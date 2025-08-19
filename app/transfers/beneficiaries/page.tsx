@@ -27,7 +27,7 @@ import {
 } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { addBeneficiary, updateBeneficiary, deleteBeneficiary, validateRIB, getBeneficiaries } from "./actions"
-import { useFormState } from "react-dom"
+import { useActionState } from "react"
 
 interface Beneficiary {
   id: string
@@ -72,9 +72,9 @@ export default function BeneficiariesPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [isPending, startTransition] = useTransition()
 
-  const [addState, addAction] = useFormState(addBeneficiary, null)
-  const [updateState, updateAction] = useFormState(updateBeneficiary, null)
-  const [deleteState, deleteAction] = useFormState(deleteBeneficiary, null)
+  const [addState, addAction] = useActionState(addBeneficiary, null)
+  const [updateState, updateAction] = useActionState(updateBeneficiary, null)
+  const [deleteState, deleteAction] = useActionState(deleteBeneficiary, null)
 
   const loadBeneficiaries = async () => {
     setIsLoading(true)
