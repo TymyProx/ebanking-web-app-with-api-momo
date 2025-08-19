@@ -1,8 +1,8 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
-//import Cookies from "js-cookie"
 import { cookies } from "next/headers"
+
 interface ActionResult {
   success?: boolean
   error?: string
@@ -30,21 +30,14 @@ const TENANT_ID = "afa25e29-08dd-46b6-8ea2-d778cb2d6694"
 
 const cookieToken = (await cookies()).get("token")?.value
 export async function getBeneficiaries(): Promise<ApiBeneficiary[]> {
-  //async function getBearerToken(): Promise<string | null> {
-  
-  //if (cookieToken) return cookieToken
-  //return localStorage.getItem("token")
-  
-//   return null
-//}
-  const usertoken = cookieToken; //getBearerToken()
+  const usertoken = cookieToken
   console.log("Récupération des bénéficiaires avec token:", usertoken)
   try {
     const response = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/beneficiaire`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${usertoken}`,
+        Authorization: `Bearer ${usertoken}`,
       },
       cache: "no-store", // Always fetch fresh data
     })
@@ -130,10 +123,12 @@ export async function addBeneficiary(prevState: ActionResult | null, formData: F
       },
     }
 
+    const usertoken = cookieToken
     const response = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/beneficiaire`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        Authorization: `Bearer ${usertoken}`,
       },
       body: JSON.stringify(apiData),
     })
@@ -166,7 +161,6 @@ export async function addBeneficiary(prevState: ActionResult | null, formData: F
 }
 
 function getBankCode(bankName: string, type: string): string {
-  // Mapping des banques vers leurs codes
   const bankCodes: Record<string, string> = {
     "Banque Nationale de Guinée": "BNG",
     BICIGUI: "BICI",
@@ -235,14 +229,13 @@ export async function updateBeneficiary(prevState: ActionResult | null, formData
     const type = formData.get("type") as string
 
     // Validation des données
-    if (!name || !account || !bank || !type) {
+    if (!beneficiaryId || !name || !account || !bank || !type) {
       return {
         success: false,
         error: "Tous les champs obligatoires doivent être remplis",
       }
     }
 
-    // Validation du RIB/IBAN
     const ribValidation = await validateRIB(account, type)
     if (!ribValidation.isValid) {
       return {
@@ -261,10 +254,12 @@ export async function updateBeneficiary(prevState: ActionResult | null, formData
       },
     }
 
+    const usertoken = cookieToken
     const response = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/beneficiaire/${beneficiaryId}`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
+        Authorization: `Bearer ${usertoken}`,
       },
       body: JSON.stringify(apiData),
     })
@@ -310,10 +305,12 @@ export async function deleteBeneficiary(prevState: ActionResult | null, formData
       }
     }
 
+    const usertoken = cookieToken
     const response = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/beneficiaire/${beneficiaryId}`, {
       method: "DELETE",
       headers: {
         "Content-Type": "application/json",
+        Authorization: `Bearer ${usertoken}`,
       },
     })
 
