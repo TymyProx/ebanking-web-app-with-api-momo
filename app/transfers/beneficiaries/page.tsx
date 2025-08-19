@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useTransition } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -70,10 +70,11 @@ export default function BeneficiariesPage() {
   const [ribValidation, setRibValidation] = useState<{ isValid: boolean; message: string } | null>(null)
   const [beneficiaries, setBeneficiaries] = useState<Beneficiary[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [isPending, startTransition] = useTransition()
 
-  const [addState, addAction, isAddPending] = useFormState(addBeneficiary, null)
-  const [updateState, updateAction, isUpdatePending] = useFormState(updateBeneficiary, null)
-  const [deleteState, deleteAction, isDeletePending] = useFormState(deleteBeneficiary, null)
+  const [addState, addAction] = useFormState(addBeneficiary, null)
+  const [updateState, updateAction] = useFormState(updateBeneficiary, null)
+  const [deleteState, deleteAction] = useFormState(deleteBeneficiary, null)
 
   const loadBeneficiaries = async () => {
     setIsLoading(true)
@@ -189,12 +190,14 @@ export default function BeneficiariesPage() {
     setIsDeleteModalOpen(true)
   }
 
-  const confirmDeleteBeneficiary = async () => {
+  const confirmDeleteBeneficiary = () => {
     if (!beneficiaryToDelete) return
 
-    const formData = new FormData()
-    formData.append("id", beneficiaryToDelete.id)
-    await deleteAction(formData)
+    startTransition(() => {
+      const formData = new FormData()
+      formData.append("id", beneficiaryToDelete.id)
+      deleteAction(formData)
+    })
 
     setIsDeleteModalOpen(false)
     setBeneficiaryToDelete(null)
@@ -460,7 +463,7 @@ export default function BeneficiariesPage() {
               </Alert>
             )}
 
-            <BeneficiaryForm onSubmit={handleAddBeneficiary} isPending={isAddPending} />
+            <BeneficiaryForm onSubmit={handleAddBeneficiary} isPending={isPending} />
           </DialogContent>
         </Dialog>
       </div>
@@ -638,7 +641,7 @@ export default function BeneficiariesPage() {
                         <DropdownMenuItem
                           className="text-red-600"
                           onClick={() => handleDeleteBeneficiary(beneficiary)}
-                          disabled={isDeletePending}
+                          disabled={isPending}
                         >
                           <Trash2 className="w-4 h-4 mr-2" />
                           Supprimer
@@ -675,7 +678,7 @@ export default function BeneficiariesPage() {
             </Alert>
           )}
 
-          <BeneficiaryForm isEdit={true} onSubmit={handleEditBeneficiary} isPending={isUpdatePending} />
+          <BeneficiaryForm isEdit={true} onSubmit={handleEditBeneficiary} isPending={isPending} />
         </DialogContent>
       </Dialog>
 
