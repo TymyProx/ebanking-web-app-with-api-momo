@@ -28,10 +28,10 @@ interface ApiBeneficiary {
 const API_BASE_URL = "http://192.168.1.200:8080/api" //process.env.NEXT_PUBLIC_API_BASE_URL
 const TENANT_ID = "afa25e29-08dd-46b6-8ea2-d778cb2d6694"
 
-
+const cookieToken = (await cookies()).get("token")?.value
 export async function getBeneficiaries(): Promise<ApiBeneficiary[]> {
   //async function getBearerToken(): Promise<string | null> {
-    const cookieToken = (await cookies()).get("token")?.value
+  
   //if (cookieToken) return cookieToken
   //return localStorage.getItem("token")
   
