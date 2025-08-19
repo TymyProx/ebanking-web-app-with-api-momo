@@ -27,7 +27,6 @@ interface ApiBeneficiary {
 const API_BASE_URL = "http://192.168.1.200:8080/api" //process.env.NEXT_PUBLIC_API_BASE_URL
 const TENANT_ID = "afa25e29-08dd-46b6-8ea2-d778cb2d6694"
 
-
 export async function getBeneficiaries(): Promise<ApiBeneficiary[]> {
   const cookieToken = (await cookies()).get("token")?.value
   const usertoken = cookieToken
@@ -222,6 +221,7 @@ export async function updateBeneficiary(prevState: ActionResult | null, formData
     // Simulation d'un délai de traitement
     await new Promise((resolve) => setTimeout(resolve, 1000))
 
+    const id = formData.get("id") as string
     const beneficiaryId = formData.get("beneficiaryId") as string
     const name = formData.get("name") as string
     const account = formData.get("account") as string
@@ -229,7 +229,7 @@ export async function updateBeneficiary(prevState: ActionResult | null, formData
     const type = formData.get("type") as string
 
     // Validation des données
-    if (!beneficiaryId || !name || !account || !bank || !type) {
+    if (!id || !name || !account || !bank || !type) {
       return {
         success: false,
         error: "Tous les champs obligatoires doivent être remplis",
@@ -246,7 +246,7 @@ export async function updateBeneficiary(prevState: ActionResult | null, formData
 
     const apiData = {
       data: {
-        beneficiaryId: beneficiaryId,
+        beneficiaryId: beneficiaryId || `BEN_${Date.now()}`, // Utiliser l'ID existant ou générer un nouveau
         customerId: "CUSTOMER_ID_PLACEHOLDER", // À remplacer par l'ID du client connecté
         name: name,
         accountNumber: account,
@@ -255,7 +255,7 @@ export async function updateBeneficiary(prevState: ActionResult | null, formData
     }
     const cookieToken = (await cookies()).get("token")?.value
     const usertoken = cookieToken
-    const response = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/beneficiaire/${beneficiaryId}`, {
+    const response = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/beneficiaire/${id}`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
@@ -296,9 +296,9 @@ export async function deleteBeneficiary(prevState: ActionResult | null, formData
     // Simulation d'un délai de traitement
     await new Promise((resolve) => setTimeout(resolve, 800))
 
-    const beneficiaryId = formData.get("beneficiaryId") as string
+    const id = formData.get("id") as string
 
-    if (!beneficiaryId) {
+    if (!id) {
       return {
         success: false,
         error: "Identifiant du bénéficiaire manquant",
@@ -306,7 +306,7 @@ export async function deleteBeneficiary(prevState: ActionResult | null, formData
     }
     const cookieToken = (await cookies()).get("token")?.value
     const usertoken = cookieToken
-    const response = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/beneficiaire/${beneficiaryId}`, {
+    const response = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/beneficiaire/${id}`, {
       method: "DELETE",
       headers: {
         "Content-Type": "application/json",
@@ -322,7 +322,7 @@ export async function deleteBeneficiary(prevState: ActionResult | null, formData
       }
     }
 
-    console.log("Bénéficiaire supprimé via API:", beneficiaryId)
+    console.log("Bénéficiaire supprimé via API:", id)
 
     revalidatePath("/transfers/beneficiaries")
     revalidatePath("/transfers/new")

@@ -166,6 +166,13 @@ export default function BeneficiariesPage() {
   const handleEditBeneficiary = async (formData: FormData) => {
     if (!editingBeneficiary) return
 
+    formData.append("id", editingBeneficiary.id)
+    const apiBeneficiaries = await getBeneficiaries()
+    const apiBeneficiary = apiBeneficiaries.find((b) => b.id === editingBeneficiary.id)
+    if (apiBeneficiary?.beneficiaryId) {
+      formData.append("beneficiaryId", apiBeneficiary.beneficiaryId)
+    }
+
     const result = await updateAction(formData)
     if (result?.success) {
       setIsEditDialogOpen(false)
@@ -176,7 +183,7 @@ export default function BeneficiariesPage() {
 
   const handleDeleteBeneficiary = async (beneficiaryId: string) => {
     const formData = new FormData()
-    formData.append("beneficiaryId", beneficiaryId)
+    formData.append("id", beneficiaryId)
     await deleteAction(formData)
   }
 
