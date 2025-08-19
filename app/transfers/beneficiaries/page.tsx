@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { DeleteConfirmationModal } from "@/components/delete-confirmation-modal"
 import {
   Users,
   Plus,
@@ -58,6 +59,8 @@ export default function BeneficiariesPage() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [editingBeneficiary, setEditingBeneficiary] = useState<Beneficiary | null>(null)
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
+  const [beneficiaryToDelete, setBeneficiaryToDelete] = useState<Beneficiary | null>(null)
   const [formData, setFormData] = useState<BeneficiaryFormData>({
     name: "",
     account: "",
@@ -181,18 +184,20 @@ export default function BeneficiariesPage() {
     }
   }
 
-  const handleDeleteBeneficiary = async (beneficiaryId: string) => {
-    const confirmed = window.confirm(
-      "Êtes-vous sûr de vouloir supprimer ce bénéficiaire ? Cette action est irréversible.",
-    )
+  const handleDeleteBeneficiary = (beneficiary: Beneficiary) => {
+    setBeneficiaryToDelete(beneficiary)
+    setIsDeleteModalOpen(true)
+  }
 
-    if (!confirmed) {
-      return // L'utilisateur a annulé la suppression
-    }
+  const confirmDeleteBeneficiary = async () => {
+    if (!beneficiaryToDelete) return
 
     const formData = new FormData()
-    formData.append("id", beneficiaryId)
+    formData.append("id", beneficiaryToDelete.id)
     await deleteAction(formData)
+
+    setIsDeleteModalOpen(false)
+    setBeneficiaryToDelete(null)
   }
 
   const validateRIBField = async (account: string, type: string) => {
@@ -632,7 +637,7 @@ export default function BeneficiariesPage() {
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           className="text-red-600"
-                          onClick={() => handleDeleteBeneficiary(beneficiary.id)}
+                          onClick={() => handleDeleteBeneficiary(beneficiary)}
                           disabled={isDeletePending}
                         >
                           <Trash2 className="w-4 h-4 mr-2" />
@@ -673,6 +678,18 @@ export default function BeneficiariesPage() {
           <BeneficiaryForm isEdit={true} onSubmit={handleEditBeneficiary} isPending={isUpdatePending} />
         </DialogContent>
       </Dialog>
+
+      <DeleteConfirmationModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => {
+          setIsDeleteModalOpen(false)
+          setBeneficiaryToDelete(null)
+        }}
+        onConfirm={confirmDeleteBeneficiary}
+        title="Supprimer le bénéficiaire"
+        description="Cette action est irréversible. Tous les virements futurs vers ce bénéficiaire devront être reconfigurés."
+        itemName={beneficiaryToDelete?.name}
+      />
     </div>
   )
 }
