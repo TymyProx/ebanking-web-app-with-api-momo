@@ -1,0 +1,406 @@
+"use client"
+
+import { useState, useEffect } from "react"
+import { useSearchParams } from "next/navigation"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Label } from "@/components/ui/label"
+import {
+  Download,
+  Printer,
+  Mail,
+  Copy,
+  CreditCard,
+  Building,
+  MapPin,
+  Phone,
+  CheckCircle,
+  Wallet,
+  PiggyBank,
+  DollarSign,
+} from "lucide-react"
+
+interface Account {
+  id: string
+  name: string
+  number: string
+  balance: number
+  currency: string
+  type: "Courant" | "Épargne" | "Devise"
+  status: "Actif" | "Bloqué" | "Fermé"
+  iban: string
+  accountHolder: string
+  bankName: string
+  bankCode: string
+  branchCode: string
+  branchName: string
+  swiftCode: string
+}
+
+export default function RIBPage() {
+  const searchParams = useSearchParams()
+  const preSelectedAccountId = searchParams.get("accountId")
+
+  const [copied, setCopied] = useState(false)
+  const [selectedAccountId, setSelectedAccountId] = useState<string>("")
+
+  // Données des comptes (simulées avec informations RIB)
+  const accounts: Account[] = [
+    {
+      id: "1",
+      name: "Compte Courant",
+      number: "0001-234567-89",
+      balance: 2400000,
+      currency: "GNF",
+      type: "Courant",
+      status: "Actif",
+      iban: "GN82 BNG 001 0001234567 89",
+      accountHolder: "DIALLO Mamadou",
+      bankName: "Banque Nationale de Guinée",
+      bankCode: "BNG",
+      branchCode: "001",
+      branchName: "Agence Kaloum",
+      swiftCode: "BNGNGNCX",
+    },
+    {
+      id: "2",
+      name: "Compte Épargne",
+      number: "0002-345678-90",
+      balance: 850000,
+      currency: "GNF",
+      type: "Épargne",
+      status: "Actif",
+      iban: "GN82 BNG 001 0002345678 90",
+      accountHolder: "DIALLO Mamadou",
+      bankName: "Banque Nationale de Guinée",
+      bankCode: "BNG",
+      branchCode: "001",
+      branchName: "Agence Kaloum",
+      swiftCode: "BNGNGNCX",
+    },
+    {
+      id: "3",
+      name: "Compte USD",
+      number: "0003-456789-01",
+      balance: 1250,
+      currency: "USD",
+      type: "Devise",
+      status: "Actif",
+      iban: "GN82 BNG 001 0003456789 01",
+      accountHolder: "DIALLO Mamadou",
+      bankName: "Banque Nationale de Guinée",
+      bankCode: "BNG",
+      branchCode: "001",
+      branchName: "Agence Kaloum",
+      swiftCode: "BNGNGNCX",
+    },
+  ]
+
+  // Pré-sélectionner le compte si fourni dans l'URL
+  useEffect(() => {
+    if (preSelectedAccountId && accounts.find((acc) => acc.id === preSelectedAccountId)) {
+      setSelectedAccountId(preSelectedAccountId)
+    } else if (accounts.length > 0) {
+      // Sélectionner le premier compte par défaut si aucun n'est pré-sélectionné
+      setSelectedAccountId(accounts[0].id)
+    }
+  }, [preSelectedAccountId])
+
+  const selectedAccount = accounts.find((acc) => acc.id === selectedAccountId) || accounts[0]
+  const preSelectedAccount = preSelectedAccountId ? accounts.find((acc) => acc.id === preSelectedAccountId) : null
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
+  const getAccountIcon = (type: string) => {
+    switch (type) {
+      case "Courant":
+        return <Wallet className="h-4 w-4" />
+      case "Épargne":
+        return <PiggyBank className="h-4 w-4" />
+      case "Devise":
+        return <DollarSign className="h-4 w-4" />
+      default:
+        return <CreditCard className="h-4 w-4" />
+    }
+  }
+
+  const formatAmount = (amount: number, currency = "GNF") => {
+    if (currency === "GNF") {
+      return new Intl.NumberFormat("fr-FR").format(amount)
+    }
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: currency,
+    }).format(amount)
+  }
+
+  if (!selectedAccount) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <p className="text-gray-500">Aucun compte disponible</p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold text-gray-900">Relevé d'Identité Bancaire (RIB)</h1>
+        <p className="text-gray-600">Consultez et téléchargez votre RIB</p>
+        {preSelectedAccount && (
+          <div className="mt-2">
+            <Alert className="border-blue-200 bg-blue-50">
+              <CheckCircle className="h-4 w-4 text-blue-600" />
+              <AlertDescription className="text-blue-800">
+                Compte pré-sélectionné : {preSelectedAccount.name} ({preSelectedAccount.number})
+              </AlertDescription>
+            </Alert>
+          </div>
+        )}
+      </div>
+
+      {/* Sélection du compte */}
+      {accounts.length > 1 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <CreditCard className="w-5 h-5 mr-2" />
+              Sélection du compte
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <Label htmlFor="account-select">Choisir le compte pour le RIB</Label>
+              <Select value={selectedAccountId} onValueChange={setSelectedAccountId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Sélectionner un compte" />
+                </SelectTrigger>
+                <SelectContent>
+                  {accounts.map((account) => (
+                    <SelectItem key={account.id} value={account.id}>
+                      <div className="flex items-center space-x-2">
+                        {getAccountIcon(account.type)}
+                        <span>
+                          {account.name} - {account.number}
+                        </span>
+                        {preSelectedAccountId === account.id && (
+                          <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 ml-2">
+                            Suggéré
+                          </Badge>
+                        )}
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <CreditCard className="w-5 h-5 mr-2" />
+                Informations bancaires
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* RIB officiel */}
+              <div className="border-2 border-dashed border-gray-300 p-6 rounded-lg bg-gray-50">
+                <div className="text-center mb-4">
+                  <h2 className="text-lg font-bold text-blue-600">{selectedAccount.bankName.toUpperCase()}</h2>
+                  <p className="text-sm text-gray-600">RELEVÉ D'IDENTITÉ BANCAIRE</p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-xs text-gray-500 uppercase">Titulaire du compte</p>
+                    <p className="font-semibold">{selectedAccount.accountHolder}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500 uppercase">Numéro de compte</p>
+                    <p className="font-mono font-semibold">{selectedAccount.number}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500 uppercase">Code banque</p>
+                    <p className="font-mono">{selectedAccount.bankCode}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500 uppercase">Code agence</p>
+                    <p className="font-mono">{selectedAccount.branchCode}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500 uppercase">RIB</p>
+                    <p className="font-mono font-semibold">
+                      {selectedAccount.bankCode} {selectedAccount.branchCode} {selectedAccount.number.replace(/-/g, "")}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500 uppercase">IBAN</p>
+                    <p className="font-mono font-semibold">{selectedAccount.iban}</p>
+                  </div>
+                </div>
+
+                <div className="mt-4 pt-4 border-t">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-xs text-gray-500 uppercase">Code SWIFT</p>
+                      <p className="font-mono font-semibold">{selectedAccount.swiftCode}</p>
+                    </div>
+                    <div className="text-right">
+                      <Badge
+                        variant="outline"
+                        className={
+                          selectedAccount.status === "Actif" ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"
+                        }
+                      >
+                        Compte {selectedAccount.status}
+                      </Badge>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Informations supplémentaires du compte */}
+                <div className="mt-4 pt-4 border-t">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-xs text-gray-500 uppercase">Type de compte</p>
+                      <p className="font-medium">{selectedAccount.type}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500 uppercase">Devise</p>
+                      <p className="font-medium">{selectedAccount.currency}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="flex flex-wrap gap-3">
+                <Button>
+                  <Download className="w-4 h-4 mr-2" />
+                  Télécharger PDF
+                </Button>
+                <Button variant="outline">
+                  <Printer className="w-4 h-4 mr-2" />
+                  Imprimer
+                </Button>
+                <Button variant="outline">
+                  <Mail className="w-4 h-4 mr-2" />
+                  Envoyer par email
+                </Button>
+                <Button variant="outline" onClick={() => copyToClipboard(selectedAccount.iban)}>
+                  <Copy className="w-4 h-4 mr-2" />
+                  {copied ? "Copié !" : "Copier IBAN"}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        <div>
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Building className="w-5 h-5 mr-2" />
+                Informations agence
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <p className="font-semibold">{selectedAccount.branchName}</p>
+                <p className="text-sm text-gray-600">{selectedAccount.bankName}</p>
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex items-start space-x-2">
+                  <MapPin className="w-4 h-4 text-gray-400 mt-0.5" />
+                  <div>
+                    <p className="text-sm">Avenue de la République</p>
+                    <p className="text-sm">Kaloum, Conakry</p>
+                    <p className="text-sm">République de Guinée</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <Phone className="w-4 h-4 text-gray-400" />
+                  <p className="text-sm">+224 622 123 456</p>
+                </div>
+              </div>
+
+              <div className="pt-4 border-t">
+                <p className="text-xs text-gray-500">Horaires d'ouverture</p>
+                <p className="text-sm">Lun - Ven: 8h00 - 16h00</p>
+                <p className="text-sm">Sam: 8h00 - 12h00</p>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="mt-6">
+            <CardHeader>
+              <CardTitle>Utilisation du RIB</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3 text-sm">
+                <div className="flex items-start space-x-2">
+                  <div className="w-2 h-2 bg-blue-600 rounded-full mt-2"></div>
+                  <p>Recevoir des virements</p>
+                </div>
+                <div className="flex items-start space-x-2">
+                  <div className="w-2 h-2 bg-blue-600 rounded-full mt-2"></div>
+                  <p>Domicilier votre salaire</p>
+                </div>
+                <div className="flex items-start space-x-2">
+                  <div className="w-2 h-2 bg-blue-600 rounded-full mt-2"></div>
+                  <p>Prélèvements automatiques</p>
+                </div>
+                <div className="flex items-start space-x-2">
+                  <div className="w-2 h-2 bg-blue-600 rounded-full mt-2"></div>
+                  <p>Virements internationaux</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Informations du compte sélectionné */}
+          <Card className="mt-6">
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                {getAccountIcon(selectedAccount.type)}
+                <span className="ml-2">Compte sélectionné</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                <div>
+                  <p className="text-xs text-gray-500">Nom du compte</p>
+                  <p className="font-medium">{selectedAccount.name}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500">Numéro</p>
+                  <p className="font-mono text-sm">{selectedAccount.number}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500">Solde actuel</p>
+                  <p className="font-semibold text-green-600">
+                    {formatAmount(selectedAccount.balance, selectedAccount.currency)} {selectedAccount.currency}
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    </div>
+  )
+}
