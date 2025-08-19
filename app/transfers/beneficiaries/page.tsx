@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useTransition } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -67,6 +67,7 @@ export default function BeneficiariesPage() {
   const [ribValidation, setRibValidation] = useState<{ isValid: boolean; message: string } | null>(null)
   const [beneficiaries, setBeneficiaries] = useState<Beneficiary[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [isPending, startTransition] = useTransition()
 
   const [addState, addAction, isAddPending] = useFormState(addBeneficiary, null)
   const [updateState, updateAction, isUpdatePending] = useFormState(updateBeneficiary, null)
@@ -173,18 +174,22 @@ export default function BeneficiariesPage() {
       formData.append("beneficiaryId", apiBeneficiary.beneficiaryId)
     }
 
-    const result = await updateAction(formData)
-    if (result?.success) {
-      setIsEditDialogOpen(false)
-      setEditingBeneficiary(null)
-      resetForm()
-    }
+    startTransition(async () => {
+      const result = await updateAction(formData)
+      if (result?.success) {
+        setIsEditDialogOpen(false)
+        setEditingBeneficiary(null)
+        resetForm()
+      }
+    })
   }
 
   const handleDeleteBeneficiary = async (beneficiaryId: string) => {
-    const formData = new FormData()
-    formData.append("id", beneficiaryId)
-    await deleteAction(formData)
+    startTransition(async () => {
+      const formData = new FormData()
+      formData.append("id", beneficiaryId)
+      await deleteAction(formData)
+    })
   }
 
   const validateRIBField = async (account: string, type: string) => {
