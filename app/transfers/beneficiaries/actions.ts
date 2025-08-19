@@ -2,7 +2,6 @@
 
 import { revalidatePath } from "next/cache"
 import { cookies } from "next/headers"
-
 interface ActionResult {
   success?: boolean
   error?: string
@@ -28,8 +27,9 @@ interface ApiBeneficiary {
 const API_BASE_URL = "http://192.168.1.200:8080/api" //process.env.NEXT_PUBLIC_API_BASE_URL
 const TENANT_ID = "afa25e29-08dd-46b6-8ea2-d778cb2d6694"
 
-const cookieToken = (await cookies()).get("token")?.value
+
 export async function getBeneficiaries(): Promise<ApiBeneficiary[]> {
+  const cookieToken = (await cookies()).get("token")?.value
   const usertoken = cookieToken
   console.log("Récupération des bénéficiaires avec token:", usertoken)
   try {
@@ -122,7 +122,7 @@ export async function addBeneficiary(prevState: ActionResult | null, formData: F
         bankCode: getBankCode(bank, type),
       },
     }
-
+    const cookieToken = (await cookies()).get("token")?.value
     const usertoken = cookieToken
     const response = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/beneficiaire`, {
       method: "POST",
@@ -253,7 +253,7 @@ export async function updateBeneficiary(prevState: ActionResult | null, formData
         bankCode: getBankCode(bank, type),
       },
     }
-
+    const cookieToken = (await cookies()).get("token")?.value
     const usertoken = cookieToken
     const response = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/beneficiaire/${beneficiaryId}`, {
       method: "PUT",
@@ -304,7 +304,7 @@ export async function deleteBeneficiary(prevState: ActionResult | null, formData
         error: "Identifiant du bénéficiaire manquant",
       }
     }
-
+    const cookieToken = (await cookies()).get("token")?.value
     const usertoken = cookieToken
     const response = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/beneficiaire/${beneficiaryId}`, {
       method: "DELETE",
