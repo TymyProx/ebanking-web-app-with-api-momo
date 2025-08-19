@@ -4,7 +4,7 @@ import { z } from "zod"
 import { cookies } from "next/headers"
 import { revalidatePath } from "next/cache"
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "https://192.168.1.200:8080/api"
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://192.168.1.200:8080/api"
 const TENANT_ID = "afa25e29-08dd-46b6-8ea2-d778cb2d6694"
 
 // Schéma de validation pour les virements
