@@ -30,7 +30,6 @@ const TENANT_ID = "afa25e29-08dd-46b6-8ea2-d778cb2d6694"
 export async function getBeneficiaries(): Promise<ApiBeneficiary[]> {
   const cookieToken = (await cookies()).get("token")?.value
   const usertoken = cookieToken
-  console.log("Récupération des bénéficiaires avec token:", usertoken)
   try {
     const response = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/beneficiaire`, {
       method: "GET",
@@ -306,12 +305,13 @@ export async function deleteBeneficiary(prevState: ActionResult | null, formData
     }
     const cookieToken = (await cookies()).get("token")?.value
     const usertoken = cookieToken
-    const response = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/beneficiaire/${id}`, {
+    const response = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/beneficiaire`, {
       method: "DELETE",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${usertoken}`,
       },
+      
     })
 
     if (!response.ok) {
