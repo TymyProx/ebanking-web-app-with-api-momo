@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useTransition } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -9,7 +9,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { DeleteConfirmationModal } from "@/components/delete-confirmation-modal"
 import {
   Users,
   Plus,
@@ -27,7 +26,7 @@ import {
 } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { addBeneficiary, updateBeneficiary, deleteBeneficiary, validateRIB, getBeneficiaries } from "./actions"
-import { useActionState } from "react"
+import { useFormState } from "react-dom"
 
 interface Beneficiary {
   id: string
@@ -59,8 +58,6 @@ export default function BeneficiariesPage() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [editingBeneficiary, setEditingBeneficiary] = useState<Beneficiary | null>(null)
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
-  const [beneficiaryToDelete, setBeneficiaryToDelete] = useState<Beneficiary | null>(null)
   const [formData, setFormData] = useState<BeneficiaryFormData>({
     name: "",
     account: "",
@@ -70,11 +67,10 @@ export default function BeneficiariesPage() {
   const [ribValidation, setRibValidation] = useState<{ isValid: boolean; message: string } | null>(null)
   const [beneficiaries, setBeneficiaries] = useState<Beneficiary[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const [isPending, startTransition] = useTransition()
 
-  const [addState, addAction] = useActionState(addBeneficiary, null)
-  const [updateState, updateAction] = useActionState(updateBeneficiary, null)
-  const [deleteState, deleteAction] = useActionState(deleteBeneficiary, null)
+  const [addState, addAction, isAddPending] = useFormState(addBeneficiary, null)
+  const [updateState, updateAction, isUpdatePending] = useFormState(updateBeneficiary, null)
+  const [deleteState, deleteAction, isDeletePending] = useFormState(deleteBeneficiary, null)
 
   const loadBeneficiaries = async () => {
     setIsLoading(true)
@@ -185,22 +181,10 @@ export default function BeneficiariesPage() {
     }
   }
 
-  const handleDeleteBeneficiary = (beneficiary: Beneficiary) => {
-    setBeneficiaryToDelete(beneficiary)
-    setIsDeleteModalOpen(true)
-  }
-
-  const confirmDeleteBeneficiary = () => {
-    if (!beneficiaryToDelete) return
-
-    startTransition(() => {
-      const formData = new FormData()
-      formData.append("id", beneficiaryToDelete.id)
-      deleteAction(formData)
-    })
-
-    setIsDeleteModalOpen(false)
-    setBeneficiaryToDelete(null)
+  const handleDeleteBeneficiary = async (beneficiaryId: string) => {
+    const formData = new FormData()
+    formData.append("id", beneficiaryId)
+    await deleteAction(formData)
   }
 
   const validateRIBField = async (account: string, type: string) => {
@@ -463,7 +447,7 @@ export default function BeneficiariesPage() {
               </Alert>
             )}
 
-            <BeneficiaryForm onSubmit={handleAddBeneficiary} isPending={isPending} />
+            <BeneficiaryForm onSubmit={handleAddBeneficiary} isPending={isAddPending} />
           </DialogContent>
         </Dialog>
       </div>
@@ -640,8 +624,8 @@ export default function BeneficiariesPage() {
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           className="text-red-600"
-                          onClick={() => handleDeleteBeneficiary(beneficiary)}
-                          disabled={isPending}
+                          onClick={() => handleDeleteBeneficiary(beneficiary.id)}
+                          disabled={isDeletePending}
                         >
                           <Trash2 className="w-4 h-4 mr-2" />
                           Supprimer
@@ -678,21 +662,9 @@ export default function BeneficiariesPage() {
             </Alert>
           )}
 
-          <BeneficiaryForm isEdit={true} onSubmit={handleEditBeneficiary} isPending={isPending} />
+          <BeneficiaryForm isEdit={true} onSubmit={handleEditBeneficiary} isPending={isUpdatePending} />
         </DialogContent>
       </Dialog>
-
-      <DeleteConfirmationModal
-        isOpen={isDeleteModalOpen}
-        onClose={() => {
-          setIsDeleteModalOpen(false)
-          setBeneficiaryToDelete(null)
-        }}
-        onConfirm={confirmDeleteBeneficiary}
-        title="Supprimer le bénéficiaire"
-        description="Cette action est irréversible. Tous les virements futurs vers ce bénéficiaire devront être reconfigurés."
-        itemName={beneficiaryToDelete?.name}
-      />
     </div>
   )
 }
