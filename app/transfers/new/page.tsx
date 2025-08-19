@@ -1,8 +1,8 @@
 "use client"
 
 import type React from "react"
-
-import { useState, useTransition } from "react"
+import { useState, useTransition, useActionState } from "react"
+import { executeTransfer } from "./actions"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -111,6 +111,7 @@ export default function NewTransferPage() {
   const [selectedBeneficiary, setSelectedBeneficiary] = useState<string>("")
   const [amount, setAmount] = useState<string>("")
   const [motif, setMotif] = useState<string>("")
+  const [transferDate, setTransferDate] = useState<string>(new Date().toISOString().split("T")[0])
   const [beneficiaries, setBeneficiaries] = useState<Beneficiary[]>(mockBeneficiaries)
 
   // États pour le formulaire de bénéficiaire
@@ -125,10 +126,7 @@ export default function NewTransferPage() {
   })
 
   const [isPending, startTransition] = useTransition()
-  const [transferState, setTransferState] = useState<{
-    success?: boolean
-    error?: string
-  } | null>(null)
+  const [transferState, transferAction] = useActionState(executeTransfer, null)
 
   const [beneficiaryState, setBeneficiaryState] = useState<{
     success?: boolean
@@ -162,38 +160,28 @@ export default function NewTransferPage() {
     e.preventDefault()
 
     if (!selectedAccount || !selectedBeneficiary || !amount || !motif) {
-      setTransferState({ error: "Tous les champs sont obligatoires" })
       return
     }
 
-    startTransition(async () => {
-      try {
-        // Simulation d'un délai de traitement
-        await new Promise((resolve) => setTimeout(resolve, 2000))
+    const formData = new FormData()
+    formData.append("sourceAccount", selectedAccount)
+    formData.append("beneficiaryId", selectedBeneficiary)
+    formData.append("amount", amount)
+    formData.append("purpose", motif)
+    formData.append("transferDate", transferDate)
 
-        // Simulation d'une erreur aléatoire (5% de chance)
-        if (Math.random() < 0.05) {
-          throw new Error("Erreur de connexion au système bancaire")
-        }
-
-        setTransferState({
-          success: true,
-        })
-
-        // Reset du formulaire après succès
-        setTimeout(() => {
-          setSelectedAccount("")
-          setSelectedBeneficiary("")
-          setAmount("")
-          setMotif("")
-          setTransferState(null)
-        }, 3000)
-      } catch (error) {
-        setTransferState({
-          error: error instanceof Error ? error.message : "Erreur lors du virement",
-        })
-      }
+    startTransition(() => {
+      transferAction(formData)
     })
+
+    // Reset du formulaire après succès
+    if (transferState?.success) {
+      setSelectedAccount("")
+      setSelectedBeneficiary("")
+      setAmount("")
+      setMotif("")
+      setTransferDate(new Date().toISOString().split("T")[0])
+    }
   }
 
   // Gestionnaires d'événements pour le bénéficiaire
@@ -275,7 +263,7 @@ export default function NewTransferPage() {
         <Alert className="border-green-200 bg-green-50">
           <Check className="h-4 w-4 text-green-600" />
           <AlertDescription className="text-green-800">
-            Virement effectué avec succès ! L'opération sera traitée dans les prochaines minutes.
+            {transferState.message || "Virement effectué avec succès !"}
           </AlertDescription>
         </Alert>
       )}
@@ -553,6 +541,18 @@ export default function NewTransferPage() {
                   required
                 />
               </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="transferDate">Date d'exécution *</Label>
+                <Input
+                  id="transferDate"
+                  type="date"
+                  value={transferDate}
+                  onChange={(e) => setTransferDate(e.target.value)}
+                  min={new Date().toISOString().split("T")[0]}
+                  required
+                />
+              </div>
             </CardContent>
           </Card>
 
@@ -618,6 +618,15 @@ export default function NewTransferPage() {
                   <h4 className="font-medium text-sm text-gray-600 mb-2">Motif</h4>
                   <div className="p-3 bg-gray-50 rounded-lg">
                     <p className="text-sm">{motif}</p>
+                  </div>
+                </div>
+              )}
+
+              {transferDate && (
+                <div>
+                  <h4 className="font-medium text-sm text-gray-600 mb-2">Date d'exécution</h4>
+                  <div className="p-3 bg-gray-50 rounded-lg">
+                    <p className="text-sm">{transferDate}</p>
                   </div>
                 </div>
               )}
