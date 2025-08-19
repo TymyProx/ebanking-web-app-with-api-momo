@@ -182,6 +182,14 @@ export default function BeneficiariesPage() {
   }
 
   const handleDeleteBeneficiary = async (beneficiaryId: string) => {
+    const confirmed = window.confirm(
+      "Êtes-vous sûr de vouloir supprimer ce bénéficiaire ? Cette action est irréversible.",
+    )
+
+    if (!confirmed) {
+      return // L'utilisateur a annulé la suppression
+    }
+
     const formData = new FormData()
     formData.append("id", beneficiaryId)
     await deleteAction(formData)
