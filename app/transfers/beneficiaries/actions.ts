@@ -305,13 +305,16 @@ export async function deleteBeneficiary(prevState: ActionResult | null, formData
     }
     const cookieToken = (await cookies()).get("token")?.value
     const usertoken = cookieToken
+
     const response = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/beneficiaire`, {
       method: "DELETE",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${usertoken}`,
       },
-      
+      body: JSON.stringify({
+        ids: [id], // L'API s'attend à un tableau d'IDs
+      }),
     })
 
     if (!response.ok) {
