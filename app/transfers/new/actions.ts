@@ -362,7 +362,7 @@ export async function getTransactions(): Promise<any[]> {
     if (Array.isArray(data.rows)) {
       return data.rows
     }
-    return Array.isArray(data) ? data : [data]
+    return [data.rows]
   } catch (error) {
     console.error("[v0] Erreur lors de la récupération des transactions:", error)
     return []
