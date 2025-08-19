@@ -320,6 +320,9 @@ export async function getTransactions(): Promise<any[]> {
   const usertoken = cookieToken
 
   try {
+    console.log("[v0] Tentative de récupération des transactions...")
+    console.log("[v0] URL:", `${API_BASE_URL}/tenant/${TENANT_ID}/transaction`)
+
     const response = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/transaction`, {
       method: "GET",
       headers: {
@@ -329,19 +332,39 @@ export async function getTransactions(): Promise<any[]> {
       cache: "no-store", // Always fetch fresh data
     })
 
+    console.log("[v0] Statut de la réponse:", response.status)
+    console.log("[v0] Headers de la réponse:", Object.fromEntries(response.headers.entries()))
+
     if (!response.ok) {
-      console.error(`Erreur API: ${response.status} ${response.statusText}`)
+      console.error(`[v0] Erreur API: ${response.status} ${response.statusText}`)
+      const contentType = response.headers.get("content-type")
+      if (contentType && contentType.includes("application/json")) {
+        const errorData = await response.json()
+        console.error("[v0] Erreur JSON:", errorData)
+      } else {
+        const errorText = await response.text()
+        console.error("[v0] Réponse non-JSON:", errorText)
+      }
+      return []
+    }
+
+    const contentType = response.headers.get("content-type")
+    if (!contentType || !contentType.includes("application/json")) {
+      const responseText = await response.text()
+      console.error("[v0] Réponse non-JSON reçue:", responseText)
       return []
     }
 
     const data = await response.json()
+    console.log("[v0] Données reçues:", data)
+
     // Retourne la réponse sous forme de tableau
     if (Array.isArray(data.rows)) {
       return data.rows
     }
     return Array.isArray(data) ? data : [data]
   } catch (error) {
-    console.error("Erreur lors de la récupération des transactions:", error)
+    console.error("[v0] Erreur lors de la récupération des transactions:", error)
     return []
   }
 }

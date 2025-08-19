@@ -15,9 +15,12 @@ import {
   PiggyBank,
   DollarSign,
 } from "lucide-react"
+import { getTransactions } from "@/app/transfers/new/actions"
 
-export default function Dashboard() {
-  // Données des comptes pour l'accueil
+export default async function Dashboard() {
+  const transactionsResult = await getTransactions()
+  const transactions = transactionsResult?.data || []
+
   const accounts = [
     {
       id: "1",
@@ -68,6 +71,23 @@ export default function Dashboard() {
         return <DollarSign className="h-4 w-4 text-purple-600" />
       default:
         return <Eye className="h-4 w-4 text-muted-foreground" />
+    }
+  }
+
+  const formatTransaction = (transaction: any) => {
+    const amount = Number.parseFloat(transaction.amount)
+    const isCredit = transaction.txnType === "CREDIT" || amount > 0
+
+    return {
+      type: transaction.txnType === "CREDIT" ? "Virement reçu" : "Virement émis",
+      from: transaction.description || "Transaction",
+      amount: `${isCredit ? "+" : "-"}${formatAmount(Math.abs(amount))} GNF`,
+      date: new Date(transaction.valueDate).toLocaleDateString("fr-FR", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      }),
+      status: transaction.status || "Exécuté",
     }
   }
 
@@ -148,55 +168,45 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {[
-                {
-                  type: "Virement reçu",
-                  from: "Aissatou Bah",
-                  amount: "+100,000 GNF",
-                  date: "13 Jan 2024",
-                  status: "Exécuté",
-                },
-                {
-                  type: "Paiement facture",
-                  from: "EDG - Électricité",
-                  amount: "-45,000 GNF",
-                  date: "12 Jan 2024",
-                  status: "Exécuté",
-                },
-                {
-                  type: "Virement émis",
-                  from: "Vers Mamadou Sow",
-                  amount: "-250,000 GNF",
-                  date: "10 Jan 2024",
-                  status: "Exécuté",
-                },
-              ].map((transaction, index) => (
-                <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                      {transaction.amount.startsWith("+") ? (
-                        <ArrowDownRight className="w-4 h-4 text-green-600" />
-                      ) : (
-                        <ArrowUpRight className="w-4 h-4 text-red-600" />
-                      )}
-                    </div>
-                    <div>
-                      <p className="font-medium text-sm">{transaction.type}</p>
-                      <p className="text-xs text-gray-500">{transaction.from}</p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <p
-                      className={`font-semibold text-sm ${
-                        transaction.amount.startsWith("+") ? "text-green-600" : "text-red-600"
-                      }`}
+              {transactions.length > 0 ? (
+                transactions.slice(0, 3).map((transaction: any, index: number) => {
+                  const formattedTransaction = formatTransaction(transaction)
+                  return (
+                    <div
+                      key={transaction.txnId || index}
+                      className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
                     >
-                      {transaction.amount}
-                    </p>
-                    <p className="text-xs text-gray-500">{transaction.date}</p>
-                  </div>
+                      <div className="flex items-center space-x-3">
+                        <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                          {formattedTransaction.amount.startsWith("+") ? (
+                            <ArrowDownRight className="w-4 h-4 text-green-600" />
+                          ) : (
+                            <ArrowUpRight className="w-4 h-4 text-red-600" />
+                          )}
+                        </div>
+                        <div>
+                          <p className="font-medium text-sm">{formattedTransaction.type}</p>
+                          <p className="text-xs text-gray-500">{formattedTransaction.from}</p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p
+                          className={`font-semibold text-sm ${
+                            formattedTransaction.amount.startsWith("+") ? "text-green-600" : "text-red-600"
+                          }`}
+                        >
+                          {formattedTransaction.amount}
+                        </p>
+                        <p className="text-xs text-gray-500">{formattedTransaction.date}</p>
+                      </div>
+                    </div>
+                  )
+                })
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  <p className="text-sm">Aucune transaction récente</p>
                 </div>
-              ))}
+              )}
             </div>
           </CardContent>
         </Card>
