@@ -1,6 +1,8 @@
 "use server"
 
 import { z } from "zod"
+import { cookies } from "next/headers"
+import { revalidatePath } from "next/cache"
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://192.168.1.200:8080/api"
 const TENANT_ID = "afa25e29-08dd-46b6-8ea2-d778cb2d6694"
@@ -199,10 +201,14 @@ export async function executeTransfer(prevState: any, formData: FormData) {
       },
     }
 
+    const cookieToken = (await cookies()).get("token")?.value
+    const usertoken = cookieToken
+
     const response = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/transaction`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        Authorization: `Bearer ${usertoken}`,
       },
       body: JSON.stringify(apiData),
     })
@@ -221,6 +227,9 @@ export async function executeTransfer(prevState: any, formData: FormData) {
     console.log(
       `[AUDIT] Virement exécuté via API - ID: ${transactionId}, Montant: ${validatedData.amount} GNF, Compte: ${validatedData.sourceAccount} à ${new Date().toISOString()}`,
     )
+
+    revalidatePath("/transfers/new")
+    revalidatePath("/accounts")
 
     return {
       success: true,
@@ -303,5 +312,36 @@ export async function calculateTransferFees(beneficiaryType: string, amount: num
       success: false,
       error: "Erreur lors du calcul des frais",
     }
+  }
+}
+
+export async function getTransactions(): Promise<any[]> {
+  const cookieToken = (await cookies()).get("token")?.value
+  const usertoken = cookieToken
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/transaction`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${usertoken}`,
+      },
+      cache: "no-store", // Always fetch fresh data
+    })
+
+    if (!response.ok) {
+      console.error(`Erreur API: ${response.status} ${response.statusText}`)
+      return []
+    }
+
+    const data = await response.json()
+    // Retourne la réponse sous forme de tableau
+    if (Array.isArray(data.rows)) {
+      return data.rows
+    }
+    return Array.isArray(data) ? data : [data]
+  } catch (error) {
+    console.error("Erreur lors de la récupération des transactions:", error)
+    return []
   }
 }
