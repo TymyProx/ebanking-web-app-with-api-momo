@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState, useTransition, useActionState } from "react"
+import { useState, useTransition, useActionState, useEffect } from "react"
 import { executeTransfer } from "./actions"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -173,15 +173,6 @@ export default function NewTransferPage() {
     startTransition(() => {
       transferAction(formData)
     })
-
-    // Reset du formulaire après succès
-    if (transferState?.success) {
-      setSelectedAccount("")
-      setSelectedBeneficiary("")
-      setAmount("")
-      setMotif("")
-      setTransferDate(new Date().toISOString().split("T")[0])
-    }
   }
 
   // Gestionnaires d'événements pour le bénéficiaire
@@ -250,6 +241,16 @@ export default function NewTransferPage() {
 
   const selectedAccountData = mockAccounts.find((acc) => acc.id === selectedAccount)
   const selectedBeneficiaryData = beneficiaries.find((ben) => ben.id === selectedBeneficiary)
+
+  useEffect(() => {
+    if (transferState?.success) {
+      setSelectedAccount("")
+      setSelectedBeneficiary("")
+      setAmount("")
+      setMotif("")
+      setTransferDate(new Date().toISOString().split("T")[0])
+    }
+  }, [transferState?.success])
 
   return (
     <div className="space-y-6">
