@@ -72,33 +72,39 @@ export default function BeneficiariesPage() {
   const [updateState, updateAction, isUpdatePending] = useActionState(updateBeneficiary, null)
   const [deleteState, deleteAction, isDeletePending] = useActionState(deleteBeneficiary, null)
 
-  useEffect(() => {
-    const loadBeneficiaries = async () => {
-      setIsLoading(true)
-      try {
-        const apiBeneficiaries = await getBeneficiaries()
-        console.log("ApiBeneficiaire",apiBeneficiaries)
-        const transformedBeneficiaries: Beneficiary[] = apiBeneficiaries.map((apiB) => ({
-          id: apiB.id,
-          name: apiB.name,
-          account: apiB.accountNumber,
-          bank: getBankNameFromCode(apiB.bankCode),
-          type: getBeneficiaryType(apiB.bankCode),
-          favorite: false,
-          lastUsed: "Jamais",
-          addedDate: new Date(apiB.createdAt).toLocaleDateString("fr-FR"),
-        }))
-        console.log("Transformed Beneficiaries",transformedBeneficiaries)
-        setBeneficiaries(transformedBeneficiaries)
-      } catch (error) {
-        console.error("Erreur lors du chargement des bénéficiaires:", error)
-      } finally {
-        setIsLoading(false)
-      }
+  const loadBeneficiaries = async () => {
+    setIsLoading(true)
+    try {
+      const apiBeneficiaries = await getBeneficiaries()
+      console.log("ApiBeneficiaire", apiBeneficiaries)
+      const transformedBeneficiaries: Beneficiary[] = apiBeneficiaries.map((apiB) => ({
+        id: apiB.id,
+        name: apiB.name,
+        account: apiB.accountNumber,
+        bank: getBankNameFromCode(apiB.bankCode),
+        type: getBeneficiaryType(apiB.bankCode),
+        favorite: false,
+        lastUsed: "Jamais",
+        addedDate: new Date(apiB.createdAt).toLocaleDateString("fr-FR"),
+      }))
+      console.log("Transformed Beneficiaries", transformedBeneficiaries)
+      setBeneficiaries(transformedBeneficiaries)
+    } catch (error) {
+      console.error("Erreur lors du chargement des bénéficiaires:", error)
+    } finally {
+      setIsLoading(false)
     }
+  }
 
+  useEffect(() => {
     loadBeneficiaries()
   }, [])
+
+  useEffect(() => {
+    if (addState?.success || updateState?.success || deleteState?.success) {
+      loadBeneficiaries()
+    }
+  }, [addState?.success, updateState?.success, deleteState?.success])
 
   const getBankNameFromCode = (bankCode: string): string => {
     const bankNames: Record<string, string> = {
@@ -152,18 +158,6 @@ export default function BeneficiariesPage() {
   const handleAddBeneficiary = async (formData: FormData) => {
     const result = await addAction(formData)
     if (result?.success) {
-      const apiBeneficiaries = await getBeneficiaries()
-      const transformedBeneficiaries: Beneficiary[] = apiBeneficiaries.map((apiB) => ({
-        id: apiB.id,
-        name: apiB.name,
-        account: apiB.accountNumber,
-        bank: getBankNameFromCode(apiB.bankCode),
-        type: getBeneficiaryType(apiB.bankCode),
-        favorite: false,
-        lastUsed: "Jamais",
-        addedDate: new Date(apiB.createdAt).toLocaleDateString("fr-FR"),
-      }))
-      setBeneficiaries(transformedBeneficiaries)
       setIsAddDialogOpen(false)
       resetForm()
     }
@@ -174,18 +168,6 @@ export default function BeneficiariesPage() {
 
     const result = await updateAction(formData)
     if (result?.success) {
-      const apiBeneficiaries = await getBeneficiaries()
-      const transformedBeneficiaries: Beneficiary[] = apiBeneficiaries.map((apiB) => ({
-        id: apiB.id,
-        name: apiB.name,
-        account: apiB.accountNumber,
-        bank: getBankNameFromCode(apiB.bankCode),
-        type: getBeneficiaryType(apiB.bankCode),
-        favorite: beneficiaries.find((b) => b.id === apiB.id)?.favorite || false,
-        lastUsed: beneficiaries.find((b) => b.id === apiB.id)?.lastUsed || "Jamais",
-        addedDate: new Date(apiB.createdAt).toLocaleDateString("fr-FR"),
-      }))
-      setBeneficiaries(transformedBeneficiaries)
       setIsEditDialogOpen(false)
       setEditingBeneficiary(null)
       resetForm()
@@ -195,11 +177,7 @@ export default function BeneficiariesPage() {
   const handleDeleteBeneficiary = async (beneficiaryId: string) => {
     const formData = new FormData()
     formData.append("beneficiaryId", beneficiaryId)
-
-    const result = await deleteAction(formData)
-    if (result?.success) {
-      setBeneficiaries((prev) => prev.filter((b) => b.id !== beneficiaryId))
-    }
+    await deleteAction(formData)
   }
 
   const validateRIBField = async (account: string, type: string) => {
