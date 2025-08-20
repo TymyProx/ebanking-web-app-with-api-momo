@@ -3,6 +3,7 @@
 import type React from "react"
 import { useState, useTransition, useActionState, useEffect } from "react"
 import { executeTransfer } from "./actions"
+import { getBeneficiaries } from "../beneficiaries/actions"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -112,7 +113,8 @@ export default function NewTransferPage() {
   const [amount, setAmount] = useState<string>("")
   const [motif, setMotif] = useState<string>("")
   const [transferDate, setTransferDate] = useState<string>(new Date().toISOString().split("T")[0])
-  const [beneficiaries, setBeneficiaries] = useState<Beneficiary[]>(mockBeneficiaries)
+  const [beneficiaries, setBeneficiaries] = useState<Beneficiary[]>([])
+  const [isLoadingBeneficiaries, setIsLoadingBeneficiaries] = useState(true)
 
   // États pour le formulaire de bénéficiaire
   const [isDialogOpen, setIsDialogOpen] = useState(false)
@@ -241,6 +243,35 @@ export default function NewTransferPage() {
 
   const selectedAccountData = mockAccounts.find((acc) => acc.id === selectedAccount)
   const selectedBeneficiaryData = beneficiaries.find((ben) => ben.id === selectedBeneficiary)
+
+  useEffect(() => {
+    const loadBeneficiaries = async () => {
+      try {
+        setIsLoadingBeneficiaries(true)
+        const result = await getBeneficiaries()
+
+        if (result.success && result.data) {
+          // Adapter le format des données API au format attendu par l'interface
+          const adaptedBeneficiaries: Beneficiary[] = result.data.map((beneficiary: any) => ({
+            id: beneficiary.id || beneficiary.beneficiaryId,
+            name: beneficiary.name,
+            account: beneficiary.accountNumber,
+            bank: beneficiary.bankCode || beneficiary.bank || "Banque inconnue",
+            type: "BNG-BNG" as const, // Par défaut, peut être adapté selon vos besoins
+          }))
+          setBeneficiaries(adaptedBeneficiaries)
+        }
+      } catch (error) {
+        console.error("Erreur lors du chargement des bénéficiaires:", error)
+        // En cas d'erreur, utiliser les données de test
+        setBeneficiaries(mockBeneficiaries)
+      } finally {
+        setIsLoadingBeneficiaries(false)
+      }
+    }
+
+    loadBeneficiaries()
+  }, [])
 
   useEffect(() => {
     if (transferState?.success) {
@@ -485,19 +516,29 @@ export default function NewTransferPage() {
                 <Label htmlFor="beneficiary">Sélectionner le bénéficiaire *</Label>
                 <Select value={selectedBeneficiary} onValueChange={setSelectedBeneficiary}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Choisir un bénéficiaire" />
+                    <SelectValue placeholder={isLoadingBeneficiaries ? "Chargement..." : "Choisir un bénéficiaire"} />
                   </SelectTrigger>
                   <SelectContent>
-                    {beneficiaries.map((beneficiary) => (
-                      <SelectItem key={beneficiary.id} value={beneficiary.id}>
-                        <div className="flex flex-col">
-                          <span className="font-medium">{beneficiary.name}</span>
-                          <span className="text-sm text-gray-500">
-                            {beneficiary.account} • {beneficiary.bank}
-                          </span>
-                        </div>
+                    {isLoadingBeneficiaries ? (
+                      <SelectItem value="loading" disabled>
+                        Chargement des bénéficiaires...
                       </SelectItem>
-                    ))}
+                    ) : beneficiaries.length === 0 ? (
+                      <SelectItem value="empty" disabled>
+                        Aucun bénéficiaire trouvé
+                      </SelectItem>
+                    ) : (
+                      beneficiaries.map((beneficiary) => (
+                        <SelectItem key={beneficiary.id} value={beneficiary.id}>
+                          <div className="flex flex-col">
+                            <span className="font-medium">{beneficiary.name}</span>
+                            <span className="text-sm text-gray-500">
+                              {beneficiary.account} • {beneficiary.bank}
+                            </span>
+                          </div>
+                        </SelectItem>
+                      ))
+                    )}
                   </SelectContent>
                 </Select>
               </div>
