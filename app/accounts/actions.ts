@@ -14,7 +14,7 @@ export async function getAccounts() {
 
     if (!usertoken) {
       console.log("[v0] Token manquant")
-      return { data: [] }
+      return []
     }
 
     const response = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/compte`, {
@@ -41,46 +41,44 @@ export async function getAccounts() {
         // Si l'API n'est pas accessible, retourner des données de test
         if (errorText.includes("only public URLs are supported") || errorText.includes("only https is supported")) {
           console.log("[v0] API non accessible, utilisation de données de test")
-          return {
-            data: [
-              {
-                id: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-                accountId: "ACC001",
-                customerId: "CUST001",
-                accountNumber: "0001234567890",
-                accountName: "Compte Courant Principal",
-                currency: "GNF",
-                bookBalance: "2500000",
-                availableBalance: "2350000",
-                createdAt: "2023-01-15T10:00:00Z",
-                tenantId: TENANT_ID,
-              },
-              {
-                id: "3fa85f64-5717-4562-b3fc-2c963f66afa7",
-                accountId: "ACC002",
-                customerId: "CUST001",
-                accountNumber: "0001234567891",
-                accountName: "Compte Épargne",
-                currency: "GNF",
-                bookBalance: "5000000",
-                availableBalance: "5000000",
-                createdAt: "2023-03-20T10:00:00Z",
-                tenantId: TENANT_ID,
-              },
-              {
-                id: "3fa85f64-5717-4562-b3fc-2c963f66afa8",
-                accountId: "ACC003",
-                customerId: "CUST001",
-                accountNumber: "0001234567892",
-                accountName: "Compte USD",
-                currency: "USD",
-                bookBalance: "1200",
-                availableBalance: "1150",
-                createdAt: "2023-06-10T10:00:00Z",
-                tenantId: TENANT_ID,
-              },
-            ],
-          }
+          return [
+            {
+              id: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+              accountId: "ACC001",
+              customerId: "CUST001",
+              accountNumber: "0001234567890",
+              accountName: "Compte Courant Principal",
+              currency: "GNF",
+              bookBalance: "2500000",
+              availableBalance: "2350000",
+              createdAt: "2023-01-15T10:00:00Z",
+              tenantId: TENANT_ID,
+            },
+            {
+              id: "3fa85f64-5717-4562-b3fc-2c963f66afa7",
+              accountId: "ACC002",
+              customerId: "CUST001",
+              accountNumber: "0001234567891",
+              accountName: "Compte Épargne",
+              currency: "GNF",
+              bookBalance: "5000000",
+              availableBalance: "5000000",
+              createdAt: "2023-03-20T10:00:00Z",
+              tenantId: TENANT_ID,
+            },
+            {
+              id: "3fa85f64-5717-4562-b3fc-2c963f66afa8",
+              accountId: "ACC003",
+              customerId: "CUST001",
+              accountNumber: "0001234567892",
+              accountName: "Compte USD",
+              currency: "USD",
+              bookBalance: "1200",
+              availableBalance: "1150",
+              createdAt: "2023-06-10T10:00:00Z",
+              tenantId: TENANT_ID,
+            },
+          ]
         }
 
         throw new Error("Erreur de communication avec l'API")
@@ -102,10 +100,10 @@ export async function getAccounts() {
     if (Array.isArray(data.rows)) {
       return data.rows
     }
-    return [data.rows]
+    return data.rows ? [data.rows] : []
   } catch (error) {
     console.error("[v0] Erreur lors de la récupération des comptes:", error)
-    return { data: [] }
+    return []
   }
 }
 

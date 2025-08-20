@@ -207,10 +207,10 @@ export default function NewTransferPage() {
 
         console.log("[v0] Résultat de getAccounts:", result)
 
-        if (result && typeof result === "object" && "data" in result && Array.isArray(result.data)) {
-          console.log("[v0] Données brutes des comptes:", result.data)
+        if (Array.isArray(result) && result.length > 0) {
+          console.log("[v0] Données brutes des comptes:", result)
 
-          const adaptedAccounts: Account[] = result.data.map((account: any) => {
+          const adaptedAccounts: Account[] = result.map((account: any) => {
             console.log("[v0] Adaptation du compte:", account)
             return {
               id: account.id || account.accountId,
@@ -224,7 +224,7 @@ export default function NewTransferPage() {
           console.log("[v0] Comptes adaptés:", adaptedAccounts)
           setAccounts(adaptedAccounts)
         } else {
-          console.log("[v0] Aucun compte trouvé ou format incorrect")
+          console.log("[v0] Aucun compte trouvé ou tableau vide")
           setAccounts([])
         }
       } catch (error) {

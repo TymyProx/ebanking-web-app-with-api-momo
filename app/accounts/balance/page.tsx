@@ -34,8 +34,7 @@ import {
   CheckCircle,
   Plus,
 } from "lucide-react"
-import { getAccountBalances, refreshBalances } from "./actions"
-import { createAccount } from "../actions"
+import { createAccount, getAccounts } from "../actions"
 
 interface Account {
   id: string
@@ -69,19 +68,36 @@ export default function BalancesPage() {
     const loadBalances = () => {
       startTransition(async () => {
         try {
-          const formData = new FormData()
-          const result = await getAccountBalances(null, formData)
-          setBalanceState(result)
+          const result = await getAccounts()
+          console.log("[v0] Résultat de getAccounts:", result)
 
-          if (result.success) {
-            setAccounts(result.accounts)
+          if (Array.isArray(result) && result.length > 0) {
+            const adaptedAccounts: Account[] = result.map((account: any) => ({
+              id: account.id || account.accountId,
+              name: account.accountName || account.name || `Compte ${account.accountNumber}`,
+              number: account.accountNumber,
+              balance: Number.parseFloat(account.bookBalance || account.balance || "0"),
+              availableBalance: Number.parseFloat(account.availableBalance || account.balance || "0"),
+              currency: account.currency || "GNF",
+              type: "Courant" as const,
+              status: "Actif" as const,
+              lastUpdate: new Date(account.createdAt || Date.now()).toLocaleDateString("fr-FR"),
+              trend: "stable" as const,
+              trendPercentage: 0,
+              iban: account.accountNumber || "",
+            }))
+
+            setAccounts(adaptedAccounts)
+            setBalanceState({ success: true, message: "Comptes chargés avec succès" })
           } else {
             setAccounts([])
+            setBalanceState({ success: false, error: "Aucun compte trouvé" })
           }
           setIsLoaded(true)
         } catch (error) {
           console.error("Erreur lors du chargement des soldes:", error)
           setAccounts([])
+          setBalanceState({ success: false, error: "Erreur lors du chargement" })
           setIsLoaded(true)
         }
       })
@@ -102,20 +118,33 @@ export default function BalancesPage() {
   const handleRefresh = () => {
     startTransition(async () => {
       try {
-        const formData = new FormData()
-        const result = await refreshBalances(null, formData)
-        setRefreshState(result)
+        const result = await getAccounts()
         setLastRefresh(new Date())
 
-        if (result.success) {
-          const refreshFormData = new FormData()
-          const refreshResult = await getAccountBalances(null, refreshFormData)
-          if (refreshResult.success) {
-            setAccounts(refreshResult.accounts)
-          }
+        if (Array.isArray(result) && result.length > 0) {
+          const adaptedAccounts: Account[] = result.map((account: any) => ({
+            id: account.id || account.accountId,
+            name: account.accountName || account.name || `Compte ${account.accountNumber}`,
+            number: account.accountNumber,
+            balance: Number.parseFloat(account.bookBalance || account.balance || "0"),
+            availableBalance: Number.parseFloat(account.availableBalance || account.balance || "0"),
+            currency: account.currency || "GNF",
+            type: "Courant" as const,
+            status: "Actif" as const,
+            lastUpdate: new Date(account.createdAt || Date.now()).toLocaleDateString("fr-FR"),
+            trend: "stable" as const,
+            trendPercentage: 0,
+            iban: account.accountNumber || "",
+          }))
+
+          setAccounts(adaptedAccounts)
+          setRefreshState({ success: true, message: "Comptes actualisés" })
+        } else {
+          setRefreshState({ success: false, error: "Aucun compte trouvé" })
         }
       } catch (error) {
         console.error("Erreur lors du rafraîchissement:", error)
+        setRefreshState({ success: false, error: "Erreur lors du rafraîchissement" })
       }
     })
   }
@@ -132,11 +161,23 @@ export default function BalancesPage() {
       setCreateAccountState(result)
 
       if (result?.success) {
-        setIsNewAccountDialogOpen(true)
-        const refreshFormData = new FormData()
-        const refreshResult = await getAccountBalances(null, refreshFormData)
-        if (refreshResult.success) {
-          setAccounts(refreshResult.accounts)
+        const refreshedAccounts = await getAccounts()
+        if (Array.isArray(refreshedAccounts)) {
+          const adaptedAccounts: Account[] = refreshedAccounts.map((account: any) => ({
+            id: account.id || account.accountId,
+            name: account.accountName || account.name || `Compte ${account.accountNumber}`,
+            number: account.accountNumber,
+            balance: Number.parseFloat(account.bookBalance || account.balance || "0"),
+            availableBalance: Number.parseFloat(account.availableBalance || account.balance || "0"),
+            currency: account.currency || "GNF",
+            type: "Courant" as const,
+            status: "Actif" as const,
+            lastUpdate: new Date(account.createdAt || Date.now()).toLocaleDateString("fr-FR"),
+            trend: "stable" as const,
+            trendPercentage: 0,
+            iban: account.accountNumber || "",
+          }))
+          setAccounts(adaptedAccounts)
         }
         if (form) {
           form.reset()
