@@ -122,7 +122,7 @@ export default function BalancesPage() {
       setCreateAccountState(result)
 
       if (result?.success) {
-        setIsNewAccountDialogOpen(false)
+        setIsNewAccountDialogOpen(true)
         const refreshFormData = new FormData()
         const refreshResult = await getAccountBalances(null, refreshFormData)
         if (refreshResult.success) {
