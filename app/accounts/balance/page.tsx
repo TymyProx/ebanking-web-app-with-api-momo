@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState, useEffect, useTransition } from "react"
+import { useState, useEffect, useTransition, useActionState } from "react"
 import Link from "next/link"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -61,8 +61,7 @@ export default function BalancesPage() {
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date())
 
   const [isNewAccountDialogOpen, setIsNewAccountDialogOpen] = useState(false)
-  const [isCreatingAccount, setIsCreatingAccount] = useState(false)
-  const [createAccountState, setCreateAccountState] = useState<any>(null)
+  const [createAccountState, createAccountAction, isCreatingAccount] = useActionState(createAccount, null)
 
   useEffect(() => {
     const loadBalances = () => {
@@ -104,16 +103,6 @@ export default function BalancesPage() {
     loadBalances()
   }, [])
 
-  useEffect(() => {
-    if (createAccountState?.success) {
-      const timer = setTimeout(() => {
-        setCreateAccountState(null)
-      }, 8000) // 8 secondes
-
-      return () => clearTimeout(timer)
-    }
-  }, [createAccountState?.success])
-
   const handleRefresh = () => {
     startTransition(async () => {
       try {
@@ -149,16 +138,14 @@ export default function BalancesPage() {
 
   const handleCreateAccount = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    setIsCreatingAccount(true)
-
     const formData = new FormData(event.currentTarget)
     const form = event.currentTarget
 
-    try {
-      const result = await createAccount(null, formData)
-      setCreateAccountState(result)
+    startTransition(async () => {
+      await createAccountAction(formData)
 
-      if (result?.success) {
+      // Rafraîchir la liste des comptes après création
+      try {
         const refreshResult = await getAccounts()
         if (refreshResult?.data && Array.isArray(refreshResult.data)) {
           const adaptedAccounts = refreshResult.data.map((account: any) => ({
@@ -177,15 +164,15 @@ export default function BalancesPage() {
           }))
           setAccounts(adaptedAccounts)
         }
+
+        // Réinitialiser le formulaire si succès
         if (form) {
           form.reset()
         }
+      } catch (error) {
+        console.error("Erreur lors du rafraîchissement:", error)
       }
-    } catch (error) {
-      console.error("Erreur lors de la création du compte:", error)
-    } finally {
-      setIsCreatingAccount(false)
-    }
+    })
   }
 
   const formatAmount = (amount: number, currency = "GNF") => {
