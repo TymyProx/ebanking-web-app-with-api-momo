@@ -365,7 +365,7 @@ export default function BalancesPage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {accounts.map((account) => (
+          {(accounts || []).map((account) => (
             <Link key={account.id} href={`/accounts/${account.id}`}>
               <Card className="hover:shadow-lg transition-all duration-200 cursor-pointer border-2 hover:border-blue-200">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -428,7 +428,7 @@ export default function BalancesPage() {
         </div>
       )}
 
-      {isLoaded && accounts.length === 0 && (
+      {isLoaded && (accounts?.length === 0 || !accounts) && (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
             <Wallet className="h-12 w-12 text-gray-400 mb-4" />
@@ -438,7 +438,7 @@ export default function BalancesPage() {
         </Card>
       )}
 
-      {isLoaded && accounts.length > 0 && (
+      {isLoaded && accounts && accounts.length > 0 && (
         <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
           <CardHeader>
             <CardTitle className="flex items-center text-blue-900">
