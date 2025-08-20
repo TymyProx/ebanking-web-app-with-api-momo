@@ -398,30 +398,34 @@ export default function CartesPage() {
               </div>
 
               {/* Card Type Selection */}
-              <div className="space-y-3">
-                <Label>Type de carte *</Label>
-                <RadioGroup
+              <div className="space-y-2">
+                <Label htmlFor="card-type">Type de carte *</Label>
+                <Select
                   value={cardRequestForm.cardType}
                   onValueChange={(value) => updateCardRequestForm("cardType", value)}
                 >
-                  <div className="grid grid-cols-1 gap-3">
+                  <SelectTrigger>
+                    <SelectValue placeholder="Sélectionnez le type de carte" />
+                  </SelectTrigger>
+                  <SelectContent>
                     {cardTypes.map((cardType) => (
-                      <div
-                        key={cardType.id}
-                        className="flex items-center space-x-3 border rounded-lg p-3 hover:bg-gray-50"
-                      >
-                        <RadioGroupItem value={cardType.id} id={cardType.id} />
-                        <div className="flex-1">
-                          <Label htmlFor={cardType.id} className="font-medium cursor-pointer">
-                            {cardType.name}
-                          </Label>
-                          <p className="text-sm text-gray-600">{cardType.description}</p>
-                          <p className="text-sm text-blue-600 font-medium">{cardType.fee}</p>
+                      <SelectItem key={cardType.id} value={cardType.id}>
+                        <div className="flex flex-col">
+                          <span className="font-medium">{cardType.name}</span>
+                          <span className="text-sm text-gray-500">{cardType.description}</span>
+                          <span className="text-sm text-blue-600 font-medium">{cardType.fee}</span>
                         </div>
-                      </div>
+                      </SelectItem>
                     ))}
+                  </SelectContent>
+                </Select>
+                {getSelectedCardType() && (
+                  <div className="bg-gray-50 border rounded-lg p-3 mt-2">
+                    <p className="font-medium text-sm">{getSelectedCardType()?.name}</p>
+                    <p className="text-sm text-gray-600">{getSelectedCardType()?.description}</p>
+                    <p className="text-sm text-blue-600 font-medium">Frais: {getSelectedCardType()?.fee}</p>
                   </div>
-                </RadioGroup>
+                )}
               </div>
 
               {/* Delivery Method */}
