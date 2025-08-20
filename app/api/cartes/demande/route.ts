@@ -26,43 +26,33 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Simulation de l'appel à l'API externe
-    const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "http://192.168.1.200:8080/api"
-
-    const requestData = {
-      accountId: body.accountId,
-      cardType: body.cardType,
-      deliveryMethod: body.deliveryMethod,
+    // Simulation de l'enregistrement de la demande
+    // En réalité, ici on sauvegarderait en base de données
+    const cardRequest = {
+      id: `REQ-${Date.now()}`,
+      accountId,
+      cardType,
+      deliveryMethod,
       deliveryAddress: body.deliveryAddress || null,
       pickupAgency: body.pickupAgency || null,
-      phone: body.phone,
-      email: body.email,
+      phone,
+      email,
       comments: body.comments || "",
-      requestDate: new Date().toISOString(),
-      status: "PENDING",
+      status: "pending",
+      createdAt: new Date().toISOString(),
+      estimatedDelivery: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 jours
     }
 
-    // Ici, vous feriez l'appel réel à votre API backend
-    // const response = await fetch(`${apiBaseUrl}/cards/request`, {
-    //   method: "POST",
-    //   headers: {
-    //     "Content-Type": "application/json",
-    //     "Authorization": request.headers.get("Authorization") || ""
-    //   },
-    //   body: JSON.stringify(requestData)
-    // })
-
-    // Pour la démonstration, on simule une réponse réussie
-    console.log("[v0] Card request data:", requestData)
-
-    // Simulation d'un délai de traitement
-    await new Promise((resolve) => setTimeout(resolve, 1000))
+    // Simulation d'envoi de notifications
+    console.log("Demande de carte enregistrée:", cardRequest)
+    console.log("Envoi SMS à:", phone)
+    console.log("Envoi email à:", email)
 
     return NextResponse.json({
       success: true,
-      message: "Votre demande de carte bancaire a été soumise avec succès",
-      requestId: `CARD_REQ_${Date.now()}`,
-      estimatedDelivery: "5-7 jours ouvrables",
+      message: "Votre demande d'ouverture de compte a été prise en compte",
+      requestId: cardRequest.id,
+      estimatedDelivery: cardRequest.estimatedDelivery,
     })
   } catch (error) {
     console.error("Erreur lors de la demande de carte:", error)

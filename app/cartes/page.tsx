@@ -41,6 +41,7 @@ import {
   Clock,
   X,
 } from "lucide-react"
+import Link from "next/link"
 
 interface Card {
   id: string
@@ -217,9 +218,11 @@ export default function CartesPage() {
           <h1 className="text-3xl font-bold text-gray-900">Mes Cartes</h1>
           <p className="text-gray-600">Gérez vos cartes bancaires et leurs paramètres</p>
         </div>
-        <Button>
-          <CreditCard className="w-4 h-4 mr-2" />
-          Demander une nouvelle carte
+        <Button asChild>
+          <Link href="/cartes/demande">
+            <CreditCard className="w-4 h-4 mr-2" />
+            Demander une nouvelle carte
+          </Link>
         </Button>
       </div>
 
@@ -452,7 +455,7 @@ export default function CartesPage() {
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
                     <Button variant="destructive" className="w-full">
-                      <Lock className="w-4 h-4 mr-2" />
+                      <Lock className="w-4 h-4 mr-1" />
                       Faire opposition sur toutes les cartes
                     </Button>
                   </AlertDialogTrigger>

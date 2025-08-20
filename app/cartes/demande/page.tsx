@@ -65,7 +65,7 @@ const cardTypes: CardType[] = [
     description: "Carte standard pour vos achats quotidiens",
     features: ["Paiements en magasin", "Retraits aux DAB", "Paiements en ligne", "Sans frais annuels"],
     fees: "Gratuite",
-    currency: ["GNF"],
+    currency: ["FCFA"],
     icon: "💳",
   },
   {
@@ -73,17 +73,17 @@ const cardTypes: CardType[] = [
     name: "Carte de Débit Gold",
     description: "Carte premium avec avantages exclusifs",
     features: ["Tous les avantages Classique", "Assurance voyage", "Plafonds élevés", "Service client prioritaire"],
-    fees: "25,000 GNF/an",
-    currency: ["GNF", "USD"],
+    fees: "25,000 FCFA/an",
+    currency: ["FCFA", "USD"],
     icon: "🏆",
   },
   {
     id: "credit_standard",
     name: "Carte de Crédit Standard",
     description: "Crédit renouvelable pour vos projets",
-    features: ["Crédit jusqu'à 500,000 GNF", "Remboursement flexible", "Taux préférentiel", "Assurance incluse"],
-    fees: "50,000 GNF/an",
-    currency: ["GNF"],
+    features: ["Crédit jusqu'à 500,000 FCFA", "Remboursement flexible", "Taux préférentiel", "Assurance incluse"],
+    fees: "50,000 FCFA/an",
+    currency: ["FCFA"],
     icon: "💎",
   },
   {
@@ -91,44 +91,44 @@ const cardTypes: CardType[] = [
     name: "Carte Prépayée",
     description: "Carte rechargeable pour un contrôle total",
     features: ["Rechargeable", "Contrôle des dépenses", "Idéale pour les jeunes", "Pas de découvert"],
-    fees: "10,000 GNF à l'émission",
-    currency: ["GNF", "USD"],
+    fees: "10,000 FCFA à l'émission",
+    currency: ["FCFA", "USD"],
     icon: "🎯",
   },
 ]
 
 const agencies: Agency[] = [
   {
-    id: "conakry_centre",
-    name: "Agence Conakry Centre",
-    address: "Avenue de la République, Kaloum",
-    city: "Conakry",
-    phone: "+224 622 123 456",
+    id: "abidjan_plateau",
+    name: "Agence Plateau",
+    address: "Avenue Houphouët-Boigny, Plateau",
+    city: "Abidjan",
+    phone: "+225 27 20 12 34 56",
   },
   {
-    id: "conakry_matam",
-    name: "Agence Matam",
-    address: "Quartier Matam, Commune de Matam",
-    city: "Conakry",
-    phone: "+224 622 123 457",
+    id: "abidjan_cocody",
+    name: "Agence Cocody",
+    address: "Boulevard de France, Cocody",
+    city: "Abidjan",
+    phone: "+225 27 22 44 55 66",
   },
   {
-    id: "kankan",
-    name: "Agence Kankan",
-    address: "Centre-ville de Kankan",
-    city: "Kankan",
-    phone: "+224 622 123 458",
+    id: "bouake",
+    name: "Agence Bouaké",
+    address: "Centre-ville de Bouaké",
+    city: "Bouaké",
+    phone: "+225 31 63 12 34",
   },
   {
-    id: "labe",
-    name: "Agence Labé",
-    address: "Centre commercial de Labé",
-    city: "Labé",
-    phone: "+224 622 123 459",
+    id: "yamoussoukro",
+    name: "Agence Yamoussoukro",
+    address: "Boulevard Mamadou Koulibaly",
+    city: "Yamoussoukro",
+    phone: "+225 30 64 12 34",
   },
 ]
 
-export default function CardRequestPage() {
+export default function DemandeCartePage() {
   const [selectedAccount, setSelectedAccount] = useState<string>("")
   const [selectedCardType, setSelectedCardType] = useState<string>("")
   const [deliveryMethod, setDeliveryMethod] = useState<"delivery" | "pickup">("")
@@ -148,7 +148,7 @@ export default function CardRequestPage() {
       name: "Compte Courant",
       number: "0001-234567-89",
       balance: 2400000,
-      currency: "GNF",
+      currency: "FCFA",
       type: "Courant",
       status: "Actif",
     },
@@ -157,7 +157,7 @@ export default function CardRequestPage() {
       name: "Compte Épargne",
       number: "0002-345678-90",
       balance: 850000,
-      currency: "GNF",
+      currency: "FCFA",
       type: "Épargne",
       status: "Actif",
     },
@@ -194,8 +194,8 @@ export default function CardRequestPage() {
     }
   }
 
-  const formatAmount = (amount: number, currency = "GNF") => {
-    if (currency === "GNF") {
+  const formatAmount = (amount: number, currency = "FCFA") => {
+    if (currency === "FCFA") {
       return new Intl.NumberFormat("fr-FR").format(amount)
     }
     return new Intl.NumberFormat("en-US", {
@@ -221,7 +221,7 @@ export default function CardRequestPage() {
         comments,
       }
 
-      const response = await fetch("/api/cards/request", {
+      const response = await fetch("/api/cartes/demande", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -271,9 +271,9 @@ export default function CardRequestPage() {
         <div>
           <div className="flex items-center space-x-4 mb-2">
             <Button variant="ghost" size="sm" asChild>
-              <Link href="/cards">
+              <Link href="/cartes">
                 <ArrowLeft className="w-4 h-4 mr-2" />
-                Retour
+                Retour aux cartes
               </Link>
             </Button>
           </div>
@@ -287,7 +287,7 @@ export default function CardRequestPage() {
         <Alert className="border-green-200 bg-green-50">
           <CheckCircle className="h-4 w-4 text-green-600" />
           <AlertDescription className="text-green-800">
-            ✅ Votre demande de carte bancaire a été soumise avec succès ! Vous recevrez une confirmation par email et
+            ✅ Votre demande d'ouverture de compte a été prise en compte ! Vous recevrez une confirmation par email et
             SMS.
           </AlertDescription>
         </Alert>
@@ -500,7 +500,7 @@ export default function CardRequestPage() {
                 <Input
                   id="phone"
                   type="tel"
-                  placeholder="+224 XXX XXX XXX"
+                  placeholder="+225 XX XX XX XX XX"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                 />
