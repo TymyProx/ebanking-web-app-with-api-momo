@@ -55,7 +55,6 @@ export default function BalancesPage() {
   const [accounts, setAccounts] = useState<Account[]>([])
   const [isLoaded, setIsLoaded] = useState(false)
   const [isPending, startTransition] = useTransition()
-  const [isCreatePending, startCreateTransition] = useTransition()
 
   const [balanceState, balanceAction] = useActionState(getAccountBalances, null)
   const [refreshState, refreshAction] = useActionState(refreshBalances, null)
@@ -65,63 +64,32 @@ export default function BalancesPage() {
   const [createAccountState, createAccountAction] = useActionState(createAccount, null)
 
   useEffect(() => {
-    startTransition(() => {
-      const formData = new FormData()
-      balanceAction(formData)
-    })
+    const formData = new FormData()
+    balanceAction(formData)
   }, [])
 
   useEffect(() => {
-    if (balanceState?.success && balanceState?.data && Array.isArray(balanceState.data)) {
-      const mappedAccounts: Account[] = balanceState.data.map((apiAccount: any) => ({
-        id: apiAccount.accountId || apiAccount.id || Math.random().toString(),
-        name: apiAccount.accountName || `Compte ${apiAccount.accountId}`,
-        number: apiAccount.accountNumber || apiAccount.accountId,
-        balance: apiAccount.balance || apiAccount.bookBalance || 0,
-        availableBalance: apiAccount.availableBalance || apiAccount.balance || 0,
-        currency: apiAccount.currency || "GNF",
-        type: "Courant" as const,
-        status: apiAccount.status === "active" ? ("Actif" as const) : ("Bloqué" as const),
-        lastUpdate: apiAccount.lastUpdate || new Date().toLocaleDateString(),
-        trend: "stable" as const,
-        trendPercentage: 0,
-        iban: apiAccount.iban || "",
-      }))
-      setAccounts(mappedAccounts)
+    if (balanceState?.accounts) {
+      setAccounts(balanceState.accounts)
       setIsLoaded(true)
-    } else if (balanceState?.success === false) {
+    } else if (balanceState?.error) {
       setAccounts([])
       setIsLoaded(true)
     }
   }, [balanceState])
 
   useEffect(() => {
-    if (refreshState?.success && refreshState?.data && Array.isArray(refreshState.data)) {
-      const mappedAccounts: Account[] = refreshState.data.map((apiAccount: any) => ({
-        id: apiAccount.accountId || apiAccount.id || Math.random().toString(),
-        name: apiAccount.accountName || `Compte ${apiAccount.accountId}`,
-        number: apiAccount.accountNumber || apiAccount.accountId,
-        balance: apiAccount.balance || apiAccount.bookBalance || 0,
-        availableBalance: apiAccount.availableBalance || apiAccount.balance || 0,
-        currency: apiAccount.currency || "GNF",
-        type: "Courant" as const,
-        status: apiAccount.status === "active" ? ("Actif" as const) : ("Bloqué" as const),
-        lastUpdate: apiAccount.lastUpdate || new Date().toLocaleDateString(),
-        trend: "stable" as const,
-        trendPercentage: 0,
-        iban: apiAccount.iban || "",
-      }))
-      setAccounts(mappedAccounts)
+    if (refreshState?.accounts) {
+      setAccounts(refreshState.accounts)
       setLastRefresh(new Date())
     }
   }, [refreshState])
 
   useEffect(() => {
     if (createAccountState?.success) {
-      startTransition(() => {
-        const formData = new FormData()
-        balanceAction(formData)
-      })
+      // Rafraîchir la liste des comptes
+      const formData = new FormData()
+      balanceAction(formData)
 
       const timer = setTimeout(() => {
         // Reset du state après 8 secondes
@@ -134,16 +102,12 @@ export default function BalancesPage() {
   }, [createAccountState?.success])
 
   const handleRefresh = () => {
-    startTransition(() => {
-      const formData = new FormData()
-      refreshAction(formData)
-    })
+    const formData = new FormData()
+    refreshAction(formData)
   }
 
   const handleCreateAccount = (formData: FormData) => {
-    startCreateTransition(() => {
-      createAccountAction(formData)
-    })
+    createAccountAction(formData)
   }
 
   const formatAmount = (amount: number, currency = "GNF") => {
@@ -292,12 +256,12 @@ export default function BalancesPage() {
                     type="button"
                     variant="outline"
                     onClick={() => setIsNewAccountDialogOpen(false)}
-                    disabled={isCreatePending}
+                    disabled={createAccountState?.pending}
                   >
                     Annuler
                   </Button>
-                  <Button type="submit" disabled={isCreatePending}>
-                    {isCreatePending ? (
+                  <Button type="submit" disabled={createAccountState?.pending}>
+                    {createAccountState?.pending ? (
                       <>
                         <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
                         Création...
