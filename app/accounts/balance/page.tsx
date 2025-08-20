@@ -89,6 +89,16 @@ export default function BalancesPage() {
     loadBalances()
   }, [])
 
+  useEffect(() => {
+    if (createAccountState?.success) {
+      const timer = setTimeout(() => {
+        setCreateAccountState(null)
+      }, 8000) // 8 secondes
+
+      return () => clearTimeout(timer)
+    }
+  }, [createAccountState?.success])
+
   const handleRefresh = () => {
     startTransition(async () => {
       try {
