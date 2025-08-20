@@ -207,6 +207,24 @@ export default function BalancesPage() {
               </DialogHeader>
 
               <form onSubmit={handleCreateAccount} className="space-y-4">
+                {createAccountState?.success && (
+                  <Alert className="border-green-200 bg-green-50">
+                    <CheckCircle className="h-4 w-4 text-green-600" />
+                    <AlertDescription className="text-green-800">
+                      Votre demande d'ouverture de compte a été prise en compte
+                    </AlertDescription>
+                  </Alert>
+                )}
+
+                {createAccountState?.error && (
+                  <Alert variant="destructive">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription>
+                      Erreur lors de la création du compte: {createAccountState.error}
+                    </AlertDescription>
+                  </Alert>
+                )}
+
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="accountName">Nom du compte</Label>
@@ -261,24 +279,6 @@ export default function BalancesPage() {
                     </SelectContent>
                   </Select>
                 </div>
-
-                {createAccountState?.error && (
-                  <Alert variant="destructive">
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertDescription>
-                      Erreur lors de la création du compte: {createAccountState.error}
-                    </AlertDescription>
-                  </Alert>
-                )}
-
-                {createAccountState?.success && (
-                  <Alert className="border-green-200 bg-green-50">
-                    <CheckCircle className="h-4 w-4 text-green-600" />
-                    <AlertDescription className="text-green-800">
-                      Votre demande d'ouverture de compte a été prise en compte
-                    </AlertDescription>
-                  </Alert>
-                )}
 
                 <div className="flex justify-end space-x-2 pt-4">
                   <Button
