@@ -64,8 +64,10 @@ export default function BalancesPage() {
   const [createAccountState, createAccountAction] = useActionState(createAccount, null)
 
   useEffect(() => {
-    const formData = new FormData()
-    balanceAction(formData)
+    startTransition(() => {
+      const formData = new FormData()
+      balanceAction(formData)
+    })
   }, [])
 
   useEffect(() => {
@@ -87,9 +89,10 @@ export default function BalancesPage() {
 
   useEffect(() => {
     if (createAccountState?.success) {
-      // Rafraîchir la liste des comptes
-      const formData = new FormData()
-      balanceAction(formData)
+      startTransition(() => {
+        const formData = new FormData()
+        balanceAction(formData)
+      })
 
       const timer = setTimeout(() => {
         // Reset du state après 8 secondes
@@ -102,8 +105,10 @@ export default function BalancesPage() {
   }, [createAccountState?.success])
 
   const handleRefresh = () => {
-    const formData = new FormData()
-    refreshAction(formData)
+    startTransition(() => {
+      const formData = new FormData()
+      refreshAction(formData)
+    })
   }
 
   const handleCreateAccount = (formData: FormData) => {
