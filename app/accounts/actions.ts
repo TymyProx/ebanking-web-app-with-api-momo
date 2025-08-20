@@ -3,7 +3,7 @@
 import { cookies } from "next/headers"
 import { revalidatePath } from "next/cache"
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "https://192.168.1.200:8080/api"
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://192.168.1.200:8080/api"
 const TENANT_ID = "afa25e29-08dd-46b6-8ea2-d778cb2d6694"
 
 export async function getAccounts() {
@@ -90,15 +90,19 @@ export async function getAccounts() {
     const data = await response.json()
     console.log("[v0] Données reçues:", data)
 
-    if (Array.isArray(data)) {
-      return { data: data }
-    } else if (data.data && Array.isArray(data.data)) {
-      return { data: data.data }
-    } else if (data.data) {
-      return { data: [data.data] }
-    } else {
-      return { data: [data] }
+    // if (Array.isArray(data)) {
+    //   return { data: data }
+    // } else if (data.data && Array.isArray(data.data)) {
+    //   return { data: data.data }
+    // } else if (data.data) {
+    //   return { data: [data.data] }
+    // } else {
+    //   return { data: [data] }
+    // }
+    if (Array.isArray(data.rows)) {
+      return data.rows
     }
+    return [data.rows]
   } catch (error) {
     console.error("[v0] Erreur lors de la récupération des comptes:", error)
     return { data: [] }
