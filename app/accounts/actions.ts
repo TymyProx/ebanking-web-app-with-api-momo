@@ -7,19 +7,18 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://192.168.1.2
 const TENANT_ID = "afa25e29-08dd-46b6-8ea2-d778cb2d6694"
 
 export async function getAccounts() {
-   const cookieToken = (await cookies()).get("token")?.value
-   const usertoken = cookieToken
+  const cookieToken = (await cookies()).get("token")?.value
+  const usertoken = cookieToken
   try {
     console.log("[v0] Récupération des comptes...")
-
-    
 
     if (!usertoken) {
       console.log("[v0] Token manquant")
       return { data: [] }
     }
 
-    const response = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/compte`, {
+    const CUSTOMER_ID = "CUSTOMER_ID_PLACEHOLDER" // À remplacer par l'ID réel du customer connecté
+    const response = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/compte/${CUSTOMER_ID}`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -46,6 +45,7 @@ export async function getAccounts() {
           return {
             data: [
               {
+                id: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
                 accountId: "ACC001",
                 customerId: "CUST001",
                 accountNumber: "0001234567890",
@@ -53,11 +53,12 @@ export async function getAccounts() {
                 currency: "GNF",
                 bookBalance: "2500000",
                 availableBalance: "2350000",
-                status: "ACTIVE",
-                openDate: "2023-01-15",
-                accountType: "CURRENT",
+                createdAt: "2023-01-15T10:00:00Z",
+                updatedAt: "2023-01-15T10:00:00Z",
+                tenantId: TENANT_ID,
               },
               {
+                id: "3fa85f64-5717-4562-b3fc-2c963f66afa7",
                 accountId: "ACC002",
                 customerId: "CUST001",
                 accountNumber: "0001234567891",
@@ -65,21 +66,9 @@ export async function getAccounts() {
                 currency: "GNF",
                 bookBalance: "5000000",
                 availableBalance: "5000000",
-                status: "ACTIVE",
-                openDate: "2023-03-20",
-                accountType: "SAVINGS",
-              },
-              {
-                accountId: "ACC003",
-                customerId: "CUST001",
-                accountNumber: "0001234567892",
-                accountName: "Compte USD",
-                currency: "USD",
-                bookBalance: "1200",
-                availableBalance: "1150",
-                status: "ACTIVE",
-                openDate: "2023-06-10",
-                accountType: "FOREIGN_CURRENCY",
+                createdAt: "2023-03-20T10:00:00Z",
+                updatedAt: "2023-03-20T10:00:00Z",
+                tenantId: TENANT_ID,
               },
             ],
           }
@@ -92,18 +81,22 @@ export async function getAccounts() {
     const data = await response.json()
     console.log("[v0] Données reçues:", data)
 
-    // Retourner les données dans le format attendu
-    if (Array.isArray(data.rows)) {
-      return { data: data.rows }
-    } else if (data.rows) {
-      return { data: [data.rows] }
-    } else if (Array.isArray(data.data)) {
-      return { data: data.data }
-    } else if (data.data) {
-      return { data: [data.data] }
-    } else {
-      return { data: Array.isArray(data) ? data : [data] }
+    // Si la réponse est un seul compte, on le met dans un tableau
+    if (data && !Array.isArray(data)) {
+      return { data: [data] }
     }
+
+    // Si c'est déjà un tableau
+    if (Array.isArray(data)) {
+      return { data: data }
+    }
+
+    // Gestion des autres formats possibles
+    if (data.data) {
+      return { data: Array.isArray(data.data) ? data.data : [data.data] }
+    }
+
+    return { data: [] }
   } catch (error) {
     console.error("[v0] Erreur lors de la récupération des comptes:", error)
     return { data: [] }
@@ -111,12 +104,10 @@ export async function getAccounts() {
 }
 
 export async function createAccount(prevState: any, formData: FormData) {
-   const cookieToken = (await cookies()).get("token")?.value
-   const usertoken = cookieToken
+  const cookieToken = (await cookies()).get("token")?.value
+  const usertoken = cookieToken
   try {
     console.log("[v0] Création d'un nouveau compte...")
-
-   
 
     if (!usertoken) {
       return {
