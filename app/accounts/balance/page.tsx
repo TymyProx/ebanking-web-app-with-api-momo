@@ -115,6 +115,7 @@ export default function BalancesPage() {
     setIsCreatingAccount(true)
 
     const formData = new FormData(event.currentTarget)
+    const form = event.currentTarget
 
     try {
       const result = await createAccount(null, formData)
@@ -127,7 +128,9 @@ export default function BalancesPage() {
         if (refreshResult.success) {
           setAccounts(refreshResult.accounts)
         }
-        event.currentTarget.reset()
+        if (form) {
+          form.reset()
+        }
       }
     } catch (error) {
       console.error("Erreur lors de la création du compte:", error)
