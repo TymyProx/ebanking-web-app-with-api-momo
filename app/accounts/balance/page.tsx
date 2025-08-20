@@ -275,7 +275,7 @@ export default function BalancesPage() {
                   <Alert className="border-green-200 bg-green-50">
                     <CheckCircle className="h-4 w-4 text-green-600" />
                     <AlertDescription className="text-green-800">
-                      Demande d'ouverture de compte envoyée avec succès !
+                      Votre demande d'ouverture de compte a été prise en compte
                     </AlertDescription>
                   </Alert>
                 )}
