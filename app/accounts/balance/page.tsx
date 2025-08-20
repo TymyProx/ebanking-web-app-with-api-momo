@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState, useEffect, useTransition, useActionState } from "react"
+import { useState, useEffect, useTransition } from "react"
 import Link from "next/link"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -34,7 +34,8 @@ import {
   CheckCircle,
   Plus,
 } from "lucide-react"
-import { getAccounts, createAccount } from "../actions"
+import { getAccountBalances, refreshBalances } from "./actions"
+import { createAccount } from "../actions"
 
 interface Account {
   id: string
@@ -61,41 +62,26 @@ export default function BalancesPage() {
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date())
 
   const [isNewAccountDialogOpen, setIsNewAccountDialogOpen] = useState(false)
-  const [createAccountState, createAccountAction, isCreatingAccount] = useActionState(createAccount, null)
+  const [isCreatingAccount, setIsCreatingAccount] = useState(false)
+  const [createAccountState, setCreateAccountState] = useState<any>(null)
 
   useEffect(() => {
     const loadBalances = () => {
       startTransition(async () => {
         try {
-          const result = await getAccounts()
-          console.log("[v0] Résultat getAccounts:", result)
+          const formData = new FormData()
+          const result = await getAccountBalances(null, formData)
+          setBalanceState(result)
 
-          if (result?.data && Array.isArray(result.data)) {
-            const adaptedAccounts = result.data.map((account: any) => ({
-              id: account.id || account.accountId,
-              name: account.accountName || account.name || "Compte",
-              number: account.accountNumber || account.number || "N/A",
-              balance: Number.parseFloat(account.bookBalance || account.balance || "0"),
-              availableBalance: Number.parseFloat(account.availableBalance || account.balance || "0"),
-              currency: account.currency || "GNF",
-              type: account.accountType || "Courant",
-              status: "Actif",
-              lastUpdate: new Date(account.createdAt || Date.now()).toLocaleDateString("fr-FR"),
-              trend: "stable" as const,
-              trendPercentage: 0,
-              iban: account.iban || "",
-            }))
-            setAccounts(adaptedAccounts)
-            setBalanceState({ success: true })
+          if (result.success) {
+            setAccounts(result.accounts)
           } else {
             setAccounts([])
-            setBalanceState({ success: false, error: "Aucun compte trouvé" })
           }
           setIsLoaded(true)
         } catch (error) {
-          console.error("Erreur lors du chargement des comptes:", error)
+          console.error("Erreur lors du chargement des soldes:", error)
           setAccounts([])
-          setBalanceState({ success: false, error: "Erreur de connexion" })
           setIsLoaded(true)
         }
       })
@@ -103,76 +89,64 @@ export default function BalancesPage() {
     loadBalances()
   }, [])
 
+  useEffect(() => {
+    if (createAccountState?.success) {
+      const timer = setTimeout(() => {
+        setCreateAccountState(null)
+      }, 8000) // 8 secondes
+
+      return () => clearTimeout(timer)
+    }
+  }, [createAccountState?.success])
+
   const handleRefresh = () => {
     startTransition(async () => {
       try {
-        const result = await getAccounts()
+        const formData = new FormData()
+        const result = await refreshBalances(null, formData)
+        setRefreshState(result)
         setLastRefresh(new Date())
 
-        if (result?.data && Array.isArray(result.data)) {
-          const adaptedAccounts = result.data.map((account: any) => ({
-            id: account.id || account.accountId,
-            name: account.accountName || account.name || "Compte",
-            number: account.accountNumber || account.number || "N/A",
-            balance: Number.parseFloat(account.bookBalance || account.balance || "0"),
-            availableBalance: Number.parseFloat(account.availableBalance || account.balance || "0"),
-            currency: account.currency || "GNF",
-            type: account.accountType || "Courant",
-            status: "Actif",
-            lastUpdate: new Date(account.createdAt || Date.now()).toLocaleDateString("fr-FR"),
-            trend: "stable" as const,
-            trendPercentage: 0,
-            iban: account.iban || "",
-          }))
-          setAccounts(adaptedAccounts)
-          setRefreshState({ success: true })
-        } else {
-          setRefreshState({ success: false, error: "Erreur lors du rafraîchissement" })
+        if (result.success) {
+          const refreshFormData = new FormData()
+          const refreshResult = await getAccountBalances(null, refreshFormData)
+          if (refreshResult.success) {
+            setAccounts(refreshResult.accounts)
+          }
         }
       } catch (error) {
         console.error("Erreur lors du rafraîchissement:", error)
-        setRefreshState({ success: false, error: "Erreur de connexion" })
       }
     })
   }
 
   const handleCreateAccount = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
+    setIsCreatingAccount(true)
+
     const formData = new FormData(event.currentTarget)
     const form = event.currentTarget
 
-    startTransition(async () => {
-      await createAccountAction(formData)
+    try {
+      const result = await createAccount(null, formData)
+      setCreateAccountState(result)
 
-      // Rafraîchir la liste des comptes après création
-      try {
-        const refreshResult = await getAccounts()
-        if (refreshResult?.data && Array.isArray(refreshResult.data)) {
-          const adaptedAccounts = refreshResult.data.map((account: any) => ({
-            id: account.id || account.accountId,
-            name: account.accountName || account.name || "Compte",
-            number: account.accountNumber || account.number || "N/A",
-            balance: Number.parseFloat(account.bookBalance || account.balance || "0"),
-            availableBalance: Number.parseFloat(account.availableBalance || account.balance || "0"),
-            currency: account.currency || "GNF",
-            type: account.accountType || "Courant",
-            status: "Actif",
-            lastUpdate: new Date(account.createdAt || Date.now()).toLocaleDateString("fr-FR"),
-            trend: "stable" as const,
-            trendPercentage: 0,
-            iban: account.iban || "",
-          }))
-          setAccounts(adaptedAccounts)
+      if (result?.success) {
+        setIsNewAccountDialogOpen(true)
+        const refreshFormData = new FormData()
+        const refreshResult = await getAccountBalances(null, refreshFormData)
+        if (refreshResult.success) {
+          setAccounts(refreshResult.accounts)
         }
-
-        // Réinitialiser le formulaire si succès
         if (form) {
           form.reset()
         }
-      } catch (error) {
-        console.error("Erreur lors du rafraîchissement:", error)
       }
-    })
+    } catch (error) {
+      console.error("Erreur lors de la création du compte:", error)
+    } finally {
+      setIsCreatingAccount(false)
+    }
   }
 
   const formatAmount = (amount: number, currency = "GNF") => {
