@@ -1,6 +1,8 @@
 "use client"
 
-import { useState, useEffect, useTransition, useActionState } from "react"
+import type React from "react"
+
+import { useState, useEffect, useTransition } from "react"
 import Link from "next/link"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -55,59 +57,96 @@ export default function BalancesPage() {
   const [accounts, setAccounts] = useState<Account[]>([])
   const [isLoaded, setIsLoaded] = useState(false)
   const [isPending, startTransition] = useTransition()
-
-  const [balanceState, balanceAction] = useActionState(getAccountBalances, null)
-  const [refreshState, refreshAction] = useActionState(refreshBalances, null)
+  const [balanceState, setBalanceState] = useState<any>(null)
+  const [refreshState, setRefreshState] = useState<any>(null)
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date())
 
   const [isNewAccountDialogOpen, setIsNewAccountDialogOpen] = useState(false)
-  const [createAccountState, createAccountAction] = useActionState(createAccount, null)
+  const [isCreatingAccount, setIsCreatingAccount] = useState(false)
+  const [createAccountState, setCreateAccountState] = useState<any>(null)
 
   useEffect(() => {
-    const formData = new FormData()
-    balanceAction(formData)
+    const loadBalances = () => {
+      startTransition(async () => {
+        try {
+          const formData = new FormData()
+          const result = await getAccountBalances(null, formData)
+          setBalanceState(result)
+
+          if (result.success) {
+            setAccounts(result.accounts)
+          } else {
+            setAccounts([])
+          }
+          setIsLoaded(true)
+        } catch (error) {
+          console.error("Erreur lors du chargement des soldes:", error)
+          setAccounts([])
+          setIsLoaded(true)
+        }
+      })
+    }
+    loadBalances()
   }, [])
 
   useEffect(() => {
-    if (balanceState?.accounts) {
-      setAccounts(balanceState.accounts)
-      setIsLoaded(true)
-    } else if (balanceState?.error) {
-      setAccounts([])
-      setIsLoaded(true)
-    }
-  }, [balanceState])
-
-  useEffect(() => {
-    if (refreshState?.accounts) {
-      setAccounts(refreshState.accounts)
-      setLastRefresh(new Date())
-    }
-  }, [refreshState])
-
-  useEffect(() => {
     if (createAccountState?.success) {
-      // Rafraîchir la liste des comptes
-      const formData = new FormData()
-      balanceAction(formData)
-
       const timer = setTimeout(() => {
-        // Reset du state après 8 secondes
-        const resetFormData = new FormData()
-        createAccountAction(resetFormData)
-      }, 8000)
+        setCreateAccountState(null)
+      }, 8000) // 8 secondes
 
       return () => clearTimeout(timer)
     }
   }, [createAccountState?.success])
 
   const handleRefresh = () => {
-    const formData = new FormData()
-    refreshAction(formData)
+    startTransition(async () => {
+      try {
+        const formData = new FormData()
+        const result = await refreshBalances(null, formData)
+        setRefreshState(result)
+        setLastRefresh(new Date())
+
+        if (result.success) {
+          const refreshFormData = new FormData()
+          const refreshResult = await getAccountBalances(null, refreshFormData)
+          if (refreshResult.success) {
+            setAccounts(refreshResult.accounts)
+          }
+        }
+      } catch (error) {
+        console.error("Erreur lors du rafraîchissement:", error)
+      }
+    })
   }
 
-  const handleCreateAccount = (formData: FormData) => {
-    createAccountAction(formData)
+  const handleCreateAccount = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    setIsCreatingAccount(true)
+
+    const formData = new FormData(event.currentTarget)
+    const form = event.currentTarget
+
+    try {
+      const result = await createAccount(null, formData)
+      setCreateAccountState(result)
+
+      if (result?.success) {
+        setIsNewAccountDialogOpen(true)
+        const refreshFormData = new FormData()
+        const refreshResult = await getAccountBalances(null, refreshFormData)
+        if (refreshResult.success) {
+          setAccounts(refreshResult.accounts)
+        }
+        if (form) {
+          form.reset()
+        }
+      }
+    } catch (error) {
+      console.error("Erreur lors de la création du compte:", error)
+    } finally {
+      setIsCreatingAccount(false)
+    }
   }
 
   const formatAmount = (amount: number, currency = "GNF") => {
@@ -177,7 +216,7 @@ export default function BalancesPage() {
                 </DialogDescription>
               </DialogHeader>
 
-              <form action={handleCreateAccount} className="space-y-4">
+              <form onSubmit={handleCreateAccount} className="space-y-4">
                 {createAccountState?.success && (
                   <Alert className="border-green-200 bg-green-50">
                     <CheckCircle className="h-4 w-4 text-green-600" />
@@ -256,12 +295,12 @@ export default function BalancesPage() {
                     type="button"
                     variant="outline"
                     onClick={() => setIsNewAccountDialogOpen(false)}
-                    disabled={createAccountState?.pending}
+                    disabled={isCreatingAccount}
                   >
                     Annuler
                   </Button>
-                  <Button type="submit" disabled={createAccountState?.pending}>
-                    {createAccountState?.pending ? (
+                  <Button type="submit" disabled={isCreatingAccount}>
+                    {isCreatingAccount ? (
                       <>
                         <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
                         Création...
@@ -285,10 +324,35 @@ export default function BalancesPage() {
         </div>
       </div>
 
+      {balanceState?.success && (
+        <Alert className="border-green-200 bg-green-50">
+          <CheckCircle className="h-4 w-4 text-green-600" />
+          <AlertDescription className="text-green-800">
+            ✅ Soldes mis à jour avec succès. Dernière actualisation : {lastRefresh.toLocaleTimeString("fr-FR")}
+          </AlertDescription>
+        </Alert>
+      )}
+
       {balanceState?.error && (
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>❌ Erreur de connexion. Données non disponibles. Veuillez réessayer.</AlertDescription>
+        </Alert>
+      )}
+
+      {refreshState?.success && (
+        <Alert className="border-green-200 bg-green-50">
+          <CheckCircle className="h-4 w-4 text-green-600" />
+          <AlertDescription className="text-green-800">
+            ✅ Soldes actualisés avec succès à {lastRefresh.toLocaleTimeString("fr-FR")}
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {refreshState?.error && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>❌ Impossible d'actualiser les soldes. Vérifiez votre connexion.</AlertDescription>
         </Alert>
       )}
 

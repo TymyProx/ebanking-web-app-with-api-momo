@@ -218,7 +218,7 @@ export async function getAccountById(accountId: string) {
       return { data: null }
     }
 
-    const response = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/compte`, {
+    const response = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/compte/${accountId}`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -263,15 +263,9 @@ export async function getAccountById(accountId: string) {
     }
 
     const data = await response.json()
-    //Retourne la reponse sous forme de tableau
-    if (Array.isArray(data.rows)) {
-      return data.rows
-    }
-
-    // const data = await response.json()
     console.log("[v0] Données compte reçues:", data)
 
-    // return { data: data.data || data }
+    return { data: data.data || data }
   } catch (error) {
     console.error("[v0] Erreur lors de la récupération du compte:", error)
     return { data: null }
