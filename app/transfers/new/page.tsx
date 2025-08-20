@@ -252,12 +252,12 @@ export default function NewTransferPage() {
         const result = await getBeneficiaries()
 
         console.log("[v0] Résultat de getBeneficiaries:", result)
+        console.log("[v0] Type de result:", typeof result, Array.isArray(result))
 
-        if (result.success && result.data) {
-          console.log("[v0] Données brutes des bénéficiaires:", result.data)
-          console.log("[v0] Type de result.data:", typeof result.data, Array.isArray(result.data))
+        if (Array.isArray(result) && result.length > 0) {
+          console.log("[v0] Données brutes des bénéficiaires:", result)
 
-          const adaptedBeneficiaries: Beneficiary[] = result.data.map((beneficiary: any) => {
+          const adaptedBeneficiaries: Beneficiary[] = result.map((beneficiary: any) => {
             console.log("[v0] Adaptation du bénéficiaire:", beneficiary)
             return {
               id: beneficiary.id || beneficiary.beneficiaryId,
@@ -271,13 +271,13 @@ export default function NewTransferPage() {
           console.log("[v0] Bénéficiaires adaptés:", adaptedBeneficiaries)
           setBeneficiaries(adaptedBeneficiaries)
         } else {
-          console.log("[v0] Pas de données ou échec:", result)
-          setBeneficiaries(mockBeneficiaries)
+          console.log("[v0] Aucun bénéficiaire trouvé ou tableau vide")
+          setBeneficiaries([]) // Tableau vide au lieu des données de test
         }
       } catch (error) {
         console.error("[v0] Erreur lors du chargement des bénéficiaires:", error)
-        // En cas d'erreur, utiliser les données de test
-        setBeneficiaries(mockBeneficiaries)
+        // En cas d'erreur, utiliser un tableau vide
+        setBeneficiaries([])
       } finally {
         setIsLoadingBeneficiaries(false)
         console.log("[v0] Fin du chargement des bénéficiaires")
