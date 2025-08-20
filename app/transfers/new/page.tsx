@@ -247,26 +247,40 @@ export default function NewTransferPage() {
   useEffect(() => {
     const loadBeneficiaries = async () => {
       try {
+        console.log("[v0] Début du chargement des bénéficiaires")
         setIsLoadingBeneficiaries(true)
         const result = await getBeneficiaries()
 
+        console.log("[v0] Résultat de getBeneficiaries:", result)
+
         if (result.success && result.data) {
-          // Adapter le format des données API au format attendu par l'interface
-          const adaptedBeneficiaries: Beneficiary[] = result.data.map((beneficiary: any) => ({
-            id: beneficiary.id || beneficiary.beneficiaryId,
-            name: beneficiary.name,
-            account: beneficiary.accountNumber,
-            bank: beneficiary.bankCode || beneficiary.bank || "Banque inconnue",
-            type: "BNG-BNG" as const, // Par défaut, peut être adapté selon vos besoins
-          }))
+          console.log("[v0] Données brutes des bénéficiaires:", result.data)
+          console.log("[v0] Type de result.data:", typeof result.data, Array.isArray(result.data))
+
+          const adaptedBeneficiaries: Beneficiary[] = result.data.map((beneficiary: any) => {
+            console.log("[v0] Adaptation du bénéficiaire:", beneficiary)
+            return {
+              id: beneficiary.id || beneficiary.beneficiaryId,
+              name: beneficiary.name,
+              account: beneficiary.accountNumber,
+              bank: beneficiary.bankCode || beneficiary.bank || "Banque inconnue",
+              type: "BNG-BNG" as const, // Par défaut, peut être adapté selon vos besoins
+            }
+          })
+
+          console.log("[v0] Bénéficiaires adaptés:", adaptedBeneficiaries)
           setBeneficiaries(adaptedBeneficiaries)
+        } else {
+          console.log("[v0] Pas de données ou échec:", result)
+          setBeneficiaries(mockBeneficiaries)
         }
       } catch (error) {
-        console.error("Erreur lors du chargement des bénéficiaires:", error)
+        console.error("[v0] Erreur lors du chargement des bénéficiaires:", error)
         // En cas d'erreur, utiliser les données de test
         setBeneficiaries(mockBeneficiaries)
       } finally {
         setIsLoadingBeneficiaries(false)
+        console.log("[v0] Fin du chargement des bénéficiaires")
       }
     }
 
