@@ -71,8 +71,8 @@ export default function BalancesPage() {
   }, [])
 
   useEffect(() => {
-    if (balanceState?.accounts) {
-      setAccounts(balanceState.accounts)
+    if (balanceState?.data) {
+      setAccounts(balanceState.data)
       setIsLoaded(true)
     } else if (balanceState?.error) {
       setAccounts([])
@@ -81,8 +81,8 @@ export default function BalancesPage() {
   }, [balanceState])
 
   useEffect(() => {
-    if (refreshState?.accounts) {
-      setAccounts(refreshState.accounts)
+    if (refreshState?.data) {
+      setAccounts(refreshState.data)
       setLastRefresh(new Date())
     }
   }, [refreshState])
