@@ -3,7 +3,7 @@
 import { cookies } from "next/headers"
 import { revalidatePath } from "next/cache"
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://192.168.1.200:8080/api"
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "https://192.168.1.200:8080/api"
 const TENANT_ID = "afa25e29-08dd-46b6-8ea2-d778cb2d6694"
 
 export async function getAccounts() {
@@ -17,8 +17,7 @@ export async function getAccounts() {
       return { data: [] }
     }
 
-    const CUSTOMER_ID = "CUSTOMER_ID_PLACEHOLDER" // À remplacer par l'ID réel du customer connecté
-    const response = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/compte/${CUSTOMER_ID}`, {
+    const response = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/compte`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -54,7 +53,6 @@ export async function getAccounts() {
                 bookBalance: "2500000",
                 availableBalance: "2350000",
                 createdAt: "2023-01-15T10:00:00Z",
-                updatedAt: "2023-01-15T10:00:00Z",
                 tenantId: TENANT_ID,
               },
               {
@@ -67,7 +65,18 @@ export async function getAccounts() {
                 bookBalance: "5000000",
                 availableBalance: "5000000",
                 createdAt: "2023-03-20T10:00:00Z",
-                updatedAt: "2023-03-20T10:00:00Z",
+                tenantId: TENANT_ID,
+              },
+              {
+                id: "3fa85f64-5717-4562-b3fc-2c963f66afa8",
+                accountId: "ACC003",
+                customerId: "CUST001",
+                accountNumber: "0001234567892",
+                accountName: "Compte USD",
+                currency: "USD",
+                bookBalance: "1200",
+                availableBalance: "1150",
+                createdAt: "2023-06-10T10:00:00Z",
                 tenantId: TENANT_ID,
               },
             ],
@@ -81,22 +90,15 @@ export async function getAccounts() {
     const data = await response.json()
     console.log("[v0] Données reçues:", data)
 
-    // Si la réponse est un seul compte, on le met dans un tableau
-    if (data && !Array.isArray(data)) {
-      return { data: [data] }
-    }
-
-    // Si c'est déjà un tableau
     if (Array.isArray(data)) {
       return { data: data }
+    } else if (data.data && Array.isArray(data.data)) {
+      return { data: data.data }
+    } else if (data.data) {
+      return { data: [data.data] }
+    } else {
+      return { data: [data] }
     }
-
-    // Gestion des autres formats possibles
-    if (data.data) {
-      return { data: Array.isArray(data.data) ? data.data : [data.data] }
-    }
-
-    return { data: [] }
   } catch (error) {
     console.error("[v0] Erreur lors de la récupération des comptes:", error)
     return { data: [] }
@@ -205,7 +207,7 @@ export async function getAccountById(accountId: string) {
     console.log("[v0] Récupération du compte:", accountId)
 
     const cookieStore = await cookies()
-    const token = cookieStore.get("auth-token")?.value
+    const token = cookieStore.get("token")?.value
 
     if (!token) {
       console.log("[v0] Token manquant")
@@ -238,6 +240,7 @@ export async function getAccountById(accountId: string) {
           console.log("[v0] API non accessible, utilisation de données de test")
           return {
             data: {
+              id: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
               accountId: accountId,
               customerId: "CUST001",
               accountNumber: "0001234567890",
@@ -245,9 +248,8 @@ export async function getAccountById(accountId: string) {
               currency: "GNF",
               bookBalance: "2500000",
               availableBalance: "2350000",
-              status: "ACTIVE",
-              openDate: "2023-01-15",
-              accountType: "CURRENT",
+              createdAt: "2023-01-15T10:00:00Z",
+              tenantId: TENANT_ID,
             },
           }
         }
