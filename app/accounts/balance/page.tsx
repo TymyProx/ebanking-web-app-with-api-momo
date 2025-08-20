@@ -72,7 +72,7 @@ export default function BalancesPage() {
   }, [])
 
   useEffect(() => {
-    if (balanceState?.success && balanceState?.data) {
+    if (balanceState?.success && balanceState?.data && Array.isArray(balanceState.data)) {
       const mappedAccounts: Account[] = balanceState.data.map((apiAccount: any) => ({
         id: apiAccount.accountId || apiAccount.id || Math.random().toString(),
         name: apiAccount.accountName || `Compte ${apiAccount.accountId}`,
@@ -96,7 +96,7 @@ export default function BalancesPage() {
   }, [balanceState])
 
   useEffect(() => {
-    if (refreshState?.success && refreshState?.data) {
+    if (refreshState?.success && refreshState?.data && Array.isArray(refreshState.data)) {
       const mappedAccounts: Account[] = refreshState.data.map((apiAccount: any) => ({
         id: apiAccount.accountId || apiAccount.id || Math.random().toString(),
         name: apiAccount.accountName || `Compte ${apiAccount.accountId}`,
