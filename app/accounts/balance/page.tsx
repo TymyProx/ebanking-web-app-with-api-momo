@@ -1,5 +1,7 @@
 "use client"
 
+import type React from "react"
+
 import { useState, useEffect, useTransition } from "react"
 import Link from "next/link"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -7,6 +9,17 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import {
   RefreshCw,
   Wallet,
@@ -19,8 +32,10 @@ import {
   TrendingDown,
   AlertCircle,
   CheckCircle,
+  Plus,
 } from "lucide-react"
 import { getAccountBalances, refreshBalances } from "./actions"
+import { createAccount } from "../actions"
 
 interface Account {
   id: string
@@ -46,53 +61,10 @@ export default function BalancesPage() {
   const [refreshState, setRefreshState] = useState<any>(null)
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date())
 
-  // Données des comptes par défaut (simulées)
-  const defaultAccounts: Account[] = [
-    {
-      id: "1",
-      name: "Compte Courant",
-      number: "0001-234567-89",
-      balance: 2400000,
-      availableBalance: 2350000,
-      currency: "GNF",
-      type: "Courant",
-      status: "Actif",
-      lastUpdate: "13 Jan 2024 14:30",
-      trend: "up",
-      trendPercentage: 2.5,
-      iban: "GN82 BNG 001 0001234567 89",
-    },
-    {
-      id: "2",
-      name: "Compte Épargne",
-      number: "0002-345678-90",
-      balance: 850000,
-      availableBalance: 850000,
-      currency: "GNF",
-      type: "Épargne",
-      status: "Actif",
-      lastUpdate: "13 Jan 2024 14:30",
-      trend: "up",
-      trendPercentage: 1.2,
-      iban: "GN82 BNG 001 0002345678 90",
-    },
-    {
-      id: "3",
-      name: "Compte USD",
-      number: "0003-456789-01",
-      balance: 1250,
-      availableBalance: 1250,
-      currency: "USD",
-      type: "Devise",
-      status: "Actif",
-      lastUpdate: "13 Jan 2024 14:30",
-      trend: "stable",
-      trendPercentage: 0,
-      iban: "GN82 BNG 001 0003456789 01",
-    },
-  ]
+  const [isNewAccountDialogOpen, setIsNewAccountDialogOpen] = useState(false)
+  const [isCreatingAccount, setIsCreatingAccount] = useState(false)
+  const [createAccountState, setCreateAccountState] = useState<any>(null)
 
-  // Charger les soldes au montage du composant
   useEffect(() => {
     const loadBalances = () => {
       startTransition(async () => {
@@ -102,17 +74,14 @@ export default function BalancesPage() {
           setBalanceState(result)
 
           if (result.success) {
-            // Utiliser les données par défaut pour la simulation
-            setAccounts(defaultAccounts)
+            setAccounts(result.accounts)
           } else {
-            // En cas d'erreur, utiliser quand même les données par défaut
-            setAccounts(defaultAccounts)
+            setAccounts([])
           }
           setIsLoaded(true)
         } catch (error) {
           console.error("Erreur lors du chargement des soldes:", error)
-          // En cas d'erreur, utiliser les données par défaut
-          setAccounts(defaultAccounts)
+          setAccounts([])
           setIsLoaded(true)
         }
       })
@@ -129,13 +98,42 @@ export default function BalancesPage() {
         setLastRefresh(new Date())
 
         if (result.success) {
-          // Simuler une mise à jour des données
-          setAccounts(defaultAccounts)
+          const refreshFormData = new FormData()
+          const refreshResult = await getAccountBalances(null, refreshFormData)
+          if (refreshResult.success) {
+            setAccounts(refreshResult.accounts)
+          }
         }
       } catch (error) {
         console.error("Erreur lors du rafraîchissement:", error)
       }
     })
+  }
+
+  const handleCreateAccount = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    setIsCreatingAccount(true)
+
+    const formData = new FormData(event.currentTarget)
+
+    try {
+      const result = await createAccount(null, formData)
+      setCreateAccountState(result)
+
+      if (result?.success) {
+        setIsNewAccountDialogOpen(false)
+        const refreshFormData = new FormData()
+        const refreshResult = await getAccountBalances(null, refreshFormData)
+        if (refreshResult.success) {
+          setAccounts(refreshResult.accounts)
+        }
+        event.currentTarget.reset()
+      }
+    } catch (error) {
+      console.error("Erreur lors de la création du compte:", error)
+    } finally {
+      setIsCreatingAccount(false)
+    }
   }
 
   const formatAmount = (amount: number, currency = "GNF") => {
@@ -190,6 +188,119 @@ export default function BalancesPage() {
           <p className="text-gray-600">Vue d'ensemble de tous vos comptes</p>
         </div>
         <div className="flex items-center space-x-2">
+          <Dialog open={isNewAccountDialogOpen} onOpenChange={setIsNewAccountDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="bg-blue-600 hover:bg-blue-700">
+                <Plus className="h-4 w-4 mr-2" />
+                Ouvrir un nouveau compte
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[500px]">
+              <DialogHeader>
+                <DialogTitle>Demande d'ouverture de compte</DialogTitle>
+                <DialogDescription>
+                  Remplissez les informations ci-dessous pour ouvrir un nouveau compte bancaire.
+                </DialogDescription>
+              </DialogHeader>
+
+              <form onSubmit={handleCreateAccount} className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="accountName">Nom du compte</Label>
+                    <Input id="accountName" name="accountName" placeholder="Ex: Compte Épargne" required />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="accountType">Type de compte</Label>
+                    <Select name="accountType" required>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Sélectionner le type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Courant">Compte Courant</SelectItem>
+                        <SelectItem value="Épargne">Compte Épargne</SelectItem>
+                        <SelectItem value="Devise">Compte Devise</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="currency">Devise</Label>
+                    <Select name="currency" required>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Sélectionner la devise" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="GNF">Franc Guinéen (GNF)</SelectItem>
+                        <SelectItem value="USD">Dollar US (USD)</SelectItem>
+                        <SelectItem value="EUR">Euro (EUR)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="initialDeposit">Dépôt initial (optionnel)</Label>
+                    <Input id="initialDeposit" name="initialDeposit" type="number" placeholder="0" min="0" />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="purpose">Objectif du compte</Label>
+                  <Select name="purpose" required>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Sélectionner l'objectif" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="personnel">Usage personnel</SelectItem>
+                      <SelectItem value="professionnel">Usage professionnel</SelectItem>
+                      <SelectItem value="epargne">Épargne</SelectItem>
+                      <SelectItem value="investissement">Investissement</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {createAccountState?.error && (
+                  <Alert variant="destructive">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription>
+                      Erreur lors de la création du compte: {createAccountState.error}
+                    </AlertDescription>
+                  </Alert>
+                )}
+
+                {createAccountState?.success && (
+                  <Alert className="border-green-200 bg-green-50">
+                    <CheckCircle className="h-4 w-4 text-green-600" />
+                    <AlertDescription className="text-green-800">
+                      Demande d'ouverture de compte envoyée avec succès !
+                    </AlertDescription>
+                  </Alert>
+                )}
+
+                <div className="flex justify-end space-x-2 pt-4">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setIsNewAccountDialogOpen(false)}
+                    disabled={isCreatingAccount}
+                  >
+                    Annuler
+                  </Button>
+                  <Button type="submit" disabled={isCreatingAccount}>
+                    {isCreatingAccount ? (
+                      <>
+                        <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                        Création...
+                      </>
+                    ) : (
+                      "Créer le compte"
+                    )}
+                  </Button>
+                </div>
+              </form>
+            </DialogContent>
+          </Dialog>
+
           <Button onClick={handleRefresh} disabled={isPending} variant="outline" size="sm">
             <RefreshCw className={`h-4 w-4 mr-2 ${isPending ? "animate-spin" : ""}`} />
             {isPending ? "Actualisation..." : "Actualiser"}
@@ -200,7 +311,6 @@ export default function BalancesPage() {
         </div>
       </div>
 
-      {/* Messages de feedback */}
       {balanceState?.success && (
         <Alert className="border-green-200 bg-green-50">
           <CheckCircle className="h-4 w-4 text-green-600" />
@@ -269,7 +379,6 @@ export default function BalancesPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
-                    {/* Solde principal */}
                     <div className="space-y-1">
                       <div className="text-2xl font-bold text-gray-900">
                         {showBalance
@@ -285,7 +394,6 @@ export default function BalancesPage() {
                       <p className="text-xs text-muted-foreground font-mono">{account.number}</p>
                     </div>
 
-                    {/* Évolution */}
                     <div className="flex items-center justify-between pt-2 border-t">
                       <div className="flex items-center space-x-1">
                         {getTrendIcon(account.trend, account.trendPercentage)}
@@ -302,7 +410,6 @@ export default function BalancesPage() {
                       <div className="text-xs text-blue-600 font-medium">Voir détails →</div>
                     </div>
 
-                    {/* Informations supplémentaires */}
                     <div className="grid grid-cols-2 gap-2 text-xs text-gray-600">
                       <div>
                         <span className="font-medium">Type:</span>
@@ -331,7 +438,6 @@ export default function BalancesPage() {
         </Card>
       )}
 
-      {/* Résumé global */}
       {isLoaded && accounts.length > 0 && (
         <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
           <CardHeader>
