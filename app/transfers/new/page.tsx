@@ -4,6 +4,7 @@ import type React from "react"
 import { useState, useTransition, useActionState, useEffect } from "react"
 import { executeTransfer } from "./actions"
 import { getBeneficiaries } from "../beneficiaries/actions"
+import { getAccounts } from "../../accounts/actions"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -31,55 +32,6 @@ interface Account {
   balance: number
   currency: string
 }
-
-// Données simulées
-const mockAccounts: Account[] = [
-  {
-    id: "1",
-    name: "Compte Courant Principal",
-    number: "BNG-2024-001234-01",
-    balance: 2500000,
-    currency: "GNF",
-  },
-  {
-    id: "2",
-    name: "Compte Épargne",
-    number: "BNG-2024-001234-02",
-    balance: 5000000,
-    currency: "GNF",
-  },
-  {
-    id: "3",
-    name: "Compte USD",
-    number: "BNG-2024-001234-03",
-    balance: 1500,
-    currency: "USD",
-  },
-]
-
-const mockBeneficiaries: Beneficiary[] = [
-  {
-    id: "1",
-    name: "Mamadou Diallo",
-    account: "BNG-2024-005678-01",
-    bank: "Banque Nationale de Guinée",
-    type: "BNG-BNG",
-  },
-  {
-    id: "2",
-    name: "Aissatou Barry",
-    account: "UBA-2024-123456-01",
-    bank: "United Bank for Africa",
-    type: "BNG-CONFRERE",
-  },
-  {
-    id: "3",
-    name: "Ibrahim Camara",
-    account: "FR76 1234 5678 9012 3456 789",
-    bank: "BNP Paribas",
-    type: "International",
-  },
-]
 
 const banks = {
   "BNG-BNG": ["Banque Nationale de Guinée"],
@@ -115,6 +67,8 @@ export default function NewTransferPage() {
   const [transferDate, setTransferDate] = useState<string>(new Date().toISOString().split("T")[0])
   const [beneficiaries, setBeneficiaries] = useState<Beneficiary[]>([])
   const [isLoadingBeneficiaries, setIsLoadingBeneficiaries] = useState(true)
+  const [accounts, setAccounts] = useState<Account[]>([])
+  const [isLoadingAccounts, setIsLoadingAccounts] = useState(true)
 
   // États pour le formulaire de bénéficiaire
   const [isDialogOpen, setIsDialogOpen] = useState(false)
@@ -241,8 +195,49 @@ export default function NewTransferPage() {
     })
   }
 
-  const selectedAccountData = mockAccounts.find((acc) => acc.id === selectedAccount)
+  const selectedAccountData = accounts.find((acc) => acc.id === selectedAccount)
   const selectedBeneficiaryData = beneficiaries.find((ben) => ben.id === selectedBeneficiary)
+
+  useEffect(() => {
+    const loadAccounts = async () => {
+      try {
+        console.log("[v0] Début du chargement des comptes")
+        setIsLoadingAccounts(true)
+        const result = await getAccounts()
+
+        console.log("[v0] Résultat de getAccounts:", result)
+
+        if (result && typeof result === "object" && "data" in result && Array.isArray(result.data)) {
+          console.log("[v0] Données brutes des comptes:", result.data)
+
+          const adaptedAccounts: Account[] = result.data.map((account: any) => {
+            console.log("[v0] Adaptation du compte:", account)
+            return {
+              id: account.id || account.accountId,
+              name: account.accountName || account.name || `Compte ${account.accountNumber}`,
+              number: account.accountNumber,
+              balance: Number.parseFloat(account.availableBalance || account.balance || "0"),
+              currency: account.currency || "GNF",
+            }
+          })
+
+          console.log("[v0] Comptes adaptés:", adaptedAccounts)
+          setAccounts(adaptedAccounts)
+        } else {
+          console.log("[v0] Aucun compte trouvé ou format incorrect")
+          setAccounts([])
+        }
+      } catch (error) {
+        console.error("[v0] Erreur lors du chargement des comptes:", error)
+        setAccounts([])
+      } finally {
+        setIsLoadingAccounts(false)
+        console.log("[v0] Fin du chargement des comptes")
+      }
+    }
+
+    loadAccounts()
+  }, [])
 
   useEffect(() => {
     const loadBeneficiaries = async () => {
@@ -337,19 +332,29 @@ export default function NewTransferPage() {
                 <Label htmlFor="account">Sélectionner le compte à débiter *</Label>
                 <Select value={selectedAccount} onValueChange={setSelectedAccount}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Choisir un compte" />
+                    <SelectValue placeholder={isLoadingAccounts ? "Chargement..." : "Choisir un compte"} />
                   </SelectTrigger>
                   <SelectContent>
-                    {mockAccounts.map((account) => (
-                      <SelectItem key={account.id} value={account.id}>
-                        <div className="flex flex-col">
-                          <span className="font-medium">{account.name}</span>
-                          <span className="text-sm text-gray-500">
-                            {account.number} • {formatCurrency(account.balance, account.currency)}
-                          </span>
-                        </div>
+                    {isLoadingAccounts ? (
+                      <SelectItem value="loading" disabled>
+                        Chargement des comptes...
                       </SelectItem>
-                    ))}
+                    ) : accounts.length === 0 ? (
+                      <SelectItem value="empty" disabled>
+                        Aucun compte trouvé
+                      </SelectItem>
+                    ) : (
+                      accounts.map((account) => (
+                        <SelectItem key={account.id} value={account.id}>
+                          <div className="flex flex-col">
+                            <span className="font-medium">{account.name}</span>
+                            <span className="text-sm text-gray-500">
+                              {account.number} • {formatCurrency(account.balance, account.currency)}
+                            </span>
+                          </div>
+                        </SelectItem>
+                      ))
+                    )}
                   </SelectContent>
                 </Select>
               </div>
