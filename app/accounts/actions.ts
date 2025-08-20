@@ -3,17 +3,18 @@
 import { cookies } from "next/headers"
 import { revalidatePath } from "next/cache"
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "https://192.168.1.200:8080/api"
-const TENANT_ID = "your-tenant-id"
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://192.168.1.200:8080/api"
+const TENANT_ID = "afa25e29-08dd-46b6-8ea2-d778cb2d6694"
 
 export async function getAccounts() {
+   const cookieToken = (await cookies()).get("token")?.value
+   const usertoken = cookieToken
   try {
     console.log("[v0] Récupération des comptes...")
 
-    const cookieStore = await cookies()
-    const token = cookieStore.get("auth-token")?.value
+    
 
-    if (!token) {
+    if (!usertoken) {
       console.log("[v0] Token manquant")
       return { data: [] }
     }
@@ -22,7 +23,7 @@ export async function getAccounts() {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
+        Authorization: `Bearer ${usertoken}`,
       },
       cache: "no-store",
     })
@@ -110,13 +111,14 @@ export async function getAccounts() {
 }
 
 export async function createAccount(prevState: any, formData: FormData) {
+   const cookieToken = (await cookies()).get("token")?.value
+   const usertoken = cookieToken
   try {
     console.log("[v0] Création d'un nouveau compte...")
 
-    const cookieStore = await cookies()
-    const token = cookieStore.get("auth-token")?.value
+   
 
-    if (!token) {
+    if (!usertoken) {
       return {
         success: false,
         error: "Token d'authentification manquant",
@@ -148,7 +150,7 @@ export async function createAccount(prevState: any, formData: FormData) {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
+        Authorization: `Bearer ${usertoken}`,
       },
       body: JSON.stringify({
         data: accountData,
