@@ -7,6 +7,9 @@ import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Textarea } from "@/components/ui/textarea"
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -27,6 +30,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 import { toast } from "@/hooks/use-toast"
 import {
   CreditCard,
@@ -40,8 +44,10 @@ import {
   CheckCircle,
   Clock,
   X,
+  Plus,
+  Phone,
+  Mail,
 } from "lucide-react"
-import Link from "next/link"
 
 interface Card {
   id: string
@@ -103,11 +109,65 @@ const transactions = [
   { id: "5", cardId: "1", date: "2024-01-11", description: "Virement reçu", amount: 200000, type: "transfer" },
 ]
 
+const mockAccounts = [
+  {
+    id: "1",
+    name: "Compte Courant",
+    number: "0001-234567-89",
+    balance: 2400000,
+    currency: "GNF",
+    type: "Courant",
+  },
+  {
+    id: "2",
+    name: "Compte Épargne",
+    number: "0002-345678-90",
+    balance: 850000,
+    currency: "GNF",
+    type: "Épargne",
+  },
+  {
+    id: "3",
+    name: "Compte USD",
+    number: "0003-456789-01",
+    balance: 1250,
+    currency: "USD",
+    type: "Devise",
+  },
+]
+
+const cardTypes = [
+  { id: "visa-classic", name: "Visa Classic", description: "Carte de débit standard", fee: "15,000 GNF/an" },
+  { id: "visa-gold", name: "Visa Gold", description: "Carte premium avec avantages", fee: "35,000 GNF/an" },
+  { id: "mastercard-standard", name: "Mastercard Standard", description: "Carte internationale", fee: "20,000 GNF/an" },
+  { id: "mastercard-platinum", name: "Mastercard Platinum", description: "Carte haut de gamme", fee: "50,000 GNF/an" },
+]
+
+const agencies = [
+  { id: "kaloum", name: "Agence Kaloum", address: "Avenue de la République, Kaloum" },
+  { id: "ratoma", name: "Agence Ratoma", address: "Quartier Ratoma Centre" },
+  { id: "matam", name: "Agence Matam", address: "Rond-point Matam" },
+  { id: "dixinn", name: "Agence Dixinn", address: "Centre commercial Dixinn" },
+]
+
 export default function CartesPage() {
   const [cards, setCards] = useState<Card[]>(mockCards)
   const [selectedCard, setSelectedCard] = useState<Card | null>(null)
   const [showCardNumber, setShowCardNumber] = useState<string | null>(null)
   const [newLimits, setNewLimits] = useState({ daily: 0, monthly: 0 })
+
+  const [isCardRequestOpen, setIsCardRequestOpen] = useState(false)
+  const [isSubmittingRequest, setIsSubmittingRequest] = useState(false)
+  const [cardRequestForm, setCardRequestForm] = useState({
+    accountId: "",
+    cardType: "",
+    deliveryMethod: "agency", // "agency" or "address"
+    deliveryAddress: "",
+    agencyId: "",
+    phone: "", // TODO: Pre-fill from user profile
+    email: "", // TODO: Pre-fill from user profile
+    comments: "",
+  })
 
   const getCardIcon = (type: string) => {
     switch (type) {
@@ -211,6 +271,72 @@ export default function CartesPage() {
     setShowCardNumber(showCardNumber === cardId ? null : cardId)
   }
 
+  const handleCardRequest = async () => {
+    setIsSubmittingRequest(true)
+
+    try {
+      // TODO: Replace with actual API endpoint when backend is ready
+      const response = await fetch("/api/card-requests", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          accountId: cardRequestForm.accountId,
+          cardType: cardRequestForm.cardType,
+          deliveryMethod: cardRequestForm.deliveryMethod,
+          deliveryAddress: cardRequestForm.deliveryMethod === "address" ? cardRequestForm.deliveryAddress : null,
+          agencyId: cardRequestForm.deliveryMethod === "agency" ? cardRequestForm.agencyId : null,
+          phone: cardRequestForm.phone,
+          email: cardRequestForm.email,
+          comments: cardRequestForm.comments,
+        }),
+      })
+
+      if (response.ok) {
+        toast({
+          title: "Demande envoyée",
+          description: "Votre demande de carte bancaire a été prise en compte. Vous recevrez une confirmation par SMS.",
+        })
+        setIsCardRequestOpen(false)
+        // Reset form
+        setCardRequestForm({
+          accountId: "",
+          cardType: "",
+          deliveryMethod: "agency",
+          deliveryAddress: "",
+          agencyId: "",
+          phone: "",
+          email: "",
+          comments: "",
+        })
+      } else {
+        throw new Error("Erreur lors de l'envoi de la demande")
+      }
+    } catch (error) {
+      console.error("Erreur:", error)
+      toast({
+        title: "Erreur",
+        description: "Une erreur est survenue lors de l'envoi de votre demande. Veuillez réessayer.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsSubmittingRequest(false)
+    }
+  }
+
+  const updateCardRequestForm = (field: string, value: string) => {
+    setCardRequestForm((prev) => ({ ...prev, [field]: value }))
+  }
+
+  const getSelectedAccount = () => {
+    return mockAccounts.find((acc) => acc.id === cardRequestForm.accountId)
+  }
+
+  const getSelectedCardType = () => {
+    return cardTypes.find((type) => type.id === cardRequestForm.cardType)
+  }
+
   return (
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between">
@@ -218,12 +344,256 @@ export default function CartesPage() {
           <h1 className="text-3xl font-bold text-gray-900">Mes Cartes</h1>
           <p className="text-gray-600">Gérez vos cartes bancaires et leurs paramètres</p>
         </div>
-        <Button asChild>
-          <Link href="/cartes/demande">
-            <CreditCard className="w-4 h-4 mr-2" />
-            Demander une nouvelle carte
-          </Link>
-        </Button>
+        <Dialog open={isCardRequestOpen} onOpenChange={setIsCardRequestOpen}>
+          <DialogTrigger asChild>
+            <Button>
+              <CreditCard className="w-4 h-4 mr-2" />
+              Demander une nouvelle carte
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center">
+                <CreditCard className="w-5 h-5 mr-2" />
+                Demande de nouvelle carte bancaire
+              </DialogTitle>
+              <DialogDescription>
+                Remplissez les informations ci-dessous pour demander une nouvelle carte bancaire.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-6 py-4">
+              {/* Account Selection */}
+              <div className="space-y-2">
+                <Label htmlFor="account">Compte à associer *</Label>
+                <Select
+                  value={cardRequestForm.accountId}
+                  onValueChange={(value) => updateCardRequestForm("accountId", value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Sélectionnez le compte" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {mockAccounts.map((account) => (
+                      <SelectItem key={account.id} value={account.id}>
+                        <div className="flex items-center justify-between w-full">
+                          <div>
+                            <span className="font-medium">{account.name}</span>
+                            <span className="text-sm text-gray-500 ml-2">({account.number})</span>
+                          </div>
+                          <span className="text-sm text-gray-600 ml-4">
+                            {new Intl.NumberFormat("fr-FR").format(account.balance)} {account.currency}
+                          </span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {getSelectedAccount() && (
+                  <p className="text-sm text-gray-600">
+                    Solde disponible: {new Intl.NumberFormat("fr-FR").format(getSelectedAccount()!.balance)}{" "}
+                    {getSelectedAccount()!.currency}
+                  </p>
+                )}
+              </div>
+
+              {/* Card Type Selection */}
+              <div className="space-y-3">
+                <Label>Type de carte *</Label>
+                <RadioGroup
+                  value={cardRequestForm.cardType}
+                  onValueChange={(value) => updateCardRequestForm("cardType", value)}
+                >
+                  <div className="grid grid-cols-1 gap-3">
+                    {cardTypes.map((cardType) => (
+                      <div
+                        key={cardType.id}
+                        className="flex items-center space-x-3 border rounded-lg p-3 hover:bg-gray-50"
+                      >
+                        <RadioGroupItem value={cardType.id} id={cardType.id} />
+                        <div className="flex-1">
+                          <Label htmlFor={cardType.id} className="font-medium cursor-pointer">
+                            {cardType.name}
+                          </Label>
+                          <p className="text-sm text-gray-600">{cardType.description}</p>
+                          <p className="text-sm text-blue-600 font-medium">{cardType.fee}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </RadioGroup>
+              </div>
+
+              {/* Delivery Method */}
+              <div className="space-y-3">
+                <Label>Méthode de livraison *</Label>
+                <RadioGroup
+                  value={cardRequestForm.deliveryMethod}
+                  onValueChange={(value) => updateCardRequestForm("deliveryMethod", value)}
+                >
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="agency" id="agency" />
+                    <Label htmlFor="agency" className="cursor-pointer">
+                      Retrait en agence (gratuit)
+                    </Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="address" id="address" />
+                    <Label htmlFor="address" className="cursor-pointer">
+                      Livraison à domicile (5,000 GNF)
+                    </Label>
+                  </div>
+                </RadioGroup>
+              </div>
+
+              {/* Agency Selection */}
+              {cardRequestForm.deliveryMethod === "agency" && (
+                <div className="space-y-2">
+                  <Label htmlFor="agency-select">Agence de retrait *</Label>
+                  <Select
+                    value={cardRequestForm.agencyId}
+                    onValueChange={(value) => updateCardRequestForm("agencyId", value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Sélectionnez une agence" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {agencies.map((agency) => (
+                        <SelectItem key={agency.id} value={agency.id}>
+                          <div>
+                            <div className="font-medium">{agency.name}</div>
+                            <div className="text-sm text-gray-500">{agency.address}</div>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
+              {/* Delivery Address */}
+              {cardRequestForm.deliveryMethod === "address" && (
+                <div className="space-y-2">
+                  <Label htmlFor="delivery-address">Adresse de livraison *</Label>
+                  <Textarea
+                    id="delivery-address"
+                    placeholder="Entrez votre adresse complète de livraison..."
+                    value={cardRequestForm.deliveryAddress}
+                    onChange={(e) => updateCardRequestForm("deliveryAddress", e.target.value)}
+                    rows={3}
+                  />
+                </div>
+              )}
+
+              {/* Contact Information */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="phone">Téléphone *</Label>
+                  <div className="relative">
+                    <Phone className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                    <Input
+                      id="phone"
+                      type="tel"
+                      placeholder="+224 XXX XXX XXX"
+                      value={cardRequestForm.phone}
+                      onChange={(e) => updateCardRequestForm("phone", e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email *</Label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                    <Input
+                      id="email"
+                      type="email"
+                      placeholder="votre@email.com"
+                      value={cardRequestForm.email}
+                      onChange={(e) => updateCardRequestForm("email", e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Comments */}
+              <div className="space-y-2">
+                <Label htmlFor="comments">Commentaires (optionnel)</Label>
+                <Textarea
+                  id="comments"
+                  placeholder="Informations supplémentaires ou demandes spéciales..."
+                  value={cardRequestForm.comments}
+                  onChange={(e) => updateCardRequestForm("comments", e.target.value)}
+                  rows={2}
+                />
+              </div>
+
+              {/* Summary */}
+              {cardRequestForm.accountId && cardRequestForm.cardType && (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <h4 className="font-medium text-blue-900 mb-2">Résumé de votre demande</h4>
+                  <div className="space-y-1 text-sm text-blue-800">
+                    <p>
+                      <strong>Compte:</strong> {getSelectedAccount()?.name} ({getSelectedAccount()?.number})
+                    </p>
+                    <p>
+                      <strong>Type de carte:</strong> {getSelectedCardType()?.name}
+                    </p>
+                    <p>
+                      <strong>Frais annuels:</strong> {getSelectedCardType()?.fee}
+                    </p>
+                    <p>
+                      <strong>Livraison:</strong>{" "}
+                      {cardRequestForm.deliveryMethod === "agency"
+                        ? "Retrait en agence (gratuit)"
+                        : "Livraison à domicile (5,000 GNF)"}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Important Notice */}
+              <Alert>
+                <Clock className="h-4 w-4" />
+                <AlertDescription>
+                  <strong>Délai de traitement :</strong> Votre carte sera disponible sous 5-7 jours ouvrables. Vous
+                  recevrez un SMS de confirmation une fois votre carte prête.
+                </AlertDescription>
+              </Alert>
+            </div>
+
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsCardRequestOpen(false)} disabled={isSubmittingRequest}>
+                Annuler
+              </Button>
+              <Button
+                onClick={handleCardRequest}
+                disabled={
+                  isSubmittingRequest ||
+                  !cardRequestForm.accountId ||
+                  !cardRequestForm.cardType ||
+                  !cardRequestForm.phone ||
+                  !cardRequestForm.email ||
+                  (cardRequestForm.deliveryMethod === "agency" && !cardRequestForm.agencyId) ||
+                  (cardRequestForm.deliveryMethod === "address" && !cardRequestForm.deliveryAddress)
+                }
+              >
+                {isSubmittingRequest ? (
+                  <>
+                    <Clock className="w-4 h-4 mr-2 animate-spin" />
+                    Envoi en cours...
+                  </>
+                ) : (
+                  <>
+                    <Plus className="w-4 h-4 mr-2" />
+                    Envoyer la demande
+                  </>
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
 
       <Tabs defaultValue="cards" className="space-y-6">
