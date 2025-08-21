@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -30,13 +30,7 @@ import {
   Briefcase,
   Plus,
 } from "lucide-react"
-import {
-  submitServiceRequest,
-  getServiceRequests,
-  getUserAccounts,
-  getRequestStatus,
-  downloadRequestDocument,
-} from "./actions"
+import { submitServiceRequest } from "./actions"
 import { useActionState } from "react"
 
 const serviceTypes = [
@@ -122,122 +116,45 @@ const serviceTypes = [
   },
 ]
 
+const accounts = [
+  { id: "acc_001", name: "Compte Courant Principal", number: "0001234567890", balance: 2500000, currency: "GNF" },
+  { id: "acc_002", name: "Compte Épargne", number: "0001234567891", balance: 5000000, currency: "GNF" },
+  { id: "acc_003", name: "Compte USD", number: "0001234567892", balance: 1200, currency: "USD" },
+]
+
+const recentRequests = [
+  {
+    id: "REQ001",
+    type: "Demande de chéquier",
+    status: "En cours",
+    submittedAt: "2024-01-15",
+    expectedResponse: "2024-01-18",
+    account: "Compte Courant Principal",
+  },
+  {
+    id: "REQ002",
+    type: "E-attestation bancaire",
+    status: "Approuvée",
+    submittedAt: "2024-01-10",
+    completedAt: "2024-01-12",
+    account: "Compte Courant Principal",
+  },
+  {
+    id: "REQ003",
+    type: "Crédit personnel",
+    status: "En attente de documents",
+    submittedAt: "2024-01-08",
+    expectedResponse: "2024-01-22",
+    account: "Compte Courant Principal",
+  },
+]
+
 export default function ServiceRequestsPage() {
   const [selectedService, setSelectedService] = useState<string>("")
   const [selectedAccount, setSelectedAccount] = useState<string>("")
   const [formData, setFormData] = useState<Record<string, any>>({})
   const [activeTab, setActiveTab] = useState("new")
   const [submitState, submitAction, isSubmitting] = useActionState(submitServiceRequest, null)
-
-  const [accounts, setAccounts] = useState<any[]>([])
-  const [requests, setRequests] = useState<any[]>([])
-  const [isLoadingAccounts, setIsLoadingAccounts] = useState(true)
-  const [isLoadingRequests, setIsLoadingRequests] = useState(true)
-  const [apiError, setApiError] = useState<string | null>(null)
-
-  useEffect(() => {
-    loadUserAccounts()
-    loadUserRequests()
-  }, [])
-
-  const loadUserAccounts = async () => {
-    setIsLoadingAccounts(true)
-    setApiError(null)
-
-    try {
-      const result = await getUserAccounts()
-      if (result.success) {
-        setAccounts(result.data)
-      } else {
-        setApiError(result.error || "Erreur lors du chargement des comptes")
-        // Fallback to mock data if API fails
-        setAccounts([
-          {
-            id: "acc_001",
-            name: "Compte Courant Principal",
-            number: "0001234567890",
-            balance: 2500000,
-            currency: "GNF",
-          },
-          { id: "acc_002", name: "Compte Épargne", number: "0001234567891", balance: 5000000, currency: "GNF" },
-          { id: "acc_003", name: "Compte USD", number: "0001234567892", balance: 1200, currency: "USD" },
-        ])
-      }
-    } catch (error) {
-      console.error("Erreur lors du chargement des comptes:", error)
-      setApiError("Erreur de connexion")
-    } finally {
-      setIsLoadingAccounts(false)
-    }
-  }
-
-  const loadUserRequests = async () => {
-    setIsLoadingRequests(true)
-
-    try {
-      const result = await getServiceRequests()
-      if (result.success) {
-        setRequests(result.data)
-      } else {
-        // Fallback to mock data if API fails
-        setRequests([
-          {
-            id: "REQ001",
-            type: "Demande de chéquier",
-            status: "En cours",
-            submittedAt: "2024-01-15",
-            expectedResponse: "2024-01-18",
-            account: "Compte Courant Principal",
-          },
-          {
-            id: "REQ002",
-            type: "E-attestation bancaire",
-            status: "Approuvée",
-            submittedAt: "2024-01-10",
-            completedAt: "2024-01-12",
-            account: "Compte Courant Principal",
-          },
-        ])
-      }
-    } catch (error) {
-      console.error("Erreur lors du chargement des demandes:", error)
-    } finally {
-      setIsLoadingRequests(false)
-    }
-  }
-
-  const refreshRequestStatus = async (requestId: string) => {
-    try {
-      const result = await getRequestStatus(requestId)
-      if (result.success) {
-        setRequests((prev) => prev.map((req) => (req.id === requestId ? { ...req, status: result.data.status } : req)))
-      }
-    } catch (error) {
-      console.error("Erreur lors de la mise à jour du statut:", error)
-    }
-  }
-
-  const handleDownloadDocument = async (requestId: string, documentType = "certificate") => {
-    try {
-      const result = await downloadRequestDocument(requestId, documentType)
-      if (result.success) {
-        // Create download link
-        const url = window.URL.createObjectURL(result.data)
-        const link = document.createElement("a")
-        link.href = url
-        link.download = result.filename
-        document.body.appendChild(link)
-        link.click()
-        document.body.removeChild(link)
-        window.URL.revokeObjectURL(url)
-      } else {
-        setApiError(result.error || "Erreur lors du téléchargement")
-      }
-    } catch (error) {
-      console.error("Erreur lors du téléchargement:", error)
-      setApiError("Erreur lors du téléchargement du document")
-    }
-  }
 
   const selectedServiceData = serviceTypes.find((s) => s.id === selectedService)
 
@@ -613,27 +530,6 @@ export default function ServiceRequestsPage() {
         <p className="text-gray-600">Faites vos demandes de services en ligne</p>
       </div>
 
-      {apiError && (
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            {apiError}
-            <Button
-              variant="outline"
-              size="sm"
-              className="ml-2 bg-transparent"
-              onClick={() => {
-                setApiError(null)
-                loadUserAccounts()
-                loadUserRequests()
-              }}
-            >
-              Réessayer
-            </Button>
-          </AlertDescription>
-        </Alert>
-      )}
-
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="new">Nouvelle demande</TabsTrigger>
@@ -735,37 +631,31 @@ export default function ServiceRequestsPage() {
                   </ul>
                 </div>
 
+                {/* Account Selection */}
                 <div>
                   <Label htmlFor="account">Compte concerné *</Label>
-                  {isLoadingAccounts ? (
-                    <div className="flex items-center space-x-2 p-4 border rounded-lg">
-                      <Clock className="w-4 h-4 animate-spin" />
-                      <span>Chargement des comptes...</span>
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-2">
-                      {accounts.map((account) => (
-                        <div
-                          key={account.id}
-                          className={`p-3 border rounded-lg cursor-pointer transition-all ${
-                            selectedAccount === account.id
-                              ? "border-blue-500 bg-blue-50 ring-2 ring-blue-200"
-                              : "border-gray-200 hover:border-gray-300"
-                          }`}
-                          onClick={() => setSelectedAccount(account.id)}
-                        >
-                          <div className="flex items-center space-x-2">
-                            <CreditCard className="w-4 h-4 text-gray-500" />
-                            <span className="font-medium text-sm">{account.name}</span>
-                          </div>
-                          <p className="text-xs text-gray-500 mt-1">***{account.number.slice(-4)}</p>
-                          <p className="text-sm font-bold mt-1">
-                            {formatAmount(account.balance, account.currency)} {account.currency}
-                          </p>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-2">
+                    {accounts.map((account) => (
+                      <div
+                        key={account.id}
+                        className={`p-3 border rounded-lg cursor-pointer transition-all ${
+                          selectedAccount === account.id
+                            ? "border-blue-500 bg-blue-50 ring-2 ring-blue-200"
+                            : "border-gray-200 hover:border-gray-300"
+                        }`}
+                        onClick={() => setSelectedAccount(account.id)}
+                      >
+                        <div className="flex items-center space-x-2">
+                          <CreditCard className="w-4 h-4 text-gray-500" />
+                          <span className="font-medium text-sm">{account.name}</span>
                         </div>
-                      ))}
-                    </div>
-                  )}
+                        <p className="text-xs text-gray-500 mt-1">***{account.number.slice(-4)}</p>
+                        <p className="text-sm font-bold mt-1">
+                          {formatAmount(account.balance, account.currency)} {account.currency}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
                 </div>
 
                 {/* Dynamic Form */}
@@ -872,61 +762,49 @@ export default function ServiceRequestsPage() {
         <TabsContent value="history" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <FileText className="w-5 h-5" />
-                  <span>Mes demandes</span>
-                </div>
-                <Button variant="outline" size="sm" onClick={loadUserRequests} disabled={isLoadingRequests}>
-                  {isLoadingRequests ? <Clock className="w-4 h-4 animate-spin" /> : "Actualiser"}
-                </Button>
+              <CardTitle className="flex items-center space-x-2">
+                <FileText className="w-5 h-5" />
+                <span>Mes demandes</span>
               </CardTitle>
               <CardDescription>Suivez l'état de vos demandes de services</CardDescription>
             </CardHeader>
             <CardContent>
-              {isLoadingRequests ? (
-                <div className="flex items-center justify-center p-8">
-                  <Clock className="w-6 h-6 animate-spin mr-2" />
-                  <span>Chargement des demandes...</span>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {requests.map((request) => (
-                    <div key={request.id} className="flex items-center justify-between p-4 border rounded-lg">
-                      <div className="flex items-center space-x-4">
-                        <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                          <FileText className="w-5 h-5 text-blue-600" />
-                        </div>
-                        <div>
-                          <p className="font-medium">{request.type}</p>
-                          <p className="text-sm text-gray-500">{request.account}</p>
-                          <p className="text-xs text-gray-400">
-                            Demandé le {request.submittedAt}
-                            {request.expectedResponse && ` • Réponse attendue le ${request.expectedResponse}`}
-                            {request.completedAt && ` • Complété le ${request.completedAt}`}
-                          </p>
-                        </div>
+              <div className="space-y-4">
+                {recentRequests.map((request) => (
+                  <div key={request.id} className="flex items-center justify-between p-4 border rounded-lg">
+                    <div className="flex items-center space-x-4">
+                      <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                        <FileText className="w-5 h-5 text-blue-600" />
                       </div>
-                      <div className="flex items-center space-x-3">
-                        {getStatusBadge(request.status)}
-                        <div className="text-right text-sm">
-                          <p className="text-gray-600">Réf: {request.id}</p>
-                        </div>
-                        <div className="flex space-x-1">
-                          <Button size="sm" variant="outline" onClick={() => refreshRequestStatus(request.id)}>
-                            <Eye className="w-4 h-4" />
-                          </Button>
-                          {request.status === "Approuvée" && (
-                            <Button size="sm" variant="outline" onClick={() => handleDownloadDocument(request.id)}>
-                              <Download className="w-4 h-4" />
-                            </Button>
-                          )}
-                        </div>
+                      <div>
+                        <p className="font-medium">{request.type}</p>
+                        <p className="text-sm text-gray-500">{request.account}</p>
+                        <p className="text-xs text-gray-400">
+                          Demandé le {request.submittedAt}
+                          {request.expectedResponse && ` • Réponse attendue le ${request.expectedResponse}`}
+                          {request.completedAt && ` • Complété le ${request.completedAt}`}
+                        </p>
                       </div>
                     </div>
-                  ))}
-                </div>
-              )}
+                    <div className="flex items-center space-x-3">
+                      {getStatusBadge(request.status)}
+                      <div className="text-right text-sm">
+                        <p className="text-gray-600">Réf: {request.id}</p>
+                      </div>
+                      <div className="flex space-x-1">
+                        <Button size="sm" variant="outline">
+                          <Eye className="w-4 h-4" />
+                        </Button>
+                        {request.status === "Approuvée" && (
+                          <Button size="sm" variant="outline">
+                            <Download className="w-4 h-4" />
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
