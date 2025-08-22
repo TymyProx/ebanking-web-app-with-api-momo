@@ -195,15 +195,25 @@ export async function executeTransfer(prevState: any, formData: FormData) {
     const data = {
       sourceAccount: formData.get("sourceAccount") as string,
       transferType: formData.get("transferType") as string,
-      beneficiaryId: formData.get("beneficiaryId") as string,
-      targetAccount: formData.get("targetAccount") as string,
+      beneficiaryId: formData.get("beneficiaryId") as string | null,
+      targetAccount: formData.get("targetAccount") as string | null,
       amount: formData.get("amount") as string,
       purpose: formData.get("purpose") as string,
       transferDate: formData.get("transferDate") as string,
     }
 
+    const cleanedData = {
+      sourceAccount: data.sourceAccount,
+      transferType: data.transferType,
+      beneficiaryId: data.beneficiaryId || undefined,
+      targetAccount: data.targetAccount || undefined,
+      amount: data.amount,
+      purpose: data.purpose,
+      transferDate: data.transferDate,
+    }
+
     // Validation des données
-    const validatedData = transferSchema.parse(data)
+    const validatedData = transferSchema.parse(cleanedData)
 
     const transactionId = `TXN_${Date.now()}_${Math.floor(Math.random() * 1000)
       .toString()
