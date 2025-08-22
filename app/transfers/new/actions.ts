@@ -20,17 +20,26 @@ const transferSchema = z
   })
   .refine(
     (data) => {
-      // Validation conditionnelle selon le type de virement
       if (data.transferType === "account-to-beneficiary") {
         return data.beneficiaryId && data.beneficiaryId.length > 0
-      } else if (data.transferType === "account-to-account") {
-        return data.targetAccount && data.targetAccount.length > 0
       }
-      return false
+      return true // Pas de validation du beneficiaryId pour account-to-account
     },
     {
-      message: "Veuillez sélectionner un destinataire valide",
-      path: ["beneficiaryId"], // Path pour l'affichage d'erreur
+      message: "Veuillez sélectionner un bénéficiaire",
+      path: ["beneficiaryId"],
+    },
+  )
+  .refine(
+    (data) => {
+      if (data.transferType === "account-to-account") {
+        return data.targetAccount && data.targetAccount.length > 0
+      }
+      return true // Pas de validation du targetAccount pour account-to-beneficiary
+    },
+    {
+      message: "Veuillez sélectionner un compte destinataire",
+      path: ["targetAccount"],
     },
   )
 
