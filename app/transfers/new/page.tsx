@@ -4,6 +4,8 @@ import type React from "react"
 import { useState, useTransition, useEffect } from "react"
 import { addBeneficiary } from "../beneficiaries/actions"
 import { executeTransfer } from "./actions" // Import de l'action executeTransfer
+import { getAccounts } from "../../accounts/actions"
+import { getBeneficiaries } from "../beneficiaries/actions"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -118,8 +120,9 @@ export default function NewTransferPage() {
   }
 
   const handleAddBeneficiary = (formData: FormData) => {
-    // Placeholder for handleAddBeneficiary logic
-    console.log("Adding beneficiary:", formData)
+    startTransition(() => {
+      addBeneficiaryAction(formData)
+    })
   }
 
   // Gestionnaires d'événements pour le virement
@@ -203,6 +206,112 @@ export default function NewTransferPage() {
       setTransferSubmitted(false) // Réinitialiser l'état de soumission
     }
   }, [transferState?.success, transferSubmitted])
+
+  const loadAccounts = async () => {
+    try {
+      console.log("[v0] Chargement des comptes...")
+      setIsLoadingAccounts(true)
+      const result = await getAccounts()
+      console.log("[v0] Résultat getAccounts:", result)
+
+      if (Array.isArray(result) && result.length > 0) {
+        // Adapter les données API au format Account
+        const adaptedAccounts = result.map((apiAccount: any) => ({
+          id: apiAccount.id || apiAccount.accountId,
+          name: apiAccount.accountName || apiAccount.name || `Compte ${apiAccount.accountNumber || apiAccount.number}`,
+          number: apiAccount.accountNumber || apiAccount.number || apiAccount.id,
+          balance: apiAccount.bookBalance || apiAccount.balance || 0,
+          currency: apiAccount.currency || "GNF",
+        }))
+        console.log("[v0] Comptes adaptés:", adaptedAccounts)
+        setAccounts(adaptedAccounts)
+      } else {
+        console.log("[v0] Aucun compte trouvé, utilisation des données de test")
+        setAccounts([])
+      }
+    } catch (error) {
+      console.error("[v0] Erreur lors du chargement des comptes:", error)
+      setAccounts([])
+    } finally {
+      setIsLoadingAccounts(false)
+    }
+  }
+
+  const loadBeneficiaries = async () => {
+    try {
+      console.log("[v0] Chargement des bénéficiaires...")
+      setIsLoadingBeneficiaries(true)
+      const result = await getBeneficiaries()
+      console.log("[v0] Résultat getBeneficiaries:", result)
+
+      if (Array.isArray(result) && result.length > 0) {
+        // Adapter les données API au format Beneficiary
+        const adaptedBeneficiaries = result.map((apiBeneficiary: any) => ({
+          id: apiBeneficiary.id,
+          name: apiBeneficiary.name,
+          account: apiBeneficiary.accountNumber,
+          bank: apiBeneficiary.bankName,
+          type: apiBeneficiary.beneficiaryType || "BNG-BNG",
+        }))
+        console.log("[v0] Bénéficiaires adaptés:", adaptedBeneficiaries)
+        setBeneficiaries(adaptedBeneficiaries)
+      } else {
+        console.log("[v0] Aucun bénéficiaire trouvé")
+        setBeneficiaries([])
+      }
+    } catch (error) {
+      console.error("[v0] Erreur lors du chargement des bénéficiaires:", error)
+      setBeneficiaries([])
+    } finally {
+      setIsLoadingBeneficiaries(false)
+    }
+  }
+
+  useEffect(() => {
+    loadAccounts()
+    loadBeneficiaries()
+  }, [])
+
+  useEffect(() => {
+    if (addBeneficiaryState?.success) {
+      setBeneficiaryMessage({
+        type: "success",
+        text: addBeneficiaryState.message || "Bénéficiaire ajouté avec succès !",
+      })
+      // Recharger la liste des bénéficiaires
+      loadBeneficiaries()
+    } else if (addBeneficiaryState?.error) {
+      setBeneficiaryMessage({ type: "error", text: addBeneficiaryState.error })
+    }
+  }, [addBeneficiaryState])
+
+  useEffect(() => {
+    if (transferValidationError && transferSubmitted) {
+      const timer = setTimeout(() => {
+        setTransferValidationError("")
+        setTransferSubmitted(false)
+      }, 8000)
+      return () => clearTimeout(timer)
+    }
+  }, [transferValidationError, transferSubmitted])
+
+  useEffect(() => {
+    if (transferState?.success) {
+      const timer = setTimeout(() => {
+        // Les messages de succès se réinitialiseront naturellement lors des prochaines interactions
+      }, 8000)
+      return () => clearTimeout(timer)
+    }
+  }, [transferState?.success])
+
+  useEffect(() => {
+    if (transferState?.error) {
+      const timer = setTimeout(() => {
+        // Les messages d'erreur se réinitialiseront naturellement lors des prochaines interactions
+      }, 8000)
+      return () => clearTimeout(timer)
+    }
+  }, [transferState?.error])
 
   return (
     <div className="space-y-6">
