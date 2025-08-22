@@ -8,13 +8,31 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://192.168.1.2
 const TENANT_ID = "afa25e29-08dd-46b6-8ea2-d778cb2d6694"
 
 // Schéma de validation pour les virements
-const transferSchema = z.object({
-  sourceAccount: z.string().min(1, "Le compte débiteur est requis"),
-  beneficiaryId: z.string().min(1, "Le bénéficiaire est requis"),
-  amount: z.string().refine((val) => Number.parseFloat(val) >= 1000, "Montant minimum: 1,000 GNF"),
-  purpose: z.string().min(5, "Le motif doit contenir au moins 5 caractères"),
-  transferDate: z.string().min(1, "La date d'exécution est requise"),
-})
+const transferSchema = z
+  .object({
+    sourceAccount: z.string().min(1, "Le compte débiteur est requis"),
+    transferType: z.enum(["account-to-account", "account-to-beneficiary"]),
+    beneficiaryId: z.string().optional(), // Optionnel pour les virements compte à compte
+    targetAccount: z.string().optional(), // Pour les virements compte à compte
+    amount: z.string().refine((val) => Number.parseFloat(val) >= 1000, "Montant minimum: 1,000 GNF"),
+    purpose: z.string().min(5, "Le motif doit contenir au moins 5 caractères"),
+    transferDate: z.string().min(1, "La date d'exécution est requise"),
+  })
+  .refine(
+    (data) => {
+      // Validation conditionnelle selon le type de virement
+      if (data.transferType === "account-to-beneficiary") {
+        return data.beneficiaryId && data.beneficiaryId.length > 0
+      } else if (data.transferType === "account-to-account") {
+        return data.targetAccount && data.targetAccount.length > 0
+      }
+      return false
+    },
+    {
+      message: "Veuillez sélectionner un destinataire valide",
+      path: ["beneficiaryId"], // Path pour l'affichage d'erreur
+    },
+  )
 
 // Schéma de validation OTP
 const otpSchema = z.object({
@@ -176,7 +194,9 @@ export async function executeTransfer(prevState: any, formData: FormData) {
   try {
     const data = {
       sourceAccount: formData.get("sourceAccount") as string,
+      transferType: formData.get("transferType") as string,
       beneficiaryId: formData.get("beneficiaryId") as string,
+      targetAccount: formData.get("targetAccount") as string,
       amount: formData.get("amount") as string,
       purpose: formData.get("purpose") as string,
       transferDate: formData.get("transferDate") as string,
@@ -189,15 +209,31 @@ export async function executeTransfer(prevState: any, formData: FormData) {
       .toString()
       .padStart(3, "0")}`
 
+    let txnType = "TRANSFER"
+    if (validatedData.transferType === "account-to-account") {
+      txnType = "INTERNAL_TRANSFER"
+    } else if (validatedData.beneficiaryId) {
+      // Pour les virements vers bénéficiaires, utiliser le type du bénéficiaire
+      txnType = getTransactionType("BNG-BNG") // Par défaut, peut être déterminé dynamiquement
+    }
+
     const apiData = {
       data: {
         txnId: transactionId,
         accountId: validatedData.sourceAccount,
-        txnType: getTransactionType("BNG-BNG"), // Par défaut, peut être déterminé dynamiquement
+        txnType: txnType,
         amount: validatedData.amount,
         valueDate: new Date(validatedData.transferDate).toISOString(),
         status: "PENDING",
         description: validatedData.purpose,
+        ...(validatedData.transferType === "account-to-beneficiary" &&
+          validatedData.beneficiaryId && {
+            beneficiaryId: validatedData.beneficiaryId,
+          }),
+        ...(validatedData.transferType === "account-to-account" &&
+          validatedData.targetAccount && {
+            targetAccountId: validatedData.targetAccount,
+          }),
       },
     }
 
