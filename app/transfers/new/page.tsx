@@ -4,6 +4,7 @@ import type React from "react"
 import { useState, useTransition, useEffect } from "react"
 import { getBeneficiaries, addBeneficiary } from "../beneficiaries/actions"
 import { getAccounts } from "../../accounts/actions"
+import { executeTransfer } from "./actions" // Import de l'action executeTransfer
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -74,7 +75,7 @@ export default function NewTransferPage() {
   // États pour le formulaire de bénéficiaire
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [isPending, startTransition] = useTransition()
-  const [transferState, transferAction] = useState(null)
+  const [transferState, transferAction, isTransferPending] = useActionState(executeTransfer, null) // Utilisation de useActionState avec executeTransfer
   const [addBeneficiaryState, addBeneficiaryAction, isAddBeneficiaryPending] = useActionState(addBeneficiary, null)
 
   // Fonctions utilitaires
@@ -103,7 +104,20 @@ export default function NewTransferPage() {
   const handleTransferSubmit = (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!selectedAccount || !selectedBeneficiary || !amount || !motif) {
+    if (!selectedAccount) {
+      alert("Veuillez sélectionner un compte débiteur")
+      return
+    }
+    if (!selectedBeneficiary) {
+      alert("Veuillez sélectionner un bénéficiaire")
+      return
+    }
+    if (!amount || Number.parseFloat(amount) <= 0) {
+      alert("Veuillez saisir un montant valide")
+      return
+    }
+    if (!motif.trim()) {
+      alert("Veuillez saisir un motif pour le virement")
       return
     }
 
@@ -114,9 +128,7 @@ export default function NewTransferPage() {
     formData.append("purpose", motif)
     formData.append("transferDate", transferDate)
 
-    startTransition(() => {
-      transferAction(formData)
-    })
+    transferAction(formData)
   }
 
   // Gestionnaires d'événements pour le bénéficiaire
@@ -432,11 +444,12 @@ export default function NewTransferPage() {
           <div className="flex justify-end">
             <Button
               type="submit"
-              disabled={isPending || !selectedAccount || !selectedBeneficiary || !amount || !motif}
+              disabled={isTransferPending || !selectedAccount || !selectedBeneficiary || !amount || !motif} // Utilisation de isTransferPending au lieu de isPending
               className="flex items-center space-x-2"
             >
               <ArrowRight className="h-4 w-4" />
-              <span>{isPending ? "Traitement..." : "Effectuer le virement"}</span>
+              <span>{isTransferPending ? "Traitement..." : "Effectuer le virement"}</span>{" "}
+              {/* Utilisation de isTransferPending */}
             </Button>
           </div>
         </div>

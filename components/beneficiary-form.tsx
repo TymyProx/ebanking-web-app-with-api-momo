@@ -39,6 +39,15 @@ export default function BeneficiaryForm({
 
   const formRef = useRef<HTMLFormElement>(null)
 
+  const handleTypeChange = (type: string) => {
+    setSelectedType(type)
+    if (type === "BNG-BNG") {
+      setSelectedBank("Banque Nationale de Guinée")
+    } else {
+      setSelectedBank("")
+    }
+  }
+
   const validateRIBField = async (account: string, type: string) => {
     if (!account || account.length <= 5) {
       setRibValidation(null)
@@ -57,8 +66,19 @@ export default function BeneficiaryForm({
     e.preventDefault()
     const formData = new FormData(e.currentTarget)
 
+    if (!selectedType) {
+      alert("Veuillez sélectionner un type de bénéficiaire")
+      return
+    }
+
     formData.set("type", selectedType)
-    formData.set("bank", selectedBank)
+    const bankValue = selectedType === "BNG-BNG" ? "Banque Nationale de Guinée" : selectedBank
+    if (!bankValue) {
+      alert("Veuillez sélectionner une banque")
+      return
+    }
+    formData.set("bank", bankValue)
+
     if (selectedCountry) {
       formData.set("country", selectedCountry)
     }
@@ -81,7 +101,7 @@ export default function BeneficiaryForm({
 
       <div className="space-y-2">
         <Label htmlFor="type">Type de bénéficiaire *</Label>
-        <Select value={selectedType} onValueChange={setSelectedType} required>
+        <Select value={selectedType} onValueChange={handleTypeChange} required>
           <SelectTrigger>
             <SelectValue placeholder="Sélectionnez le type" />
           </SelectTrigger>
@@ -118,7 +138,10 @@ export default function BeneficiaryForm({
       <div className="space-y-2">
         <Label htmlFor="bank">Banque *</Label>
         {selectedType === "BNG-BNG" ? (
-          <Input id="bank" name="bank" value="Banque Nationale de Guinée" readOnly className="bg-gray-50" />
+          <>
+            <Input id="bank" name="bank" value="Banque Nationale de Guinée" readOnly className="bg-gray-50" />
+            <input type="hidden" name="bank" value="Banque Nationale de Guinée" />
+          </>
         ) : (
           <Select value={selectedBank} onValueChange={setSelectedBank} required>
             <SelectTrigger>
