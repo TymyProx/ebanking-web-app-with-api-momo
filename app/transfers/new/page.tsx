@@ -153,7 +153,10 @@ export default function NewTransferPage() {
 
   const handleDialogClose = (open: boolean) => {
     setIsDialogOpen(open)
-    // Ne pas déclencher de validation du formulaire de virement lors de la fermeture
+    if (!open) {
+      setTransferValidationError("")
+      setTransferSubmitted(false)
+    }
   }
 
   const selectedAccountData = accounts.find((acc) => acc.id === selectedAccount)
