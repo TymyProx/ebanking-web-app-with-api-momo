@@ -81,6 +81,8 @@ export default function NewTransferPage() {
   const [transferState, transferAction, isTransferPending] = useActionState(executeTransfer, null)
   const [addBeneficiaryState, addBeneficiaryAction, isAddBeneficiaryPending] = useActionState(addBeneficiary, null)
 
+  const [beneficiaryMessage, setBeneficiaryMessage] = useState<{ type: "success" | "error"; text: string } | null>(null)
+
   // Fonctions utilitaires
   const formatCurrency = (amount: number, currency: string) => {
     return new Intl.NumberFormat("fr-FR", {
@@ -144,9 +146,11 @@ export default function NewTransferPage() {
     startTransition(async () => {
       const result = await addBeneficiaryAction(formData)
       if (result?.success) {
+        setBeneficiaryMessage({ type: "success", text: "✅ Bénéficiaire ajouté avec succès !" })
         // Recharger la liste des bénéficiaires
         await loadBeneficiaries()
-        setIsDialogOpen(false)
+      } else if (result?.error) {
+        setBeneficiaryMessage({ type: "error", text: `❌ ${result.error}` })
       }
     })
   }
@@ -156,6 +160,7 @@ export default function NewTransferPage() {
     if (!open) {
       setTransferValidationError("")
       setTransferSubmitted(false)
+      setBeneficiaryMessage(null)
     }
   }
 
@@ -353,29 +358,11 @@ export default function NewTransferPage() {
                       <DialogTitle>Ajouter un bénéficiaire</DialogTitle>
                     </DialogHeader>
 
-                    {addBeneficiaryState?.success && (
-                      <Alert className="border-green-200 bg-green-50">
-                        <Check className="h-4 w-4 text-green-600" />
-                        <AlertDescription className="text-green-800">
-                          ✅ Bénéficiaire ajouté avec succès !
-                        </AlertDescription>
-                      </Alert>
-                    )}
-
-                    {addBeneficiaryState?.error && (
-                      <Alert variant="destructive">
-                        <AlertCircle className="h-4 w-4" />
-                        <AlertDescription>❌ {addBeneficiaryState.error}</AlertDescription>
-                      </Alert>
-                    )}
-
                     <BeneficiaryForm
-                      successMessage={addBeneficiaryState?.success ? "✅ Bénéficiaire ajouté avec succès !" : undefined}
-                      errorMessage={addBeneficiaryState?.error ? `❌ ${addBeneficiaryState.error}` : undefined}
+                      successMessage={beneficiaryMessage?.type === "success" ? beneficiaryMessage.text : undefined}
+                      errorMessage={beneficiaryMessage?.type === "error" ? beneficiaryMessage.text : undefined}
                       onMessageClear={() => {
-                        // Réinitialiser l'état du bénéficiaire après disparition du message
-                        setIsDialogOpen(false)
-                        setIsDialogOpen(true)
+                        setBeneficiaryMessage(null)
                       }}
                       onSubmit={handleAddBeneficiary}
                       onCancel={() => setIsDialogOpen(false)}
