@@ -73,6 +73,7 @@ export default function NewTransferPage() {
   const [isLoadingAccounts, setIsLoadingAccounts] = useState(true)
 
   const [transferValidationError, setTransferValidationError] = useState<string>("")
+  const [transferSubmitted, setTransferSubmitted] = useState(false)
 
   // États pour le formulaire de bénéficiaire
   const [isDialogOpen, setIsDialogOpen] = useState(false)
@@ -106,6 +107,7 @@ export default function NewTransferPage() {
   const handleTransferSubmit = (e: React.FormEvent) => {
     e.preventDefault()
 
+    setTransferSubmitted(true)
     setTransferValidationError("") // Réinitialiser les erreurs
 
     if (!selectedAccount) {
@@ -147,6 +149,11 @@ export default function NewTransferPage() {
         setIsDialogOpen(false)
       }
     })
+  }
+
+  const handleDialogClose = (open: boolean) => {
+    setIsDialogOpen(open)
+    // Ne pas déclencher de validation du formulaire de virement lors de la fermeture
   }
 
   const selectedAccountData = accounts.find((acc) => acc.id === selectedAccount)
@@ -237,15 +244,16 @@ export default function NewTransferPage() {
   }, [])
 
   useEffect(() => {
-    if (transferState?.success) {
+    if (transferState?.success && transferSubmitted) {
       setTransferValidationError("")
       setSelectedAccount("")
       setSelectedBeneficiary("")
       setAmount("")
       setMotif("")
       setTransferDate(new Date().toISOString().split("T")[0])
+      setTransferSubmitted(false) // Réinitialiser l'état de soumission
     }
-  }, [transferState?.success])
+  }, [transferState?.success, transferSubmitted])
 
   return (
     <div className="space-y-6">
@@ -254,7 +262,7 @@ export default function NewTransferPage() {
         <p className="text-gray-600">Effectuer un virement vers un bénéficiaire</p>
       </div>
 
-      {transferValidationError && (
+      {transferValidationError && transferSubmitted && (
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>{transferValidationError}</AlertDescription>
@@ -330,7 +338,7 @@ export default function NewTransferPage() {
                   <Building className="h-5 w-5" />
                   <span>Bénéficiaire</span>
                 </div>
-                <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                <Dialog open={isDialogOpen} onOpenChange={handleDialogClose}>
                   <DialogTrigger asChild>
                     <Button variant="outline" size="sm" className="flex items-center space-x-2 bg-transparent">
                       <Plus className="h-4 w-4" />
