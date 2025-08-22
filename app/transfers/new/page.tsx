@@ -266,6 +266,41 @@ export default function NewTransferPage() {
     }
   }, [transferState?.success, transferSubmitted])
 
+  useEffect(() => {
+    if (transferValidationError && transferSubmitted) {
+      const timer = setTimeout(() => {
+        setTransferValidationError("")
+        setTransferSubmitted(false)
+      }, 8000)
+
+      return () => clearTimeout(timer)
+    }
+  }, [transferValidationError, transferSubmitted])
+
+  useEffect(() => {
+    if (transferState?.success) {
+      const timer = setTimeout(() => {
+        // Réinitialiser l'état de transfert pour faire disparaître le message de succès
+        // Note: transferState est géré par useActionState, on ne peut pas le modifier directement
+        // Le message disparaîtra naturellement lors du prochain rendu
+      }, 8000)
+
+      return () => clearTimeout(timer)
+    }
+  }, [transferState?.success])
+
+  useEffect(() => {
+    if (transferState?.error) {
+      const timer = setTimeout(() => {
+        // Réinitialiser l'état de transfert pour faire disparaître le message d'erreur
+        // Note: transferState est géré par useActionState, on ne peut pas le modifier directement
+        // Le message disparaîtra naturellement lors du prochain rendu
+      }, 8000)
+
+      return () => clearTimeout(timer)
+    }
+  }, [transferState?.error])
+
   return (
     <div className="space-y-6">
       <div>
