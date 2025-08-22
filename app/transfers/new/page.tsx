@@ -144,14 +144,7 @@ export default function NewTransferPage() {
   // Gestionnaires d'événements pour le bénéficiaire
   const handleAddBeneficiary = async (formData: FormData) => {
     startTransition(async () => {
-      const result = await addBeneficiaryAction(formData)
-      if (result?.success) {
-        setBeneficiaryMessage({ type: "success", text: "✅ Bénéficiaire ajouté avec succès !" })
-        // Recharger la liste des bénéficiaires
-        await loadBeneficiaries()
-      } else if (result?.error) {
-        setBeneficiaryMessage({ type: "error", text: `❌ ${result.error}` })
-      }
+      await addBeneficiaryAction(formData)
     })
   }
 
@@ -250,6 +243,16 @@ export default function NewTransferPage() {
   useEffect(() => {
     loadBeneficiaries()
   }, [])
+
+  useEffect(() => {
+    if (addBeneficiaryState?.success) {
+      setBeneficiaryMessage({ type: "success", text: "✅ Bénéficiaire ajouté avec succès !" })
+      // Recharger la liste des bénéficiaires
+      loadBeneficiaries()
+    } else if (addBeneficiaryState?.error) {
+      setBeneficiaryMessage({ type: "error", text: `❌ ${addBeneficiaryState.error}` })
+    }
+  }, [addBeneficiaryState])
 
   useEffect(() => {
     if (transferState?.success && transferSubmitted) {
