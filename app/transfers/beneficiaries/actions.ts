@@ -59,26 +59,27 @@ export async function getBeneficiaries(): Promise<ApiBeneficiary[]> {
 
 function getBankNameFromCode(bankCode: string): string {
   const bankNames: Record<string, string> = {
-    BNG: "Banque Nationale de Guinée",
-    BICI: "BICIGUI",
-    SGBG: "Société Générale de Banques en Guinée",
-    UBA: "United Bank for Africa",
-    ECO: "Ecobank Guinée",
-    VISTA: "VISTA BANK",
-    BNPP: "BNP Paribas",
-    SG: "Société Générale",
-    CA: "Crédit Agricole",
-    HSBC: "HSBC",
-    DB: "Deutsche Bank",
+    bng: "Banque Nationale de Guinée",
+    bici: "BICIGUI",
+    sgbg: "Société Générale de Banques en Guinée",
+    uba: "United Bank for Africa",
+    eco: "Ecobank Guinée",
+    vista: "VISTA BANK",
+    bnpp: "BNP Paribas",
+    sg: "Société Générale",
+    ca: "Crédit Agricole",
+    hsbc: "HSBC",
+    db: "Deutsche Bank",
   }
 
-  return bankNames[bankCode] || bankCode
+  return bankNames[bankCode.toLowerCase()] || bankCode
 }
 
 function getBeneficiaryType(bankCode: string): "BNG-BNG" | "BNG-CONFRERE" | "BNG-INTERNATIONAL" {
-  if (bankCode === "BNG") {
+  const lowerBankCode = bankCode.toLowerCase()
+  if (lowerBankCode === "bng") {
     return "BNG-BNG"
-  } else if (["BICI", "SGBG", "UBA", "ECO", "VISTA"].includes(bankCode)) {
+  } else if (["bici", "sgbg", "uba", "eco", "vista"].includes(lowerBankCode)) {
     return "BNG-CONFRERE"
   } else {
     return "BNG-INTERNATIONAL"
@@ -160,20 +161,20 @@ export async function addBeneficiary(prevState: ActionResult | null, formData: F
 
 function getBankCode(bankName: string, type: string): string {
   const bankCodes: Record<string, string> = {
-    "Banque Nationale de Guinée": "BNG",
-    BICIGUI: "BICI",
-    "Société Générale de Banques en Guinée": "SGBG",
-    "United Bank for Africa": "UBA",
-    "Ecobank Guinée": "ECO",
-    "VISTA BANK": "VISTA",
-    "BNP Paribas": "BNPP",
-    "Société Générale": "SG",
-    "Crédit Agricole": "CA",
-    HSBC: "HSBC",
-    "Deutsche Bank": "DB",
+    "Banque Nationale de Guinée": "bng",
+    BICIGUI: "bici",
+    "Société Générale de Banques en Guinée": "sgbg",
+    "United Bank for Africa": "uba",
+    "Ecobank Guinée": "eco",
+    "VISTA BANK": "vista",
+    "BNP Paribas": "bnpp",
+    "Société Générale": "sg",
+    "Crédit Agricole": "ca",
+    HSBC: "hsbc",
+    "Deutsche Bank": "db",
   }
 
-  return bankCodes[bankName] || bankName.substring(0, 4).toUpperCase()
+  return bankCodes[bankName] || bankName.substring(0, 4).toLowerCase()
 }
 
 export async function validateRIB(account: string, type: string): Promise<{ isValid: boolean; message: string }> {
