@@ -145,10 +145,12 @@ export default function BeneficiariesPage() {
   }
 
   const handleAddBeneficiary = async (formData: FormData) => {
-    const result = await addAction(formData)
-    if (result?.success) {
-      setIsAddDialogOpen(false)
-    }
+    startTransition(async () => {
+      const result = await addAction(formData)
+      if (result?.success) {
+        setIsAddDialogOpen(false)
+      }
+    })
   }
 
   const handleEditBeneficiary = async (formData: FormData) => {
