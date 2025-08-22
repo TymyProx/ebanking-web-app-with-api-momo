@@ -273,14 +273,14 @@ export default function NewTransferPage() {
         <p className="text-gray-600">Effectuer un virement vers un bénéficiaire</p>
       </div>
 
-      {transferValidationError && transferSubmitted && (
+      {transferValidationError && transferSubmitted && !isDialogOpen && (
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>{transferValidationError}</AlertDescription>
         </Alert>
       )}
 
-      {transferState?.success && (
+      {transferState?.success && !isDialogOpen && (
         <Alert className="border-green-200 bg-green-50">
           <Check className="h-4 w-4 text-green-600" />
           <AlertDescription className="text-green-800">
@@ -289,7 +289,7 @@ export default function NewTransferPage() {
         </Alert>
       )}
 
-      {transferState?.error && (
+      {transferState?.error && !isDialogOpen && (
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>{transferState.error}</AlertDescription>
