@@ -2,7 +2,7 @@
 
 import type React from "react"
 import { useState, useTransition, useEffect } from "react"
-import { getBeneficiaries } from "../beneficiaries/actions"
+import { getBeneficiaries, addBeneficiary } from "../beneficiaries/actions"
 import { getAccounts } from "../../accounts/actions"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -14,6 +14,8 @@ import { Badge } from "@/components/ui/badge"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { ArrowRight, Plus, User, Building, Check, AlertCircle } from "lucide-react"
+import BeneficiaryForm from "@/components/beneficiary-form"
+import { useActionState } from "react"
 
 // Types
 interface Beneficiary {
@@ -71,22 +73,9 @@ export default function NewTransferPage() {
 
   // États pour le formulaire de bénéficiaire
   const [isDialogOpen, setIsDialogOpen] = useState(false)
-  const [beneficiaryForm, setBeneficiaryForm] = useState({
-    name: "",
-    type: "" as "BNG-BNG" | "BNG-CONFRERE" | "International" | "",
-    account: "",
-    bank: "",
-    swiftCode: "",
-    country: "",
-  })
-
   const [isPending, startTransition] = useTransition()
   const [transferState, transferAction] = useState(null)
-
-  const [beneficiaryState, setBeneficiaryState] = useState<{
-    success?: boolean
-    error?: string
-  } | null>(null)
+  const [addBeneficiaryState, addBeneficiaryAction, isAddBeneficiaryPending] = useActionState(addBeneficiary, null)
 
   // Fonctions utilitaires
   const formatCurrency = (amount: number, currency: string) => {
@@ -131,67 +120,13 @@ export default function NewTransferPage() {
   }
 
   // Gestionnaires d'événements pour le bénéficiaire
-  const handleBeneficiarySubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-
-    if (!beneficiaryForm.name || !beneficiaryForm.type || !beneficiaryForm.account || !beneficiaryForm.bank) {
-      setBeneficiaryState({ error: "Tous les champs obligatoires doivent être remplis" })
-      return
+  const handleAddBeneficiary = async (formData: FormData) => {
+    const result = await addBeneficiaryAction(formData)
+    if (result?.success) {
+      // Recharger la liste des bénéficiaires
+      await loadBeneficiaries()
+      setIsDialogOpen(false)
     }
-
-    if (!validateRIB(beneficiaryForm.account, beneficiaryForm.type)) {
-      setBeneficiaryState({ error: "Format de compte invalide" })
-      return
-    }
-
-    if (beneficiaryForm.type === "International" && !beneficiaryForm.swiftCode) {
-      setBeneficiaryState({ error: "Le code SWIFT est obligatoire pour les virements internationaux" })
-      return
-    }
-
-    startTransition(async () => {
-      try {
-        // Simulation d'un délai de traitement
-        await new Promise((resolve) => setTimeout(resolve, 1500))
-
-        // Simulation d'une erreur aléatoire (3% de chance)
-        if (Math.random() < 0.03) {
-          throw new Error("Erreur lors de l'ajout du bénéficiaire")
-        }
-
-        // Ajouter le nouveau bénéficiaire
-        const newBeneficiary: Beneficiary = {
-          id: Date.now().toString(),
-          name: beneficiaryForm.name,
-          account: beneficiaryForm.account,
-          bank: beneficiaryForm.bank,
-          type: beneficiaryForm.type as "BNG-BNG" | "BNG-CONFRERE" | "International",
-        }
-
-        setBeneficiaries((prev) => [...prev, newBeneficiary])
-        setSelectedBeneficiary(newBeneficiary.id)
-
-        setBeneficiaryState({ success: true })
-
-        // Reset du formulaire et fermeture du dialog
-        setTimeout(() => {
-          setBeneficiaryForm({
-            name: "",
-            type: "",
-            account: "",
-            bank: "",
-            swiftCode: "",
-            country: "",
-          })
-          setBeneficiaryState(null)
-          setIsDialogOpen(false)
-        }, 2000)
-      } catch (error) {
-        setBeneficiaryState({
-          error: error instanceof Error ? error.message : "Erreur lors de l'ajout",
-        })
-      }
-    })
   }
 
   const selectedAccountData = accounts.find((acc) => acc.id === selectedAccount)
@@ -238,46 +173,46 @@ export default function NewTransferPage() {
     loadAccounts()
   }, [])
 
-  useEffect(() => {
-    const loadBeneficiaries = async () => {
-      try {
-        console.log("[v0] Début du chargement des bénéficiaires")
-        setIsLoadingBeneficiaries(true)
-        const result = await getBeneficiaries()
+  const loadBeneficiaries = async () => {
+    try {
+      console.log("[v0] Début du chargement des bénéficiaires")
+      setIsLoadingBeneficiaries(true)
+      const result = await getBeneficiaries()
 
-        console.log("[v0] Résultat de getBeneficiaries:", result)
-        console.log("[v0] Type de result:", typeof result, Array.isArray(result))
+      console.log("[v0] Résultat de getBeneficiaries:", result)
+      console.log("[v0] Type de result:", typeof result, Array.isArray(result))
 
-        if (Array.isArray(result) && result.length > 0) {
-          console.log("[v0] Données brutes des bénéficiaires:", result)
+      if (Array.isArray(result) && result.length > 0) {
+        console.log("[v0] Données brutes des bénéficiaires:", result)
 
-          const adaptedBeneficiaries: Beneficiary[] = result.map((beneficiary: any) => {
-            console.log("[v0] Adaptation du bénéficiaire:", beneficiary)
-            return {
-              id: beneficiary.id || beneficiary.beneficiaryId,
-              name: beneficiary.name,
-              account: beneficiary.accountNumber,
-              bank: beneficiary.bankCode || beneficiary.bank || "Banque inconnue",
-              type: "BNG-BNG" as const, // Par défaut, peut être adapté selon vos besoins
-            }
-          })
+        const adaptedBeneficiaries: Beneficiary[] = result.map((beneficiary: any) => {
+          console.log("[v0] Adaptation du bénéficiaire:", beneficiary)
+          return {
+            id: beneficiary.id || beneficiary.beneficiaryId,
+            name: beneficiary.name,
+            account: beneficiary.accountNumber,
+            bank: beneficiary.bankCode || beneficiary.bank || "Banque inconnue",
+            type: "BNG-BNG" as const, // Par défaut, peut être adapté selon vos besoins
+          }
+        })
 
-          console.log("[v0] Bénéficiaires adaptés:", adaptedBeneficiaries)
-          setBeneficiaries(adaptedBeneficiaries)
-        } else {
-          console.log("[v0] Aucun bénéficiaire trouvé ou tableau vide")
-          setBeneficiaries([]) // Tableau vide au lieu des données de test
-        }
-      } catch (error) {
-        console.error("[v0] Erreur lors du chargement des bénéficiaires:", error)
-        // En cas d'erreur, utiliser un tableau vide
-        setBeneficiaries([])
-      } finally {
-        setIsLoadingBeneficiaries(false)
-        console.log("[v0] Fin du chargement des bénéficiaires")
+        console.log("[v0] Bénéficiaires adaptés:", adaptedBeneficiaries)
+        setBeneficiaries(adaptedBeneficiaries)
+      } else {
+        console.log("[v0] Aucun bénéficiaire trouvé ou tableau vide")
+        setBeneficiaries([]) // Tableau vide au lieu des données de test
       }
+    } catch (error) {
+      console.error("[v0] Erreur lors du chargement des bénéficiaires:", error)
+      // En cas d'erreur, utiliser un tableau vide
+      setBeneficiaries([])
+    } finally {
+      setIsLoadingBeneficiaries(false)
+      console.log("[v0] Fin du chargement des bénéficiaires")
     }
+  }
 
+  useEffect(() => {
     loadBeneficiaries()
   }, [])
 
@@ -375,172 +310,32 @@ export default function NewTransferPage() {
                       <span>Nouveau bénéficiaire</span>
                     </Button>
                   </DialogTrigger>
-                  <DialogContent className="max-w-md">
+                  <DialogContent className="sm:max-w-[500px]">
                     <DialogHeader>
                       <DialogTitle>Ajouter un bénéficiaire</DialogTitle>
                     </DialogHeader>
 
-                    {/* Messages de feedback pour le bénéficiaire */}
-                    {beneficiaryState?.success && (
+                    {addBeneficiaryState?.success && (
                       <Alert className="border-green-200 bg-green-50">
                         <Check className="h-4 w-4 text-green-600" />
                         <AlertDescription className="text-green-800">
-                          Bénéficiaire ajouté avec succès !
+                          ✅ Bénéficiaire ajouté avec succès !
                         </AlertDescription>
                       </Alert>
                     )}
 
-                    {beneficiaryState?.error && (
+                    {addBeneficiaryState?.error && (
                       <Alert variant="destructive">
                         <AlertCircle className="h-4 w-4" />
-                        <AlertDescription>{beneficiaryState.error}</AlertDescription>
+                        <AlertDescription>❌ {addBeneficiaryState.error}</AlertDescription>
                       </Alert>
                     )}
 
-                    <form onSubmit={handleBeneficiarySubmit} className="space-y-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="beneficiary-name">Nom complet *</Label>
-                        <Input
-                          id="beneficiary-name"
-                          name="name"
-                          defaultValue={beneficiaryForm.name}
-                          placeholder="Nom et prénom du bénéficiaire"
-                          required
-                        />
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="beneficiary-type">Type de bénéficiaire *</Label>
-                        <input type="hidden" name="type" value={beneficiaryForm.type} />
-                        <Select
-                          value={beneficiaryForm.type}
-                          onValueChange={(value) =>
-                            setBeneficiaryForm((prev) => ({
-                              ...prev,
-                              type: value as "BNG-BNG" | "BNG-CONFRERE" | "International",
-                              account: "",
-                              bank: "",
-                              swiftCode: "",
-                              country: "",
-                            }))
-                          }
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Sélectionner le type" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="BNG-BNG">BNG vers BNG (Gratuit)</SelectItem>
-                            <SelectItem value="BNG-CONFRERE">BNG vers Confrère (2,500 GNF)</SelectItem>
-                            <SelectItem value="International">International (Variable)</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      {beneficiaryForm.type && (
-                        <div className="space-y-2">
-                          <Label htmlFor="beneficiary-account">
-                            {beneficiaryForm.type === "International" ? "IBAN *" : "Numéro de compte / RIB *"}
-                          </Label>
-                          <Input
-                            id="beneficiary-account"
-                            name="account"
-                            defaultValue={beneficiaryForm.account}
-                            placeholder={
-                              beneficiaryForm.type === "BNG-BNG"
-                                ? "BNG-2024-123456-01"
-                                : beneficiaryForm.type === "BNG-CONFRERE"
-                                  ? "UBA-2024-123456-01"
-                                  : "FR76 1234 5678 9012 3456 789"
-                            }
-                            required
-                          />
-                        </div>
-                      )}
-
-                      {beneficiaryForm.type && (
-                        <div className="space-y-2">
-                          <Label htmlFor="beneficiary-bank">Banque *</Label>
-                          <input type="hidden" name="bank" value={beneficiaryForm.bank} />
-                          <Select
-                            value={beneficiaryForm.bank}
-                            onValueChange={(value) => setBeneficiaryForm((prev) => ({ ...prev, bank: value }))}
-                          >
-                            <SelectTrigger>
-                              <SelectValue placeholder="Sélectionner la banque" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {beneficiaryForm.type === "BNG-BNG" ? (
-                                <SelectItem value="Banque Nationale de Guinée">Banque Nationale de Guinée</SelectItem>
-                              ) : beneficiaryForm.type === "BNG-CONFRERE" ? (
-                                <>
-                                  <SelectItem value="BICIGUI">BICIGUI</SelectItem>
-                                  <SelectItem value="SGBG">Société Générale de Banques en Guinée</SelectItem>
-                                  <SelectItem value="UBA">United Bank for Africa</SelectItem>
-                                  <SelectItem value="ECOBANK">Ecobank Guinée</SelectItem>
-                                  <SelectItem value="VISTA BANK">Vista Bank</SelectItem>
-                                </>
-                              ) : (
-                                <>
-                                  <SelectItem value="BNP Paribas">BNP Paribas</SelectItem>
-                                  <SelectItem value="Société Générale">Société Générale</SelectItem>
-                                  <SelectItem value="Crédit Agricole">Crédit Agricole</SelectItem>
-                                  <SelectItem value="HSBC">HSBC</SelectItem>
-                                  <SelectItem value="Deutsche Bank">Deutsche Bank</SelectItem>
-                                </>
-                              )}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      )}
-
-                      {beneficiaryForm.type === "International" && (
-                        <>
-                          <div className="space-y-2">
-                            <Label htmlFor="swift-code">Code SWIFT</Label>
-                            <Input
-                              id="swift-code"
-                              name="swiftCode"
-                              defaultValue={beneficiaryForm.swiftCode}
-                              placeholder="BNPAFRPP"
-                            />
-                          </div>
-
-                          <div className="space-y-2">
-                            <Label htmlFor="country">Pays</Label>
-                            <input type="hidden" name="country" value={beneficiaryForm.country} />
-                            <Select
-                              value={beneficiaryForm.country}
-                              onValueChange={(value) => setBeneficiaryForm((prev) => ({ ...prev, country: value }))}
-                            >
-                              <SelectTrigger>
-                                <SelectValue placeholder="Sélectionner le pays" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="France">France</SelectItem>
-                                <SelectItem value="Belgique">Belgique</SelectItem>
-                                <SelectItem value="Suisse">Suisse</SelectItem>
-                                <SelectItem value="Canada">Canada</SelectItem>
-                                <SelectItem value="États-Unis">États-Unis</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
-                        </>
-                      )}
-
-                      <div className="flex justify-end space-x-2 pt-4">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          onClick={() => setIsDialogOpen(false)}
-                          disabled={isPending}
-                        >
-                          Annuler
-                        </Button>
-                        <Button type="submit" disabled={isPending}>
-                          {isPending ? "Ajout..." : "Ajouter"}
-                        </Button>
-                      </div>
-                    </form>
+                    <BeneficiaryForm
+                      onSubmit={handleAddBeneficiary}
+                      onCancel={() => setIsDialogOpen(false)}
+                      isPending={isAddBeneficiaryPending}
+                    />
                   </DialogContent>
                 </Dialog>
               </CardTitle>
