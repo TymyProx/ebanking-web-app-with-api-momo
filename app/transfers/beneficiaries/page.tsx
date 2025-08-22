@@ -67,6 +67,9 @@ export default function BeneficiariesPage() {
   const [updateState, updateAction, isUpdatePending] = useActionState(updateBeneficiary, null)
   const [deleteState, deleteAction, isDeletePending] = useActionState(deleteBeneficiary, null)
 
+  const [addMessage, setAddMessage] = useState<{ success?: string; error?: string } | null>(null)
+  const [updateMessage, setUpdateMessage] = useState<{ success?: string; error?: string } | null>(null)
+
   const loadBeneficiaries = async () => {
     setIsLoading(true)
     try {
@@ -100,6 +103,22 @@ export default function BeneficiariesPage() {
       loadBeneficiaries()
     }
   }, [addState?.success, updateState?.success, deleteState?.success])
+
+  useEffect(() => {
+    if (addState?.success) {
+      setAddMessage({ success: "✅ Bénéficiaire ajouté avec succès." })
+    } else if (addState?.error) {
+      setAddMessage({ error: "❌ Erreur lors de l'ajout. Veuillez vérifier les informations." })
+    }
+  }, [addState])
+
+  useEffect(() => {
+    if (updateState?.success) {
+      setUpdateMessage({ success: "✅ Bénéficiaire modifié avec succès." })
+    } else if (updateState?.error) {
+      setUpdateMessage({ error: "❌ Erreur lors de la modification. Veuillez vérifier les informations." })
+    }
+  }, [updateState])
 
   const getBankNameFromCode = (bankCode: string): string => {
     const bankNames: Record<string, string> = {
@@ -253,14 +272,9 @@ export default function BeneficiariesPage() {
             </DialogHeader>
 
             <BeneficiaryForm
-              successMessage={addState?.success ? "✅ Bénéficiaire ajouté avec succès." : undefined}
-              errorMessage={
-                addState?.error ? "❌ Erreur lors de l'ajout. Veuillez vérifier les informations." : undefined
-              }
-              onMessageClear={() => {
-                setIsAddDialogOpen(false)
-                setIsAddDialogOpen(true)
-              }}
+              successMessage={addMessage?.success}
+              errorMessage={addMessage?.error}
+              onMessageClear={() => setAddMessage(null)}
               onSubmit={handleAddBeneficiary}
               onCancel={() => setIsAddDialogOpen(false)}
               isPending={isAddPending}
@@ -474,14 +488,9 @@ export default function BeneficiariesPage() {
               swiftCode: editingBeneficiary?.swiftCode,
               country: editingBeneficiary?.country,
             }}
-            successMessage={updateState?.success ? "✅ Bénéficiaire modifié avec succès." : undefined}
-            errorMessage={
-              updateState?.error ? "❌ Erreur lors de la modification. Veuillez vérifier les informations." : undefined
-            }
-            onMessageClear={() => {
-              setIsEditDialogOpen(false)
-              setIsEditDialogOpen(true)
-            }}
+            successMessage={updateMessage?.success}
+            errorMessage={updateMessage?.error}
+            onMessageClear={() => setUpdateMessage(null)}
             onSubmit={handleEditBeneficiary}
             onCancel={() => {
               setIsEditDialogOpen(false)
