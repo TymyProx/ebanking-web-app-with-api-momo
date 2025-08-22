@@ -169,7 +169,7 @@ export default function NewTransferPage() {
     if (transferType === "account-to-beneficiary") {
       formData.append("beneficiaryId", selectedBeneficiary)
     } else {
-      formData.append("destinationAccount", selectedCreditAccount)
+      formData.append("targetAccount", selectedCreditAccount)
     }
 
     formData.append("amount", amount)
