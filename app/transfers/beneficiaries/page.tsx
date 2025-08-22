@@ -1,7 +1,5 @@
 "use client"
 
-import type React from "react"
-
 import { useState, useEffect, useTransition } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -53,185 +51,6 @@ interface BeneficiaryFormData {
   swiftCode?: string
   country?: string
 }
-
-const BeneficiaryForm = ({
-  isEdit = false,
-  onSubmit,
-  isPending,
-  formData,
-  setFormData,
-  ribValidation,
-  validateRIBField,
-  resetForm,
-  setIsEditDialogOpen,
-  setEditingBeneficiary,
-  setIsAddDialogOpen,
-}: {
-  isEdit?: boolean
-  onSubmit: (formData: FormData) => void
-  isPending: boolean
-  formData: BeneficiaryFormData
-  setFormData: React.Dispatch<React.SetStateAction<BeneficiaryFormData>>
-  ribValidation: { isValid: boolean; message: string } | null
-  validateRIBField: (account: string, type: string) => void
-  resetForm: () => void
-  setIsEditDialogOpen: React.Dispatch<React.SetStateAction<boolean>>
-  setEditingBeneficiary: React.Dispatch<React.SetStateAction<Beneficiary | null>>
-  setIsAddDialogOpen: React.Dispatch<React.SetStateAction<boolean>>
-}) => (
-  <form action={onSubmit} className="space-y-4">
-    <div className="space-y-2">
-      <Label htmlFor="name">Nom complet *</Label>
-      <Input
-        id="name"
-        name="name"
-        value={formData.name}
-        onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
-        placeholder="Nom et prénom du bénéficiaire"
-        required
-      />
-    </div>
-
-    <div className="space-y-2">
-      <Label htmlFor="type">Type de bénéficiaire *</Label>
-      <Select
-        name="type"
-        value={formData.type}
-        onValueChange={(value) => setFormData((prev) => ({ ...prev, type: value }))}
-        required
-      >
-        <SelectTrigger>
-          <SelectValue placeholder="Sélectionnez le type" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="BNG-BNG">BNG vers BNG (Gratuit)</SelectItem>
-          <SelectItem value="BNG-CONFRERE">BNG vers Confrère (2,500 GNF)</SelectItem>
-          <SelectItem value="BNG-INTERNATIONAL">International (Variable)</SelectItem>
-        </SelectContent>
-      </Select>
-    </div>
-
-    <div className="space-y-2">
-      <Label htmlFor="account">{formData.type === "BNG-INTERNATIONAL" ? "IBAN *" : "Numéro de compte / RIB *"}</Label>
-      <Input
-        id="account"
-        name="account"
-        value={formData.account}
-        onChange={(e) => {
-          const value = e.target.value
-          setFormData((prev) => ({ ...prev, account: value }))
-          if (value.length > 5) {
-            validateRIBField(value, formData.type)
-          }
-        }}
-        placeholder={formData.type === "BNG-INTERNATIONAL" ? "FR76 1234 5678 9012 3456 78" : "0001-234567-89"}
-        required
-      />
-      {ribValidation && (
-        <div
-          className={`flex items-center space-x-2 text-sm ${ribValidation.isValid ? "text-green-600" : "text-red-600"}`}
-        >
-          {ribValidation.isValid ? <CheckCircle className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}
-          <span>{ribValidation.message}</span>
-        </div>
-      )}
-    </div>
-
-    <div className="space-y-2">
-      <Label htmlFor="bank">Banque *</Label>
-      {formData.type === "BNG-BNG" ? (
-        <Input id="bank" name="bank" value="Banque Nationale de Guinée" readOnly className="bg-gray-50" />
-      ) : (
-        <Select
-          name="bank"
-          value={formData.bank}
-          onValueChange={(value) => setFormData((prev) => ({ ...prev, bank: value }))}
-          required
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Sélectionnez la banque" />
-          </SelectTrigger>
-          <SelectContent>
-            {formData.type === "BNG-CONFRERE" ? (
-              <>
-                <SelectItem value="BICIGUI">BICIGUI</SelectItem>
-                <SelectItem value="SGBG">Société Générale de Banques en Guinée</SelectItem>
-                <SelectItem value="UBA">United Bank for Africa</SelectItem>
-                <SelectItem value="ECOBANK">Ecobank Guinée</SelectItem>
-                <SelectItem value="VISTA BANK">Vista Bank</SelectItem>
-              </>
-            ) : (
-              <>
-                <SelectItem value="BNP Paribas">BNP Paribas</SelectItem>
-                <SelectItem value="Société Générale">Société Générale</SelectItem>
-                <SelectItem value="Crédit Agricole">Crédit Agricole</SelectItem>
-                <SelectItem value="HSBC">HSBC</SelectItem>
-                <SelectItem value="Deutsche Bank">Deutsche Bank</SelectItem>
-              </>
-            )}
-          </SelectContent>
-        </Select>
-      )}
-    </div>
-
-    {formData.type === "BNG-INTERNATIONAL" && (
-      <>
-        <div className="space-y-2">
-          <Label htmlFor="swiftCode">Code SWIFT</Label>
-          <Input
-            id="swiftCode"
-            name="swiftCode"
-            value={formData.swiftCode || ""}
-            onChange={(e) => setFormData((prev) => ({ ...prev, swiftCode: e.target.value }))}
-            placeholder="BNPAFRPP"
-          />
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="country">Pays</Label>
-          <Select
-            name="country"
-            value={formData.country || ""}
-            onValueChange={(value) => setFormData((prev) => ({ ...prev, country: value }))}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Sélectionnez le pays" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="France">France</SelectItem>
-              <SelectItem value="Belgique">Belgique</SelectItem>
-              <SelectItem value="Suisse">Suisse</SelectItem>
-              <SelectItem value="Canada">Canada</SelectItem>
-              <SelectItem value="États-Unis">États-Unis</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </>
-    )}
-
-    <div className="flex justify-end space-x-2 pt-4">
-      <Button
-        type="button"
-        variant="outline"
-        onClick={() => {
-          if (isEdit) {
-            setIsEditDialogOpen(false)
-            setEditingBeneficiary(null)
-          } else {
-            setIsAddDialogOpen(false)
-          }
-          resetForm()
-        }}
-        disabled={isPending}
-      >
-        Annuler
-      </Button>
-      <Button type="submit" disabled={isPending || (ribValidation && !ribValidation.isValid)}>
-        {isPending ? "Traitement..." : isEdit ? "Modifier" : "Ajouter"}
-      </Button>
-    </div>
-  </form>
-)
 
 export default function BeneficiariesPage() {
   const [searchTerm, setSearchTerm] = useState("")
@@ -434,6 +253,165 @@ export default function BeneficiariesPage() {
     }
   }
 
+  const BeneficiaryForm = ({
+    isEdit = false,
+    onSubmit,
+    isPending,
+  }: {
+    isEdit?: boolean
+    onSubmit: (formData: FormData) => void
+    isPending: boolean
+  }) => (
+    <form action={onSubmit} className="space-y-4">
+      <div className="space-y-2">
+        <Label htmlFor="name">Nom complet *</Label>
+        <Input
+          id="name"
+          name="name"
+          defaultValue={formData.name}
+          placeholder="Nom et prénom du bénéficiaire"
+          required
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="type">Type de bénéficiaire *</Label>
+        <input type="hidden" name="type" value={formData.type} />
+        <Select
+          defaultValue={formData.type}
+          onValueChange={(value) => setFormData((prev) => ({ ...prev, type: value }))}
+          required
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Sélectionnez le type" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="BNG-BNG">BNG vers BNG (Gratuit)</SelectItem>
+            <SelectItem value="BNG-CONFRERE">BNG vers Confrère (2,500 GNF)</SelectItem>
+            <SelectItem value="BNG-INTERNATIONAL">International (Variable)</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="account">{formData.type === "BNG-INTERNATIONAL" ? "IBAN *" : "Numéro de compte / RIB *"}</Label>
+        <Input
+          id="account"
+          name="account"
+          defaultValue={formData.account}
+          onChange={(e) => {
+            const value = e.target.value
+            if (value.length > 5) {
+              validateRIBField(value, formData.type)
+            }
+          }}
+          placeholder={formData.type === "BNG-INTERNATIONAL" ? "FR76 1234 5678 9012 3456 78" : "0001-234567-89"}
+          required
+        />
+        {ribValidation && (
+          <div
+            className={`flex items-center space-x-2 text-sm ${
+              ribValidation.isValid ? "text-green-600" : "text-red-600"
+            }`}
+          >
+            {ribValidation.isValid ? <CheckCircle className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}
+            <span>{ribValidation.message}</span>
+          </div>
+        )}
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="bank">Banque *</Label>
+        {formData.type === "BNG-BNG" ? (
+          <Input id="bank" name="bank" value="Banque Nationale de Guinée" readOnly className="bg-gray-50" />
+        ) : (
+          <>
+            <input type="hidden" name="bank" value={formData.bank} />
+            <Select
+              defaultValue={formData.bank}
+              onValueChange={(value) => setFormData((prev) => ({ ...prev, bank: value }))}
+              required
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Sélectionnez la banque" />
+              </SelectTrigger>
+              <SelectContent>
+                {formData.type === "BNG-CONFRERE" ? (
+                  <>
+                    <SelectItem value="BICIGUI">BICIGUI</SelectItem>
+                    <SelectItem value="SGBG">Société Générale de Banques en Guinée</SelectItem>
+                    <SelectItem value="UBA">United Bank for Africa</SelectItem>
+                    <SelectItem value="ECOBANK">Ecobank Guinée</SelectItem>
+                    <SelectItem value="VISTA BANK">Vista Bank</SelectItem>
+                  </>
+                ) : (
+                  <>
+                    <SelectItem value="BNP Paribas">BNP Paribas</SelectItem>
+                    <SelectItem value="Société Générale">Société Générale</SelectItem>
+                    <SelectItem value="Crédit Agricole">Crédit Agricole</SelectItem>
+                    <SelectItem value="HSBC">HSBC</SelectItem>
+                    <SelectItem value="Deutsche Bank">Deutsche Bank</SelectItem>
+                  </>
+                )}
+              </SelectContent>
+            </Select>
+          </>
+        )}
+      </div>
+
+      {formData.type === "BNG-INTERNATIONAL" && (
+        <>
+          <div className="space-y-2">
+            <Label htmlFor="swiftCode">Code SWIFT</Label>
+            <Input id="swiftCode" name="swiftCode" defaultValue={formData.swiftCode || ""} placeholder="BNPAFRPP" />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="country">Pays</Label>
+            <input type="hidden" name="country" value={formData.country || ""} />
+            <Select
+              defaultValue={formData.country || ""}
+              onValueChange={(value) => setFormData((prev) => ({ ...prev, country: value }))}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Sélectionnez le pays" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="France">France</SelectItem>
+                <SelectItem value="Belgique">Belgique</SelectItem>
+                <SelectItem value="Suisse">Suisse</SelectItem>
+                <SelectItem value="Canada">Canada</SelectItem>
+                <SelectItem value="États-Unis">États-Unis</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </>
+      )}
+
+      <div className="flex justify-end space-x-2 pt-4">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => {
+            if (isEdit) {
+              setIsEditDialogOpen(false)
+              setEditingBeneficiary(null)
+            } else {
+              setIsAddDialogOpen(false)
+            }
+            resetForm()
+          }}
+          disabled={isPending}
+        >
+          Annuler
+        </Button>
+        <Button type="submit" disabled={isPending || (ribValidation && !ribValidation.isValid)}>
+          {isPending ? "Traitement..." : isEdit ? "Modifier" : "Ajouter"}
+        </Button>
+      </div>
+    </form>
+  )
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -468,18 +446,7 @@ export default function BeneficiariesPage() {
               </Alert>
             )}
 
-            <BeneficiaryForm
-              onSubmit={handleAddBeneficiary}
-              isPending={isAddPending}
-              formData={formData}
-              setFormData={setFormData}
-              ribValidation={ribValidation}
-              validateRIBField={validateRIBField}
-              resetForm={resetForm}
-              setIsEditDialogOpen={setIsEditDialogOpen}
-              setEditingBeneficiary={setEditingBeneficiary}
-              setIsAddDialogOpen={setIsAddDialogOpen}
-            />
+            <BeneficiaryForm onSubmit={handleAddBeneficiary} isPending={isAddPending} />
           </DialogContent>
         </Dialog>
       </div>
@@ -694,19 +661,7 @@ export default function BeneficiariesPage() {
             </Alert>
           )}
 
-          <BeneficiaryForm
-            isEdit={true}
-            onSubmit={handleEditBeneficiary}
-            isPending={isUpdatePending}
-            formData={formData}
-            setFormData={setFormData}
-            ribValidation={ribValidation}
-            validateRIBField={validateRIBField}
-            resetForm={resetForm}
-            setIsEditDialogOpen={setIsEditDialogOpen}
-            setEditingBeneficiary={setEditingBeneficiary}
-            setIsAddDialogOpen={setIsAddDialogOpen}
-          />
+          <BeneficiaryForm isEdit={true} onSubmit={handleEditBeneficiary} isPending={isUpdatePending} />
         </DialogContent>
       </Dialog>
     </div>

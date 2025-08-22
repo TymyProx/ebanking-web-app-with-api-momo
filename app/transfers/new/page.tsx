@@ -1,9 +1,8 @@
 "use client"
 
 import type React from "react"
-import { useState, useTransition, useActionState, useEffect } from "react"
-import { executeTransfer } from "./actions"
-import { getBeneficiaries, addBeneficiary } from "../beneficiaries/actions"
+import { useState, useTransition, useEffect } from "react"
+import { getBeneficiaries } from "../beneficiaries/actions"
 import { getAccounts } from "../../accounts/actions"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -82,9 +81,12 @@ export default function NewTransferPage() {
   })
 
   const [isPending, startTransition] = useTransition()
-  const [transferState, transferAction] = useActionState(executeTransfer, null)
+  const [transferState, transferAction] = useState(null)
 
-  const [beneficiaryState, beneficiaryAction] = useActionState(addBeneficiary, null)
+  const [beneficiaryState, setBeneficiaryState] = useState<{
+    success?: boolean
+    error?: string
+  } | null>(null)
 
   // Fonctions utilitaires
   const formatCurrency = (amount: number, currency: string) => {
@@ -129,51 +131,67 @@ export default function NewTransferPage() {
   }
 
   // Gestionnaires d'événements pour le bénéficiaire
-  const handleBeneficiarySubmit = async (e: React.FormEvent) => {
+  const handleBeneficiarySubmit = (e: React.FormEvent) => {
     e.preventDefault()
 
-    const formData = new FormData()
-    formData.append("name", beneficiaryForm.name)
-    formData.append("type", beneficiaryForm.type)
-    formData.append("account", beneficiaryForm.account)
-    formData.append("bank", beneficiaryForm.bank)
-    formData.append("swiftCode", beneficiaryForm.swiftCode)
-    formData.append("country", beneficiaryForm.country)
-
-    const result = await beneficiaryAction(formData)
-    if (result?.success) {
-      // Recharger les bénéficiaires après ajout
-      const loadBeneficiaries = async () => {
-        try {
-          const result = await getBeneficiaries()
-          if (Array.isArray(result) && result.length > 0) {
-            const adaptedBeneficiaries: Beneficiary[] = result.map((beneficiary: any) => ({
-              id: beneficiary.id || beneficiary.beneficiaryId,
-              name: beneficiary.name,
-              account: beneficiary.accountNumber,
-              bank: beneficiary.bankCode || beneficiary.bank || "Banque inconnue",
-              type: "BNG-BNG" as const,
-            }))
-            setBeneficiaries(adaptedBeneficiaries)
-          }
-        } catch (error) {
-          console.error("[v0] Erreur lors du rechargement des bénéficiaires:", error)
-        }
-      }
-
-      await loadBeneficiaries()
-
-      // Reset du formulaire et fermeture du dialog
-      setBeneficiaryForm({
-        name: "",
-        type: "",
-        account: "",
-        bank: "",
-        swiftCode: "",
-        country: "",
-      })
-      setIsDialogOpen(false)
+    if (!beneficiaryForm.name || !beneficiaryForm.type || !beneficiaryForm.account || !beneficiaryForm.bank) {
+      setBeneficiaryState({ error: "Tous les champs obligatoires doivent être remplis" })
+      return
     }
+
+    if (!validateRIB(beneficiaryForm.account, beneficiaryForm.type)) {
+      setBeneficiaryState({ error: "Format de compte invalide" })
+      return
+    }
+
+    if (beneficiaryForm.type === "International" && !beneficiaryForm.swiftCode) {
+      setBeneficiaryState({ error: "Le code SWIFT est obligatoire pour les virements internationaux" })
+      return
+    }
+
+    startTransition(async () => {
+      try {
+        // Simulation d'un délai de traitement
+        await new Promise((resolve) => setTimeout(resolve, 1500))
+
+        // Simulation d'une erreur aléatoire (3% de chance)
+        if (Math.random() < 0.03) {
+          throw new Error("Erreur lors de l'ajout du bénéficiaire")
+        }
+
+        // Ajouter le nouveau bénéficiaire
+        const newBeneficiary: Beneficiary = {
+          id: Date.now().toString(),
+          name: beneficiaryForm.name,
+          account: beneficiaryForm.account,
+          bank: beneficiaryForm.bank,
+          type: beneficiaryForm.type as "BNG-BNG" | "BNG-CONFRERE" | "International",
+        }
+
+        setBeneficiaries((prev) => [...prev, newBeneficiary])
+        setSelectedBeneficiary(newBeneficiary.id)
+
+        setBeneficiaryState({ success: true })
+
+        // Reset du formulaire et fermeture du dialog
+        setTimeout(() => {
+          setBeneficiaryForm({
+            name: "",
+            type: "",
+            account: "",
+            bank: "",
+            swiftCode: "",
+            country: "",
+          })
+          setBeneficiaryState(null)
+          setIsDialogOpen(false)
+        }, 2000)
+      } catch (error) {
+        setBeneficiaryState({
+          error: error instanceof Error ? error.message : "Erreur lors de l'ajout",
+        })
+      }
+    })
   }
 
   const selectedAccountData = accounts.find((acc) => acc.id === selectedAccount)
@@ -362,6 +380,7 @@ export default function NewTransferPage() {
                       <DialogTitle>Ajouter un bénéficiaire</DialogTitle>
                     </DialogHeader>
 
+                    {/* Messages de feedback pour le bénéficiaire */}
                     {beneficiaryState?.success && (
                       <Alert className="border-green-200 bg-green-50">
                         <Check className="h-4 w-4 text-green-600" />
@@ -383,15 +402,16 @@ export default function NewTransferPage() {
                         <Label htmlFor="beneficiary-name">Nom complet *</Label>
                         <Input
                           id="beneficiary-name"
-                          value={beneficiaryForm.name}
-                          onChange={(e) => setBeneficiaryForm((prev) => ({ ...prev, name: e.target.value }))}
+                          name="name"
+                          defaultValue={beneficiaryForm.name}
                           placeholder="Nom et prénom du bénéficiaire"
                           required
                         />
                       </div>
 
                       <div className="space-y-2">
-                        <Label htmlFor="beneficiary-type">Type de virement *</Label>
+                        <Label htmlFor="beneficiary-type">Type de bénéficiaire *</Label>
+                        <input type="hidden" name="type" value={beneficiaryForm.type} />
                         <Select
                           value={beneficiaryForm.type}
                           onValueChange={(value) =>
@@ -409,9 +429,9 @@ export default function NewTransferPage() {
                             <SelectValue placeholder="Sélectionner le type" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="BNG-BNG">BNG vers BNG</SelectItem>
-                            <SelectItem value="BNG-CONFRERE">BNG vers Confrère</SelectItem>
-                            <SelectItem value="International">International</SelectItem>
+                            <SelectItem value="BNG-BNG">BNG vers BNG (Gratuit)</SelectItem>
+                            <SelectItem value="BNG-CONFRERE">BNG vers Confrère (2,500 GNF)</SelectItem>
+                            <SelectItem value="International">International (Variable)</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
@@ -419,12 +439,12 @@ export default function NewTransferPage() {
                       {beneficiaryForm.type && (
                         <div className="space-y-2">
                           <Label htmlFor="beneficiary-account">
-                            {beneficiaryForm.type === "International" ? "IBAN *" : "Numéro de compte *"}
+                            {beneficiaryForm.type === "International" ? "IBAN *" : "Numéro de compte / RIB *"}
                           </Label>
                           <Input
                             id="beneficiary-account"
-                            value={beneficiaryForm.account}
-                            onChange={(e) => setBeneficiaryForm((prev) => ({ ...prev, account: e.target.value }))}
+                            name="account"
+                            defaultValue={beneficiaryForm.account}
                             placeholder={
                               beneficiaryForm.type === "BNG-BNG"
                                 ? "BNG-2024-123456-01"
@@ -440,6 +460,7 @@ export default function NewTransferPage() {
                       {beneficiaryForm.type && (
                         <div className="space-y-2">
                           <Label htmlFor="beneficiary-bank">Banque *</Label>
+                          <input type="hidden" name="bank" value={beneficiaryForm.bank} />
                           <Select
                             value={beneficiaryForm.bank}
                             onValueChange={(value) => setBeneficiaryForm((prev) => ({ ...prev, bank: value }))}
@@ -448,11 +469,25 @@ export default function NewTransferPage() {
                               <SelectValue placeholder="Sélectionner la banque" />
                             </SelectTrigger>
                             <SelectContent>
-                              {banks[beneficiaryForm.type]?.map((bank) => (
-                                <SelectItem key={bank} value={bank}>
-                                  {bank}
-                                </SelectItem>
-                              ))}
+                              {beneficiaryForm.type === "BNG-BNG" ? (
+                                <SelectItem value="Banque Nationale de Guinée">Banque Nationale de Guinée</SelectItem>
+                              ) : beneficiaryForm.type === "BNG-CONFRERE" ? (
+                                <>
+                                  <SelectItem value="BICIGUI">BICIGUI</SelectItem>
+                                  <SelectItem value="SGBG">Société Générale de Banques en Guinée</SelectItem>
+                                  <SelectItem value="UBA">United Bank for Africa</SelectItem>
+                                  <SelectItem value="ECOBANK">Ecobank Guinée</SelectItem>
+                                  <SelectItem value="VISTA BANK">Vista Bank</SelectItem>
+                                </>
+                              ) : (
+                                <>
+                                  <SelectItem value="BNP Paribas">BNP Paribas</SelectItem>
+                                  <SelectItem value="Société Générale">Société Générale</SelectItem>
+                                  <SelectItem value="Crédit Agricole">Crédit Agricole</SelectItem>
+                                  <SelectItem value="HSBC">HSBC</SelectItem>
+                                  <SelectItem value="Deutsche Bank">Deutsche Bank</SelectItem>
+                                </>
+                              )}
                             </SelectContent>
                           </Select>
                         </div>
@@ -461,18 +496,18 @@ export default function NewTransferPage() {
                       {beneficiaryForm.type === "International" && (
                         <>
                           <div className="space-y-2">
-                            <Label htmlFor="swift-code">Code SWIFT *</Label>
+                            <Label htmlFor="swift-code">Code SWIFT</Label>
                             <Input
                               id="swift-code"
-                              value={beneficiaryForm.swiftCode}
-                              onChange={(e) => setBeneficiaryForm((prev) => ({ ...prev, swiftCode: e.target.value }))}
+                              name="swiftCode"
+                              defaultValue={beneficiaryForm.swiftCode}
                               placeholder="BNPAFRPP"
-                              required
                             />
                           </div>
 
                           <div className="space-y-2">
                             <Label htmlFor="country">Pays</Label>
+                            <input type="hidden" name="country" value={beneficiaryForm.country} />
                             <Select
                               value={beneficiaryForm.country}
                               onValueChange={(value) => setBeneficiaryForm((prev) => ({ ...prev, country: value }))}
@@ -481,11 +516,11 @@ export default function NewTransferPage() {
                                 <SelectValue placeholder="Sélectionner le pays" />
                               </SelectTrigger>
                               <SelectContent>
-                                {countries.map((country) => (
-                                  <SelectItem key={country} value={country}>
-                                    {country}
-                                  </SelectItem>
-                                ))}
+                                <SelectItem value="France">France</SelectItem>
+                                <SelectItem value="Belgique">Belgique</SelectItem>
+                                <SelectItem value="Suisse">Suisse</SelectItem>
+                                <SelectItem value="Canada">Canada</SelectItem>
+                                <SelectItem value="États-Unis">États-Unis</SelectItem>
                               </SelectContent>
                             </Select>
                           </div>
