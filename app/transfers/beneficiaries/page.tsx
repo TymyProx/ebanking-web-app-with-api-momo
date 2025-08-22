@@ -252,21 +252,15 @@ export default function BeneficiariesPage() {
               <DialogTitle>Ajouter un bénéficiaire</DialogTitle>
             </DialogHeader>
 
-            {addState?.success && (
-              <Alert className="border-green-200 bg-green-50">
-                <CheckCircle className="h-4 w-4 text-green-600" />
-                <AlertDescription className="text-green-800">✅ Bénéficiaire ajouté avec succès.</AlertDescription>
-              </Alert>
-            )}
-
-            {addState?.error && (
-              <Alert variant="destructive">
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>❌ Erreur lors de l'ajout. Veuillez vérifier les informations.</AlertDescription>
-              </Alert>
-            )}
-
             <BeneficiaryForm
+              successMessage={addState?.success ? "✅ Bénéficiaire ajouté avec succès." : undefined}
+              errorMessage={
+                addState?.error ? "❌ Erreur lors de l'ajout. Veuillez vérifier les informations." : undefined
+              }
+              onMessageClear={() => {
+                setIsAddDialogOpen(false)
+                setIsAddDialogOpen(true)
+              }}
               onSubmit={handleAddBeneficiary}
               onCancel={() => setIsAddDialogOpen(false)}
               isPending={isAddPending}
@@ -469,22 +463,6 @@ export default function BeneficiariesPage() {
             <DialogTitle>Modifier le bénéficiaire</DialogTitle>
           </DialogHeader>
 
-          {updateState?.success && (
-            <Alert className="border-green-200 bg-green-50">
-              <CheckCircle className="h-4 w-4 text-green-600" />
-              <AlertDescription className="text-green-800">✅ Bénéficiaire modifié avec succès.</AlertDescription>
-            </Alert>
-          )}
-
-          {updateState?.error && (
-            <Alert variant="destructive">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>
-                ❌ Erreur lors de la modification. Veuillez vérifier les informations.
-              </AlertDescription>
-            </Alert>
-          )}
-
           <BeneficiaryForm
             isEdit={true}
             initialData={{
@@ -495,6 +473,14 @@ export default function BeneficiariesPage() {
               iban: editingBeneficiary?.iban,
               swiftCode: editingBeneficiary?.swiftCode,
               country: editingBeneficiary?.country,
+            }}
+            successMessage={updateState?.success ? "✅ Bénéficiaire modifié avec succès." : undefined}
+            errorMessage={
+              updateState?.error ? "❌ Erreur lors de la modification. Veuillez vérifier les informations." : undefined
+            }
+            onMessageClear={() => {
+              setIsEditDialogOpen(false)
+              setIsEditDialogOpen(true)
             }}
             onSubmit={handleEditBeneficiary}
             onCancel={() => {

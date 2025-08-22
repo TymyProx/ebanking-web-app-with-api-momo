@@ -370,6 +370,13 @@ export default function NewTransferPage() {
                     )}
 
                     <BeneficiaryForm
+                      successMessage={addBeneficiaryState?.success ? "✅ Bénéficiaire ajouté avec succès !" : undefined}
+                      errorMessage={addBeneficiaryState?.error ? `❌ ${addBeneficiaryState.error}` : undefined}
+                      onMessageClear={() => {
+                        // Réinitialiser l'état du bénéficiaire après disparition du message
+                        setIsDialogOpen(false)
+                        setIsDialogOpen(true)
+                      }}
                       onSubmit={handleAddBeneficiary}
                       onCancel={() => setIsDialogOpen(false)}
                       isPending={isAddBeneficiaryPending}
