@@ -2,8 +2,7 @@
 
 import type React from "react"
 import { useState, useTransition, useEffect } from "react"
-import { getBeneficiaries, addBeneficiary } from "../beneficiaries/actions"
-import { getAccounts } from "../../accounts/actions"
+import { addBeneficiary } from "../beneficiaries/actions"
 import { executeTransfer } from "./actions" // Import de l'action executeTransfer
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -35,6 +34,8 @@ interface Account {
   currency: string
 }
 
+type TransferType = "account-to-account" | "account-to-beneficiary"
+
 const banks = {
   "BNG-BNG": ["Banque Nationale de Guinée"],
   "BNG-CONFRERE": [
@@ -61,9 +62,12 @@ const countries = [
 ]
 
 export default function NewTransferPage() {
+  const [transferType, setTransferType] = useState<TransferType>("account-to-beneficiary")
+
   // États pour le virement
   const [selectedAccount, setSelectedAccount] = useState<string>("")
   const [selectedBeneficiary, setSelectedBeneficiary] = useState<string>("")
+  const [selectedCreditAccount, setSelectedCreditAccount] = useState<string>("")
   const [amount, setAmount] = useState<string>("")
   const [motif, setMotif] = useState<string>("")
   const [transferDate, setTransferDate] = useState<string>(new Date().toISOString().split("T")[0])
@@ -105,6 +109,19 @@ export default function NewTransferPage() {
     }
   }
 
+  const handleTransferTypeChange = (type: TransferType) => {
+    setTransferType(type)
+    setSelectedBeneficiary("")
+    setSelectedCreditAccount("")
+    setTransferValidationError("")
+    setTransferSubmitted(false)
+  }
+
+  const handleAddBeneficiary = (formData: FormData) => {
+    // Placeholder for handleAddBeneficiary logic
+    console.log("Adding beneficiary:", formData)
+  }
+
   // Gestionnaires d'événements pour le virement
   const handleTransferSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -116,10 +133,23 @@ export default function NewTransferPage() {
       setTransferValidationError("Veuillez sélectionner un compte débiteur")
       return
     }
-    if (!selectedBeneficiary) {
-      setTransferValidationError("Veuillez sélectionner un bénéficiaire")
-      return
+
+    if (transferType === "account-to-beneficiary") {
+      if (!selectedBeneficiary) {
+        setTransferValidationError("Veuillez sélectionner un bénéficiaire")
+        return
+      }
+    } else {
+      if (!selectedCreditAccount) {
+        setTransferValidationError("Veuillez sélectionner un compte créditeur")
+        return
+      }
+      if (selectedAccount === selectedCreditAccount) {
+        setTransferValidationError("Le compte débiteur et créditeur ne peuvent pas être identiques")
+        return
+      }
     }
+
     if (!amount || Number.parseFloat(amount) <= 0) {
       setTransferValidationError("Veuillez saisir un montant valide")
       return
@@ -131,20 +161,20 @@ export default function NewTransferPage() {
 
     const formData = new FormData()
     formData.append("sourceAccount", selectedAccount)
-    formData.append("beneficiaryId", selectedBeneficiary)
+    formData.append("transferType", transferType)
+
+    if (transferType === "account-to-beneficiary") {
+      formData.append("beneficiaryId", selectedBeneficiary)
+    } else {
+      formData.append("destinationAccount", selectedCreditAccount)
+    }
+
     formData.append("amount", amount)
     formData.append("purpose", motif)
     formData.append("transferDate", transferDate)
 
     startTransition(() => {
       transferAction(formData)
-    })
-  }
-
-  // Gestionnaires d'événements pour le bénéficiaire
-  const handleAddBeneficiary = async (formData: FormData) => {
-    startTransition(async () => {
-      await addBeneficiaryAction(formData)
     })
   }
 
@@ -159,106 +189,14 @@ export default function NewTransferPage() {
 
   const selectedAccountData = accounts.find((acc) => acc.id === selectedAccount)
   const selectedBeneficiaryData = beneficiaries.find((ben) => ben.id === selectedBeneficiary)
-
-  useEffect(() => {
-    const loadAccounts = async () => {
-      try {
-        console.log("[v0] Début du chargement des comptes")
-        setIsLoadingAccounts(true)
-        const result = await getAccounts()
-
-        console.log("[v0] Résultat de getAccounts:", result)
-
-        if (Array.isArray(result) && result.length > 0) {
-          console.log("[v0] Données brutes des comptes:", result)
-
-          const adaptedAccounts: Account[] = result.map((account: any) => {
-            console.log("[v0] Adaptation du compte:", account)
-            return {
-              id: account.id || account.accountId,
-              name: account.accountName || account.name || `Compte ${account.accountNumber}`,
-              number: account.accountNumber,
-              balance: Number.parseFloat(account.availableBalance || account.balance || "0"),
-              currency: account.currency || "GNF",
-            }
-          })
-
-          console.log("[v0] Comptes adaptés:", adaptedAccounts)
-          setAccounts(adaptedAccounts)
-        } else {
-          console.log("[v0] Aucun compte trouvé ou tableau vide")
-          setAccounts([])
-        }
-      } catch (error) {
-        console.error("[v0] Erreur lors du chargement des comptes:", error)
-        setAccounts([])
-      } finally {
-        setIsLoadingAccounts(false)
-        console.log("[v0] Fin du chargement des comptes")
-      }
-    }
-
-    loadAccounts()
-  }, [])
-
-  const loadBeneficiaries = async () => {
-    try {
-      console.log("[v0] Début du chargement des bénéficiaires")
-      setIsLoadingBeneficiaries(true)
-      const result = await getBeneficiaries()
-
-      console.log("[v0] Résultat de getBeneficiaries:", result)
-      console.log("[v0] Type de result:", typeof result, Array.isArray(result))
-
-      if (Array.isArray(result) && result.length > 0) {
-        console.log("[v0] Données brutes des bénéficiaires:", result)
-
-        const adaptedBeneficiaries: Beneficiary[] = result.map((beneficiary: any) => {
-          console.log("[v0] Adaptation du bénéficiaire:", beneficiary)
-          return {
-            id: beneficiary.id || beneficiary.beneficiaryId,
-            name: beneficiary.name,
-            account: beneficiary.accountNumber,
-            bank: beneficiary.bankCode || beneficiary.bank || "Banque inconnue",
-            type: "BNG-BNG" as const, // Par défaut, peut être adapté selon vos besoins
-          }
-        })
-
-        console.log("[v0] Bénéficiaires adaptés:", adaptedBeneficiaries)
-        setBeneficiaries(adaptedBeneficiaries)
-      } else {
-        console.log("[v0] Aucun bénéficiaire trouvé ou tableau vide")
-        setBeneficiaries([]) // Tableau vide au lieu des données de test
-      }
-    } catch (error) {
-      console.error("[v0] Erreur lors du chargement des bénéficiaires:", error)
-      // En cas d'erreur, utiliser un tableau vide
-      setBeneficiaries([])
-    } finally {
-      setIsLoadingBeneficiaries(false)
-      console.log("[v0] Fin du chargement des bénéficiaires")
-    }
-  }
-
-  useEffect(() => {
-    loadBeneficiaries()
-  }, [])
-
-  useEffect(() => {
-    if (addBeneficiaryState?.success) {
-      setBeneficiaryMessage({ type: "success", text: "✅ Bénéficiaire ajouté avec succès !" })
-      // Recharger la liste des bénéficiaires
-      loadBeneficiaries()
-    } else if (addBeneficiaryState?.error) {
-      setBeneficiaryMessage({ type: "error", text: `❌ ${addBeneficiaryState.error}` })
-    }
-  }, [addBeneficiaryState])
+  const selectedCreditAccountData = accounts.find((acc) => acc.id === selectedCreditAccount)
 
   useEffect(() => {
     if (transferState?.success && transferSubmitted) {
       setTransferValidationError("")
       setSelectedAccount("")
       setSelectedBeneficiary("")
+      setSelectedCreditAccount("")
       setAmount("")
       setMotif("")
       setTransferDate(new Date().toISOString().split("T")[0])
@@ -266,46 +204,11 @@ export default function NewTransferPage() {
     }
   }, [transferState?.success, transferSubmitted])
 
-  useEffect(() => {
-    if (transferValidationError && transferSubmitted) {
-      const timer = setTimeout(() => {
-        setTransferValidationError("")
-        setTransferSubmitted(false)
-      }, 8000)
-
-      return () => clearTimeout(timer)
-    }
-  }, [transferValidationError, transferSubmitted])
-
-  useEffect(() => {
-    if (transferState?.success) {
-      const timer = setTimeout(() => {
-        // Réinitialiser l'état de transfert pour faire disparaître le message de succès
-        // Note: transferState est géré par useActionState, on ne peut pas le modifier directement
-        // Le message disparaîtra naturellement lors du prochain rendu
-      }, 8000)
-
-      return () => clearTimeout(timer)
-    }
-  }, [transferState?.success])
-
-  useEffect(() => {
-    if (transferState?.error) {
-      const timer = setTimeout(() => {
-        // Réinitialiser l'état de transfert pour faire disparaître le message d'erreur
-        // Note: transferState est géré par useActionState, on ne peut pas le modifier directement
-        // Le message disparaîtra naturellement lors du prochain rendu
-      }, 8000)
-
-      return () => clearTimeout(timer)
-    }
-  }, [transferState?.error])
-
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Nouveau virement</h1>
-        <p className="text-gray-600">Effectuer un virement vers un bénéficiaire</p>
+        <p className="text-gray-600">Effectuer un virement vers un bénéficiaire ou un autre compte</p>
       </div>
 
       {transferValidationError && transferSubmitted && !isDialogOpen && (
@@ -334,6 +237,39 @@ export default function NewTransferPage() {
       <form onSubmit={handleTransferSubmit} className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Formulaire principal */}
         <div className="lg:col-span-2 space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <ArrowRight className="h-5 w-5" />
+                <span>Type de virement</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="transferType">Sélectionner le type de virement *</Label>
+                <Select value={transferType} onValueChange={handleTransferTypeChange}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choisir le type de virement" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="account-to-beneficiary">
+                      <div className="flex flex-col">
+                        <span className="font-medium">Compte vers bénéficiaire</span>
+                        <span className="text-sm text-gray-500">Virement vers un bénéficiaire enregistré</span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="account-to-account">
+                      <div className="flex flex-col">
+                        <span className="font-medium">Compte à compte</span>
+                        <span className="text-sm text-gray-500">Virement entre vos comptes</span>
+                      </div>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </CardContent>
+          </Card>
+
           {/* Compte débiteur */}
           <Card>
             <CardHeader>
@@ -376,73 +312,119 @@ export default function NewTransferPage() {
             </CardContent>
           </Card>
 
-          {/* Bénéficiaire */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
+          {transferType === "account-to-account" ? (
+            /* Compte créditeur pour compte à compte */
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
                   <Building className="h-5 w-5" />
-                  <span>Bénéficiaire</span>
-                </div>
-                <Dialog open={isDialogOpen} onOpenChange={handleDialogClose}>
-                  <DialogTrigger asChild>
-                    <Button variant="outline" size="sm" className="flex items-center space-x-2 bg-transparent">
-                      <Plus className="h-4 w-4" />
-                      <span>Nouveau bénéficiaire</span>
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="sm:max-w-[500px]">
-                    <DialogHeader>
-                      <DialogTitle>Ajouter un bénéficiaire</DialogTitle>
-                    </DialogHeader>
-
-                    <BeneficiaryForm
-                      successMessage={beneficiaryMessage?.type === "success" ? beneficiaryMessage.text : undefined}
-                      errorMessage={beneficiaryMessage?.type === "error" ? beneficiaryMessage.text : undefined}
-                      onMessageClear={() => {
-                        setBeneficiaryMessage(null)
-                      }}
-                      onSubmit={handleAddBeneficiary}
-                      onCancel={() => setIsDialogOpen(false)}
-                      isPending={isAddBeneficiaryPending}
-                    />
-                  </DialogContent>
-                </Dialog>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="beneficiary">Sélectionner le bénéficiaire *</Label>
-                <Select value={selectedBeneficiary} onValueChange={setSelectedBeneficiary}>
-                  <SelectTrigger>
-                    <SelectValue placeholder={isLoadingBeneficiaries ? "Chargement..." : "Choisir un bénéficiaire"} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {isLoadingBeneficiaries ? (
-                      <SelectItem value="loading" disabled>
-                        Chargement des bénéficiaires...
-                      </SelectItem>
-                    ) : beneficiaries.length === 0 ? (
-                      <SelectItem value="empty" disabled>
-                        Aucun bénéficiaire trouvé
-                      </SelectItem>
-                    ) : (
-                      beneficiaries.map((beneficiary) => (
-                        <SelectItem key={beneficiary.id} value={beneficiary.id}>
-                          <div className="flex flex-col">
-                            <span className="font-medium">{beneficiary.name}</span>
-                            <span className="text-sm text-gray-500">
-                              {beneficiary.account} • {beneficiary.bank}
-                            </span>
-                          </div>
+                  <span>Compte créditeur</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="creditAccount">Sélectionner le compte à créditer *</Label>
+                  <Select value={selectedCreditAccount} onValueChange={setSelectedCreditAccount}>
+                    <SelectTrigger>
+                      <SelectValue placeholder={isLoadingAccounts ? "Chargement..." : "Choisir un compte"} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {isLoadingAccounts ? (
+                        <SelectItem value="loading" disabled>
+                          Chargement des comptes...
                         </SelectItem>
-                      ))
-                    )}
-                  </SelectContent>
-                </Select>
-              </div>
-            </CardContent>
-          </Card>
+                      ) : accounts.length === 0 ? (
+                        <SelectItem value="empty" disabled>
+                          Aucun compte trouvé
+                        </SelectItem>
+                      ) : (
+                        accounts
+                          .filter((account) => account.id !== selectedAccount) // Exclure le compte débiteur
+                          .map((account) => (
+                            <SelectItem key={account.id} value={account.id}>
+                              <div className="flex flex-col">
+                                <span className="font-medium">{account.name}</span>
+                                <span className="text-sm text-gray-500">
+                                  {account.number} • {formatCurrency(account.balance, account.currency)}
+                                </span>
+                              </div>
+                            </SelectItem>
+                          ))
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            /* Bénéficiaire pour compte vers bénéficiaire */
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <Building className="h-5 w-5" />
+                    <span>Bénéficiaire</span>
+                  </div>
+                  <Dialog open={isDialogOpen} onOpenChange={handleDialogClose}>
+                    <DialogTrigger asChild>
+                      <Button variant="outline" size="sm" className="flex items-center space-x-2 bg-transparent">
+                        <Plus className="h-4 w-4" />
+                        <span>Nouveau bénéficiaire</span>
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-[500px]">
+                      <DialogHeader>
+                        <DialogTitle>Ajouter un bénéficiaire</DialogTitle>
+                      </DialogHeader>
+
+                      <BeneficiaryForm
+                        successMessage={beneficiaryMessage?.type === "success" ? beneficiaryMessage.text : undefined}
+                        errorMessage={beneficiaryMessage?.type === "error" ? beneficiaryMessage.text : undefined}
+                        onMessageClear={() => {
+                          setBeneficiaryMessage(null)
+                        }}
+                        onSubmit={handleAddBeneficiary}
+                        onCancel={() => setIsDialogOpen(false)}
+                        isPending={isAddBeneficiaryPending}
+                      />
+                    </DialogContent>
+                  </Dialog>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="beneficiary">Sélectionner le bénéficiaire *</Label>
+                  <Select value={selectedBeneficiary} onValueChange={setSelectedBeneficiary}>
+                    <SelectTrigger>
+                      <SelectValue placeholder={isLoadingBeneficiaries ? "Chargement..." : "Choisir un bénéficiaire"} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {isLoadingBeneficiaries ? (
+                        <SelectItem value="loading" disabled>
+                          Chargement des bénéficiaires...
+                        </SelectItem>
+                      ) : beneficiaries.length === 0 ? (
+                        <SelectItem value="empty" disabled>
+                          Aucun bénéficiaire trouvé
+                        </SelectItem>
+                      ) : (
+                        beneficiaries.map((beneficiary) => (
+                          <SelectItem key={beneficiary.id} value={beneficiary.id}>
+                            <div className="flex flex-col">
+                              <span className="font-medium">{beneficiary.name}</span>
+                              <span className="text-sm text-gray-500">
+                                {beneficiary.account} • {beneficiary.bank}
+                              </span>
+                            </div>
+                          </SelectItem>
+                        ))
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Détails du virement */}
           <Card>
@@ -500,7 +482,13 @@ export default function NewTransferPage() {
           <div className="flex justify-end">
             <Button
               type="submit"
-              disabled={isTransferPending || !selectedAccount || !selectedBeneficiary || !amount || !motif}
+              disabled={
+                isTransferPending ||
+                !selectedAccount ||
+                (transferType === "account-to-beneficiary" ? !selectedBeneficiary : !selectedCreditAccount) ||
+                !amount ||
+                !motif
+              }
               className="flex items-center space-x-2"
             >
               <ArrowRight className="h-4 w-4" />
@@ -516,6 +504,15 @@ export default function NewTransferPage() {
               <CardTitle>Résumé du virement</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
+              <div>
+                <h4 className="font-medium text-sm text-gray-600 mb-2">Type de virement</h4>
+                <div className="p-3 bg-gray-50 rounded-lg">
+                  <p className="font-medium">
+                    {transferType === "account-to-beneficiary" ? "Compte vers bénéficiaire" : "Compte à compte"}
+                  </p>
+                </div>
+              </div>
+
               {selectedAccountData && (
                 <div>
                   <h4 className="font-medium text-sm text-gray-600 mb-2">Compte débiteur</h4>
@@ -529,7 +526,7 @@ export default function NewTransferPage() {
                 </div>
               )}
 
-              {selectedBeneficiaryData && (
+              {transferType === "account-to-beneficiary" && selectedBeneficiaryData && (
                 <div>
                   <h4 className="font-medium text-sm text-gray-600 mb-2">Bénéficiaire</h4>
                   <div className="p-3 bg-gray-50 rounded-lg">
@@ -539,6 +536,19 @@ export default function NewTransferPage() {
                     <Badge variant="outline" className="mt-2">
                       {selectedBeneficiaryData.type}
                     </Badge>
+                  </div>
+                </div>
+              )}
+
+              {transferType === "account-to-account" && selectedCreditAccountData && (
+                <div>
+                  <h4 className="font-medium text-sm text-gray-600 mb-2">Compte créditeur</h4>
+                  <div className="p-3 bg-gray-50 rounded-lg">
+                    <p className="font-medium">{selectedCreditAccountData.name}</p>
+                    <p className="text-sm text-gray-600">{selectedCreditAccountData.number}</p>
+                    <p className="text-sm text-gray-600">
+                      {formatCurrency(selectedCreditAccountData.balance, selectedCreditAccountData.currency)}
+                    </p>
                   </div>
                 </div>
               )}
