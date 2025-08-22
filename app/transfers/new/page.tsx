@@ -121,12 +121,14 @@ export default function NewTransferPage() {
 
   // Gestionnaires d'événements pour le bénéficiaire
   const handleAddBeneficiary = async (formData: FormData) => {
-    const result = await addBeneficiaryAction(formData)
-    if (result?.success) {
-      // Recharger la liste des bénéficiaires
-      await loadBeneficiaries()
-      setIsDialogOpen(false)
-    }
+    startTransition(async () => {
+      const result = await addBeneficiaryAction(formData)
+      if (result?.success) {
+        // Recharger la liste des bénéficiaires
+        await loadBeneficiaries()
+        setIsDialogOpen(false)
+      }
+    })
   }
 
   const selectedAccountData = accounts.find((acc) => acc.id === selectedAccount)
