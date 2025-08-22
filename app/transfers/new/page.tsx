@@ -72,10 +72,12 @@ export default function NewTransferPage() {
   const [accounts, setAccounts] = useState<Account[]>([])
   const [isLoadingAccounts, setIsLoadingAccounts] = useState(true)
 
+  const [transferValidationError, setTransferValidationError] = useState<string>("")
+
   // États pour le formulaire de bénéficiaire
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [isPending, startTransition] = useTransition()
-  const [transferState, transferAction, isTransferPending] = useActionState(executeTransfer, null) // Utilisation de useActionState avec executeTransfer
+  const [transferState, transferAction, isTransferPending] = useActionState(executeTransfer, null)
   const [addBeneficiaryState, addBeneficiaryAction, isAddBeneficiaryPending] = useActionState(addBeneficiary, null)
 
   // Fonctions utilitaires
@@ -104,20 +106,22 @@ export default function NewTransferPage() {
   const handleTransferSubmit = (e: React.FormEvent) => {
     e.preventDefault()
 
+    setTransferValidationError("") // Réinitialiser les erreurs
+
     if (!selectedAccount) {
-      alert("Veuillez sélectionner un compte débiteur")
+      setTransferValidationError("Veuillez sélectionner un compte débiteur")
       return
     }
     if (!selectedBeneficiary) {
-      alert("Veuillez sélectionner un bénéficiaire")
+      setTransferValidationError("Veuillez sélectionner un bénéficiaire")
       return
     }
     if (!amount || Number.parseFloat(amount) <= 0) {
-      alert("Veuillez saisir un montant valide")
+      setTransferValidationError("Veuillez saisir un montant valide")
       return
     }
     if (!motif.trim()) {
-      alert("Veuillez saisir le motif du virement")
+      setTransferValidationError("Veuillez saisir le motif du virement")
       return
     }
 
@@ -234,6 +238,7 @@ export default function NewTransferPage() {
 
   useEffect(() => {
     if (transferState?.success) {
+      setTransferValidationError("")
       setSelectedAccount("")
       setSelectedBeneficiary("")
       setAmount("")
@@ -249,7 +254,13 @@ export default function NewTransferPage() {
         <p className="text-gray-600">Effectuer un virement vers un bénéficiaire</p>
       </div>
 
-      {/* Messages de feedback pour le virement */}
+      {transferValidationError && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{transferValidationError}</AlertDescription>
+        </Alert>
+      )}
+
       {transferState?.success && (
         <Alert className="border-green-200 bg-green-50">
           <Check className="h-4 w-4 text-green-600" />
