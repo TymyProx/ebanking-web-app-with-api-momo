@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -39,14 +39,13 @@ export default function BeneficiaryForm({
 
   const formRef = useRef<HTMLFormElement>(null)
 
-  const handleTypeChange = (type: string) => {
-    setSelectedType(type)
-    if (type === "BNG-BNG") {
+  useEffect(() => {
+    if (selectedType === "BNG-BNG") {
       setSelectedBank("Banque Nationale de Guinée")
-    } else {
+    } else if (selectedType !== "" && selectedBank === "Banque Nationale de Guinée") {
       setSelectedBank("")
     }
-  }
+  }, [selectedType])
 
   const validateRIBField = async (account: string, type: string) => {
     if (!account || account.length <= 5) {
@@ -66,19 +65,9 @@ export default function BeneficiaryForm({
     e.preventDefault()
     const formData = new FormData(e.currentTarget)
 
-    if (!selectedType) {
-      alert("Veuillez sélectionner un type de bénéficiaire")
-      return
-    }
-
     formData.set("type", selectedType)
     const bankValue = selectedType === "BNG-BNG" ? "Banque Nationale de Guinée" : selectedBank
-    if (!bankValue) {
-      alert("Veuillez sélectionner une banque")
-      return
-    }
     formData.set("bank", bankValue)
-
     if (selectedCountry) {
       formData.set("country", selectedCountry)
     }
@@ -101,7 +90,7 @@ export default function BeneficiaryForm({
 
       <div className="space-y-2">
         <Label htmlFor="type">Type de bénéficiaire *</Label>
-        <Select value={selectedType} onValueChange={handleTypeChange} required>
+        <Select value={selectedType} onValueChange={setSelectedType} required>
           <SelectTrigger>
             <SelectValue placeholder="Sélectionnez le type" />
           </SelectTrigger>
@@ -138,10 +127,7 @@ export default function BeneficiaryForm({
       <div className="space-y-2">
         <Label htmlFor="bank">Banque *</Label>
         {selectedType === "BNG-BNG" ? (
-          <>
-            <Input id="bank" name="bank" value="Banque Nationale de Guinée" readOnly className="bg-gray-50" />
-            <input type="hidden" name="bank" value="Banque Nationale de Guinée" />
-          </>
+          <Input id="bank" name="bank" value="Banque Nationale de Guinée" readOnly className="bg-gray-50" />
         ) : (
           <Select value={selectedBank} onValueChange={setSelectedBank} required>
             <SelectTrigger>

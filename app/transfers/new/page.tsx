@@ -117,7 +117,7 @@ export default function NewTransferPage() {
       return
     }
     if (!motif.trim()) {
-      alert("Veuillez saisir un motif pour le virement")
+      alert("Veuillez saisir le motif du virement")
       return
     }
 
@@ -128,7 +128,9 @@ export default function NewTransferPage() {
     formData.append("purpose", motif)
     formData.append("transferDate", transferDate)
 
-    transferAction(formData)
+    startTransition(() => {
+      transferAction(formData)
+    })
   }
 
   // Gestionnaires d'événements pour le bénéficiaire
@@ -444,12 +446,11 @@ export default function NewTransferPage() {
           <div className="flex justify-end">
             <Button
               type="submit"
-              disabled={isTransferPending || !selectedAccount || !selectedBeneficiary || !amount || !motif} // Utilisation de isTransferPending au lieu de isPending
+              disabled={isTransferPending || !selectedAccount || !selectedBeneficiary || !amount || !motif}
               className="flex items-center space-x-2"
             >
               <ArrowRight className="h-4 w-4" />
-              <span>{isTransferPending ? "Traitement..." : "Effectuer le virement"}</span>{" "}
-              {/* Utilisation de isTransferPending */}
+              <span>{isTransferPending ? "Traitement..." : "Effectuer le virement"}</span>
             </Button>
           </div>
         </div>
