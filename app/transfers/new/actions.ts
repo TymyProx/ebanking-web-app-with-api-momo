@@ -217,6 +217,10 @@ export async function executeTransfer(prevState: any, formData: FormData) {
     }
 
     console.log("[v0] Données extraites:", data)
+    console.log("[v0] targetAccount valeur brute:", data.targetAccount)
+    console.log("[v0] targetAccount type:", typeof data.targetAccount)
+    console.log("[v0] targetAccount === null:", data.targetAccount === null)
+    console.log("[v0] targetAccount === '':", data.targetAccount === "")
 
     const cleanedData = {
       sourceAccount: data.sourceAccount,
@@ -229,6 +233,8 @@ export async function executeTransfer(prevState: any, formData: FormData) {
     }
 
     console.log("[v0] Données nettoyées:", cleanedData)
+    console.log("[v0] targetAccount après nettoyage:", cleanedData.targetAccount)
+    console.log("[v0] targetAccount après nettoyage type:", typeof cleanedData.targetAccount)
 
     // Validation des données
     const validatedData = transferSchema.parse(cleanedData)
