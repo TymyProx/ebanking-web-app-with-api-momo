@@ -3,7 +3,7 @@
 import type React from "react"
 import { useState, useTransition, useActionState, useEffect } from "react"
 import { executeTransfer } from "./actions"
-import { getBeneficiaries } from "../beneficiaries/actions"
+import { getBeneficiaries, addBeneficiary } from "../beneficiaries/actions"
 import { getAccounts } from "../../accounts/actions"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -84,10 +84,7 @@ export default function NewTransferPage() {
   const [isPending, startTransition] = useTransition()
   const [transferState, transferAction] = useActionState(executeTransfer, null)
 
-  const [beneficiaryState, setBeneficiaryState] = useState<{
-    success?: boolean
-    error?: string
-  } | null>(null)
+  const [beneficiaryState, beneficiaryAction] = useActionState(addBeneficiary, null)
 
   // Fonctions utilitaires
   const formatCurrency = (amount: number, currency: string) => {
@@ -132,67 +129,51 @@ export default function NewTransferPage() {
   }
 
   // Gestionnaires d'événements pour le bénéficiaire
-  const handleBeneficiarySubmit = (e: React.FormEvent) => {
+  const handleBeneficiarySubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!beneficiaryForm.name || !beneficiaryForm.type || !beneficiaryForm.account || !beneficiaryForm.bank) {
-      setBeneficiaryState({ error: "Tous les champs obligatoires doivent être remplis" })
-      return
-    }
+    const formData = new FormData()
+    formData.append("name", beneficiaryForm.name)
+    formData.append("type", beneficiaryForm.type)
+    formData.append("account", beneficiaryForm.account)
+    formData.append("bank", beneficiaryForm.bank)
+    formData.append("swiftCode", beneficiaryForm.swiftCode)
+    formData.append("country", beneficiaryForm.country)
 
-    if (!validateRIB(beneficiaryForm.account, beneficiaryForm.type)) {
-      setBeneficiaryState({ error: "Format de compte invalide" })
-      return
-    }
-
-    if (beneficiaryForm.type === "International" && !beneficiaryForm.swiftCode) {
-      setBeneficiaryState({ error: "Le code SWIFT est obligatoire pour les virements internationaux" })
-      return
-    }
-
-    startTransition(async () => {
-      try {
-        // Simulation d'un délai de traitement
-        await new Promise((resolve) => setTimeout(resolve, 1500))
-
-        // Simulation d'une erreur aléatoire (3% de chance)
-        if (Math.random() < 0.03) {
-          throw new Error("Erreur lors de l'ajout du bénéficiaire")
+    const result = await beneficiaryAction(formData)
+    if (result?.success) {
+      // Recharger les bénéficiaires après ajout
+      const loadBeneficiaries = async () => {
+        try {
+          const result = await getBeneficiaries()
+          if (Array.isArray(result) && result.length > 0) {
+            const adaptedBeneficiaries: Beneficiary[] = result.map((beneficiary: any) => ({
+              id: beneficiary.id || beneficiary.beneficiaryId,
+              name: beneficiary.name,
+              account: beneficiary.accountNumber,
+              bank: beneficiary.bankCode || beneficiary.bank || "Banque inconnue",
+              type: "BNG-BNG" as const,
+            }))
+            setBeneficiaries(adaptedBeneficiaries)
+          }
+        } catch (error) {
+          console.error("[v0] Erreur lors du rechargement des bénéficiaires:", error)
         }
-
-        // Ajouter le nouveau bénéficiaire
-        const newBeneficiary: Beneficiary = {
-          id: Date.now().toString(),
-          name: beneficiaryForm.name,
-          account: beneficiaryForm.account,
-          bank: beneficiaryForm.bank,
-          type: beneficiaryForm.type as "BNG-BNG" | "BNG-CONFRERE" | "International",
-        }
-
-        setBeneficiaries((prev) => [...prev, newBeneficiary])
-        setSelectedBeneficiary(newBeneficiary.id)
-
-        setBeneficiaryState({ success: true })
-
-        // Reset du formulaire et fermeture du dialog
-        setTimeout(() => {
-          setBeneficiaryForm({
-            name: "",
-            type: "",
-            account: "",
-            bank: "",
-            swiftCode: "",
-            country: "",
-          })
-          setBeneficiaryState(null)
-          setIsDialogOpen(false)
-        }, 2000)
-      } catch (error) {
-        setBeneficiaryState({
-          error: error instanceof Error ? error.message : "Erreur lors de l'ajout",
-        })
       }
-    })
+
+      await loadBeneficiaries()
+
+      // Reset du formulaire et fermeture du dialog
+      setBeneficiaryForm({
+        name: "",
+        type: "",
+        account: "",
+        bank: "",
+        swiftCode: "",
+        country: "",
+      })
+      setIsDialogOpen(false)
+    }
   }
 
   const selectedAccountData = accounts.find((acc) => acc.id === selectedAccount)
@@ -381,7 +362,6 @@ export default function NewTransferPage() {
                       <DialogTitle>Ajouter un bénéficiaire</DialogTitle>
                     </DialogHeader>
 
-                    {/* Messages de feedback pour le bénéficiaire */}
                     {beneficiaryState?.success && (
                       <Alert className="border-green-200 bg-green-50">
                         <Check className="h-4 w-4 text-green-600" />
