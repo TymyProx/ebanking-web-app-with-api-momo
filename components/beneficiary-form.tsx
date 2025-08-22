@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 import { CheckCircle, AlertCircle } from "lucide-react"
 
 interface BeneficiaryFormProps {
@@ -23,6 +24,9 @@ interface BeneficiaryFormProps {
   onSubmit: (formData: FormData) => void
   onCancel: () => void
   isPending: boolean
+  successMessage?: string
+  errorMessage?: string
+  onMessageClear?: () => void
 }
 
 export default function BeneficiaryForm({
@@ -31,6 +35,9 @@ export default function BeneficiaryForm({
   onSubmit,
   onCancel,
   isPending,
+  successMessage,
+  errorMessage,
+  onMessageClear,
 }: BeneficiaryFormProps) {
   const [selectedType, setSelectedType] = useState(initialData.type || "")
   const [selectedBank, setSelectedBank] = useState(initialData.bank || "")
@@ -47,13 +54,37 @@ export default function BeneficiaryForm({
     }
   }, [selectedType])
 
+  useEffect(() => {
+    if (successMessage || errorMessage) {
+      const timer = setTimeout(() => {
+        if (onMessageClear) {
+          onMessageClear()
+        }
+      }, 8000)
+
+      return () => clearTimeout(timer)
+    }
+  }, [successMessage, errorMessage, onMessageClear])
+
+  useEffect(() => {
+    if (successMessage && !isEdit) {
+      setSelectedType("")
+      setSelectedBank("")
+      setSelectedCountry("")
+      setRibValidation(null)
+
+      if (formRef.current) {
+        formRef.current.reset()
+      }
+    }
+  }, [successMessage, isEdit])
+
   const validateRIBField = async (account: string, type: string) => {
     if (!account || account.length <= 5) {
       setRibValidation(null)
       return
     }
 
-    // Simulation de validation RIB
     const isValid = account.length >= 10
     setRibValidation({
       isValid,
@@ -77,6 +108,20 @@ export default function BeneficiaryForm({
 
   return (
     <form ref={formRef} onSubmit={handleSubmit} className="space-y-4">
+      {successMessage && (
+        <Alert variant="default" className="border-green-200 bg-green-50">
+          <CheckCircle className="h-4 w-4 text-green-600" />
+          <AlertDescription className="text-green-800">{successMessage}</AlertDescription>
+        </Alert>
+      )}
+
+      {errorMessage && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{errorMessage}</AlertDescription>
+        </Alert>
+      )}
+
       <div className="space-y-2">
         <Label htmlFor="name">Nom complet *</Label>
         <Input
