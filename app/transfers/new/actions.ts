@@ -201,6 +201,11 @@ function getTransactionType(beneficiaryType: string): string {
 // Action pour exécuter le virement
 export async function executeTransfer(prevState: any, formData: FormData) {
   try {
+    console.log("[v0] FormData reçu:")
+    for (const [key, value] of formData.entries()) {
+      console.log(`[v0] ${key}: ${value}`)
+    }
+
     const data = {
       sourceAccount: formData.get("sourceAccount") as string,
       transferType: formData.get("transferType") as string,
@@ -210,6 +215,8 @@ export async function executeTransfer(prevState: any, formData: FormData) {
       purpose: formData.get("purpose") as string,
       transferDate: formData.get("transferDate") as string,
     }
+
+    console.log("[v0] Données extraites:", data)
 
     const cleanedData = {
       sourceAccount: data.sourceAccount,
@@ -221,8 +228,12 @@ export async function executeTransfer(prevState: any, formData: FormData) {
       transferDate: data.transferDate,
     }
 
+    console.log("[v0] Données nettoyées:", cleanedData)
+
     // Validation des données
     const validatedData = transferSchema.parse(cleanedData)
+
+    console.log("[v0] Données validées:", validatedData)
 
     const transactionId = `TXN_${Date.now()}_${Math.floor(Math.random() * 1000)
       .toString()
@@ -298,6 +309,7 @@ export async function executeTransfer(prevState: any, formData: FormData) {
     console.error("Erreur lors de l'exécution du virement:", error)
 
     if (error instanceof z.ZodError) {
+      console.log("[v0] Erreurs de validation Zod:", error.errors)
       return {
         success: false,
         error: error.errors[0].message,
