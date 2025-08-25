@@ -211,6 +211,9 @@ export async function executeTransfer(prevState: any, formData: FormData) {
       transferDate: formData.get("transferDate") as string,
     }
 
+    console.log("[v0] Données brutes du formulaire:", data)
+    console.log("[v0] targetAccount reçu:", data.targetAccount, "Type:", typeof data.targetAccount)
+
     const cleanedData = {
       sourceAccount: data.sourceAccount,
       transferType: data.transferType,
@@ -221,16 +224,24 @@ export async function executeTransfer(prevState: any, formData: FormData) {
       transferDate: data.transferDate,
     }
 
+    console.log("[v0] Données nettoyées:", cleanedData)
+
     // Validation des données
     const validatedData = transferSchema.parse(cleanedData)
+
+    console.log("[v0] Données validées:", validatedData)
 
     const transactionId = `TXN_${Date.now()}_${Math.floor(Math.random() * 1000)
       .toString()
       .padStart(3, "0")}`
 
     let txnType = "TRANSFER"
+    let finalBeneficiaryId = validatedData.beneficiaryId
+
     if (validatedData.transferType === "account-to-account") {
       txnType = "INTERNAL_TRANSFER"
+      // Pour les virements compte à compte, utiliser targetAccount comme beneficiaryId
+      finalBeneficiaryId = validatedData.targetAccount
     } else if (validatedData.beneficiaryId) {
       // Pour les virements vers bénéficiaires, utiliser le type du bénéficiaire
       txnType = getTransactionType("BNG-BNG") // Par défaut, peut être déterminé dynamiquement
@@ -245,16 +256,11 @@ export async function executeTransfer(prevState: any, formData: FormData) {
         valueDate: new Date(validatedData.transferDate).toISOString(),
         status: "PENDING",
         description: validatedData.purpose,
-        ...(validatedData.transferType === "account-to-beneficiary" &&
-          validatedData.beneficiaryId && {
-            beneficiaryId: validatedData.beneficiaryId,
-          }),
-        ...(validatedData.transferType === "account-to-account" &&
-          validatedData.targetAccount && {
-            targetAccountId: validatedData.targetAccount,
-          }),
+        beneficiaryId: finalBeneficiaryId,
       },
     }
+
+    console.log("[v0] Données envoyées à l'API:", apiData)
 
     const cookieToken = (await cookies()).get("token")?.value
     const usertoken = cookieToken
@@ -298,6 +304,7 @@ export async function executeTransfer(prevState: any, formData: FormData) {
     console.error("Erreur lors de l'exécution du virement:", error)
 
     if (error instanceof z.ZodError) {
+      console.log("[v0] Erreurs de validation Zod:", error.errors)
       return {
         success: false,
         error: error.errors[0].message,
