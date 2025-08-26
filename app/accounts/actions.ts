@@ -3,8 +3,8 @@
 import { cookies } from "next/headers"
 import { revalidatePath } from "next/cache"
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://192.168.1.200:8080/api"
-const TENANT_ID = "afa25e29-08dd-46b6-8ea2-d778cb2d6694"
+const API_BASE_URL = process.env.API_BASE_URL || process.env.NEXT_PUBLIC_API_BASE_URL || "http://192.168.1.200:8080/api"
+const TENANT_ID = process.env.TENANT_ID || "11cacc69-5a49-4f01-8b16-e8f473746634"
 
 export async function getAccounts() {
   const cookieToken = (await cookies()).get("token")?.value
