@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useTransition } from "react"
 import { useSearchParams } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -125,6 +125,8 @@ export default function StatementsPage() {
   const [generateState, generateAction, isGenerating] = useActionState(generateStatement, null)
   const [emailState, emailAction, isSending] = useActionState(sendStatementByEmail, null)
 
+  const [isPending, startTransition] = useTransition()
+
   useEffect(() => {
     const loadAccounts = async () => {
       try {
@@ -236,7 +238,9 @@ export default function StatementsPage() {
     formData.append("language", language)
     formData.append("transactions", JSON.stringify(filteredTransactions))
 
-    await generateAction(formData)
+    startTransition(() => {
+      generateAction(formData)
+    })
   }
 
   const handleSendByEmail = async () => {
@@ -248,7 +252,9 @@ export default function StatementsPage() {
     formData.append("email", emailAddress)
     formData.append("statementId", generateState.statementId)
 
-    await emailAction(formData)
+    startTransition(() => {
+      emailAction(formData)
+    })
   }
 
   const getAccountIcon = (type: string) => {
@@ -555,8 +561,12 @@ export default function StatementsPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex flex-col sm:flex-row gap-4">
-                <Button onClick={handleGenerateStatement} disabled={!isFormValid || isGenerating} className="flex-1">
-                  {isGenerating ? (
+                <Button
+                  onClick={handleGenerateStatement}
+                  disabled={!isFormValid || isGenerating || isPending}
+                  className="flex-1"
+                >
+                  {isGenerating || isPending ? (
                     <>
                       <Clock className="w-4 h-4 mr-2 animate-spin" />
                       Génération en cours...
@@ -593,8 +603,16 @@ export default function StatementsPage() {
                       onChange={(e) => setEmailAddress(e.target.value)}
                       className="flex-1"
                     />
-                    <Button onClick={handleSendByEmail} disabled={!emailAddress || isSending} variant="outline">
-                      {isSending ? <Clock className="w-4 h-4 animate-spin" /> : <Mail className="w-4 h-4" />}
+                    <Button
+                      onClick={handleSendByEmail}
+                      disabled={!emailAddress || isSending || isPending}
+                      variant="outline"
+                    >
+                      {isSending || isPending ? (
+                        <Clock className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Mail className="w-4 h-4" />
+                      )}
                     </Button>
                   </div>
                 </div>
