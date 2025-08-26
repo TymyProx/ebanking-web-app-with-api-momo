@@ -44,107 +44,161 @@ interface Account {
 
 const generatePDF = async (account: Account) => {
   const { jsPDF } = await import("jspdf")
+  const { autoTable } = await import("jspdf-autotable")
 
   const doc = new jsPDF()
 
-  const primaryColor = [0, 102, 204]
-  const secondaryColor = [102, 102, 102]
+  const primaryColor = [41, 128, 185] // Bleu moderne
+  const accentColor = [52, 152, 219] // Bleu clair
+  const darkColor = [44, 62, 80] // Gris foncé
+  const lightGray = [236, 240, 241] // Gris clair
 
+  // En-tête moderne avec dégradé simulé
   doc.setFillColor(...primaryColor)
-  doc.rect(0, 0, 210, 30, "F")
+  doc.rect(0, 0, 210, 35, "F")
 
+  doc.setFillColor(...accentColor)
+  doc.rect(0, 30, 210, 5, "F")
+
+  // Titre principal
   doc.setTextColor(255, 255, 255)
-  doc.setFontSize(20)
+  doc.setFontSize(24)
   doc.setFont("helvetica", "bold")
   doc.text("RELEVÉ D'IDENTITÉ BANCAIRE", 105, 20, { align: "center" })
 
-  doc.setTextColor(...primaryColor)
-  doc.setFontSize(16)
-  doc.text(account.bankName.toUpperCase(), 20, 50)
-
-  doc.setTextColor(0, 0, 0)
   doc.setFontSize(12)
   doc.setFont("helvetica", "normal")
+  doc.text("Document officiel", 105, 28, { align: "center" })
 
-  let yPos = 70
-
+  // Logo/Nom de la banque
+  doc.setTextColor(...primaryColor)
+  doc.setFontSize(18)
   doc.setFont("helvetica", "bold")
-  doc.text("Titulaire du compte:", 20, yPos)
-  doc.setFont("helvetica", "normal")
-  doc.text(account.accountHolder, 70, yPos)
-  yPos += 10
+  doc.text(account.bankName.toUpperCase(), 20, 55)
 
-  doc.setFont("helvetica", "bold")
-  doc.text("Numéro de compte:", 20, yPos)
-  doc.setFont("helvetica", "normal")
-  doc.text(account.number, 70, yPos)
-  yPos += 10
+  // Date de génération
+  doc.setTextColor(...darkColor)
+  doc.setFontSize(10)
+  doc.text(`Généré le ${new Date().toLocaleDateString("fr-FR")} à ${new Date().toLocaleTimeString("fr-FR")}`, 150, 55)
 
-  doc.setFont("helvetica", "bold")
-  doc.text("IBAN:", 20, yPos)
-  doc.setFont("helvetica", "normal")
-  doc.text(account.iban, 70, yPos)
-  yPos += 15
+  let yPos = 75
 
-  doc.setFont("helvetica", "bold")
-  doc.text("Code banque:", 20, yPos)
-  doc.setFont("helvetica", "normal")
-  doc.text(account.bankCode, 70, yPos)
+  const accountData = [
+    ["Titulaire du compte", account.accountHolder],
+    ["Numéro de compte", account.number],
+    ["IBAN", account.iban],
+    ["Type de compte", account.type],
+    ["Devise", account.currency],
+    ["Statut", account.status],
+  ]
 
-  doc.setFont("helvetica", "bold")
-  doc.text("Code agence:", 120, yPos)
-  doc.setFont("helvetica", "normal")
-  doc.text(account.branchCode, 170, yPos)
-  yPos += 10
+  // @ts-ignore - jsPDF autoTable types
+  doc.autoTable({
+    startY: yPos,
+    head: [["Information", "Valeur"]],
+    body: accountData,
+    theme: "grid",
+    headStyles: {
+      fillColor: primaryColor,
+      textColor: [255, 255, 255],
+      fontSize: 12,
+      fontStyle: "bold",
+      halign: "center",
+    },
+    bodyStyles: {
+      fontSize: 11,
+      cellPadding: 8,
+    },
+    alternateRowStyles: {
+      fillColor: lightGray,
+    },
+    columnStyles: {
+      0: { fontStyle: "bold", fillColor: [248, 249, 250] },
+      1: { fontStyle: "normal" },
+    },
+    margin: { left: 20, right: 20 },
+  })
 
-  doc.setFont("helvetica", "bold")
-  doc.text("Code SWIFT:", 20, yPos)
-  doc.setFont("helvetica", "normal")
-  doc.text(account.swiftCode, 70, yPos)
-  yPos += 15
+  // @ts-ignore - Récupération de la position Y après le tableau
+  yPos = doc.lastAutoTable.finalY + 20
 
-  doc.setFont("helvetica", "bold")
-  doc.text("Type de compte:", 20, yPos)
-  doc.setFont("helvetica", "normal")
-  doc.text(account.type, 70, yPos)
+  const bankingCodes = [
+    ["Code banque", account.bankCode],
+    ["Code agence", account.branchCode],
+    ["Code SWIFT/BIC", account.swiftCode],
+    ["RIB complet", `${account.bankCode} ${account.branchCode} ${account.number.replace(/-/g, "")}`],
+  ]
 
-  doc.setFont("helvetica", "bold")
-  doc.text("Devise:", 120, yPos)
-  doc.setFont("helvetica", "normal")
-  doc.text(account.currency, 170, yPos)
-  yPos += 10
+  // @ts-ignore
+  doc.autoTable({
+    startY: yPos,
+    head: [["Codes bancaires", "Valeur"]],
+    body: bankingCodes,
+    theme: "grid",
+    headStyles: {
+      fillColor: accentColor,
+      textColor: [255, 255, 255],
+      fontSize: 12,
+      fontStyle: "bold",
+      halign: "center",
+    },
+    bodyStyles: {
+      fontSize: 11,
+      cellPadding: 8,
+    },
+    alternateRowStyles: {
+      fillColor: lightGray,
+    },
+    columnStyles: {
+      0: { fontStyle: "bold", fillColor: [248, 249, 250] },
+      1: { fontStyle: "normal", fontFamily: "courier" },
+    },
+    margin: { left: 20, right: 20 },
+  })
 
-  doc.setFont("helvetica", "bold")
-  doc.text("Statut:", 20, yPos)
-  doc.setFont("helvetica", "normal")
-  doc.text(account.status, 70, yPos)
-  yPos += 20
+  // @ts-ignore
+  yPos = doc.lastAutoTable.finalY + 20
+
+  doc.setFillColor(...lightGray)
+  doc.rect(20, yPos, 170, 35, "F")
 
   doc.setTextColor(...primaryColor)
   doc.setFontSize(14)
   doc.setFont("helvetica", "bold")
-  doc.text("INFORMATIONS DE L'AGENCE", 20, yPos)
-  yPos += 10
+  doc.text("INFORMATIONS DE L'AGENCE", 25, yPos + 10)
 
-  doc.setTextColor(0, 0, 0)
-  doc.setFontSize(12)
+  doc.setTextColor(...darkColor)
+  doc.setFontSize(11)
   doc.setFont("helvetica", "normal")
+  doc.text(account.branchName, 25, yPos + 18)
+  doc.text("Avenue de la République, Kaloum", 25, yPos + 24)
+  doc.text("Conakry, République de Guinée", 25, yPos + 30)
 
-  doc.text(account.branchName, 20, yPos)
-  yPos += 8
-  doc.text("Avenue de la République", 20, yPos)
-  yPos += 6
-  doc.text("Kaloum, Conakry", 20, yPos)
-  yPos += 6
-  doc.text("République de Guinée", 20, yPos)
-  yPos += 6
-  doc.text("Tél: +224 622 123 456", 20, yPos)
-  yPos += 15
+  doc.setFont("helvetica", "bold")
+  doc.text("Tél: +224 622 123 456", 120, yPos + 24)
+  doc.text("Email: contact@bng.gn", 120, yPos + 30)
 
-  doc.setTextColor(...secondaryColor)
-  doc.setFontSize(10)
-  doc.text(`Document généré le ${new Date().toLocaleDateString("fr-FR")}`, 20, yPos)
-  doc.text("Ce document est valable pour tous vos échanges bancaires", 20, yPos + 5)
+  yPos += 50
+
+  doc.setDrawColor(...primaryColor)
+  doc.setLineWidth(0.5)
+  doc.line(20, yPos, 190, yPos)
+
+  doc.setTextColor(...darkColor)
+  doc.setFontSize(9)
+  doc.setFont("helvetica", "italic")
+  doc.text("Ce document est valable pour tous vos échanges bancaires et opérations financières.", 105, yPos + 8, {
+    align: "center",
+  })
+  doc.text("Conservez-le précieusement et ne le communiquez qu'aux organismes autorisés.", 105, yPos + 14, {
+    align: "center",
+  })
+
+  // Numéro de page et sécurité
+  doc.setFontSize(8)
+  doc.setFont("helvetica", "normal")
+  doc.text("Page 1/1", 190, 285, { align: "right" })
+  doc.text(`Réf: RIB-${account.number.replace(/-/g, "")}-${Date.now()}`, 20, 285)
 
   const fileName = `RIB_${account.number.replace(/-/g, "_")}_${new Date().toISOString().split("T")[0]}.pdf`
   doc.save(fileName)
