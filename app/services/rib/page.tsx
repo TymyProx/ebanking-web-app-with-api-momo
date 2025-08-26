@@ -44,7 +44,6 @@ interface Account {
 
 const generatePDF = async (account: Account) => {
   const { jsPDF } = await import("jspdf")
-  const { autoTable } = await import("jspdf-autotable")
 
   const doc = new jsPDF()
 
@@ -52,6 +51,63 @@ const generatePDF = async (account: Account) => {
   const accentColor = [52, 152, 219] // Bleu clair
   const darkColor = [44, 62, 80] // Gris foncé
   const lightGray = [236, 240, 241] // Gris clair
+
+  const createTable = (startY: number, headers: string[], data: string[][], headerColor: number[], title?: string) => {
+    const tableWidth = 170
+    const colWidth = tableWidth / headers.length
+    const rowHeight = 12
+    let currentY = startY
+
+    // Titre du tableau si fourni
+    if (title) {
+      doc.setFillColor(...headerColor)
+      doc.rect(20, currentY, tableWidth, rowHeight, "F")
+      doc.setTextColor(255, 255, 255)
+      doc.setFontSize(12)
+      doc.setFont("helvetica", "bold")
+      doc.text(title, 105, currentY + 8, { align: "center" })
+      currentY += rowHeight
+    }
+
+    // En-têtes
+    doc.setFillColor(...headerColor)
+    doc.rect(20, currentY, tableWidth, rowHeight, "F")
+    doc.setTextColor(255, 255, 255)
+    doc.setFontSize(11)
+    doc.setFont("helvetica", "bold")
+
+    headers.forEach((header, index) => {
+      const x = 20 + index * colWidth + colWidth / 2
+      doc.text(header, x, currentY + 8, { align: "center" })
+    })
+    currentY += rowHeight
+
+    // Données
+    doc.setTextColor(...darkColor)
+    doc.setFont("helvetica", "normal")
+
+    data.forEach((row, rowIndex) => {
+      // Alternance de couleurs
+      if (rowIndex % 2 === 0) {
+        doc.setFillColor(...lightGray)
+        doc.rect(20, currentY, tableWidth, rowHeight, "F")
+      }
+
+      // Bordures
+      doc.setDrawColor(200, 200, 200)
+      doc.setLineWidth(0.1)
+      doc.rect(20, currentY, tableWidth, rowHeight, "S")
+
+      row.forEach((cell, colIndex) => {
+        const x = 20 + colIndex * colWidth + 5
+        doc.setFont("helvetica", colIndex === 0 ? "bold" : "normal")
+        doc.text(cell, x, currentY + 8)
+      })
+      currentY += rowHeight
+    })
+
+    return currentY
+  }
 
   // En-tête moderne avec dégradé simulé
   doc.setFillColor(...primaryColor)
@@ -92,35 +148,8 @@ const generatePDF = async (account: Account) => {
     ["Statut", account.status],
   ]
 
-  // @ts-ignore - jsPDF autoTable types
-  doc.autoTable({
-    startY: yPos,
-    head: [["Information", "Valeur"]],
-    body: accountData,
-    theme: "grid",
-    headStyles: {
-      fillColor: primaryColor,
-      textColor: [255, 255, 255],
-      fontSize: 12,
-      fontStyle: "bold",
-      halign: "center",
-    },
-    bodyStyles: {
-      fontSize: 11,
-      cellPadding: 8,
-    },
-    alternateRowStyles: {
-      fillColor: lightGray,
-    },
-    columnStyles: {
-      0: { fontStyle: "bold", fillColor: [248, 249, 250] },
-      1: { fontStyle: "normal" },
-    },
-    margin: { left: 20, right: 20 },
-  })
-
-  // @ts-ignore - Récupération de la position Y après le tableau
-  yPos = doc.lastAutoTable.finalY + 20
+  yPos = createTable(yPos, ["Information", "Valeur"], accountData, primaryColor, "INFORMATIONS DU COMPTE")
+  yPos += 20
 
   const bankingCodes = [
     ["Code banque", account.bankCode],
@@ -129,36 +158,10 @@ const generatePDF = async (account: Account) => {
     ["RIB complet", `${account.bankCode} ${account.branchCode} ${account.number.replace(/-/g, "")}`],
   ]
 
-  // @ts-ignore
-  doc.autoTable({
-    startY: yPos,
-    head: [["Codes bancaires", "Valeur"]],
-    body: bankingCodes,
-    theme: "grid",
-    headStyles: {
-      fillColor: accentColor,
-      textColor: [255, 255, 255],
-      fontSize: 12,
-      fontStyle: "bold",
-      halign: "center",
-    },
-    bodyStyles: {
-      fontSize: 11,
-      cellPadding: 8,
-    },
-    alternateRowStyles: {
-      fillColor: lightGray,
-    },
-    columnStyles: {
-      0: { fontStyle: "bold", fillColor: [248, 249, 250] },
-      1: { fontStyle: "normal", fontFamily: "courier" },
-    },
-    margin: { left: 20, right: 20 },
-  })
+  yPos = createTable(yPos, ["Codes bancaires", "Valeur"], bankingCodes, accentColor, "CODES BANCAIRES")
+  yPos += 20
 
-  // @ts-ignore
-  yPos = doc.lastAutoTable.finalY + 20
-
+  // Section agence
   doc.setFillColor(...lightGray)
   doc.rect(20, yPos, 170, 35, "F")
 
@@ -180,6 +183,7 @@ const generatePDF = async (account: Account) => {
 
   yPos += 50
 
+  // Pied de page
   doc.setDrawColor(...primaryColor)
   doc.setLineWidth(0.5)
   doc.line(20, yPos, 190, yPos)
