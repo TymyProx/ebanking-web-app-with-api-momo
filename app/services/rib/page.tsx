@@ -42,6 +42,114 @@ interface Account {
   swiftCode: string
 }
 
+const generatePDF = async (account: Account) => {
+  const { jsPDF } = await import("jspdf")
+
+  const doc = new jsPDF()
+
+  const primaryColor = [0, 102, 204]
+  const secondaryColor = [102, 102, 102]
+
+  doc.setFillColor(...primaryColor)
+  doc.rect(0, 0, 210, 30, "F")
+
+  doc.setTextColor(255, 255, 255)
+  doc.setFontSize(20)
+  doc.setFont("helvetica", "bold")
+  doc.text("RELEVÉ D'IDENTITÉ BANCAIRE", 105, 20, { align: "center" })
+
+  doc.setTextColor(...primaryColor)
+  doc.setFontSize(16)
+  doc.text(account.bankName.toUpperCase(), 20, 50)
+
+  doc.setTextColor(0, 0, 0)
+  doc.setFontSize(12)
+  doc.setFont("helvetica", "normal")
+
+  let yPos = 70
+
+  doc.setFont("helvetica", "bold")
+  doc.text("Titulaire du compte:", 20, yPos)
+  doc.setFont("helvetica", "normal")
+  doc.text(account.accountHolder, 70, yPos)
+  yPos += 10
+
+  doc.setFont("helvetica", "bold")
+  doc.text("Numéro de compte:", 20, yPos)
+  doc.setFont("helvetica", "normal")
+  doc.text(account.number, 70, yPos)
+  yPos += 10
+
+  doc.setFont("helvetica", "bold")
+  doc.text("IBAN:", 20, yPos)
+  doc.setFont("helvetica", "normal")
+  doc.text(account.iban, 70, yPos)
+  yPos += 15
+
+  doc.setFont("helvetica", "bold")
+  doc.text("Code banque:", 20, yPos)
+  doc.setFont("helvetica", "normal")
+  doc.text(account.bankCode, 70, yPos)
+
+  doc.setFont("helvetica", "bold")
+  doc.text("Code agence:", 120, yPos)
+  doc.setFont("helvetica", "normal")
+  doc.text(account.branchCode, 170, yPos)
+  yPos += 10
+
+  doc.setFont("helvetica", "bold")
+  doc.text("Code SWIFT:", 20, yPos)
+  doc.setFont("helvetica", "normal")
+  doc.text(account.swiftCode, 70, yPos)
+  yPos += 15
+
+  doc.setFont("helvetica", "bold")
+  doc.text("Type de compte:", 20, yPos)
+  doc.setFont("helvetica", "normal")
+  doc.text(account.type, 70, yPos)
+
+  doc.setFont("helvetica", "bold")
+  doc.text("Devise:", 120, yPos)
+  doc.setFont("helvetica", "normal")
+  doc.text(account.currency, 170, yPos)
+  yPos += 10
+
+  doc.setFont("helvetica", "bold")
+  doc.text("Statut:", 20, yPos)
+  doc.setFont("helvetica", "normal")
+  doc.text(account.status, 70, yPos)
+  yPos += 20
+
+  doc.setTextColor(...primaryColor)
+  doc.setFontSize(14)
+  doc.setFont("helvetica", "bold")
+  doc.text("INFORMATIONS DE L'AGENCE", 20, yPos)
+  yPos += 10
+
+  doc.setTextColor(0, 0, 0)
+  doc.setFontSize(12)
+  doc.setFont("helvetica", "normal")
+
+  doc.text(account.branchName, 20, yPos)
+  yPos += 8
+  doc.text("Avenue de la République", 20, yPos)
+  yPos += 6
+  doc.text("Kaloum, Conakry", 20, yPos)
+  yPos += 6
+  doc.text("République de Guinée", 20, yPos)
+  yPos += 6
+  doc.text("Tél: +224 622 123 456", 20, yPos)
+  yPos += 15
+
+  doc.setTextColor(...secondaryColor)
+  doc.setFontSize(10)
+  doc.text(`Document généré le ${new Date().toLocaleDateString("fr-FR")}`, 20, yPos)
+  doc.text("Ce document est valable pour tous vos échanges bancaires", 20, yPos + 5)
+
+  const fileName = `RIB_${account.number.replace(/-/g, "_")}_${new Date().toISOString().split("T")[0]}.pdf`
+  doc.save(fileName)
+}
+
 export default function RIBPage() {
   const searchParams = useSearchParams()
   const preSelectedAccountId = searchParams.get("accountId")
@@ -67,7 +175,7 @@ export default function RIBPage() {
             type: "Courant" as const,
             status: "Actif" as const,
             iban: `GN82 BNG 001 ${acc.accountNumber}`,
-            accountHolder: "DIALLO Mamadou", // Par défaut
+            accountHolder: "DIALLO Mamadou",
             bankName: "Banque Nationale de Guinée",
             bankCode: "BNG",
             branchCode: "001",
@@ -121,38 +229,43 @@ export default function RIBPage() {
     setTimeout(() => setCopied(false), 2000)
   }
 
-  const downloadPDF = () => {
+  const downloadPDF = async () => {
     if (!selectedAccount) return
 
-    const pdfContent = `
-      RELEVÉ D'IDENTITÉ BANCAIRE (RIB)
-      
-      ${selectedAccount.bankName.toUpperCase()}
-      
-      Titulaire du compte: ${selectedAccount.accountHolder}
-      Numéro de compte: ${selectedAccount.number}
-      IBAN: ${selectedAccount.iban}
-      Code banque: ${selectedAccount.bankCode}
-      Code agence: ${selectedAccount.branchCode}
-      Code SWIFT: ${selectedAccount.swiftCode}
-      
-      Agence: ${selectedAccount.branchName}
-      Type de compte: ${selectedAccount.type}
-      Devise: ${selectedAccount.currency}
-      Statut: ${selectedAccount.status}
-      
-      Date d'édition: ${new Date().toLocaleDateString("fr-FR")}
-    `
+    try {
+      await generatePDF(selectedAccount)
+    } catch (error) {
+      console.error("Erreur lors de la génération du PDF:", error)
+      const pdfContent = `
+        RELEVÉ D'IDENTITÉ BANCAIRE (RIB)
+        
+        ${selectedAccount.bankName.toUpperCase()}
+        
+        Titulaire du compte: ${selectedAccount.accountHolder}
+        Numéro de compte: ${selectedAccount.number}
+        IBAN: ${selectedAccount.iban}
+        Code banque: ${selectedAccount.bankCode}
+        Code agence: ${selectedAccount.branchCode}
+        Code SWIFT: ${selectedAccount.swiftCode}
+        
+        Agence: ${selectedAccount.branchName}
+        Type de compte: ${selectedAccount.type}
+        Devise: ${selectedAccount.currency}
+        Statut: ${selectedAccount.status}
+        
+        Date d'édition: ${new Date().toLocaleDateString("fr-FR")}
+      `
 
-    const blob = new Blob([pdfContent], { type: "text/plain" })
-    const url = window.URL.createObjectURL(blob)
-    const a = document.createElement("a")
-    a.href = url
-    a.download = `RIB_${selectedAccount.number.replace(/-/g, "_")}_${new Date().toISOString().split("T")[0]}.txt`
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    window.URL.revokeObjectURL(url)
+      const blob = new Blob([pdfContent], { type: "text/plain" })
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement("a")
+      a.href = url
+      a.download = `RIB_${selectedAccount.number.replace(/-/g, "_")}_${new Date().toISOString().split("T")[0]}.txt`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      window.URL.revokeObjectURL(url)
+    }
   }
 
   const getAccountIcon = (type: string) => {
