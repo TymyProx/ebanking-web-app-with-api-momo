@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Label } from "@/components/ui/label"
+import { Skeleton } from "@/components/ui/skeleton"
 import {
   Download,
   Printer,
@@ -22,6 +23,7 @@ import {
   PiggyBank,
   DollarSign,
 } from "lucide-react"
+import { getAccounts } from "../../accounts/actions"
 
 interface Account {
   id: string
@@ -46,68 +48,69 @@ export default function RIBPage() {
 
   const [copied, setCopied] = useState(false)
   const [selectedAccountId, setSelectedAccountId] = useState<string>("")
+  const [accounts, setAccounts] = useState<Account[]>([])
+  const [isLoading, setIsLoading] = useState(true)
 
-  // Données des comptes (simulées avec informations RIB)
-  const accounts: Account[] = [
-    {
-      id: "1",
-      name: "Compte Courant",
-      number: "0001-234567-89",
-      balance: 2400000,
-      currency: "GNF",
-      type: "Courant",
-      status: "Actif",
-      iban: "GN82 BNG 001 0001234567 89",
-      accountHolder: "DIALLO Mamadou",
-      bankName: "Banque Nationale de Guinée",
-      bankCode: "BNG",
-      branchCode: "001",
-      branchName: "Agence Kaloum",
-      swiftCode: "BNGNGNCX",
-    },
-    {
-      id: "2",
-      name: "Compte Épargne",
-      number: "0002-345678-90",
-      balance: 850000,
-      currency: "GNF",
-      type: "Épargne",
-      status: "Actif",
-      iban: "GN82 BNG 001 0002345678 90",
-      accountHolder: "DIALLO Mamadou",
-      bankName: "Banque Nationale de Guinée",
-      bankCode: "BNG",
-      branchCode: "001",
-      branchName: "Agence Kaloum",
-      swiftCode: "BNGNGNCX",
-    },
-    {
-      id: "3",
-      name: "Compte USD",
-      number: "0003-456789-01",
-      balance: 1250,
-      currency: "USD",
-      type: "Devise",
-      status: "Actif",
-      iban: "GN82 BNG 001 0003456789 01",
-      accountHolder: "DIALLO Mamadou",
-      bankName: "Banque Nationale de Guinée",
-      bankCode: "BNG",
-      branchCode: "001",
-      branchName: "Agence Kaloum",
-      swiftCode: "BNGNGNCX",
-    },
-  ]
+  useEffect(() => {
+    const loadAccounts = async () => {
+      try {
+        const accountsData = await getAccounts()
+        console.log("[v0] Comptes récupérés pour RIB:", accountsData)
 
-  // Pré-sélectionner le compte si fourni dans l'URL
+        if (Array.isArray(accountsData)) {
+          const adaptedAccounts: Account[] = accountsData.map((acc: any) => ({
+            id: acc.id || acc.accountId,
+            name: acc.accountName || acc.name || `Compte ${acc.accountNumber}`,
+            number: acc.accountNumber,
+            balance: Number.parseFloat(acc.bookBalance || acc.balance || "0"),
+            currency: acc.currency || "GNF",
+            type: "Courant" as const,
+            status: "Actif" as const,
+            iban: `GN82 BNG 001 ${acc.accountNumber}`,
+            accountHolder: "DIALLO Mamadou", // Par défaut
+            bankName: "Banque Nationale de Guinée",
+            bankCode: "BNG",
+            branchCode: "001",
+            branchName: "Agence Kaloum",
+            swiftCode: "BNGNGNCX",
+          }))
+          setAccounts(adaptedAccounts)
+        }
+      } catch (error) {
+        console.error("Erreur lors du chargement des comptes:", error)
+        setAccounts([
+          {
+            id: "1",
+            name: "Compte Courant",
+            number: "0001-234567-89",
+            balance: 2400000,
+            currency: "GNF",
+            type: "Courant",
+            status: "Actif",
+            iban: "GN82 BNG 001 0001234567 89",
+            accountHolder: "DIALLO Mamadou",
+            bankName: "Banque Nationale de Guinée",
+            bankCode: "BNG",
+            branchCode: "001",
+            branchName: "Agence Kaloum",
+            swiftCode: "BNGNGNCX",
+          },
+        ])
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    loadAccounts()
+  }, [])
+
   useEffect(() => {
     if (preSelectedAccountId && accounts.find((acc) => acc.id === preSelectedAccountId)) {
       setSelectedAccountId(preSelectedAccountId)
     } else if (accounts.length > 0) {
-      // Sélectionner le premier compte par défaut si aucun n'est pré-sélectionné
       setSelectedAccountId(accounts[0].id)
     }
-  }, [preSelectedAccountId])
+  }, [preSelectedAccountId, accounts])
 
   const selectedAccount = accounts.find((acc) => acc.id === selectedAccountId) || accounts[0]
   const preSelectedAccount = preSelectedAccountId ? accounts.find((acc) => acc.id === preSelectedAccountId) : null
@@ -116,6 +119,40 @@ export default function RIBPage() {
     navigator.clipboard.writeText(text)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
+  }
+
+  const downloadPDF = () => {
+    if (!selectedAccount) return
+
+    const pdfContent = `
+      RELEVÉ D'IDENTITÉ BANCAIRE (RIB)
+      
+      ${selectedAccount.bankName.toUpperCase()}
+      
+      Titulaire du compte: ${selectedAccount.accountHolder}
+      Numéro de compte: ${selectedAccount.number}
+      IBAN: ${selectedAccount.iban}
+      Code banque: ${selectedAccount.bankCode}
+      Code agence: ${selectedAccount.branchCode}
+      Code SWIFT: ${selectedAccount.swiftCode}
+      
+      Agence: ${selectedAccount.branchName}
+      Type de compte: ${selectedAccount.type}
+      Devise: ${selectedAccount.currency}
+      Statut: ${selectedAccount.status}
+      
+      Date d'édition: ${new Date().toLocaleDateString("fr-FR")}
+    `
+
+    const blob = new Blob([pdfContent], { type: "text/plain" })
+    const url = window.URL.createObjectURL(blob)
+    const a = document.createElement("a")
+    a.href = url
+    a.download = `RIB_${selectedAccount.number.replace(/-/g, "_")}_${new Date().toISOString().split("T")[0]}.txt`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    window.URL.revokeObjectURL(url)
   }
 
   const getAccountIcon = (type: string) => {
@@ -139,6 +176,25 @@ export default function RIBPage() {
       style: "currency",
       currency: currency,
     }).format(amount)
+  }
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <Skeleton className="h-8 w-96" />
+          <Skeleton className="h-4 w-64 mt-2" />
+        </div>
+        <Card>
+          <CardHeader>
+            <Skeleton className="h-6 w-48" />
+          </CardHeader>
+          <CardContent>
+            <Skeleton className="h-32 w-full" />
+          </CardContent>
+        </Card>
+      </div>
+    )
   }
 
   if (!selectedAccount) {
@@ -166,7 +222,6 @@ export default function RIBPage() {
         )}
       </div>
 
-      {/* Sélection du compte */}
       {accounts.length > 1 && (
         <Card>
           <CardHeader>
@@ -215,7 +270,6 @@ export default function RIBPage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
-              {/* RIB officiel */}
               <div className="border-2 border-dashed border-gray-300 p-6 rounded-lg bg-gray-50">
                 <div className="text-center mb-4">
                   <h2 className="text-lg font-bold text-blue-600">{selectedAccount.bankName.toUpperCase()}</h2>
@@ -270,7 +324,6 @@ export default function RIBPage() {
                   </div>
                 </div>
 
-                {/* Informations supplémentaires du compte */}
                 <div className="mt-4 pt-4 border-t">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
@@ -285,9 +338,8 @@ export default function RIBPage() {
                 </div>
               </div>
 
-              {/* Actions */}
               <div className="flex flex-wrap gap-3">
-                <Button>
+                <Button onClick={downloadPDF}>
                   <Download className="w-4 h-4 mr-2" />
                   Télécharger PDF
                 </Button>
@@ -372,7 +424,6 @@ export default function RIBPage() {
             </CardContent>
           </Card>
 
-          {/* Informations du compte sélectionné */}
           <Card className="mt-6">
             <CardHeader>
               <CardTitle className="flex items-center">
