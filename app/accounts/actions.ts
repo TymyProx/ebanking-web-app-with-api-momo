@@ -51,6 +51,9 @@ export async function getAccounts() {
               currency: "GNF",
               bookBalance: "2500000",
               availableBalance: "2350000",
+              status: "ACTIVE",
+              type: "CURRENT",
+              agency: "Agence Centrale",
               createdAt: "2023-01-15T10:00:00Z",
               tenantId: TENANT_ID,
             },
@@ -63,6 +66,9 @@ export async function getAccounts() {
               currency: "GNF",
               bookBalance: "5000000",
               availableBalance: "5000000",
+              status: "ACTIVE",
+              type: "SAVINGS",
+              agency: "Agence Centrale",
               createdAt: "2023-03-20T10:00:00Z",
               tenantId: TENANT_ID,
             },
@@ -75,6 +81,9 @@ export async function getAccounts() {
               currency: "USD",
               bookBalance: "1200",
               availableBalance: "1150",
+              status: "ACTIVE",
+              type: "CURRENT",
+              agency: "Agence Internationale",
               createdAt: "2023-06-10T10:00:00Z",
               tenantId: TENANT_ID,
             },
@@ -85,22 +94,33 @@ export async function getAccounts() {
       }
     }
 
-    const data = await response.json()
-    console.log("[v0] Données reçues:", data)
+    const responseData = await response.json()
+    console.log("[v0] Données reçues:", responseData)
 
-    // if (Array.isArray(data)) {
-    //   return { data: data }
-    // } else if (data.data && Array.isArray(data.data)) {
-    //   return { data: data.data }
-    // } else if (data.data) {
-    //   return { data: [data.data] }
-    // } else {
-    //   return { data: [data] }
-    // }
-    if (Array.isArray(data.rows)) {
-      return data.rows
+    // Gérer les différents formats de réponse possibles
+    if (responseData.data) {
+      // Si responseData.data est un tableau
+      if (Array.isArray(responseData.data)) {
+        return responseData.data
+      }
+      // Si responseData.data est un objet unique (un seul compte)
+      else if (typeof responseData.data === "object") {
+        return [responseData.data]
+      }
     }
-    return data.rows ? [data.rows] : []
+
+    // Compatibilité avec l'ancienne structure (rows)
+    if (Array.isArray(responseData.rows)) {
+      return responseData.rows
+    }
+
+    // Si responseData est directement un tableau
+    if (Array.isArray(responseData)) {
+      return responseData
+    }
+
+    // Si aucune structure reconnue, retourner un tableau vide
+    return []
   } catch (error) {
     console.error("[v0] Erreur lors de la récupération des comptes:", error)
     return []
@@ -250,6 +270,9 @@ export async function getAccountById(accountId: string) {
               currency: "GNF",
               bookBalance: "2500000",
               availableBalance: "2350000",
+              status: "ACTIVE",
+              type: "CURRENT",
+              agency: "Agence Centrale",
               createdAt: "2023-01-15T10:00:00Z",
               tenantId: TENANT_ID,
             },
