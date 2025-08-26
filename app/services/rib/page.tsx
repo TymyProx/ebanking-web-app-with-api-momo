@@ -47,10 +47,10 @@ const generatePDF = async (account: Account) => {
 
   const doc = new jsPDF()
 
-  const primaryColor = [41, 128, 185] // Bleu moderne
-  const accentColor = [52, 152, 219] // Bleu clair
+  const primaryColor = [70, 70, 70] // Gris foncé
+  const accentColor = [120, 120, 120] // Gris moyen
   const darkColor = [44, 62, 80] // Gris foncé
-  const lightGray = [236, 240, 241] // Gris clair
+  const lightGray = [248, 248, 248] // Gris très clair pour alternance
 
   const createUnifiedTable = (startY: number, data: string[][]) => {
     const tableWidth = 170
@@ -58,13 +58,13 @@ const generatePDF = async (account: Account) => {
     const rowHeight = 12
     let currentY = startY
 
-    // En-tête du tableau
+    // En-tête du tableau avec fond neutre
     doc.setFillColor(...primaryColor)
     doc.rect(20, currentY, tableWidth, rowHeight, "F")
     doc.setTextColor(255, 255, 255)
     doc.setFontSize(12)
     doc.setFont("helvetica", "bold")
-    doc.text("INFORMATIONS BANCAIRES COMPLÈTES", 105, currentY + 8, { align: "center" })
+    doc.text("INFORMATIONS BANCAIRES", 105, currentY + 8, { align: "center" })
     currentY += rowHeight
 
     // Données du tableau
@@ -72,7 +72,7 @@ const generatePDF = async (account: Account) => {
     doc.setFont("helvetica", "normal")
 
     data.forEach((row, rowIndex) => {
-      // Alternance de couleurs
+      // Alternance de couleurs neutres
       if (rowIndex % 2 === 0) {
         doc.setFillColor(...lightGray)
         doc.rect(20, currentY, tableWidth, rowHeight, "F")
@@ -102,7 +102,7 @@ const generatePDF = async (account: Account) => {
     return currentY
   }
 
-  // En-tête moderne avec dégradé simulé
+  // En-tête moderne avec couleurs neutres
   doc.setFillColor(...primaryColor)
   doc.rect(0, 0, 210, 35, "F")
 
@@ -132,28 +132,19 @@ const generatePDF = async (account: Account) => {
 
   let yPos = 75
 
-  const allRibData = [
+  const ribData = [
     ["Titulaire du compte", account.accountHolder],
     ["Numéro de compte", account.number],
-    ["IBAN", account.iban],
-    ["Type de compte", account.type],
-    ["Devise", account.currency],
-    ["Statut du compte", account.status],
-    ["", ""], // Ligne vide pour séparer visuellement
     ["Code banque", account.bankCode],
     ["Code agence", account.branchCode],
-    ["Code SWIFT/BIC", account.swiftCode],
-    ["RIB complet", `${account.bankCode} ${account.branchCode} ${account.number.replace(/-/g, "")}`],
-    ["", ""], // Ligne vide pour séparer visuellement
-    ["Nom de la banque", account.bankName],
-    ["Nom de l'agence", account.branchName],
-    ["Adresse agence", "Avenue de la République, Kaloum"],
-    ["Ville", "Conakry, République de Guinée"],
-    ["Téléphone", "+224 622 123 456"],
-    ["Email", "contact@bng.gn"],
+    ["RIB", `${account.bankCode} ${account.branchCode} ${account.number.replace(/-/g, "")}`],
+    ["IBAN", account.iban],
+    ["Code SWIFT", account.swiftCode],
+    ["Type de compte", account.type],
+    ["Devise", account.currency],
   ]
 
-  yPos = createUnifiedTable(yPos, allRibData)
+  yPos = createUnifiedTable(yPos, ribData)
   yPos += 20
 
   // Pied de page
