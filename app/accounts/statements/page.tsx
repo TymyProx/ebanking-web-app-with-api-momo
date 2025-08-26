@@ -759,7 +759,7 @@ export default function StatementsPage() {
         doc.text(new Date(txn.valueDate || txn.date).toLocaleDateString("fr-FR"), 20, yPos)
         doc.text((txn.description || "Transaction").substring(0, 25), 50, yPos)
         doc.setTextColor(isCredit ? 0 : 200, isCredit ? 150 : 0, 0)
-        doc.text(`${displayAmount > 0 ? "+" : ""}${formatAmount(displayAmount)} GNF`, 140, yPos)
+        doc.text(`${formatAmount(Math.abs(displayAmount))} GNF`, 140, yPos)
         doc.setTextColor(40, 40, 40)
         doc.text(isCredit ? "CRÉDIT" : "DÉBIT", 170, yPos)
         yPos += 8
@@ -805,7 +805,7 @@ export default function StatementsPage() {
 
     try {
       // Création du contenu CSV (compatible Excel)
-      let csvContent = "data:text/csv;charset=utf-8,"
+      let csvContent = "\uFEFF" // BOM UTF-8 pour Excel
 
       // En-tête du fichier
       csvContent += `RELEVÉ DE COMPTE\n`
@@ -825,19 +825,20 @@ export default function StatementsPage() {
 
         csvContent += `${new Date(txn.valueDate || txn.date).toLocaleDateString("fr-FR")},`
         csvContent += `"${(txn.description || "Transaction").replace(/"/g, '""')}",`
-        csvContent += `${displayAmount},`
+        csvContent += `${Math.abs(displayAmount)},`
         csvContent += `${isCredit ? "CRÉDIT" : "DÉBIT"},`
         csvContent += `${txn.txnId || txn.id}\n`
       })
 
       // Téléchargement
-      const encodedUri = encodeURI(csvContent)
+      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8" })
       const link = document.createElement("a")
-      link.setAttribute("href", encodedUri)
-      link.setAttribute("download", `releve_${selectedAccountData.number}_${startDate}_${endDate}.csv`)
+      link.href = URL.createObjectURL(blob)
+      link.download = `releve_${selectedAccountData.number}_${startDate}_${endDate}.csv`
       document.body.appendChild(link)
       link.click()
       document.body.removeChild(link)
+      URL.revokeObjectURL(link.href)
 
       console.log("[v0] Excel/CSV généré et téléchargé")
     } catch (error) {
