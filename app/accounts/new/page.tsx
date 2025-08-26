@@ -344,6 +344,7 @@ export default function NewAccountPage() {
               <input type="hidden" name="currency" value={formData.currency || selectedAccountType.currency} />
               <input type="hidden" name="bookBalance" value={formData.initialDeposit || "0"} />
               <input type="hidden" name="availableBalance" value={formData.initialDeposit || "0"} />
+              <input type="hidden" name="accountType" value={selectedType} />
 
               <Button
                 type="submit"

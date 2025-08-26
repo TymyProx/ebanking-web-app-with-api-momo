@@ -149,6 +149,9 @@ export async function createAccount(prevState: any, formData: FormData) {
       currency: formData.get("currency") as string,
       bookBalance: (formData.get("bookBalance") as string) || "0",
       availableBalance: (formData.get("availableBalance") as string) || "0",
+      type: (formData.get("accountType") as string) || "CURRENT", // Récupération du type de compte
+      status: "ACTIVE",
+      agency: "Agence Principale",
     }
 
     console.log("[v0] Données du compte:", accountData)
