@@ -30,8 +30,7 @@ export default function LoginPage() {
       const email = formData.get("email") as string
       const password = formData.get("password") as string
 
-     // const tenantId = "afa25e29-08dd-46b6-8ea2-d778cb2d6694"
-      const tenantId = "11cacc69-5a49-4f01-8b16-e8f473746634"
+      const tenantId = process.env.NEXT_PUBLIC_TENANT_ID || "11cacc69-5a49-4f01-8b16-e8f473746634"
       const invitationToken = ""
 
       const loginResult = await AuthService.signIn(email, password, tenantId, invitationToken)

@@ -84,17 +84,10 @@ export class AuthService {
 
       const token = response.data
       if (token) {
-        localStorage.setItem("token", token);
-        //cookies().set("token", token)
-        Cookies.set("token", token); //{ expires: 1, secure: process.env.NODE_ENV === "production", sameSite: "lax", path: "/" });
+        localStorage.setItem("token", token)
+        Cookies.set("token", token)
         return { success: true, token }
       }
-
-    
-  // If you want to set cookies on the client, use a library like js-cookie.
-  // Example (uncomment after installing 'js-cookie'):
-   
-  // Otherwise, you can remove this block if not needed.
 
       throw new Error("Token non reçu")
     } catch (error: any) {
@@ -166,6 +159,3 @@ export class AuthService {
 }
 
 export default AuthService
-function cookies() {
-  throw new Error("Function not implemented.")
-}
