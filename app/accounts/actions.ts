@@ -3,8 +3,12 @@
 import { cookies } from "next/headers"
 import { revalidatePath } from "next/cache"
 
-const API_BASE_URL = process.env.API_BASE_URL || process.env.NEXT_PUBLIC_API_BASE_URL || "http://192.168.1.200:8080/api"
-const TENANT_ID = process.env.TENANT_ID || "11cacc69-5a49-4f01-8b16-e8f473746634"
+const API_BASE_URL = process.env.API_BASE_URL || process.env.NEXT_PUBLIC_API_BASE_URL
+const TENANT_ID = process.env.TENANT_ID || process.env.NEXT_PUBLIC_TENANT_ID
+
+if (!API_BASE_URL || !TENANT_ID) {
+  throw new Error("Variables d'environnement API_BASE_URL et TENANT_ID requises")
+}
 
 export async function getAccounts() {
   const cookieToken = (await cookies()).get("token")?.value
@@ -140,6 +144,9 @@ export async function createAccount(prevState: any, formData: FormData) {
       }
     }
 
+    const accountType = formData.get("accountType") as string
+    console.log("[v0] Type de compte reçu:", accountType)
+
     // Extraction des données du formulaire
     const accountData = {
       accountId: formData.get("accountId") as string,
@@ -149,7 +156,7 @@ export async function createAccount(prevState: any, formData: FormData) {
       currency: formData.get("currency") as string,
       bookBalance: (formData.get("bookBalance") as string) || "0",
       availableBalance: (formData.get("availableBalance") as string) || "0",
-      type: (formData.get("accountType") as string) || "CURRENT", // Récupération du type de compte
+      type: accountType || "CURRENT", // Utilisation directe du type récupéré
       status: "ACTIVE",
       agency: "Agence Principale",
     }

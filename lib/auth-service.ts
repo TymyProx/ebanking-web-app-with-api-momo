@@ -1,7 +1,11 @@
 import axios from "axios"
 import Cookies from "js-cookie"
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://192.168.1.200:8080/api"
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL
+
+if (!API_BASE_URL) {
+  throw new Error("Variable d'environnement NEXT_PUBLIC_API_BASE_URL requise")
+}
 
 // Configuration de l'instance axios pour l'authentification
 const authAxios = axios.create({
