@@ -76,10 +76,10 @@ export default async function Dashboard() {
 
   const formatTransaction = (transaction: any) => {
     const amount = Number.parseFloat(transaction.amount)
-    const isCredit = transaction.txnType === "CREDIT" || amount > 0
+    const isCredit = transaction.txnType === "CREDIT"
 
     return {
-      type: transaction.txnType === "CREDIT" ? "Virement reçu" : "Virement émis",
+      type: isCredit ? "Virement reçu" : "Virement émis",
       from: transaction.description || "Transaction",
       amount: `${isCredit ? "+" : "-"}${formatAmount(Math.abs(amount))} GNF`,
       date: new Date(transaction.valueDate).toLocaleDateString("fr-FR", {
