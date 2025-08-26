@@ -31,6 +31,8 @@ import {
 } from "lucide-react"
 import { generateStatement, sendStatementByEmail } from "./actions"
 import { useActionState } from "react"
+import { getAccounts } from "../actions"
+import { getTransactions } from "../../transfers/new/actions"
 
 interface Account {
   id: string
@@ -63,6 +65,45 @@ interface StatementHistory {
   status: "Généré" | "Expiré" | "En cours"
 }
 
+const predefinedPeriods = [
+  {
+    value: "lastMonth",
+    label: "Dernier mois",
+    startDate: new Date(new Date().setMonth(new Date().getMonth() - 1)).toISOString().split("T")[0],
+    endDate: new Date().toISOString().split("T")[0],
+  },
+  {
+    value: "thisMonth",
+    label: "Ce mois",
+    startDate: new Date().toISOString().split("T")[0],
+    endDate: new Date().toISOString().split("T")[0],
+  },
+  { value: "custom", label: "Personnalisé" },
+]
+
+const statementHistory = [
+  {
+    id: "1",
+    accountName: "Compte Courant",
+    period: "01/01/2023 - 31/01/2023",
+    format: "PDF",
+    generatedAt: "01/02/2023",
+    downloadCount: 5,
+    fileSize: "2MB",
+    status: "Généré",
+  },
+  {
+    id: "2",
+    accountName: "Compte Épargne",
+    period: "01/02/2023 - 28/02/2023",
+    format: "Excel",
+    generatedAt: "01/03/2023",
+    downloadCount: 3,
+    fileSize: "1.5MB",
+    status: "Expiré",
+  },
+]
+
 export default function StatementsPage() {
   const searchParams = useSearchParams()
   const preSelectedAccountId = searchParams.get("accountId")
@@ -76,94 +117,83 @@ export default function StatementsPage() {
   const [emailAddress, setEmailAddress] = useState("")
   const [selectedPeriod, setSelectedPeriod] = useState<string>("")
 
+  const [accounts, setAccounts] = useState<Account[]>([])
+  const [isLoadingAccounts, setIsLoadingAccounts] = useState(true)
+  const [transactions, setTransactions] = useState<any[]>([])
+
   // États pour les actions serveur
   const [generateState, generateAction, isGenerating] = useActionState(generateStatement, null)
   const [emailState, emailAction, isSending] = useActionState(sendStatementByEmail, null)
 
-  // Données des comptes (simulées)
-  const accounts: Account[] = [
-    {
-      id: "1",
-      name: "Compte Courant",
-      number: "0001-234567-89",
-      balance: 2400000,
-      currency: "GNF",
-      type: "Courant",
-      status: "Actif",
-      iban: "GN82 BNG 001 0001234567 89",
-    },
-    {
-      id: "2",
-      name: "Compte Épargne",
-      number: "0002-345678-90",
-      balance: 850000,
-      currency: "GNF",
-      type: "Épargne",
-      status: "Actif",
-      iban: "GN82 BNG 001 0002345678 90",
-    },
-    {
-      id: "3",
-      name: "Compte USD",
-      number: "0003-456789-01",
-      balance: 1250,
-      currency: "USD",
-      type: "Devise",
-      status: "Actif",
-      iban: "GN82 BNG 001 0003456789 01",
-    },
-  ]
+  useEffect(() => {
+    const loadAccounts = async () => {
+      try {
+        const accountsData = await getAccounts()
+        console.log("[v0] Comptes récupérés pour relevés:", accountsData)
 
-  // Historique des relevés (simulé)
-  const statementHistory: StatementHistory[] = [
-    {
-      id: "1",
-      accountName: "Compte Courant",
-      period: "Décembre 2023",
-      format: "PDF",
-      generatedAt: "15 Jan 2024 10:30",
-      downloadCount: 3,
-      fileSize: "245 KB",
-      status: "Généré",
-    },
-    {
-      id: "2",
-      accountName: "Compte Épargne",
-      period: "Novembre 2023",
-      format: "Excel",
-      generatedAt: "12 Jan 2024 14:15",
-      downloadCount: 1,
-      fileSize: "89 KB",
-      status: "Généré",
-    },
-    {
-      id: "3",
-      accountName: "Compte Courant",
-      period: "Octobre 2023",
-      format: "PDF",
-      generatedAt: "08 Jan 2024 09:45",
-      downloadCount: 0,
-      fileSize: "312 KB",
-      status: "Expiré",
-    },
-  ]
+        if (Array.isArray(accountsData)) {
+          const adaptedAccounts: Account[] = accountsData.map((acc: any) => ({
+            id: acc.id || acc.accountId,
+            name: acc.accountName || acc.name || `Compte ${acc.accountNumber}`,
+            number: acc.accountNumber,
+            balance: Number.parseFloat(acc.bookBalance || acc.balance || "0"),
+            currency: acc.currency || "GNF",
+            type: "Courant" as const,
+            status: "Actif" as const,
+            iban: `GN82 BNG 001 ${acc.accountNumber}`,
+          }))
+          setAccounts(adaptedAccounts)
+        }
+      } catch (error) {
+        console.error("Erreur lors du chargement des comptes:", error)
+        // Fallback vers des données de test en cas d'erreur
+        setAccounts([
+          {
+            id: "1",
+            name: "Compte Courant",
+            number: "0001-234567-89",
+            balance: 2400000,
+            currency: "GNF",
+            type: "Courant",
+            status: "Actif",
+            iban: "GN82 BNG 001 0001234567 89",
+          },
+        ])
+      } finally {
+        setIsLoadingAccounts(false)
+      }
+    }
 
-  // Périodes prédéfinies
-  const predefinedPeriods = [
-    { value: "current_month", label: "Mois en cours", startDate: "2024-01-01", endDate: "2024-01-31" },
-    { value: "last_month", label: "Mois dernier", startDate: "2023-12-01", endDate: "2023-12-31" },
-    { value: "last_3_months", label: "3 derniers mois", startDate: "2023-10-01", endDate: "2023-12-31" },
-    { value: "last_6_months", label: "6 derniers mois", startDate: "2023-07-01", endDate: "2023-12-31" },
-    { value: "last_year", label: "Année dernière", startDate: "2023-01-01", endDate: "2023-12-31" },
-    { value: "custom", label: "Période personnalisée", startDate: "", endDate: "" },
-  ]
+    loadAccounts()
+  }, [])
+
+  useEffect(() => {
+    const loadTransactions = async () => {
+      if (!selectedAccount) return
+
+      try {
+        const transactionsData = await getTransactions()
+        console.log("[v0] Transactions récupérées pour relevé:", transactionsData)
+
+        if (transactionsData.data && Array.isArray(transactionsData.data)) {
+          const accountTransactions = transactionsData.data.filter((txn: any) => txn.accountId === selectedAccount)
+          setTransactions(accountTransactions)
+        }
+      } catch (error) {
+        console.error("Erreur lors du chargement des transactions:", error)
+        setTransactions([])
+      }
+    }
+
+    loadTransactions()
+  }, [selectedAccount])
 
   // Pré-sélectionner le compte si fourni dans l'URL
   useEffect(() => {
     if (preSelectedAccountId && accounts.find((acc) => acc.id === preSelectedAccountId)) {
       setSelectedAccount(preSelectedAccountId)
     }
-  }, [preSelectedAccountId])
+  }, [preSelectedAccountId, accounts])
 
   const handlePeriodChange = (value: string) => {
     setSelectedPeriod(value)
@@ -182,6 +212,21 @@ export default function StatementsPage() {
       return
     }
 
+    // Filtrer les transactions par période
+    const filteredTransactions = transactions.filter((txn) => {
+      const txnDate = new Date(txn.valueDate || txn.date)
+      const start = new Date(startDate)
+      const end = new Date(endDate)
+      return txnDate >= start && txnDate <= end
+    })
+
+    console.log("[v0] Génération relevé avec transactions filtrées:", {
+      compte: selectedAccount,
+      période: `${startDate} à ${endDate}`,
+      nombreTransactions: filteredTransactions.length,
+      format,
+    })
+
     const formData = new FormData()
     formData.append("accountId", selectedAccount)
     formData.append("startDate", startDate)
@@ -189,6 +234,7 @@ export default function StatementsPage() {
     formData.append("format", format)
     formData.append("includeImages", includeImages.toString())
     formData.append("language", language)
+    formData.append("transactions", JSON.stringify(filteredTransactions))
 
     await generateAction(formData)
   }
@@ -239,12 +285,13 @@ export default function StatementsPage() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Télécharger relevé</h1>
           <p className="text-gray-600">Générez et téléchargez vos relevés de compte</p>
-          {preSelectedAccount && (
+          {preSelectedAccountId && accounts.find((acc) => acc.id === preSelectedAccountId) && (
             <div className="mt-2">
               <Alert className="border-blue-200 bg-blue-50">
                 <CheckCircle className="h-4 w-4 text-blue-600" />
                 <AlertDescription className="text-blue-800">
-                  Compte pré-sélectionné : {preSelectedAccount.name} ({preSelectedAccount.number})
+                  Compte pré-sélectionné : {accounts.find((acc) => acc.id === preSelectedAccountId)?.name} (
+                  {accounts.find((acc) => acc.id === preSelectedAccountId)?.number})
                 </AlertDescription>
               </Alert>
             </div>
@@ -267,11 +314,17 @@ export default function StatementsPage() {
         <Alert className="border-green-200 bg-green-50">
           <CheckCircle className="h-4 w-4 text-green-600" />
           <AlertDescription className="text-green-800">
-            ✅ Relevé généré avec succès !
+            ✅ Relevé généré avec succès ! ({generateState.transactionCount} transactions)
             <Button
               variant="link"
               className="p-0 h-auto text-green-700 underline ml-2"
-              onClick={() => window.open(generateState.downloadUrl, "_blank")}
+              onClick={() => {
+                if (format === "pdf") {
+                  generateAndDownloadPDF()
+                } else {
+                  generateAndDownloadExcel()
+                }
+              }}
             >
               Télécharger maintenant
             </Button>
@@ -318,36 +371,43 @@ export default function StatementsPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {accounts.map((account) => (
-                  <div
-                    key={account.id}
-                    className={`p-4 border rounded-lg cursor-pointer transition-all ${
-                      selectedAccount === account.id
-                        ? "border-blue-500 bg-blue-50 ring-2 ring-blue-200"
-                        : "border-gray-200 hover:border-gray-300"
-                    } ${preSelectedAccountId === account.id && !selectedAccount ? "border-blue-300 bg-blue-25" : ""}`}
-                    onClick={() => setSelectedAccount(account.id)}
-                  >
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center space-x-2">
-                        {getAccountIcon(account.type)}
-                        <span className="font-medium text-sm">{account.name}</span>
-                        {preSelectedAccountId === account.id && (
-                          <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700">
-                            Suggéré
-                          </Badge>
-                        )}
+              {isLoadingAccounts ? (
+                <div className="text-center py-4">
+                  <Clock className="w-6 h-6 animate-spin mx-auto mb-2" />
+                  <p className="text-gray-500">Chargement des comptes...</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {accounts.map((account) => (
+                    <div
+                      key={account.id}
+                      className={`p-4 border rounded-lg cursor-pointer transition-all ${
+                        selectedAccount === account.id
+                          ? "border-blue-500 bg-blue-50 ring-2 ring-blue-200"
+                          : "border-gray-200 hover:border-gray-300"
+                      } ${preSelectedAccountId === account.id && !selectedAccount ? "border-blue-300 bg-blue-25" : ""}`}
+                      onClick={() => setSelectedAccount(account.id)}
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center space-x-2">
+                          {getAccountIcon(account.type)}
+                          <span className="font-medium text-sm">{account.name}</span>
+                          {preSelectedAccountId === account.id && (
+                            <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700">
+                              Suggéré
+                            </Badge>
+                          )}
+                        </div>
+                        <Badge variant={account.status === "Actif" ? "default" : "secondary"}>{account.status}</Badge>
                       </div>
-                      <Badge variant={account.status === "Actif" ? "default" : "secondary"}>{account.status}</Badge>
+                      <p className="text-xs text-gray-500 font-mono mb-1">{account.number}</p>
+                      <p className="text-lg font-bold">
+                        {formatAmount(account.balance, account.currency)} {account.currency}
+                      </p>
                     </div>
-                    <p className="text-xs text-gray-500 font-mono mb-1">{account.number}</p>
-                    <p className="text-lg font-bold">
-                      {formatAmount(account.balance, account.currency)} {account.currency}
-                    </p>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
 
@@ -620,4 +680,220 @@ export default function StatementsPage() {
       </Tabs>
     </div>
   )
+
+  function generateAndDownloadPDF() {
+    const selectedAccountData = accounts.find((acc) => acc.id === selectedAccount)
+    if (!selectedAccountData) return
+
+    // Filtrer les transactions par période
+    const filteredTransactions = transactions.filter((txn) => {
+      const txnDate = new Date(txn.valueDate || txn.date)
+      const start = new Date(startDate)
+      const end = new Date(endDate)
+      return txnDate >= start && txnDate <= end
+    })
+
+    try {
+      // Utilisation de jsPDF pour générer le PDF
+      const { jsPDF } = require("jspdf")
+      const doc = new jsPDF()
+
+      // En-tête du relevé
+      doc.setFontSize(20)
+      doc.setTextColor(40, 40, 40)
+      doc.text("RELEVÉ DE COMPTE", 20, 30)
+
+      doc.setFontSize(12)
+      doc.setTextColor(100, 100, 100)
+      doc.text(
+        `Période: ${new Date(startDate).toLocaleDateString("fr-FR")} au ${new Date(endDate).toLocaleDateString("fr-FR")}`,
+        20,
+        45,
+      )
+
+      // Informations du compte
+      doc.setFontSize(14)
+      doc.setTextColor(40, 40, 40)
+      doc.text("Informations du compte", 20, 65)
+
+      doc.setFontSize(10)
+      doc.text(`Nom: ${selectedAccountData.name}`, 20, 80)
+      doc.text(`Numéro: ${selectedAccountData.number}`, 20, 90)
+      doc.text(`IBAN: ${selectedAccountData.iban}`, 20, 100)
+      doc.text(
+        `Solde: ${formatAmount(selectedAccountData.balance, selectedAccountData.currency)} ${selectedAccountData.currency}`,
+        20,
+        110,
+      )
+
+      // Tableau des transactions
+      let yPos = 130
+      doc.setFontSize(14)
+      doc.text("Transactions", 20, yPos)
+      yPos += 15
+
+      // En-têtes du tableau
+      doc.setFontSize(9)
+      doc.setTextColor(60, 60, 60)
+      doc.text("Date", 20, yPos)
+      doc.text("Description", 50, yPos)
+      doc.text("Montant", 140, yPos)
+      doc.text("Type", 170, yPos)
+      yPos += 10
+
+      // Ligne de séparation
+      doc.line(20, yPos - 5, 190, yPos - 5)
+
+      // Transactions
+      filteredTransactions.forEach((txn, index) => {
+        if (yPos > 270) {
+          doc.addPage()
+          yPos = 30
+        }
+
+        const amount = Number.parseFloat(txn.amount || "0")
+        const isCredit = txn.txnType === "CREDIT"
+        const displayAmount = isCredit ? Math.abs(amount) : -Math.abs(amount)
+
+        doc.setTextColor(40, 40, 40)
+        doc.text(new Date(txn.valueDate || txn.date).toLocaleDateString("fr-FR"), 20, yPos)
+        doc.text((txn.description || "Transaction").substring(0, 25), 50, yPos)
+        doc.setTextColor(isCredit ? 0 : 200, isCredit ? 150 : 0, 0)
+        doc.text(`${displayAmount > 0 ? "+" : ""}${formatAmount(displayAmount)} GNF`, 140, yPos)
+        doc.setTextColor(40, 40, 40)
+        doc.text(isCredit ? "CRÉDIT" : "DÉBIT", 170, yPos)
+        yPos += 8
+      })
+
+      // Pied de page
+      const pageCount = doc.internal.getNumberOfPages()
+      for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i)
+        doc.setFontSize(8)
+        doc.setTextColor(150, 150, 150)
+        doc.text(`Page ${i} sur ${pageCount}`, 20, 285)
+        doc.text(
+          `Généré le ${new Date().toLocaleDateString("fr-FR")} à ${new Date().toLocaleTimeString("fr-FR")}`,
+          120,
+          285,
+        )
+      }
+
+      // Téléchargement
+      const fileName = `releve_${selectedAccountData.number}_${startDate}_${endDate}.pdf`
+      doc.save(fileName)
+
+      console.log("[v0] PDF généré et téléchargé:", fileName)
+    } catch (error) {
+      console.error("Erreur lors de la génération PDF:", error)
+      // Fallback vers téléchargement texte
+      generateAndDownloadText()
+    }
+  }
+
+  function generateAndDownloadExcel() {
+    const selectedAccountData = accounts.find((acc) => acc.id === selectedAccount)
+    if (!selectedAccountData) return
+
+    // Filtrer les transactions par période
+    const filteredTransactions = transactions.filter((txn) => {
+      const txnDate = new Date(txn.valueDate || txn.date)
+      const start = new Date(startDate)
+      const end = new Date(endDate)
+      return txnDate >= start && txnDate <= end
+    })
+
+    try {
+      // Création du contenu CSV (compatible Excel)
+      let csvContent = "data:text/csv;charset=utf-8,"
+
+      // En-tête du fichier
+      csvContent += `RELEVÉ DE COMPTE\n`
+      csvContent += `Compte: ${selectedAccountData.name}\n`
+      csvContent += `Numéro: ${selectedAccountData.number}\n`
+      csvContent += `Période: ${new Date(startDate).toLocaleDateString("fr-FR")} au ${new Date(endDate).toLocaleDateString("fr-FR")}\n`
+      csvContent += `Solde: ${formatAmount(selectedAccountData.balance, selectedAccountData.currency)} ${selectedAccountData.currency}\n\n`
+
+      // En-têtes des colonnes
+      csvContent += "Date,Description,Montant,Type,Référence\n"
+
+      // Données des transactions
+      filteredTransactions.forEach((txn) => {
+        const amount = Number.parseFloat(txn.amount || "0")
+        const isCredit = txn.txnType === "CREDIT"
+        const displayAmount = isCredit ? Math.abs(amount) : -Math.abs(amount)
+
+        csvContent += `${new Date(txn.valueDate || txn.date).toLocaleDateString("fr-FR")},`
+        csvContent += `"${(txn.description || "Transaction").replace(/"/g, '""')}",`
+        csvContent += `${displayAmount},`
+        csvContent += `${isCredit ? "CRÉDIT" : "DÉBIT"},`
+        csvContent += `${txn.txnId || txn.id}\n`
+      })
+
+      // Téléchargement
+      const encodedUri = encodeURI(csvContent)
+      const link = document.createElement("a")
+      link.setAttribute("href", encodedUri)
+      link.setAttribute("download", `releve_${selectedAccountData.number}_${startDate}_${endDate}.csv`)
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+
+      console.log("[v0] Excel/CSV généré et téléchargé")
+    } catch (error) {
+      console.error("Erreur lors de la génération Excel:", error)
+      // Fallback vers téléchargement texte
+      generateAndDownloadText()
+    }
+  }
+
+  function generateAndDownloadText() {
+    const selectedAccountData = accounts.find((acc) => acc.id === selectedAccount)
+    if (!selectedAccountData) return
+
+    // Filtrer les transactions par période
+    const filteredTransactions = transactions.filter((txn) => {
+      const txnDate = new Date(txn.valueDate || txn.date)
+      const start = new Date(startDate)
+      const end = new Date(endDate)
+      return txnDate >= start && txnDate <= end
+    })
+
+    let content = `RELEVÉ DE COMPTE\n`
+    content += `================\n\n`
+    content += `Compte: ${selectedAccountData.name}\n`
+    content += `Numéro: ${selectedAccountData.number}\n`
+    content += `IBAN: ${selectedAccountData.iban}\n`
+    content += `Période: ${new Date(startDate).toLocaleDateString("fr-FR")} au ${new Date(endDate).toLocaleDateString("fr-FR")}\n`
+    content += `Solde: ${formatAmount(selectedAccountData.balance, selectedAccountData.currency)} ${selectedAccountData.currency}\n\n`
+    content += `TRANSACTIONS (${filteredTransactions.length})\n`
+    content += `=============\n\n`
+
+    filteredTransactions.forEach((txn) => {
+      const amount = Number.parseFloat(txn.amount || "0")
+      const isCredit = txn.txnType === "CREDIT"
+      const displayAmount = isCredit ? Math.abs(amount) : -Math.abs(amount)
+
+      content += `Date: ${new Date(txn.valueDate || txn.date).toLocaleDateString("fr-FR")}\n`
+      content += `Description: ${txn.description || "Transaction"}\n`
+      content += `Montant: ${displayAmount > 0 ? "+" : ""}${formatAmount(displayAmount)} GNF\n`
+      content += `Type: ${isCredit ? "CRÉDIT" : "DÉBIT"}\n`
+      content += `Référence: ${txn.txnId || txn.id}\n`
+      content += `---\n\n`
+    })
+
+    content += `\nGénéré le ${new Date().toLocaleDateString("fr-FR")} à ${new Date().toLocaleTimeString("fr-FR")}\n`
+
+    // Téléchargement
+    const blob = new Blob([content], { type: "text/plain;charset=utf-8" })
+    const link = document.createElement("a")
+    link.href = URL.createObjectURL(blob)
+    link.download = `releve_${selectedAccountData.number}_${startDate}_${endDate}.txt`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(link.href)
+
+    console.log("[v0] Relevé texte généré et téléchargé")
+  }
 }
