@@ -52,37 +52,22 @@ const generatePDF = async (account: Account) => {
   const darkColor = [44, 62, 80] // Gris foncé
   const lightGray = [236, 240, 241] // Gris clair
 
-  const createTable = (startY: number, headers: string[], data: string[][], headerColor: number[], title?: string) => {
+  const createUnifiedTable = (startY: number, data: string[][]) => {
     const tableWidth = 170
-    const colWidth = tableWidth / headers.length
+    const colWidth = tableWidth / 2 // 2 colonnes : Label et Valeur
     const rowHeight = 12
     let currentY = startY
 
-    // Titre du tableau si fourni
-    if (title) {
-      doc.setFillColor(...headerColor)
-      doc.rect(20, currentY, tableWidth, rowHeight, "F")
-      doc.setTextColor(255, 255, 255)
-      doc.setFontSize(12)
-      doc.setFont("helvetica", "bold")
-      doc.text(title, 105, currentY + 8, { align: "center" })
-      currentY += rowHeight
-    }
-
-    // En-têtes
-    doc.setFillColor(...headerColor)
+    // En-tête du tableau
+    doc.setFillColor(...primaryColor)
     doc.rect(20, currentY, tableWidth, rowHeight, "F")
     doc.setTextColor(255, 255, 255)
-    doc.setFontSize(11)
+    doc.setFontSize(12)
     doc.setFont("helvetica", "bold")
-
-    headers.forEach((header, index) => {
-      const x = 20 + index * colWidth + colWidth / 2
-      doc.text(header, x, currentY + 8, { align: "center" })
-    })
+    doc.text("INFORMATIONS BANCAIRES COMPLÈTES", 105, currentY + 8, { align: "center" })
     currentY += rowHeight
 
-    // Données
+    // Données du tableau
     doc.setTextColor(...darkColor)
     doc.setFont("helvetica", "normal")
 
@@ -98,11 +83,19 @@ const generatePDF = async (account: Account) => {
       doc.setLineWidth(0.1)
       doc.rect(20, currentY, tableWidth, rowHeight, "S")
 
-      row.forEach((cell, colIndex) => {
-        const x = 20 + colIndex * colWidth + 5
-        doc.setFont("helvetica", colIndex === 0 ? "bold" : "normal")
-        doc.text(cell, x, currentY + 8)
-      })
+      // Séparateur vertical entre les colonnes
+      doc.line(20 + colWidth, currentY, 20 + colWidth, currentY + rowHeight)
+
+      // Première colonne (Label) - en gras
+      doc.setFont("helvetica", "bold")
+      doc.setFontSize(10)
+      doc.text(row[0], 25, currentY + 8)
+
+      // Deuxième colonne (Valeur) - normal
+      doc.setFont("helvetica", "normal")
+      doc.setFontSize(10)
+      doc.text(row[1], 25 + colWidth, currentY + 8)
+
       currentY += rowHeight
     })
 
@@ -139,49 +132,29 @@ const generatePDF = async (account: Account) => {
 
   let yPos = 75
 
-  const accountData = [
+  const allRibData = [
     ["Titulaire du compte", account.accountHolder],
     ["Numéro de compte", account.number],
     ["IBAN", account.iban],
     ["Type de compte", account.type],
     ["Devise", account.currency],
-    ["Statut", account.status],
-  ]
-
-  yPos = createTable(yPos, ["Information", "Valeur"], accountData, primaryColor, "INFORMATIONS DU COMPTE")
-  yPos += 20
-
-  const bankingCodes = [
+    ["Statut du compte", account.status],
+    ["", ""], // Ligne vide pour séparer visuellement
     ["Code banque", account.bankCode],
     ["Code agence", account.branchCode],
     ["Code SWIFT/BIC", account.swiftCode],
     ["RIB complet", `${account.bankCode} ${account.branchCode} ${account.number.replace(/-/g, "")}`],
+    ["", ""], // Ligne vide pour séparer visuellement
+    ["Nom de la banque", account.bankName],
+    ["Nom de l'agence", account.branchName],
+    ["Adresse agence", "Avenue de la République, Kaloum"],
+    ["Ville", "Conakry, République de Guinée"],
+    ["Téléphone", "+224 622 123 456"],
+    ["Email", "contact@bng.gn"],
   ]
 
-  yPos = createTable(yPos, ["Codes bancaires", "Valeur"], bankingCodes, accentColor, "CODES BANCAIRES")
+  yPos = createUnifiedTable(yPos, allRibData)
   yPos += 20
-
-  // Section agence
-  doc.setFillColor(...lightGray)
-  doc.rect(20, yPos, 170, 35, "F")
-
-  doc.setTextColor(...primaryColor)
-  doc.setFontSize(14)
-  doc.setFont("helvetica", "bold")
-  doc.text("INFORMATIONS DE L'AGENCE", 25, yPos + 10)
-
-  doc.setTextColor(...darkColor)
-  doc.setFontSize(11)
-  doc.setFont("helvetica", "normal")
-  doc.text(account.branchName, 25, yPos + 18)
-  doc.text("Avenue de la République, Kaloum", 25, yPos + 24)
-  doc.text("Conakry, République de Guinée", 25, yPos + 30)
-
-  doc.setFont("helvetica", "bold")
-  doc.text("Tél: +224 622 123 456", 120, yPos + 24)
-  doc.text("Email: contact@bng.gn", 120, yPos + 30)
-
-  yPos += 50
 
   // Pied de page
   doc.setDrawColor(...primaryColor)
