@@ -118,7 +118,8 @@ export default function AccountDetailsPage() {
             .filter((txn: any) => txn.accountId === accountId)
             .map((txn: any) => {
               const amount = Number.parseFloat(txn.amount || "0")
-              const isCredit = txn.txnType === "CREDIT" || amount > 0
+              const isCredit = txn.txnType === "CREDIT"
+              const isDebit = txn.txnType === "DEBIT"
 
               return {
                 id: txn.txnId || txn.id,
@@ -157,7 +158,7 @@ export default function AccountDetailsPage() {
           .filter((txn: any) => txn.accountId === accountId)
           .map((txn: any) => {
             const amount = Number.parseFloat(txn.amount || "0")
-            const isCredit = txn.txnType === "CREDIT" || amount > 0
+            const isCredit = txn.txnType === "CREDIT"
 
             return {
               id: txn.txnId || txn.id,
