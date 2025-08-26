@@ -51,6 +51,9 @@ export async function getAccounts() {
               currency: "GNF",
               bookBalance: "2500000",
               availableBalance: "2350000",
+              status: "ACTIVE",
+              type: "CURRENT",
+              agency: "Agence Kaloum",
               createdAt: "2023-01-15T10:00:00Z",
               tenantId: TENANT_ID,
             },
@@ -63,6 +66,9 @@ export async function getAccounts() {
               currency: "GNF",
               bookBalance: "5000000",
               availableBalance: "5000000",
+              status: "ACTIVE",
+              type: "SAVINGS",
+              agency: "Agence Kaloum",
               createdAt: "2023-03-20T10:00:00Z",
               tenantId: TENANT_ID,
             },
@@ -75,6 +81,9 @@ export async function getAccounts() {
               currency: "USD",
               bookBalance: "1200",
               availableBalance: "1150",
+              status: "ACTIVE",
+              type: "CURRENT",
+              agency: "Agence Kaloum",
               createdAt: "2023-06-10T10:00:00Z",
               tenantId: TENANT_ID,
             },
@@ -85,22 +94,29 @@ export async function getAccounts() {
       }
     }
 
-    const data = await response.json()
-    console.log("[v0] Données reçues:", data)
+    const responseData = await response.json()
+    console.log("[v0] Données reçues:", responseData)
 
-    // if (Array.isArray(data)) {
-    //   return { data: data }
-    // } else if (data.data && Array.isArray(data.data)) {
-    //   return { data: data.data }
-    // } else if (data.data) {
-    //   return { data: [data.data] }
-    // } else {
-    //   return { data: [data] }
-    // }
-    if (Array.isArray(data.rows)) {
-      return data.rows
+    // L'API retourne maintenant { data: { accountId, customerId, ... } } au lieu de { rows: [...] }
+    if (responseData.data) {
+      // Si data est un objet (un seul compte), le convertir en tableau
+      if (typeof responseData.data === "object" && !Array.isArray(responseData.data)) {
+        return [responseData.data]
+      }
+      // Si data est déjà un tableau, le retourner directement
+      if (Array.isArray(responseData.data)) {
+        return responseData.data
+      }
     }
-    return data.rows ? [data.rows] : []
+
+    // Fallback pour l'ancienne structure avec rows
+    if (Array.isArray(responseData.rows)) {
+      return responseData.rows
+    }
+
+    // Si aucune structure reconnue, retourner un tableau vide
+    console.log("[v0] Structure de réponse non reconnue:", responseData)
+    return []
   } catch (error) {
     console.error("[v0] Erreur lors de la récupération des comptes:", error)
     return []
@@ -250,6 +266,9 @@ export async function getAccountById(accountId: string) {
               currency: "GNF",
               bookBalance: "2500000",
               availableBalance: "2350000",
+              status: "ACTIVE",
+              type: "CURRENT",
+              agency: "Agence Kaloum",
               createdAt: "2023-01-15T10:00:00Z",
               tenantId: TENANT_ID,
             },
