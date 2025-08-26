@@ -24,12 +24,8 @@ interface ApiBeneficiary {
   bankCode: string
 }
 
-const API_BASE_URL = process.env.API_BASE_URL || process.env.NEXT_PUBLIC_API_BASE_URL
-const TENANT_ID = process.env.TENANT_ID || process.env.NEXT_PUBLIC_TENANT_ID
-
-if (!API_BASE_URL || !TENANT_ID) {
-  throw new Error("Variables d'environnement API_BASE_URL et TENANT_ID requises")
-}
+const API_BASE_URL = process.env.API_BASE_URL || process.env.NEXT_PUBLIC_API_BASE_URL || "http://192.168.1.200:8080/api"
+const TENANT_ID = process.env.TENANT_ID || "11cacc69-5a49-4f01-8b16-e8f473746634"
 
 export async function getBeneficiaries(): Promise<ApiBeneficiary[]> {
   const cookieToken = (await cookies()).get("token")?.value
