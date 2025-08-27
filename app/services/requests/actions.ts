@@ -5,91 +5,13 @@ import { z } from "zod"
 const serviceRequestSchema = z.object({
   serviceType: z.string().min(1, "Type de service requis"),
   accountId: z.string().min(1, "Compte requis"),
-  formData: z.string().min(1, "Données du formulaire requises"),  
+  formData: z.string().min(1, "Données du formulaire requises"),
 })
-
-const API_BASE_URL = "http://192.168.1.200:8080/api" //process.env.NEXT_PUBLIC_API_BASE_URL
-const TENANT_ID = "11cacc69-5a49-4f01-8b16-e8f473746634"
-
-// Get tenant from user session or environment
-async function getTenant(): Promise<string> {
-  // TODO: Implement tenant retrieval from user session/JWT
-  return process.env.TENANT_ID || "default-tenant"
-}
-
-// Get authorization headers
-async function getAuthHeaders(): Promise<Record<string, string>> {
-  // TODO: Implement token retrieval from session/cookies
-  const token = process.env.API_TOKEN || ""
-  return {
-    "Content-Type": "application/json",
-    Authorization: `Bearer ${token}`,
-    "X-Tenant-ID": await getTenant(),
-  }
-}
-
-export async function getServiceRequests(accountId?: string) {
-  try {
-    const headers = await getAuthHeaders()
-    const url = new URL(`${API_BASE_URL}/api/requests`)
-
-    if (accountId) {
-      url.searchParams.append("accountId", accountId)
-    }
-
-    const response = await fetch(url.toString(), {
-      method: "GET",
-      headers,
-    })
-
-    if (!response.ok) {
-      throw new Error(`API Error: ${response.status} ${response.statusText}`)
-    }
-
-    const data = await response.json()
-    return {
-      success: true,
-      data: data.requests || [],
-    }
-  } catch (error) {
-    console.error("Erreur lors de la récupération des demandes:", error)
-    return {
-      success: false,
-      error: "Impossible de récupérer les demandes. Veuillez réessayer.",
-    }
-  }
-}
-
-export async function getUserAccounts() {
-  try {
-    const headers = await getAuthHeaders()
-    const response = await fetch(`${API_BASE_URL}/api/accounts`, {
-      method: "GET",
-      headers,
-    })
-
-    if (!response.ok) {
-      throw new Error(`API Error: ${response.status} ${response.statusText}`)
-    }
-
-    const data = await response.json()
-    return {
-      success: true,
-      data: data.accounts || [],
-    }
-  } catch (error) {
-    console.error("Erreur lors de la récupération des comptes:", error)
-    return {
-      success: false,
-      error: "Impossible de récupérer les comptes. Veuillez réessayer.",
-    }
-  }
-}
 
 export async function submitServiceRequest(prevState: any, formData: FormData) {
   try {
-    // Simulate processing delay for UX
-    await new Promise((resolve) => setTimeout(resolve, 1000))
+    // Simulate processing delay
+    await new Promise((resolve) => setTimeout(resolve, 2000))
 
     const validatedFields = serviceRequestSchema.safeParse({
       serviceType: formData.get("serviceType"),
@@ -116,165 +38,38 @@ export async function submitServiceRequest(prevState: any, formData: FormData) {
       }
     }
 
-    const apiResult = await callServiceAPI(serviceType, accountId, parsedFormData)
-
-    if (!apiResult.success) {
+    // Simulate random error (5% chance)
+    if (Math.random() < 0.05) {
       return {
         success: false,
-        error: apiResult.error || "Erreur lors de la soumission de la demande.",
+        error: "Erreur technique temporaire. Veuillez réessayer dans quelques minutes.",
       }
     }
 
+    // Generate request reference
+    const reference = generateRequestReference(serviceType)
+
     // Log the request for audit
     console.log(
-      `[AUDIT] Nouvelle demande de service - Type: ${serviceType}, Compte: ${accountId}, Référence: ${apiResult.reference}`,
+      `[AUDIT] Nouvelle demande de service - Type: ${serviceType}, Compte: ${accountId}, Référence: ${reference}`,
     )
+    console.log(`[AUDIT] Données de la demande:`, parsedFormData)
+
+    // Simulate business logic
+    const processingInfo = getProcessingInfo(serviceType)
 
     return {
       success: true,
-      reference: apiResult.reference,
+      reference,
       serviceType,
-      processingTime: apiResult.processingTime,
-      nextSteps: apiResult.nextSteps,
+      processingTime: processingInfo.processingTime,
+      nextSteps: processingInfo.nextSteps,
     }
   } catch (error) {
     console.error("Erreur lors de la soumission de la demande:", error)
     return {
       success: false,
       error: "Une erreur inattendue s'est produite. Veuillez réessayer.",
-    }
-  }
-}
-
-async function callServiceAPI(serviceType: string, accountId: string, formData: any) {
-  const headers = await getAuthHeaders()
-
-  // Map service types to API endpoints
-  const endpointMap: Record<string, string> = {
-    checkbook: "/api/requests/checkbook",
-    certificate: "/api/requests/certificate",
-    credit_personal: "/api/requests/credit/personal",
-    credit_mortgage: "/api/requests/credit/mortgage",
-    credit_auto: "/api/requests/credit/auto",
-    credit_student: "/api/requests/credit/student",
-    business_account: "/api/requests/account/business",
-    card_request: "/api/requests/card",
-  }
-
-  const endpoint = endpointMap[serviceType]
-  if (!endpoint) {
-    return {
-      success: false,
-      error: `Type de service non supporté: ${serviceType}`,
-    }
-  }
-
-  try {
-    const requestPayload = {
-      accountId,
-      serviceType,
-      ...formData,
-      submittedAt: new Date().toISOString(),
-      tenant: await getTenant(),
-    }
-
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-      method: "POST",
-      headers,
-      body: JSON.stringify(requestPayload),
-    })
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}))
-      throw new Error(errorData.message || `API Error: ${response.status} ${response.statusText}`)
-    }
-
-    const result = await response.json()
-
-    return {
-      success: true,
-      reference: result.reference || generateRequestReference(serviceType),
-      processingTime: result.processingTime || getProcessingInfo(serviceType).processingTime,
-      nextSteps: result.nextSteps || getProcessingInfo(serviceType).nextSteps,
-    }
-  } catch (error) {
-    console.error(`Erreur API pour ${serviceType}:`, error)
-
-    // Return specific error messages based on error type
-    if (error instanceof Error) {
-      if (error.message.includes("401")) {
-        return { success: false, error: "Session expirée. Veuillez vous reconnecter." }
-      }
-      if (error.message.includes("403")) {
-        return { success: false, error: "Accès non autorisé pour ce type de demande." }
-      }
-      if (error.message.includes("429")) {
-        return { success: false, error: "Trop de demandes. Veuillez patienter avant de réessayer." }
-      }
-      if (error.message.includes("500")) {
-        return { success: false, error: "Erreur serveur temporaire. Veuillez réessayer plus tard." }
-      }
-    }
-
-    return {
-      success: false,
-      error: "Erreur de connexion à l'API. Veuillez vérifier votre connexion et réessayer.",
-    }
-  }
-}
-
-export async function getRequestStatus(requestId: string) {
-  try {
-    const headers = await getAuthHeaders()
-    const response = await fetch(`${API_BASE_URL}/api/requests/${requestId}/status`, {
-      method: "GET",
-      headers,
-    })
-
-    if (!response.ok) {
-      throw new Error(`API Error: ${response.status} ${response.statusText}`)
-    }
-
-    const data = await response.json()
-    return {
-      success: true,
-      data: data.status,
-    }
-  } catch (error) {
-    console.error("Erreur lors de la récupération du statut:", error)
-    return {
-      success: false,
-      error: "Impossible de récupérer le statut de la demande.",
-    }
-  }
-}
-
-export async function downloadRequestDocument(requestId: string, documentType: string) {
-  try {
-    const headers = await getAuthHeaders()
-    const response = await fetch(`${API_BASE_URL}/api/requests/${requestId}/documents/${documentType}`, {
-      method: "GET",
-      headers: {
-        ...headers,
-        Accept: "application/pdf",
-      },
-    })
-
-    if (!response.ok) {
-      throw new Error(`API Error: ${response.status} ${response.statusText}`)
-    }
-
-    const blob = await response.blob()
-    return {
-      success: true,
-      data: blob,
-      filename: `${requestId}_${documentType}.pdf`,
-    }
-  } catch (error) {
-    console.error("Erreur lors du téléchargement:", error)
-    return {
-      success: false,
-      error: "Impossible de télécharger le document.",
     }
   }
 }
