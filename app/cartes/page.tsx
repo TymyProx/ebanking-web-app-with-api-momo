@@ -7,7 +7,6 @@ import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import {
   AlertDialog,
@@ -237,6 +236,48 @@ export default function CartesPage() {
     })
   }
 
+  const cardTypes = [
+    {
+      id: "ESSENTIEL",
+      name: "Carte Essentiel",
+      description: "Pour vos besoins quotidiens",
+      color: "bg-blue-500",
+      advantages: [
+        "Retraits gratuits dans le réseau BNG",
+        "Paiements en ligne sécurisés",
+        "Plafond journalier : 200,000 GNF",
+        "Frais de tenue de compte réduits",
+      ],
+    },
+    {
+      id: "GOLD",
+      name: "Carte Gold",
+      description: "Pour plus de privilèges",
+      color: "bg-yellow-500",
+      advantages: [
+        "Retraits gratuits partout en Guinée",
+        "Plafond journalier : 500,000 GNF",
+        "Assurance voyage incluse",
+        "Service client prioritaire",
+        "Cashback sur les achats",
+      ],
+    },
+    {
+      id: "PLATINUM",
+      name: "Carte Platinum",
+      description: "L'excellence bancaire",
+      color: "bg-gray-700",
+      advantages: [
+        "Plafond journalier : 1,000,000 GNF",
+        "Accès aux salons VIP aéroports",
+        "Conciergerie 24h/24",
+        "Assurance voyage premium",
+        "Cashback majoré",
+        "Frais à l'étranger réduits",
+      ],
+    },
+  ]
+
   useState(() => {
     if (createCardState?.success) {
       toast({
@@ -268,13 +309,13 @@ export default function CartesPage() {
               Demander une nouvelle carte
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-md">
+          <DialogContent className="sm:max-w-2xl">
             <DialogHeader>
               <DialogTitle className="flex items-center space-x-2">
                 <Plus className="w-5 h-5" />
                 <span>Demander une nouvelle carte</span>
               </DialogTitle>
-              <DialogDescription>Sélectionnez le type de carte que vous souhaitez demander</DialogDescription>
+              <DialogDescription>Choisissez le type de carte qui correspond à vos besoins</DialogDescription>
             </DialogHeader>
 
             <div className="space-y-6">
@@ -297,18 +338,46 @@ export default function CartesPage() {
                 </div>
               </div>
 
-              <div className="space-y-3">
-                <Label htmlFor="card-type">Type de carte *</Label>
-                <Select value={selectedCardType} onValueChange={setSelectedCardType}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Sélectionnez le type de carte" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="DEBIT">Carte de débit</SelectItem>
-                    <SelectItem value="CREDIT">Carte de crédit</SelectItem>
-                    <SelectItem value="PREPAID">Carte prépayée</SelectItem>
-                  </SelectContent>
-                </Select>
+              <div className="space-y-4">
+                <Label>Choisissez votre type de carte *</Label>
+                <div className="grid gap-4">
+                  {cardTypes.map((cardType) => (
+                    <div
+                      key={cardType.id}
+                      className={`relative p-4 border-2 rounded-lg cursor-pointer transition-all hover:shadow-md ${
+                        selectedCardType === cardType.id
+                          ? "border-blue-500 bg-blue-50"
+                          : "border-gray-200 hover:border-gray-300"
+                      }`}
+                      onClick={() => setSelectedCardType(cardType.id)}
+                    >
+                      <div className="flex items-start space-x-4">
+                        <div
+                          className={`w-12 h-8 ${cardType.color} rounded flex items-center justify-center text-white text-xs font-bold`}
+                        >
+                          BNG
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-center justify-between mb-2">
+                            <div>
+                              <h3 className="font-semibold text-lg">{cardType.name}</h3>
+                              <p className="text-sm text-gray-600">{cardType.description}</p>
+                            </div>
+                            {selectedCardType === cardType.id && <CheckCircle className="w-5 h-5 text-blue-500" />}
+                          </div>
+                          <div className="space-y-1">
+                            {cardType.advantages.map((advantage, index) => (
+                              <div key={index} className="flex items-center space-x-2">
+                                <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
+                                <span className="text-sm text-gray-700">{advantage}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
 
               {createCardState?.success && (
