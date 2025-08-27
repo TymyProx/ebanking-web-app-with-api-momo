@@ -1,30 +1,6 @@
 "use server"
 
 import { z } from "zod"
-import { revalidatePath } from "next/cache"
-import { cookies } from "next/headers"
-
-export interface ApiCreditRequest {
-  id: string
-  createdAt: string
-  updatedAt: string
-  deletedAt?: string
-  createdById: string
-  updatedById: string
-  importHash?: string
-  tenantId: string
-  applicantName: string
-  creditAmount: string
-  durationMonths: string
-  purpose: string
-  status?: "En cours" | "Approuvée" | "Rejetée" | "En attente de documents"
-}
-
-export interface ActionResult {
-  success?: boolean
-  error?: string
-  message?: string
-}
 
 const serviceRequestSchema = z.object({
   serviceType: z.string().min(1, "Type de service requis"),
@@ -34,7 +10,6 @@ const serviceRequestSchema = z.object({
 
 const API_BASE_URL = "http://192.168.1.200:8080/api" //process.env.NEXT_PUBLIC_API_BASE_URL
 const TENANT_ID = "11cacc69-5a49-4f01-8b16-e8f473746634"
-
 
 // Get tenant from user session or environment
 async function getTenant(): Promise<string> {
