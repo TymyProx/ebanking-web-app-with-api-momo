@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useTransition } from "react"
+import { useState, useTransition, useEffect } from "react"
 import { Card as UI_Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -116,6 +116,9 @@ export default function CartesPage() {
   const [selectedCardType, setSelectedCardType] = useState("")
   const [createCardState, createCardAction, isCreatingCard] = useActionState(createCard, null)
   const [isPending, startTransition] = useTransition()
+  const [displayMessage, setDisplayMessage] = useState<{ success?: string; error?: string; reference?: string } | null>(
+    null,
+  )
 
   const getCardIcon = (type: string) => {
     switch (type) {
@@ -278,20 +281,39 @@ export default function CartesPage() {
     },
   ]
 
-  useState(() => {
+  useEffect(() => {
     if (createCardState?.success) {
+      setDisplayMessage({
+        success: createCardState.message,
+        reference: createCardState.reference,
+      })
       toast({
         title: "Succès",
         description: createCardState.message,
       })
       setIsNewCardDialogOpen(false)
       setSelectedCardType("")
+
+      const timer = setTimeout(() => {
+        setDisplayMessage(null)
+      }, 8000)
+
+      return () => clearTimeout(timer)
     } else if (createCardState?.error) {
+      setDisplayMessage({
+        error: createCardState.error,
+      })
       toast({
         title: "Erreur",
         description: createCardState.error,
         variant: "destructive",
       })
+
+      const timer = setTimeout(() => {
+        setDisplayMessage(null)
+      }, 8000)
+
+      return () => clearTimeout(timer)
     }
   }, [createCardState])
 
@@ -383,22 +405,22 @@ export default function CartesPage() {
                 </div>
               </div>
 
-              {createCardState?.success && (
+              {displayMessage?.success && (
                 <Alert className="border-green-200 bg-green-50">
                   <CheckCircle className="h-4 w-4 text-green-600" />
                   <AlertDescription className="text-green-800">
-                    ✅ {createCardState.message}
-                    {createCardState.reference && (
-                      <span className="block mt-1">Référence: {createCardState.reference}</span>
+                    ✅ {displayMessage.success}
+                    {displayMessage.reference && (
+                      <span className="block mt-1">Référence: {displayMessage.reference}</span>
                     )}
                   </AlertDescription>
                 </Alert>
               )}
 
-              {createCardState?.error && (
+              {displayMessage?.error && (
                 <Alert className="border-red-200 bg-red-50">
                   <AlertCircle className="h-4 w-4 text-red-600" />
-                  <AlertDescription className="text-red-800">❌ {createCardState.error}</AlertDescription>
+                  <AlertDescription className="text-red-800">❌ {displayMessage.error}</AlertDescription>
                 </Alert>
               )}
             </div>
