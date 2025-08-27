@@ -1,11 +1,12 @@
 "use client"
 
 import { useParams, useRouter } from "next/navigation"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
+import { Skeleton } from "@/components/ui/skeleton"
 import {
   ArrowLeft,
   Download,
@@ -23,7 +24,10 @@ import {
   TrendingUp,
   Shield,
   Info,
+  RefreshCw,
 } from "lucide-react"
+import { getAccounts } from "../actions"
+import { getTransactions } from "../../transfers/new/actions"
 
 interface Account {
   id: string
@@ -60,123 +64,159 @@ export default function AccountDetailsPage() {
   const params = useParams()
   const accountId = params.id as string
   const [showBalance, setShowBalance] = useState(true)
+  const [account, setAccount] = useState<Account | null>(null)
+  const [transactions, setTransactions] = useState<Transaction[]>([])
+  const [isLoadingAccount, setIsLoadingAccount] = useState(true)
+  const [isLoadingTransactions, setIsLoadingTransactions] = useState(true)
 
-  // Données des comptes (simulées)
-  const accountsData: Account[] = [
-    {
-      id: "1",
-      name: "Compte Courant",
-      number: "0001-234567-89",
-      balance: 2400000,
-      availableBalance: 2350000,
-      currency: "GNF",
-      type: "Courant",
-      status: "Actif",
-      iban: "GN82 BNG 001 0001234567 89",
-      openingDate: "2020-03-15",
-      branch: "Agence Kaloum",
-      overdraftLimit: 500000,
-    },
-    {
-      id: "2",
-      name: "Compte Épargne",
-      number: "0002-345678-90",
-      balance: 850000,
-      availableBalance: 850000,
-      currency: "GNF",
-      type: "Épargne",
-      status: "Actif",
-      iban: "GN82 BNG 001 0002345678 90",
-      openingDate: "2021-06-10",
-      branch: "Agence Kaloum",
-      interestRate: 3.5,
-    },
-    {
-      id: "3",
-      name: "Compte USD",
-      number: "0003-456789-01",
-      balance: 1250,
-      availableBalance: 1250,
-      currency: "USD",
-      type: "Devise",
-      status: "Actif",
-      iban: "GN82 BNG 001 0003456789 01",
-      openingDate: "2022-01-20",
-      branch: "Agence Kaloum",
-    },
-  ]
+  useEffect(() => {
+    const loadAccount = async () => {
+      try {
+        const accountsData = await getAccounts()
+        console.log("[v0] Comptes récupérés:", accountsData)
 
-  // Données des transactions (simulées)
-  const transactionsData: Transaction[] = [
-    {
-      id: "1",
-      accountId: "1",
-      type: "Virement reçu",
-      description: "Salaire mensuel",
-      amount: 1500000,
-      currency: "GNF",
-      date: "2024-01-15T10:30:00",
-      status: "Exécuté",
-      counterparty: "Entreprise ABC SARL",
-      reference: "SAL-2024-001",
-      balanceAfter: 2400000,
-    },
-    {
-      id: "2",
-      accountId: "1",
-      type: "Paiement facture",
-      description: "Facture électricité",
-      amount: -45000,
-      currency: "GNF",
-      date: "2024-01-12T14:15:00",
-      status: "Exécuté",
-      counterparty: "EDG - Électricité de Guinée",
-      reference: "ELEC-2024-001",
-      balanceAfter: 900000,
-    },
-    {
-      id: "3",
-      accountId: "1",
-      type: "Virement émis",
-      description: "Virement vers Mamadou Sow",
-      amount: -250000,
-      currency: "GNF",
-      date: "2024-01-10T09:45:00",
-      status: "Exécuté",
-      counterparty: "DIALLO Mamadou",
-      reference: "VIR-2024-003",
-      balanceAfter: 945000,
-    },
-    {
-      id: "4",
-      accountId: "1",
-      type: "Retrait DAB",
-      description: "Retrait distributeur Kaloum",
-      amount: -50000,
-      currency: "GNF",
-      date: "2024-01-08T16:20:00",
-      status: "Exécuté",
-      counterparty: "DAB BNG Kaloum",
-      reference: "DAB-2024-012",
-      balanceAfter: 1195000,
-    },
-    {
-      id: "5",
-      accountId: "2",
-      type: "Virement reçu",
-      description: "Épargne mensuelle",
-      amount: 200000,
-      currency: "GNF",
-      date: "2024-01-01T08:00:00",
-      status: "Exécuté",
-      counterparty: "Virement automatique",
-      reference: "EPA-2024-001",
-      balanceAfter: 850000,
-    },
-  ]
+        if (Array.isArray(accountsData)) {
+          const foundAccount = accountsData.find((acc: any) => acc.id === accountId || acc.accountId === accountId)
 
-  const account = accountsData.find((acc) => acc.id === accountId)
-  const accountTransactions = transactionsData.filter((txn) => txn.accountId === accountId)
+          if (foundAccount) {
+            const adaptedAccount: Account = {
+              id: foundAccount.id || foundAccount.accountId,
+              name: foundAccount.accountName || foundAccount.name || `Compte ${foundAccount.accountNumber}`,
+              number: foundAccount.accountNumber,
+              balance: Number.parseFloat(foundAccount.bookBalance || foundAccount.balance || "0"),
+              availableBalance: Number.parseFloat(foundAccount.availableBalance || foundAccount.balance || "0"),
+              currency: foundAccount.currency || "GNF",
+              type: "Courant" as const,
+              status: "Actif" as const,
+              iban: `GN82 BNG 001 ${foundAccount.accountNumber}`,
+              openingDate: foundAccount.createdAt || "2020-01-01",
+              branch: "Agence Kaloum",
+              overdraftLimit: foundAccount.currency === "GNF" ? 500000 : undefined,
+            }
+            setAccount(adaptedAccount)
+          }
+        }
+      } catch (error) {
+        console.error("Erreur lors du chargement du compte:", error)
+      } finally {
+        setIsLoadingAccount(false)
+      }
+    }
+
+    loadAccount()
+  }, [accountId])
+
+  useEffect(() => {
+    const loadTransactions = async () => {
+      try {
+        const transactionsData = await getTransactions()
+        console.log("[v0] Transactions récupérées:", transactionsData)
+
+        if (transactionsData.data && Array.isArray(transactionsData.data)) {
+          // Filtrer les transactions pour ce compte spécifique
+          const accountTransactions = transactionsData.data
+            .filter((txn: any) => txn.accountId === accountId)
+            .map((txn: any) => {
+              const amount = Number.parseFloat(txn.amount || "0")
+              const isCredit = txn.txnType === "CREDIT"
+              const isDebit = txn.txnType === "DEBIT"
+
+              return {
+                id: txn.txnId || txn.id,
+                accountId: txn.accountId,
+                type: isCredit ? "Virement reçu" : "Virement émis",
+                description: txn.description || "Transaction",
+                amount: isCredit ? Math.abs(amount) : -Math.abs(amount),
+                currency: "GNF", // Par défaut
+                date: txn.valueDate || new Date().toISOString(),
+                status: txn.status === "COMPLETED" ? "Exécuté" : txn.status === "PENDING" ? "En attente" : "Rejeté",
+                counterparty: txn.beneficiaryId || "Système",
+                reference: txn.txnId || "REF-" + Date.now(),
+                balanceAfter: 0, // Calculé dynamiquement si nécessaire
+              } as Transaction
+            })
+            .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()) // Trier par date décroissante
+
+          setTransactions(accountTransactions)
+        }
+      } catch (error) {
+        console.error("Erreur lors du chargement des transactions:", error)
+      } finally {
+        setIsLoadingTransactions(false)
+      }
+    }
+
+    loadTransactions()
+  }, [accountId])
+
+  const handleRefreshTransactions = async () => {
+    setIsLoadingTransactions(true)
+    try {
+      const transactionsData = await getTransactions()
+      if (transactionsData.data && Array.isArray(transactionsData.data)) {
+        const accountTransactions = transactionsData.data
+          .filter((txn: any) => txn.accountId === accountId)
+          .map((txn: any) => {
+            const amount = Number.parseFloat(txn.amount || "0")
+            const isCredit = txn.txnType === "CREDIT"
+
+            return {
+              id: txn.txnId || txn.id,
+              accountId: txn.accountId,
+              type: isCredit ? "Virement reçu" : "Virement émis",
+              description: txn.description || "Transaction",
+              amount: isCredit ? Math.abs(amount) : -Math.abs(amount),
+              currency: "GNF",
+              date: txn.valueDate || new Date().toISOString(),
+              status: txn.status === "COMPLETED" ? "Exécuté" : txn.status === "PENDING" ? "En attente" : "Rejeté",
+              counterparty: txn.beneficiaryId || "Système",
+              reference: txn.txnId || "REF-" + Date.now(),
+              balanceAfter: 0,
+            } as Transaction
+          })
+          .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+
+        setTransactions(accountTransactions)
+      }
+    } catch (error) {
+      console.error("Erreur lors du rechargement des transactions:", error)
+    } finally {
+      setIsLoadingTransactions(false)
+    }
+  }
+
+  if (isLoadingAccount) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center space-x-4">
+          <Skeleton className="h-10 w-20" />
+          <div className="space-y-2">
+            <Skeleton className="h-8 w-48" />
+            <Skeleton className="h-4 w-32" />
+          </div>
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <Card className="lg:col-span-2">
+            <CardHeader>
+              <Skeleton className="h-6 w-40" />
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <Skeleton className="h-12 w-full" />
+              <Skeleton className="h-8 w-full" />
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <Skeleton className="h-6 w-32" />
+            </CardHeader>
+            <CardContent>
+              <Skeleton className="h-32 w-full" />
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    )
+  }
 
   if (!account) {
     return (
@@ -185,9 +225,9 @@ export default function AccountDetailsPage() {
           <h1 className="text-2xl font-bold text-gray-900">Compte introuvable</h1>
           <p className="text-gray-600 mt-2">Le compte demandé n'existe pas ou n'est pas accessible.</p>
         </div>
-        <Button onClick={() => router.push("/")} variant="outline">
+        <Button onClick={() => router.push("/accounts/balance")} variant="outline">
           <ArrowLeft className="w-4 h-4 mr-2" />
-          Retour au tableau de bord
+          Retour aux comptes
         </Button>
       </div>
     )
@@ -411,24 +451,28 @@ export default function AccountDetailsPage() {
                   <ArrowUpRight className="w-4 h-4 mr-2" />
                   Effectuer un virement
                 </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="w-full justify-start bg-transparent"
-                  onClick={() => router.push(`/accounts/statements?accountId=${accountId}`)}
-                >
-                  <Download className="w-4 h-4 mr-2" />
-                  Télécharger relevé
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="w-full justify-start bg-transparent"
-                  onClick={() => router.push(`/services/rib?accountId=${accountId}`)}
-                >
-                  <FileText className="w-4 h-4 mr-2" />
-                  Obtenir RIB
-                </Button>
+                {account.status === "Actif" && (
+                  <>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full justify-start bg-transparent"
+                      onClick={() => router.push(`/accounts/statements?accountId=${accountId}`)}
+                    >
+                      <Download className="w-4 h-4 mr-2" />
+                      Télécharger relevé
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full justify-start bg-transparent"
+                      onClick={() => router.push(`/services/rib?accountId=${accountId}`)}
+                    >
+                      <FileText className="w-4 h-4 mr-2" />
+                      Obtenir RIB
+                    </Button>
+                  </>
+                )}
               </div>
             </div>
           </CardContent>
@@ -438,16 +482,42 @@ export default function AccountDetailsPage() {
       {/* Historique des transactions */}
       <Card>
         <CardHeader>
-          <CardTitle>Dernières transactions</CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle>Transactions du compte</CardTitle>
+            <Button onClick={handleRefreshTransactions} disabled={isLoadingTransactions} variant="outline" size="sm">
+              <RefreshCw className={`h-4 w-4 mr-2 ${isLoadingTransactions ? "animate-spin" : ""}`} />
+              {isLoadingTransactions ? "Actualisation..." : "Actualiser"}
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
-          {accountTransactions.length === 0 ? (
+          {isLoadingTransactions ? (
+            <div className="space-y-4">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="flex items-center justify-between p-4 border rounded-lg">
+                  <div className="flex items-center space-x-4">
+                    <Skeleton className="w-12 h-12 rounded-full" />
+                    <div className="space-y-2">
+                      <Skeleton className="h-4 w-32" />
+                      <Skeleton className="h-3 w-48" />
+                      <Skeleton className="h-3 w-24" />
+                    </div>
+                  </div>
+                  <div className="text-right space-y-2">
+                    <Skeleton className="h-6 w-24" />
+                    <Skeleton className="h-4 w-20" />
+                    <Skeleton className="h-3 w-32" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : transactions.length === 0 ? (
             <div className="text-center py-8">
-              <p className="text-gray-500">Aucune transaction récente</p>
+              <p className="text-gray-500">Aucune transaction trouvée pour ce compte</p>
             </div>
           ) : (
             <div className="space-y-4">
-              {accountTransactions.map((transaction) => (
+              {transactions.map((transaction) => (
                 <div
                   key={transaction.id}
                   className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50"
@@ -476,9 +546,17 @@ export default function AccountDetailsPage() {
                       {formatAmount(transaction.amount, transaction.currency)} {transaction.currency}
                     </p>
                     <p className="text-sm text-gray-500">{formatDateTime(transaction.date)}</p>
-                    <p className="text-xs text-gray-400">
-                      Solde: {formatAmount(transaction.balanceAfter, transaction.currency)} {transaction.currency}
-                    </p>
+                    <Badge
+                      variant={
+                        transaction.status === "Exécuté"
+                          ? "default"
+                          : transaction.status === "En attente"
+                            ? "secondary"
+                            : "destructive"
+                      }
+                    >
+                      {transaction.status}
+                    </Badge>
                   </div>
                 </div>
               ))}

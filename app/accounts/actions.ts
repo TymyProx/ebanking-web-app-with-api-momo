@@ -3,20 +3,18 @@
 import { cookies } from "next/headers"
 import { revalidatePath } from "next/cache"
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://192.168.1.200:8080/api"
-const TENANT_ID = "afa25e29-08dd-46b6-8ea2-d778cb2d6694"
+const API_BASE_URL = process.env.API_BASE_URL || process.env.NEXT_PUBLIC_API_BASE_URL || "http://192.168.1.200:8080/api"
+const TENANT_ID = process.env.TENANT_ID || "11cacc69-5a49-4f01-8b16-e8f473746634"
 
 export async function getAccounts() {
-   const cookieToken = (await cookies()).get("token")?.value
-   const usertoken = cookieToken
+  const cookieToken = (await cookies()).get("token")?.value
+  const usertoken = cookieToken
   try {
     console.log("[v0] Récupération des comptes...")
 
-    
-
     if (!usertoken) {
       console.log("[v0] Token manquant")
-      return { data: [] }
+      return []
     }
 
     const response = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/compte`, {
@@ -43,80 +41,97 @@ export async function getAccounts() {
         // Si l'API n'est pas accessible, retourner des données de test
         if (errorText.includes("only public URLs are supported") || errorText.includes("only https is supported")) {
           console.log("[v0] API non accessible, utilisation de données de test")
-          return {
-            data: [
-              {
-                accountId: "ACC001",
-                customerId: "CUST001",
-                accountNumber: "0001234567890",
-                accountName: "Compte Courant Principal",
-                currency: "GNF",
-                bookBalance: "2500000",
-                availableBalance: "2350000",
-                status: "ACTIVE",
-                openDate: "2023-01-15",
-                accountType: "CURRENT",
-              },
-              {
-                accountId: "ACC002",
-                customerId: "CUST001",
-                accountNumber: "0001234567891",
-                accountName: "Compte Épargne",
-                currency: "GNF",
-                bookBalance: "5000000",
-                availableBalance: "5000000",
-                status: "ACTIVE",
-                openDate: "2023-03-20",
-                accountType: "SAVINGS",
-              },
-              {
-                accountId: "ACC003",
-                customerId: "CUST001",
-                accountNumber: "0001234567892",
-                accountName: "Compte USD",
-                currency: "USD",
-                bookBalance: "1200",
-                availableBalance: "1150",
-                status: "ACTIVE",
-                openDate: "2023-06-10",
-                accountType: "FOREIGN_CURRENCY",
-              },
-            ],
-          }
+          return [
+            {
+              id: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+              accountId: "ACC001",
+              customerId: "CUST001",
+              accountNumber: "0001234567890",
+              accountName: "Compte Courant Principal",
+              currency: "GNF",
+              bookBalance: "2500000",
+              availableBalance: "2350000",
+              status: "ACTIVE",
+              type: "CURRENT",
+              agency: "Agence Centrale",
+              createdAt: "2023-01-15T10:00:00Z",
+              tenantId: TENANT_ID,
+            },
+            {
+              id: "3fa85f64-5717-4562-b3fc-2c963f66afa7",
+              accountId: "ACC002",
+              customerId: "CUST001",
+              accountNumber: "0001234567891",
+              accountName: "Compte Épargne",
+              currency: "GNF",
+              bookBalance: "5000000",
+              availableBalance: "5000000",
+              status: "ACTIVE",
+              type: "SAVINGS",
+              agency: "Agence Centrale",
+              createdAt: "2023-03-20T10:00:00Z",
+              tenantId: TENANT_ID,
+            },
+            {
+              id: "3fa85f64-5717-4562-b3fc-2c963f66afa8",
+              accountId: "ACC003",
+              customerId: "CUST001",
+              accountNumber: "0001234567892",
+              accountName: "Compte USD",
+              currency: "USD",
+              bookBalance: "1200",
+              availableBalance: "1150",
+              status: "ACTIVE",
+              type: "CURRENT",
+              agency: "Agence Internationale",
+              createdAt: "2023-06-10T10:00:00Z",
+              tenantId: TENANT_ID,
+            },
+          ]
         }
 
         throw new Error("Erreur de communication avec l'API")
       }
     }
 
-    const data = await response.json()
-    console.log("[v0] Données reçues:", data)
+    const responseData = await response.json()
+    console.log("[v0] Données reçues:", responseData)
 
-    // Retourner les données dans le format attendu
-    if (Array.isArray(data.rows)) {
-      return { data: data.rows }
-    } else if (data.rows) {
-      return { data: [data.rows] }
-    } else if (Array.isArray(data.data)) {
-      return { data: data.data }
-    } else if (data.data) {
-      return { data: [data.data] }
-    } else {
-      return { data: Array.isArray(data) ? data : [data] }
+    // Gérer les différents formats de réponse possibles
+    if (responseData.data) {
+      // Si responseData.data est un tableau
+      if (Array.isArray(responseData.data)) {
+        return responseData.data
+      }
+      // Si responseData.data est un objet unique (un seul compte)
+      else if (typeof responseData.data === "object") {
+        return [responseData.data]
+      }
     }
+
+    // Compatibilité avec l'ancienne structure (rows)
+    if (Array.isArray(responseData.rows)) {
+      return responseData.rows
+    }
+
+    // Si responseData est directement un tableau
+    if (Array.isArray(responseData)) {
+      return responseData
+    }
+
+    // Si aucune structure reconnue, retourner un tableau vide
+    return []
   } catch (error) {
     console.error("[v0] Erreur lors de la récupération des comptes:", error)
-    return { data: [] }
+    return []
   }
 }
 
 export async function createAccount(prevState: any, formData: FormData) {
-   const cookieToken = (await cookies()).get("token")?.value
-   const usertoken = cookieToken
+  const cookieToken = (await cookies()).get("token")?.value
+  const usertoken = cookieToken
   try {
     console.log("[v0] Création d'un nouveau compte...")
-
-   
 
     if (!usertoken) {
       return {
@@ -134,6 +149,9 @@ export async function createAccount(prevState: any, formData: FormData) {
       currency: formData.get("currency") as string,
       bookBalance: (formData.get("bookBalance") as string) || "0",
       availableBalance: (formData.get("availableBalance") as string) || "0",
+      type: (formData.get("accountType") as string) || "CURRENT", // Récupération du type de compte
+      status: "EN ATTENTE",
+      agency: "Agence Principale",
     }
 
     console.log("[v0] Données du compte:", accountData)
@@ -214,7 +232,7 @@ export async function getAccountById(accountId: string) {
     console.log("[v0] Récupération du compte:", accountId)
 
     const cookieStore = await cookies()
-    const token = cookieStore.get("auth-token")?.value
+    const token = cookieStore.get("token")?.value
 
     if (!token) {
       console.log("[v0] Token manquant")
@@ -247,6 +265,7 @@ export async function getAccountById(accountId: string) {
           console.log("[v0] API non accessible, utilisation de données de test")
           return {
             data: {
+              id: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
               accountId: accountId,
               customerId: "CUST001",
               accountNumber: "0001234567890",
@@ -255,8 +274,10 @@ export async function getAccountById(accountId: string) {
               bookBalance: "2500000",
               availableBalance: "2350000",
               status: "ACTIVE",
-              openDate: "2023-01-15",
-              accountType: "CURRENT",
+              type: "CURRENT",
+              agency: "Agence Centrale",
+              createdAt: "2023-01-15T10:00:00Z",
+              tenantId: TENANT_ID,
             },
           }
         }

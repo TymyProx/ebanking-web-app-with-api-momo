@@ -33,6 +33,17 @@ export async function generateStatement(prevState: any, formData: FormData) {
 
     const { accountId, startDate, endDate, format, includeImages, language } = validatedData
 
+    const transactionsJson = formData.get("transactions") as string
+    let realTransactions = []
+
+    try {
+      if (transactionsJson) {
+        realTransactions = JSON.parse(transactionsJson)
+      }
+    } catch (error) {
+      console.error("Erreur parsing transactions:", error)
+    }
+
     // Vérification de la période
     const start = new Date(startDate)
     const end = new Date(endDate)
@@ -61,17 +72,18 @@ export async function generateStatement(prevState: any, formData: FormData) {
       }
     }
 
-    // Simulation de la récupération des données du compte
-    console.log(`[AUDIT] Génération relevé - Compte: ${accountId}, Période: ${startDate} à ${endDate}`)
+    console.log(
+      `[AUDIT] Génération relevé - Compte: ${accountId}, Période: ${startDate} à ${endDate}, Transactions: ${realTransactions.length}`,
+    )
 
     // Simulation d'un délai de génération
-    await new Promise((resolve) => setTimeout(resolve, 3000))
+    await new Promise((resolve) => setTimeout(resolve, 2000))
 
-    // Simulation d'une erreur si aucune transaction (5% de chance)
-    if (Math.random() < 0.05) {
+    // Vérification s'il y a des transactions
+    if (realTransactions.length === 0) {
       return {
         success: false,
-        error: "❌ Aucun relevé pour cette période.",
+        error: "❌ Aucune transaction trouvée pour cette période.",
       }
     }
 
@@ -79,7 +91,15 @@ export async function generateStatement(prevState: any, formData: FormData) {
     const statementId = `STMT_${Date.now()}_${accountId}`
     const fileName = `releve_${accountId}_${startDate}_${endDate}.${format}`
 
-    // Simulation des données du relevé
+    const totalCredits = realTransactions
+      .filter((txn: any) => txn.txnType === "CREDIT")
+      .reduce((sum: number, txn: any) => sum + Math.abs(Number.parseFloat(txn.amount || "0")), 0)
+
+    const totalDebits = realTransactions
+      .filter((txn: any) => txn.txnType === "DEBIT")
+      .reduce((sum: number, txn: any) => sum + Math.abs(Number.parseFloat(txn.amount || "0")), 0)
+
+    // Simulation des données du relevé avec vraies transactions
     const statementData = {
       accountId,
       accountName: getAccountName(accountId),
@@ -88,13 +108,13 @@ export async function generateStatement(prevState: any, formData: FormData) {
       format,
       language,
       includeImages,
-      transactions: await generateTransactionData(accountId, startDate, endDate),
+      transactions: realTransactions,
       summary: {
-        openingBalance: 1500000,
-        closingBalance: 2400000,
-        totalCredits: 1200000,
-        totalDebits: 300000,
-        transactionCount: 25,
+        openingBalance: 1500000, // À calculer selon les vraies données
+        closingBalance: 1500000 + totalCredits - totalDebits,
+        totalCredits,
+        totalDebits,
+        transactionCount: realTransactions.length,
       },
       generatedAt: new Date().toISOString(),
       generatedBy: "USER123",
@@ -138,19 +158,21 @@ export async function generateStatement(prevState: any, formData: FormData) {
       expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 jours
     })
 
-    // Log d'audit
-    console.log(`[AUDIT] Relevé généré avec succès - ID: ${statementId}, Format: ${format.toUpperCase()}`)
+    // Log d'audit avec vraies données
+    console.log(
+      `[AUDIT] Relevé généré avec succès - ID: ${statementId}, Format: ${format.toUpperCase()}, Transactions: ${realTransactions.length}`,
+    )
 
     return {
       success: true,
       message: "Relevé généré avec succès",
       statementId,
       fileName,
-      fileSize,
-      downloadUrl,
+      fileSize: format === "pdf" ? "245 KB" : "89 KB",
+      downloadUrl: `/api/statements/download/${statementId}.${format}`,
       format: format.toUpperCase(),
       period: `${new Date(startDate).toLocaleDateString("fr-FR")} au ${new Date(endDate).toLocaleDateString("fr-FR")}`,
-      transactionCount: statementData.transactions.length,
+      transactionCount: realTransactions.length,
       timestamp: new Date().toISOString(),
     }
   } catch (error) {

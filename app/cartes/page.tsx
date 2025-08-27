@@ -1,15 +1,13 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useTransition, useEffect } from "react"
 import { Card as UI_Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Textarea } from "@/components/ui/textarea"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -30,7 +28,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
-import { Alert, AlertDescription } from "@/components/ui/alert"
 import { toast } from "@/hooks/use-toast"
 import {
   CreditCard,
@@ -45,9 +42,10 @@ import {
   Clock,
   X,
   Plus,
-  Phone,
-  Mail,
+  AlertCircle,
 } from "lucide-react"
+import { createCard, getCards } from "./actions"
+import { useActionState } from "react"
 
 interface Card {
   id: string
@@ -109,65 +107,19 @@ const transactions = [
   { id: "5", cardId: "1", date: "2024-01-11", description: "Virement reçu", amount: 200000, type: "transfer" },
 ]
 
-const mockAccounts = [
-  {
-    id: "1",
-    name: "Compte Courant",
-    number: "0001-234567-89",
-    balance: 2400000,
-    currency: "GNF",
-    type: "Courant",
-  },
-  {
-    id: "2",
-    name: "Compte Épargne",
-    number: "0002-345678-90",
-    balance: 850000,
-    currency: "GNF",
-    type: "Épargne",
-  },
-  {
-    id: "3",
-    name: "Compte USD",
-    number: "0003-456789-01",
-    balance: 1250,
-    currency: "USD",
-    type: "Devise",
-  },
-]
-
-const cardTypes = [
-  { id: "visa-classic", name: "Visa Classic", description: "Carte de débit standard", fee: "15,000 GNF/an" },
-  { id: "visa-gold", name: "Visa Gold", description: "Carte premium avec avantages", fee: "35,000 GNF/an" },
-  { id: "mastercard-standard", name: "Mastercard Standard", description: "Carte internationale", fee: "20,000 GNF/an" },
-  { id: "mastercard-platinum", name: "Mastercard Platinum", description: "Carte haut de gamme", fee: "50,000 GNF/an" },
-]
-
-const agencies = [
-  { id: "kaloum", name: "Agence Kaloum", address: "Avenue de la République, Kaloum" },
-  { id: "ratoma", name: "Agence Ratoma", address: "Quartier Ratoma Centre" },
-  { id: "matam", name: "Agence Matam", address: "Rond-point Matam" },
-  { id: "dixinn", name: "Agence Dixinn", address: "Centre commercial Dixinn" },
-]
-
 export default function CartesPage() {
-  const [cards, setCards] = useState<Card[]>(mockCards)
+  const [cards, setCards] = useState<Card[]>([])
+  const [isLoadingCards, setIsLoadingCards] = useState(true)
   const [selectedCard, setSelectedCard] = useState<Card | null>(null)
   const [showCardNumber, setShowCardNumber] = useState<string | null>(null)
   const [newLimits, setNewLimits] = useState({ daily: 0, monthly: 0 })
-
-  const [isCardRequestOpen, setIsCardRequestOpen] = useState(false)
-  const [isSubmittingRequest, setIsSubmittingRequest] = useState(false)
-  const [cardRequestForm, setCardRequestForm] = useState({
-    accountId: "",
-    cardType: "",
-    deliveryMethod: "agency", // "agency" or "address"
-    deliveryAddress: "",
-    agencyId: "",
-    phone: "", // TODO: Pre-fill from user profile
-    email: "", // TODO: Pre-fill from user profile
-    comments: "",
-  })
+  const [isNewCardDialogOpen, setIsNewCardDialogOpen] = useState(false)
+  const [selectedCardType, setSelectedCardType] = useState("")
+  const [createCardState, createCardAction, isCreatingCard] = useActionState(createCard, null)
+  const [isPending, startTransition] = useTransition()
+  const [displayMessage, setDisplayMessage] = useState<{ success?: string; error?: string; reference?: string } | null>(
+    null,
+  )
 
   const getCardIcon = (type: string) => {
     switch (type) {
@@ -271,71 +223,158 @@ export default function CartesPage() {
     setShowCardNumber(showCardNumber === cardId ? null : cardId)
   }
 
-  const handleCardRequest = async () => {
-    setIsSubmittingRequest(true)
-
-    try {
-      // TODO: Replace with actual API endpoint when backend is ready
-      const response = await fetch("/api/card-requests", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          accountId: cardRequestForm.accountId,
-          cardType: cardRequestForm.cardType,
-          deliveryMethod: cardRequestForm.deliveryMethod,
-          deliveryAddress: cardRequestForm.deliveryMethod === "address" ? cardRequestForm.deliveryAddress : null,
-          agencyId: cardRequestForm.deliveryMethod === "agency" ? cardRequestForm.agencyId : null,
-          phone: cardRequestForm.phone,
-          email: cardRequestForm.email,
-          comments: cardRequestForm.comments,
-        }),
-      })
-
-      if (response.ok) {
-        toast({
-          title: "Demande envoyée",
-          description: "Votre demande de carte bancaire a été prise en compte. Vous recevrez une confirmation par SMS.",
-        })
-        setIsCardRequestOpen(false)
-        // Reset form
-        setCardRequestForm({
-          accountId: "",
-          cardType: "",
-          deliveryMethod: "agency",
-          deliveryAddress: "",
-          agencyId: "",
-          phone: "",
-          email: "",
-          comments: "",
-        })
-      } else {
-        throw new Error("Erreur lors de l'envoi de la demande")
-      }
-    } catch (error) {
-      console.error("Erreur:", error)
+  const handleCreateCard = () => {
+    if (!selectedCardType) {
       toast({
         title: "Erreur",
-        description: "Une erreur est survenue lors de l'envoi de votre demande. Veuillez réessayer.",
+        description: "Veuillez sélectionner un type de carte",
         variant: "destructive",
       })
+      return
+    }
+
+    startTransition(() => {
+      const formData = new FormData()
+      formData.append("cardType", selectedCardType)
+      createCardAction(formData)
+    })
+  }
+
+  const cardTypes = [
+    {
+      id: "ESSENTIEL",
+      name: "Carte Essentiel",
+      description: "Pour vos besoins quotidiens",
+      color: "bg-blue-500",
+      advantages: [
+        "Retraits gratuits dans le réseau BNG",
+        "Paiements en ligne sécurisés",
+        "Plafond journalier : 200,000 GNF",
+        "Frais de tenue de compte réduits",
+      ],
+    },
+    {
+      id: "GOLD",
+      name: "Carte Gold",
+      description: "Pour plus de privilèges",
+      color: "bg-yellow-500",
+      advantages: [
+        "Retraits gratuits partout en Guinée",
+        "Plafond journalier : 500,000 GNF",
+        "Assurance voyage incluse",
+        "Service client prioritaire",
+        "Cashback sur les achats",
+      ],
+    },
+    {
+      id: "PLATINUM",
+      name: "Carte Platinum",
+      description: "L'excellence bancaire",
+      color: "bg-gray-700",
+      advantages: [
+        "Plafond journalier : 1,000,000 GNF",
+        "Accès aux salons VIP aéroports",
+        "Conciergerie 24h/24",
+        "Assurance voyage premium",
+        "Cashback majoré",
+        "Frais à l'étranger réduits",
+      ],
+    },
+  ]
+
+  const loadCards = async () => {
+    try {
+      setIsLoadingCards(true)
+      console.log("[v0] Chargement des cartes...")
+      const result = await getCards()
+
+      if (result.success && result.data) {
+        console.log("[v0] Données API cartes:", result.data)
+        const transformedCards: Card[] = Array.isArray(result.data)
+          ? result.data.map((apiCard: any) => ({
+              id: apiCard.numCard || apiCard.id || Math.random().toString(),
+              number: apiCard.numCard ? `**** **** **** ${apiCard.numCard.slice(-4)}` : "**** **** **** ****",
+              type: getCardTypeFromAPI(apiCard.typCard) as "visa" | "mastercard" | "amex",
+              status: getCardStatusFromAPI(apiCard.status) as "active" | "blocked" | "expired" | "pending",
+              expiryDate: apiCard.dateExpiration
+                ? new Date(apiCard.dateExpiration).toLocaleDateString("fr-FR", { month: "2-digit", year: "2-digit" })
+                : "12/26",
+              holder: "MAMADOU DIALLO", // Valeur par défaut
+              dailyLimit: 500000, // Valeur par défaut
+              monthlyLimit: 2000000, // Valeur par défaut
+              balance: 1250000, // Valeur par défaut
+              lastTransaction: "Aucune transaction récente",
+            }))
+          : []
+
+        console.log("[v0] Cartes transformées:", transformedCards)
+        setCards(transformedCards)
+      } else {
+        console.log("[v0] Pas de données ou erreur, utilisation des données simulées")
+        setCards(mockCards)
+      }
+    } catch (error) {
+      console.error("[v0] Erreur lors du chargement des cartes:", error)
+      setCards(mockCards)
     } finally {
-      setIsSubmittingRequest(false)
+      setIsLoadingCards(false)
     }
   }
 
-  const updateCardRequestForm = (field: string, value: string) => {
-    setCardRequestForm((prev) => ({ ...prev, [field]: value }))
+  const getCardTypeFromAPI = (typCard: string): string => {
+    const typeMapping: Record<string, string> = {
+      ESSENTIEL: "visa",
+      GOLD: "mastercard",
+      PLATINUM: "amex",
+      DEBIT: "visa",
+      CREDIT: "mastercard",
+      PREPAID: "visa",
+    }
+    return typeMapping[typCard?.toUpperCase()] || "visa"
   }
 
-  const getSelectedAccount = () => {
-    return mockAccounts.find((acc) => acc.id === cardRequestForm.accountId)
+  const getCardStatusFromAPI = (status: string): string => {
+    const statusMapping: Record<string, string> = {
+      ACTIVE: "active",
+      BLOCKED: "blocked",
+      EXPIRED: "expired",
+      PENDING: "pending",
+      INACTIVE: "blocked",
+    }
+    return statusMapping[status?.toUpperCase()] || "pending"
   }
 
-  const getSelectedCardType = () => {
-    return cardTypes.find((type) => type.id === cardRequestForm.cardType)
-  }
+  useEffect(() => {
+    loadCards()
+  }, [])
+
+  useEffect(() => {
+    if (createCardState?.success) {
+      setDisplayMessage({
+        success: createCardState.message,
+        reference: createCardState.reference,
+      })
+      setSelectedCardType("")
+
+      loadCards()
+
+      const timer = setTimeout(() => {
+        setDisplayMessage(null)
+      }, 8000)
+
+      return () => clearTimeout(timer)
+    } else if (createCardState?.error) {
+      setDisplayMessage({
+        error: createCardState.error,
+      })
+
+      const timer = setTimeout(() => {
+        setDisplayMessage(null)
+      }, 8000)
+
+      return () => clearTimeout(timer)
+    }
+  }, [createCardState])
 
   return (
     <div className="container mx-auto p-6 space-y-6">
@@ -344,254 +383,121 @@ export default function CartesPage() {
           <h1 className="text-3xl font-bold text-gray-900">Mes Cartes</h1>
           <p className="text-gray-600">Gérez vos cartes bancaires et leurs paramètres</p>
         </div>
-        <Dialog open={isCardRequestOpen} onOpenChange={setIsCardRequestOpen}>
+        <Dialog open={isNewCardDialogOpen} onOpenChange={setIsNewCardDialogOpen}>
           <DialogTrigger asChild>
             <Button>
               <CreditCard className="w-4 h-4 mr-2" />
               Demander une nouvelle carte
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+          <DialogContent className="sm:max-w-xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle className="flex items-center">
-                <CreditCard className="w-5 h-5 mr-2" />
-                Demande de nouvelle carte bancaire
+              <DialogTitle className="flex items-center space-x-2">
+                <Plus className="w-5 h-5" />
+                <span>Demander une nouvelle carte</span>
               </DialogTitle>
-              <DialogDescription>
-                Remplissez les informations ci-dessous pour demander une nouvelle carte bancaire.
-              </DialogDescription>
+              <DialogDescription>Choisissez le type de carte qui correspond à vos besoins</DialogDescription>
             </DialogHeader>
 
-            <div className="space-y-6 py-4">
-              {/* Account Selection */}
-              <div className="space-y-2">
-                <Label htmlFor="account">Compte à associer *</Label>
-                <Select
-                  value={cardRequestForm.accountId}
-                  onValueChange={(value) => updateCardRequestForm("accountId", value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Sélectionnez le compte" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {mockAccounts.map((account) => (
-                      <SelectItem key={account.id} value={account.id}>
-                        <div className="flex items-center justify-between w-full">
-                          <div>
-                            <span className="font-medium">{account.name}</span>
-                            <span className="text-sm text-gray-500 ml-2">({account.number})</span>
-                          </div>
-                          <span className="text-sm text-gray-600 ml-4">
-                            {new Intl.NumberFormat("fr-FR").format(account.balance)} {account.currency}
-                          </span>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {getSelectedAccount() && (
-                  <p className="text-sm text-gray-600">
-                    Solde disponible: {new Intl.NumberFormat("fr-FR").format(getSelectedAccount()!.balance)}{" "}
-                    {getSelectedAccount()!.currency}
-                  </p>
-                )}
-              </div>
-
-              {/* Card Type Selection */}
-              <div className="space-y-2">
-                <Label htmlFor="card-type">Type de carte *</Label>
-                <Select
-                  value={cardRequestForm.cardType}
-                  onValueChange={(value) => updateCardRequestForm("cardType", value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Sélectionnez le type de carte" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {cardTypes.map((cardType) => (
-                      <SelectItem key={cardType.id} value={cardType.id}>
-                        <div className="flex flex-col">
-                          <span className="font-medium">{cardType.name}</span>
-                          <span className="text-sm text-gray-500">{cardType.description}</span>
-                          <span className="text-sm text-blue-600 font-medium">{cardType.fee}</span>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {getSelectedCardType() && (
-                  <div className="bg-gray-50 border rounded-lg p-3 mt-2">
-                    <p className="font-medium text-sm">{getSelectedCardType()?.name}</p>
-                    <p className="text-sm text-gray-600">{getSelectedCardType()?.description}</p>
-                    <p className="text-sm text-blue-600 font-medium">Frais: {getSelectedCardType()?.fee}</p>
+            <div className="space-y-4">
+              <div className="p-3 bg-blue-50 rounded-lg">
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="flex items-center space-x-2">
+                    <Clock className="w-4 h-4 text-blue-600" />
+                    <div>
+                      <p className="text-xs font-medium">Délai de traitement</p>
+                      <p className="text-xs text-gray-600">7-10 jours ouvrables</p>
+                    </div>
                   </div>
-                )}
+                </div>
               </div>
 
-              {/* Delivery Method */}
               <div className="space-y-3">
-                <Label>Méthode de livraison *</Label>
-                <RadioGroup
-                  value={cardRequestForm.deliveryMethod}
-                  onValueChange={(value) => updateCardRequestForm("deliveryMethod", value)}
-                >
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="agency" id="agency" />
-                    <Label htmlFor="agency" className="cursor-pointer">
-                      Retrait en agence (gratuit)
-                    </Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="address" id="address" />
-                    <Label htmlFor="address" className="cursor-pointer">
-                      Livraison à domicile (5,000 GNF)
-                    </Label>
-                  </div>
-                </RadioGroup>
-              </div>
-
-              {/* Agency Selection */}
-              {cardRequestForm.deliveryMethod === "agency" && (
-                <div className="space-y-2">
-                  <Label htmlFor="agency-select">Agence de retrait *</Label>
-                  <Select
-                    value={cardRequestForm.agencyId}
-                    onValueChange={(value) => updateCardRequestForm("agencyId", value)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Sélectionnez une agence" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {agencies.map((agency) => (
-                        <SelectItem key={agency.id} value={agency.id}>
-                          <div>
-                            <div className="font-medium">{agency.name}</div>
-                            <div className="text-sm text-gray-500">{agency.address}</div>
+                <Label className="text-sm">Choisissez votre type de carte *</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  {cardTypes.map((cardType) => (
+                    <div
+                      key={cardType.id}
+                      className={`relative p-2 border-2 rounded-lg cursor-pointer transition-all hover:shadow-md ${
+                        selectedCardType === cardType.id
+                          ? "border-blue-500 bg-blue-50"
+                          : "border-gray-200 hover:border-gray-300"
+                      }`}
+                      onClick={() => setSelectedCardType(cardType.id)}
+                    >
+                      <div className="space-y-1.5">
+                        <div className="flex items-center justify-between">
+                          <div
+                            className={`w-8 h-5 ${cardType.color} rounded flex items-center justify-center text-white text-xs font-bold`}
+                          >
+                            BNG
                           </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-
-              {/* Delivery Address */}
-              {cardRequestForm.deliveryMethod === "address" && (
-                <div className="space-y-2">
-                  <Label htmlFor="delivery-address">Adresse de livraison *</Label>
-                  <Textarea
-                    id="delivery-address"
-                    placeholder="Entrez votre adresse complète de livraison..."
-                    value={cardRequestForm.deliveryAddress}
-                    onChange={(e) => updateCardRequestForm("deliveryAddress", e.target.value)}
-                    rows={3}
-                  />
-                </div>
-              )}
-
-              {/* Contact Information */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="phone">Téléphone *</Label>
-                  <div className="relative">
-                    <Phone className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                    <Input
-                      id="phone"
-                      type="tel"
-                      placeholder="+224 XXX XXX XXX"
-                      value={cardRequestForm.phone}
-                      onChange={(e) => updateCardRequestForm("phone", e.target.value)}
-                      className="pl-10"
-                    />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email *</Label>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                    <Input
-                      id="email"
-                      type="email"
-                      placeholder="votre@email.com"
-                      value={cardRequestForm.email}
-                      onChange={(e) => updateCardRequestForm("email", e.target.value)}
-                      className="pl-10"
-                    />
-                  </div>
+                          {selectedCardType === cardType.id && <CheckCircle className="w-4 h-4 text-blue-500" />}
+                        </div>
+                        <div>
+                          <h3 className="font-semibold text-xs">{cardType.name}</h3>
+                          <p className="text-xs text-gray-600 mb-1">{cardType.description}</p>
+                        </div>
+                        <div className="space-y-0.5">
+                          {cardType.advantages.slice(0, 2).map((advantage, index) => (
+                            <div key={index} className="flex items-start space-x-1">
+                              <div className="w-1 h-1 bg-green-500 rounded-full mt-1 flex-shrink-0"></div>
+                              <span className="text-xs text-gray-700 leading-tight">{advantage}</span>
+                            </div>
+                          ))}
+                          {cardType.advantages.length > 2 && (
+                            <p className="text-xs text-blue-600 font-medium">
+                              +{cardType.advantages.length - 2} autres avantages
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
 
-              {/* Comments */}
-              <div className="space-y-2">
-                <Label htmlFor="comments">Commentaires (optionnel)</Label>
-                <Textarea
-                  id="comments"
-                  placeholder="Informations supplémentaires ou demandes spéciales..."
-                  value={cardRequestForm.comments}
-                  onChange={(e) => updateCardRequestForm("comments", e.target.value)}
-                  rows={2}
-                />
-              </div>
-
-              {/* Summary */}
-              {cardRequestForm.accountId && cardRequestForm.cardType && (
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                  <h4 className="font-medium text-blue-900 mb-2">Résumé de votre demande</h4>
-                  <div className="space-y-1 text-sm text-blue-800">
-                    <p>
-                      <strong>Compte:</strong> {getSelectedAccount()?.name} ({getSelectedAccount()?.number})
-                    </p>
-                    <p>
-                      <strong>Type de carte:</strong> {getSelectedCardType()?.name}
-                    </p>
-                    <p>
-                      <strong>Frais annuels:</strong> {getSelectedCardType()?.fee}
-                    </p>
-                    <p>
-                      <strong>Livraison:</strong>{" "}
-                      {cardRequestForm.deliveryMethod === "agency"
-                        ? "Retrait en agence (gratuit)"
-                        : "Livraison à domicile (5,000 GNF)"}
-                    </p>
-                  </div>
-                </div>
+              {displayMessage?.success && (
+                <Alert className="border-green-200 bg-green-50">
+                  <CheckCircle className="h-4 w-4 text-green-600" />
+                  <AlertDescription className="text-green-800">
+                    ✅ {displayMessage.success}
+                    {displayMessage.reference && (
+                      <span className="block mt-1">Référence: {displayMessage.reference}</span>
+                    )}
+                  </AlertDescription>
+                </Alert>
               )}
 
-              {/* Important Notice */}
-              <Alert>
-                <Clock className="h-4 w-4" />
-                <AlertDescription>
-                  <strong>Délai de traitement :</strong> Votre carte sera disponible sous 5-7 jours ouvrables. Vous
-                  recevrez un SMS de confirmation une fois votre carte prête.
-                </AlertDescription>
-              </Alert>
+              {displayMessage?.error && (
+                <Alert className="border-red-200 bg-red-50">
+                  <AlertCircle className="h-4 w-4 text-red-600" />
+                  <AlertDescription className="text-red-800">❌ {displayMessage.error}</AlertDescription>
+                </Alert>
+              )}
             </div>
 
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setIsCardRequestOpen(false)} disabled={isSubmittingRequest}>
+            <DialogFooter className="flex space-x-2 pt-4">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setIsNewCardDialogOpen(false)
+                  setSelectedCardType("")
+                }}
+                disabled={isCreatingCard || isPending}
+              >
                 Annuler
               </Button>
-              <Button
-                onClick={handleCardRequest}
-                disabled={
-                  isSubmittingRequest ||
-                  !cardRequestForm.accountId ||
-                  !cardRequestForm.cardType ||
-                  !cardRequestForm.phone ||
-                  !cardRequestForm.email ||
-                  (cardRequestForm.deliveryMethod === "agency" && !cardRequestForm.agencyId) ||
-                  (cardRequestForm.deliveryMethod === "address" && !cardRequestForm.deliveryAddress)
-                }
-              >
-                {isSubmittingRequest ? (
+              <Button onClick={handleCreateCard} disabled={!selectedCardType || isCreatingCard || isPending}>
+                {isCreatingCard || isPending ? (
                   <>
                     <Clock className="w-4 h-4 mr-2 animate-spin" />
-                    Envoi en cours...
+                    Création...
                   </>
                 ) : (
                   <>
                     <Plus className="w-4 h-4 mr-2" />
-                    Envoyer la demande
+                    Créer la demande
                   </>
                 )}
               </Button>
@@ -608,139 +514,158 @@ export default function CartesPage() {
         </TabsList>
 
         <TabsContent value="cards" className="space-y-6">
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {cards.map((card) => (
-              <UI_Card key={card.id} className="relative overflow-hidden">
-                <CardHeader className="pb-3">
-                  <div className="flex items-center justify-between">
-                    {getCardIcon(card.type)}
-                    {getStatusBadge(card.status)}
-                  </div>
-                  <CardTitle className="text-lg">
-                    <div className="flex items-center space-x-2">
-                      <span>
-                        {showCardNumber === card.id
-                          ? card.number.replace("****", card.id === "1" ? "4532" : card.id === "2" ? "5555" : "3782")
-                          : card.number}
-                      </span>
-                      <Button variant="ghost" size="sm" onClick={() => toggleCardNumberVisibility(card.id)}>
-                        {showCardNumber === card.id ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                      </Button>
+          {isLoadingCards ? (
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {[1, 2, 3].map((i) => (
+                <UI_Card key={i} className="relative overflow-hidden animate-pulse">
+                  <CardHeader className="pb-3">
+                    <div className="h-4 bg-gray-200 rounded w-1/2 mb-2"></div>
+                    <div className="h-6 bg-gray-200 rounded w-3/4"></div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2">
+                      <div className="h-4 bg-gray-200 rounded"></div>
+                      <div className="h-4 bg-gray-200 rounded w-2/3"></div>
                     </div>
-                  </CardTitle>
-                  <CardDescription>
-                    <div className="space-y-1">
-                      <p>{card.holder}</p>
-                      <p>Expire: {card.expiryDate}</p>
+                  </CardContent>
+                </UI_Card>
+              ))}
+            </div>
+          ) : (
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {cards.map((card) => (
+                <UI_Card key={card.id} className="relative overflow-hidden">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center justify-between">
+                      {getCardIcon(card.type)}
+                      {getStatusBadge(card.status)}
                     </div>
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">Solde disponible:</span>
-                      <span className="font-medium">{formatAmount(card.balance)}</span>
+                    <CardTitle className="text-lg">
+                      <div className="flex items-center space-x-2">
+                        <span>
+                          {showCardNumber === card.id
+                            ? card.number.replace("****", card.id === "1" ? "4532" : card.id === "2" ? "5555" : "3782")
+                            : card.number}
+                        </span>
+                        <Button variant="ghost" size="sm" onClick={() => toggleCardNumberVisibility(card.id)}>
+                          {showCardNumber === card.id ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        </Button>
+                      </div>
+                    </CardTitle>
+                    <CardDescription>
+                      <div className="space-y-1">
+                        <p>{card.holder}</p>
+                        <p>Expire: {card.expiryDate}</p>
+                      </div>
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-600">Solde disponible:</span>
+                        <span className="font-medium">{formatAmount(card.balance)}</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-600">Plafond journalier:</span>
+                        <span className="font-medium">{formatAmount(card.dailyLimit)}</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-600">Dernière transaction:</span>
+                      </div>
+                      <p className="text-xs text-gray-500">{card.lastTransaction}</p>
                     </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">Plafond journalier:</span>
-                      <span className="font-medium">{formatAmount(card.dailyLimit)}</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">Dernière transaction:</span>
-                    </div>
-                    <p className="text-xs text-gray-500">{card.lastTransaction}</p>
-                  </div>
 
-                  <div className="flex space-x-2">
-                    {card.status === "active" ? (
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button variant="outline" size="sm" className="flex-1 bg-transparent">
-                            <Lock className="w-4 h-4 mr-1" />
-                            Bloquer
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Bloquer la carte</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              Êtes-vous sûr de vouloir bloquer cette carte ? Vous pourrez la débloquer à tout moment.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Annuler</AlertDialogCancel>
-                            <AlertDialogAction onClick={() => handleBlockCard(card.id)}>Bloquer</AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    ) : card.status === "blocked" ? (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="flex-1 bg-transparent"
-                        onClick={() => handleUnblockCard(card.id)}
-                      >
-                        <Unlock className="w-4 h-4 mr-1" />
-                        Débloquer
-                      </Button>
-                    ) : null}
-
-                    <Dialog>
-                      <DialogTrigger asChild>
+                    <div className="flex space-x-2">
+                      {card.status === "active" ? (
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="outline" size="sm" className="flex-1 bg-transparent">
+                              <Lock className="w-4 h-4 mr-1" />
+                              Bloquer
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Bloquer la carte</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Êtes-vous sûr de vouloir bloquer cette carte ? Vous pourrez la débloquer à tout moment.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Annuler</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => handleBlockCard(card.id)}>Bloquer</AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      ) : card.status === "blocked" ? (
                         <Button
                           variant="outline"
                           size="sm"
                           className="flex-1 bg-transparent"
-                          onClick={() => {
-                            setSelectedCard(card)
-                            setNewLimits({ daily: card.dailyLimit, monthly: card.monthlyLimit })
-                          }}
+                          onClick={() => handleUnblockCard(card.id)}
                         >
-                          <Settings className="w-4 h-4 mr-1" />
-                          Modifier
+                          <Unlock className="w-4 h-4 mr-1" />
+                          Débloquer
                         </Button>
-                      </DialogTrigger>
-                      <DialogContent>
-                        <DialogHeader>
-                          <DialogTitle>Modifier les plafonds</DialogTitle>
-                          <DialogDescription>Ajustez les plafonds de dépense pour cette carte</DialogDescription>
-                        </DialogHeader>
-                        <div className="space-y-4">
-                          <div className="space-y-2">
-                            <Label htmlFor="daily-limit">Plafond journalier (FCFA)</Label>
-                            <Input
-                              id="daily-limit"
-                              type="number"
-                              value={newLimits.daily}
-                              onChange={(e) =>
-                                setNewLimits({ ...newLimits, daily: Number.parseInt(e.target.value) || 0 })
-                              }
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="monthly-limit">Plafond mensuel (FCFA)</Label>
-                            <Input
-                              id="monthly-limit"
-                              type="number"
-                              value={newLimits.monthly}
-                              onChange={(e) =>
-                                setNewLimits({ ...newLimits, monthly: Number.parseInt(e.target.value) || 0 })
-                              }
-                            />
-                          </div>
-                        </div>
-                        <DialogFooter>
-                          <Button onClick={() => selectedCard && handleUpdateLimits(selectedCard.id)}>
-                            Sauvegarder
+                      ) : null}
+
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="flex-1 bg-transparent"
+                            onClick={() => {
+                              setSelectedCard(card)
+                              setNewLimits({ daily: card.dailyLimit, monthly: card.monthlyLimit })
+                            }}
+                          >
+                            <Settings className="w-4 h-4 mr-1" />
+                            Modifier
                           </Button>
-                        </DialogFooter>
-                      </DialogContent>
-                    </Dialog>
-                  </div>
-                </CardContent>
-              </UI_Card>
-            ))}
-          </div>
+                        </DialogTrigger>
+                        <DialogContent>
+                          <DialogHeader>
+                            <DialogTitle>Modifier les plafonds</DialogTitle>
+                            <DialogDescription>Ajustez les plafonds de dépense pour cette carte</DialogDescription>
+                          </DialogHeader>
+                          <div className="space-y-4">
+                            <div className="space-y-2">
+                              <Label htmlFor="daily-limit">Plafond journalier (FCFA)</Label>
+                              <Input
+                                id="daily-limit"
+                                type="number"
+                                value={newLimits.daily}
+                                onChange={(e) =>
+                                  setNewLimits({ ...newLimits, daily: Number.parseInt(e.target.value) || 0 })
+                                }
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor="monthly-limit">Plafond mensuel (FCFA)</Label>
+                              <Input
+                                id="monthly-limit"
+                                type="number"
+                                value={newLimits.monthly}
+                                onChange={(e) =>
+                                  setNewLimits({ ...newLimits, monthly: Number.parseInt(e.target.value) || 0 })
+                                }
+                              />
+                            </div>
+                          </div>
+                          <DialogFooter>
+                            <Button onClick={() => selectedCard && handleUpdateLimits(selectedCard.id)}>
+                              Sauvegarder
+                            </Button>
+                          </DialogFooter>
+                        </DialogContent>
+                      </Dialog>
+                    </div>
+                  </CardContent>
+                </UI_Card>
+              ))}
+            </div>
+          )}
         </TabsContent>
 
         <TabsContent value="transactions" className="space-y-6">
@@ -829,7 +754,7 @@ export default function CartesPage() {
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
                     <Button variant="destructive" className="w-full">
-                      <Lock className="w-4 h-4 mr-1" />
+                      <Lock className="w-4 h-4 mr-2" />
                       Faire opposition sur toutes les cartes
                     </Button>
                   </AlertDialogTrigger>

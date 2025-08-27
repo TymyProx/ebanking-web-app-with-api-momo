@@ -34,8 +34,7 @@ import {
   CheckCircle,
   Plus,
 } from "lucide-react"
-import { getAccountBalances, refreshBalances } from "./actions"
-import { createAccount } from "../actions"
+import { createAccount, getAccounts } from "../actions"
 
 interface Account {
   id: string
@@ -45,7 +44,7 @@ interface Account {
   availableBalance: number
   currency: string
   type: "Courant" | "Épargne" | "Devise"
-  status: "Actif" | "Bloqué" | "Fermé"
+  status: string // "Actif" | "Bloqué" | "Fermé"
   lastUpdate: string
   trend: "up" | "down" | "stable"
   trendPercentage: number
@@ -69,19 +68,36 @@ export default function BalancesPage() {
     const loadBalances = () => {
       startTransition(async () => {
         try {
-          const formData = new FormData()
-          const result = await getAccountBalances(null, formData)
-          setBalanceState(result)
+          const result = await getAccounts()
+          console.log("[v0] Résultat de getAccounts:", result)
 
-          if (result.success) {
-            setAccounts(result.accounts)
+          if (Array.isArray(result) && result.length > 0) {
+            const adaptedAccounts: Account[] = result.map((account: any) => ({
+              id: account.id || account.accountId,
+              name: account.accountName || account.name || `Compte ${account.accountNumber}`,
+              number: account.accountNumber,
+              balance: Number.parseFloat(account.bookBalance || account.balance || "0"),
+              availableBalance: Number.parseFloat(account.availableBalance || account.balance || "0"),
+              currency: account.currency || "GNF",
+              type: account.type,
+              status: account.status,
+              lastUpdate: new Date(account.createdAt || Date.now()).toLocaleDateString("fr-FR"),
+              trend: "stable" as const,
+              trendPercentage: 0,
+              iban: account.accountNumber || "",
+            }))
+
+            setAccounts(adaptedAccounts)
+            setBalanceState({ success: true, message: "Comptes chargés avec succès" })
           } else {
             setAccounts([])
+            setBalanceState({ success: true, message: "Aucun compte disponible" })
           }
           setIsLoaded(true)
         } catch (error) {
           console.error("Erreur lors du chargement des soldes:", error)
           setAccounts([])
+          setBalanceState({ success: false, error: "Erreur de connexion. Données non disponibles." })
           setIsLoaded(true)
         }
       })
@@ -89,23 +105,46 @@ export default function BalancesPage() {
     loadBalances()
   }, [])
 
+  useEffect(() => {
+    if (createAccountState?.success) {
+      const timer = setTimeout(() => {
+        setCreateAccountState(null)
+      }, 8000) // 8 secondes
+
+      return () => clearTimeout(timer)
+    }
+  }, [createAccountState?.success])
+
   const handleRefresh = () => {
     startTransition(async () => {
       try {
-        const formData = new FormData()
-        const result = await refreshBalances(null, formData)
-        setRefreshState(result)
+        const result = await getAccounts()
         setLastRefresh(new Date())
 
-        if (result.success) {
-          const refreshFormData = new FormData()
-          const refreshResult = await getAccountBalances(null, refreshFormData)
-          if (refreshResult.success) {
-            setAccounts(refreshResult.accounts)
-          }
+        if (Array.isArray(result) && result.length > 0) {
+          const adaptedAccounts: Account[] = result.map((account: any) => ({
+            id: account.id || account.accountId,
+            name: account.accountName || account.name || `Compte ${account.accountNumber}`,
+            number: account.accountNumber,
+            balance: Number.parseFloat(account.bookBalance || account.balance || "0"),
+            availableBalance: Number.parseFloat(account.availableBalance || account.balance || "0"),
+            currency: account.currency || "GNF",
+            type: account.type,
+            status: account.status,
+            lastUpdate: new Date(account.createdAt || Date.now()).toLocaleDateString("fr-FR"),
+            trend: "stable" as const,
+            trendPercentage: 0,
+            iban: account.accountNumber || "",
+          }))
+
+          setAccounts(adaptedAccounts)
+          setRefreshState({ success: true, message: "Comptes actualisés" })
+        } else {
+          setRefreshState({ success: true, message: "Aucun compte disponible" })
         }
       } catch (error) {
         console.error("Erreur lors du rafraîchissement:", error)
+        setRefreshState({ success: false, error: "Erreur lors du rafraîchissement" })
       }
     })
   }
@@ -122,11 +161,23 @@ export default function BalancesPage() {
       setCreateAccountState(result)
 
       if (result?.success) {
-        setIsNewAccountDialogOpen(false)
-        const refreshFormData = new FormData()
-        const refreshResult = await getAccountBalances(null, refreshFormData)
-        if (refreshResult.success) {
-          setAccounts(refreshResult.accounts)
+        const refreshedAccounts = await getAccounts()
+        if (Array.isArray(refreshedAccounts)) {
+          const adaptedAccounts: Account[] = refreshedAccounts.map((account: any) => ({
+            id: account.id || account.accountId,
+            name: account.accountName || account.name || `Compte ${account.accountNumber}`,
+            number: account.accountNumber,
+            balance: Number.parseFloat(account.bookBalance || account.balance || "0"),
+            availableBalance: Number.parseFloat(account.availableBalance || account.balance || "0"),
+            currency: account.currency || "GNF",
+            type: account.type,
+            status: account.status,
+            lastUpdate: new Date(account.createdAt || Date.now()).toLocaleDateString("fr-FR"),
+            trend: "stable" as const,
+            trendPercentage: 0,
+            iban: account.accountNumber || "",
+          }))
+          setAccounts(adaptedAccounts)
         }
         if (form) {
           form.reset()
@@ -207,6 +258,24 @@ export default function BalancesPage() {
               </DialogHeader>
 
               <form onSubmit={handleCreateAccount} className="space-y-4">
+                {createAccountState?.success && (
+                  <Alert className="border-green-200 bg-green-50">
+                    <CheckCircle className="h-4 w-4 text-green-600" />
+                    <AlertDescription className="text-green-800">
+                      Votre demande d'ouverture de compte a été prise en compte
+                    </AlertDescription>
+                  </Alert>
+                )}
+
+                {createAccountState?.error && (
+                  <Alert variant="destructive">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription>
+                      Erreur lors de la création du compte: {createAccountState.error}
+                    </AlertDescription>
+                  </Alert>
+                )}
+
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="accountName">Nom du compte</Label>
@@ -262,24 +331,6 @@ export default function BalancesPage() {
                   </Select>
                 </div>
 
-                {createAccountState?.error && (
-                  <Alert variant="destructive">
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertDescription>
-                      Erreur lors de la création du compte: {createAccountState.error}
-                    </AlertDescription>
-                  </Alert>
-                )}
-
-                {createAccountState?.success && (
-                  <Alert className="border-green-200 bg-green-50">
-                    <CheckCircle className="h-4 w-4 text-green-600" />
-                    <AlertDescription className="text-green-800">
-                      Votre demande d'ouverture de compte a été prise en compte
-                    </AlertDescription>
-                  </Alert>
-                )}
-
                 <div className="flex justify-end space-x-2 pt-4">
                   <Button
                     type="button"
@@ -326,7 +377,7 @@ export default function BalancesPage() {
       {balanceState?.error && (
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
-          <AlertDescription>❌ Erreur de connexion. Données non disponibles. Veuillez réessayer.</AlertDescription>
+          <AlertDescription>❌ {balanceState.error} Veuillez réessayer.</AlertDescription>
         </Alert>
       )}
 
