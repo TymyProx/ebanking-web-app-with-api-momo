@@ -340,13 +340,6 @@ export default function CartesPage() {
                       <p className="text-xs text-gray-600">7-10 jours ouvrables</p>
                     </div>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <Shield className="w-4 h-4 text-blue-600" />
-                    <div>
-                      <p className="text-xs font-medium">Coût</p>
-                      <p className="text-xs text-gray-600">15,000 GNF</p>
-                    </div>
-                  </div>
                 </div>
               </div>
 
