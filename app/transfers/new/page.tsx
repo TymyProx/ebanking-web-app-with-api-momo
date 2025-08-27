@@ -34,6 +34,7 @@ interface Account {
   number: string
   balance: number
   currency: string
+  status?: string // Added status field to Account interface
 }
 
 type TransferType = "account-to-account" | "account-to-beneficiary"
@@ -222,9 +223,13 @@ export default function NewTransferPage() {
           number: apiAccount.accountNumber || apiAccount.number || apiAccount.id,
           balance: apiAccount.bookBalance || apiAccount.balance || 0,
           currency: apiAccount.currency || "GNF",
+          status: apiAccount.status, // Added status field mapping
         }))
-        console.log("[v0] Comptes adaptés:", adaptedAccounts)
-        setAccounts(adaptedAccounts)
+        const activeAccounts = adaptedAccounts.filter(
+          (account: Account) => account.status === "ACTIVE" || account.status === "Actif",
+        )
+        console.log("[v0] Comptes actifs adaptés:", activeAccounts)
+        setAccounts(activeAccounts)
       } else {
         console.log("[v0] Aucun compte trouvé, utilisation des données de test")
         setAccounts([])
