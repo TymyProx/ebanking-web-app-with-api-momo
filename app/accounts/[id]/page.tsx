@@ -36,8 +36,8 @@ interface Account {
   balance: number
   availableBalance: number
   currency: string
-  type: "Courant" | "Épargne" | "Devise"
-  status: "Actif" | "Bloqué" | "Fermé"
+  type: string,//"Courant" | "Épargne" | "Devise"
+  status: string,//"Actif" | "Bloqué" | "Fermé"
   iban: string
   openingDate: string
   branch: string
@@ -86,8 +86,8 @@ export default function AccountDetailsPage() {
               balance: Number.parseFloat(foundAccount.bookBalance || foundAccount.balance || "0"),
               availableBalance: Number.parseFloat(foundAccount.availableBalance || foundAccount.balance || "0"),
               currency: foundAccount.currency || "GNF",
-              type: "Courant" as const,
-              status: "Actif" as const,
+              type:foundAccount.type, //"Courant" as const,
+              status: foundAccount.status ,//|| "Actif" as const,
               iban: `GN82 BNG 001 ${foundAccount.accountNumber}`,
               openingDate: foundAccount.createdAt || "2020-01-01",
               branch: "Agence Kaloum",
@@ -129,7 +129,7 @@ export default function AccountDetailsPage() {
                 amount: isCredit ? Math.abs(amount) : -Math.abs(amount),
                 currency: "GNF", // Par défaut
                 date: txn.valueDate || new Date().toISOString(),
-                status: txn.status === "COMPLETED" ? "Exécuté" : txn.status === "PENDING" ? "En attente" : "Rejeté",
+                status: txn.status,//txn.status === "COMPLETED" ? "Exécuté" : txn.status === "PENDING" ? "En attente" : "Rejeté",
                 counterparty: txn.beneficiaryId || "Système",
                 reference: txn.txnId || "REF-" + Date.now(),
                 balanceAfter: 0, // Calculé dynamiquement si nécessaire
@@ -168,7 +168,7 @@ export default function AccountDetailsPage() {
               amount: isCredit ? Math.abs(amount) : -Math.abs(amount),
               currency: "GNF",
               date: txn.valueDate || new Date().toISOString(),
-              status: txn.status === "COMPLETED" ? "Exécuté" : txn.status === "PENDING" ? "En attente" : "Rejeté",
+              status: txn.status,//txn.status === "COMPLETED" ? "Exécuté" : txn.status === "PENDING" ? "En attente" : "Rejeté",
               counterparty: txn.beneficiaryId || "Système",
               reference: txn.txnId || "REF-" + Date.now(),
               balanceAfter: 0,
@@ -442,7 +442,10 @@ export default function AccountDetailsPage() {
             <div className="space-y-2">
               <p className="text-sm font-medium">Actions disponibles</p>
               <div className="space-y-2">
-                <Button
+              
+               {account.status === "ACTIVE" && !!(account.number && String(account.number).trim()) && (
+                  <>
+                    <Button
                   variant="outline"
                   size="sm"
                   className="w-full justify-start bg-transparent"
@@ -451,8 +454,6 @@ export default function AccountDetailsPage() {
                   <ArrowUpRight className="w-4 h-4 mr-2" />
                   Effectuer un virement
                 </Button>
-                {account.status === "Actif" && (
-                  <>
                     <Button
                       variant="outline"
                       size="sm"
