@@ -47,10 +47,10 @@ const generatePDF = async (account: Account) => {
 
   const doc = new jsPDF()
 
-  const primaryColor = [70, 70, 70] // Gris foncé
-  const accentColor = [120, 120, 120] // Gris moyen
-  const darkColor = [44, 62, 80] // Gris foncé
-  const lightGray = [248, 248, 248] // Gris très clair pour alternance
+  const primaryColor: [number, number, number] = [70, 70, 70] // Gris foncé
+  const accentColor: [number, number, number] = [120, 120, 120] // Gris moyen
+  const darkColor: [number, number, number] = [44, 62, 80] // Gris foncé
+  const lightGray: [number, number, number] = [248, 248, 248] // Gris très clair pour alternance
 
   const createUnifiedTable = (startY: number, data: string[][]) => {
     const tableWidth = 170
