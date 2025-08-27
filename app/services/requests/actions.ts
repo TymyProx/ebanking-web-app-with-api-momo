@@ -1,6 +1,30 @@
 "use server"
 
 import { z } from "zod"
+import { revalidatePath } from "next/cache"
+import { cookies } from "next/headers"
+
+export interface ApiCreditRequest {
+  id: string
+  createdAt: string
+  updatedAt: string
+  deletedAt?: string
+  createdById: string
+  updatedById: string
+  importHash?: string
+  tenantId: string
+  applicantName: string
+  creditAmount: string
+  durationMonths: string
+  purpose: string
+  status?: "En cours" | "Approuvée" | "Rejetée" | "En attente de documents"
+}
+
+export interface ActionResult {
+  success?: boolean
+  error?: string
+  message?: string
+}
 
 const serviceRequestSchema = z.object({
   serviceType: z.string().min(1, "Type de service requis"),
