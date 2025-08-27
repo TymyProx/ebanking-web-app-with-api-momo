@@ -1,12 +1,14 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useTransition } from "react"
 import { Card as UI_Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -40,7 +42,11 @@ import {
   CheckCircle,
   Clock,
   X,
+  Plus,
+  AlertCircle,
 } from "lucide-react"
+import { createCard } from "./actions"
+import { useActionState } from "react"
 
 interface Card {
   id: string
@@ -107,6 +113,10 @@ export default function CartesPage() {
   const [selectedCard, setSelectedCard] = useState<Card | null>(null)
   const [showCardNumber, setShowCardNumber] = useState<string | null>(null)
   const [newLimits, setNewLimits] = useState({ daily: 0, monthly: 0 })
+  const [isNewCardDialogOpen, setIsNewCardDialogOpen] = useState(false)
+  const [selectedCardType, setSelectedCardType] = useState("")
+  const [createCardState, createCardAction, isCreatingCard] = useActionState(createCard, null)
+  const [isPending, startTransition] = useTransition()
 
   const getCardIcon = (type: string) => {
     switch (type) {
@@ -210,6 +220,40 @@ export default function CartesPage() {
     setShowCardNumber(showCardNumber === cardId ? null : cardId)
   }
 
+  const handleCreateCard = () => {
+    if (!selectedCardType) {
+      toast({
+        title: "Erreur",
+        description: "Veuillez sélectionner un type de carte",
+        variant: "destructive",
+      })
+      return
+    }
+
+    startTransition(() => {
+      const formData = new FormData()
+      formData.append("cardType", selectedCardType)
+      createCardAction(formData)
+    })
+  }
+
+  useState(() => {
+    if (createCardState?.success) {
+      toast({
+        title: "Succès",
+        description: createCardState.message,
+      })
+      setIsNewCardDialogOpen(false)
+      setSelectedCardType("")
+    } else if (createCardState?.error) {
+      toast({
+        title: "Erreur",
+        description: createCardState.error,
+        variant: "destructive",
+      })
+    }
+  }, [createCardState])
+
   return (
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between">
@@ -217,10 +261,103 @@ export default function CartesPage() {
           <h1 className="text-3xl font-bold text-gray-900">Mes Cartes</h1>
           <p className="text-gray-600">Gérez vos cartes bancaires et leurs paramètres</p>
         </div>
-        <Button>
-          <CreditCard className="w-4 h-4 mr-2" />
-          Demander une nouvelle carte
-        </Button>
+        <Dialog open={isNewCardDialogOpen} onOpenChange={setIsNewCardDialogOpen}>
+          <DialogTrigger asChild>
+            <Button>
+              <CreditCard className="w-4 h-4 mr-2" />
+              Demander une nouvelle carte
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center space-x-2">
+                <Plus className="w-5 h-5" />
+                <span>Demander une nouvelle carte</span>
+              </DialogTitle>
+              <DialogDescription>Sélectionnez le type de carte que vous souhaitez demander</DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-6">
+              <div className="p-4 bg-blue-50 rounded-lg">
+                <div className="grid grid-cols-1 gap-3">
+                  <div className="flex items-center space-x-2">
+                    <Clock className="w-4 h-4 text-blue-600" />
+                    <div>
+                      <p className="text-sm font-medium">Délai de traitement</p>
+                      <p className="text-xs text-gray-600">7-10 jours ouvrables</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Shield className="w-4 h-4 text-blue-600" />
+                    <div>
+                      <p className="text-sm font-medium">Coût</p>
+                      <p className="text-xs text-gray-600">15,000 GNF</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <Label htmlFor="card-type">Type de carte *</Label>
+                <Select value={selectedCardType} onValueChange={setSelectedCardType}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Sélectionnez le type de carte" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="DEBIT">Carte de débit</SelectItem>
+                    <SelectItem value="CREDIT">Carte de crédit</SelectItem>
+                    <SelectItem value="PREPAID">Carte prépayée</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {createCardState?.success && (
+                <Alert className="border-green-200 bg-green-50">
+                  <CheckCircle className="h-4 w-4 text-green-600" />
+                  <AlertDescription className="text-green-800">
+                    ✅ {createCardState.message}
+                    {createCardState.reference && (
+                      <span className="block mt-1">Référence: {createCardState.reference}</span>
+                    )}
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              {createCardState?.error && (
+                <Alert className="border-red-200 bg-red-50">
+                  <AlertCircle className="h-4 w-4 text-red-600" />
+                  <AlertDescription className="text-red-800">❌ {createCardState.error}</AlertDescription>
+                </Alert>
+              )}
+            </div>
+
+            <DialogFooter className="flex space-x-2">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setIsNewCardDialogOpen(false)
+                  setSelectedCardType("")
+                }}
+                disabled={isCreatingCard || isPending}
+              >
+                Annuler
+              </Button>
+              <Button onClick={handleCreateCard} disabled={!selectedCardType || isCreatingCard || isPending}>
+                {isCreatingCard || isPending ? (
+                  <>
+                    <Clock className="w-4 h-4 mr-2 animate-spin" />
+                    Création...
+                  </>
+                ) : (
+                  <>
+                    <Plus className="w-4 h-4 mr-2" />
+                    Créer la demande
+                  </>
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
 
       <Tabs defaultValue="cards" className="space-y-6">
