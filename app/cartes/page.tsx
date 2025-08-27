@@ -285,63 +285,36 @@ export default function CartesPage() {
   const loadCards = async () => {
     try {
       setIsLoadingCards(true)
+      console.log("[v0] Chargement des cartes...")
       const result = await getCards()
 
-      console.log("[v0] Résultat getCards:", result)
-
-      // Normaliser la réponse API - gérer différents formats possibles
-      let cardsData: any[] = []
-
-      if (result && result.success) {
-        // Si result.data existe et est un tableau
-        if (Array.isArray(result.data)) {
-          cardsData = result.data
-        }
-        // Si result.data est un objet unique, le mettre dans un tableau
-        else if (result.data && typeof result.data === "object") {
-          cardsData = [result.data]
-        }
-        // Si result lui-même est un tableau (format alternatif)
-        else if (Array.isArray(result)) {
-          cardsData = result
-        }
-      }
-      // Si result est directement un tableau (autre format possible)
-      else if (Array.isArray(result)) {
-        cardsData = result
-      }
-
-      console.log("[v0] Données normalisées:", cardsData)
-
-      // Transformer les données API vers le format UI
-      if (cardsData.length > 0) {
-        const transformedCards: Card[] = cardsData.map((apiCard: any, index: number) => ({
-          id: apiCard.id || apiCard.numCard || `card_${index + 1}`,
-          number: apiCard.numCard
-            ? apiCard.numCard.length > 4
-              ? `**** **** **** ${apiCard.numCard.slice(-4)}`
-              : apiCard.numCard
-            : "**** **** **** ****",
-          type: getCardTypeFromAPI(apiCard.typCard) as "visa" | "mastercard" | "amex",
-          status: getCardStatusFromAPI(apiCard.status) as "active" | "blocked" | "expired" | "pending",
-          expiryDate: apiCard.dateExpiration ? formatDateToExpiry(apiCard.dateExpiration) : "12/26",
-          holder: apiCard.holder || "MAMADOU DIALLO",
-          dailyLimit: apiCard.dailyLimit || 500000,
-          monthlyLimit: apiCard.monthlyLimit || 2000000,
-          balance: apiCard.balance || 1250000,
-          lastTransaction: apiCard.lastTransaction || "Aucune transaction récente",
-        }))
+      if (result.success && result.data) {
+        console.log("[v0] Données API cartes:", result.data)
+        const transformedCards: Card[] = Array.isArray(result.data)
+          ? result.data.map((apiCard: any) => ({
+              id: apiCard.numCard || apiCard.id || Math.random().toString(),
+              number: apiCard.numCard ? `**** **** **** ${apiCard.numCard.slice(-4)}` : "**** **** **** ****",
+              type: getCardTypeFromAPI(apiCard.typCard) as "visa" | "mastercard" | "amex",
+              status: getCardStatusFromAPI(apiCard.status) as "active" | "blocked" | "expired" | "pending",
+              expiryDate: apiCard.dateExpiration
+                ? new Date(apiCard.dateExpiration).toLocaleDateString("fr-FR", { month: "2-digit", year: "2-digit" })
+                : "12/26",
+              holder: "MAMADOU DIALLO", // Valeur par défaut
+              dailyLimit: 500000, // Valeur par défaut
+              monthlyLimit: 2000000, // Valeur par défaut
+              balance: 1250000, // Valeur par défaut
+              lastTransaction: "Aucune transaction récente",
+            }))
+          : []
 
         console.log("[v0] Cartes transformées:", transformedCards)
         setCards(transformedCards)
       } else {
-        // Aucune donnée API valide, utiliser les données simulées
-        console.log("[v0] Aucune donnée API, utilisation des données simulées")
+        console.log("[v0] Pas de données ou erreur, utilisation des données simulées")
         setCards(mockCards)
       }
     } catch (error) {
       console.error("[v0] Erreur lors du chargement des cartes:", error)
-      // En cas d'erreur, utiliser les données simulées
       setCards(mockCards)
     } finally {
       setIsLoadingCards(false)
@@ -369,17 +342,6 @@ export default function CartesPage() {
       INACTIVE: "blocked",
     }
     return statusMapping[status?.toUpperCase()] || "pending"
-  }
-
-  const formatDateToExpiry = (dateString: string): string => {
-    try {
-      const date = new Date(dateString)
-      const month = (date.getMonth() + 1).toString().padStart(2, "0")
-      const year = date.getFullYear().toString().slice(-2)
-      return `${month}/${year}`
-    } catch {
-      return "12/26"
-    }
   }
 
   useEffect(() => {
@@ -568,12 +530,6 @@ export default function CartesPage() {
                   </CardContent>
                 </UI_Card>
               ))}
-            </div>
-          ) : cards.length === 0 ? (
-            <div className="text-center py-12">
-              <CreditCard className="w-16 h-16 mx-auto text-gray-400 mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">Aucune carte trouvée</h3>
-              <p className="text-gray-600">Vous n'avez pas encore de carte bancaire.</p>
             </div>
           ) : (
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
