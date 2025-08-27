@@ -674,26 +674,34 @@ export default function ServiceRequestsPage() {
                 <div>
                   <Label htmlFor="account">Compte concerné *</Label>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-2">
-                    {accounts.map((account) => (
-                      <div
-                        key={account.id}
-                        className={`p-3 border rounded-lg cursor-pointer transition-all ${
-                          selectedAccount === account.id
-                            ? "border-blue-500 bg-blue-50 ring-2 ring-blue-200"
-                            : "border-gray-200 hover:border-gray-300"
-                        }`}
-                        onClick={() => setSelectedAccount(account.id)}
-                      >
-                        <div className="flex items-center space-x-2">
-                          <CreditCard className="w-4 h-4 text-gray-500" />
-                          <span className="font-medium text-sm">{account.name}</span>
-                        </div>
-                        <p className="text-xs text-gray-500 mt-1">***{account.number.slice(-4)}</p>
-                        <p className="text-sm font-bold mt-1">
-                          {formatAmount(account.balance, account.currency)} {account.currency}
-                        </p>
+                    {accounts.length === 0 ? (
+                      <div className="col-span-full text-center py-8">
+                        <CreditCard className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                        <p className="text-gray-500 font-medium">Aucun compte</p>
+                        <p className="text-gray-400 text-sm">Aucun compte n'est disponible pour cette demande</p>
                       </div>
-                    ))}
+                    ) : (
+                      accounts.map((account) => (
+                        <div
+                          key={account.id}
+                          className={`p-3 border rounded-lg cursor-pointer transition-all ${
+                            selectedAccount === account.id
+                              ? "border-blue-500 bg-blue-50 ring-2 ring-blue-200"
+                              : "border-gray-200 hover:border-gray-300"
+                          }`}
+                          onClick={() => setSelectedAccount(account.id)}
+                        >
+                          <div className="flex items-center space-x-2">
+                            <CreditCard className="w-4 h-4 text-gray-500" />
+                            <span className="font-medium text-sm">{account.name}</span>
+                          </div>
+                          <p className="text-xs text-gray-500 mt-1">***{account.number.slice(-4)}</p>
+                          <p className="text-sm font-bold mt-1">
+                            {formatAmount(account.balance, account.currency)} {account.currency}
+                          </p>
+                        </div>
+                      ))
+                    )}
                   </div>
                 </div>
 
@@ -909,20 +917,31 @@ export default function ServiceRequestsPage() {
                     <div>
                       <Label>Compte concerné</Label>
                       <div className="mt-2">
-                        {accounts
-                          .filter((account) => account.name === selectedHistoryRequestData.account)
-                          .map((account) => (
-                            <div key={account.id} className="p-3 border-2 border-blue-500 bg-blue-50 rounded-lg">
-                              <div className="flex items-center space-x-2">
-                                <CreditCard className="w-4 h-4 text-gray-500" />
-                                <span className="font-medium text-sm">{account.name}</span>
+                        {accounts.filter((account) => account.name === selectedHistoryRequestData.account).length ===
+                        0 ? (
+                          <div className="text-center py-8">
+                            <CreditCard className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                            <p className="text-gray-500 font-medium">Aucun compte</p>
+                            <p className="text-gray-400 text-sm">
+                              Le compte associé à cette demande n'est plus disponible
+                            </p>
+                          </div>
+                        ) : (
+                          accounts
+                            .filter((account) => account.name === selectedHistoryRequestData.account)
+                            .map((account) => (
+                              <div key={account.id} className="p-3 border-2 border-blue-500 bg-blue-50 rounded-lg">
+                                <div className="flex items-center space-x-2">
+                                  <CreditCard className="w-4 h-4 text-gray-500" />
+                                  <span className="font-medium text-sm">{account.name}</span>
+                                </div>
+                                <p className="text-xs text-gray-500 mt-1">***{account.number.slice(-4)}</p>
+                                <p className="text-sm font-bold mt-1">
+                                  {formatAmount(account.balance, account.currency)} {account.currency}
+                                </p>
                               </div>
-                              <p className="text-xs text-gray-500 mt-1">***{account.number.slice(-4)}</p>
-                              <p className="text-sm font-bold mt-1">
-                                {formatAmount(account.balance, account.currency)} {account.currency}
-                              </p>
-                            </div>
-                          ))}
+                            ))
+                        )}
                       </div>
                     </div>
 

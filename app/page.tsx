@@ -100,32 +100,44 @@ export default async function Dashboard() {
 
       {/* Soldes des comptes - US005 avec liens cliquables */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {accounts.map((account) => (
-          <Link key={account.id} href={`/accounts/${account.id}`}>
-            <Card className="hover:shadow-md transition-shadow cursor-pointer">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <div className="flex items-center space-x-2">
-                  {getAccountIcon(account.type)}
-                  <CardTitle className="text-sm font-medium">{account.name}</CardTitle>
-                </div>
-                <Badge variant="secondary">{account.type}</Badge>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  {/* ✅ Solde affiché selon US005 */}
-                  <div className="text-2xl font-bold">
-                    {formatAmount(account.balance, account.currency)} {account.currency}
+        {accounts.length > 0 ? (
+          accounts.map((account) => (
+            <Link key={account.id} href={`/accounts/${account.id}`}>
+              <Card className="hover:shadow-md transition-shadow cursor-pointer">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <div className="flex items-center space-x-2">
+                    {getAccountIcon(account.type)}
+                    <CardTitle className="text-sm font-medium">{account.name}</CardTitle>
                   </div>
-                  <p className="text-xs text-muted-foreground font-mono">{account.number}</p>
-                  <div className="flex items-center pt-1">
-                    <ArrowUpRight className="h-4 w-4 text-green-600" />
-                    <span className="text-xs text-green-600 ml-1">{account.trend} ce mois</span>
+                  <Badge variant="secondary">{account.type}</Badge>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    {/* ✅ Solde affiché selon US005 */}
+                    <div className="text-2xl font-bold">
+                      {formatAmount(account.balance, account.currency)} {account.currency}
+                    </div>
+                    <p className="text-xs text-muted-foreground font-mono">{account.number}</p>
+                    <div className="flex items-center pt-1">
+                      <ArrowUpRight className="h-4 w-4 text-green-600" />
+                      <span className="text-xs text-green-600 ml-1">{account.trend} ce mois</span>
+                    </div>
                   </div>
-                </div>
+                </CardContent>
+              </Card>
+            </Link>
+          ))
+        ) : (
+          <div className="col-span-full">
+            <Card>
+              <CardContent className="flex flex-col items-center justify-center py-12">
+                <Wallet className="h-12 w-12 text-gray-400 mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">Aucun compte</h3>
+                <p className="text-gray-600 text-center">Aucun compte n'est disponible pour le moment.</p>
               </CardContent>
             </Card>
-          </Link>
-        ))}
+          </div>
+        )}
       </div>
 
       {/* Actions rapides */}
