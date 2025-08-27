@@ -5,7 +5,7 @@ import { z } from "zod"
 const serviceRequestSchema = z.object({
   serviceType: z.string().min(1, "Type de service requis"),
   accountId: z.string().min(1, "Compte requis"),
-  formData: z.string().min(1, "Données du formulaire requises"),
+  formData: z.string().min(1, "Données du formulaire requises"),  
 })
 
 const API_BASE_URL = "http://192.168.1.200:8080/api" //process.env.NEXT_PUBLIC_API_BASE_URL
