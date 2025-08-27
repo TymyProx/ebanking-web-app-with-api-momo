@@ -291,7 +291,6 @@ export default function CartesPage() {
         title: "Succès",
         description: createCardState.message,
       })
-      setIsNewCardDialogOpen(false)
       setSelectedCardType("")
 
       const timer = setTimeout(() => {
