@@ -285,44 +285,32 @@ export default function CartesPage() {
   const loadCards = async () => {
     try {
       setIsLoadingCards(true)
-      console.log("[v0] Chargement des cartes...")
       const result = await getCards()
 
-      if (result.success && result.data) {
-        console.log("[v0] Données API cartes:", result.data)
-        const transformedCards: Card[] = Array.isArray(result.data)
-          ? result.data.map((apiCard: any) => ({
-              id: apiCard.numCard || apiCard.id || Math.random().toString(),
-              number: apiCard.numCard ? `**** **** **** ${apiCard.numCard.slice(-4)}` : "**** **** **** ****",
-              type: getCardTypeFromAPI(apiCard.typCard) as "visa" | "mastercard" | "amex",
-              status: getCardStatusFromAPI(apiCard.status) as "active" | "blocked" | "expired" | "pending",
-              expiryDate: apiCard.dateExpiration
-                ? new Date(apiCard.dateExpiration).toLocaleDateString("fr-FR", { month: "2-digit", year: "2-digit" })
-                : "12/26",
-              holder: "MAMADOU DIALLO", // Valeur par défaut
-              dailyLimit: 500000, // Valeur par défaut
-              monthlyLimit: 2000000, // Valeur par défaut
-              balance: 1250000, // Valeur par défaut
-              lastTransaction: "Aucune transaction récente",
-            }))
-          : []
+      if (result.success && result.data && Array.isArray(result.data) && result.data.length > 0) {
+        const transformedCards: Card[] = result.data.map((apiCard: any) => ({
+          id: apiCard.numCard || apiCard.id || Math.random().toString(),
+          number: apiCard.numCard ? `**** **** **** ${apiCard.numCard.slice(-4)}` : "**** **** **** ****",
+          type: getCardTypeFromAPI(apiCard.typCard) as "visa" | "mastercard" | "amex",
+          status: getCardStatusFromAPI(apiCard.status) as "active" | "blocked" | "expired" | "pending",
+          expiryDate: apiCard.dateExpiration
+            ? new Date(apiCard.dateExpiration).toLocaleDateString("fr-FR", { month: "2-digit", year: "2-digit" })
+            : "12/26",
+          holder: "MAMADOU DIALLO", // Valeur par défaut
+          dailyLimit: 500000, // Valeur par défaut
+          monthlyLimit: 2000000, // Valeur par défaut
+          balance: 1250000, // Valeur par défaut
+          lastTransaction: "Aucune transaction récente",
+        }))
 
-        console.log("[v0] Cartes transformées:", transformedCards)
-        if (transformedCards.length === 0) {
-          console.log("[v0] Aucune carte API, utilisation des données simulées")
-          setCards(mockCards)
-        } else {
-          setCards(transformedCards)
-        }
+        setCards(transformedCards)
       } else {
-        console.log("[v0] Pas de données ou erreur, utilisation des données simulées")
         setCards(mockCards)
       }
     } catch (error) {
-      console.error("[v0] Erreur lors du chargement des cartes:", error)
+      console.error("Erreur lors du chargement des cartes:", error)
       setCards(mockCards)
     } finally {
-      console.log("[v0] Fin du chargement, isLoadingCards sera false")
       setIsLoadingCards(false)
     }
   }
@@ -520,8 +508,6 @@ export default function CartesPage() {
         </TabsList>
 
         <TabsContent value="cards" className="space-y-6">
-          {console.log("[v0] Rendu - isLoadingCards:", isLoadingCards, "cards.length:", cards.length)}
-
           {isLoadingCards ? (
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
               {[1, 2, 3].map((i) => (
