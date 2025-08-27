@@ -44,7 +44,7 @@ interface Account {
   availableBalance: number
   currency: string
   type: "Courant" | "Épargne" | "Devise"
-  status: "Actif" | "Bloqué" | "Fermé"
+  status: string,//"Actif" | "Bloqué" | "Fermé"
   lastUpdate: string
   trend: "up" | "down" | "stable"
   trendPercentage: number
@@ -170,8 +170,8 @@ export default function BalancesPage() {
             balance: Number.parseFloat(account.bookBalance || account.balance || "0"),
             availableBalance: Number.parseFloat(account.availableBalance || account.balance || "0"),
             currency: account.currency || "GNF",
-            type: "Courant" as const,
-            status: "Actif" as const,
+            type: account.type,
+            status: account.status,
             lastUpdate: new Date(account.createdAt || Date.now()).toLocaleDateString("fr-FR"),
             trend: "stable" as const,
             trendPercentage: 0,
