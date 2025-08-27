@@ -150,7 +150,7 @@ export async function createAccount(prevState: any, formData: FormData) {
       bookBalance: (formData.get("bookBalance") as string) || "0",
       availableBalance: (formData.get("availableBalance") as string) || "0",
       type: (formData.get("accountType") as string) || "CURRENT", // Récupération du type de compte
-      status: "ACTIVE",
+      status: "EN ATTENTE",
       agency: "Agence Principale",
     }
 
