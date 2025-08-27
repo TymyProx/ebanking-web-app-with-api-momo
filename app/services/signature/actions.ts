@@ -24,14 +24,6 @@ const documentSignatureSchema = z.object({
   otpCode: z.string().optional(),
 })
 
-// Schéma de validation pour la demande de crédit API
-const creditRequestSchema = z.object({
-  applicantName: z.string().min(1, "Le nom du demandeur est requis"),
-  creditAmount: z.string().min(1, "Le montant du crédit est requis"),
-  durationMonths: z.string().min(1, "La durée est requise"),
-  purpose: z.string().min(1, "L'objet du crédit est requis"),
-})
-
 interface ActionResult {
   success: boolean
   message: string
@@ -297,96 +289,6 @@ export async function signDocument(formData: FormData): Promise<ActionResult> {
     return {
       success: false,
       message: "Une erreur technique est survenue lors de la signature",
-    }
-  }
-}
-
-export async function submitCreditRequest(formData: FormData): Promise<ActionResult> {
-  try {
-    // Simuler un délai de traitement
-    await new Promise((resolve) => setTimeout(resolve, 1500))
-
-    // Extraire les données du formulaire
-    const rawData = {
-      applicantName: formData.get("applicantName") as string,
-      creditAmount: formData.get("creditAmount") as string,
-      durationMonths: formData.get("durationMonths") as string,
-      purpose: formData.get("purpose") as string,
-    }
-
-    // Validation avec Zod
-    const validationResult = creditRequestSchema.safeParse(rawData)
-
-    if (!validationResult.success) {
-      return {
-        success: false,
-        message: "Erreur de validation des données",
-        errors: validationResult.error.errors.map((err) => `${err.path.join(".")}: ${err.message}`),
-      }
-    }
-
-    const data = validationResult.data
-
-    // Récupérer les variables d'environnement
-    const apiBaseUrl = process.env.API_BASE_URL
-    const tenantId = process.env.TENANT_ID
-
-    if (!apiBaseUrl || !tenantId) {
-      console.error("Variables d'environnement manquantes:", { apiBaseUrl, tenantId })
-      return {
-        success: false,
-        message: "Configuration du système incomplète",
-      }
-    }
-
-    // Préparer le body de la requête
-    const requestBody = {
-      data: {
-        applicantName: data.applicantName,
-        creditAmount: data.creditAmount,
-        durationMonths: data.durationMonths,
-        purpose: data.purpose,
-      },
-    }
-
-    console.log("[v0] Envoi demande de crédit:", requestBody)
-
-    // Appel à l'API
-    const response = await fetch(`${apiBaseUrl}/tenant/${tenantId}/demande-credit`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      },
-      body: JSON.stringify(requestBody),
-    })
-
-    console.log("[v0] Réponse API demande crédit:", response.status)
-
-    if (!response.ok) {
-      console.error("Erreur API demande crédit:", response.status, response.statusText)
-      return {
-        success: false,
-        message: "Erreur lors de l'envoi de la demande de crédit. Veuillez réessayer.",
-      }
-    }
-
-    const responseData = await response.json()
-    console.log("[v0] Données réponse demande crédit:", responseData)
-
-    // Revalider la page pour mettre à jour l'interface
-    revalidatePath("/services/signature")
-
-    return {
-      success: true,
-      message: "Votre demande de crédit a été soumise avec succès. Vous recevrez une réponse sous 48h.",
-      reference: `CREDIT-${Date.now()}`,
-    }
-  } catch (error) {
-    console.error("Erreur lors de la soumission de la demande de crédit:", error)
-    return {
-      success: false,
-      message: "Une erreur technique est survenue lors de l'envoi de la demande",
     }
   }
 }
