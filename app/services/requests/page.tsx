@@ -576,226 +576,206 @@ export default function ServiceRequestsPage() {
         </TabsList>
 
         <TabsContent value="new" className="space-y-6">
-          {/* Service Selection */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
                 <Plus className="w-5 h-5" />
                 <span>Nouvelle demande</span>
               </CardTitle>
-              <CardDescription>Sélectionnez le type de service que vous souhaitez demander</CardDescription>
+              <CardDescription>Remplissez le formulaire ci-dessous pour soumettre votre demande</CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {serviceTypes.map((service) => {
-                  const Icon = service.icon
-                  return (
-                    <div
-                      key={service.id}
-                      className={`p-4 border rounded-lg cursor-pointer transition-all ${
-                        selectedService === service.id
-                          ? "border-blue-500 bg-blue-50 ring-2 ring-blue-200"
-                          : "border-gray-200 hover:border-gray-300"
-                      }`}
-                      onClick={() => setSelectedService(service.id)}
-                    >
-                      <div className="flex items-start space-x-3">
-                        <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                          <Icon className="w-5 h-5 text-blue-600" />
-                        </div>
-                        <div className="flex-1">
-                          <h3 className="font-medium text-sm">{service.name}</h3>
-                          <p className="text-xs text-gray-500 mt-1">{service.description}</p>
-                          <div className="flex items-center justify-between mt-2">
-                            <Badge variant="outline" className="text-xs">
-                              {service.processingTime}
-                            </Badge>
-                            <span className="text-xs font-medium text-green-600">{service.cost}</span>
+            <CardContent className="space-y-6">
+              {/* Type de demande Select */}
+              <div>
+                <Label htmlFor="service-type-select">Type de demande *</Label>
+                <Select value={selectedService} onValueChange={setSelectedService}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Sélectionnez le type de service" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {serviceTypes.map((service) => {
+                      const Icon = service.icon
+                      return (
+                        <SelectItem key={service.id} value={service.id}>
+                          <div className="flex items-center space-x-2">
+                            <Icon className="w-4 h-4" />
+                            <span>{service.name}</span>
                           </div>
-                        </div>
+                        </SelectItem>
+                      )
+                    })}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Service Details & Dynamic Form */}
+              {selectedServiceData && (
+                <>
+                  {/* Service Info */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-gray-50 rounded-lg">
+                    <div className="flex items-center space-x-2">
+                      <Clock className="w-4 h-4 text-gray-500" />
+                      <div>
+                        <p className="text-sm font-medium">Délai de traitement</p>
+                        <p className="text-xs text-gray-600">{selectedServiceData.processingTime}</p>
                       </div>
                     </div>
-                  )
-                })}
-              </div>
+                    <div className="flex items-center space-x-2">
+                      <Banknote className="w-4 h-4 text-gray-500" />
+                      <div>
+                        <p className="text-sm font-medium">Coût</p>
+                        <p className="text-xs text-gray-600">{selectedServiceData.cost}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Shield className="w-4 h-4 text-gray-500" />
+                      <div>
+                        <p className="text-sm font-medium">Sécurisé</p>
+                        <p className="text-xs text-gray-600">Traitement confidentiel</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Requirements */}
+                  <div>
+                    <h4 className="font-medium mb-2">Prérequis</h4>
+                    <ul className="space-y-1">
+                      {selectedServiceData.requirements.map((req, index) => (
+                        <li key={index} className="flex items-center space-x-2 text-sm">
+                          <CheckCircle className="w-4 h-4 text-green-500" />
+                          <span>{req}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  {/* Account Selection */}
+                  <div>
+                    <Label htmlFor="account">Compte concerné *</Label>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-2">
+                      {accounts.map((account) => (
+                        <div
+                          key={account.id}
+                          className={`p-3 border rounded-lg cursor-pointer transition-all ${
+                            selectedAccount === account.id
+                              ? "border-blue-500 bg-blue-50 ring-2 ring-blue-200"
+                              : "border-gray-200 hover:border-gray-300"
+                          }`}
+                          onClick={() => setSelectedAccount(account.id)}
+                        >
+                          <div className="flex items-center space-x-2">
+                            <CreditCard className="w-4 h-4 text-gray-500" />
+                            <span className="font-medium text-sm">{account.name}</span>
+                          </div>
+                          <p className="text-xs text-gray-500 mt-1">***{account.number.slice(-4)}</p>
+                          <p className="text-sm font-bold mt-1">
+                            {formatAmount(account.balance, account.currency)} {account.currency}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Dynamic Form */}
+                  {renderServiceForm()}
+
+                  {/* Contact Information */}
+                  <div className="space-y-4">
+                    <h4 className="font-medium">Informations de contact</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="contact_phone">Téléphone *</Label>
+                        <Input
+                          id="contact_phone"
+                          placeholder="+224 6XX XXX XXX"
+                          value={formData.contact_phone || ""}
+                          onChange={(e) => handleInputChange("contact_phone", e.target.value)}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="contact_email">Email *</Label>
+                        <Input
+                          id="contact_email"
+                          type="email"
+                          placeholder="votre@email.com"
+                          value={formData.contact_email || ""}
+                          onChange={(e) => handleInputChange("contact_email", e.target.value)}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Additional Comments */}
+                  <div>
+                    <Label htmlFor="comments">Commentaires additionnels</Label>
+                    <Textarea
+                      id="comments"
+                      placeholder="Informations supplémentaires (optionnel)"
+                      value={formData.comments || ""}
+                      onChange={(e) => handleInputChange("comments", e.target.value)}
+                    />
+                  </div>
+
+                  {/* Terms and Conditions */}
+                  <div className="flex items-start space-x-2">
+                    <Checkbox
+                      id="terms"
+                      checked={formData.terms || false}
+                      onCheckedChange={(checked) => handleInputChange("terms", checked)}
+                    />
+                    <Label htmlFor="terms" className="text-sm">
+                      J'accepte les{" "}
+                      <a href="#" className="text-blue-600 hover:underline">
+                        conditions générales
+                      </a>{" "}
+                      et autorise le traitement de ma demande
+                    </Label>
+                  </div>
+
+                  {/* Submit Button */}
+                  <form action={submitAction}>
+                    <input type="hidden" name="serviceType" value={selectedService} />
+                    <input type="hidden" name="accountId" value={selectedAccount} />
+                    <input type="hidden" name="formData" value={JSON.stringify(formData)} />
+
+                    <Button type="submit" disabled={isSubmitting || !formData.terms} className="w-full">
+                      {isSubmitting ? (
+                        <>
+                          <Clock className="w-4 h-4 mr-2 animate-spin" />
+                          Envoi en cours...
+                        </>
+                      ) : (
+                        <>
+                          <Send className="w-4 h-4 mr-2" />
+                          Envoyer la demande
+                        </>
+                      )}
+                    </Button>
+                  </form>
+
+                  {/* Feedback Messages */}
+                  {submitState?.success && (
+                    <Alert className="border-green-200 bg-green-50">
+                      <CheckCircle className="h-4 w-4 text-green-600" />
+                      <AlertDescription className="text-green-800">
+                        ✅ Votre demande a été envoyée avec succès. Référence: {submitState.reference}. Réponse sous{" "}
+                        {selectedServiceData.processingTime}.
+                      </AlertDescription>
+                    </Alert>
+                  )}
+
+                  {submitState?.error && (
+                    <Alert className="border-red-200 bg-red-50">
+                      <AlertCircle className="h-4 w-4 text-red-600" />
+                      <AlertDescription className="text-red-800">
+                        ❌ Une erreur est survenue: {submitState.error}. Veuillez réessayer.
+                      </AlertDescription>
+                    </Alert>
+                  )}
+                </>
+              )}
             </CardContent>
           </Card>
-
-          {/* Service Details & Form */}
-          {selectedServiceData && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <selectedServiceData.icon className="w-5 h-5" />
-                  <span>{selectedServiceData.name}</span>
-                </CardTitle>
-                <CardDescription>{selectedServiceData.description}</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                {/* Service Info */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-gray-50 rounded-lg">
-                  <div className="flex items-center space-x-2">
-                    <Clock className="w-4 h-4 text-gray-500" />
-                    <div>
-                      <p className="text-sm font-medium">Délai de traitement</p>
-                      <p className="text-xs text-gray-600">{selectedServiceData.processingTime}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Banknote className="w-4 h-4 text-gray-500" />
-                    <div>
-                      <p className="text-sm font-medium">Coût</p>
-                      <p className="text-xs text-gray-600">{selectedServiceData.cost}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Shield className="w-4 h-4 text-gray-500" />
-                    <div>
-                      <p className="text-sm font-medium">Sécurisé</p>
-                      <p className="text-xs text-gray-600">Traitement confidentiel</p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Requirements */}
-                <div>
-                  <h4 className="font-medium mb-2">Prérequis</h4>
-                  <ul className="space-y-1">
-                    {selectedServiceData.requirements.map((req, index) => (
-                      <li key={index} className="flex items-center space-x-2 text-sm">
-                        <CheckCircle className="w-4 h-4 text-green-500" />
-                        <span>{req}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-
-                {/* Account Selection */}
-                <div>
-                  <Label htmlFor="account">Compte concerné *</Label>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-2">
-                    {accounts.map((account) => (
-                      <div
-                        key={account.id}
-                        className={`p-3 border rounded-lg cursor-pointer transition-all ${
-                          selectedAccount === account.id
-                            ? "border-blue-500 bg-blue-50 ring-2 ring-blue-200"
-                            : "border-gray-200 hover:border-gray-300"
-                        }`}
-                        onClick={() => setSelectedAccount(account.id)}
-                      >
-                        <div className="flex items-center space-x-2">
-                          <CreditCard className="w-4 h-4 text-gray-500" />
-                          <span className="font-medium text-sm">{account.name}</span>
-                        </div>
-                        <p className="text-xs text-gray-500 mt-1">***{account.number.slice(-4)}</p>
-                        <p className="text-sm font-bold mt-1">
-                          {formatAmount(account.balance, account.currency)} {account.currency}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Dynamic Form */}
-                {renderServiceForm()}
-
-                {/* Contact Information */}
-                <div className="space-y-4">
-                  <h4 className="font-medium">Informations de contact</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="contact_phone">Téléphone *</Label>
-                      <Input
-                        id="contact_phone"
-                        placeholder="+224 6XX XXX XXX"
-                        value={formData.contact_phone || ""}
-                        onChange={(e) => handleInputChange("contact_phone", e.target.value)}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="contact_email">Email *</Label>
-                      <Input
-                        id="contact_email"
-                        type="email"
-                        placeholder="votre@email.com"
-                        value={formData.contact_email || ""}
-                        onChange={(e) => handleInputChange("contact_email", e.target.value)}
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Additional Comments */}
-                <div>
-                  <Label htmlFor="comments">Commentaires additionnels</Label>
-                  <Textarea
-                    id="comments"
-                    placeholder="Informations supplémentaires (optionnel)"
-                    value={formData.comments || ""}
-                    onChange={(e) => handleInputChange("comments", e.target.value)}
-                  />
-                </div>
-
-                {/* Terms and Conditions */}
-                <div className="flex items-start space-x-2">
-                  <Checkbox
-                    id="terms"
-                    checked={formData.terms || false}
-                    onCheckedChange={(checked) => handleInputChange("terms", checked)}
-                  />
-                  <Label htmlFor="terms" className="text-sm">
-                    J'accepte les{" "}
-                    <a href="#" className="text-blue-600 hover:underline">
-                      conditions générales
-                    </a>{" "}
-                    et autorise le traitement de ma demande
-                  </Label>
-                </div>
-
-                {/* Submit Button */}
-                <form action={submitAction}>
-                  <input type="hidden" name="serviceType" value={selectedService} />
-                  <input type="hidden" name="accountId" value={selectedAccount} />
-                  <input type="hidden" name="formData" value={JSON.stringify(formData)} />
-
-                  <Button type="submit" disabled={isSubmitting || !formData.terms} className="w-full">
-                    {isSubmitting ? (
-                      <>
-                        <Clock className="w-4 h-4 mr-2 animate-spin" />
-                        Envoi en cours...
-                      </>
-                    ) : (
-                      <>
-                        <Send className="w-4 h-4 mr-2" />
-                        Envoyer la demande
-                      </>
-                    )}
-                  </Button>
-                </form>
-
-                {/* Feedback Messages */}
-                {submitState?.success && (
-                  <Alert className="border-green-200 bg-green-50">
-                    <CheckCircle className="h-4 w-4 text-green-600" />
-                    <AlertDescription className="text-green-800">
-                      ✅ Votre demande a été envoyée avec succès. Référence: {submitState.reference}. Réponse sous{" "}
-                      {selectedServiceData.processingTime}.
-                    </AlertDescription>
-                  </Alert>
-                )}
-
-                {submitState?.error && (
-                  <Alert className="border-red-200 bg-red-50">
-                    <AlertCircle className="h-4 w-4 text-red-600" />
-                    <AlertDescription className="text-red-800">
-                      ❌ Une erreur est survenue: {submitState.error}. Veuillez réessayer.
-                    </AlertDescription>
-                  </Alert>
-                )}
-              </CardContent>
-            </Card>
-          )}
         </TabsContent>
 
         <TabsContent value="history" className="space-y-6">

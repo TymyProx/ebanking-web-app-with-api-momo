@@ -308,7 +308,12 @@ export default function CartesPage() {
           : []
 
         console.log("[v0] Cartes transformées:", transformedCards)
-        setCards(transformedCards)
+        if (transformedCards.length === 0) {
+          console.log("[v0] Aucune carte API, utilisation des données simulées")
+          setCards(mockCards)
+        } else {
+          setCards(transformedCards)
+        }
       } else {
         console.log("[v0] Pas de données ou erreur, utilisation des données simulées")
         setCards(mockCards)
@@ -317,6 +322,7 @@ export default function CartesPage() {
       console.error("[v0] Erreur lors du chargement des cartes:", error)
       setCards(mockCards)
     } finally {
+      console.log("[v0] Fin du chargement, isLoadingCards sera false")
       setIsLoadingCards(false)
     }
   }
@@ -514,6 +520,8 @@ export default function CartesPage() {
         </TabsList>
 
         <TabsContent value="cards" className="space-y-6">
+          {console.log("[v0] Rendu - isLoadingCards:", isLoadingCards, "cards.length:", cards.length)}
+
           {isLoadingCards ? (
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
               {[1, 2, 3].map((i) => (
@@ -530,6 +538,12 @@ export default function CartesPage() {
                   </CardContent>
                 </UI_Card>
               ))}
+            </div>
+          ) : cards.length === 0 ? (
+            <div className="text-center py-12">
+              <CreditCard className="w-16 h-16 mx-auto text-gray-400 mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">Aucune carte trouvée</h3>
+              <p className="text-gray-600">Vous n'avez pas encore de carte bancaire.</p>
             </div>
           ) : (
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
