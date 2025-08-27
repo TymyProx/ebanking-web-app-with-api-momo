@@ -289,20 +289,59 @@ export default function CartesPage() {
       const result = await getCards()
 
       if (result.success && result.data) {
-        console.log("[v0] Cartes chargées:", result.data)
-        setCards(result.data)
+        console.log("[v0] Données API cartes:", result.data)
+        const transformedCards: Card[] = Array.isArray(result.data)
+          ? result.data.map((apiCard: any) => ({
+              id: apiCard.numCard || apiCard.id || Math.random().toString(),
+              number: apiCard.numCard ? `**** **** **** ${apiCard.numCard.slice(-4)}` : "**** **** **** ****",
+              type: getCardTypeFromAPI(apiCard.typCard) as "visa" | "mastercard" | "amex",
+              status: getCardStatusFromAPI(apiCard.status) as "active" | "blocked" | "expired" | "pending",
+              expiryDate: apiCard.dateExpiration
+                ? new Date(apiCard.dateExpiration).toLocaleDateString("fr-FR", { month: "2-digit", year: "2-digit" })
+                : "12/26",
+              holder: "MAMADOU DIALLO", // Valeur par défaut
+              dailyLimit: 500000, // Valeur par défaut
+              monthlyLimit: 2000000, // Valeur par défaut
+              balance: 1250000, // Valeur par défaut
+              lastTransaction: "Aucune transaction récente",
+            }))
+          : []
+
+        console.log("[v0] Cartes transformées:", transformedCards)
+        setCards(transformedCards)
       } else {
-        console.log("[v0] Erreur lors du chargement des cartes")
-        // Garder les données simulées en cas d'erreur
+        console.log("[v0] Pas de données ou erreur, utilisation des données simulées")
         setCards(mockCards)
       }
     } catch (error) {
       console.error("[v0] Erreur lors du chargement des cartes:", error)
-      // Garder les données simulées en cas d'erreur
       setCards(mockCards)
     } finally {
       setIsLoadingCards(false)
     }
+  }
+
+  const getCardTypeFromAPI = (typCard: string): string => {
+    const typeMapping: Record<string, string> = {
+      ESSENTIEL: "visa",
+      GOLD: "mastercard",
+      PLATINUM: "amex",
+      DEBIT: "visa",
+      CREDIT: "mastercard",
+      PREPAID: "visa",
+    }
+    return typeMapping[typCard?.toUpperCase()] || "visa"
+  }
+
+  const getCardStatusFromAPI = (status: string): string => {
+    const statusMapping: Record<string, string> = {
+      ACTIVE: "active",
+      BLOCKED: "blocked",
+      EXPIRED: "expired",
+      PENDING: "pending",
+      INACTIVE: "blocked",
+    }
+    return statusMapping[status?.toUpperCase()] || "pending"
   }
 
   useEffect(() => {
