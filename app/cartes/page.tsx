@@ -340,39 +340,42 @@ export default function CartesPage() {
 
               <div className="space-y-4">
                 <Label>Choisissez votre type de carte *</Label>
-                <div className="grid gap-4">
+                <div className="grid grid-cols-2 gap-3">
                   {cardTypes.map((cardType) => (
                     <div
                       key={cardType.id}
-                      className={`relative p-4 border-2 rounded-lg cursor-pointer transition-all hover:shadow-md ${
+                      className={`relative p-3 border-2 rounded-lg cursor-pointer transition-all hover:shadow-md ${
                         selectedCardType === cardType.id
                           ? "border-blue-500 bg-blue-50"
                           : "border-gray-200 hover:border-gray-300"
                       }`}
                       onClick={() => setSelectedCardType(cardType.id)}
                     >
-                      <div className="flex items-start space-x-4">
-                        <div
-                          className={`w-12 h-8 ${cardType.color} rounded flex items-center justify-center text-white text-xs font-bold`}
-                        >
-                          BNG
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <div
+                            className={`w-10 h-6 ${cardType.color} rounded flex items-center justify-center text-white text-xs font-bold`}
+                          >
+                            BNG
+                          </div>
+                          {selectedCardType === cardType.id && <CheckCircle className="w-4 h-4 text-blue-500" />}
                         </div>
-                        <div className="flex-1">
-                          <div className="flex items-center justify-between mb-2">
-                            <div>
-                              <h3 className="font-semibold text-lg">{cardType.name}</h3>
-                              <p className="text-sm text-gray-600">{cardType.description}</p>
+                        <div>
+                          <h3 className="font-semibold text-sm">{cardType.name}</h3>
+                          <p className="text-xs text-gray-600 mb-2">{cardType.description}</p>
+                        </div>
+                        <div className="space-y-1">
+                          {cardType.advantages.slice(0, 3).map((advantage, index) => (
+                            <div key={index} className="flex items-start space-x-1">
+                              <div className="w-1 h-1 bg-green-500 rounded-full mt-1.5 flex-shrink-0"></div>
+                              <span className="text-xs text-gray-700 leading-tight">{advantage}</span>
                             </div>
-                            {selectedCardType === cardType.id && <CheckCircle className="w-5 h-5 text-blue-500" />}
-                          </div>
-                          <div className="space-y-1">
-                            {cardType.advantages.map((advantage, index) => (
-                              <div key={index} className="flex items-center space-x-2">
-                                <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
-                                <span className="text-sm text-gray-700">{advantage}</span>
-                              </div>
-                            ))}
-                          </div>
+                          ))}
+                          {cardType.advantages.length > 3 && (
+                            <p className="text-xs text-blue-600 font-medium">
+                              +{cardType.advantages.length - 3} autres avantages
+                            </p>
+                          )}
                         </div>
                       </div>
                     </div>
