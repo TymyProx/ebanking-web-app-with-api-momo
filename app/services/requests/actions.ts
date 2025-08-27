@@ -35,6 +35,7 @@ const serviceRequestSchema = z.object({
 const API_BASE_URL = "http://192.168.1.200:8080/api" //process.env.NEXT_PUBLIC_API_BASE_URL
 const TENANT_ID = "11cacc69-5a49-4f01-8b16-e8f473746634"
 
+
 // Get tenant from user session or environment
 async function getTenant(): Promise<string> {
   // TODO: Implement tenant retrieval from user session/JWT
