@@ -382,12 +382,6 @@ export default function StatementsPage() {
                   <Clock className="w-6 h-6 animate-spin mx-auto mb-2" />
                   <p className="text-gray-500">Chargement des comptes...</p>
                 </div>
-              ) : accounts.length === 0 ? (
-                <div className="text-center py-8">
-                  <CreditCard className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                  <p className="text-gray-500 font-medium">Aucun compte</p>
-                  <p className="text-gray-400 text-sm">Aucun compte n'est disponible pour générer un relevé</p>
-                </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   {accounts.map((account) => (

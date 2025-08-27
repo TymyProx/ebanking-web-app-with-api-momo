@@ -22,7 +22,6 @@ import {
   AlertCircle,
   Smartphone,
   Mail,
-  CreditCard,
 } from "lucide-react"
 import { generateDocument, signDocument, sendOTP } from "./actions"
 
@@ -286,34 +285,24 @@ export default function ElectronicSignaturePage() {
                     {selectedDocType.fields.includes("accountId") && (
                       <div className="space-y-2">
                         <Label htmlFor="accountId">Compte concerné *</Label>
-                        {accounts.length === 0 ? (
-                          <div className="text-center py-8">
-                            <CreditCard className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                            <p className="text-gray-500 font-medium">Aucun compte</p>
-                            <p className="text-gray-400 text-sm">
-                              Aucun compte n'est disponible pour générer ce document
-                            </p>
-                          </div>
-                        ) : (
-                          <Select
-                            value={documentData.accountId}
-                            onValueChange={(value) => setDocumentData({ ...documentData, accountId: value })}
-                          >
-                            <SelectTrigger>
-                              <SelectValue placeholder="Sélectionnez un compte" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {accounts.map((account) => (
-                                <SelectItem key={account.id} value={account.id}>
-                                  <div className="flex flex-col">
-                                    <span>{account.name}</span>
-                                    <span className="text-xs text-gray-500">{account.balance}</span>
-                                  </div>
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        )}
+                        <Select
+                          value={documentData.accountId}
+                          onValueChange={(value) => setDocumentData({ ...documentData, accountId: value })}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Sélectionnez un compte" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {accounts.map((account) => (
+                              <SelectItem key={account.id} value={account.id}>
+                                <div className="flex flex-col">
+                                  <span>{account.name}</span>
+                                  <span className="text-xs text-gray-500">{account.balance}</span>
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </div>
                     )}
 
@@ -380,7 +369,7 @@ export default function ElectronicSignaturePage() {
 
                   <Button
                     onClick={handleGenerateDocument}
-                    disabled={isPending || !documentData.accountId || accounts.length === 0}
+                    disabled={isPending || !documentData.accountId}
                     className="w-full"
                   >
                     {isPending ? "Génération..." : "Générer le document"}
