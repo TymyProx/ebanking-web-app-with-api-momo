@@ -140,8 +140,8 @@ export default function StatementsPage() {
             number: acc.accountNumber,
             balance: Number.parseFloat(acc.bookBalance || acc.balance || "0"),
             currency: acc.currency || "GNF",
-            type: "Courant" as const,
-            status: "Actif" as const,
+            type: acc.type,
+            status: acc.status,
             iban: `GN82 BNG 001 ${acc.accountNumber}`,
           }))
           setAccounts(adaptedAccounts)
@@ -250,7 +250,7 @@ export default function StatementsPage() {
 
     const formData = new FormData()
     formData.append("email", emailAddress)
-    formData.append("statementId", generateState.statementId)
+    formData.append("statementId", generateState.statementId ?? "")
 
     startTransition(() => {
       emailAction(formData)
