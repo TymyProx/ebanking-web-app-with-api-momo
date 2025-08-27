@@ -4,7 +4,6 @@ import { useState, useEffect, useTransition } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
@@ -27,6 +26,7 @@ import {
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { addBeneficiary, updateBeneficiary, deleteBeneficiary, validateRIB, getBeneficiaries } from "./actions"
 import { useActionState } from "react"
+import BeneficiaryForm from "@/components/beneficiary-form"
 
 interface Beneficiary {
   id: string
@@ -58,12 +58,6 @@ export default function BeneficiariesPage() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [editingBeneficiary, setEditingBeneficiary] = useState<Beneficiary | null>(null)
-  const [formData, setFormData] = useState<BeneficiaryFormData>({
-    name: "",
-    account: "",
-    bank: "",
-    type: "",
-  })
   const [ribValidation, setRibValidation] = useState<{ isValid: boolean; message: string } | null>(null)
   const [beneficiaries, setBeneficiaries] = useState<Beneficiary[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -72,6 +66,9 @@ export default function BeneficiariesPage() {
   const [addState, addAction, isAddPending] = useActionState(addBeneficiary, null)
   const [updateState, updateAction, isUpdatePending] = useActionState(updateBeneficiary, null)
   const [deleteState, deleteAction, isDeletePending] = useActionState(deleteBeneficiary, null)
+
+  const [addMessage, setAddMessage] = useState<{ success?: string; error?: string } | null>(null)
+  const [updateMessage, setUpdateMessage] = useState<{ success?: string; error?: string } | null>(null)
 
   const loadBeneficiaries = async () => {
     setIsLoading(true)
@@ -106,6 +103,22 @@ export default function BeneficiariesPage() {
       loadBeneficiaries()
     }
   }, [addState?.success, updateState?.success, deleteState?.success])
+
+  useEffect(() => {
+    if (addState?.success) {
+      setAddMessage({ success: "✅ Bénéficiaire ajouté avec succès." })
+    } else if (addState?.error) {
+      setAddMessage({ error: "❌ Erreur lors de l'ajout. Veuillez vérifier les informations." })
+    }
+  }, [addState])
+
+  useEffect(() => {
+    if (updateState?.success) {
+      setUpdateMessage({ success: "✅ Bénéficiaire modifié avec succès." })
+    } else if (updateState?.error) {
+      setUpdateMessage({ error: "❌ Erreur lors de la modification. Veuillez vérifier les informations." })
+    }
+  }, [updateState])
 
   const getBankNameFromCode = (bankCode: string): string => {
     const bankNames: Record<string, string> = {
@@ -147,21 +160,16 @@ export default function BeneficiariesPage() {
   })
 
   const resetForm = () => {
-    setFormData({
-      name: "",
-      account: "",
-      bank: "",
-      type: "",
-    })
     setRibValidation(null)
   }
 
   const handleAddBeneficiary = async (formData: FormData) => {
-    const result = await addAction(formData)
-    if (result?.success) {
-      setIsAddDialogOpen(false)
-      resetForm()
-    }
+    startTransition(async () => {
+      const result = await addAction(formData)
+      if (result?.success) {
+        setIsAddDialogOpen(false)
+      }
+    })
   }
 
   const handleEditBeneficiary = async (formData: FormData) => {
@@ -179,7 +187,6 @@ export default function BeneficiariesPage() {
       if (result?.success) {
         setIsEditDialogOpen(false)
         setEditingBeneficiary(null)
-        resetForm()
       }
     })
   }
@@ -215,15 +222,6 @@ export default function BeneficiariesPage() {
 
   const openEditDialog = (beneficiary: Beneficiary) => {
     setEditingBeneficiary(beneficiary)
-    setFormData({
-      name: beneficiary.name,
-      account: beneficiary.account,
-      bank: beneficiary.bank,
-      type: beneficiary.type,
-      iban: beneficiary.iban || "",
-      swiftCode: beneficiary.swiftCode || "",
-      country: beneficiary.country || "",
-    })
     setIsEditDialogOpen(true)
   }
 
@@ -253,171 +251,6 @@ export default function BeneficiariesPage() {
     }
   }
 
-  const BeneficiaryForm = ({
-    isEdit = false,
-    onSubmit,
-    isPending,
-  }: {
-    isEdit?: boolean
-    onSubmit: (formData: FormData) => void
-    isPending: boolean
-  }) => (
-    <form action={onSubmit} className="space-y-4">
-      <div className="space-y-2">
-        <Label htmlFor="name">Nom complet *</Label>
-        <Input
-          id="name"
-          name="name"
-          value={formData.name}
-          onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
-          placeholder="Nom et prénom du bénéficiaire"
-          required
-        />
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="type">Type de bénéficiaire *</Label>
-        <Select
-          name="type"
-          value={formData.type}
-          onValueChange={(value) => setFormData((prev) => ({ ...prev, type: value }))}
-          required
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Sélectionnez le type" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="BNG-BNG">BNG vers BNG (Gratuit)</SelectItem>
-            <SelectItem value="BNG-CONFRERE">BNG vers Confrère (2,500 GNF)</SelectItem>
-            <SelectItem value="BNG-INTERNATIONAL">International (Variable)</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="account">{formData.type === "BNG-INTERNATIONAL" ? "IBAN *" : "Numéro de compte / RIB *"}</Label>
-        <Input
-          id="account"
-          name="account"
-          value={formData.account}
-          onChange={(e) => {
-            const value = e.target.value
-            setFormData((prev) => ({ ...prev, account: value }))
-            if (value.length > 5) {
-              validateRIBField(value, formData.type)
-            }
-          }}
-          placeholder={formData.type === "BNG-INTERNATIONAL" ? "FR76 1234 5678 9012 3456 78" : "0001-234567-89"}
-          required
-        />
-        {ribValidation && (
-          <div
-            className={`flex items-center space-x-2 text-sm ${
-              ribValidation.isValid ? "text-green-600" : "text-red-600"
-            }`}
-          >
-            {ribValidation.isValid ? <CheckCircle className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}
-            <span>{ribValidation.message}</span>
-          </div>
-        )}
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="bank">Banque *</Label>
-        {formData.type === "BNG-BNG" ? (
-          <Input id="bank" name="bank" value="Banque Nationale de Guinée" readOnly className="bg-gray-50" />
-        ) : (
-          <Select
-            name="bank"
-            value={formData.bank}
-            onValueChange={(value) => setFormData((prev) => ({ ...prev, bank: value }))}
-            required
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Sélectionnez la banque" />
-            </SelectTrigger>
-            <SelectContent>
-              {formData.type === "BNG-CONFRERE" ? (
-                <>
-                  <SelectItem value="BICIGUI">BICIGUI</SelectItem>
-                  <SelectItem value="SGBG">Société Générale de Banques en Guinée</SelectItem>
-                  <SelectItem value="UBA">United Bank for Africa</SelectItem>
-                  <SelectItem value="ECOBANK">Ecobank Guinée</SelectItem>
-                  <SelectItem value="VISTA BANK">Vista Bank</SelectItem>
-                </>
-              ) : (
-                <>
-                  <SelectItem value="BNP Paribas">BNP Paribas</SelectItem>
-                  <SelectItem value="Société Générale">Société Générale</SelectItem>
-                  <SelectItem value="Crédit Agricole">Crédit Agricole</SelectItem>
-                  <SelectItem value="HSBC">HSBC</SelectItem>
-                  <SelectItem value="Deutsche Bank">Deutsche Bank</SelectItem>
-                </>
-              )}
-            </SelectContent>
-          </Select>
-        )}
-      </div>
-
-      {formData.type === "BNG-INTERNATIONAL" && (
-        <>
-          <div className="space-y-2">
-            <Label htmlFor="swiftCode">Code SWIFT</Label>
-            <Input
-              id="swiftCode"
-              name="swiftCode"
-              value={formData.swiftCode || ""}
-              onChange={(e) => setFormData((prev) => ({ ...prev, swiftCode: e.target.value }))}
-              placeholder="BNPAFRPP"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="country">Pays</Label>
-            <Select
-              name="country"
-              value={formData.country || ""}
-              onValueChange={(value) => setFormData((prev) => ({ ...prev, country: value }))}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Sélectionnez le pays" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="France">France</SelectItem>
-                <SelectItem value="Belgique">Belgique</SelectItem>
-                <SelectItem value="Suisse">Suisse</SelectItem>
-                <SelectItem value="Canada">Canada</SelectItem>
-                <SelectItem value="États-Unis">États-Unis</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </>
-      )}
-
-      <div className="flex justify-end space-x-2 pt-4">
-        <Button
-          type="button"
-          variant="outline"
-          onClick={() => {
-            if (isEdit) {
-              setIsEditDialogOpen(false)
-              setEditingBeneficiary(null)
-            } else {
-              setIsAddDialogOpen(false)
-            }
-            resetForm()
-          }}
-          disabled={isPending}
-        >
-          Annuler
-        </Button>
-        <Button type="submit" disabled={isPending || (ribValidation && !ribValidation.isValid)}>
-          {isPending ? "Traitement..." : isEdit ? "Modifier" : "Ajouter"}
-        </Button>
-      </div>
-    </form>
-  )
-
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -438,21 +271,14 @@ export default function BeneficiariesPage() {
               <DialogTitle>Ajouter un bénéficiaire</DialogTitle>
             </DialogHeader>
 
-            {addState?.success && (
-              <Alert className="border-green-200 bg-green-50">
-                <CheckCircle className="h-4 w-4 text-green-600" />
-                <AlertDescription className="text-green-800">✅ Bénéficiaire ajouté avec succès.</AlertDescription>
-              </Alert>
-            )}
-
-            {addState?.error && (
-              <Alert variant="destructive">
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>❌ Erreur lors de l'ajout. Veuillez vérifier les informations.</AlertDescription>
-              </Alert>
-            )}
-
-            <BeneficiaryForm onSubmit={handleAddBeneficiary} isPending={isAddPending} />
+            <BeneficiaryForm
+              successMessage={addMessage?.success}
+              errorMessage={addMessage?.error}
+              onMessageClear={() => setAddMessage(null)}
+              onSubmit={handleAddBeneficiary}
+              onCancel={() => setIsAddDialogOpen(false)}
+              isPending={isAddPending}
+            />
           </DialogContent>
         </Dialog>
       </div>
@@ -651,23 +477,27 @@ export default function BeneficiariesPage() {
             <DialogTitle>Modifier le bénéficiaire</DialogTitle>
           </DialogHeader>
 
-          {updateState?.success && (
-            <Alert className="border-green-200 bg-green-50">
-              <CheckCircle className="h-4 w-4 text-green-600" />
-              <AlertDescription className="text-green-800">✅ Bénéficiaire modifié avec succès.</AlertDescription>
-            </Alert>
-          )}
-
-          {updateState?.error && (
-            <Alert variant="destructive">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>
-                ❌ Erreur lors de la modification. Veuillez vérifier les informations.
-              </AlertDescription>
-            </Alert>
-          )}
-
-          <BeneficiaryForm isEdit={true} onSubmit={handleEditBeneficiary} isPending={isUpdatePending} />
+          <BeneficiaryForm
+            isEdit={true}
+            initialData={{
+              name: editingBeneficiary?.name,
+              account: editingBeneficiary?.account,
+              bank: editingBeneficiary?.bank,
+              type: editingBeneficiary?.type,
+              iban: editingBeneficiary?.iban,
+              swiftCode: editingBeneficiary?.swiftCode,
+              country: editingBeneficiary?.country,
+            }}
+            successMessage={updateMessage?.success}
+            errorMessage={updateMessage?.error}
+            onMessageClear={() => setUpdateMessage(null)}
+            onSubmit={handleEditBeneficiary}
+            onCancel={() => {
+              setIsEditDialogOpen(false)
+              setEditingBeneficiary(null)
+            }}
+            isPending={isUpdatePending}
+          />
         </DialogContent>
       </Dialog>
     </div>

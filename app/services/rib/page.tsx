@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Label } from "@/components/ui/label"
+import { Skeleton } from "@/components/ui/skeleton"
 import {
   Download,
   Printer,
@@ -22,6 +23,7 @@ import {
   PiggyBank,
   DollarSign,
 } from "lucide-react"
+import { getAccounts } from "../../accounts/actions"
 
 interface Account {
   id: string
@@ -40,74 +42,205 @@ interface Account {
   swiftCode: string
 }
 
+const generatePDF = async (account: Account) => {
+  const { jsPDF } = await import("jspdf")
+
+  const doc = new jsPDF()
+
+  const primaryColor: [number, number, number] = [70, 70, 70] // Gris foncé
+  const accentColor: [number, number, number] = [120, 120, 120] // Gris moyen
+  const darkColor: [number, number, number] = [44, 62, 80] // Gris foncé
+  const lightGray: [number, number, number] = [248, 248, 248] // Gris très clair pour alternance
+
+  const createUnifiedTable = (startY: number, data: string[][]) => {
+    const tableWidth = 170
+    const colWidth = tableWidth / 2 // 2 colonnes : Label et Valeur
+    const rowHeight = 12
+    let currentY = startY
+
+    // En-tête du tableau avec fond neutre
+    doc.setFillColor(...primaryColor)
+    doc.rect(20, currentY, tableWidth, rowHeight, "F")
+    doc.setTextColor(255, 255, 255)
+    doc.setFontSize(12)
+    doc.setFont("helvetica", "bold")
+    doc.text("INFORMATIONS BANCAIRES", 105, currentY + 8, { align: "center" })
+    currentY += rowHeight
+
+    // Données du tableau
+    doc.setTextColor(...darkColor)
+    doc.setFont("helvetica", "normal")
+
+    data.forEach((row, rowIndex) => {
+      // Alternance de couleurs neutres
+      if (rowIndex % 2 === 0) {
+        doc.setFillColor(...lightGray)
+        doc.rect(20, currentY, tableWidth, rowHeight, "F")
+      }
+
+      // Bordures
+      doc.setDrawColor(200, 200, 200)
+      doc.setLineWidth(0.1)
+      doc.rect(20, currentY, tableWidth, rowHeight, "S")
+
+      // Séparateur vertical entre les colonnes
+      doc.line(20 + colWidth, currentY, 20 + colWidth, currentY + rowHeight)
+
+      // Première colonne (Label) - en gras
+      doc.setFont("helvetica", "bold")
+      doc.setFontSize(10)
+      doc.text(row[0], 25, currentY + 8)
+
+      // Deuxième colonne (Valeur) - normal
+      doc.setFont("helvetica", "normal")
+      doc.setFontSize(10)
+      doc.text(row[1], 25 + colWidth, currentY + 8)
+
+      currentY += rowHeight
+    })
+
+    return currentY
+  }
+
+  // En-tête moderne avec couleurs neutres
+  doc.setFillColor(...primaryColor)
+  doc.rect(0, 0, 210, 35, "F")
+
+  doc.setFillColor(...accentColor)
+  doc.rect(0, 30, 210, 5, "F")
+
+  // Titre principal
+  doc.setTextColor(255, 255, 255)
+  doc.setFontSize(24)
+  doc.setFont("helvetica", "bold")
+  doc.text("RELEVÉ D'IDENTITÉ BANCAIRE", 105, 20, { align: "center" })
+
+  doc.setFontSize(12)
+  doc.setFont("helvetica", "normal")
+  doc.text("Document officiel", 105, 28, { align: "center" })
+
+  // Logo/Nom de la banque
+  doc.setTextColor(...primaryColor)
+  doc.setFontSize(18)
+  doc.setFont("helvetica", "bold")
+  doc.text(account.bankName.toUpperCase(), 20, 55)
+
+  // Date de génération
+  doc.setTextColor(...darkColor)
+  doc.setFontSize(10)
+  doc.text(`Généré le ${new Date().toLocaleDateString("fr-FR")} à ${new Date().toLocaleTimeString("fr-FR")}`, 150, 55)
+
+  let yPos = 75
+
+  const ribData = [
+    ["Titulaire du compte", account.accountHolder],
+    ["Numéro de compte", account.number],
+    ["Code banque", account.bankCode],
+    ["Code agence", account.branchCode],
+    ["RIB", `${account.bankCode} ${account.branchCode} ${account.number.replace(/-/g, "")}`],
+    ["IBAN", account.iban],
+    ["Code SWIFT", account.swiftCode],
+    ["Type de compte", account.type],
+    ["Devise", account.currency],
+  ]
+
+  yPos = createUnifiedTable(yPos, ribData)
+  yPos += 20
+
+  // Pied de page
+  doc.setDrawColor(...primaryColor)
+  doc.setLineWidth(0.5)
+  doc.line(20, yPos, 190, yPos)
+
+  doc.setTextColor(...darkColor)
+  doc.setFontSize(9)
+  doc.setFont("helvetica", "italic")
+  doc.text("Ce document est valable pour tous vos échanges bancaires et opérations financières.", 105, yPos + 8, {
+    align: "center",
+  })
+  doc.text("Conservez-le précieusement et ne le communiquez qu'aux organismes autorisés.", 105, yPos + 14, {
+    align: "center",
+  })
+
+  // Numéro de page et sécurité
+  doc.setFontSize(8)
+  doc.setFont("helvetica", "normal")
+  doc.text("Page 1/1", 190, 285, { align: "right" })
+  doc.text(`Réf: RIB-${account.number.replace(/-/g, "")}-${Date.now()}`, 20, 285)
+
+  const fileName = `RIB_${account.number.replace(/-/g, "_")}_${new Date().toISOString().split("T")[0]}.pdf`
+  doc.save(fileName)
+}
+
 export default function RIBPage() {
   const searchParams = useSearchParams()
   const preSelectedAccountId = searchParams.get("accountId")
 
   const [copied, setCopied] = useState(false)
   const [selectedAccountId, setSelectedAccountId] = useState<string>("")
+  const [accounts, setAccounts] = useState<Account[]>([])
+  const [isLoading, setIsLoading] = useState(true)
 
-  // Données des comptes (simulées avec informations RIB)
-  const accounts: Account[] = [
-    {
-      id: "1",
-      name: "Compte Courant",
-      number: "0001-234567-89",
-      balance: 2400000,
-      currency: "GNF",
-      type: "Courant",
-      status: "Actif",
-      iban: "GN82 BNG 001 0001234567 89",
-      accountHolder: "DIALLO Mamadou",
-      bankName: "Banque Nationale de Guinée",
-      bankCode: "BNG",
-      branchCode: "001",
-      branchName: "Agence Kaloum",
-      swiftCode: "BNGNGNCX",
-    },
-    {
-      id: "2",
-      name: "Compte Épargne",
-      number: "0002-345678-90",
-      balance: 850000,
-      currency: "GNF",
-      type: "Épargne",
-      status: "Actif",
-      iban: "GN82 BNG 001 0002345678 90",
-      accountHolder: "DIALLO Mamadou",
-      bankName: "Banque Nationale de Guinée",
-      bankCode: "BNG",
-      branchCode: "001",
-      branchName: "Agence Kaloum",
-      swiftCode: "BNGNGNCX",
-    },
-    {
-      id: "3",
-      name: "Compte USD",
-      number: "0003-456789-01",
-      balance: 1250,
-      currency: "USD",
-      type: "Devise",
-      status: "Actif",
-      iban: "GN82 BNG 001 0003456789 01",
-      accountHolder: "DIALLO Mamadou",
-      bankName: "Banque Nationale de Guinée",
-      bankCode: "BNG",
-      branchCode: "001",
-      branchName: "Agence Kaloum",
-      swiftCode: "BNGNGNCX",
-    },
-  ]
+  useEffect(() => {
+    const loadAccounts = async () => {
+      try {
+        const accountsData = await getAccounts()
+        console.log("[v0] Comptes récupérés pour RIB:", accountsData)
 
-  // Pré-sélectionner le compte si fourni dans l'URL
+        if (Array.isArray(accountsData)) {
+          const adaptedAccounts: Account[] = accountsData.map((acc: any) => ({
+            id: acc.id || acc.accountId,
+            name: acc.accountName || acc.name || `Compte ${acc.accountNumber}`,
+            number: acc.accountNumber,
+            balance: Number.parseFloat(acc.bookBalance || acc.balance || "0"),
+            currency: acc.currency || "GNF",
+            type: "Courant" as const,
+            status: "Actif" as const,
+            iban: `GN82 BNG 001 ${acc.accountNumber}`,
+            accountHolder: "DIALLO Mamadou",
+            bankName: "Banque Nationale de Guinée",
+            bankCode: "BNG",
+            branchCode: "001",
+            branchName: "Agence Kaloum",
+            swiftCode: "BNGNGNCX",
+          }))
+          setAccounts(adaptedAccounts)
+        }
+      } catch (error) {
+        console.error("Erreur lors du chargement des comptes:", error)
+        setAccounts([
+          {
+            id: "1",
+            name: "Compte Courant",
+            number: "0001-234567-89",
+            balance: 2400000,
+            currency: "GNF",
+            type: "Courant",
+            status: "Actif",
+            iban: "GN82 BNG 001 0001234567 89",
+            accountHolder: "DIALLO Mamadou",
+            bankName: "Banque Nationale de Guinée",
+            bankCode: "BNG",
+            branchCode: "001",
+            branchName: "Agence Kaloum",
+            swiftCode: "BNGNGNCX",
+          },
+        ])
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    loadAccounts()
+  }, [])
+
   useEffect(() => {
     if (preSelectedAccountId && accounts.find((acc) => acc.id === preSelectedAccountId)) {
       setSelectedAccountId(preSelectedAccountId)
     } else if (accounts.length > 0) {
-      // Sélectionner le premier compte par défaut si aucun n'est pré-sélectionné
       setSelectedAccountId(accounts[0].id)
     }
-  }, [preSelectedAccountId])
+  }, [preSelectedAccountId, accounts])
 
   const selectedAccount = accounts.find((acc) => acc.id === selectedAccountId) || accounts[0]
   const preSelectedAccount = preSelectedAccountId ? accounts.find((acc) => acc.id === preSelectedAccountId) : null
@@ -116,6 +249,45 @@ export default function RIBPage() {
     navigator.clipboard.writeText(text)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
+  }
+
+  const downloadPDF = async () => {
+    if (!selectedAccount) return
+
+    try {
+      await generatePDF(selectedAccount)
+    } catch (error) {
+      console.error("Erreur lors de la génération du PDF:", error)
+      const pdfContent = `
+        RELEVÉ D'IDENTITÉ BANCAIRE (RIB)
+        
+        ${selectedAccount.bankName.toUpperCase()}
+        
+        Titulaire du compte: ${selectedAccount.accountHolder}
+        Numéro de compte: ${selectedAccount.number}
+        IBAN: ${selectedAccount.iban}
+        Code banque: ${selectedAccount.bankCode}
+        Code agence: ${selectedAccount.branchCode}
+        Code SWIFT: ${selectedAccount.swiftCode}
+        
+        Agence: ${selectedAccount.branchName}
+        Type de compte: ${selectedAccount.type}
+        Devise: ${selectedAccount.currency}
+        Statut: ${selectedAccount.status}
+        
+        Date d'édition: ${new Date().toLocaleDateString("fr-FR")}
+      `
+
+      const blob = new Blob([pdfContent], { type: "text/plain" })
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement("a")
+      a.href = url
+      a.download = `RIB_${selectedAccount.number.replace(/-/g, "_")}_${new Date().toISOString().split("T")[0]}.txt`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      window.URL.revokeObjectURL(url)
+    }
   }
 
   const getAccountIcon = (type: string) => {
@@ -139,6 +311,25 @@ export default function RIBPage() {
       style: "currency",
       currency: currency,
     }).format(amount)
+  }
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <Skeleton className="h-8 w-96" />
+          <Skeleton className="h-4 w-64 mt-2" />
+        </div>
+        <Card>
+          <CardHeader>
+            <Skeleton className="h-6 w-48" />
+          </CardHeader>
+          <CardContent>
+            <Skeleton className="h-32 w-full" />
+          </CardContent>
+        </Card>
+      </div>
+    )
   }
 
   if (!selectedAccount) {
@@ -166,7 +357,6 @@ export default function RIBPage() {
         )}
       </div>
 
-      {/* Sélection du compte */}
       {accounts.length > 1 && (
         <Card>
           <CardHeader>
@@ -215,7 +405,6 @@ export default function RIBPage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
-              {/* RIB officiel */}
               <div className="border-2 border-dashed border-gray-300 p-6 rounded-lg bg-gray-50">
                 <div className="text-center mb-4">
                   <h2 className="text-lg font-bold text-blue-600">{selectedAccount.bankName.toUpperCase()}</h2>
@@ -270,7 +459,6 @@ export default function RIBPage() {
                   </div>
                 </div>
 
-                {/* Informations supplémentaires du compte */}
                 <div className="mt-4 pt-4 border-t">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
@@ -285,9 +473,8 @@ export default function RIBPage() {
                 </div>
               </div>
 
-              {/* Actions */}
               <div className="flex flex-wrap gap-3">
-                <Button>
+                <Button onClick={downloadPDF}>
                   <Download className="w-4 h-4 mr-2" />
                   Télécharger PDF
                 </Button>
@@ -372,7 +559,6 @@ export default function RIBPage() {
             </CardContent>
           </Card>
 
-          {/* Informations du compte sélectionné */}
           <Card className="mt-6">
             <CardHeader>
               <CardTitle className="flex items-center">

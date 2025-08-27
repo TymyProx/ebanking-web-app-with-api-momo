@@ -98,49 +98,20 @@ export default function NewAccountPage() {
           <CardDescription>Sélectionnez le type de compte que vous souhaitez ouvrir</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {accountTypes.map((type) => (
-              <div
-                key={type.id}
-                className={`p-4 border rounded-lg cursor-pointer transition-all ${
-                  selectedType === type.id
-                    ? "border-blue-500 bg-blue-50 ring-2 ring-blue-200"
-                    : "border-gray-200 hover:border-gray-300"
-                }`}
-                onClick={() => setSelectedType(type.id)}
-              >
-                <div className="flex items-start justify-between mb-3">
-                  <div>
-                    <h3 className="font-semibold text-lg">{type.name}</h3>
-                    <p className="text-sm text-gray-600">{type.description}</p>
-                  </div>
-                  <Badge variant="outline">{type.currency}</Badge>
-                </div>
-
-                <div className="space-y-2 mb-4">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-600">Solde minimum:</span>
-                    <span className="font-medium">
-                      {formatAmount(type.minBalance, type.currency)} {type.currency}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-600">Frais:</span>
-                    <span className="font-medium text-green-600">{type.fees}</span>
-                  </div>
-                </div>
-
-                <div className="space-y-1">
-                  {type.features.map((feature, index) => (
-                    <div key={index} className="flex items-center space-x-2 text-sm">
-                      <CheckCircle className="w-3 h-3 text-green-500" />
-                      <span className="text-gray-700">{feature}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
+         <div className="space-y-2">
+        <Label>Type de compte</Label>
+            <Select value={formData.accountType} onValueChange={(value) => handleInputChange("accountType", value)}>
+              <SelectTrigger>
+                <SelectValue placeholder="Sélectionnez le type de compte" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="COURANT">Compte courant</SelectItem>
+                <SelectItem value="EPARGNE">Compte épargne</SelectItem>
+                <SelectItem value="TERME">Compte à terme</SelectItem>
+                <SelectItem value="DEVISE">Compte en devise</SelectItem>
+              </SelectContent>
+            </Select>
+      </div>
         </CardContent>
       </Card>
 
@@ -344,6 +315,7 @@ export default function NewAccountPage() {
               <input type="hidden" name="currency" value={formData.currency || selectedAccountType.currency} />
               <input type="hidden" name="bookBalance" value={formData.initialDeposit || "0"} />
               <input type="hidden" name="availableBalance" value={formData.initialDeposit || "0"} />
+              <input type="hidden" name="accountType" value={selectedType} />
 
               <Button
                 type="submit"
