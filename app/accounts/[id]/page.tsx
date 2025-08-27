@@ -456,6 +456,7 @@ export default function AccountDetailsPage() {
                   size="sm"
                   className="w-full justify-start bg-transparent"
                   onClick={() => router.push(`/accounts/statements?accountId=${accountId}`)}
+                  disabled={account.status !== "Actif"}
                 >
                   <Download className="w-4 h-4 mr-2" />
                   Télécharger relevé
@@ -465,6 +466,7 @@ export default function AccountDetailsPage() {
                   size="sm"
                   className="w-full justify-start bg-transparent"
                   onClick={() => router.push(`/services/rib?accountId=${accountId}`)}
+                  disabled={account.status !== "Actif"}
                 >
                   <FileText className="w-4 h-4 mr-2" />
                   Obtenir RIB
