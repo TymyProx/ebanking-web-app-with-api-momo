@@ -44,7 +44,7 @@ import {
   Plus,
   AlertCircle,
 } from "lucide-react"
-import { createCard } from "./actions"
+import { createCard, getCards } from "./actions"
 import { useActionState } from "react"
 
 interface Card {
@@ -108,7 +108,8 @@ const transactions = [
 ]
 
 export default function CartesPage() {
-  const [cards, setCards] = useState<Card[]>(mockCards)
+  const [cards, setCards] = useState<Card[]>([])
+  const [isLoadingCards, setIsLoadingCards] = useState(true)
   const [selectedCard, setSelectedCard] = useState<Card | null>(null)
   const [showCardNumber, setShowCardNumber] = useState<string | null>(null)
   const [newLimits, setNewLimits] = useState({ daily: 0, monthly: 0 })
@@ -281,6 +282,33 @@ export default function CartesPage() {
     },
   ]
 
+  const loadCards = async () => {
+    try {
+      setIsLoadingCards(true)
+      console.log("[v0] Chargement des cartes...")
+      const result = await getCards()
+
+      if (result.success && result.data) {
+        console.log("[v0] Cartes chargées:", result.data)
+        setCards(result.data)
+      } else {
+        console.log("[v0] Erreur lors du chargement des cartes")
+        // Garder les données simulées en cas d'erreur
+        setCards(mockCards)
+      }
+    } catch (error) {
+      console.error("[v0] Erreur lors du chargement des cartes:", error)
+      // Garder les données simulées en cas d'erreur
+      setCards(mockCards)
+    } finally {
+      setIsLoadingCards(false)
+    }
+  }
+
+  useEffect(() => {
+    loadCards()
+  }, [])
+
   useEffect(() => {
     if (createCardState?.success) {
       setDisplayMessage({
@@ -288,6 +316,8 @@ export default function CartesPage() {
         reference: createCardState.reference,
       })
       setSelectedCardType("")
+
+      loadCards()
 
       const timer = setTimeout(() => {
         setDisplayMessage(null)
@@ -445,139 +475,158 @@ export default function CartesPage() {
         </TabsList>
 
         <TabsContent value="cards" className="space-y-6">
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {cards.map((card) => (
-              <UI_Card key={card.id} className="relative overflow-hidden">
-                <CardHeader className="pb-3">
-                  <div className="flex items-center justify-between">
-                    {getCardIcon(card.type)}
-                    {getStatusBadge(card.status)}
-                  </div>
-                  <CardTitle className="text-lg">
-                    <div className="flex items-center space-x-2">
-                      <span>
-                        {showCardNumber === card.id
-                          ? card.number.replace("****", card.id === "1" ? "4532" : card.id === "2" ? "5555" : "3782")
-                          : card.number}
-                      </span>
-                      <Button variant="ghost" size="sm" onClick={() => toggleCardNumberVisibility(card.id)}>
-                        {showCardNumber === card.id ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                      </Button>
+          {isLoadingCards ? (
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {[1, 2, 3].map((i) => (
+                <UI_Card key={i} className="relative overflow-hidden animate-pulse">
+                  <CardHeader className="pb-3">
+                    <div className="h-4 bg-gray-200 rounded w-1/2 mb-2"></div>
+                    <div className="h-6 bg-gray-200 rounded w-3/4"></div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2">
+                      <div className="h-4 bg-gray-200 rounded"></div>
+                      <div className="h-4 bg-gray-200 rounded w-2/3"></div>
                     </div>
-                  </CardTitle>
-                  <CardDescription>
-                    <div className="space-y-1">
-                      <p>{card.holder}</p>
-                      <p>Expire: {card.expiryDate}</p>
+                  </CardContent>
+                </UI_Card>
+              ))}
+            </div>
+          ) : (
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {cards.map((card) => (
+                <UI_Card key={card.id} className="relative overflow-hidden">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center justify-between">
+                      {getCardIcon(card.type)}
+                      {getStatusBadge(card.status)}
                     </div>
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">Solde disponible:</span>
-                      <span className="font-medium">{formatAmount(card.balance)}</span>
+                    <CardTitle className="text-lg">
+                      <div className="flex items-center space-x-2">
+                        <span>
+                          {showCardNumber === card.id
+                            ? card.number.replace("****", card.id === "1" ? "4532" : card.id === "2" ? "5555" : "3782")
+                            : card.number}
+                        </span>
+                        <Button variant="ghost" size="sm" onClick={() => toggleCardNumberVisibility(card.id)}>
+                          {showCardNumber === card.id ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        </Button>
+                      </div>
+                    </CardTitle>
+                    <CardDescription>
+                      <div className="space-y-1">
+                        <p>{card.holder}</p>
+                        <p>Expire: {card.expiryDate}</p>
+                      </div>
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-600">Solde disponible:</span>
+                        <span className="font-medium">{formatAmount(card.balance)}</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-600">Plafond journalier:</span>
+                        <span className="font-medium">{formatAmount(card.dailyLimit)}</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-600">Dernière transaction:</span>
+                      </div>
+                      <p className="text-xs text-gray-500">{card.lastTransaction}</p>
                     </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">Plafond journalier:</span>
-                      <span className="font-medium">{formatAmount(card.dailyLimit)}</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">Dernière transaction:</span>
-                    </div>
-                    <p className="text-xs text-gray-500">{card.lastTransaction}</p>
-                  </div>
 
-                  <div className="flex space-x-2">
-                    {card.status === "active" ? (
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button variant="outline" size="sm" className="flex-1 bg-transparent">
-                            <Lock className="w-4 h-4 mr-1" />
-                            Bloquer
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Bloquer la carte</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              Êtes-vous sûr de vouloir bloquer cette carte ? Vous pourrez la débloquer à tout moment.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Annuler</AlertDialogCancel>
-                            <AlertDialogAction onClick={() => handleBlockCard(card.id)}>Bloquer</AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    ) : card.status === "blocked" ? (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="flex-1 bg-transparent"
-                        onClick={() => handleUnblockCard(card.id)}
-                      >
-                        <Unlock className="w-4 h-4 mr-1" />
-                        Débloquer
-                      </Button>
-                    ) : null}
-
-                    <Dialog>
-                      <DialogTrigger asChild>
+                    <div className="flex space-x-2">
+                      {card.status === "active" ? (
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="outline" size="sm" className="flex-1 bg-transparent">
+                              <Lock className="w-4 h-4 mr-1" />
+                              Bloquer
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Bloquer la carte</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Êtes-vous sûr de vouloir bloquer cette carte ? Vous pourrez la débloquer à tout moment.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Annuler</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => handleBlockCard(card.id)}>Bloquer</AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      ) : card.status === "blocked" ? (
                         <Button
                           variant="outline"
                           size="sm"
                           className="flex-1 bg-transparent"
-                          onClick={() => {
-                            setSelectedCard(card)
-                            setNewLimits({ daily: card.dailyLimit, monthly: card.monthlyLimit })
-                          }}
+                          onClick={() => handleUnblockCard(card.id)}
                         >
-                          <Settings className="w-4 h-4 mr-1" />
-                          Modifier
+                          <Unlock className="w-4 h-4 mr-1" />
+                          Débloquer
                         </Button>
-                      </DialogTrigger>
-                      <DialogContent>
-                        <DialogHeader>
-                          <DialogTitle>Modifier les plafonds</DialogTitle>
-                          <DialogDescription>Ajustez les plafonds de dépense pour cette carte</DialogDescription>
-                        </DialogHeader>
-                        <div className="space-y-4">
-                          <div className="space-y-2">
-                            <Label htmlFor="daily-limit">Plafond journalier (FCFA)</Label>
-                            <Input
-                              id="daily-limit"
-                              type="number"
-                              value={newLimits.daily}
-                              onChange={(e) =>
-                                setNewLimits({ ...newLimits, daily: Number.parseInt(e.target.value) || 0 })
-                              }
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="monthly-limit">Plafond mensuel (FCFA)</Label>
-                            <Input
-                              id="monthly-limit"
-                              type="number"
-                              value={newLimits.monthly}
-                              onChange={(e) =>
-                                setNewLimits({ ...newLimits, monthly: Number.parseInt(e.target.value) || 0 })
-                              }
-                            />
-                          </div>
-                        </div>
-                        <DialogFooter>
-                          <Button onClick={() => selectedCard && handleUpdateLimits(selectedCard.id)}>
-                            Sauvegarder
+                      ) : null}
+
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="flex-1 bg-transparent"
+                            onClick={() => {
+                              setSelectedCard(card)
+                              setNewLimits({ daily: card.dailyLimit, monthly: card.monthlyLimit })
+                            }}
+                          >
+                            <Settings className="w-4 h-4 mr-1" />
+                            Modifier
                           </Button>
-                        </DialogFooter>
-                      </DialogContent>
-                    </Dialog>
-                  </div>
-                </CardContent>
-              </UI_Card>
-            ))}
-          </div>
+                        </DialogTrigger>
+                        <DialogContent>
+                          <DialogHeader>
+                            <DialogTitle>Modifier les plafonds</DialogTitle>
+                            <DialogDescription>Ajustez les plafonds de dépense pour cette carte</DialogDescription>
+                          </DialogHeader>
+                          <div className="space-y-4">
+                            <div className="space-y-2">
+                              <Label htmlFor="daily-limit">Plafond journalier (FCFA)</Label>
+                              <Input
+                                id="daily-limit"
+                                type="number"
+                                value={newLimits.daily}
+                                onChange={(e) =>
+                                  setNewLimits({ ...newLimits, daily: Number.parseInt(e.target.value) || 0 })
+                                }
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor="monthly-limit">Plafond mensuel (FCFA)</Label>
+                              <Input
+                                id="monthly-limit"
+                                type="number"
+                                value={newLimits.monthly}
+                                onChange={(e) =>
+                                  setNewLimits({ ...newLimits, monthly: Number.parseInt(e.target.value) || 0 })
+                                }
+                              />
+                            </div>
+                          </div>
+                          <DialogFooter>
+                            <Button onClick={() => selectedCard && handleUpdateLimits(selectedCard.id)}>
+                              Sauvegarder
+                            </Button>
+                          </DialogFooter>
+                        </DialogContent>
+                      </Dialog>
+                    </div>
+                  </CardContent>
+                </UI_Card>
+              ))}
+            </div>
+          )}
         </TabsContent>
 
         <TabsContent value="transactions" className="space-y-6">
