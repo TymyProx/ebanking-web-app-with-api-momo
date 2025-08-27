@@ -287,10 +287,6 @@ export default function CartesPage() {
         success: createCardState.message,
         reference: createCardState.reference,
       })
-      toast({
-        title: "Succès",
-        description: createCardState.message,
-      })
       setSelectedCardType("")
 
       const timer = setTimeout(() => {
@@ -301,11 +297,6 @@ export default function CartesPage() {
     } else if (createCardState?.error) {
       setDisplayMessage({
         error: createCardState.error,
-      })
-      toast({
-        title: "Erreur",
-        description: createCardState.error,
-        variant: "destructive",
       })
 
       const timer = setTimeout(() => {
