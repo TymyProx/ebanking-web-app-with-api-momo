@@ -451,24 +451,28 @@ export default function AccountDetailsPage() {
                   <ArrowUpRight className="w-4 h-4 mr-2" />
                   Effectuer un virement
                 </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="w-full justify-start bg-transparent"
-                  onClick={() => router.push(`/accounts/statements?accountId=${accountId}`)}
-                >
-                  <Download className="w-4 h-4 mr-2" />
-                  Télécharger relevé
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="w-full justify-start bg-transparent"
-                  onClick={() => router.push(`/services/rib?accountId=${accountId}`)}
-                >
-                  <FileText className="w-4 h-4 mr-2" />
-                  Obtenir RIB
-                </Button>
+                {account.status === "Actif" && (
+                  <>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full justify-start bg-transparent"
+                      onClick={() => router.push(`/accounts/statements?accountId=${accountId}`)}
+                    >
+                      <Download className="w-4 h-4 mr-2" />
+                      Télécharger relevé
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full justify-start bg-transparent"
+                      onClick={() => router.push(`/services/rib?accountId=${accountId}`)}
+                    >
+                      <FileText className="w-4 h-4 mr-2" />
+                      Obtenir RIB
+                    </Button>
+                  </>
+                )}
               </div>
             </div>
           </CardContent>
