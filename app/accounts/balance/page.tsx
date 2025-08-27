@@ -44,7 +44,7 @@ interface Account {
   availableBalance: number
   currency: string
   type: "Courant" | "Épargne" | "Devise"
-  status: string,//"Actif" | "Bloqué" | "Fermé"
+  status: string // "Actif" | "Bloqué" | "Fermé"
   lastUpdate: string
   trend: "up" | "down" | "stable"
   trendPercentage: number
@@ -91,13 +91,13 @@ export default function BalancesPage() {
             setBalanceState({ success: true, message: "Comptes chargés avec succès" })
           } else {
             setAccounts([])
-            setBalanceState({ success: false, error: "Aucun compte trouvé" })
+            setBalanceState({ success: true, message: "Aucun compte disponible" })
           }
           setIsLoaded(true)
         } catch (error) {
           console.error("Erreur lors du chargement des soldes:", error)
           setAccounts([])
-          setBalanceState({ success: false, error: "Erreur lors du chargement" })
+          setBalanceState({ success: false, error: "Erreur de connexion. Données non disponibles." })
           setIsLoaded(true)
         }
       })
@@ -140,7 +140,7 @@ export default function BalancesPage() {
           setAccounts(adaptedAccounts)
           setRefreshState({ success: true, message: "Comptes actualisés" })
         } else {
-          setRefreshState({ success: false, error: "Aucun compte trouvé" })
+          setRefreshState({ success: true, message: "Aucun compte disponible" })
         }
       } catch (error) {
         console.error("Erreur lors du rafraîchissement:", error)
@@ -377,7 +377,7 @@ export default function BalancesPage() {
       {balanceState?.error && (
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
-          <AlertDescription>❌ Erreur de connexion. Données non disponibles. Veuillez réessayer.</AlertDescription>
+          <AlertDescription>❌ {balanceState.error} Veuillez réessayer.</AlertDescription>
         </Alert>
       )}
 
