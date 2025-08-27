@@ -321,7 +321,7 @@ export default function CartesPage() {
               Demander une nouvelle carte
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-2xl">
+          <DialogContent className="sm:max-w-xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="flex items-center space-x-2">
                 <Plus className="w-5 h-5" />
@@ -330,62 +330,62 @@ export default function CartesPage() {
               <DialogDescription>Choisissez le type de carte qui correspond à vos besoins</DialogDescription>
             </DialogHeader>
 
-            <div className="space-y-6">
-              <div className="p-4 bg-blue-50 rounded-lg">
-                <div className="grid grid-cols-1 gap-3">
+            <div className="space-y-4">
+              <div className="p-3 bg-blue-50 rounded-lg">
+                <div className="grid grid-cols-2 gap-2">
                   <div className="flex items-center space-x-2">
                     <Clock className="w-4 h-4 text-blue-600" />
                     <div>
-                      <p className="text-sm font-medium">Délai de traitement</p>
+                      <p className="text-xs font-medium">Délai de traitement</p>
                       <p className="text-xs text-gray-600">7-10 jours ouvrables</p>
                     </div>
                   </div>
                   <div className="flex items-center space-x-2">
                     <Shield className="w-4 h-4 text-blue-600" />
                     <div>
-                      <p className="text-sm font-medium">Coût</p>
+                      <p className="text-xs font-medium">Coût</p>
                       <p className="text-xs text-gray-600">15,000 GNF</p>
                     </div>
                   </div>
                 </div>
               </div>
 
-              <div className="space-y-4">
-                <Label>Choisissez votre type de carte *</Label>
-                <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-3">
+                <Label className="text-sm">Choisissez votre type de carte *</Label>
+                <div className="grid grid-cols-2 gap-2">
                   {cardTypes.map((cardType) => (
                     <div
                       key={cardType.id}
-                      className={`relative p-3 border-2 rounded-lg cursor-pointer transition-all hover:shadow-md ${
+                      className={`relative p-2 border-2 rounded-lg cursor-pointer transition-all hover:shadow-md ${
                         selectedCardType === cardType.id
                           ? "border-blue-500 bg-blue-50"
                           : "border-gray-200 hover:border-gray-300"
                       }`}
                       onClick={() => setSelectedCardType(cardType.id)}
                     >
-                      <div className="space-y-2">
+                      <div className="space-y-1.5">
                         <div className="flex items-center justify-between">
                           <div
-                            className={`w-10 h-6 ${cardType.color} rounded flex items-center justify-center text-white text-xs font-bold`}
+                            className={`w-8 h-5 ${cardType.color} rounded flex items-center justify-center text-white text-xs font-bold`}
                           >
                             BNG
                           </div>
                           {selectedCardType === cardType.id && <CheckCircle className="w-4 h-4 text-blue-500" />}
                         </div>
                         <div>
-                          <h3 className="font-semibold text-sm">{cardType.name}</h3>
-                          <p className="text-xs text-gray-600 mb-2">{cardType.description}</p>
+                          <h3 className="font-semibold text-xs">{cardType.name}</h3>
+                          <p className="text-xs text-gray-600 mb-1">{cardType.description}</p>
                         </div>
-                        <div className="space-y-1">
-                          {cardType.advantages.slice(0, 3).map((advantage, index) => (
+                        <div className="space-y-0.5">
+                          {cardType.advantages.slice(0, 2).map((advantage, index) => (
                             <div key={index} className="flex items-start space-x-1">
-                              <div className="w-1 h-1 bg-green-500 rounded-full mt-1.5 flex-shrink-0"></div>
+                              <div className="w-1 h-1 bg-green-500 rounded-full mt-1 flex-shrink-0"></div>
                               <span className="text-xs text-gray-700 leading-tight">{advantage}</span>
                             </div>
                           ))}
-                          {cardType.advantages.length > 3 && (
+                          {cardType.advantages.length > 2 && (
                             <p className="text-xs text-blue-600 font-medium">
-                              +{cardType.advantages.length - 3} autres avantages
+                              +{cardType.advantages.length - 2} autres avantages
                             </p>
                           )}
                         </div>
@@ -415,7 +415,7 @@ export default function CartesPage() {
               )}
             </div>
 
-            <DialogFooter className="flex space-x-2">
+            <DialogFooter className="flex space-x-2 pt-4">
               <Button
                 variant="outline"
                 onClick={() => {
