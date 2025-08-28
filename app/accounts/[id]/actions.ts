@@ -1,5 +1,7 @@
 "use server"
 
+import { revalidatePath } from "next/cache"
+
 export async function getAccountDetails(accountId: string) {
   // Simulation d'un appel API
   await new Promise((resolve) => setTimeout(resolve, 1000))
@@ -18,54 +20,43 @@ export async function toggleAccountStatus(accountId: string, newStatus: string) 
   // Simulation d'un appel API
   await new Promise((resolve) => setTimeout(resolve, 500))
 
+  console.log("[v0] Server action - Changement de statut:", { accountId, newStatus })
+
   try {
-    // Créer une notification pour le changement de statut
-    await createAccountStatusNotification({
-      accountId,
+    const statusMessages = {
+      ACTIVE: "activé",
+      BLOCKED: "bloqué",
+      SUSPENDED: "suspendu",
+      CLOSED: "fermé",
+      PENDING: "mis en attente",
+    }
+
+    const message = `Le statut de votre compte ${accountId} a été modifié vers "${statusMessages[newStatus as keyof typeof statusMessages] || newStatus.toLowerCase()}".`
+
+    console.log("[v0] Notification de changement de statut créée:", {
+      type: "account_status",
+      title: "Changement de statut de compte",
+      message,
+      account: accountId,
       newStatus,
-      previousStatus: "ACTIVE", // Dans une vraie app, on récupérerait l'ancien statut
     })
+
+    revalidatePath(`/accounts/${accountId}`)
+
+    return {
+      success: true,
+      message: `Statut du compte mis à jour: ${newStatus}`,
+      notification: {
+        type: "account_status",
+        title: "Changement de statut de compte",
+        message,
+      },
+    }
   } catch (error) {
-    console.error("Erreur lors de la création de la notification:", error)
-  }
-
-  return {
-    success: true,
-    message: `Statut du compte mis à jour: ${newStatus}`,
-  }
-}
-
-async function createAccountStatusNotification({
-  accountId,
-  newStatus,
-  previousStatus,
-}: {
-  accountId: string
-  newStatus: string
-  previousStatus: string
-}) {
-  const statusMessages = {
-    ACTIVE: "activé",
-    INACTIVE: "désactivé",
-    SUSPENDED: "suspendu",
-    PENDING: "mis en attente",
-    BLOCKED: "bloqué",
-  }
-
-  const message = `Le statut de votre compte ${accountId} a été modifié de "${previousStatus}" vers "${newStatus}". Votre compte est maintenant ${statusMessages[newStatus as keyof typeof statusMessages] || newStatus.toLowerCase()}.`
-
-  // Simuler l'ajout de la notification (dans une vraie app, cela serait géré côté client)
-  console.log("[v0] Notification de changement de statut créée:", {
-    type: "account_status",
-    title: "Changement de statut de compte",
-    message,
-    account: accountId,
-    channels: ["email", "sms", "push"],
-  })
-
-  return {
-    success: true,
-    notificationId: Date.now(),
-    message: "Notification de changement de statut créée",
+    console.error("[v0] Erreur lors de la création de la notification:", error)
+    return {
+      success: false,
+      message: "Erreur lors de la mise à jour du statut",
+    }
   }
 }
