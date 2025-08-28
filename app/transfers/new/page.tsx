@@ -226,9 +226,12 @@ export default function NewTransferPage() {
           status: apiAccount.status, // Added status field mapping
         }))
         const activeAccounts = adaptedAccounts.filter(
-          (account: Account) => account.status === "ACTIVE" || account.status === "Actif",
+          (account: Account) =>
+            (account.status === "ACTIVE" || account.status === "Actif") &&
+            account.number &&
+            String(account.number).trim() !== "",
         )
-        console.log("[v0] Comptes actifs adaptés:", activeAccounts)
+        console.log("[v0] Comptes actifs avec numéro valide:", activeAccounts)
         setAccounts(activeAccounts)
       } else {
         console.log("[v0] Aucun compte trouvé, utilisation des données de test")
