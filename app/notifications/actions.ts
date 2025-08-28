@@ -2,14 +2,14 @@
 
 interface Notification {
   id: number
-  type: "debit" | "credit"
+  type: "debit" | "credit" | "account_status"
   title: string
   message: string
-  amount: number
+  amount?: number
   date: string
   read: boolean
   channels: string[]
-  account: string
+  account?: string
   recipient?: string
   sender?: string
 }
@@ -53,6 +53,17 @@ const mockNotifications: Notification[] = [
   },
   {
     id: 3,
+    type: "account_status",
+    title: "Changement de statut de compte",
+    message:
+      'Le statut de votre compte 0001-234567-89 a été modifié de "PENDING" vers "ACTIVE". Votre compte est maintenant activé.',
+    date: "2024-01-14T16:45:00Z",
+    read: false,
+    channels: ["email", "sms", "push"],
+    account: "0001-234567-89",
+  },
+  {
+    id: 4,
     type: "debit",
     title: "Débit automatique",
     message: "Vous avez été débité de 15,000 GNF le 21/07/2025 pour un retrait DAB. Solde actuel : 100,000 GNF.",
@@ -64,7 +75,7 @@ const mockNotifications: Notification[] = [
     recipient: "Agence Kaloum",
   },
   {
-    id: 4,
+    id: 5,
     type: "credit",
     title: "Crédit reçu",
     message:
@@ -76,22 +87,10 @@ const mockNotifications: Notification[] = [
     account: "0001-234567-89",
     sender: "Mamadou Diallo",
   },
-  {
-    id: 5,
-    type: "debit",
-    title: "Débit automatique",
-    message: "Vous avez été débité de 8,500 GNF le 20/07/2025 pour un paiement facture EDG. Solde actuel : 40,000 GNF.",
-    amount: -8500,
-    date: "2024-01-13T12:10:00Z",
-    read: true,
-    channels: ["email", "sms", "push"],
-    account: "0001-234567-89",
-    recipient: "EDG",
-  },
 ]
 
 export async function getNotifications(filters?: {
-  type?: "debit" | "credit" | "all"
+  type?: "debit" | "credit" | "account_status" | "all"
   read?: boolean
   limit?: number
 }) {
@@ -323,12 +322,14 @@ export async function exportNotifications(
 
 // Fonction pour créer automatiquement une notification lors d'une transaction
 export async function createTransactionNotification(transaction: {
-  type: "debit" | "credit"
-  amount: number
-  account: string
-  description: string
+  type: "debit" | "credit" | "account_status"
+  amount?: number
+  account?: string
+  description?: string
   recipient?: string
   sender?: string
+  title?: string
+  message?: string
 }) {
   try {
     // Simulation d'attente
@@ -337,9 +338,19 @@ export async function createTransactionNotification(transaction: {
     const notification = {
       id: Date.now(),
       type: transaction.type,
-      title: transaction.type === "debit" ? "Débit automatique" : "Crédit reçu",
-      message: generateNotificationMessage(transaction),
-      amount: transaction.type === "debit" ? -Math.abs(transaction.amount) : Math.abs(transaction.amount),
+      title:
+        transaction.title ||
+        (transaction.type === "debit"
+          ? "Débit automatique"
+          : transaction.type === "credit"
+            ? "Crédit reçu"
+            : "Notification système"),
+      message: transaction.message || generateNotificationMessage(transaction),
+      amount: transaction.amount
+        ? transaction.type === "debit"
+          ? -Math.abs(transaction.amount)
+          : Math.abs(transaction.amount)
+        : undefined,
       date: new Date().toISOString(),
       read: false,
       channels: ["email", "sms", "push"], // Selon les paramètres utilisateur
@@ -365,13 +376,19 @@ export async function createTransactionNotification(transaction: {
 }
 
 function generateNotificationMessage(transaction: {
-  type: "debit" | "credit"
-  amount: number
-  account: string
-  description: string
+  type: "debit" | "credit" | "account_status"
+  amount?: number
+  account?: string
+  description?: string
   recipient?: string
   sender?: string
 }): string {
+  if (transaction.type === "account_status") {
+    return transaction.description || "Le statut de votre compte a été modifié."
+  }
+
+  if (!transaction.amount) return transaction.description || "Transaction effectuée."
+
   const formattedAmount = new Intl.NumberFormat("fr-FR").format(transaction.amount)
   const currentDate = new Date().toLocaleDateString("fr-FR")
 

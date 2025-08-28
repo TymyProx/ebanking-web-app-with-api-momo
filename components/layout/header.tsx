@@ -20,28 +20,25 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Bell, Search, Settings, User } from "lucide-react"
-import { Badge } from "@/components/ui/badge"
+import { Search, Settings, User } from "lucide-react"
 import { LogoutButton } from "@/components/auth/logout-button"
+import { NotificationDropdown } from "@/components/notifications/notification-dropdown"
 import { usePathname } from "next/navigation"
 import { useState, useEffect } from "react"
 
 export function Header() {
   const pathname = usePathname()
-  const [userData, 
-    setUserData] = useState<any>(null)
+  const [userData, setUserData] = useState<any>(null)
 
   useEffect(() => {
     const storedUserData = localStorage.getItem("userData")
     const token = localStorage.getItem("token")
     console.log("Token récupéré:", token)
 
-
     if (storedUserData) {
       setUserData(JSON.parse(storedUserData))
     }
   }, [])
-
 
   const getInitials = (fullName: string) => {
     if (!fullName) return "U"
@@ -105,12 +102,7 @@ export function Header() {
           <span className="sr-only">Rechercher</span>
         </Button>
 
-        {/* Notifications */}
-        <Button variant="ghost" size="icon" className="h-8 w-8 relative">
-          <Bell className="h-4 w-4" />
-          <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs">3</Badge>
-          <span className="sr-only">Notifications</span>
-        </Button>
+        <NotificationDropdown />
 
         {/* User Menu */}
         <DropdownMenu>
