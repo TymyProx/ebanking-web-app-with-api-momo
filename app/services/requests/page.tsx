@@ -360,16 +360,17 @@ export default function ServiceRequestsPage() {
             </div>
           </div>
         )
-
+// PERSONAL PAGE
       case "credit_personal":
         return (
           <div className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="loan_amount">Montant demandé (GNF) *</Label>
+                <Label htmlFor="loan_amount">Montant du crédit (GNF) *</Label>
                 <Input
                   id="loan_amount"
                   type="number"
+                  name="applicantName"
                   placeholder="Ex: 10000000"
                   value={formData.loan_amount || ""}
                   onChange={(e) => handleInputChange("loan_amount", e.target.value)}
@@ -377,7 +378,7 @@ export default function ServiceRequestsPage() {
               </div>
               <div>
                 <Label htmlFor="loan_duration">Durée (mois) *</Label>
-                <Select onValueChange={(value) => handleInputChange("loan_duration", value)}>
+                <Select name= "durationMonths" onValueChange={(value) => handleInputChange("loan_duration", value)}>
                   <SelectTrigger>
                     <SelectValue placeholder="Durée" />
                   </SelectTrigger>
@@ -394,7 +395,7 @@ export default function ServiceRequestsPage() {
 
             <div>
               <Label htmlFor="loan_purpose">Objet du crédit *</Label>
-              <Select onValueChange={(value) => handleInputChange("loan_purpose", value)}>
+              <Select  name= "purpose" onValueChange={(value) => handleInputChange("loan_purpose", value)}>
                 <SelectTrigger>
                   <SelectValue placeholder="Sélectionnez l'objet" />
                 </SelectTrigger>
@@ -437,12 +438,13 @@ export default function ServiceRequestsPage() {
             </div>
 
             <div>
-              <Label htmlFor="employer">Employeur *</Label>
+              <Label htmlFor="applicant_name">Nom du demandeur *</Label>
               <Input
-                id="employer"
-                placeholder="Nom de l'employeur ou entreprise"
-                value={formData.employer || ""}
-                onChange={(e) => handleInputChange("employer", e.target.value)}
+                id="applicant_name"
+                name="applicantName"
+                placeholder="Nom du demandeur"
+                value={formData.applicant_name || ""}
+                onChange={(e) => handleInputChange("applicant_name", e.target.value)}
               />
             </div>
 
