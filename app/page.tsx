@@ -16,55 +16,31 @@ import {
   DollarSign,
 } from "lucide-react"
 import { getTransactions } from "@/app/transfers/new/actions"
+import { getAccounts } from "@/app/accounts/actions"
 
 export default async function Dashboard() {
   const transactionsResult = await getTransactions()
   const transactions = transactionsResult?.data || []
 
-  const accounts = [
-    {
-      id: "1",
-      name: "Compte Courant",
-      number: "0001-234567-89",
-      balance: 2400000,
-      currency: "GNF",
-      type: "Courant",
-      trend: "+2.5%",
-    },
-    {
-      id: "2",
-      name: "Compte Épargne",
-      number: "0002-345678-90",
-      balance: 850000,
-      currency: "GNF",
-      type: "Épargne",
-      trend: "+1.2%",
-    },
-    {
-      id: "3",
-      name: "Compte USD",
-      number: "0003-456789-01",
-      balance: 1250,
-      currency: "USD",
-      type: "Devise",
-      trend: "0%",
-    },
-  ]
+  const accounts = await getAccounts()
 
-  const formatAmount = (amount: number, currency = "GNF") => {
+  const formatAmount = (amount: number | string, currency = "GNF") => {
+    const numAmount = typeof amount === "string" ? Number.parseFloat(amount) : amount
     if (currency === "GNF") {
-      return new Intl.NumberFormat("fr-FR").format(amount)
+      return new Intl.NumberFormat("fr-FR").format(numAmount)
     }
     return new Intl.NumberFormat("en-US", {
       style: "currency",
       currency: currency,
-    }).format(amount)
+    }).format(numAmount)
   }
 
   const getAccountIcon = (type: string) => {
     switch (type) {
+      case "CURRENT":
       case "Courant":
         return <Wallet className="h-4 w-4 text-blue-600" />
+      case "SAVINGS":
       case "Épargne":
         return <PiggyBank className="h-4 w-4 text-green-600" />
       case "Devise":
@@ -72,6 +48,21 @@ export default async function Dashboard() {
       default:
         return <Eye className="h-4 w-4 text-muted-foreground" />
     }
+  }
+
+  const getAccountTypeDisplay = (type: string) => {
+    switch (type) {
+      case "CURRENT":
+        return "Courant"
+      case "SAVINGS":
+        return "Épargne"
+      default:
+        return type
+    }
+  }
+
+  const getAccountTrend = () => {
+    return "+2.5%" // Placeholder - could be calculated from transaction history
   }
 
   const formatTransaction = (transaction: any) => {
@@ -101,32 +92,34 @@ export default async function Dashboard() {
       {/* Soldes des comptes - US005 avec liens cliquables */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {accounts.length > 0 ? (
-          accounts.map((account) => (
-            <Link key={account.id} href={`/accounts/${account.id}`}>
-              <Card className="hover:shadow-md transition-shadow cursor-pointer">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <div className="flex items-center space-x-2">
-                    {getAccountIcon(account.type)}
-                    <CardTitle className="text-sm font-medium">{account.name}</CardTitle>
-                  </div>
-                  <Badge variant="secondary">{account.type}</Badge>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    {/* ✅ Solde affiché selon US005 */}
-                    <div className="text-2xl font-bold">
-                      {formatAmount(account.balance, account.currency)} {account.currency}
+          accounts
+            .filter((account) => account.status === "ACTIVE")
+            .map((account) => (
+              <Link key={account.id} href={`/accounts/${account.id}`}>
+                <Card className="hover:shadow-md transition-shadow cursor-pointer">
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <div className="flex items-center space-x-2">
+                      {getAccountIcon(account.type)}
+                      <CardTitle className="text-sm font-medium">{account.accountName}</CardTitle>
                     </div>
-                    <p className="text-xs text-muted-foreground font-mono">{account.number}</p>
-                    <div className="flex items-center pt-1">
-                      <ArrowUpRight className="h-4 w-4 text-green-600" />
-                      <span className="text-xs text-green-600 ml-1">{account.trend} ce mois</span>
+                    <Badge variant="secondary">{getAccountTypeDisplay(account.type)}</Badge>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2">
+                      {/* ✅ Solde affiché selon US005 */}
+                      <div className="text-2xl font-bold">
+                        {formatAmount(account.availableBalance, account.currency)} {account.currency}
+                      </div>
+                      <p className="text-xs text-muted-foreground font-mono">{account.accountNumber}</p>
+                      <div className="flex items-center pt-1">
+                        <ArrowUpRight className="h-4 w-4 text-green-600" />
+                        <span className="text-xs text-green-600 ml-1">{getAccountTrend()} ce mois</span>
+                      </div>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </Link>
-          ))
+                  </CardContent>
+                </Card>
+              </Link>
+            ))
         ) : (
           <div className="col-span-full">
             <Card>
