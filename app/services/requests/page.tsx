@@ -42,7 +42,7 @@ const renderServiceForm = () => {
   )
 }
 
-export default function CreditForm({ tenantId, accounts, formatAmount }: CreditFormProps) {
+export default function CreditForm({ tenantId, accounts = [], formatAmount }: CreditFormProps) {
   const [selectedAccount, setSelectedAccount] = useState<string | null>(null)
   const [selectedService, setSelectedService] = useState<string | null>(null)
   const [formData, setFormData] = useState<FormData>({})
@@ -101,7 +101,7 @@ export default function CreditForm({ tenantId, accounts, formatAmount }: CreditF
       <div>
         <Label htmlFor="account">Compte concerné *</Label>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-2">
-          {accounts.map((account: Account) => (
+          {accounts?.map((account: Account) => (
             <div
               key={account.id}
               className={`p-3 border rounded-lg cursor-pointer transition-all ${
@@ -180,13 +180,16 @@ export default function CreditForm({ tenantId, accounts, formatAmount }: CreditF
             handleInputChange("terms", checked as boolean)
           }
         />
-        <Label htmlFor="terms" className="text-sm">
+        <label
+          htmlFor="terms"
+          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+        >
           J'accepte les{" "}
           <a href="#" className="text-blue-600 hover:underline">
             conditions générales
           </a>{" "}
           et autorise le traitement de ma demande
-        </Label>
+        </label>
       </div>
 
       {/* Submit Button */}
