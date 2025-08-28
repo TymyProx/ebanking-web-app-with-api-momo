@@ -1,13 +1,12 @@
 "use client"
 
 import { useParams, useRouter } from "next/navigation"
-import { useState, useEffect, useTransition } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select"
 import {
   ArrowLeft,
   Download,
@@ -26,11 +25,9 @@ import {
   Shield,
   Info,
   RefreshCw,
-  Settings,
 } from "lucide-react"
 import { getAccounts } from "../actions"
 import { getTransactions } from "../../transfers/new/actions"
-import { toggleAccountStatus } from "./actions"
 import { useNotifications } from "@/contexts/notification-context"
 
 interface Account {
@@ -72,7 +69,6 @@ export default function AccountDetailsPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [isLoadingAccount, setIsLoadingAccount] = useState(true)
   const [isLoadingTransactions, setIsLoadingTransactions] = useState(true)
-  const [isPending, startTransition] = useTransition()
   const { addNotification } = useNotifications()
 
   useEffect(() => {
@@ -155,6 +151,45 @@ export default function AccountDetailsPage() {
     loadTransactions()
   }, [accountId])
 
+  useEffect(() => {
+    if (!account) return
+
+    const pollForStatusChanges = async () => {
+      try {
+        const accountsData = await getAccounts()
+        if (Array.isArray(accountsData)) {
+          const foundAccount = accountsData.find((acc: any) => acc.id === accountId || acc.accountId === accountId)
+
+          if (foundAccount && foundAccount.status !== account.status) {
+            const previousStatus = account.status
+            const newStatus = foundAccount.status
+
+            // Update local account state
+            setAccount((prev) => (prev ? { ...prev, status: newStatus } : null))
+
+            // Add notification for status change
+            addNotification({
+              type: "account_status",
+              title: "Changement de statut de compte",
+              message: `Le statut de votre compte ${account.name} (${account.number}) a été modifié de "${previousStatus}" vers "${newStatus}".`,
+              timestamp: new Date(),
+              isRead: false,
+            })
+
+            console.log("[v0] Changement de statut détecté:", { accountId, previousStatus, newStatus })
+          }
+        }
+      } catch (error) {
+        console.error("[v0] Erreur lors de la vérification du statut:", error)
+      }
+    }
+
+    // Poll every 30 seconds for status changes
+    const interval = setInterval(pollForStatusChanges, 30000)
+
+    return () => clearInterval(interval)
+  }, [account, accountId, addNotification])
+
   const handleRefreshTransactions = async () => {
     setIsLoadingTransactions(true)
     try {
@@ -189,93 +224,6 @@ export default function AccountDetailsPage() {
     } finally {
       setIsLoadingTransactions(false)
     }
-  }
-
-  const handleStatusChange = async (newStatus: string) => {
-    if (!account || account.status === newStatus) return
-
-    const previousStatus = account.status
-
-    startTransition(async () => {
-      try {
-        console.log("[v0] Changement de statut:", { accountId, previousStatus, newStatus })
-
-        const result = await toggleAccountStatus(accountId, newStatus)
-
-        if (result.success) {
-          // Update local account state
-          setAccount((prev) => (prev ? { ...prev, status: newStatus } : null))
-
-          // Add notification to the context
-          addNotification({
-            type: "account_status",
-            title: "Changement de statut de compte",
-            message: `Le statut de votre compte ${account.name} (${account.number}) a été modifié de "${previousStatus}" vers "${newStatus}".`,
-            timestamp: new Date(),
-            isRead: false,
-          })
-
-          console.log("[v0] Statut mis à jour avec succès")
-        }
-      } catch (error) {
-        console.error("[v0] Erreur lors du changement de statut:", error)
-        addNotification({
-          type: "error",
-          title: "Erreur",
-          message: "Impossible de modifier le statut du compte. Veuillez réessayer.",
-          timestamp: new Date(),
-          isRead: false,
-        })
-      }
-    })
-  }
-
-  if (isLoadingAccount) {
-    return (
-      <div className="space-y-6">
-        <div className="flex items-center space-x-4">
-          <Skeleton className="h-10 w-20" />
-          <div className="space-y-2">
-            <Skeleton className="h-8 w-48" />
-            <Skeleton className="h-4 w-32" />
-          </div>
-        </div>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <Card className="lg:col-span-2">
-            <CardHeader>
-              <Skeleton className="h-6 w-40" />
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <Skeleton className="h-12 w-full" />
-              <Skeleton className="h-8 w-full" />
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader>
-              <Skeleton className="h-6 w-32" />
-            </CardHeader>
-            <CardContent>
-              <Skeleton className="h-32 w-full" />
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    )
-  }
-
-  if (!account) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[400px] space-y-4">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900">Compte introuvable</h1>
-          <p className="text-gray-600 mt-2">Le compte demandé n'existe pas ou n'est pas accessible.</p>
-        </div>
-        <Button onClick={() => router.push("/accounts/balance")} variant="outline">
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Retour aux comptes
-        </Button>
-      </div>
-    )
   }
 
   const formatAmount = (amount: number, currency = "GNF") => {
@@ -344,7 +292,7 @@ export default function AccountDetailsPage() {
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Détails du compte</h1>
             <p className="text-gray-600">
-              {account.name} • {account.number}
+              {account?.name} • {account?.number}
             </p>
           </div>
         </div>
@@ -357,26 +305,13 @@ export default function AccountDetailsPage() {
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
-                {getAccountIcon(account.type)}
+                {getAccountIcon(account?.type || "")}
                 <div>
-                  <h3 className="text-lg font-semibold">{account.name}</h3>
-                  <p className="text-sm text-gray-500 font-mono">{account.number}</p>
+                  <h3 className="text-lg font-semibold">{account?.name}</h3>
+                  <p className="text-sm text-gray-500 font-mono">{account?.number}</p>
                 </div>
               </div>
-              <div className="flex items-center space-x-2">
-                {getStatusBadge(account.status)}
-                <Select onValueChange={handleStatusChange} disabled={isPending}>
-                  <SelectTrigger className="w-auto">
-                    <Settings className="h-4 w-4" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="ACTIVE">Activer</SelectItem>
-                    <SelectItem value="BLOCKED">Bloquer</SelectItem>
-                    <SelectItem value="SUSPENDED">Suspendre</SelectItem>
-                    <SelectItem value="CLOSED">Fermer</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+              <div className="flex items-center space-x-2">{getStatusBadge(account?.status || "")}</div>
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
@@ -397,7 +332,7 @@ export default function AccountDetailsPage() {
                 <div className="text-3xl font-bold text-gray-900">
                   {showBalance ? (
                     <>
-                      {formatAmount(account.balance, account.currency)} {account.currency}
+                      {formatAmount(account?.balance || 0, account?.currency || "GNF")} {account?.currency}
                     </>
                   ) : (
                     "••••••••"
@@ -409,7 +344,7 @@ export default function AccountDetailsPage() {
                 <div className="text-2xl font-semibold text-green-600">
                   {showBalance ? (
                     <>
-                      {formatAmount(account.availableBalance, account.currency)} {account.currency}
+                      {formatAmount(account?.availableBalance || 0, account?.currency || "GNF")} {account?.currency}
                     </>
                   ) : (
                     "••••••••"
@@ -427,14 +362,14 @@ export default function AccountDetailsPage() {
                   <Building className="h-4 w-4 text-gray-400" />
                   <div>
                     <p className="text-xs text-gray-500">Agence</p>
-                    <p className="text-sm font-medium">{account.branch}</p>
+                    <p className="text-sm font-medium">{account?.branch}</p>
                   </div>
                 </div>
                 <div className="flex items-center space-x-2">
                   <Calendar className="h-4 w-4 text-gray-400" />
                   <div>
                     <p className="text-xs text-gray-500">Date d'ouverture</p>
-                    <p className="text-sm font-medium">{formatDate(account.openingDate)}</p>
+                    <p className="text-sm font-medium">{formatDate(account?.openingDate || "")}</p>
                   </div>
                 </div>
               </div>
@@ -443,10 +378,10 @@ export default function AccountDetailsPage() {
                   <CreditCard className="h-4 w-4 text-gray-400" />
                   <div>
                     <p className="text-xs text-gray-500">IBAN</p>
-                    <p className="text-sm font-medium font-mono">{account.iban}</p>
+                    <p className="text-sm font-medium font-mono">{account?.iban}</p>
                   </div>
                 </div>
-                {account.interestRate && (
+                {account?.interestRate && (
                   <div className="flex items-center space-x-2">
                     <TrendingUp className="h-4 w-4 text-gray-400" />
                     <div>
@@ -455,13 +390,13 @@ export default function AccountDetailsPage() {
                     </div>
                   </div>
                 )}
-                {account.overdraftLimit && (
+                {account?.overdraftLimit && (
                   <div className="flex items-center space-x-2">
                     <Shield className="h-4 w-4 text-gray-400" />
                     <div>
                       <p className="text-xs text-gray-500">Découvert autorisé</p>
                       <p className="text-sm font-medium">
-                        {formatAmount(account.overdraftLimit, account.currency)} {account.currency}
+                        {formatAmount(account.overdraftLimit || 0, account.currency || "GNF")} {account.currency}
                       </p>
                     </div>
                   </div>
@@ -483,15 +418,15 @@ export default function AccountDetailsPage() {
             <div className="space-y-3">
               <div>
                 <p className="text-xs text-gray-500 uppercase">Type de compte</p>
-                <p className="font-medium">{account.type}</p>
+                <p className="font-medium">{account?.type}</p>
               </div>
               <div>
                 <p className="text-xs text-gray-500 uppercase">Devise</p>
-                <p className="font-medium">{account.currency}</p>
+                <p className="font-medium">{account?.currency}</p>
               </div>
               <div>
                 <p className="text-xs text-gray-500 uppercase">Statut</p>
-                {getStatusBadge(account.status)}
+                {getStatusBadge(account?.status || "")}
               </div>
             </div>
 
@@ -500,7 +435,7 @@ export default function AccountDetailsPage() {
             <div className="space-y-2">
               <p className="text-sm font-medium">Actions disponibles</p>
               <div className="space-y-2">
-                {account.status === "ACTIVE" && !!(account.number && String(account.number).trim()) && (
+                {account?.status === "ACTIVE" && !!(account?.number && String(account.number).trim()) && (
                   <>
                     <Button
                       variant="outline"
