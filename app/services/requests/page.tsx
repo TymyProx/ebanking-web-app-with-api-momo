@@ -1,24 +1,64 @@
-import { useState } from "react";
-import { Button, Input, Textarea, Label, Checkbox } from "@/components/ui";
-import { Clock, Send, CreditCard } from "lucide-react";
+"use client"
 
-export default function CreditForm({ tenantId, accounts, formatAmount }) {
-  const [selectedAccount, setSelectedAccount] = useState(null);
-  const [selectedService, setSelectedService] = useState(null);
-  const [formData, setFormData] = useState({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
+import { useState } from "react"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
+import { Label } from "@/components/ui/label"
+import { Checkbox } from "@/components/ui/checkbox"
+import { Clock, Send, CreditCard } from "lucide-react"
 
-  const handleInputChange = (field, value) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-  };
+// 👉 Types
+interface Account {
+  id: string
+  name: string
+  number: string
+  balance: number
+  currency: string
+}
 
-  const handleSubmit = async (e) => {
-    e.preventDefault(); // bloque l'envoi classique du formulaire
-    if (!selectedAccount) return alert("Veuillez sélectionner un compte !");
-    if (!selectedService) return alert("Veuillez sélectionner un service !");
-    if (!formData.terms) return alert("Vous devez accepter les conditions.");
+interface FormData {
+  contact_name?: string
+  contact_phone?: string
+  contact_email?: string
+  creditAmount?: string
+  durationMonths?: string
+  comments?: string
+  terms?: boolean
+}
 
-    setIsSubmitting(true);
+interface CreditFormProps {
+  tenantId: string
+  accounts: Account[]
+  formatAmount: (amount: number, currency: string) => string
+}
+
+// stub pour éviter l'erreur si aucun service choisi
+const renderServiceForm = () => {
+  return (
+    <div className="my-4 p-3 border rounded-md text-sm text-gray-500">
+      Sélectionnez un service pour afficher le formulaire correspondant.
+    </div>
+  )
+}
+
+export default function CreditForm({ tenantId, accounts, formatAmount }: CreditFormProps) {
+  const [selectedAccount, setSelectedAccount] = useState<string | null>(null)
+  const [selectedService, setSelectedService] = useState<string | null>(null)
+  const [formData, setFormData] = useState<FormData>({})
+  const [isSubmitting, setIsSubmitting] = useState(false)
+
+  const handleInputChange = (field: keyof FormData, value: string | boolean) => {
+    setFormData((prev) => ({ ...prev, [field]: value }))
+  }
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    if (!selectedAccount) return alert("Veuillez sélectionner un compte !")
+    if (!selectedService) return alert("Veuillez sélectionner un service !")
+    if (!formData.terms) return alert("Vous devez accepter les conditions.")
+
+    setIsSubmitting(true)
 
     try {
       const response = await fetch(`/tenant/${tenantId}/demande-credit`, {
@@ -28,32 +68,32 @@ export default function CreditForm({ tenantId, accounts, formatAmount }) {
         },
         body: JSON.stringify({
           data: {
-            applicantName: formData.contact_name || "", // si tu as un champ nom
+            applicantName: formData.contact_name || "",
             creditAmount: formData.creditAmount || "",
             durationMonths: formData.durationMonths || "",
-            purpose: formData.comments || "", // utilisation du champ comments comme purpose
+            purpose: formData.comments || "",
           },
         }),
-      });
+      })
 
-      const result = await response.json();
+      const result = await response.json()
 
       if (!response.ok) {
-        console.error(result);
-        alert("Erreur lors de l'envoi de la demande.");
+        console.error(result)
+        alert("Erreur lors de l'envoi de la demande.")
       } else {
-        alert("Demande envoyée avec succès !");
-        setFormData({});
-        setSelectedAccount(null);
-        setSelectedService(null);
+        alert("Demande envoyée avec succès !")
+        setFormData({})
+        setSelectedAccount(null)
+        setSelectedService(null)
       }
     } catch (error) {
-      console.error(error);
-      alert("Une erreur réseau est survenue.");
+      console.error(error)
+      alert("Une erreur réseau est survenue.")
     } finally {
-      setIsSubmitting(false);
+      setIsSubmitting(false)
     }
-  };
+  }
 
   return (
     <form onSubmit={handleSubmit}>
@@ -61,7 +101,7 @@ export default function CreditForm({ tenantId, accounts, formatAmount }) {
       <div>
         <Label htmlFor="account">Compte concerné *</Label>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-2">
-          {accounts.map((account) => (
+          {accounts.map((account: Account) => (
             <div
               key={account.id}
               className={`p-3 border rounded-lg cursor-pointer transition-all ${
@@ -75,9 +115,12 @@ export default function CreditForm({ tenantId, accounts, formatAmount }) {
                 <CreditCard className="w-4 h-4 text-gray-500" />
                 <span className="font-medium text-sm">{account.name}</span>
               </div>
-              <p className="text-xs text-gray-500 mt-1">***{account.number.slice(-4)}</p>
+              <p className="text-xs text-gray-500 mt-1">
+                ***{account.number.slice(-4)}
+              </p>
               <p className="text-sm font-bold mt-1">
-                {formatAmount(account.balance, account.currency)} {account.currency}
+                {formatAmount(account.balance, account.currency)}{" "}
+                {account.currency}
               </p>
             </div>
           ))}
@@ -97,7 +140,9 @@ export default function CreditForm({ tenantId, accounts, formatAmount }) {
               id="contact_phone"
               placeholder="+224 6XX XXX XXX"
               value={formData.contact_phone || ""}
-              onChange={(e) => handleInputChange("contact_phone", e.target.value)}
+              onChange={(e) =>
+                handleInputChange("contact_phone", e.target.value)
+              }
             />
           </div>
           <div>
@@ -107,7 +152,9 @@ export default function CreditForm({ tenantId, accounts, formatAmount }) {
               type="email"
               placeholder="votre@email.com"
               value={formData.contact_email || ""}
-              onChange={(e) => handleInputChange("contact_email", e.target.value)}
+              onChange={(e) =>
+                handleInputChange("contact_email", e.target.value)
+              }
             />
           </div>
         </div>
@@ -129,7 +176,9 @@ export default function CreditForm({ tenantId, accounts, formatAmount }) {
         <Checkbox
           id="terms"
           checked={formData.terms || false}
-          onCheckedChange={(checked) => handleInputChange("terms", checked)}
+          onCheckedChange={(checked) =>
+            handleInputChange("terms", checked as boolean)
+          }
         />
         <Label htmlFor="terms" className="text-sm">
           J'accepte les{" "}
@@ -141,7 +190,11 @@ export default function CreditForm({ tenantId, accounts, formatAmount }) {
       </div>
 
       {/* Submit Button */}
-      <Button type="submit" disabled={isSubmitting || !formData.terms} className="w-full mt-4">
+      <Button
+        type="submit"
+        disabled={isSubmitting || !formData.terms}
+        className="w-full mt-4"
+      >
         {isSubmitting ? (
           <>
             <Clock className="w-4 h-4 mr-2 animate-spin" />
@@ -155,5 +208,5 @@ export default function CreditForm({ tenantId, accounts, formatAmount }) {
         )}
       </Button>
     </form>
-  );
+  )
 }
