@@ -31,8 +31,8 @@ interface Account {
   number: string
   balance: number
   currency: string
-  type: "Courant" | "Épargne" | "Devise"
-  status: "Actif" | "Bloqué" | "Fermé"
+  type: string,//"Courant" | "Épargne" | "Devise"
+  status: string,//"Actif" | "Bloqué" | "Fermé"
   iban: string
   accountHolder: string
   bankName: string
@@ -194,8 +194,8 @@ export default function RIBPage() {
             number: acc.accountNumber,
             balance: Number.parseFloat(acc.bookBalance || acc.balance || "0"),
             currency: acc.currency || "GNF",
-            type: "Courant" as const,
-            status: "Actif" as const,
+            type: acc.type,//"Courant" as const,
+            status: acc.status,//"Actif" as const,
             iban: `GN82 BNG 001 ${acc.accountNumber}`,
             accountHolder: "DIALLO Mamadou",
             bankName: "Banque Nationale de Guinée",
@@ -430,8 +430,11 @@ export default function RIBPage() {
                   </div>
                   <div>
                     <p className="text-xs text-gray-500 uppercase">RIB</p>
-                    <p className="font-mono font-semibold">
+                    {/* <p className="font-mono font-semibold">
                       {selectedAccount.bankCode} {selectedAccount.branchCode} {selectedAccount.number.replace(/-/g, "")}
+                    </p> */}
+                    <p className="font-mono font-semibold">
+                      {selectedAccount.bankCode} {selectedAccount.branchCode} {(selectedAccount.number ?? "").replace(/-/g, "")}
                     </p>
                   </div>
                   <div>
