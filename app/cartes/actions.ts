@@ -3,7 +3,7 @@
 import { cookies } from "next/headers"
 import { revalidatePath } from "next/cache"
 
-const API_BASE_URL = process.env.API_BASE_URL || "https://192.168.1.200:8080/api"
+const API_BASE_URL = process.env.API_BASE_URL || "http://192.168.1.200:8080/api"
 const TENANT_ID = process.env.TENANT_ID || "11cacc69-5a49-4f01-8b16-e8f473746634"
 
 export async function createCard(prevState: any, formData: FormData) {

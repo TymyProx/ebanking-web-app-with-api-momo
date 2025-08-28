@@ -24,7 +24,7 @@ interface ApiBeneficiary {
   bankCode: string
 }
 
-const API_BASE_URL = process.env.API_BASE_URL || process.env.NEXT_PUBLIC_API_BASE_URL || "https://192.168.1.200:8080/api"
+const API_BASE_URL = process.env.API_BASE_URL || process.env.NEXT_PUBLIC_API_BASE_URL || "http://192.168.1.200:8080/api"
 const TENANT_ID = process.env.TENANT_ID || "11cacc69-5a49-4f01-8b16-e8f473746634"
 
 export async function getBeneficiaries(): Promise<ApiBeneficiary[]> {
