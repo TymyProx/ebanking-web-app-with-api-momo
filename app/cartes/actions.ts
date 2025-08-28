@@ -118,124 +118,101 @@ export async function getCards() {
   try {
     console.log("[v0] Récupération des cartes...")
 
-    if (!usertoken) {
-      console.log("[v0] Token manquant, utilisation des données de test")
-      // Retourner des données de test si pas de token
-      return {
-        success: true,
-        data: [
-          {
-            id: "1",
-            numCard: "4532 **** **** 1234",
-            typCard: "GOLD",
-            status: "ACTIVE",
-            dateEmission: "2024-01-01",
-            dateExpiration: "2026-12-31",
-            idClient: "CLIENT_001",
-            holder: "MAMADOU DIALLO",
-            dailyLimit: 500000,
-            monthlyLimit: 2000000,
-            balance: 1250000,
-            lastTransaction: "Achat chez Carrefour - 45,000 FCFA",
-          },
-          {
-            id: "2",
-            numCard: "5555 **** **** 9876",
-            typCard: "ESSENTIEL",
-            status: "BLOCKED",
-            dateEmission: "2023-08-01",
-            dateExpiration: "2025-08-31",
-            idClient: "CLIENT_001",
-            holder: "MAMADOU DIALLO",
-            dailyLimit: 300000,
-            monthlyLimit: 1500000,
-            balance: 850000,
-            lastTransaction: "Retrait DAB BNG Plateau - 50,000 FCFA",
-          },
-        ],
-      }
-    }
-
-    const response = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/card`, {
-      method: "GET",
-      headers: {
+    try {
+      const headers: Record<string, string> = {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${usertoken}`,
-      },
-    })
-
-    console.log("[v0] Statut réponse récupération cartes:", response.status)
-
-    if (!response.ok) {
-      console.log("[v0] Erreur API, utilisation des données de test")
-      // En cas d'erreur, retourner des données de test
-      return {
-        success: true,
-        data: [
-          {
-            id: "1",
-            numCard: "4532 **** **** 1234",
-            typCard: "GOLD",
-            status: "ACTIVE",
-            dateEmission: "2024-01-01",
-            dateExpiration: "2026-12-31",
-            idClient: "CLIENT_001",
-            holder: "MAMADOU DIALLO",
-            dailyLimit: 500000,
-            monthlyLimit: 2000000,
-            balance: 1250000,
-            lastTransaction: "Achat chez Carrefour - 45,000 FCFA",
-          },
-          {
-            id: "2",
-            numCard: "5555 **** **** 9876",
-            typCard: "ESSENTIEL",
-            status: "BLOCKED",
-            dateEmission: "2023-08-01",
-            dateExpiration: "2025-08-31",
-            idClient: "CLIENT_001",
-            holder: "MAMADOU DIALLO",
-            dailyLimit: 300000,
-            monthlyLimit: 1500000,
-            balance: 850000,
-            lastTransaction: "Retrait DAB BNG Plateau - 50,000 FCFA",
-          },
-        ],
       }
-    }
 
-    const result = await response.json()
-    console.log("[v0] Résultat récupération cartes:", result)
+      // Add authorization header only if token exists
+      if (usertoken) {
+        headers.Authorization = `Bearer ${usertoken}`
+      }
 
-    // Adapter les données API au format attendu par l'interface
-    let cardsData = []
-    if (result.data) {
-      // Si result.data est un tableau
-      if (Array.isArray(result.data)) {
-        cardsData = result.data
+      console.log("[v0] Tentative d'appel API pour récupérer les vraies données...")
+
+      const response = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/card`, {
+        method: "GET",
+        headers,
+      })
+
+      console.log("[v0] Statut réponse récupération cartes:", response.status)
+
+      if (response.ok) {
+        const result = await response.json()
+        console.log("[v0] Résultat récupération cartes depuis la BD:", result)
+
+        // Adapter les données API au format attendu par l'interface
+        let cardsData = []
+        if (result.data) {
+          // Si result.data est un tableau
+          if (Array.isArray(result.data)) {
+            cardsData = result.data
+          } else {
+            // Si result.data est un objet unique
+            cardsData = [result.data]
+          }
+        }
+
+        // Mapper les données API vers le format de l'interface
+        const formattedCards = cardsData.map((card: any, index: number) => ({
+          id: card.id || `card_${index + 1}`,
+          number: card.numCard || "****",
+          type: getCardTypeFromTypCard(card.typCard),
+          status: mapApiStatusToUIStatus(card.status),
+          expiryDate: formatExpiryDate(card.dateExpiration),
+          holder: card.holder || "MAMADOU DIALLO",
+          dailyLimit: card.dailyLimit || 500000,
+          monthlyLimit: card.monthlyLimit || 2000000,
+          balance: card.balance || 1000000,
+          lastTransaction: card.lastTransaction || "Aucune transaction récente",
+        }))
+
+        console.log("[v0] Cartes formatées depuis la BD:", formattedCards)
+
+        return {
+          success: true,
+          data: formattedCards,
+        }
       } else {
-        // Si result.data est un objet unique
-        cardsData = [result.data]
+        console.log("[v0] Erreur API (status:", response.status, "), fallback vers données de test")
       }
+    } catch (apiError) {
+      console.log("[v0] Erreur lors de l'appel API:", apiError, "- fallback vers données de test")
     }
 
-    // Mapper les données API vers le format de l'interface
-    const formattedCards = cardsData.map((card: any, index: number) => ({
-      id: card.id || `card_${index + 1}`,
-      number: card.numCard || "****",
-      type: getCardTypeFromTypCard(card.typCard),
-      status: mapApiStatusToUIStatus(card.status),
-      expiryDate: formatExpiryDate(card.dateExpiration),
-      holder: card.holder || "MAMADOU DIALLO",
-      dailyLimit: card.dailyLimit || 500000,
-      monthlyLimit: card.monthlyLimit || 2000000,
-      balance: card.balance || 1000000,
-      lastTransaction: card.lastTransaction || "Aucune transaction récente",
-    }))
-
+    console.log("[v0] Utilisation des données de test comme fallback")
     return {
       success: true,
-      data: formattedCards,
+      data: [
+        {
+          id: "1",
+          numCard: "4532 **** **** 1234",
+          typCard: "GOLD",
+          status: "ACTIVE",
+          dateEmission: "2024-01-01",
+          dateExpiration: "2026-12-31",
+          idClient: "CLIENT_001",
+          holder: "MAMADOU DIALLO",
+          dailyLimit: 500000,
+          monthlyLimit: 2000000,
+          balance: 1250000,
+          lastTransaction: "Achat chez Carrefour - 45,000 FCFA",
+        },
+        {
+          id: "2",
+          numCard: "5555 **** **** 9876",
+          typCard: "ESSENTIEL",
+          status: "BLOCKED",
+          dateEmission: "2023-08-01",
+          dateExpiration: "2025-08-31",
+          idClient: "CLIENT_001",
+          holder: "MAMADOU DIALLO",
+          dailyLimit: 300000,
+          monthlyLimit: 1500000,
+          balance: 850000,
+          lastTransaction: "Retrait DAB BNG Plateau - 50,000 FCFA",
+        },
+      ],
     }
   } catch (error) {
     console.error("[v0] Erreur lors de la récupération des cartes:", error)
