@@ -288,29 +288,88 @@ export default function CartesPage() {
       console.log("[v0] Chargement des cartes...")
       const result = await getCards()
 
+      console.log("[v0] Résultat complet de getCards:", result)
+
       if (result.success && result.data) {
         console.log("[v0] Données API cartes:", result.data)
-        const transformedCards: Card[] = Array.isArray(result.data)
-          ? result.data.map((apiCard: any) => ({
-              id: apiCard.numCard || apiCard.id || Math.random().toString(),
+        console.log("[v0] Type de result.data:", typeof result.data, "Array?", Array.isArray(result.data))
+
+        let transformedCards: Card[] = []
+
+        if (Array.isArray(result.data)) {
+          // Si c'est un tableau, traiter chaque élément
+          transformedCards = result.data.map((apiCard: any, index: number) => {
+            console.log(`[v0] Transformation carte ${index}:`, apiCard)
+
+            // Vérifier si les données sont déjà au bon format (données de test)
+            if (apiCard.number && apiCard.type && apiCard.status) {
+              console.log(`[v0] Carte ${index} déjà au bon format`)
+              return {
+                id: apiCard.id || `card_${index}`,
+                number: apiCard.number,
+                type: apiCard.type as "visa" | "mastercard" | "amex",
+                status: apiCard.status as "active" | "blocked" | "expired" | "pending",
+                expiryDate: apiCard.expiryDate || "12/26",
+                holder: apiCard.holder || "MAMADOU DIALLO",
+                dailyLimit: apiCard.dailyLimit || 500000,
+                monthlyLimit: apiCard.monthlyLimit || 2000000,
+                balance: apiCard.balance || 1250000,
+                lastTransaction: apiCard.lastTransaction || "Aucune transaction récente",
+              }
+            } else {
+              // Sinon, transformer depuis le format API
+              console.log(`[v0] Transformation carte ${index} depuis format API`)
+              return {
+                id: apiCard.numCard || apiCard.id || `card_${index}`,
+                number: apiCard.numCard ? `**** **** **** ${apiCard.numCard.slice(-4)}` : "**** **** **** ****",
+                type: getCardTypeFromAPI(apiCard.typCard) as "visa" | "mastercard" | "amex",
+                status: getCardStatusFromAPI(apiCard.status) as "active" | "blocked" | "expired" | "pending",
+                expiryDate: apiCard.dateExpiration
+                  ? new Date(apiCard.dateExpiration).toLocaleDateString("fr-FR", { month: "2-digit", year: "2-digit" })
+                  : "12/26",
+                holder: apiCard.holder || "MAMADOU DIALLO",
+                dailyLimit: apiCard.dailyLimit || 500000,
+                monthlyLimit: apiCard.monthlyLimit || 2000000,
+                balance: apiCard.balance || 1250000,
+                lastTransaction: apiCard.lastTransaction || "Aucune transaction récente",
+              }
+            }
+          })
+        } else if (result.data && typeof result.data === "object") {
+          // Si c'est un objet unique, le traiter comme un seul élément
+          console.log("[v0] Données sous forme d'objet unique")
+          const apiCard = result.data
+          transformedCards = [
+            {
+              id: apiCard.numCard || apiCard.id || "card_1",
               number: apiCard.numCard ? `**** **** **** ${apiCard.numCard.slice(-4)}` : "**** **** **** ****",
               type: getCardTypeFromAPI(apiCard.typCard) as "visa" | "mastercard" | "amex",
               status: getCardStatusFromAPI(apiCard.status) as "active" | "blocked" | "expired" | "pending",
               expiryDate: apiCard.dateExpiration
                 ? new Date(apiCard.dateExpiration).toLocaleDateString("fr-FR", { month: "2-digit", year: "2-digit" })
                 : "12/26",
-              holder: "MAMADOU DIALLO", // Valeur par défaut
-              dailyLimit: 500000, // Valeur par défaut
-              monthlyLimit: 2000000, // Valeur par défaut
-              balance: 1250000, // Valeur par défaut
-              lastTransaction: "Aucune transaction récente",
-            }))
-          : []
+              holder: apiCard.holder || "MAMADOU DIALLO",
+              dailyLimit: apiCard.dailyLimit || 500000,
+              monthlyLimit: apiCard.monthlyLimit || 2000000,
+              balance: apiCard.balance || 1250000,
+              lastTransaction: apiCard.lastTransaction || "Aucune transaction récente",
+            },
+          ]
+        }
 
         console.log("[v0] Cartes transformées:", transformedCards)
-        setCards(transformedCards)
+        console.log("[v0] Nombre de cartes:", transformedCards.length)
+
+        if (transformedCards.length > 0) {
+          setCards(transformedCards)
+          console.log("[v0] Cartes définies dans le state")
+        } else {
+          console.log("[v0] Aucune carte transformée, utilisation des données simulées")
+          setCards(mockCards)
+        }
       } else {
         console.log("[v0] Pas de données ou erreur, utilisation des données simulées")
+        console.log("[v0] result.success:", result.success, "result.data:", result.data)
         setCards(mockCards)
       }
     } catch (error) {
@@ -318,6 +377,7 @@ export default function CartesPage() {
       setCards(mockCards)
     } finally {
       setIsLoadingCards(false)
+      console.log("[v0] Chargement terminé, isLoadingCards:", false)
     }
   }
 
