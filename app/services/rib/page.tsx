@@ -132,12 +132,15 @@ const generatePDF = async (account: Account) => {
 
   let yPos = 75
 
+  const safeAccountNumber = account.number || "N/A"
+  const cleanAccountNumber = safeAccountNumber.replace(/-/g, "")
+
   const ribData = [
     ["Titulaire du compte", account.accountHolder],
-    ["Numéro de compte", account.number],
+    ["Numéro de compte", safeAccountNumber],
     ["Code banque", account.bankCode],
     ["Code agence", account.branchCode],
-    ["RIB", `${account.bankCode} ${account.branchCode} ${account.number.replace(/-/g, "")}`],
+    ["RIB", `${account.bankCode} ${account.branchCode} ${cleanAccountNumber}`],
     ["IBAN", account.iban],
     ["Code SWIFT", account.swiftCode],
     ["Type de compte", account.type],
@@ -166,9 +169,9 @@ const generatePDF = async (account: Account) => {
   doc.setFontSize(8)
   doc.setFont("helvetica", "normal")
   doc.text("Page 1/1", 190, 285, { align: "right" })
-  doc.text(`Réf: RIB-${account.number.replace(/-/g, "")}-${Date.now()}`, 20, 285)
+  doc.text(`Réf: RIB-${cleanAccountNumber}-${Date.now()}`, 20, 285)
 
-  const fileName = `RIB_${account.number.replace(/-/g, "_")}_${new Date().toISOString().split("T")[0]}.pdf`
+  const fileName = `RIB_${safeAccountNumber.replace(/-/g, "_")}_${new Date().toISOString().split("T")[0]}.pdf`
   doc.save(fileName)
 }
 
@@ -190,13 +193,13 @@ export default function RIBPage() {
         if (Array.isArray(accountsData)) {
           const adaptedAccounts: Account[] = accountsData.map((acc: any) => ({
             id: acc.id || acc.accountId,
-            name: acc.accountName || acc.name || `Compte ${acc.accountNumber}`,
-            number: acc.accountNumber,
+            name: acc.accountName || acc.name || `Compte ${acc.accountNumber || "N/A"}`,
+            number: acc.accountNumber || "N/A",
             balance: Number.parseFloat(acc.bookBalance || acc.balance || "0"),
             currency: acc.currency || "GNF",
             type: "Courant" as const,
             status: "Actif" as const,
-            iban: `GN82 BNG 001 ${acc.accountNumber}`,
+            iban: `GN82 BNG 001 ${acc.accountNumber || "N/A"}`,
             accountHolder: "DIALLO Mamadou",
             bankName: "Banque Nationale de Guinée",
             bankCode: "BNG",
@@ -282,7 +285,8 @@ export default function RIBPage() {
       const url = window.URL.createObjectURL(blob)
       const a = document.createElement("a")
       a.href = url
-      a.download = `RIB_${selectedAccount.number.replace(/-/g, "_")}_${new Date().toISOString().split("T")[0]}.txt`
+      const safeNumber = selectedAccount.number || "N/A"
+      a.download = `RIB_${safeNumber.replace(/-/g, "_")}_${new Date().toISOString().split("T")[0]}.txt`
       document.body.appendChild(a)
       a.click()
       document.body.removeChild(a)
@@ -431,7 +435,8 @@ export default function RIBPage() {
                   <div>
                     <p className="text-xs text-gray-500 uppercase">RIB</p>
                     <p className="font-mono font-semibold">
-                      {selectedAccount.bankCode} {selectedAccount.branchCode} {selectedAccount.number.replace(/-/g, "")}
+                      {selectedAccount.bankCode} {selectedAccount.branchCode}{" "}
+                      {(selectedAccount.number || "N/A").replace(/-/g, "")}
                     </p>
                   </div>
                   <div>
