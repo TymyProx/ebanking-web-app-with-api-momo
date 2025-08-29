@@ -292,18 +292,22 @@ export default function CartesPage() {
         console.log("[v0] Données API cartes:", result.data)
         const transformedCards: Card[] = Array.isArray(result.data)
           ? result.data.map((apiCard: any) => ({
-              id: apiCard.numCard || apiCard.id || Math.random().toString(),
-              number: apiCard.numCard ? `**** **** **** ${apiCard.numCard.slice(-4)}` : "**** **** **** ****",
-              type: getCardTypeFromAPI(apiCard.typCard) as "visa" | "mastercard" | "amex",
-              status: getCardStatusFromAPI(apiCard.status) as "active" | "blocked" | "expired" | "pending",
-              expiryDate: apiCard.dateExpiration
-                ? new Date(apiCard.dateExpiration).toLocaleDateString("fr-FR", { month: "2-digit", year: "2-digit" })
-                : "12/26",
-              holder: "MAMADOU DIALLO", // Valeur par défaut
-              dailyLimit: 500000, // Valeur par défaut
-              monthlyLimit: 2000000, // Valeur par défaut
-              balance: 1250000, // Valeur par défaut
-              lastTransaction: "Aucune transaction récente",
+              id: apiCard.id || Math.random().toString(),
+              number: apiCard.number || apiCard.numCard || "**** **** **** ****",
+              type: apiCard.type || (getCardTypeFromAPI(apiCard.typCard) as "visa" | "mastercard" | "amex"),
+              status:
+                apiCard.status ||
+                (getCardStatusFromAPI(apiCard.status) as "active" | "blocked" | "expired" | "pending"),
+              expiryDate:
+                apiCard.expiryDate ||
+                (apiCard.dateExpiration
+                  ? new Date(apiCard.dateExpiration).toLocaleDateString("fr-FR", { month: "2-digit", year: "2-digit" })
+                  : "12/26"),
+              holder: apiCard.holder || "MAMADOU DIALLO",
+              dailyLimit: apiCard.dailyLimit || 500000,
+              monthlyLimit: apiCard.monthlyLimit || 2000000,
+              balance: apiCard.balance || 1250000,
+              lastTransaction: apiCard.lastTransaction || "Aucune transaction récente",
             }))
           : []
 
