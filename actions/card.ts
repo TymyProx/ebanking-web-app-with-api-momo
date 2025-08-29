@@ -62,8 +62,17 @@ export async function fetchAllCards(): Promise<CardsResponse> {
 export async function createCardRequest(cardData: NewCardRequest): Promise<Card> {
   console.log("[v0] Envoi de la demande avec type:", cardData.typCard)
 
+  const today = new Date().toISOString().split("T")[0] // Format YYYY-MM-DD
+
   const requestBody = {
-    typCard: cardData.typCard,
+    data: {
+      numCard: "",
+      typCard: cardData.typCard,
+      status: "EN_ATTENTE",
+      dateEmission: today,
+      dateExpiration: "",
+      idClient: "USER_123", // TODO: Récupérer l'ID du client connecté
+    },
   }
 
   console.log("[v0] Corps de la requête:", JSON.stringify(requestBody))
