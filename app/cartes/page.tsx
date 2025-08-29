@@ -1,17 +1,65 @@
 "use client"
-import { useEffect, useState } from "react"
+
 import type React from "react"
 
-import { fetchAllCards, createCardRequest, type Card, type NewCardRequest } from "../../actions/card"
+import { useEffect, useState } from "react"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Badge } from "@/components/ui/badge"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
+import { Switch } from "@/components/ui/switch"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import {
+  CreditCard,
+  Plus,
+  Shield,
+  ShieldOff,
+  Settings,
+  AlertTriangle,
+  Phone,
+  Eye,
+  EyeOff,
+  RefreshCw,
+  Lock,
+  Unlock,
+  Edit,
+  CheckCircle,
+  XCircle,
+  Clock,
+  DollarSign,
+} from "lucide-react"
+
+import { fetchAllCards, createCardRequest, type Card as CardType, type NewCardRequest } from "../../actions/card"
+
+type CardWithUI = CardType & {
+  holder?: string
+  dailyLimit?: number
+  monthlyLimit?: number
+  balance?: number
+  lastTransaction?: string
+  isNumberVisible?: boolean
+}
 
 export default function CardsPage() {
-  const [cards, setCards] = useState<Card[]>([])
+  const [cards, setCards] = useState<CardWithUI[]>([])
   const [total, setTotal] = useState<number>(0)
   const [loading, setLoading] = useState<boolean>(false)
   const [error, setError] = useState<string | null>(null)
 
-  const [showForm, setShowForm] = useState<boolean>(false)
-  const [formData, setFormData] = useState<NewCardRequest>({
+  // New card request state
+  const [showNewCardForm, setShowNewCardForm] = useState<boolean>(false)
+  const [newCardData, setNewCardData] = useState<NewCardRequest>({
     typCard: "",
     idClient: "",
   })
@@ -19,13 +67,29 @@ export default function CardsPage() {
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [submitSuccess, setSubmitSuccess] = useState<string | null>(null)
 
+  // Card management state
+  const [selectedCard, setSelectedCard] = useState<CardWithUI | null>(null)
+  const [showLimitsDialog, setShowLimitsDialog] = useState<boolean>(false)
+  const [showHistoryDialog, setShowHistoryDialog] = useState<boolean>(false)
+  const [showSecurityDialog, setShowSecurityDialog] = useState<boolean>(false)
+  const [tempLimits, setTempLimits] = useState({ daily: 0, monthly: 0 })
+
   async function loadCards() {
     setLoading(true)
     setError(null)
 
     try {
       const response = await fetchAllCards()
-      setCards(response.rows)
+      const enhancedCards = response.rows.map((card) => ({
+        ...card,
+        holder: "MAMADOU DIALLO", // Default holder name
+        dailyLimit: 500000,
+        monthlyLimit: 2000000,
+        balance: 1250000,
+        lastTransaction: "Achat chez Carrefour - 45,000 FCFA",
+        isNumberVisible: false,
+      }))
+      setCards(enhancedCards)
       setTotal(response.count)
     } catch (e: any) {
       setError(e?.message ?? String(e))
@@ -36,10 +100,10 @@ export default function CardsPage() {
     }
   }
 
-  async function handleSubmitNewCard(e: React.FormEvent) {
+  async function handleNewCardRequest(e: React.FormEvent) {
     e.preventDefault()
 
-    if (!formData.typCard.trim() || !formData.idClient.trim()) {
+    if (!newCardData.typCard.trim() || !newCardData.idClient.trim()) {
       setSubmitError("Veuillez remplir tous les champs obligatoires")
       return
     }
@@ -49,11 +113,10 @@ export default function CardsPage() {
     setSubmitSuccess(null)
 
     try {
-      await createCardRequest(formData)
+      await createCardRequest(newCardData)
       setSubmitSuccess("Demande de carte créée avec succès !")
-      setFormData({ typCard: "", idClient: "" })
-      setShowForm(false)
-      // Refresh the cards list
+      setNewCardData({ typCard: "", idClient: "" })
+      setShowNewCardForm(false)
       await loadCards()
     } catch (e: any) {
       setSubmitError(e?.message ?? "Erreur lors de la création de la demande")
@@ -62,11 +125,54 @@ export default function CardsPage() {
     }
   }
 
-  function resetForm() {
-    setFormData({ typCard: "", idClient: "" })
-    setSubmitError(null)
-    setSubmitSuccess(null)
-    setShowForm(false)
+  function toggleCardNumberVisibility(cardId: string) {
+    setCards((prev) =>
+      prev.map((card) => (card.id === cardId ? { ...card, isNumberVisible: !card.isNumberVisible } : card)),
+    )
+  }
+
+  function getCardTypeColor(type: string) {
+    switch (type?.toUpperCase()) {
+      case "GOLD":
+        return "bg-gradient-to-r from-yellow-400 to-yellow-600"
+      case "PLATINUM":
+        return "bg-gradient-to-r from-gray-400 to-gray-600"
+      case "CREDIT":
+        return "bg-gradient-to-r from-blue-500 to-blue-700"
+      case "DEBIT":
+        return "bg-gradient-to-r from-green-500 to-green-700"
+      default:
+        return "bg-gradient-to-r from-gray-500 to-gray-700"
+    }
+  }
+
+  function getStatusBadge(status: string) {
+    switch (status?.toUpperCase()) {
+      case "ACTIVE":
+      case "ACTIF":
+        return <Badge className="bg-green-100 text-green-800">Actif</Badge>
+      case "BLOCKED":
+      case "BLOQUE":
+        return <Badge className="bg-red-100 text-red-800">Bloqué</Badge>
+      case "EXPIRED":
+      case "EXPIRE":
+        return <Badge className="bg-gray-100 text-gray-800">Expiré</Badge>
+      default:
+        return <Badge variant="secondary">{status}</Badge>
+    }
+  }
+
+  function formatCardNumber(number: string, isVisible: boolean) {
+    if (!number) return "****"
+    if (isVisible) return number
+    return number
+      .replace(/(.{4})/g, "$1 ")
+      .replace(/\d(?=\d{4})/g, "*")
+      .trim()
+  }
+
+  function formatAmount(amount: number) {
+    return new Intl.NumberFormat("fr-FR").format(amount)
   }
 
   useEffect(() => {
@@ -74,127 +180,397 @@ export default function CardsPage() {
   }, [])
 
   return (
-    <main className="max-w-3xl mx-auto p-4">
-      <header className="flex items-center justify-between mb-4">
-        <h1 className="text-xl font-bold">Cartes</h1>
-        <div className="flex gap-2">
-          <button
-            onClick={() => setShowForm(true)}
-            className="rounded px-3 py-2 border bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-60"
-            disabled={loading || submitting}
-          >
-            Nouvelle demande de carte
-          </button>
-          <button
-            onClick={loadCards}
-            className="rounded px-3 py-2 border bg-black text-white disabled:opacity-60"
-            disabled={loading}
-          >
-            {loading ? "Chargement..." : "Rafraîchir"}
-          </button>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Mes Cartes</h1>
+          <p className="text-gray-600">Gérez vos cartes bancaires et leurs paramètres</p>
         </div>
-      </header>
+        <div className="flex gap-2">
+          <Button onClick={() => setShowNewCardForm(true)} className="bg-blue-600 hover:bg-blue-700">
+            <Plus className="w-4 h-4 mr-2" />
+            Nouvelle carte
+          </Button>
+          <Button variant="outline" onClick={loadCards} disabled={loading}>
+            <RefreshCw className={`w-4 h-4 mr-2 ${loading ? "animate-spin" : ""}`} />
+            Actualiser
+          </Button>
+        </div>
+      </div>
 
+      {/* Success/Error Messages */}
       {submitSuccess && (
-        <div className="border border-green-200 bg-green-50 text-green-700 rounded p-3 mb-3">{submitSuccess}</div>
+        <Alert className="border-green-200 bg-green-50">
+          <CheckCircle className="h-4 w-4 text-green-600" />
+          <AlertDescription className="text-green-800">{submitSuccess}</AlertDescription>
+        </Alert>
       )}
 
       {error && (
-        <div className="border border-red-200 bg-red-50 text-red-700 rounded p-3 mb-3 whitespace-pre-wrap">{error}</div>
+        <Alert className="border-red-200 bg-red-50">
+          <XCircle className="h-4 w-4 text-red-600" />
+          <AlertDescription className="text-red-800">{error}</AlertDescription>
+        </Alert>
       )}
 
-      {showForm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
-            <h2 className="text-lg font-semibold mb-4">Nouvelle demande de carte</h2>
-
-            {submitError && (
-              <div className="border border-red-200 bg-red-50 text-red-700 rounded p-3 mb-4">{submitError}</div>
-            )}
-
-            <form onSubmit={handleSubmitNewCard} className="space-y-4">
-              <div>
-                <label htmlFor="typCard" className="block text-sm font-medium text-gray-700 mb-1">
-                  Type de carte *
-                </label>
-                <select
-                  id="typCard"
-                  value={formData.typCard}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, typCard: e.target.value }))}
-                  className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required
-                >
-                  <option value="">Sélectionner un type</option>
-                  <option value="DEBIT">Carte de débit</option>
-                  <option value="CREDIT">Carte de crédit</option>
-                  <option value="PREPAID">Carte prépayée</option>
-                </select>
-              </div>
-
-              <div>
-                <label htmlFor="idClient" className="block text-sm font-medium text-gray-700 mb-1">
-                  ID Client *
-                </label>
-                <input
-                  type="text"
-                  id="idClient"
-                  value={formData.idClient}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, idClient: e.target.value }))}
-                  className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Entrez l'ID du client"
-                  required
-                />
-              </div>
-
-              <div className="flex gap-2 pt-4">
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className="flex-1 bg-blue-600 text-white rounded px-4 py-2 hover:bg-blue-700 disabled:opacity-60"
-                >
-                  {submitting ? "Création..." : "Créer la demande"}
-                </button>
-                <button
-                  type="button"
-                  onClick={resetForm}
-                  disabled={submitting}
-                  className="flex-1 bg-gray-300 text-gray-700 rounded px-4 py-2 hover:bg-gray-400 disabled:opacity-60"
-                >
-                  Annuler
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {!error && (
-        <p className="text-sm text-gray-600 mb-3">
-          Total (count): <b>{total}</b> • Affichées: <b>{cards.length}</b>
-        </p>
-      )}
-
-      {loading && <p>Chargement des cartes…</p>}
-
-      {!loading && !error && cards.length === 0 && <p className="text-gray-600">Aucune carte trouvée.</p>}
-
-      {cards.length > 0 && (
-        <ul className="space-y-3">
-          {cards.map((c, idx) => (
-            <li key={c.id || idx} className="border rounded p-3 shadow-sm bg-white">
-              <div className="text-sm text-gray-500 mb-1">ID : {c.id || "N/A"}</div>
-              <div className="font-semibold text-lg mb-1">
-                {c.typCard || "Type inconnu"} — {c.numCard || "Numéro inconnu"}{" "}
-                <span className="text-sm text-gray-600">({c.status || "?"})</span>
-              </div>
-              <div className="text-sm text-gray-700">
-                Émise le : {c.dateEmission || "N/A"} • Expire le : {c.dateExpiration || "N/A"}
-              </div>
-              <div className="text-sm text-gray-600 mt-1">Client : {c.idClient || "N/A"}</div>
-            </li>
+      {/* Cards Grid */}
+      {loading ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {[1, 2, 3].map((i) => (
+            <Card key={i} className="h-64 animate-pulse">
+              <CardContent className="p-6">
+                <div className="h-full bg-gray-200 rounded"></div>
+              </CardContent>
+            </Card>
           ))}
-        </ul>
+        </div>
+      ) : cards.length > 0 ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {cards.map((card) => (
+            <Card key={card.id} className="overflow-hidden">
+              {/* Card Visual */}
+              <div className={`${getCardTypeColor(card.typCard)} p-6 text-white relative`}>
+                <div className="flex justify-between items-start mb-4">
+                  <div className="text-sm opacity-90">{card.typCard}</div>
+                  {getStatusBadge(card.status)}
+                </div>
+
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="font-mono text-lg tracking-wider">
+                      {formatCardNumber(card.numCard, card.isNumberVisible || false)}
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => toggleCardNumberVisibility(card.id)}
+                      className="text-white hover:bg-white/20"
+                    >
+                      {card.isNumberVisible ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </Button>
+                  </div>
+
+                  <div className="flex justify-between items-end">
+                    <div>
+                      <div className="text-xs opacity-75">Titulaire</div>
+                      <div className="font-medium">{card.holder}</div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-xs opacity-75">Expire</div>
+                      <div className="font-medium">{card.dateExpiration}</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Card Info */}
+              <CardContent className="p-4 space-y-4">
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <div className="text-gray-500">Plafond jour</div>
+                    <div className="font-medium">{formatAmount(card.dailyLimit || 0)} GNF</div>
+                  </div>
+                  <div>
+                    <div className="text-gray-500">Plafond mois</div>
+                    <div className="font-medium">{formatAmount(card.monthlyLimit || 0)} GNF</div>
+                  </div>
+                </div>
+
+                <div className="text-sm">
+                  <div className="text-gray-500">Dernière transaction</div>
+                  <div className="font-medium">{card.lastTransaction}</div>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex gap-2">
+                  {card.status?.toUpperCase() === "ACTIVE" ? (
+                    <Button variant="outline" size="sm" className="flex-1 bg-transparent">
+                      <Lock className="w-4 h-4 mr-1" />
+                      Bloquer
+                    </Button>
+                  ) : (
+                    <Button variant="outline" size="sm" className="flex-1 bg-transparent">
+                      <Unlock className="w-4 h-4 mr-1" />
+                      Débloquer
+                    </Button>
+                  )}
+
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <Button variant="outline" size="sm" onClick={() => setSelectedCard(card)}>
+                        <Settings className="w-4 h-4" />
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-2xl">
+                      <DialogHeader>
+                        <DialogTitle>Gestion de la carte</DialogTitle>
+                        <DialogDescription>
+                          {card.typCard} - {formatCardNumber(card.numCard, false)}
+                        </DialogDescription>
+                      </DialogHeader>
+
+                      <Tabs defaultValue="limits" className="w-full">
+                        <TabsList className="grid w-full grid-cols-3">
+                          <TabsTrigger value="limits">Plafonds</TabsTrigger>
+                          <TabsTrigger value="security">Sécurité</TabsTrigger>
+                          <TabsTrigger value="history">Historique</TabsTrigger>
+                        </TabsList>
+
+                        <TabsContent value="limits" className="space-y-4">
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <Label htmlFor="daily-limit">Plafond journalier (GNF)</Label>
+                              <Input
+                                id="daily-limit"
+                                type="number"
+                                defaultValue={card.dailyLimit}
+                                onChange={(e) => setTempLimits((prev) => ({ ...prev, daily: Number(e.target.value) }))}
+                              />
+                            </div>
+                            <div>
+                              <Label htmlFor="monthly-limit">Plafond mensuel (GNF)</Label>
+                              <Input
+                                id="monthly-limit"
+                                type="number"
+                                defaultValue={card.monthlyLimit}
+                                onChange={(e) =>
+                                  setTempLimits((prev) => ({ ...prev, monthly: Number(e.target.value) }))
+                                }
+                              />
+                            </div>
+                          </div>
+                          <Button className="w-full">
+                            <Edit className="w-4 h-4 mr-2" />
+                            Modifier les plafonds
+                          </Button>
+                        </TabsContent>
+
+                        <TabsContent value="security" className="space-y-4">
+                          <div className="space-y-4">
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <div className="font-medium">Notifications SMS</div>
+                                <div className="text-sm text-gray-500">Recevoir des SMS pour chaque transaction</div>
+                              </div>
+                              <Switch defaultChecked />
+                            </div>
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <div className="font-medium">Paiements en ligne</div>
+                                <div className="text-sm text-gray-500">Autoriser les achats sur internet</div>
+                              </div>
+                              <Switch defaultChecked />
+                            </div>
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <div className="font-medium">Paiements à l'étranger</div>
+                                <div className="text-sm text-gray-500">Autoriser les transactions hors Guinée</div>
+                              </div>
+                              <Switch />
+                            </div>
+                          </div>
+                        </TabsContent>
+
+                        <TabsContent value="history" className="space-y-4">
+                          <div className="space-y-3">
+                            {[
+                              { date: "2024-01-15", description: "Achat Carrefour", amount: -45000, type: "debit" },
+                              { date: "2024-01-14", description: "Retrait DAB", amount: -50000, type: "withdrawal" },
+                              { date: "2024-01-13", description: "Virement reçu", amount: 200000, type: "credit" },
+                            ].map((transaction, index) => (
+                              <div key={index} className="flex items-center justify-between p-3 border rounded">
+                                <div>
+                                  <div className="font-medium">{transaction.description}</div>
+                                  <div className="text-sm text-gray-500">{transaction.date}</div>
+                                </div>
+                                <div
+                                  className={`font-medium ${transaction.amount > 0 ? "text-green-600" : "text-red-600"}`}
+                                >
+                                  {transaction.amount > 0 ? "+" : ""}
+                                  {formatAmount(Math.abs(transaction.amount))} GNF
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </TabsContent>
+                      </Tabs>
+                    </DialogContent>
+                  </Dialog>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      ) : (
+        <Card className="p-12 text-center">
+          <CreditCard className="w-12 h-12 mx-auto text-gray-400 mb-4" />
+          <h3 className="text-lg font-medium text-gray-900 mb-2">Aucune carte trouvée</h3>
+          <p className="text-gray-500 mb-4">Vous n'avez pas encore de carte bancaire.</p>
+          <Button onClick={() => setShowNewCardForm(true)}>
+            <Plus className="w-4 h-4 mr-2" />
+            Demander une carte
+          </Button>
+        </Card>
       )}
-    </main>
+
+      {/* New Card Request Dialog */}
+      <Dialog open={showNewCardForm} onOpenChange={setShowNewCardForm}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Demande de nouvelle carte</DialogTitle>
+            <DialogDescription>Remplissez le formulaire pour demander une nouvelle carte bancaire</DialogDescription>
+          </DialogHeader>
+
+          {submitError && (
+            <Alert className="border-red-200 bg-red-50">
+              <XCircle className="h-4 w-4 text-red-600" />
+              <AlertDescription className="text-red-800">{submitError}</AlertDescription>
+            </Alert>
+          )}
+
+          <form onSubmit={handleNewCardRequest} className="space-y-4">
+            <div>
+              <Label htmlFor="card-type">Type de carte *</Label>
+              <Select
+                value={newCardData.typCard}
+                onValueChange={(value) => setNewCardData((prev) => ({ ...prev, typCard: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Sélectionner un type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="DEBIT">Carte de débit</SelectItem>
+                  <SelectItem value="CREDIT">Carte de crédit</SelectItem>
+                  <SelectItem value="PREPAID">Carte prépayée</SelectItem>
+                  <SelectItem value="GOLD">Carte Gold</SelectItem>
+                  <SelectItem value="PLATINUM">Carte Platinum</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label htmlFor="client-id">ID Client *</Label>
+              <Input
+                id="client-id"
+                value={newCardData.idClient}
+                onChange={(e) => setNewCardData((prev) => ({ ...prev, idClient: e.target.value }))}
+                placeholder="Entrez votre ID client"
+                required
+              />
+            </div>
+
+            <div className="flex gap-2 pt-4">
+              <Button type="submit" disabled={submitting} className="flex-1">
+                {submitting ? (
+                  <>
+                    <Clock className="w-4 h-4 mr-2 animate-spin" />
+                    Création...
+                  </>
+                ) : (
+                  <>
+                    <Plus className="w-4 h-4 mr-2" />
+                    Créer la demande
+                  </>
+                )}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setShowNewCardForm(false)
+                  setNewCardData({ typCard: "", idClient: "" })
+                  setSubmitError(null)
+                }}
+                disabled={submitting}
+                className="flex-1"
+              >
+                Annuler
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Emergency Actions */}
+      <Card className="border-red-200">
+        <CardHeader>
+          <CardTitle className="flex items-center text-red-600">
+            <AlertTriangle className="w-5 h-5 mr-2" />
+            Actions d'urgence
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Button variant="outline" className="border-red-200 text-red-600 hover:bg-red-50 bg-transparent">
+              <ShieldOff className="w-4 h-4 mr-2" />
+              Opposition générale
+            </Button>
+            <Button variant="outline" className="border-orange-200 text-orange-600 hover:bg-orange-50 bg-transparent">
+              <AlertTriangle className="w-4 h-4 mr-2" />
+              Signaler une fraude
+            </Button>
+            <Button variant="outline" className="border-blue-200 text-blue-600 hover:bg-blue-50 bg-transparent">
+              <Phone className="w-4 h-4 mr-2" />
+              Contacter le support
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Statistics */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-sm text-gray-500">Total cartes</div>
+                <div className="text-2xl font-bold">{total}</div>
+              </div>
+              <CreditCard className="w-8 h-8 text-blue-500" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-sm text-gray-500">Cartes actives</div>
+                <div className="text-2xl font-bold text-green-600">
+                  {cards.filter((c) => c.status?.toUpperCase() === "ACTIVE").length}
+                </div>
+              </div>
+              <Shield className="w-8 h-8 text-green-500" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-sm text-gray-500">Cartes bloquées</div>
+                <div className="text-2xl font-bold text-red-600">
+                  {cards.filter((c) => c.status?.toUpperCase() === "BLOCKED").length}
+                </div>
+              </div>
+              <ShieldOff className="w-8 h-8 text-red-500" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-sm text-gray-500">Plafond total</div>
+                <div className="text-2xl font-bold">
+                  {formatAmount(cards.reduce((sum, card) => sum + (card.dailyLimit || 0), 0))}
+                </div>
+              </div>
+              <DollarSign className="w-8 h-8 text-blue-500" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
   )
 }
