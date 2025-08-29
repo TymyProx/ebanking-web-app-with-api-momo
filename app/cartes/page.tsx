@@ -1,788 +1,142 @@
-"use client"
+"use client";
+import { useEffect, useState } from "react";
 
-import { useState, useTransition, useEffect } from "react"
-import { Card as UI_Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog"
-import { toast } from "@/hooks/use-toast"
-import {
-  CreditCard,
-  Lock,
-  Unlock,
-  Settings,
-  Eye,
-  EyeOff,
-  Shield,
-  AlertTriangle,
-  CheckCircle,
-  Clock,
-  X,
-  Plus,
-  AlertCircle,
-} from "lucide-react"
-import { createCard, getCards } from "./actions"
-import { useActionState } from "react"
+const BASE_URL = "http://192.168.1.200:8080/api";
+const TENANT_ID = "11cacc69-5a49-4f01-8b16-e8f473746634";
+const API_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjJhYWY0OWMzLThlOGUtNDZkYS1iZDM4LWIwZDlmNTFiODAzNyIsImlhdCI6MTc1NjQ1OTYzMCwiZXhwIjoxNzU3MDY0NDMwfQ.F1glqniLIDoTxs6PmLa6AEiuaHvAQqWSyCkPswF7n80"; // ← remplace par ton vrai token
 
-interface Card {
-  id: string
-  number: string
-  type: "visa" | "mastercard" | "amex"
-  status: "active" | "blocked" | "expired" | "pending"
-  expiryDate: string
-  holder: string
-  dailyLimit: number
-  monthlyLimit: number
-  balance: number
-  lastTransaction: string
-}
+type Card = {
+  id: string;
+  numCard: string;
+  typCard: string;
+  status: string;
+  dateEmission: string;   // ex: "2025-08-29"
+  dateExpiration: string; // ex: "2025-08-29"
+  idClient: string;
+  // champs meta éventuels de ta réponse (facultatif à l'affichage)
+  createdAt?: string;
+  updatedAt?: string;
+  deletedAt?: string | null;
+  createdById?: string;
+  updatedById?: string;
+  importHash?: string;
+  tenantId?: string;
+};
 
-const mockCards: Card[] = [
-  {
-    id: "1",
-    number: "4532 **** **** 1234",
-    type: "visa",
-    status: "active",
-    expiryDate: "12/26",
-    holder: "MAMADOU DIALLO",
-    dailyLimit: 500000,
-    monthlyLimit: 2000000,
-    balance: 1250000,
-    lastTransaction: "Achat chez Carrefour - 45,000 FCFA",
-  },
-  {
-    id: "2",
-    number: "5555 **** **** 9876",
-    type: "mastercard",
-    status: "blocked",
-    expiryDate: "08/25",
-    holder: "MAMADOU DIALLO",
-    dailyLimit: 300000,
-    monthlyLimit: 1500000,
-    balance: 850000,
-    lastTransaction: "Retrait DAB BNG Plateau - 50,000 FCFA",
-  },
-  {
-    id: "3",
-    number: "3782 **** **** 5678",
-    type: "amex",
-    status: "active",
-    expiryDate: "03/27",
-    holder: "MAMADOU DIALLO",
-    dailyLimit: 1000000,
-    monthlyLimit: 5000000,
-    balance: 3200000,
-    lastTransaction: "Paiement en ligne Amazon - 125,000 FCFA",
-  },
-]
+type CardsResponse = {
+  rows: Card[];
+  count: number;
+};
 
-const transactions = [
-  { id: "1", cardId: "1", date: "2024-01-15", description: "Achat chez Carrefour", amount: -45000, type: "purchase" },
-  { id: "2", cardId: "1", date: "2024-01-14", description: "Retrait DAB", amount: -100000, type: "withdrawal" },
-  { id: "3", cardId: "2", date: "2024-01-13", description: "Paiement facture CIE", amount: -75000, type: "bill" },
-  { id: "4", cardId: "3", date: "2024-01-12", description: "Achat en ligne Amazon", amount: -125000, type: "online" },
-  { id: "5", cardId: "1", date: "2024-01-11", description: "Virement reçu", amount: 200000, type: "transfer" },
-]
+export default function CardsPage() {
+  const [cards, setCards] = useState<Card[]>([]);
+  const [total, setTotal] = useState<number>(0);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
 
-export default function CartesPage() {
-  const [cards, setCards] = useState<Card[]>([])
-  const [isLoadingCards, setIsLoadingCards] = useState(true)
-  const [selectedCard, setSelectedCard] = useState<Card | null>(null)
-  const [showCardNumber, setShowCardNumber] = useState<string | null>(null)
-  const [newLimits, setNewLimits] = useState({ daily: 0, monthly: 0 })
-  const [isNewCardDialogOpen, setIsNewCardDialogOpen] = useState(false)
-  const [selectedCardType, setSelectedCardType] = useState("")
-  const [createCardState, createCardAction, isCreatingCard] = useActionState(createCard, null)
-  const [isPending, startTransition] = useTransition()
-  const [displayMessage, setDisplayMessage] = useState<{ success?: string; error?: string; reference?: string } | null>(
-    null,
-  )
+  async function fetchAllCards() {
+    setLoading(true);
+    setError(null);
 
-  const getCardIcon = (type: string) => {
-    switch (type) {
-      case "visa":
-        return (
-          <div className="w-8 h-5 bg-blue-600 rounded text-white text-xs flex items-center justify-center font-bold">
-            VISA
-          </div>
-        )
-      case "mastercard":
-        return (
-          <div className="w-8 h-5 bg-red-600 rounded text-white text-xs flex items-center justify-center font-bold">
-            MC
-          </div>
-        )
-      case "amex":
-        return (
-          <div className="w-8 h-5 bg-green-600 rounded text-white text-xs flex items-center justify-center font-bold">
-            AMEX
-          </div>
-        )
-      default:
-        return <CreditCard className="w-5 h-5" />
-    }
-  }
-
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "active":
-        return (
-          <Badge variant="default" className="bg-green-100 text-green-800">
-            <CheckCircle className="w-3 h-3 mr-1" />
-            Active
-          </Badge>
-        )
-      case "blocked":
-        return (
-          <Badge variant="destructive">
-            <Lock className="w-3 h-3 mr-1" />
-            Bloquée
-          </Badge>
-        )
-      case "expired":
-        return (
-          <Badge variant="secondary">
-            <X className="w-3 h-3 mr-1" />
-            Expirée
-          </Badge>
-        )
-      case "pending":
-        return (
-          <Badge variant="outline">
-            <Clock className="w-3 h-3 mr-1" />
-            En attente
-          </Badge>
-        )
-      default:
-        return <Badge variant="outline">{status}</Badge>
-    }
-  }
-
-  const handleBlockCard = (cardId: string) => {
-    setCards(cards.map((card) => (card.id === cardId ? { ...card, status: "blocked" as const } : card)))
-    toast({
-      title: "Carte bloquée",
-      description: "Votre carte a été bloquée avec succès.",
-    })
-  }
-
-  const handleUnblockCard = (cardId: string) => {
-    setCards(cards.map((card) => (card.id === cardId ? { ...card, status: "active" as const } : card)))
-    toast({
-      title: "Carte débloquée",
-      description: "Votre carte a été débloquée avec succès.",
-    })
-  }
-
-  const handleUpdateLimits = (cardId: string) => {
-    setCards(
-      cards.map((card) =>
-        card.id === cardId
-          ? {
-              ...card,
-              dailyLimit: newLimits.daily,
-              monthlyLimit: newLimits.monthly,
-            }
-          : card,
-      ),
-    )
-    toast({
-      title: "Plafonds mis à jour",
-      description: "Les nouveaux plafonds ont été appliqués à votre carte.",
-    })
-  }
-
-  const formatAmount = (amount: number) => {
-    return new Intl.NumberFormat("fr-FR").format(amount) + " FCFA"
-  }
-
-  const toggleCardNumberVisibility = (cardId: string) => {
-    setShowCardNumber(showCardNumber === cardId ? null : cardId)
-  }
-
-  const handleCreateCard = () => {
-    if (!selectedCardType) {
-      toast({
-        title: "Erreur",
-        description: "Veuillez sélectionner un type de carte",
-        variant: "destructive",
-      })
-      return
-    }
-
-    startTransition(() => {
-      const formData = new FormData()
-      formData.append("cardType", selectedCardType)
-      createCardAction(formData)
-    })
-  }
-
-  const cardTypes = [
-    {
-      id: "ESSENTIEL",
-      name: "Carte Essentiel",
-      description: "Pour vos besoins quotidiens",
-      color: "bg-blue-500",
-      advantages: [
-        "Retraits gratuits dans le réseau BNG",
-        "Paiements en ligne sécurisés",
-        "Plafond journalier : 200,000 GNF",
-        "Frais de tenue de compte réduits",
-      ],
-    },
-    {
-      id: "GOLD",
-      name: "Carte Gold",
-      description: "Pour plus de privilèges",
-      color: "bg-yellow-500",
-      advantages: [
-        "Retraits gratuits partout en Guinée",
-        "Plafond journalier : 500,000 GNF",
-        "Assurance voyage incluse",
-        "Service client prioritaire",
-        "Cashback sur les achats",
-      ],
-    },
-    {
-      id: "PLATINUM",
-      name: "Carte Platinum",
-      description: "L'excellence bancaire",
-      color: "bg-gray-700",
-      advantages: [
-        "Plafond journalier : 1,000,000 GNF",
-        "Accès aux salons VIP aéroports",
-        "Conciergerie 24h/24",
-        "Assurance voyage premium",
-        "Cashback majoré",
-        "Frais à l'étranger réduits",
-      ],
-    },
-  ]
-
-  const loadCards = async () => {
     try {
-      setIsLoadingCards(true)
-      console.log("[v0] Chargement des cartes...")
-      const result = await getCards()
+      const res = await fetch(
+        `${BASE_URL}/tenant/${TENANT_ID}/card`,
+        {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${API_TOKEN}`,
+          },
+          cache: "no-store",
+        },
+      );
 
-      if (result.success && result.data) {
-        console.log("[v0] Données API cartes:", result.data)
-        const transformedCards: Card[] = Array.isArray(result.data)
-          ? result.data.map((apiCard: any) => ({
-              id: apiCard.numCard || apiCard.id || Math.random().toString(),
-              number: apiCard.numCard ? `**** **** **** ${apiCard.numCard.slice(-4)}` : "**** **** **** ****",
-              type: getCardTypeFromAPI(apiCard.typCard) as "visa" | "mastercard" | "amex",
-              status: getCardStatusFromAPI(apiCard.status) as "active" | "blocked" | "expired" | "pending",
-              expiryDate: apiCard.dateExpiration
-                ? new Date(apiCard.dateExpiration).toLocaleDateString("fr-FR", { month: "2-digit", year: "2-digit" })
-                : "12/26",
-              holder: "MAMADOU DIALLO", // Valeur par défaut
-              dailyLimit: 500000, // Valeur par défaut
-              monthlyLimit: 2000000, // Valeur par défaut
-              balance: 1250000, // Valeur par défaut
-              lastTransaction: "Aucune transaction récente",
-            }))
-          : []
+      const contentType = res.headers.get("content-type") || "";
+      const bodyText = await res.text();
 
-        console.log("[v0] Cartes transformées:", transformedCards)
-        setCards(transformedCards)
-      } else {
-        console.log("[v0] Pas de données ou erreur, utilisation des données simulées")
-        setCards(mockCards)
+      if (!res.ok) {
+        throw new Error(`API ${res.status}: ${bodyText || "Erreur inconnue"}`);
       }
-    } catch (error) {
-      console.error("[v0] Erreur lors du chargement des cartes:", error)
-      setCards(mockCards)
+
+      let parsed: CardsResponse | null = null;
+      if (contentType.includes("application/json") && bodyText) {
+        parsed = JSON.parse(bodyText) as CardsResponse;
+      }
+
+      const list = parsed?.rows ?? [];
+      const count = parsed?.count ?? list.length;
+
+      setCards(list);
+      setTotal(count);
+    } catch (e: any) {
+      setError(e?.message ?? String(e));
+      setCards([]);
+      setTotal(0);
     } finally {
-      setIsLoadingCards(false)
+      setLoading(false);
     }
-  }
-
-  const getCardTypeFromAPI = (typCard: string): string => {
-    const typeMapping: Record<string, string> = {
-      ESSENTIEL: "visa",
-      GOLD: "mastercard",
-      PLATINUM: "amex",
-      DEBIT: "visa",
-      CREDIT: "mastercard",
-      PREPAID: "visa",
-    }
-    return typeMapping[typCard?.toUpperCase()] || "visa"
-  }
-
-  const getCardStatusFromAPI = (status: string): string => {
-    const statusMapping: Record<string, string> = {
-      ACTIVE: "active",
-      BLOCKED: "blocked",
-      EXPIRED: "expired",
-      PENDING: "pending",
-      INACTIVE: "blocked",
-    }
-    return statusMapping[status?.toUpperCase()] || "pending"
   }
 
   useEffect(() => {
-    loadCards()
-  }, [])
-
-  useEffect(() => {
-    if (createCardState?.success) {
-      setDisplayMessage({
-        success: createCardState.message,
-        reference: createCardState.reference,
-      })
-      setSelectedCardType("")
-
-      loadCards()
-
-      const timer = setTimeout(() => {
-        setDisplayMessage(null)
-      }, 8000)
-
-      return () => clearTimeout(timer)
-    } else if (createCardState?.error) {
-      setDisplayMessage({
-        error: createCardState.error,
-      })
-
-      const timer = setTimeout(() => {
-        setDisplayMessage(null)
-      }, 8000)
-
-      return () => clearTimeout(timer)
-    }
-  }, [createCardState])
+    fetchAllCards();
+  }, []);
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Mes Cartes</h1>
-          <p className="text-gray-600">Gérez vos cartes bancaires et leurs paramètres</p>
+    <main className="max-w-3xl mx-auto p-4">
+      <header className="flex items-center justify-between mb-4">
+        <h1 className="text-xl font-bold">Cartes</h1>
+        <button
+          onClick={fetchAllCards}
+          className="rounded px-3 py-2 border bg-black text-white disabled:opacity-60"
+          disabled={loading}
+        >
+          {loading ? "Chargement..." : "Rafraîchir"}
+        </button>
+      </header>
+
+      {error && (
+        <div className="border border-red-200 bg-red-50 text-red-700 rounded p-3 mb-3 whitespace-pre-wrap">
+          {error}
         </div>
-        <Dialog open={isNewCardDialogOpen} onOpenChange={setIsNewCardDialogOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <CreditCard className="w-4 h-4 mr-2" />
-              Demander une nouvelle carte
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle className="flex items-center space-x-2">
-                <Plus className="w-5 h-5" />
-                <span>Demander une nouvelle carte</span>
-              </DialogTitle>
-              <DialogDescription>Choisissez le type de carte qui correspond à vos besoins</DialogDescription>
-            </DialogHeader>
+      )}
 
-            <div className="space-y-4">
-              <div className="p-3 bg-blue-50 rounded-lg">
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="flex items-center space-x-2">
-                    <Clock className="w-4 h-4 text-blue-600" />
-                    <div>
-                      <p className="text-xs font-medium">Délai de traitement</p>
-                      <p className="text-xs text-gray-600">7-10 jours ouvrables</p>
-                    </div>
-                  </div>
-                </div>
+      {!error && (
+        <p className="text-sm text-gray-600 mb-3">
+          Total (count): <b>{total}</b> • Affichées: <b>{cards.length}</b>
+        </p>
+      )}
+
+      {loading && <p>Chargement des cartes…</p>}
+
+      {!loading && !error && cards.length === 0 && (
+        <p className="text-gray-600">Aucune carte trouvée.</p>
+      )}
+
+      {cards.length > 0 && (
+        <ul className="space-y-3">
+          {cards.map((c, idx) => (
+            <li
+              key={c.id || idx}
+              className="border rounded p-3 shadow-sm bg-white"
+            >
+              <div className="text-sm text-gray-500 mb-1">
+                ID : {c.id || "N/A"}
               </div>
-
-              <div className="space-y-3">
-                <Label className="text-sm">Choisissez votre type de carte *</Label>
-                <div className="grid grid-cols-2 gap-2">
-                  {cardTypes.map((cardType) => (
-                    <div
-                      key={cardType.id}
-                      className={`relative p-2 border-2 rounded-lg cursor-pointer transition-all hover:shadow-md ${
-                        selectedCardType === cardType.id
-                          ? "border-blue-500 bg-blue-50"
-                          : "border-gray-200 hover:border-gray-300"
-                      }`}
-                      onClick={() => setSelectedCardType(cardType.id)}
-                    >
-                      <div className="space-y-1.5">
-                        <div className="flex items-center justify-between">
-                          <div
-                            className={`w-8 h-5 ${cardType.color} rounded flex items-center justify-center text-white text-xs font-bold`}
-                          >
-                            BNG
-                          </div>
-                          {selectedCardType === cardType.id && <CheckCircle className="w-4 h-4 text-blue-500" />}
-                        </div>
-                        <div>
-                          <h3 className="font-semibold text-xs">{cardType.name}</h3>
-                          <p className="text-xs text-gray-600 mb-1">{cardType.description}</p>
-                        </div>
-                        <div className="space-y-0.5">
-                          {cardType.advantages.slice(0, 2).map((advantage, index) => (
-                            <div key={index} className="flex items-start space-x-1">
-                              <div className="w-1 h-1 bg-green-500 rounded-full mt-1 flex-shrink-0"></div>
-                              <span className="text-xs text-gray-700 leading-tight">{advantage}</span>
-                            </div>
-                          ))}
-                          {cardType.advantages.length > 2 && (
-                            <p className="text-xs text-blue-600 font-medium">
-                              +{cardType.advantages.length - 2} autres avantages
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+              <div className="font-semibold text-lg mb-1">
+                {c.typCard || "Type inconnu"} — {c.numCard || "Numéro inconnu"}{" "}
+                <span className="text-sm text-gray-600">({c.status || "?"})</span>
               </div>
-
-              {displayMessage?.success && (
-                <Alert className="border-green-200 bg-green-50">
-                  <CheckCircle className="h-4 w-4 text-green-600" />
-                  <AlertDescription className="text-green-800">
-                    ✅ {displayMessage.success}
-                    {displayMessage.reference && (
-                      <span className="block mt-1">Référence: {displayMessage.reference}</span>
-                    )}
-                  </AlertDescription>
-                </Alert>
-              )}
-
-              {displayMessage?.error && (
-                <Alert className="border-red-200 bg-red-50">
-                  <AlertCircle className="h-4 w-4 text-red-600" />
-                  <AlertDescription className="text-red-800">❌ {displayMessage.error}</AlertDescription>
-                </Alert>
-              )}
-            </div>
-
-            <DialogFooter className="flex space-x-2 pt-4">
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setIsNewCardDialogOpen(false)
-                  setSelectedCardType("")
-                }}
-                disabled={isCreatingCard || isPending}
-              >
-                Annuler
-              </Button>
-              <Button onClick={handleCreateCard} disabled={!selectedCardType || isCreatingCard || isPending}>
-                {isCreatingCard || isPending ? (
-                  <>
-                    <Clock className="w-4 h-4 mr-2 animate-spin" />
-                    Création...
-                  </>
-                ) : (
-                  <>
-                    <Plus className="w-4 h-4 mr-2" />
-                    Créer la demande
-                  </>
-                )}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      </div>
-
-      <Tabs defaultValue="cards" className="space-y-6">
-        <TabsList>
-          <TabsTrigger value="cards">Mes Cartes</TabsTrigger>
-          <TabsTrigger value="transactions">Historique</TabsTrigger>
-          <TabsTrigger value="settings">Paramètres</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="cards" className="space-y-6">
-          {isLoadingCards ? (
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {[1, 2, 3].map((i) => (
-                <UI_Card key={i} className="relative overflow-hidden animate-pulse">
-                  <CardHeader className="pb-3">
-                    <div className="h-4 bg-gray-200 rounded w-1/2 mb-2"></div>
-                    <div className="h-6 bg-gray-200 rounded w-3/4"></div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-2">
-                      <div className="h-4 bg-gray-200 rounded"></div>
-                      <div className="h-4 bg-gray-200 rounded w-2/3"></div>
-                    </div>
-                  </CardContent>
-                </UI_Card>
-              ))}
-            </div>
-          ) : (
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {cards.map((card) => (
-                <UI_Card key={card.id} className="relative overflow-hidden">
-                  <CardHeader className="pb-3">
-                    <div className="flex items-center justify-between">
-                      {getCardIcon(card.type)}
-                      {getStatusBadge(card.status)}
-                    </div>
-                    <CardTitle className="text-lg">
-                      <div className="flex items-center space-x-2">
-                        <span>
-                          {showCardNumber === card.id
-                            ? card.number.replace("****", card.id === "1" ? "4532" : card.id === "2" ? "5555" : "3782")
-                            : card.number}
-                        </span>
-                        <Button variant="ghost" size="sm" onClick={() => toggleCardNumberVisibility(card.id)}>
-                          {showCardNumber === card.id ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                        </Button>
-                      </div>
-                    </CardTitle>
-                    <CardDescription>
-                      <div className="space-y-1">
-                        <p>{card.holder}</p>
-                        <p>Expire: {card.expiryDate}</p>
-                      </div>
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="space-y-2">
-                      <div className="flex justify-between text-sm">
-                        <span className="text-gray-600">Solde disponible:</span>
-                        <span className="font-medium">{formatAmount(card.balance)}</span>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span className="text-gray-600">Plafond journalier:</span>
-                        <span className="font-medium">{formatAmount(card.dailyLimit)}</span>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span className="text-gray-600">Dernière transaction:</span>
-                      </div>
-                      <p className="text-xs text-gray-500">{card.lastTransaction}</p>
-                    </div>
-
-                    <div className="flex space-x-2">
-                      {card.status === "active" ? (
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button variant="outline" size="sm" className="flex-1 bg-transparent">
-                              <Lock className="w-4 h-4 mr-1" />
-                              Bloquer
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Bloquer la carte</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Êtes-vous sûr de vouloir bloquer cette carte ? Vous pourrez la débloquer à tout moment.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Annuler</AlertDialogCancel>
-                              <AlertDialogAction onClick={() => handleBlockCard(card.id)}>Bloquer</AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      ) : card.status === "blocked" ? (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="flex-1 bg-transparent"
-                          onClick={() => handleUnblockCard(card.id)}
-                        >
-                          <Unlock className="w-4 h-4 mr-1" />
-                          Débloquer
-                        </Button>
-                      ) : null}
-
-                      <Dialog>
-                        <DialogTrigger asChild>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="flex-1 bg-transparent"
-                            onClick={() => {
-                              setSelectedCard(card)
-                              setNewLimits({ daily: card.dailyLimit, monthly: card.monthlyLimit })
-                            }}
-                          >
-                            <Settings className="w-4 h-4 mr-1" />
-                            Modifier
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                          <DialogHeader>
-                            <DialogTitle>Modifier les plafonds</DialogTitle>
-                            <DialogDescription>Ajustez les plafonds de dépense pour cette carte</DialogDescription>
-                          </DialogHeader>
-                          <div className="space-y-4">
-                            <div className="space-y-2">
-                              <Label htmlFor="daily-limit">Plafond journalier (FCFA)</Label>
-                              <Input
-                                id="daily-limit"
-                                type="number"
-                                value={newLimits.daily}
-                                onChange={(e) =>
-                                  setNewLimits({ ...newLimits, daily: Number.parseInt(e.target.value) || 0 })
-                                }
-                              />
-                            </div>
-                            <div className="space-y-2">
-                              <Label htmlFor="monthly-limit">Plafond mensuel (FCFA)</Label>
-                              <Input
-                                id="monthly-limit"
-                                type="number"
-                                value={newLimits.monthly}
-                                onChange={(e) =>
-                                  setNewLimits({ ...newLimits, monthly: Number.parseInt(e.target.value) || 0 })
-                                }
-                              />
-                            </div>
-                          </div>
-                          <DialogFooter>
-                            <Button onClick={() => selectedCard && handleUpdateLimits(selectedCard.id)}>
-                              Sauvegarder
-                            </Button>
-                          </DialogFooter>
-                        </DialogContent>
-                      </Dialog>
-                    </div>
-                  </CardContent>
-                </UI_Card>
-              ))}
-            </div>
-          )}
-        </TabsContent>
-
-        <TabsContent value="transactions" className="space-y-6">
-          <UI_Card>
-            <CardHeader>
-              <CardTitle>Historique des transactions</CardTitle>
-              <CardDescription>Toutes vos transactions récentes</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {transactions.map((transaction) => {
-                  const card = cards.find((c) => c.id === transaction.cardId)
-                  return (
-                    <div key={transaction.id} className="flex items-center justify-between p-4 border rounded-lg">
-                      <div className="flex items-center space-x-4">
-                        {card && getCardIcon(card.type)}
-                        <div>
-                          <p className="font-medium">{transaction.description}</p>
-                          <p className="text-sm text-gray-600">
-                            {card?.number} • {transaction.date}
-                          </p>
-                        </div>
-                      </div>
-                      <div className={`font-medium ${transaction.amount > 0 ? "text-green-600" : "text-red-600"}`}>
-                        {transaction.amount > 0 ? "+" : ""}
-                        {formatAmount(Math.abs(transaction.amount))}
-                      </div>
-                    </div>
-                  )
-                })}
+              <div className="text-sm text-gray-700">
+                Émise le : {c.dateEmission || "N/A"} • Expire le : {c.dateExpiration || "N/A"}
               </div>
-            </CardContent>
-          </UI_Card>
-        </TabsContent>
-
-        <TabsContent value="settings" className="space-y-6">
-          <div className="grid gap-6 md:grid-cols-2">
-            <UI_Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Shield className="w-5 h-5 mr-2" />
-                  Sécurité
-                </CardTitle>
-                <CardDescription>Paramètres de sécurité pour vos cartes</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium">Notifications SMS</p>
-                    <p className="text-sm text-gray-600">Recevoir un SMS pour chaque transaction</p>
-                  </div>
-                  <Button variant="outline" size="sm">
-                    Activé
-                  </Button>
-                </div>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium">Paiements en ligne</p>
-                    <p className="text-sm text-gray-600">Autoriser les achats sur internet</p>
-                  </div>
-                  <Button variant="outline" size="sm">
-                    Activé
-                  </Button>
-                </div>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium">Paiements à l'étranger</p>
-                    <p className="text-sm text-gray-600">Autoriser les transactions hors Côte d'Ivoire</p>
-                  </div>
-                  <Button variant="outline" size="sm">
-                    Désactivé
-                  </Button>
-                </div>
-              </CardContent>
-            </UI_Card>
-
-            <UI_Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <AlertTriangle className="w-5 h-5 mr-2" />
-                  Actions d'urgence
-                </CardTitle>
-                <CardDescription>En cas de perte ou de vol</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button variant="destructive" className="w-full">
-                      <Lock className="w-4 h-4 mr-2" />
-                      Faire opposition sur toutes les cartes
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Opposition sur toutes les cartes</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        Cette action bloquera immédiatement toutes vos cartes. Vous devrez contacter votre agence pour
-                        les débloquer.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Annuler</AlertDialogCancel>
-                      <AlertDialogAction>Confirmer l'opposition</AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-                <Button variant="outline" className="w-full bg-transparent">
-                  Signaler une transaction frauduleuse
-                </Button>
-                <Button variant="outline" className="w-full bg-transparent">
-                  Contacter le service client
-                </Button>
-              </CardContent>
-            </UI_Card>
-          </div>
-        </TabsContent>
-      </Tabs>
-    </div>
-  )
+              <div className="text-sm text-gray-600 mt-1">
+                Client : {c.idClient || "N/A"}
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+    </main>
+  );
 }
