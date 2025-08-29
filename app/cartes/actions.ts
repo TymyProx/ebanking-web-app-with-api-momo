@@ -207,14 +207,16 @@ export async function getCards() {
     const result = await response.json()
     console.log("[v0] Résultat récupération cartes:", result)
 
-    // Adapter les données API au format attendu par l'interface
     let cardsData = []
-    if (result.data) {
-      // Si result.data est un tableau
+    if (result.rows && Array.isArray(result.rows)) {
+      // L'API retourne { rows: [...], count: number }
+      cardsData = result.rows
+      console.log("[v0] Données extraites de result.rows:", cardsData)
+    } else if (result.data) {
+      // Fallback pour l'ancien format
       if (Array.isArray(result.data)) {
         cardsData = result.data
       } else {
-        // Si result.data est un objet unique
         cardsData = [result.data]
       }
     }
@@ -232,6 +234,8 @@ export async function getCards() {
       balance: card.balance || 1000000,
       lastTransaction: card.lastTransaction || "Aucune transaction récente",
     }))
+
+    console.log("[v0] Cartes formatées:", formattedCards)
 
     return {
       success: true,
