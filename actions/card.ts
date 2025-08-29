@@ -60,6 +60,14 @@ export async function fetchAllCards(): Promise<CardsResponse> {
 }
 
 export async function createCardRequest(cardData: NewCardRequest): Promise<Card> {
+  console.log("[v0] Envoi de la demande avec type:", cardData.typCard)
+
+  const requestBody = {
+    typCard: cardData.typCard,
+  }
+
+  console.log("[v0] Corps de la requête:", JSON.stringify(requestBody))
+
   const res = await fetch(`${BASE_URL}/tenant/${TENANT_ID}/card`, {
     method: "POST",
     headers: {
@@ -67,11 +75,13 @@ export async function createCardRequest(cardData: NewCardRequest): Promise<Card>
       "Content-Type": "application/json",
       Authorization: `Bearer ${API_TOKEN}`,
     },
-    body: JSON.stringify(cardData),
+    body: JSON.stringify(requestBody),
   })
 
   const contentType = res.headers.get("content-type") || ""
   const bodyText = await res.text()
+
+  console.log("[v0] Réponse API:", res.status, bodyText)
 
   if (!res.ok) {
     throw new Error(`API ${res.status}: ${bodyText || "Erreur lors de la création"}`)

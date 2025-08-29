@@ -107,12 +107,14 @@ export default function CardsPage() {
     setSubmitSuccess(null)
 
     try {
-      await createCardRequest({ typCard: newCardData.typCard, idClient: "" })
+      console.log("[v0] Type de carte sélectionné:", newCardData.typCard)
+      await createCardRequest({ typCard: newCardData.typCard, idClient: "AUTO" })
       setSubmitSuccess("Demande de carte créée avec succès !")
       setNewCardData({ typCard: "" })
       setShowNewCardForm(false)
       await loadCards()
     } catch (e: any) {
+      console.log("[v0] Erreur lors de la création:", e)
       setSubmitError(e?.message ?? "Erreur lors de la création de la demande")
     } finally {
       setSubmitting(false)
