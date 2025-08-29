@@ -1,13 +1,10 @@
 "use client"
 
-import type React from "react"
-
 import { useEffect, useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import {
@@ -100,9 +97,7 @@ export default function CardsPage() {
     }
   }
 
-  async function handleNewCardRequest(e: React.FormEvent) {
-    e.preventDefault()
-
+  async function handleNewCardRequest() {
     if (!newCardData.typCard.trim() || !newCardData.idClient.trim()) {
       setSubmitError("Veuillez remplir tous les champs obligatoires")
       return
@@ -416,10 +411,10 @@ export default function CardsPage() {
 
       {/* New Card Request Dialog */}
       <Dialog open={showNewCardForm} onOpenChange={setShowNewCardForm}>
-        <DialogContent>
+        <DialogContent className="max-w-4xl">
           <DialogHeader>
             <DialogTitle>Demande de nouvelle carte</DialogTitle>
-            <DialogDescription>Remplissez le formulaire pour demander une nouvelle carte bancaire</DialogDescription>
+            <DialogDescription>Choisissez le type de carte qui vous convient</DialogDescription>
           </DialogHeader>
 
           {submitError && (
@@ -429,26 +424,80 @@ export default function CardsPage() {
             </Alert>
           )}
 
-          <form onSubmit={handleNewCardRequest} className="space-y-4">
-            <div>
-              <Label htmlFor="card-type">Type de carte *</Label>
-              <Select
-                value={newCardData.typCard}
-                onValueChange={(value) => setNewCardData((prev) => ({ ...prev, typCard: value }))}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Sélectionner un type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="DEBIT">Carte de débit</SelectItem>
-                  <SelectItem value="CREDIT">Carte de crédit</SelectItem>
-                  <SelectItem value="PREPAID">Carte prépayée</SelectItem>
-                  <SelectItem value="GOLD">Carte Gold</SelectItem>
-                  <SelectItem value="PLATINUM">Carte Platinum</SelectItem>
-                </SelectContent>
-              </Select>
+          {/* Visual card type selection */}
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {[
+                {
+                  type: "DEBIT",
+                  name: "Carte de Débit",
+                  color: "bg-gradient-to-r from-green-500 to-green-700",
+                  advantages: ["Accès aux DAB", "Paiements en magasin", "Plafond quotidien flexible"],
+                  icon: <CreditCard className="w-8 h-8" />,
+                },
+                {
+                  type: "CREDIT",
+                  name: "Carte de Crédit",
+                  color: "bg-gradient-to-r from-blue-500 to-blue-700",
+                  advantages: ["Crédit renouvelable", "Paiements différés", "Assurance voyage"],
+                  icon: <DollarSign className="w-8 h-8" />,
+                },
+                {
+                  type: "PREPAID",
+                  name: "Carte Prépayée",
+                  color: "bg-gradient-to-r from-purple-500 to-purple-700",
+                  advantages: ["Contrôle des dépenses", "Rechargeable", "Idéale pour les jeunes"],
+                  icon: <Shield className="w-8 h-8" />,
+                },
+                {
+                  type: "GOLD",
+                  name: "Carte Gold",
+                  color: "bg-gradient-to-r from-yellow-400 to-yellow-600",
+                  advantages: ["Services premium", "Plafonds élevés", "Assistance 24h/7j"],
+                  icon: <CheckCircle className="w-8 h-8" />,
+                },
+                {
+                  type: "PLATINUM",
+                  name: "Carte Platinum",
+                  color: "bg-gradient-to-r from-gray-400 to-gray-600",
+                  advantages: ["Services VIP", "Plafonds illimités", "Conciergerie privée"],
+                  icon: <Settings className="w-8 h-8" />,
+                },
+              ].map((cardType) => (
+                <Card
+                  key={cardType.type}
+                  className={`cursor-pointer transition-all hover:scale-105 border-2 ${
+                    newCardData.typCard === cardType.type
+                      ? "border-blue-500 ring-2 ring-blue-200"
+                      : "border-gray-200 hover:border-gray-300"
+                  }`}
+                  onClick={() => setNewCardData((prev) => ({ ...prev, typCard: cardType.type }))}
+                >
+                  <div className={`${cardType.color} p-4 text-white`}>
+                    <div className="flex items-center justify-between mb-2">
+                      {cardType.icon}
+                      {newCardData.typCard === cardType.type && <CheckCircle className="w-6 h-6 text-white" />}
+                    </div>
+                    <h3 className="font-bold text-lg">{cardType.name}</h3>
+                  </div>
+                  <CardContent className="p-4">
+                    <div className="space-y-2">
+                      <h4 className="font-medium text-sm text-gray-700">Avantages :</h4>
+                      <ul className="space-y-1">
+                        {cardType.advantages.map((advantage, index) => (
+                          <li key={index} className="text-sm text-gray-600 flex items-center">
+                            <CheckCircle className="w-3 h-3 text-green-500 mr-2 flex-shrink-0" />
+                            {advantage}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
             </div>
 
+            {/* Client ID Input */}
             <div>
               <Label htmlFor="client-id">ID Client *</Label>
               <Input
@@ -460,17 +509,22 @@ export default function CardsPage() {
               />
             </div>
 
+            {/* Action Buttons */}
             <div className="flex gap-2 pt-4">
-              <Button type="submit" disabled={submitting} className="flex-1">
+              <Button
+                onClick={handleNewCardRequest}
+                disabled={submitting || !newCardData.typCard || !newCardData.idClient.trim()}
+                className="flex-1"
+              >
                 {submitting ? (
                   <>
                     <Clock className="w-4 h-4 mr-2 animate-spin" />
-                    Création...
+                    Envoi en cours...
                   </>
                 ) : (
                   <>
                     <Plus className="w-4 h-4 mr-2" />
-                    Créer la demande
+                    Envoyer la demande
                   </>
                 )}
               </Button>
@@ -488,7 +542,7 @@ export default function CardsPage() {
                 Annuler
               </Button>
             </div>
-          </form>
+          </div>
         </DialogContent>
       </Dialog>
 
