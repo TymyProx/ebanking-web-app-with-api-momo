@@ -64,13 +64,17 @@ export async function createCardRequest(cardData: NewCardRequest): Promise<Card>
 
   const today = new Date().toISOString().split("T")[0] // Format YYYY-MM-DD
 
+  const expirationDate = new Date()
+  expirationDate.setFullYear(expirationDate.getFullYear() + 4)
+  const dateExpiration = expirationDate.toISOString().split("T")[0]
+
   const requestBody = {
     data: {
       numCard: "",
       typCard: cardData.typCard,
       status: "EN_ATTENTE",
       dateEmission: today,
-      dateExpiration: "",
+      dateExpiration: dateExpiration, // Use calculated expiration date instead of empty string
       idClient: "USER_123", // TODO: Récupérer l'ID du client connecté
     },
   }
