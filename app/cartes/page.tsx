@@ -172,6 +172,16 @@ export default function CardsPage() {
   }
 
   useEffect(() => {
+    if (submitSuccess) {
+      const timer = setTimeout(() => {
+        setSubmitSuccess(null)
+      }, 8000)
+
+      return () => clearTimeout(timer)
+    }
+  }, [submitSuccess])
+
+  useEffect(() => {
     loadCards()
   }, [])
 
