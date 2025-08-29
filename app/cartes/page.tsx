@@ -56,9 +56,8 @@ export default function CardsPage() {
 
   // New card request state
   const [showNewCardForm, setShowNewCardForm] = useState<boolean>(false)
-  const [newCardData, setNewCardData] = useState<NewCardRequest>({
+  const [newCardData, setNewCardData] = useState<Pick<NewCardRequest, "typCard">>({
     typCard: "",
-    idClient: "",
   })
   const [submitting, setSubmitting] = useState<boolean>(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
@@ -98,8 +97,8 @@ export default function CardsPage() {
   }
 
   async function handleNewCardRequest() {
-    if (!newCardData.typCard.trim() || !newCardData.idClient.trim()) {
-      setSubmitError("Veuillez remplir tous les champs obligatoires")
+    if (!newCardData.typCard.trim()) {
+      setSubmitError("Veuillez sélectionner un type de carte")
       return
     }
 
@@ -108,9 +107,9 @@ export default function CardsPage() {
     setSubmitSuccess(null)
 
     try {
-      await createCardRequest(newCardData)
+      await createCardRequest({ typCard: newCardData.typCard, idClient: "" })
       setSubmitSuccess("Demande de carte créée avec succès !")
-      setNewCardData({ typCard: "", idClient: "" })
+      setNewCardData({ typCard: "" })
       setShowNewCardForm(false)
       await loadCards()
     } catch (e: any) {
@@ -497,25 +496,9 @@ export default function CardsPage() {
               ))}
             </div>
 
-            {/* Client ID Input */}
-            <div>
-              <Label htmlFor="client-id">ID Client *</Label>
-              <Input
-                id="client-id"
-                value={newCardData.idClient}
-                onChange={(e) => setNewCardData((prev) => ({ ...prev, idClient: e.target.value }))}
-                placeholder="Entrez votre ID client"
-                required
-              />
-            </div>
-
             {/* Action Buttons */}
             <div className="flex gap-2 pt-4">
-              <Button
-                onClick={handleNewCardRequest}
-                disabled={submitting || !newCardData.typCard || !newCardData.idClient.trim()}
-                className="flex-1"
-              >
+              <Button onClick={handleNewCardRequest} disabled={submitting || !newCardData.typCard} className="flex-1">
                 {submitting ? (
                   <>
                     <Clock className="w-4 h-4 mr-2 animate-spin" />
@@ -533,7 +516,7 @@ export default function CardsPage() {
                 variant="outline"
                 onClick={() => {
                   setShowNewCardForm(false)
-                  setNewCardData({ typCard: "", idClient: "" })
+                  setNewCardData({ typCard: "" })
                   setSubmitError(null)
                 }}
                 disabled={submitting}
