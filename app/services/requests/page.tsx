@@ -30,7 +30,7 @@ import {
   Briefcase,
   Plus,
 } from "lucide-react"
-import { submitServiceRequest } from "./actions"
+import {submitCreditRequest } from "./actions"
 import { useActionState } from "react"
 
 const serviceTypes = [
@@ -154,8 +154,10 @@ export default function ServiceRequestsPage() {
   const [selectedAccount, setSelectedAccount] = useState<string>("")
   const [formData, setFormData] = useState<Record<string, any>>({})
   const [activeTab, setActiveTab] = useState("new")
-  const [submitState, submitAction, isSubmitting] = useActionState(submitServiceRequest, null)
+  const [submitState, submitAction, isSubmitting] = useActionState(submitCreditRequest, null)
   const [selectedHistoryRequest, setSelectedHistoryRequest] = useState<string>("")
+  const [creditSubmitState, setCreditSubmitState] = useState<{ success?: boolean; error?: string; reference?: string } | null>(null)
+  const [isCreditSubmitting, setIsCreditSubmitting] = useState(false)
 
   const selectedServiceData = serviceTypes.find((s) => s.id === selectedService)
   const selectedHistoryRequestData = recentRequests.find((r) => r.id === selectedHistoryRequest)
@@ -218,6 +220,38 @@ export default function ServiceRequestsPage() {
 
   const formatAmount = (amount: number, currency: string) => {
     return new Intl.NumberFormat("fr-FR").format(amount)
+  }
+
+  // Fonction pour gérer la soumission du formulaire de crédit
+  const handleCreditSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    
+    // Vérifier que tous les champs requis sont remplis
+    if (!formData.applicant_name || !formData.loan_amount || !formData.loan_duration || !formData.loan_purpose) {
+      setCreditSubmitState({ error: "Veuillez remplir tous les champs obligatoires" })
+      return
+    }
+
+    setIsCreditSubmitting(true)
+    setCreditSubmitState(null)
+
+    try {
+      const creditData = {
+        applicant_name: formData.applicant_name,
+        loan_amount: formData.loan_amount,
+        loan_duration: formData.loan_duration,
+        loan_purpose: formData.loan_purpose,
+      }
+
+      const result = await submitCreditRequest(creditData)
+      setCreditSubmitState({ success: true, reference: result.referenceId || "REF-" + Date.now() })
+      // Réinitialiser le formulaire après succès
+      setFormData({})
+    } catch (error: any) {
+      setCreditSubmitState({ error: error.message || "Une erreur s'est produite lors de la soumission" })
+    } finally {
+      setIsCreditSubmitting(false)
+    }
   }
 
   const renderServiceForm = () => {
@@ -360,25 +394,25 @@ export default function ServiceRequestsPage() {
             </div>
           </div>
         )
-// PERSONAL PAGE
+
       case "credit_personal":
         return (
-          <div className="space-y-4">
+          <form onSubmit={handleCreditSubmit} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="loan_amount">Montant du crédit (GNF) *</Label>
                 <Input
                   id="loan_amount"
                   type="number"
-                  name="applicantName"
                   placeholder="Ex: 10000000"
                   value={formData.loan_amount || ""}
                   onChange={(e) => handleInputChange("loan_amount", e.target.value)}
+                  required
                 />
               </div>
               <div>
                 <Label htmlFor="loan_duration">Durée (mois) *</Label>
-                <Select name= "durationMonths" onValueChange={(value) => handleInputChange("loan_duration", value)}>
+                <Select onValueChange={(value) => handleInputChange("loan_duration", value)} required>
                   <SelectTrigger>
                     <SelectValue placeholder="Durée" />
                   </SelectTrigger>
@@ -395,7 +429,7 @@ export default function ServiceRequestsPage() {
 
             <div>
               <Label htmlFor="loan_purpose">Objet du crédit *</Label>
-              <Select  name= "purpose" onValueChange={(value) => handleInputChange("loan_purpose", value)}>
+              <Select onValueChange={(value) => handleInputChange("loan_purpose", value)} required>
                 <SelectTrigger>
                   <SelectValue placeholder="Sélectionnez l'objet" />
                 </SelectTrigger>
@@ -419,11 +453,12 @@ export default function ServiceRequestsPage() {
                   placeholder="Ex: 2000000"
                   value={formData.monthly_income || ""}
                   onChange={(e) => handleInputChange("monthly_income", e.target.value)}
+                  required
                 />
               </div>
               <div>
                 <Label htmlFor="employment_type">Type d'emploi *</Label>
-                <Select onValueChange={(value) => handleInputChange("employment_type", value)}>
+                <Select onValueChange={(value) => handleInputChange("employment_type", value)} required>
                   <SelectTrigger>
                     <SelectValue placeholder="Type d'emploi" />
                   </SelectTrigger>
@@ -441,10 +476,10 @@ export default function ServiceRequestsPage() {
               <Label htmlFor="applicant_name">Nom du demandeur *</Label>
               <Input
                 id="applicant_name"
-                name="applicantName"
                 placeholder="Nom du demandeur"
                 value={formData.applicant_name || ""}
                 onChange={(e) => handleInputChange("applicant_name", e.target.value)}
+                required
               />
             </div>
 
@@ -455,6 +490,7 @@ export default function ServiceRequestsPage() {
                 placeholder="Nom complet du garant"
                 value={formData.guarantor_name || ""}
                 onChange={(e) => handleInputChange("guarantor_name", e.target.value)}
+                required
               />
             </div>
 
@@ -465,9 +501,101 @@ export default function ServiceRequestsPage() {
                 placeholder="Ex: +224 6XX XXX XXX"
                 value={formData.guarantor_phone || ""}
                 onChange={(e) => handleInputChange("guarantor_phone", e.target.value)}
+                required
               />
             </div>
-          </div>
+
+            {/* Contact Information */}
+            <div className="space-y-4">
+              <h4 className="font-medium">Informations de contact</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="contact_phone">Téléphone *</Label>
+                  <Input
+                    id="contact_phone"
+                    placeholder="+224 6XX XXX XXX"
+                    value={formData.contact_phone || ""}
+                    onChange={(e) => handleInputChange("contact_phone", e.target.value)}
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="contact_email">Email *</Label>
+                  <Input
+                    id="contact_email"
+                    type="email"
+                    placeholder="votre@email.com"
+                    value={formData.contact_email || ""}
+                    onChange={(e) => handleInputChange("contact_email", e.target.value)}
+                    required
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Additional Comments */}
+            <div>
+              <Label htmlFor="comments">Commentaires additionnels</Label>
+              <Textarea
+                id="comments"
+                placeholder="Informations supplémentaires (optionnel)"
+                value={formData.comments || ""}
+                onChange={(e) => handleInputChange("comments", e.target.value)}
+              />
+            </div>
+
+            {/* Terms and Conditions */}
+            <div className="flex items-start space-x-2">
+              <Checkbox
+                id="terms"
+                checked={formData.terms || false}
+                onCheckedChange={(checked) => handleInputChange("terms", checked)}
+                required
+              />
+              <Label htmlFor="terms" className="text-sm">
+                J'accepte les{" "}
+                <a href="#" className="text-blue-600 hover:underline">
+                  conditions générales
+                </a>{" "}
+                et autorise le traitement de ma demande
+              </Label>
+            </div>
+
+            {/* Submit Button */}
+            <Button type="submit" disabled={isCreditSubmitting || !formData.terms} className="w-full">
+              {isCreditSubmitting ? (
+                <>
+                  <Clock className="w-4 h-4 mr-2 animate-spin" />
+                  Envoi en cours...
+                </>
+              ) : (
+                <>
+                  <Send className="w-4 h-4 mr-2" />
+                  Envoyer la demande
+                </>
+              )}
+            </Button>
+
+            {/* Feedback Messages */}
+            {creditSubmitState?.success && (
+              <Alert className="border-green-200 bg-green-50">
+                <CheckCircle className="h-4 w-4 text-green-600" />
+                <AlertDescription className="text-green-800">
+                  ✅ Votre demande de crédit a été envoyée avec succès. Référence: {creditSubmitState.reference}. 
+                  Réponse sous {selectedServiceData?.processingTime}.
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {creditSubmitState?.error && (
+              <Alert className="border-red-200 bg-red-50">
+                <AlertCircle className="h-4 w-4 text-red-600" />
+                <AlertDescription className="text-red-800">
+                  ❌ Une erreur est survenue: {creditSubmitState.error}. Veuillez réessayer.
+                </AlertDescription>
+              </Alert>
+            )}
+          </form>
         )
 
       case "card_request":
@@ -702,98 +830,102 @@ export default function ServiceRequestsPage() {
                 {/* Dynamic Form */}
                 {renderServiceForm()}
 
-                {/* Contact Information */}
-                <div className="space-y-4">
-                  <h4 className="font-medium">Informations de contact</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Contact Information and other fields for non-credit forms */}
+                {selectedService !== "credit_personal" && (
+                  <>
+                    <div className="space-y-4">
+                      <h4 className="font-medium">Informations de contact</h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor="contact_phone">Téléphone *</Label>
+                          <Input
+                            id="contact_phone"
+                            placeholder="+224 6XX XXX XXX"
+                            value={formData.contact_phone || ""}
+                            onChange={(e) => handleInputChange("contact_phone", e.target.value)}
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="contact_email">Email *</Label>
+                          <Input
+                            id="contact_email"
+                            type="email"
+                            placeholder="votre@email.com"
+                            value={formData.contact_email || ""}
+                            onChange={(e) => handleInputChange("contact_email", e.target.value)}
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Additional Comments */}
                     <div>
-                      <Label htmlFor="contact_phone">Téléphone *</Label>
-                      <Input
-                        id="contact_phone"
-                        placeholder="+224 6XX XXX XXX"
-                        value={formData.contact_phone || ""}
-                        onChange={(e) => handleInputChange("contact_phone", e.target.value)}
+                      <Label htmlFor="comments">Commentaires additionnels</Label>
+                      <Textarea
+                        id="comments"
+                        placeholder="Informations supplémentaires (optionnel)"
+                        value={formData.comments || ""}
+                        onChange={(e) => handleInputChange("comments", e.target.value)}
                       />
                     </div>
-                    <div>
-                      <Label htmlFor="contact_email">Email *</Label>
-                      <Input
-                        id="contact_email"
-                        type="email"
-                        placeholder="votre@email.com"
-                        value={formData.contact_email || ""}
-                        onChange={(e) => handleInputChange("contact_email", e.target.value)}
+
+                    {/* Terms and Conditions */}
+                    <div className="flex items-start space-x-2">
+                      <Checkbox
+                        id="terms"
+                        checked={formData.terms || false}
+                        onCheckedChange={(checked) => handleInputChange("terms", checked)}
                       />
+                      <Label htmlFor="terms" className="text-sm">
+                        J'accepte les{" "}
+                        <a href="#" className="text-blue-600 hover:underline">
+                          conditions générales
+                        </a>{" "}
+                        et autorise le traitement de ma demande
+                      </Label>
                     </div>
-                  </div>
-                </div>
 
-                {/* Additional Comments */}
-                <div>
-                  <Label htmlFor="comments">Commentaires additionnels</Label>
-                  <Textarea
-                    id="comments"
-                    placeholder="Informations supplémentaires (optionnel)"
-                    value={formData.comments || ""}
-                    onChange={(e) => handleInputChange("comments", e.target.value)}
-                  />
-                </div>
+                    {/* Submit Button for non-credit forms */}
+                    <form action={submitAction}>
+                      <input type="hidden" name="serviceType" value={selectedService} />
+                      <input type="hidden" name="accountId" value={selectedAccount} />
+                      <input type="hidden" name="formData" value={JSON.stringify(formData)} />
 
-                {/* Terms and Conditions */}
-                <div className="flex items-start space-x-2">
-                  <Checkbox
-                    id="terms"
-                    checked={formData.terms || false}
-                    onCheckedChange={(checked) => handleInputChange("terms", checked)}
-                  />
-                  <Label htmlFor="terms" className="text-sm">
-                    J'accepte les{" "}
-                    <a href="#" className="text-blue-600 hover:underline">
-                      conditions générales
-                    </a>{" "}
-                    et autorise le traitement de ma demande
-                  </Label>
-                </div>
+                      <Button type="submit" disabled={isSubmitting || !formData.terms} className="w-full">
+                        {isSubmitting ? (
+                          <>
+                            <Clock className="w-4 h-4 mr-2 animate-spin" />
+                            Envoi en cours...
+                          </>
+                        ) : (
+                          <>
+                            <Send className="w-4 h-4 mr-2" />
+                            Envoyer la demande
+                          </>
+                        )}
+                      </Button>
+                    </form>
 
-                {/* Submit Button */}
-                <form action={submitAction}>
-                  <input type="hidden" name="serviceType" value={selectedService} />
-                  <input type="hidden" name="accountId" value={selectedAccount} />
-                  <input type="hidden" name="formData" value={JSON.stringify(formData)} />
-
-                  <Button type="submit" disabled={isSubmitting || !formData.terms} className="w-full">
-                    {isSubmitting ? (
-                      <>
-                        <Clock className="w-4 h-4 mr-2 animate-spin" />
-                        Envoi en cours...
-                      </>
-                    ) : (
-                      <>
-                        <Send className="w-4 h-4 mr-2" />
-                        Envoyer la demande
-                      </>
+                    {/* Feedback Messages for non-credit forms */}
+                    {submitState?.success && (
+                      <Alert className="border-green-200 bg-green-50">
+                        <CheckCircle className="h-4 w-4 text-green-600" />
+                        <AlertDescription className="text-green-800">
+                          ✅ Votre demande a été envoyée avec succès. Référence: {submitState.reference}. Réponse sous{" "}
+                          {selectedServiceData.processingTime}.
+                        </AlertDescription>
+                      </Alert>
                     )}
-                  </Button>
-                </form>
 
-                {/* Feedback Messages */}
-                {submitState?.success && (
-                  <Alert className="border-green-200 bg-green-50">
-                    <CheckCircle className="h-4 w-4 text-green-600" />
-                    <AlertDescription className="text-green-800">
-                      ✅ Votre demande a été envoyée avec succès. Référence: {submitState.reference}. Réponse sous{" "}
-                      {selectedServiceData.processingTime}.
-                    </AlertDescription>
-                  </Alert>
-                )}
-
-                {submitState?.error && (
-                  <Alert className="border-red-200 bg-red-50">
-                    <AlertCircle className="h-4 w-4 text-red-600" />
-                    <AlertDescription className="text-red-800">
-                      ❌ Une erreur est survenue: {submitState.error}. Veuillez réessayer.
-                    </AlertDescription>
-                  </Alert>
+                    {submitState?.error && (
+                      <Alert className="border-red-200 bg-red-50">
+                        <AlertCircle className="h-4 w-4 text-red-600" />
+                        <AlertDescription className="text-red-800">
+                          ❌ Une erreur est survenue: {submitState.error}. Veuillez réessayer.
+                        </AlertDescription>
+                      </Alert>
+                    )}
+                  </>
                 )}
               </CardContent>
             </Card>
