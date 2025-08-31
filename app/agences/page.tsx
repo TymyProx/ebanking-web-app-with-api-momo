@@ -194,7 +194,7 @@ export default function AgencesPage() {
   }
 
   const openInMaps = (agence: Agence) => {
-    const url = `https://www.google.com/maps/dir/?api=1&destination=${agence.coordonnees.lat},${agence.coordonnees.lng}`
+    const url = `www.google.com/maps/dir/?api=1&destination=${agence.coordonnees.lat},${agence.coordonnees.lng}`
     window.open(url, "_blank")
   }
 
