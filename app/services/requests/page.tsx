@@ -1,5 +1,7 @@
 "use client"
 
+import type React from "react"
+
 import { useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -24,9 +26,6 @@ import {
   Download,
   Banknote,
   Shield,
-  Home,
-  Car,
-  GraduationCap,
   Briefcase,
   Plus,
 } from "lucide-react"
@@ -55,44 +54,14 @@ const serviceTypes = [
     requirements: ["Compte ouvert depuis 3 mois", "Justificatifs à jour"],
   },
   {
-    id: "credit_personal",
-    name: "Crédit personnel",
+    id: "credit",
+    name: "Crédit",
     icon: CreditCard,
-    description: "Demande de prêt personnel",
+    description: "Demande de crédit (personnel, immobilier, automobile, étudiant)",
     category: "credit",
-    processingTime: "5-10 jours ouvrables",
+    processingTime: "3-30 jours ouvrables",
     cost: "Gratuit",
     requirements: ["Revenus réguliers", "Garanties", "Dossier complet"],
-  },
-  {
-    id: "credit_mortgage",
-    name: "Crédit immobilier",
-    icon: Home,
-    description: "Financement pour achat immobilier",
-    category: "credit",
-    processingTime: "15-30 jours ouvrables",
-    cost: "Gratuit",
-    requirements: ["Apport personnel", "Garanties immobilières", "Étude de faisabilité"],
-  },
-  {
-    id: "credit_auto",
-    name: "Crédit automobile",
-    icon: Car,
-    description: "Financement pour achat de véhicule",
-    category: "credit",
-    processingTime: "3-7 jours ouvrables",
-    cost: "Gratuit",
-    requirements: ["Permis de conduire", "Devis véhicule", "Assurance"],
-  },
-  {
-    id: "credit_student",
-    name: "Crédit étudiant",
-    icon: GraduationCap,
-    description: "Financement des études",
-    category: "credit",
-    processingTime: "5-10 jours ouvrables",
-    cost: "Gratuit",
-    requirements: ["Attestation d'inscription", "Garant", "Relevés de notes"],
   },
   {
     id: "business_account",
@@ -156,7 +125,11 @@ export default function ServiceRequestsPage() {
   const [activeTab, setActiveTab] = useState("new")
   const [submitState, submitAction, isSubmitting] = useActionState(submitCreditRequest, null)
   const [selectedHistoryRequest, setSelectedHistoryRequest] = useState<string>("")
-  const [creditSubmitState, setCreditSubmitState] = useState<{ success?: boolean; error?: string; reference?: string } | null>(null)
+  const [creditSubmitState, setCreditSubmitState] = useState<{
+    success?: boolean
+    error?: string
+    reference?: string
+  } | null>(null)
   const [isCreditSubmitting, setIsCreditSubmitting] = useState(false)
 
   const selectedServiceData = serviceTypes.find((s) => s.id === selectedService)
@@ -170,10 +143,7 @@ export default function ServiceRequestsPage() {
     const typeMapping: Record<string, string> = {
       "Demande de chéquier": "checkbook",
       "E-attestation bancaire": "certificate",
-      "Crédit personnel": "credit_personal",
-      "Crédit immobilier": "credit_mortgage",
-      "Crédit automobile": "credit_auto",
-      "Crédit étudiant": "credit_student",
+      Crédit: "credit",
       "Compte professionnel": "business_account",
       "Demande de carte": "card_request",
     }
@@ -225,7 +195,7 @@ export default function ServiceRequestsPage() {
   // Fonction pour gérer la soumission du formulaire de crédit
   const handleCreditSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     // Vérifier que tous les champs requis sont remplis
     if (!formData.applicant_name || !formData.loan_amount || !formData.loan_duration || !formData.loan_purpose) {
       setCreditSubmitState({ error: "Veuillez remplir tous les champs obligatoires" })
@@ -395,9 +365,24 @@ export default function ServiceRequestsPage() {
           </div>
         )
 
-      case "credit_personal":
+      case "credit":
         return (
           <form onSubmit={handleCreditSubmit} className="space-y-4">
+            <div>
+              <Label htmlFor="credit_type">Type de crédit *</Label>
+              <Select onValueChange={(value) => handleInputChange("credit_type", value)} required>
+                <SelectTrigger>
+                  <SelectValue placeholder="Sélectionnez le type de crédit" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="personal">Crédit personnel</SelectItem>
+                  <SelectItem value="mortgage">Crédit immobilier</SelectItem>
+                  <SelectItem value="student">Crédit étudiant</SelectItem>
+                  <SelectItem value="auto">Crédit automobile</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="loan_amount">Montant du crédit (GNF) *</Label>
@@ -581,7 +566,7 @@ export default function ServiceRequestsPage() {
               <Alert className="border-green-200 bg-green-50">
                 <CheckCircle className="h-4 w-4 text-green-600" />
                 <AlertDescription className="text-green-800">
-                  ✅ Votre demande de crédit a été envoyée avec succès. Référence: {creditSubmitState.reference}. 
+                  ✅ Votre demande de crédit a été envoyée avec succès. Référence: {creditSubmitState.reference}.
                   Réponse sous {selectedServiceData?.processingTime}.
                 </AlertDescription>
               </Alert>
@@ -831,7 +816,7 @@ export default function ServiceRequestsPage() {
                 {renderServiceForm()}
 
                 {/* Contact Information and other fields for non-credit forms */}
-                {selectedService !== "credit_personal" && (
+                {selectedService !== "credit" && (
                   <>
                     <div className="space-y-4">
                       <h4 className="font-medium">Informations de contact</h4>
