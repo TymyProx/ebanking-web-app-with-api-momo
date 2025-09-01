@@ -14,7 +14,7 @@ export async function submitCreditRequest(formData: {
   loan_amount: string;      // Montant du crédit demandé
   loan_duration: string;    // Durée du crédit en mois
   loan_purpose: string;     // Objet / raison du crédit
-}) {
+}) {  
   try {
     // 🔑 Récupération du token JWT stocké dans les cookies
     const cookieToken = (await cookies()).get("token")?.value;
@@ -32,7 +32,7 @@ export async function submitCreditRequest(formData: {
       },
       body: JSON.stringify({
         data: {
-          // ⚡ Mapping des données du formulaire vers les champs attendus par l’API
+          //  Mapping des données du formulaire vers les champs attendus par l’API
           applicantName: formData.applicant_name,
           creditAmount: formData.loan_amount,
           durationMonths: formData.loan_duration,
