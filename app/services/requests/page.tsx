@@ -228,6 +228,7 @@ export default function ServiceRequestsPage() {
     if (!selectedServiceData) return null
 
     switch (selectedService) {
+      // COMMANDES CHEQUIER PAGE
       case "checkbook":
         return (
           <div className="space-y-4">
