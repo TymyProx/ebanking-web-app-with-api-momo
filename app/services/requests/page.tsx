@@ -363,6 +363,20 @@ export default function ServiceRequestsPage() {
                 et autorise le traitement de ma demande
               </Label>
             </div>
+
+            <Button type="submit" disabled={isCheckbookSubmitting || !formData.terms} className="w-full">
+              {isCheckbookSubmitting ? (
+                <>
+                  <Clock className="w-4 h-4 mr-2 animate-spin" />
+                  Envoi en cours...
+                </>
+              ) : (
+                <>
+                  <Send className="w-4 h-4 mr-2" />
+                  Envoyer la demande
+                </>
+              )}
+            </Button>
           </form>
         )
 
@@ -623,6 +637,20 @@ export default function ServiceRequestsPage() {
                 et autorise le traitement de ma demande
               </Label>
             </div>
+
+            <Button type="submit" disabled={isCreditSubmitting || !formData.terms} className="w-full">
+              {isCreditSubmitting ? (
+                <>
+                  <Clock className="w-4 h-4 mr-2 animate-spin" />
+                  Envoi en cours...
+                </>
+              ) : (
+                <>
+                  <Send className="w-4 h-4 mr-2" />
+                  Envoyer la demande
+                </>
+              )}
+            </Button>
           </form>
         )
 
@@ -900,19 +928,7 @@ export default function ServiceRequestsPage() {
                     )}
                   </Button>
                 ) : selectedService === "credit" ? (
-                  <Button type="submit" disabled={isCreditSubmitting || !formData.terms} className="w-full">
-                    {isCreditSubmitting ? (
-                      <>
-                        <Clock className="w-4 h-4 mr-2 animate-spin" />
-                        Envoi en cours...
-                      </>
-                    ) : (
-                      <>
-                        <Send className="w-4 h-4 mr-2" />
-                        Envoyer la demande
-                      </>
-                    )}
-                  </Button>
+                  <div></div>
                 ) : (
                   <form action={submitAction}>
                     <input type="hidden" name="serviceType" value={selectedService} />
