@@ -29,7 +29,7 @@ import {
   Briefcase,
   Plus,
 } from "lucide-react"
-import { submitCreditRequest } from "./actions"
+import { submitCreditRequest, submitCheckbookRequest } from "./actions"
 import { useActionState } from "react"
 
 const serviceTypes = [
@@ -131,6 +131,12 @@ export default function ServiceRequestsPage() {
     reference?: string
   } | null>(null)
   const [isCreditSubmitting, setIsCreditSubmitting] = useState(false)
+  const [checkbookSubmitState, setCheckbookSubmitState] = useState<{
+    success?: boolean
+    error?: string
+    reference?: string
+  } | null>(null)
+  const [isCheckbookSubmitting, setIsCheckbookSubmitting] = useState(false)
 
   const selectedServiceData = serviceTypes.find((s) => s.id === selectedService)
   const selectedHistoryRequestData = recentRequests.find((r) => r.id === selectedHistoryRequest)
@@ -224,6 +230,40 @@ export default function ServiceRequestsPage() {
     }
   }
 
+  const handleCheckbookSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+
+    // Vérifier que tous les champs requis sont remplis
+    if (!formData.nbrechequier || !formData.nbrefeuille || !formData.intitulecompte) {
+      setCheckbookSubmitState({ error: "Veuillez remplir tous les champs obligatoires" })
+      return
+    }
+
+    setIsCheckbookSubmitting(true)
+    setCheckbookSubmitState(null)
+
+    try {
+      const checkbookData = {
+        dateorder: formData.dateorder || new Date().toISOString().split("T")[0],
+        nbrefeuille: Number.parseInt(formData.nbrefeuille) || 0,
+        nbrechequier: Number.parseInt(formData.nbrechequier) || 0,
+        stepflow: 0,
+        intitulecompte: formData.intitulecompte,
+        numcompteId: selectedAccount,
+        commentaire: formData.commentaire || "",
+      }
+
+      const result = await submitCheckbookRequest(checkbookData)
+      setCheckbookSubmitState({ success: true, reference: result.referenceId || "REF-" + Date.now() })
+      // Réinitialiser le formulaire après succès
+      setFormData({})
+    } catch (error: any) {
+      setCheckbookSubmitState({ error: error.message || "Une erreur s'est produite lors de la soumission" })
+    } finally {
+      setIsCheckbookSubmitting(false)
+    }
+  }
+
   const renderServiceForm = () => {
     if (!selectedServiceData) return null
 
@@ -231,11 +271,12 @@ export default function ServiceRequestsPage() {
       // COMMANDES CHEQUIER PAGE
       case "checkbook":
         return (
-          <div className="space-y-4">
+          <form onSubmit={handleCheckbookSubmit} className="space-y-4">
             <div>
               <Label htmlFor="dateorder">Date de commande *</Label>
               <Input
                 id="dateorder"
+                name="dateorder"
                 type="date"
                 value={formData.dateorder || new Date().toISOString().split("T")[0]}
                 onChange={(e) => handleInputChange("dateorder", e.target.value)}
@@ -247,45 +288,75 @@ export default function ServiceRequestsPage() {
               <Label htmlFor="nbrechequier">Nombre de chéquiers *</Label>
               <Input
                 id="nbrechequier"
+                name="nbrechequier"
                 type="number"
                 min="1"
                 max="10"
-                placeholder="Ex: 1"
                 value={formData.nbrechequier || ""}
-                onChange={(e) => handleInputChange("nbrechequier", Number.parseInt(e.target.value) || 0)}
+                onChange={(e) => handleInputChange("nbrechequier", e.target.value)}
+                placeholder="Ex: 2"
                 required
               />
             </div>
 
             <div>
               <Label htmlFor="nbrefeuille">Nombre de feuilles par chéquier *</Label>
-              <Select onValueChange={(value) => handleInputChange("nbrefeuille", Number.parseInt(value))}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Sélectionnez le nombre de feuilles" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="25">25 feuilles</SelectItem>
-                  <SelectItem value="50">50 feuilles</SelectItem>
-                  <SelectItem value="100">100 feuilles</SelectItem>
-                </SelectContent>
-              </Select>
+              <Input
+                id="nbrefeuille"
+                name="nbrefeuille"
+                type="number"
+                min="25"
+                max="100"
+                step="25"
+                value={formData.nbrefeuille || ""}
+                onChange={(e) => handleInputChange("nbrefeuille", e.target.value)}
+                placeholder="Ex: 50"
+                required
+              />
             </div>
 
             <div>
-              <Label htmlFor="commentaire">Commentaire (optionnel)</Label>
+              <Label htmlFor="commentaire">Commentaire</Label>
               <Textarea
                 id="commentaire"
-                placeholder="Informations complémentaires sur votre demande"
+                name="commentaire"
                 value={formData.commentaire || ""}
                 onChange={(e) => handleInputChange("commentaire", e.target.value)}
+                placeholder="Commentaire optionnel..."
                 rows={3}
               />
             </div>
 
-            {/* Champs cachés pour l'API */}
-            <input type="hidden" name="stepflow" value="0" />
-            <input type="hidden" name="numcompteId" value={selectedAccount} />
-          </div>
+            {checkbookSubmitState?.success && (
+              <Alert className="border-green-200 bg-green-50">
+                <CheckCircle className="h-4 w-4 text-green-600" />
+                <AlertDescription className="text-green-800">
+                  ✅ Votre demande de chéquier a été soumise avec succès ! Référence: {checkbookSubmitState.reference}
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {checkbookSubmitState?.error && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>❌ {checkbookSubmitState.error}</AlertDescription>
+              </Alert>
+            )}
+
+            <Button type="submit" disabled={isCheckbookSubmitting || !selectedAccount} className="w-full">
+              {isCheckbookSubmitting ? (
+                <>
+                  <Clock className="w-4 h-4 mr-2 animate-spin" />
+                  Soumission en cours...
+                </>
+              ) : (
+                <>
+                  <Send className="w-4 h-4 mr-2" />
+                  Soumettre la demande
+                </>
+              )}
+            </Button>
+          </form>
         )
 
       case "certificate":
