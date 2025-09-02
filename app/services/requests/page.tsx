@@ -232,64 +232,69 @@ export default function ServiceRequestsPage() {
         return (
           <div className="space-y-4">
             <div>
-              <Label htmlFor="checkbook_type">Type de chéquier *</Label>
-              <Select onValueChange={(value) => handleInputChange("checkbook_type", value)}>
+              <Label htmlFor="dateorder">Date de commande *</Label>
+              <Input
+                id="dateorder"
+                type="date"
+                value={formData.dateorder || new Date().toISOString().split("T")[0]}
+                onChange={(e) => handleInputChange("dateorder", e.target.value)}
+                required
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="nbrechequier">Nombre de chéquiers *</Label>
+              <Input
+                id="nbrechequier"
+                type="number"
+                min="1"
+                max="10"
+                placeholder="Ex: 1"
+                value={formData.nbrechequier || ""}
+                onChange={(e) => handleInputChange("nbrechequier", Number.parseInt(e.target.value) || 0)}
+                required
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="nbrefeuille">Nombre de feuilles par chéquier *</Label>
+              <Select onValueChange={(value) => handleInputChange("nbrefeuille", Number.parseInt(value))}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Sélectionnez le type" />
+                  <SelectValue placeholder="Sélectionnez le nombre de feuilles" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="standard">Standard (25 chèques)</SelectItem>
-                  <SelectItem value="premium">Premium (50 chèques)</SelectItem>
-                  <SelectItem value="business">Professionnel (100 chèques)</SelectItem>
+                  <SelectItem value="25">25 feuilles</SelectItem>
+                  <SelectItem value="50">50 feuilles</SelectItem>
+                  <SelectItem value="100">100 feuilles</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             <div>
-              <Label htmlFor="delivery_method">Mode de livraison *</Label>
-              <RadioGroup
-                value={formData.delivery_method}
-                onValueChange={(value) => handleInputChange("delivery_method", value)}
-              >
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="branch" id="branch" />
-                  <Label htmlFor="branch">Retrait en agence</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="home" id="home" />
-                  <Label htmlFor="home">Livraison à domicile (+10,000 GNF)</Label>
-                </div>
-              </RadioGroup>
+              <Label htmlFor="intitulecompte">Intitulé du compte *</Label>
+              <Input
+                id="intitulecompte"
+                placeholder="Ex: Compte Courant Principal"
+                value={formData.intitulecompte || ""}
+                onChange={(e) => handleInputChange("intitulecompte", e.target.value)}
+                required
+              />
             </div>
 
-            {formData.delivery_method === "home" && (
-              <div>
-                <Label htmlFor="delivery_address">Adresse de livraison *</Label>
-                <Textarea
-                  id="delivery_address"
-                  placeholder="Adresse complète de livraison"
-                  value={formData.delivery_address || ""}
-                  onChange={(e) => handleInputChange("delivery_address", e.target.value)}
-                />
-              </div>
-            )}
+            <div>
+              <Label htmlFor="commentaire">Commentaire (optionnel)</Label>
+              <Textarea
+                id="commentaire"
+                placeholder="Informations complémentaires sur votre demande"
+                value={formData.commentaire || ""}
+                onChange={(e) => handleInputChange("commentaire", e.target.value)}
+                rows={3}
+              />
+            </div>
 
-            {formData.delivery_method === "branch" && (
-              <div>
-                <Label htmlFor="branch_location">Agence de retrait *</Label>
-                <Select onValueChange={(value) => handleInputChange("branch_location", value)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Sélectionnez l'agence" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="kaloum">Agence Kaloum</SelectItem>
-                    <SelectItem value="matam">Agence Matam</SelectItem>
-                    <SelectItem value="ratoma">Agence Ratoma</SelectItem>
-                    <SelectItem value="dixinn">Agence Dixinn</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
+            {/* Champs cachés pour l'API */}
+            <input type="hidden" name="stepflow" value="0" />
+            <input type="hidden" name="numcompteId" value={selectedAccount} />
           </div>
         )
 
