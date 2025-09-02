@@ -271,17 +271,6 @@ export default function ServiceRequestsPage() {
             </div>
 
             <div>
-              <Label htmlFor="intitulecompte">Intitulé du compte *</Label>
-              <Input
-                id="intitulecompte"
-                placeholder="Ex: Compte Courant Principal"
-                value={formData.intitulecompte || ""}
-                onChange={(e) => handleInputChange("intitulecompte", e.target.value)}
-                required
-              />
-            </div>
-
-            <div>
               <Label htmlFor="commentaire">Commentaire (optionnel)</Label>
               <Textarea
                 id="commentaire"
@@ -792,7 +781,7 @@ export default function ServiceRequestsPage() {
 
                 {/* Account Selection */}
                 <div>
-                  <Label htmlFor="account">Compte concerné *</Label>
+                  <Label htmlFor="account">Intitulé du compte *</Label>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-2">
                     {accounts.map((account) => (
                       <div
@@ -802,7 +791,10 @@ export default function ServiceRequestsPage() {
                             ? "border-blue-500 bg-blue-50 ring-2 ring-blue-200"
                             : "border-gray-200 hover:border-gray-300"
                         }`}
-                        onClick={() => setSelectedAccount(account.id)}
+                        onClick={() => {
+                          setSelectedAccount(account.id)
+                          handleInputChange("intitulecompte", account.name)
+                        }}
                       >
                         <div className="flex items-center space-x-2">
                           <CreditCard className="w-4 h-4 text-gray-500" />
@@ -925,144 +917,109 @@ export default function ServiceRequestsPage() {
         <TabsContent value="history" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <FileText className="w-5 h-5" />
-                <span>Mes demandes</span>
-              </CardTitle>
-              <CardDescription>Sélectionnez une demande pour voir ses détails</CardDescription>
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center space-x-2">
+                  <FileText className="w-5 h-5" />
+                  <span>Mes demandes</span>
+                </CardTitle>
+                <div className="flex items-center space-x-3">
+                  {getStatusBadge(selectedHistoryRequestData?.status || "")}
+                  <div className="flex space-x-1">
+                    <Button size="sm" variant="outline">
+                      <Eye className="w-4 h-4" />
+                    </Button>
+                    {selectedHistoryRequestData?.status === "Approuvée" && (
+                      <Button size="sm" variant="outline">
+                        <Download className="w-4 h-4" />
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </div>
+              <CardDescription>
+                <div className="space-y-1">
+                  <p>Compte: {selectedHistoryRequestData?.account}</p>
+                  <p className="text-xs">
+                    Demandé le {selectedHistoryRequestData?.submittedAt}
+                    {selectedHistoryRequestData?.expectedResponse &&
+                      ` • Réponse attendue le ${selectedHistoryRequestData?.expectedResponse}`}
+                    {selectedHistoryRequestData?.completedAt &&
+                      ` • Complété le ${selectedHistoryRequestData?.completedAt}`}
+                  </p>
+                  <p className="text-xs font-medium">Référence: {selectedHistoryRequestData?.id}</p>
+                </div>
+              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div>
-                <Label htmlFor="history-request-select">Sélectionner une demande</Label>
-                <Select value={selectedHistoryRequest} onValueChange={handleHistoryRequestChange}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Choisissez une demande à consulter" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {recentRequests.map((request) => (
-                      <SelectItem key={request.id} value={request.id}>
-                        <div className="flex items-center justify-between w-full">
-                          <span>{request.type}</span>
-                          <div className="flex items-center space-x-2 ml-4">
-                            {getStatusBadge(request.status)}
-                            <span className="text-xs text-gray-500">Réf: {request.id}</span>
-                          </div>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+              {/* Service Info */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-gray-50 rounded-lg">
+                <div className="flex items-center space-x-2">
+                  <Clock className="w-4 h-4 text-gray-500" />
+                  <div>
+                    <p className="text-sm font-medium">Délai de traitement</p>
+                    <p className="text-xs text-gray-600">{selectedServiceData?.processingTime}</p>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Banknote className="w-4 h-4 text-gray-500" />
+                  <div>
+                    <p className="text-sm font-medium">Coût</p>
+                    <p className="text-xs text-gray-600">{selectedServiceData?.cost}</p>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Shield className="w-4 h-4 text-gray-500" />
+                  <div>
+                    <p className="text-sm font-medium">Sécurisé</p>
+                    <p className="text-xs text-gray-600">Traitement confidentiel</p>
+                  </div>
+                </div>
               </div>
 
-              {selectedHistoryRequestData && selectedServiceData && (
-                <Card className="border-2 border-blue-200">
-                  <CardHeader>
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="flex items-center space-x-2">
-                        <selectedServiceData.icon className="w-5 h-5" />
-                        <span>{selectedHistoryRequestData.type}</span>
-                      </CardTitle>
-                      <div className="flex items-center space-x-3">
-                        {getStatusBadge(selectedHistoryRequestData.status)}
-                        <div className="flex space-x-1">
-                          <Button size="sm" variant="outline">
-                            <Eye className="w-4 h-4" />
-                          </Button>
-                          {selectedHistoryRequestData.status === "Approuvée" && (
-                            <Button size="sm" variant="outline">
-                              <Download className="w-4 h-4" />
-                            </Button>
-                          )}
+              {/* Requirements */}
+              <div>
+                <h4 className="font-medium mb-2">Prérequis</h4>
+                <ul className="space-y-1">
+                  {selectedServiceData?.requirements.map((req, index) => (
+                    <li key={index} className="flex items-center space-x-2 text-sm">
+                      <CheckCircle className="w-4 h-4 text-green-500" />
+                      <span>{req}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              {/* Account Selection - Read Only */}
+              <div>
+                <Label>Intitulé du compte</Label>
+                <div className="mt-2">
+                  {accounts
+                    .filter((account) => account.name === selectedHistoryRequestData?.account)
+                    .map((account) => (
+                      <div key={account.id} className="p-3 border-2 border-blue-500 bg-blue-50 rounded-lg">
+                        <div className="flex items-center space-x-2">
+                          <CreditCard className="w-4 h-4 text-gray-500" />
+                          <span className="font-medium text-sm">{account.name}</span>
                         </div>
-                      </div>
-                    </div>
-                    <CardDescription>
-                      <div className="space-y-1">
-                        <p>Compte: {selectedHistoryRequestData.account}</p>
-                        <p className="text-xs">
-                          Demandé le {selectedHistoryRequestData.submittedAt}
-                          {selectedHistoryRequestData.expectedResponse &&
-                            ` • Réponse attendue le ${selectedHistoryRequestData.expectedResponse}`}
-                          {selectedHistoryRequestData.completedAt &&
-                            ` • Complété le ${selectedHistoryRequestData.completedAt}`}
+                        <p className="text-xs text-gray-500 mt-1">***{account.number.slice(-4)}</p>
+                        <p className="text-sm font-bold mt-1">
+                          {formatAmount(account.balance, account.currency)} {account.currency}
                         </p>
-                        <p className="text-xs font-medium">Référence: {selectedHistoryRequestData.id}</p>
                       </div>
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-6">
-                    {/* Service Info */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-gray-50 rounded-lg">
-                      <div className="flex items-center space-x-2">
-                        <Clock className="w-4 h-4 text-gray-500" />
-                        <div>
-                          <p className="text-sm font-medium">Délai de traitement</p>
-                          <p className="text-xs text-gray-600">{selectedServiceData.processingTime}</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Banknote className="w-4 h-4 text-gray-500" />
-                        <div>
-                          <p className="text-sm font-medium">Coût</p>
-                          <p className="text-xs text-gray-600">{selectedServiceData.cost}</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Shield className="w-4 h-4 text-gray-500" />
-                        <div>
-                          <p className="text-sm font-medium">Sécurisé</p>
-                          <p className="text-xs text-gray-600">Traitement confidentiel</p>
-                        </div>
-                      </div>
-                    </div>
+                    ))}
+                </div>
+              </div>
 
-                    {/* Requirements */}
-                    <div>
-                      <h4 className="font-medium mb-2">Prérequis</h4>
-                      <ul className="space-y-1">
-                        {selectedServiceData.requirements.map((req, index) => (
-                          <li key={index} className="flex items-center space-x-2 text-sm">
-                            <CheckCircle className="w-4 h-4 text-green-500" />
-                            <span>{req}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
+              {/* Dynamic Form - Read Only */}
+              {renderServiceForm()}
 
-                    {/* Account Selection - Read Only */}
-                    <div>
-                      <Label>Compte concerné</Label>
-                      <div className="mt-2">
-                        {accounts
-                          .filter((account) => account.name === selectedHistoryRequestData.account)
-                          .map((account) => (
-                            <div key={account.id} className="p-3 border-2 border-blue-500 bg-blue-50 rounded-lg">
-                              <div className="flex items-center space-x-2">
-                                <CreditCard className="w-4 h-4 text-gray-500" />
-                                <span className="font-medium text-sm">{account.name}</span>
-                              </div>
-                              <p className="text-xs text-gray-500 mt-1">***{account.number.slice(-4)}</p>
-                              <p className="text-sm font-bold mt-1">
-                                {formatAmount(account.balance, account.currency)} {account.currency}
-                              </p>
-                            </div>
-                          ))}
-                      </div>
-                    </div>
-
-                    {/* Dynamic Form - Read Only */}
-                    {renderServiceForm()}
-
-                    <Alert className="border-blue-200 bg-blue-50">
-                      <AlertCircle className="h-4 w-4 text-blue-600" />
-                      <AlertDescription className="text-blue-800">
-                        📋 Cette demande a été soumise et est en cours de traitement. Les informations affichées sont en
-                        lecture seule.
-                      </AlertDescription>
-                    </Alert>
-                  </CardContent>
-                </Card>
-              )}
+              <Alert className="border-blue-200 bg-blue-50">
+                <AlertCircle className="h-4 w-4 text-blue-600" />
+                <AlertDescription className="text-blue-800">
+                  📋 Cette demande a été soumise et est en cours de traitement. Les informations affichées sont en
+                  lecture seule.
+                </AlertDescription>
+              </Alert>
             </CardContent>
           </Card>
         </TabsContent>
