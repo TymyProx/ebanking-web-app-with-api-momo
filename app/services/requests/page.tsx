@@ -342,20 +342,6 @@ export default function ServiceRequestsPage() {
                 <AlertDescription>❌ {checkbookSubmitState.error}</AlertDescription>
               </Alert>
             )}
-
-            <Button type="submit" disabled={isCheckbookSubmitting || !selectedAccount} className="w-full">
-              {isCheckbookSubmitting ? (
-                <>
-                  <Clock className="w-4 h-4 mr-2 animate-spin" />
-                  Soumission en cours...
-                </>
-              ) : (
-                <>
-                  <Send className="w-4 h-4 mr-2" />
-                  Soumettre la demande
-                </>
-              )}
-            </Button>
           </form>
         )
 
@@ -567,7 +553,6 @@ export default function ServiceRequestsPage() {
                     placeholder="+224 6XX XXX XXX"
                     value={formData.contact_phone || ""}
                     onChange={(e) => handleInputChange("contact_phone", e.target.value)}
-                    required
                   />
                 </div>
                 <div>
@@ -578,21 +563,9 @@ export default function ServiceRequestsPage() {
                     placeholder="votre@email.com"
                     value={formData.contact_email || ""}
                     onChange={(e) => handleInputChange("contact_email", e.target.value)}
-                    required
                   />
                 </div>
               </div>
-            </div>
-
-            {/* Additional Comments */}
-            <div>
-              <Label htmlFor="comments">Commentaires additionnels</Label>
-              <Textarea
-                id="comments"
-                placeholder="Informations supplémentaires (optionnel)"
-                value={formData.comments || ""}
-                onChange={(e) => handleInputChange("comments", e.target.value)}
-              />
             </div>
 
             {/* Terms and Conditions */}
@@ -884,102 +857,82 @@ export default function ServiceRequestsPage() {
                 {/* Dynamic Form */}
                 {renderServiceForm()}
 
-                {/* Contact Information and other fields for non-credit forms */}
-                {selectedService !== "credit" && (
-                  <>
-                    <div className="space-y-4">
-                      <h4 className="font-medium">Informations de contact</h4>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <Label htmlFor="contact_phone">Téléphone *</Label>
-                          <Input
-                            id="contact_phone"
-                            placeholder="+224 6XX XXX XXX"
-                            value={formData.contact_phone || ""}
-                            onChange={(e) => handleInputChange("contact_phone", e.target.value)}
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor="contact_email">Email *</Label>
-                          <Input
-                            id="contact_email"
-                            type="email"
-                            placeholder="votre@email.com"
-                            value={formData.contact_email || ""}
-                            onChange={(e) => handleInputChange("contact_email", e.target.value)}
-                          />
-                        </div>
-                      </div>
-                    </div>
+                {/* Terms and Conditions */}
+                <div className="flex items-start space-x-2">
+                  <Checkbox
+                    id="terms"
+                    checked={formData.terms || false}
+                    onCheckedChange={(checked) => handleInputChange("terms", checked)}
+                  />
+                  <Label htmlFor="terms" className="text-sm">
+                    J'accepte les{" "}
+                    <a href="#" className="text-blue-600 hover:underline">
+                      conditions générales
+                    </a>{" "}
+                    et autorise le traitement de ma demande
+                  </Label>
+                </div>
 
-                    {/* Additional Comments */}
-                    <div>
-                      <Label htmlFor="comments">Commentaires additionnels</Label>
-                      <Textarea
-                        id="comments"
-                        placeholder="Informations supplémentaires (optionnel)"
-                        value={formData.comments || ""}
-                        onChange={(e) => handleInputChange("comments", e.target.value)}
-                      />
-                    </div>
-
-                    {/* Terms and Conditions */}
-                    <div className="flex items-start space-x-2">
-                      <Checkbox
-                        id="terms"
-                        checked={formData.terms || false}
-                        onCheckedChange={(checked) => handleInputChange("terms", checked)}
-                      />
-                      <Label htmlFor="terms" className="text-sm">
-                        J'accepte les{" "}
-                        <a href="#" className="text-blue-600 hover:underline">
-                          conditions générales
-                        </a>{" "}
-                        et autorise le traitement de ma demande
-                      </Label>
-                    </div>
-
-                    {/* Submit Button for non-credit forms */}
-                    <form action={submitAction}>
-                      <input type="hidden" name="serviceType" value={selectedService} />
-                      <input type="hidden" name="accountId" value={selectedAccount} />
-                      <input type="hidden" name="formData" value={JSON.stringify(formData)} />
-
-                      <Button type="submit" disabled={isSubmitting || !formData.terms} className="w-full">
-                        {isSubmitting ? (
-                          <>
-                            <Clock className="w-4 h-4 mr-2 animate-spin" />
-                            Envoi en cours...
-                          </>
-                        ) : (
-                          <>
-                            <Send className="w-4 h-4 mr-2" />
-                            Envoyer la demande
-                          </>
-                        )}
-                      </Button>
-                    </form>
-
-                    {/* Feedback Messages for non-credit forms */}
-                    {submitState?.success && (
-                      <Alert className="border-green-200 bg-green-50">
-                        <CheckCircle className="h-4 w-4 text-green-600" />
-                        <AlertDescription className="text-green-800">
-                          ✅ Votre demande a été envoyée avec succès. Référence: {submitState.reference}. Réponse sous{" "}
-                          {selectedServiceData.processingTime}.
-                        </AlertDescription>
-                      </Alert>
+                {/* Submit Button */}
+                {selectedService === "checkbook" ? (
+                  <Button
+                    type="button"
+                    onClick={handleCheckbookSubmit}
+                    disabled={isCheckbookSubmitting || !formData.terms}
+                    className="w-full"
+                  >
+                    {isCheckbookSubmitting ? (
+                      <>
+                        <Clock className="w-4 h-4 mr-2 animate-spin" />
+                        Envoi en cours...
+                      </>
+                    ) : (
+                      <>
+                        <Send className="w-4 h-4 mr-2" />
+                        Envoyer la demande
+                      </>
                     )}
+                  </Button>
+                ) : (
+                  <form action={submitAction}>
+                    <input type="hidden" name="serviceType" value={selectedService} />
+                    <input type="hidden" name="accountId" value={selectedAccount} />
+                    <input type="hidden" name="formData" value={JSON.stringify(formData)} />
 
-                    {submitState?.error && (
-                      <Alert className="border-red-200 bg-red-50">
-                        <AlertCircle className="h-4 w-4 text-red-600" />
-                        <AlertDescription className="text-red-800">
-                          ❌ Une erreur est survenue: {submitState.error}. Veuillez réessayer.
-                        </AlertDescription>
-                      </Alert>
-                    )}
-                  </>
+                    <Button type="submit" disabled={isSubmitting || !formData.terms} className="w-full">
+                      {isSubmitting ? (
+                        <>
+                          <Clock className="w-4 h-4 mr-2 animate-spin" />
+                          Envoi en cours...
+                        </>
+                      ) : (
+                        <>
+                          <Send className="w-4 h-4 mr-2" />
+                          Envoyer la demande
+                        </>
+                      )}
+                    </Button>
+                  </form>
+                )}
+
+                {/* Feedback Messages */}
+                {submitState?.success && (
+                  <Alert className="border-green-200 bg-green-50">
+                    <CheckCircle className="h-4 w-4 text-green-600" />
+                    <AlertDescription className="text-green-800">
+                      ✅ Votre demande a été envoyée avec succès. Référence: {submitState.reference}. Réponse sous{" "}
+                      {selectedServiceData?.processingTime}.
+                    </AlertDescription>
+                  </Alert>
+                )}
+
+                {submitState?.error && (
+                  <Alert className="border-red-200 bg-red-50">
+                    <AlertCircle className="h-4 w-4 text-red-600" />
+                    <AlertDescription className="text-red-800">
+                      ❌ Une erreur est survenue: {submitState.error}. Veuillez réessayer.
+                    </AlertDescription>
+                  </Alert>
                 )}
               </CardContent>
             </Card>
