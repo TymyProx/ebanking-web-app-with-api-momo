@@ -203,7 +203,13 @@ export default function ServiceRequestsPage() {
     e.preventDefault()
 
     // Vérifier que tous les champs requis sont remplis
-    if (!formData.applicant_name || !formData.loan_amount || !formData.loan_duration || !formData.loan_purpose) {
+    if (
+      !formData.applicant_name ||
+      !formData.loan_amount ||
+      !formData.loan_duration ||
+      !formData.loan_purpose ||
+      !formData.terms
+    ) {
       setCreditSubmitState({ error: "Veuillez remplir tous les champs obligatoires" })
       return
     }
@@ -234,7 +240,7 @@ export default function ServiceRequestsPage() {
     e.preventDefault()
 
     // Vérifier que tous les champs requis sont remplis
-    if (!formData.nbrechequier || !formData.nbrefeuille || !formData.intitulecompte) {
+    if (!formData.nbrechequier || !formData.nbrefeuille || !formData.intitulecompte || !formData.terms) {
       setCheckbookSubmitState({ error: "Veuillez remplir tous les champs obligatoires" })
       return
     }
@@ -342,6 +348,21 @@ export default function ServiceRequestsPage() {
                 <AlertDescription>❌ {checkbookSubmitState.error}</AlertDescription>
               </Alert>
             )}
+
+            <div className="flex items-start space-x-2">
+              <Checkbox
+                id="checkbook_terms"
+                checked={formData.terms || false}
+                onCheckedChange={(checked) => handleInputChange("terms", checked)}
+              />
+              <Label htmlFor="checkbook_terms" className="text-sm">
+                J'accepte les{" "}
+                <a href="#" className="text-blue-600 hover:underline">
+                  conditions générales
+                </a>{" "}
+                et autorise le traitement de ma demande
+              </Label>
+            </div>
           </form>
         )
 
@@ -587,6 +608,21 @@ export default function ServiceRequestsPage() {
                 </AlertDescription>
               </Alert>
             )}
+
+            <div className="flex items-start space-x-2">
+              <Checkbox
+                id="credit_terms"
+                checked={formData.terms || false}
+                onCheckedChange={(checked) => handleInputChange("terms", checked)}
+              />
+              <Label htmlFor="credit_terms" className="text-sm">
+                J'accepte les{" "}
+                <a href="#" className="text-blue-600 hover:underline">
+                  conditions générales
+                </a>{" "}
+                et autorise le traitement de ma demande
+              </Label>
+            </div>
           </form>
         )
 
