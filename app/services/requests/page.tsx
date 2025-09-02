@@ -568,38 +568,6 @@ export default function ServiceRequestsPage() {
               </div>
             </div>
 
-            {/* Terms and Conditions */}
-            <div className="flex items-start space-x-2">
-              <Checkbox
-                id="terms"
-                checked={formData.terms || false}
-                onCheckedChange={(checked) => handleInputChange("terms", checked)}
-                required
-              />
-              <Label htmlFor="terms" className="text-sm">
-                J'accepte les{" "}
-                <a href="#" className="text-blue-600 hover:underline">
-                  conditions générales
-                </a>{" "}
-                et autorise le traitement de ma demande
-              </Label>
-            </div>
-
-            {/* Submit Button */}
-            <Button type="submit" disabled={isCreditSubmitting || !formData.terms} className="w-full">
-              {isCreditSubmitting ? (
-                <>
-                  <Clock className="w-4 h-4 mr-2 animate-spin" />
-                  Envoi en cours...
-                </>
-              ) : (
-                <>
-                  <Send className="w-4 h-4 mr-2" />
-                  Envoyer la demande
-                </>
-              )}
-            </Button>
-
             {/* Feedback Messages */}
             {creditSubmitState?.success && (
               <Alert className="border-green-200 bg-green-50">
@@ -858,20 +826,22 @@ export default function ServiceRequestsPage() {
                 {renderServiceForm()}
 
                 {/* Terms and Conditions */}
-                <div className="flex items-start space-x-2">
-                  <Checkbox
-                    id="terms"
-                    checked={formData.terms || false}
-                    onCheckedChange={(checked) => handleInputChange("terms", checked)}
-                  />
-                  <Label htmlFor="terms" className="text-sm">
-                    J'accepte les{" "}
-                    <a href="#" className="text-blue-600 hover:underline">
-                      conditions générales
-                    </a>{" "}
-                    et autorise le traitement de ma demande
-                  </Label>
-                </div>
+                {selectedService && selectedService !== "checkbook" && selectedService !== "credit" && (
+                  <div className="flex items-start space-x-2">
+                    <Checkbox
+                      id="terms"
+                      checked={formData.terms || false}
+                      onCheckedChange={(checked) => handleInputChange("terms", checked)}
+                    />
+                    <Label htmlFor="terms" className="text-sm">
+                      J'accepte les{" "}
+                      <a href="#" className="text-blue-600 hover:underline">
+                        conditions générales
+                      </a>{" "}
+                      et autorise le traitement de ma demande
+                    </Label>
+                  </div>
+                )}
 
                 {/* Submit Button */}
                 {selectedService === "checkbook" ? (
@@ -882,6 +852,20 @@ export default function ServiceRequestsPage() {
                     className="w-full"
                   >
                     {isCheckbookSubmitting ? (
+                      <>
+                        <Clock className="w-4 h-4 mr-2 animate-spin" />
+                        Envoi en cours...
+                      </>
+                    ) : (
+                      <>
+                        <Send className="w-4 h-4 mr-2" />
+                        Envoyer la demande
+                      </>
+                    )}
+                  </Button>
+                ) : selectedService === "credit" ? (
+                  <Button type="submit" disabled={isCreditSubmitting || !formData.terms} className="w-full">
+                    {isCreditSubmitting ? (
                       <>
                         <Clock className="w-4 h-4 mr-2 animate-spin" />
                         Envoi en cours...
