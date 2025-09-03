@@ -311,19 +311,6 @@ export default function ServiceRequestsPage() {
             </div>
 
             <div>
-              <Label htmlFor="intitulecompte">Intitulé du compte *</Label>
-              <Input
-                id="intitulecompte"
-                name="intitulecompte"
-                type="text"
-                value={formData.intitulecompte || ""}
-                onChange={(e) => handleInputChange("intitulecompte", e.target.value)}
-                placeholder="Ex: Compte Courant Principal"
-                required
-              />
-            </div>
-
-            <div>
               <Label htmlFor="numcompte">Numéro de compte *</Label>
               <Input
                 id="numcompte"
