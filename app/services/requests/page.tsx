@@ -86,9 +86,23 @@ const serviceTypes = [
 ]
 
 const accounts = [
-  { id: "acc_001", name: "Compte Courant Principal", number: "0001234567890", balance: 2500000, currency: "GNF" },
-  { id: "acc_002", name: "Compte Épargne", number: "0001234567891", balance: 5000000, currency: "GNF" },
-  { id: "acc_003", name: "Compte USD", number: "0001234567892", balance: 1200, currency: "USD" },
+  {
+    id: "acc_001",
+    name: "Compte Courant Principal",
+    number: "0001234567890",
+    balance: 2500000,
+    currency: "GNF",
+    type: "Courant",
+  },
+  {
+    id: "acc_002",
+    name: "Compte Épargne",
+    number: "0001234567891",
+    balance: 5000000,
+    currency: "GNF",
+    type: "Epargne",
+  },
+  { id: "acc_003", name: "Compte USD", number: "0001234567892", balance: 1200, currency: "USD", type: "USD" },
 ]
 
 const recentRequests = [
@@ -240,7 +254,13 @@ export default function ServiceRequestsPage() {
     e.preventDefault()
 
     // Vérifier que tous les champs requis sont remplis
-    if (!formData.nbrechequier || !formData.nbrefeuille || !formData.intitulecompte || !formData.terms) {
+    if (
+      !formData.nbrechequier ||
+      !formData.nbrefeuille ||
+      !formData.intitulecompte ||
+      !formData.numcompte ||
+      !formData.terms
+    ) {
       setCheckbookSubmitState({ error: "Veuillez remplir tous les champs obligatoires" })
       return
     }
@@ -286,6 +306,32 @@ export default function ServiceRequestsPage() {
                 type="date"
                 value={formData.dateorder || new Date().toISOString().split("T")[0]}
                 onChange={(e) => handleInputChange("dateorder", e.target.value)}
+                required
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="intitulecompte">Intitulé du compte *</Label>
+              <Input
+                id="intitulecompte"
+                name="intitulecompte"
+                type="text"
+                value={formData.intitulecompte || ""}
+                onChange={(e) => handleInputChange("intitulecompte", e.target.value)}
+                placeholder="Ex: Compte Courant Principal"
+                required
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="numcompte">Numéro de compte *</Label>
+              <Input
+                id="numcompte"
+                name="numcompte"
+                type="text"
+                value={formData.numcompte || ""}
+                onChange={(e) => handleInputChange("numcompte", e.target.value)}
+                placeholder="Ex: 123456789"
                 required
               />
             </div>
@@ -349,33 +395,20 @@ export default function ServiceRequestsPage() {
               </Alert>
             )}
 
-            <div className="flex items-start space-x-2">
+            <div className="flex items-center space-x-2">
               <Checkbox
                 id="checkbook_terms"
                 checked={formData.terms || false}
                 onCheckedChange={(checked) => handleInputChange("terms", checked)}
+                required
               />
               <Label htmlFor="checkbook_terms" className="text-sm">
-                J'accepte les{" "}
-                <a href="#" className="text-blue-600 hover:underline">
-                  conditions générales
-                </a>{" "}
-                et autorise le traitement de ma demande
+                J'accepte les conditions générales et autorise le traitement de ma demande
               </Label>
             </div>
 
-            <Button type="submit" disabled={isCheckbookSubmitting || !formData.terms} className="w-full">
-              {isCheckbookSubmitting ? (
-                <>
-                  <Clock className="w-4 h-4 mr-2 animate-spin" />
-                  Envoi en cours...
-                </>
-              ) : (
-                <>
-                  <Send className="w-4 h-4 mr-2" />
-                  Envoyer la demande
-                </>
-              )}
+            <Button type="submit" className="w-full" disabled={isCheckbookSubmitting || !formData.terms}>
+              {isCheckbookSubmitting ? "Envoi en cours..." : "Envoyer la demande"}
             </Button>
           </form>
         )
@@ -468,6 +501,19 @@ export default function ServiceRequestsPage() {
                   <SelectItem value="auto">Crédit automobile</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+
+            <div>
+              <Label htmlFor="numcompte_credit">Numéro de compte *</Label>
+              <Input
+                id="numcompte_credit"
+                name="numcompte_credit"
+                type="text"
+                value={formData.numcompte || ""}
+                onChange={(e) => handleInputChange("numcompte", e.target.value)}
+                placeholder="Ex: 123456789"
+                required
+              />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -860,29 +906,32 @@ export default function ServiceRequestsPage() {
                 <div>
                   <Label htmlFor="account">Intitulé du compte *</Label>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-2">
-                    {accounts.map((account) => (
-                      <div
-                        key={account.id}
-                        className={`p-3 border rounded-lg cursor-pointer transition-all ${
-                          selectedAccount === account.id
-                            ? "border-blue-500 bg-blue-50 ring-2 ring-blue-200"
-                            : "border-gray-200 hover:border-gray-300"
-                        }`}
-                        onClick={() => {
-                          setSelectedAccount(account.id)
-                          handleInputChange("intitulecompte", account.name)
-                        }}
-                      >
-                        <div className="flex items-center space-x-2">
-                          <CreditCard className="w-4 h-4 text-gray-500" />
-                          <span className="font-medium text-sm">{account.name}</span>
+                    {accounts
+                      .filter((account) => selectedService !== "credit" || account.type === "Courant")
+                      .map((account) => (
+                        <div
+                          key={account.id}
+                          className={`p-3 border rounded-lg cursor-pointer transition-all ${
+                            selectedAccount === account.id
+                              ? "border-blue-500 bg-blue-50 ring-2 ring-blue-200"
+                              : "border-gray-200 hover:border-gray-300"
+                          }`}
+                          onClick={() => {
+                            setSelectedAccount(account.id)
+                            handleInputChange("intitulecompte", account.name)
+                            handleInputChange("numcompte", account.number)
+                          }}
+                        >
+                          <div className="flex items-center space-x-2">
+                            <CreditCard className="w-4 h-4 text-gray-500" />
+                            <span className="font-medium text-sm">{account.name}</span>
+                          </div>
+                          <p className="text-xs text-gray-500 mt-1">***{account.number.slice(-4)}</p>
+                          <p className="text-sm font-bold mt-1">
+                            {formatAmount(account.balance, account.currency)} {account.currency}
+                          </p>
                         </div>
-                        <p className="text-xs text-gray-500 mt-1">***{account.number.slice(-4)}</p>
-                        <p className="text-sm font-bold mt-1">
-                          {formatAmount(account.balance, account.currency)} {account.currency}
-                        </p>
-                      </div>
-                    ))}
+                      ))}
                   </div>
                 </div>
 

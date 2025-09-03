@@ -14,6 +14,7 @@ export async function submitCreditRequest(formData: {
   loan_amount: string // Montant du crédit demandé
   loan_duration: string // Durée du crédit en mois
   loan_purpose: string // Objet / raison du crédit
+  numcompte: string // Nouveau champ numéro de compte
 }) {
   try {
     // 🔑 Récupération du token JWT stocké dans les cookies
@@ -37,6 +38,7 @@ export async function submitCreditRequest(formData: {
           creditAmount: formData.loan_amount,
           durationMonths: formData.loan_duration,
           purpose: formData.loan_purpose,
+          numcompte: formData.numcompte, // Ajout du numéro de compte dans l'API
         },
       }),
     })
@@ -66,6 +68,7 @@ export async function submitCheckbookRequest(formData: {
   intitulecompte: string // Intitulé du compte
   numcompteId: string // ID du compte
   commentaire: string // Commentaire
+  numcompte: string // Nouveau champ numéro de compte
 }) {
   try {
     // 🔑 Récupération du token JWT stocké dans les cookies
@@ -92,6 +95,7 @@ export async function submitCheckbookRequest(formData: {
           intitulecompte: formData.intitulecompte,
           numcompteId: formData.numcompteId,
           commentaire: formData.commentaire,
+          numcompte: formData.numcompte, // Ajout du numéro de compte dans l'API
         },
       }),
     })
