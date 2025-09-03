@@ -304,7 +304,7 @@ export default function ServiceRequestsPage() {
             </div>
 
             <div>
-<<<<<<< HEAD
+
               <Label htmlFor="numcompte">Numéro de compte *</Label>
               <Input
                 id="numcompte"
@@ -313,7 +313,8 @@ export default function ServiceRequestsPage() {
                 value={formData.numcompte || ""}
                 onChange={(e) => handleInputChange("numcompte", e.target.value)}
                 placeholder="Ex: 123456789"
-=======
+
+                
               <Label htmlFor="intitulecompte">Intitulé du compte *</Label>
               <Input
                 id="intitulecompte"
@@ -321,8 +322,7 @@ export default function ServiceRequestsPage() {
                 type="text"
                 value={formData.intitulecompte || ""}
                 onChange={(e) => handleInputChange("intitulecompte", e.target.value)}
-                placeholder="Ex: Compte Courant Principal"
->>>>>>> d2eaff65d32a3896f48f26c93d2e89b99f86e590
+                placeholder="Ex: Compte Courant Principal">>>>>>> d2eaff65d32a3896f48f26c93d2e89b99f86e590
                 required
               />
             </div>
