@@ -253,14 +253,7 @@ export default function ServiceRequestsPage() {
   const handleCheckbookSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    // Vérifier que tous les champs requis sont remplis
-    if (
-      !formData.nbrechequier ||
-      !formData.nbrefeuille ||
-      !formData.intitulecompte ||
-      !formData.numcompte ||
-      !formData.terms
-    ) {
+    if (!formData.nbrechequier || !formData.nbrefeuille || !formData.intitulecompte || !formData.terms) {
       setCheckbookSubmitState({ error: "Veuillez remplir tous les champs obligatoires" })
       return
     }
@@ -319,19 +312,6 @@ export default function ServiceRequestsPage() {
                 value={formData.intitulecompte || ""}
                 onChange={(e) => handleInputChange("intitulecompte", e.target.value)}
                 placeholder="Ex: Compte Courant Principal"
-                required
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="numcompte">Numéro de compte *</Label>
-              <Input
-                id="numcompte"
-                name="numcompte"
-                type="text"
-                value={formData.numcompte || ""}
-                onChange={(e) => handleInputChange("numcompte", e.target.value)}
-                placeholder="Ex: 123456789"
                 required
               />
             </div>
@@ -501,19 +481,6 @@ export default function ServiceRequestsPage() {
                   <SelectItem value="auto">Crédit automobile</SelectItem>
                 </SelectContent>
               </Select>
-            </div>
-
-            <div>
-              <Label htmlFor="numcompte_credit">Numéro de compte *</Label>
-              <Input
-                id="numcompte_credit"
-                name="numcompte_credit"
-                type="text"
-                value={formData.numcompte || ""}
-                onChange={(e) => handleInputChange("numcompte", e.target.value)}
-                placeholder="Ex: 123456789"
-                required
-              />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
