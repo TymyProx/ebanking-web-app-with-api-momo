@@ -5,7 +5,7 @@ import { cookies } from "next/headers"
 // Importation de la méthode cookies() pour accéder aux cookies côté serveur
 
 // URL de base de l’API et ID du tenant (identifiant du client dans l’API)
-const API_BASE_URL = "http://192.168.1.200:8080/api"
+const API_BASE_URL = "https://192.168.1.200:8080/api"
 const tenantId = "11cacc69-5a49-4f01-8b16-e8f473746634"
 
 // Fonction asynchrone pour soumettre une demande de crédit
