@@ -115,3 +115,41 @@ export async function submitCheckbookRequest(formData: {
     throw new Error(error.message)
   }
 }
+
+// Fonction asynchrone pour récupérer les demandes de chéquier
+export async function getCheckbookRequest(id?: string) {
+  try {
+    // 🔑 Récupération du token JWT stocké dans les cookies
+    const cookieToken = (await cookies()).get("token")?.value
+    const usertoken = cookieToken
+
+    // Si aucun token n'est trouvé → erreur
+    if (!cookieToken) throw new Error("Token introuvable.")
+
+    // Construction de l'URL avec ou sans ID spécifique
+    const url = id ? `${API_BASE_URL}/tenant/${tenantId}/commande/${id}` : `${API_BASE_URL}/tenant/${tenantId}/commande`
+
+    // Envoi de la requête GET vers l'API backend
+    const response = await fetch(url, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json", // Type de contenu JSON
+        Authorization: `Bearer ${usertoken}`, // Authentification via Bearer token
+      },
+    })
+
+    // Vérifie si la réponse est valide
+    if (!response.ok) {
+      const errorData = await response.json()
+      // Si le backend renvoie un message d'erreur, on le propage
+      throw new Error(errorData.message || "Erreur lors de la récupération")
+    }
+
+    // Récupération des données de la réponse (JSON)
+    const data = await response.json()
+    return data
+  } catch (error: any) {
+    // Gestion d'erreur (propagation du message d'erreur)
+    throw new Error(error.message)
+  }
+}
