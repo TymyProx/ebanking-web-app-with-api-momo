@@ -1,8 +1,7 @@
 "use client"
 
 import type React from "react"
-
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -28,9 +27,13 @@ import {
   Shield,
   Briefcase,
   Plus,
+  Search,
+  MoreVertical,
+  Trash2,
 } from "lucide-react"
-import { submitCreditRequest, submitCheckbookRequest } from "./actions"
+import { submitCreditRequest, submitCheckbookRequest, getCheckbookRequest } from "./actions"
 import { useActionState } from "react"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 
 const serviceTypes = [
   {
@@ -151,8 +154,151 @@ export default function ServiceRequestsPage() {
     reference?: string
   } | null>(null)
   const [isCheckbookSubmitting, setIsCheckbookSubmitting] = useState(false)
+  const [checkbookRequests, setCheckbookRequests] = useState<any[]>([])
+  const [isLoadingCheckbookRequests, setIsLoadingCheckbookRequests] = useState(false)
+  const [selectedCheckbookRequest, setSelectedCheckbookRequest] = useState<any>(null)
+
+  const [searchTerm, setSearchTerm] = useState("")
+  const [filterType, setFilterType] = useState("all")
+  const [allRequests, setAllRequests] = useState<any[]>([])
+  const [isLoadingAllRequests, setIsLoadingAllRequests] = useState(false)
 
   const selectedServiceData = serviceTypes.find((s) => s.id === selectedService)
+
+  const loadCheckbookRequests = async () => {
+    setIsLoadingCheckbookRequests(true)
+    try {
+      const requests = await getCheckbookRequest()
+      setCheckbookRequests(requests || [])
+    } catch (error) {
+      console.error("Erreur lors du chargement des demandes de chéquier:", error)
+      setCheckbookRequests([])
+    } finally {
+      setIsLoadingCheckbookRequests(false)
+    }
+  }
+
+  const loadSpecificCheckbookRequest = async (id: string) => {
+    try {
+      const request = await getCheckbookRequest(id)
+      setSelectedCheckbookRequest(request)
+    } catch (error) {
+      console.error("Erreur lors du chargement de la demande:", error)
+      setSelectedCheckbookRequest(null)
+    }
+  }
+
+  const loadAllRequests = async () => {
+    setIsLoadingAllRequests(true)
+    try {
+      // Simuler des données de demandes pour l'exemple
+      const mockRequests = [
+        {
+          id: "REQ001",
+          type: "checkbook",
+          typeName: "Demande de chéquier",
+          status: "En cours",
+          submittedAt: "2024-01-15",
+          expectedResponse: "2024-01-18",
+          account: "Compte Courant Principal",
+          reference: "CHQ-2024-001",
+        },
+        {
+          id: "REQ002",
+          type: "certificate",
+          typeName: "E-attestation bancaire",
+          status: "Approuvée",
+          submittedAt: "2024-01-10",
+          completedAt: "2024-01-12",
+          account: "Compte Courant Principal",
+          reference: "ATT-2024-002",
+        },
+        {
+          id: "REQ003",
+          type: "credit",
+          typeName: "Crédit",
+          status: "En attente de documents",
+          submittedAt: "2024-01-08",
+          expectedResponse: "2024-01-22",
+          account: "Compte Courant Principal",
+          reference: "CRD-2024-003",
+        },
+        {
+          id: "REQ004",
+          type: "card_request",
+          typeName: "Demande de carte",
+          status: "Approuvée",
+          submittedAt: "2024-01-05",
+          completedAt: "2024-01-10",
+          account: "Compte Épargne",
+          reference: "CRT-2024-004",
+        },
+        {
+          id: "REQ005",
+          type: "business_account",
+          typeName: "Compte professionnel",
+          status: "Rejetée",
+          submittedAt: "2024-01-03",
+          completedAt: "2024-01-08",
+          account: "N/A",
+          reference: "BUS-2024-005",
+        },
+      ]
+      setAllRequests(mockRequests)
+    } catch (error) {
+      console.error("Erreur lors du chargement des demandes:", error)
+      setAllRequests([])
+    } finally {
+      setIsLoadingAllRequests(false)
+    }
+  }
+
+  useEffect(() => {
+    if (activeTab === "history") {
+      loadAllRequests()
+    }
+  }, [activeTab])
+
+  useEffect(() => {
+    if (activeTab === "history") {
+      loadCheckbookRequests()
+    }
+  }, [activeTab])
+
+  const filteredRequests = allRequests.filter((request) => {
+    const matchesSearch =
+      request.typeName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      request.reference.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      request.account.toLowerCase().includes(searchTerm.toLowerCase())
+
+    const matchesFilter = filterType === "all" || request.type === filterType
+
+    return matchesSearch && matchesFilter
+  })
+
+  const getRequestTypeIcon = (type: string) => {
+    switch (type) {
+      case "checkbook":
+        return <BookOpen className="w-4 h-4 text-blue-600" />
+      case "certificate":
+        return <FileText className="w-4 h-4 text-green-600" />
+      case "credit":
+        return <CreditCard className="w-4 h-4 text-purple-600" />
+      case "card_request":
+        return <CreditCard className="w-4 h-4 text-orange-600" />
+      case "business_account":
+        return <Briefcase className="w-4 h-4 text-gray-600" />
+      default:
+        return <FileText className="w-4 h-4" />
+    }
+  }
+
+  const loadRequestsByType = async (type: string) => {
+    console.log(`Chargement des demandes de type: ${type}`)
+    // Ici vous pouvez appeler l'API spécifique pour ce type
+    // Par exemple: await getCheckbookRequest() pour les chéquiers
+  }
+
   const selectedHistoryRequestData = recentRequests.find((r) => r.id === selectedHistoryRequest)
 
   const handleInputChange = (field: string, value: any) => {
@@ -1025,111 +1171,211 @@ export default function ServiceRequestsPage() {
         </TabsContent>
 
         <TabsContent value="history" className="space-y-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-xl font-bold text-gray-900">Mes demandes</h2>
+              <p className="text-gray-600">Consultez et gérez vos demandes de services</p>
+            </div>
+          </div>
+
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex flex-col sm:flex-row gap-4">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                  <Input
+                    placeholder="Rechercher une demande..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+                <Select value={filterType} onValueChange={setFilterType}>
+                  <SelectTrigger className="w-full sm:w-48">
+                    <SelectValue placeholder="Filtrer par type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Toutes les demandes</SelectItem>
+                    <SelectItem value="checkbook">Demande de chéquier</SelectItem>
+                    <SelectItem value="credit">Demande de crédit</SelectItem>
+                    <SelectItem value="certificate">E-attestation bancaire</SelectItem>
+                    <SelectItem value="business_account">Compte professionnel</SelectItem>
+                    <SelectItem value="card_request">Demande de carte</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </CardContent>
+          </Card>
+
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+            <Card
+              className="cursor-pointer hover:bg-gray-50 transition-colors"
+              onClick={() => loadRequestsByType("all")}
+            >
+              <CardContent className="pt-6">
+                <div className="flex items-center">
+                  <FileText className="h-8 w-8 text-blue-600" />
+                  <div className="ml-4">
+                    <p className="text-sm font-medium text-gray-600">Total</p>
+                    <p className="text-2xl font-bold">{allRequests.length}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card
+              className="cursor-pointer hover:bg-gray-50 transition-colors"
+              onClick={() => loadRequestsByType("checkbook")}
+            >
+              <CardContent className="pt-6">
+                <div className="flex items-center">
+                  <BookOpen className="h-8 w-8 text-green-600" />
+                  <div className="ml-4">
+                    <p className="text-sm font-medium text-gray-600">Chéquier</p>
+                    <p className="text-2xl font-bold">{allRequests.filter((r) => r.type === "checkbook").length}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card
+              className="cursor-pointer hover:bg-gray-50 transition-colors"
+              onClick={() => loadRequestsByType("credit")}
+            >
+              <CardContent className="pt-6">
+                <div className="flex items-center">
+                  <CreditCard className="h-8 w-8 text-purple-600" />
+                  <div className="ml-4">
+                    <p className="text-sm font-medium text-gray-600">Crédit</p>
+                    <p className="text-2xl font-bold">{allRequests.filter((r) => r.type === "credit").length}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card
+              className="cursor-pointer hover:bg-gray-50 transition-colors"
+              onClick={() => loadRequestsByType("certificate")}
+            >
+              <CardContent className="pt-6">
+                <div className="flex items-center">
+                  <Shield className="h-8 w-8 text-orange-600" />
+                  <div className="ml-4">
+                    <p className="text-sm font-medium text-gray-600">Attestation</p>
+                    <p className="text-2xl font-bold">{allRequests.filter((r) => r.type === "certificate").length}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card
+              className="cursor-pointer hover:bg-gray-50 transition-colors"
+              onClick={() => loadRequestsByType("card_request")}
+            >
+              <CardContent className="pt-6">
+                <div className="flex items-center">
+                  <CreditCard className="h-8 w-8 text-red-600" />
+                  <div className="ml-4">
+                    <p className="text-sm font-medium text-gray-600">Carte</p>
+                    <p className="text-2xl font-bold">{allRequests.filter((r) => r.type === "card_request").length}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
           <Card>
             <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="flex items-center space-x-2">
-                  <FileText className="w-5 h-5" />
-                  <span>Mes demandes</span>
-                </CardTitle>
-                <div className="flex items-center space-x-3">
-                  {getStatusBadge(selectedHistoryRequestData?.status || "")}
-                  <div className="flex space-x-1">
-                    <Button size="sm" variant="outline">
-                      <Eye className="w-4 h-4" />
-                    </Button>
-                    {selectedHistoryRequestData?.status === "Approuvée" && (
-                      <Button size="sm" variant="outline">
-                        <Download className="w-4 h-4" />
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              </div>
-              <CardDescription>
-                <div className="space-y-1">
-                  <p>Compte: {selectedHistoryRequestData?.account}</p>
-                  <p className="text-xs">
-                    Demandé le {selectedHistoryRequestData?.submittedAt}
-                    {selectedHistoryRequestData?.expectedResponse &&
-                      ` • Réponse attendue le ${selectedHistoryRequestData?.expectedResponse}`}
-                    {selectedHistoryRequestData?.completedAt &&
-                      ` • Complété le ${selectedHistoryRequestData?.completedAt}`}
-                  </p>
-                  <p className="text-xs font-medium">Référence: {selectedHistoryRequestData?.id}</p>
-                </div>
-              </CardDescription>
+              <CardTitle className="flex items-center">
+                <FileText className="w-5 h-5 mr-2" />
+                Mes demandes ({filteredRequests.length})
+              </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-6">
-              {/* Service Info */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-gray-50 rounded-lg">
-                <div className="flex items-center space-x-2">
-                  <Clock className="w-4 h-4 text-gray-500" />
-                  <div>
-                    <p className="text-sm font-medium">Délai de traitement</p>
-                    <p className="text-xs text-gray-600">{selectedServiceData?.processingTime}</p>
-                  </div>
+            <CardContent>
+              {isLoadingAllRequests ? (
+                <div className="text-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                  <p className="text-gray-500">Chargement des demandes...</p>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <Banknote className="w-4 h-4 text-gray-500" />
-                  <div>
-                    <p className="text-sm font-medium">Coût</p>
-                    <p className="text-xs text-gray-600">{selectedServiceData?.cost}</p>
-                  </div>
+              ) : filteredRequests.length === 0 ? (
+                <div className="text-center py-8">
+                  <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                  <p className="text-gray-500">Aucune demande trouvée</p>
+                  <p className="text-sm text-gray-400">Créez votre première demande dans l'onglet "Nouvelle demande"</p>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <Shield className="w-4 h-4 text-gray-500" />
-                  <div>
-                    <p className="text-sm font-medium">Sécurisé</p>
-                    <p className="text-xs text-gray-600">Traitement confidentiel</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Requirements */}
-              <div>
-                <h4 className="font-medium mb-2">Prérequis</h4>
-                <ul className="space-y-1">
-                  {selectedServiceData?.requirements.map((req, index) => (
-                    <li key={index} className="flex items-center space-x-2 text-sm">
-                      <CheckCircle className="w-4 h-4 text-green-500" />
-                      <span>{req}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              {/* Account Selection - Read Only */}
-              <div>
-                <Label>Intitulé du compte</Label>
-                <div className="mt-2">
-                  {accounts
-                    .filter((account) => account.name === selectedHistoryRequestData?.account)
-                    .map((account) => (
-                      <div key={account.id} className="p-3 border-2 border-blue-500 bg-blue-50 rounded-lg">
-                        <div className="flex items-center space-x-2">
-                          <CreditCard className="w-4 h-4 text-gray-500" />
-                          <span className="font-medium text-sm">{account.name}</span>
+              ) : (
+                <div className="space-y-4">
+                  {filteredRequests.map((request) => (
+                    <div
+                      key={request.id}
+                      className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors"
+                    >
+                      <div className="flex items-center space-x-4">
+                        <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center">
+                          {getRequestTypeIcon(request.type)}
                         </div>
-                        <p className="text-xs text-gray-500 mt-1">***{account.number.slice(-4)}</p>
-                        <p className="text-sm font-bold mt-1">
-                          {formatAmount(account.balance, account.currency)} {account.currency}
-                        </p>
+
+                        <div className="flex-1">
+                          <div className="flex items-center space-x-2">
+                            <h3 className="font-semibold text-gray-900">{request.typeName}</h3>
+                            {getStatusBadge(request.status)}
+                          </div>
+
+                          <div className="text-sm text-gray-600 space-y-1">
+                            <p className="font-mono">Réf: {request.reference}</p>
+                            <p className="font-medium">{request.account}</p>
+                          </div>
+                        </div>
+
+                        <div className="text-right text-sm text-gray-500">
+                          <p>Soumise le</p>
+                          <p className="font-medium">{new Date(request.submittedAt).toLocaleDateString("fr-FR")}</p>
+                          {request.expectedResponse && (
+                            <p className="text-xs">
+                              Réponse attendue: {new Date(request.expectedResponse).toLocaleDateString("fr-FR")}
+                            </p>
+                          )}
+                          {request.completedAt && (
+                            <p className="text-xs text-green-600">
+                              Complétée le: {new Date(request.completedAt).toLocaleDateString("fr-FR")}
+                            </p>
+                          )}
+                        </div>
                       </div>
-                    ))}
+
+                      <div className="flex items-center space-x-2">
+                        <Button variant="ghost" size="sm">
+                          <Eye className="w-4 h-4" />
+                        </Button>
+
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="sm">
+                              <MoreVertical className="w-4 h-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem>
+                              <Eye className="w-4 h-4 mr-2" />
+                              Voir détails
+                            </DropdownMenuItem>
+                            <DropdownMenuItem>
+                              <Download className="w-4 h-4 mr-2" />
+                              Télécharger
+                            </DropdownMenuItem>
+                            {request.status === "En cours" && (
+                              <DropdownMenuItem className="text-red-600">
+                                <Trash2 className="w-4 h-4 mr-2" />
+                                Annuler
+                              </DropdownMenuItem>
+                            )}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              </div>
-
-              {/* Dynamic Form - Read Only */}
-              {renderServiceForm()}
-
-              <Alert className="border-blue-200 bg-blue-50">
-                <AlertCircle className="h-4 w-4 text-blue-600" />
-                <AlertDescription className="text-blue-800">
-                  📋 Cette demande a été soumise et est en cours de traitement. Les informations affichées sont en
-                  lecture seule.
-                </AlertDescription>
-              </Alert>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
