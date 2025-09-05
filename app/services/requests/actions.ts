@@ -14,7 +14,6 @@ export async function submitCreditRequest(formData: {
   loan_amount: string // Montant du crédit demandé
   loan_duration: string // Durée du crédit en mois
   loan_purpose: string // Objet / raison du crédit
-  numcompte: string // Nouveau champ numéro de compte
 }) {
   try {
     // 🔑 Récupération du token JWT stocké dans les cookies
@@ -38,16 +37,35 @@ export async function submitCreditRequest(formData: {
           creditAmount: formData.loan_amount,
           durationMonths: formData.loan_duration,
           purpose: formData.loan_purpose,
-          numcompte: formData.numcompte, // Ajout du numéro de compte dans l'API
         },
       }),
     })
 
     // Vérifie si la réponse est valide
     if (!response.ok) {
-      const errorData = await response.json()
-      // Si le backend renvoie un message d’erreur, on le propage
-      throw new Error(errorData.message || "Erreur lors de la soumission")
+      let errorMessage = "Erreur lors de la soumission"
+      
+      // Vérifier le content-type avant de tenter de parser
+      const contentType = response.headers.get("content-type")
+      
+      if (contentType && contentType.includes("application/json")) {
+        try {
+          const errorData = await response.json()
+          errorMessage = errorData.message || errorMessage
+        } catch (jsonError) {
+          errorMessage = "Erreur inattendue du serveur (format JSON invalide)"
+        }
+      } else {
+        // Si ce n'est pas du JSON, récupérer le texte brut
+        try {
+          const errorText = await response.text()
+          errorMessage = errorText || errorMessage
+        } catch (textError) {
+          errorMessage = `Erreur HTTP ${response.status}: ${response.statusText}`
+        }
+      }
+      
+      throw new Error(errorMessage)
     }
 
     // Récupération des données de la réponse (JSON)
@@ -55,7 +73,7 @@ export async function submitCreditRequest(formData: {
     return data
   } catch (error: any) {
     // Gestion d’erreur (propagation du message d’erreur)
-    throw new Error(error.message)
+    throw new Error(error.message || "Une erreur inconnue s'est produite")
   }
 }
 
@@ -68,7 +86,6 @@ export async function submitCheckbookRequest(formData: {
   intitulecompte: string // Intitulé du compte
   numcompteId: string // ID du compte
   commentaire: string // Commentaire
-  numcompte: string // Nouveau champ numéro de compte
 }) {
   try {
     // 🔑 Récupération du token JWT stocké dans les cookies
@@ -84,7 +101,7 @@ export async function submitCheckbookRequest(formData: {
       headers: {
         "Content-Type": "application/json", // Type de contenu JSON
         Authorization: `Bearer ${usertoken}`, // Authentification via Bearer token
-      },
+      },	
       body: JSON.stringify({
         data: {
           //  Mapping des données du formulaire vers les champs attendus par l'API
@@ -95,16 +112,35 @@ export async function submitCheckbookRequest(formData: {
           intitulecompte: formData.intitulecompte,
           numcompteId: formData.numcompteId,
           commentaire: formData.commentaire,
-          numcompte: formData.numcompte, // Ajout du numéro de compte dans l'API
         },
       }),
     })
 
     // Vérifie si la réponse est valide
     if (!response.ok) {
-      const errorData = await response.json()
-      // Si le backend renvoie un message d'erreur, on le propage
-      throw new Error(errorData.message || "Erreur lors de la soumission")
+      let errorMessage = "Erreur lors de la soumission"
+      
+      // Vérifier le content-type avant de tenter de parser
+      const contentType = response.headers.get("content-type")
+      
+      if (contentType && contentType.includes("application/json")) {
+        try {
+          const errorData = await response.json()
+          errorMessage = errorData.message || errorMessage
+        } catch (jsonError) {
+          errorMessage = "Erreur inattendue du serveur (format JSON invalide)"
+        }
+      } else {
+        // Si ce n'est pas du JSON, récupérer le texte brut
+        try {
+          const errorText = await response.text()
+          errorMessage = errorText || errorMessage
+        } catch (textError) {
+          errorMessage = `Erreur HTTP ${response.status}: ${response.statusText}`
+        }
+      }
+      
+      throw new Error(errorMessage)
     }
 
     // Récupération des données de la réponse (JSON)
@@ -112,6 +148,6 @@ export async function submitCheckbookRequest(formData: {
     return data
   } catch (error: any) {
     // Gestion d'erreur (propagation du message d'erreur)
-    throw new Error(error.message)
+    throw new Error(error.message || "Une erreur inconnue s'est produite")
   }
 }
