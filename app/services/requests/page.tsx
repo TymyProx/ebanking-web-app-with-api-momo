@@ -1,7 +1,8 @@
 "use client"
 
 import type React from "react"
-import { useEffect, useState } from "react"
+
+import { useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -28,7 +29,7 @@ import {
   Briefcase,
   Plus,
 } from "lucide-react"
-import { submitCreditRequest, submitCheckbookRequest, getCheckbookRequest } from "./actions"
+import { submitCreditRequest, submitCheckbookRequest } from "./actions"
 import { useActionState } from "react"
 
 const serviceTypes = [
@@ -150,41 +151,8 @@ export default function ServiceRequestsPage() {
     reference?: string
   } | null>(null)
   const [isCheckbookSubmitting, setIsCheckbookSubmitting] = useState(false)
-  const [checkbookRequests, setCheckbookRequests] = useState<any[]>([])
-  const [isLoadingCheckbookRequests, setIsLoadingCheckbookRequests] = useState(false)
-  const [selectedCheckbookRequest, setSelectedCheckbookRequest] = useState<any>(null)
 
   const selectedServiceData = serviceTypes.find((s) => s.id === selectedService)
-
-  const loadCheckbookRequests = async () => {
-    setIsLoadingCheckbookRequests(true)
-    try {
-      const requests = await getCheckbookRequest()
-      setCheckbookRequests(requests || [])
-    } catch (error) {
-      console.error("Erreur lors du chargement des demandes de chéquier:", error)
-      setCheckbookRequests([])
-    } finally {
-      setIsLoadingCheckbookRequests(false)
-    }
-  }
-
-  const loadSpecificCheckbookRequest = async (id: string) => {
-    try {
-      const request = await getCheckbookRequest(id)
-      setSelectedCheckbookRequest(request)
-    } catch (error) {
-      console.error("Erreur lors du chargement de la demande:", error)
-      setSelectedCheckbookRequest(null)
-    }
-  }
-
-  useEffect(() => {
-    if (activeTab === "history") {
-      loadCheckbookRequests()
-    }
-  }, [activeTab])
-
   const selectedHistoryRequestData = recentRequests.find((r) => r.id === selectedHistoryRequest)
 
   const handleInputChange = (field: string, value: any) => {
