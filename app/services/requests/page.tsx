@@ -31,7 +31,7 @@ import {
   MoreVertical,
   Trash2,
 } from "lucide-react"
-import { submitCreditRequest, submitCheckbookRequest, getCheckbookRequest } from "./actions"
+import { submitCreditRequest, submitCheckbookRequest, getCheckbookRequest, getCreditRequest } from "./actions"
 import { useActionState } from "react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 
@@ -192,15 +192,23 @@ export default function ServiceRequestsPage() {
     setIsLoadingAllRequests(true)
     try {
       console.log("[v0] Chargement des demandes depuis la base de données...")
-      const result = await getCheckbookRequest()
-      console.log("[v0] Résultat API:", result)
 
-      if (result.success && result.data) {
-        // Transformer les données API en format attendu par l'interface
-        const transformedRequests = Array.isArray(result.data)
-          ? result.data.map((item: any, index: number) => ({
-              id: item.id || `REQ${String(index + 1).padStart(3, "0")}`,
-              type: "checkbook", // Pour l'instant, toutes les demandes sont de type chéquier
+      // Récupération des demandes de chéquier
+      const checkbookResult = await getCheckbookRequest()
+      console.log("[v0] Résultat API chéquier:", checkbookResult)
+
+      // Récupération des demandes de crédit
+      const creditResult = await getCreditRequest()
+      console.log("[v0] Résultat API crédit:", creditResult)
+
+      let allTransformedRequests: any[] = []
+
+      // Traitement des demandes de chéquier
+      if (checkbookResult.success && checkbookResult.data) {
+        const checkbookRequests = Array.isArray(checkbookResult.data)
+          ? checkbookResult.data.map((item: any, index: number) => ({
+              id: item.id || `CHQ${String(index + 1).padStart(3, "0")}`,
+              type: "checkbook",
               typeName: "Demande de chéquier",
               status: item.stepflow === 0 ? "En cours" : item.stepflow === 1 ? "Approuvée" : "En attente",
               submittedAt: item.dateorder || new Date().toISOString().split("T")[0],
@@ -216,13 +224,34 @@ export default function ServiceRequestsPage() {
               },
             }))
           : []
-
-        console.log("[v0] Demandes transformées:", transformedRequests)
-        setAllRequests(transformedRequests)
-      } else {
-        console.log("[v0] Aucune donnée trouvée ou erreur API")
-        setAllRequests([])
+        allTransformedRequests = [...allTransformedRequests, ...checkbookRequests]
       }
+
+      // Traitement des demandes de crédit
+      if (creditResult.success && creditResult.data) {
+        const creditRequests = Array.isArray(creditResult.data)
+          ? creditResult.data.map((item: any, index: number) => ({
+              id: item.id || `CRD${String(index + 1).padStart(3, "0")}`,
+              type: "credit",
+              typeName: "Crédit",
+              status: "En cours", // Statut par défaut pour les crédits
+              submittedAt: item.createdAt ? item.createdAt.split("T")[0] : new Date().toISOString().split("T")[0],
+              expectedResponse: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split("T")[0], // 7 jours pour les crédits
+              account: "Compte courant", // Compte par défaut pour les crédits
+              reference: `CRD-${new Date().getFullYear()}-${String(index + 1).padStart(3, "0")}`,
+              details: {
+                applicantName: item.applicantName || "",
+                creditAmount: item.creditAmount || "",
+                durationMonths: item.durationMonths || "",
+                purpose: item.purpose || "",
+              },
+            }))
+          : []
+        allTransformedRequests = [...allTransformedRequests, ...creditRequests]
+      }
+
+      console.log("[v0] Toutes les demandes transformées:", allTransformedRequests)
+      setAllRequests(allTransformedRequests)
     } catch (error) {
       console.error("[v0] Erreur lors du chargement des demandes:", error)
       setAllRequests([])
@@ -272,9 +301,71 @@ export default function ServiceRequestsPage() {
   }
 
   const loadRequestsByType = async (type: string) => {
-    console.log(`Chargement des demandes de type: ${type}`)
-    // Ici vous pouvez appeler l'API spécifique pour ce type
-    // Par exemple: await getCheckbookRequest() pour les chéquiers
+    console.log(`[v0] Chargement des demandes de type: ${type}`)
+    setIsLoadingAllRequests(true)
+    try {
+      let result
+      if (type === "checkbook") {
+        result = await getCheckbookRequest()
+      } else if (type === "credit") {
+        result = await getCreditRequest()
+      } else {
+        // Pour les autres types, on charge toutes les demandes
+        await loadAllRequests()
+        return
+      }
+
+      if (result && result.success && result.data) {
+        const transformedRequests = Array.isArray(result.data)
+          ? result.data.map((item: any, index: number) => {
+              if (type === "checkbook") {
+                return {
+                  id: item.id || `CHQ${String(index + 1).padStart(3, "0")}`,
+                  type: "checkbook",
+                  typeName: "Demande de chéquier",
+                  status: item.stepflow === 0 ? "En cours" : item.stepflow === 1 ? "Approuvée" : "En attente",
+                  submittedAt: item.dateorder || new Date().toISOString().split("T")[0],
+                  expectedResponse: item.dateorder
+                    ? new Date(new Date(item.dateorder).getTime() + 3 * 24 * 60 * 60 * 1000).toISOString().split("T")[0]
+                    : new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+                  account: item.intitulecompte || "Compte non spécifié",
+                  reference: `CHQ-${new Date().getFullYear()}-${String(index + 1).padStart(3, "0")}`,
+                  details: {
+                    nbrechequier: item.nbrechequier || 0,
+                    nbrefeuille: item.nbrefeuille || 0,
+                    commentaire: item.commentaire || "",
+                  },
+                }
+              } else {
+                return {
+                  id: item.id || `CRD${String(index + 1).padStart(3, "0")}`,
+                  type: "credit",
+                  typeName: "Crédit",
+                  status: "En cours",
+                  submittedAt: item.createdAt ? item.createdAt.split("T")[0] : new Date().toISOString().split("T")[0],
+                  expectedResponse: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+                  account: "Compte courant",
+                  reference: `CRD-${new Date().getFullYear()}-${String(index + 1).padStart(3, "0")}`,
+                  details: {
+                    applicantName: item.applicantName || "",
+                    creditAmount: item.creditAmount || "",
+                    durationMonths: item.durationMonths || "",
+                    purpose: item.purpose || "",
+                  },
+                }
+              }
+            })
+          : []
+        setAllRequests(transformedRequests)
+      } else {
+        setAllRequests([])
+      }
+    } catch (error) {
+      console.error(`[v0] Erreur lors du chargement des demandes ${type}:`, error)
+      setAllRequests([])
+    } finally {
+      setIsLoadingAllRequests(false)
+    }
   }
 
   const selectedHistoryRequestData = recentRequests.find((r) => r.id === selectedHistoryRequest)
