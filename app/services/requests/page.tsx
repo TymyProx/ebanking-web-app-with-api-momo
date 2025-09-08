@@ -191,62 +191,40 @@ export default function ServiceRequestsPage() {
   const loadAllRequests = async () => {
     setIsLoadingAllRequests(true)
     try {
-      // Simuler des données de demandes pour l'exemple
-      const mockRequests = [
-        {
-          id: "REQ001",
-          type: "checkbook",
-          typeName: "Demande de chéquier",
-          status: "En cours",
-          submittedAt: "2024-01-15",
-          expectedResponse: "2024-01-18",
-          account: "Compte Courant Principal",
-          reference: "CHQ-2024-001",
-        },
-        {
-          id: "REQ002",
-          type: "certificate",
-          typeName: "E-attestation bancaire",
-          status: "Approuvée",
-          submittedAt: "2024-01-10",
-          completedAt: "2024-01-12",
-          account: "Compte Courant Principal",
-          reference: "ATT-2024-002",
-        },
-        {
-          id: "REQ003",
-          type: "credit",
-          typeName: "Crédit",
-          status: "En attente de documents",
-          submittedAt: "2024-01-08",
-          expectedResponse: "2024-01-22",
-          account: "Compte Courant Principal",
-          reference: "CRD-2024-003",
-        },
-        {
-          id: "REQ004",
-          type: "card_request",
-          typeName: "Demande de carte",
-          status: "Approuvée",
-          submittedAt: "2024-01-05",
-          completedAt: "2024-01-10",
-          account: "Compte Épargne",
-          reference: "CRT-2024-004",
-        },
-        {
-          id: "REQ005",
-          type: "business_account",
-          typeName: "Compte professionnel",
-          status: "Rejetée",
-          submittedAt: "2024-01-03",
-          completedAt: "2024-01-08",
-          account: "N/A",
-          reference: "BUS-2024-005",
-        },
-      ]
-      setAllRequests(mockRequests)
+      console.log("[v0] Chargement des demandes depuis la base de données...")
+      const result = await getCheckbookRequest()
+      console.log("[v0] Résultat API:", result)
+
+      if (result.success && result.data) {
+        // Transformer les données API en format attendu par l'interface
+        const transformedRequests = Array.isArray(result.data)
+          ? result.data.map((item: any, index: number) => ({
+              id: item.id || `REQ${String(index + 1).padStart(3, "0")}`,
+              type: "checkbook", // Pour l'instant, toutes les demandes sont de type chéquier
+              typeName: "Demande de chéquier",
+              status: item.stepflow === 0 ? "En cours" : item.stepflow === 1 ? "Approuvée" : "En attente",
+              submittedAt: item.dateorder || new Date().toISOString().split("T")[0],
+              expectedResponse: item.dateorder
+                ? new Date(new Date(item.dateorder).getTime() + 3 * 24 * 60 * 60 * 1000).toISOString().split("T")[0]
+                : new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+              account: item.intitulecompte || "Compte non spécifié",
+              reference: `CHQ-${new Date().getFullYear()}-${String(index + 1).padStart(3, "0")}`,
+              details: {
+                nbrechequier: item.nbrechequier || 0,
+                nbrefeuille: item.nbrefeuille || 0,
+                commentaire: item.commentaire || "",
+              },
+            }))
+          : []
+
+        console.log("[v0] Demandes transformées:", transformedRequests)
+        setAllRequests(transformedRequests)
+      } else {
+        console.log("[v0] Aucune donnée trouvée ou erreur API")
+        setAllRequests([])
+      }
     } catch (error) {
-      console.error("Erreur lors du chargement des demandes:", error)
+      console.error("[v0] Erreur lors du chargement des demandes:", error)
       setAllRequests([])
     } finally {
       setIsLoadingAllRequests(false)
