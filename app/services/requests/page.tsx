@@ -203,15 +203,23 @@ export default function ServiceRequestsPage() {
 
       let allTransformedRequests: any[] = []
 
-      // Traitement des demandes de chéquier
       if (checkbookResult && checkbookResult.success && checkbookResult.data) {
         const checkbookData = Array.isArray(checkbookResult.data) ? checkbookResult.data : [checkbookResult.data]
+        console.log("[v0] Données chéquier à traiter:", checkbookData)
+
         const checkbookRequests = checkbookData.map((item: any, index: number) => ({
           id: item.id || `CHQ${String(index + 1).padStart(3, "0")}`,
           type: "checkbook",
           typeName: "Demande de chéquier",
-          status: item.stepflow === 0 ? "En cours" : item.stepflow === 1 ? "Approuvée" : "En attente",
-          submittedAt: item.dateorder || new Date().toISOString().split("T")[0],
+          status:
+            item.stepflow === 0
+              ? "En attente"
+              : item.stepflow === 1
+                ? "En cours"
+                : item.stepflow === 2
+                  ? "Approuvé"
+                  : item.status || "En cours",
+          submittedAt: item.dateorder || item.createdAt?.split("T")[0] || new Date().toISOString().split("T")[0],
           expectedResponse: item.dateorder
             ? new Date(new Date(item.dateorder).getTime() + 3 * 24 * 60 * 60 * 1000).toISOString().split("T")[0]
             : new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
@@ -221,38 +229,55 @@ export default function ServiceRequestsPage() {
             nbrechequier: item.nbrechequier || 0,
             nbrefeuille: item.nbrefeuille || 0,
             commentaire: item.commentaire || "",
+            numcompte: item.numcompte || "",
           },
         }))
         allTransformedRequests = [...allTransformedRequests, ...checkbookRequests]
         console.log("[v0] Demandes de chéquier transformées:", checkbookRequests)
+      } else {
+        console.log("[v0] Aucune donnée de chéquier trouvée ou structure incorrecte")
       }
 
-      // Traitement des demandes de crédit
       if (creditResult && creditResult.success && creditResult.data) {
         const creditData = Array.isArray(creditResult.data) ? creditResult.data : [creditResult.data]
+        console.log("[v0] Données crédit à traiter:", creditData)
+
         const creditRequests = creditData.map((item: any, index: number) => ({
           id: item.id || `CRD${String(index + 1).padStart(3, "0")}`,
           type: "credit",
           typeName: "Crédit",
-          status: item.status || "En cours", // Utilise le statut de l'API ou par défaut
+          status: item.status || "En cours",
           submittedAt: item.createdAt ? item.createdAt.split("T")[0] : new Date().toISOString().split("T")[0],
-          expectedResponse: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split("T")[0], // 7 jours pour les crédits
-          account: "Compte courant", // Compte par défaut pour les crédits
+          expectedResponse: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+          account: "Compte courant",
           reference: `CRD-${new Date().getFullYear()}-${String(index + 1).padStart(3, "0")}`,
           details: {
             applicantName: item.applicantName || "",
             creditAmount: item.creditAmount || "",
             durationMonths: item.durationMonths || "",
             purpose: item.purpose || "",
+            numcompte: item.numcompte || "",
           },
         }))
         allTransformedRequests = [...allTransformedRequests, ...creditRequests]
         console.log("[v0] Demandes de crédit transformées:", creditRequests)
+      } else {
+        console.log("[v0] Aucune donnée de crédit trouvée ou structure incorrecte")
       }
 
       console.log("[v0] Toutes les demandes transformées:", allTransformedRequests)
       console.log("[v0] Nombre total de demandes:", allTransformedRequests.length)
+
       setAllRequests(allTransformedRequests)
+
+      const stats = {
+        total: allTransformedRequests.length,
+        checkbook: allTransformedRequests.filter((req) => req.type === "checkbook").length,
+        credit: allTransformedRequests.filter((req) => req.type === "credit").length,
+        card: allTransformedRequests.filter((req) => req.type === "card").length,
+        account: allTransformedRequests.filter((req) => req.type === "account").length,
+      }
+      console.log("[v0] Statistiques calculées:", stats)
     } catch (error) {
       console.error("[v0] Erreur lors du chargement des demandes:", error)
       setAllRequests([])
