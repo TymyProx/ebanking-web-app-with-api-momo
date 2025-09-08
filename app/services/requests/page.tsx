@@ -453,11 +453,7 @@ export default function ServiceRequestsPage() {
         loan_amount: formData.loan_amount,
         loan_duration: formData.loan_duration,
         loan_purpose: formData.loan_purpose,
-<<<<<<< HEAD
         numcompte: formData.numcompte, // Ajout du numéro de compte manquant
-=======
-        numcompte: selectedAccount || formData.numcompte || "",
->>>>>>> 97e1932709cc601727ca55a8fa2fa5b459704f2e
       }
 
       const result = await submitCreditRequest(creditData)
@@ -498,11 +494,7 @@ export default function ServiceRequestsPage() {
         intitulecompte: formData.intitulecompte,
         numcompteId: selectedAccount,
         commentaire: formData.commentaire || "",
-<<<<<<< HEAD
         numcompte: formData.numcompte, // Ajout du numéro de compte manquant
-=======
-        numcompte: selectedAccount || formData.numcompte || "",
->>>>>>> 97e1932709cc601727ca55a8fa2fa5b459704f2e
       }
 
       const result = await submitCheckbookRequest(checkbookData)
