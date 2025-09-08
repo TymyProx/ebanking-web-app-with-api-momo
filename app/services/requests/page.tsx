@@ -204,53 +204,54 @@ export default function ServiceRequestsPage() {
       let allTransformedRequests: any[] = []
 
       // Traitement des demandes de chéquier
-      if (checkbookResult.success && checkbookResult.data) {
-        const checkbookRequests = Array.isArray(checkbookResult.data)
-          ? checkbookResult.data.map((item: any, index: number) => ({
-              id: item.id || `CHQ${String(index + 1).padStart(3, "0")}`,
-              type: "checkbook",
-              typeName: "Demande de chéquier",
-              status: item.stepflow === 0 ? "En cours" : item.stepflow === 1 ? "Approuvée" : "En attente",
-              submittedAt: item.dateorder || new Date().toISOString().split("T")[0],
-              expectedResponse: item.dateorder
-                ? new Date(new Date(item.dateorder).getTime() + 3 * 24 * 60 * 60 * 1000).toISOString().split("T")[0]
-                : new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
-              account: item.intitulecompte || "Compte non spécifié",
-              reference: `CHQ-${new Date().getFullYear()}-${String(index + 1).padStart(3, "0")}`,
-              details: {
-                nbrechequier: item.nbrechequier || 0,
-                nbrefeuille: item.nbrefeuille || 0,
-                commentaire: item.commentaire || "",
-              },
-            }))
-          : []
+      if (checkbookResult && checkbookResult.success && checkbookResult.data) {
+        const checkbookData = Array.isArray(checkbookResult.data) ? checkbookResult.data : [checkbookResult.data]
+        const checkbookRequests = checkbookData.map((item: any, index: number) => ({
+          id: item.id || `CHQ${String(index + 1).padStart(3, "0")}`,
+          type: "checkbook",
+          typeName: "Demande de chéquier",
+          status: item.stepflow === 0 ? "En cours" : item.stepflow === 1 ? "Approuvée" : "En attente",
+          submittedAt: item.dateorder || new Date().toISOString().split("T")[0],
+          expectedResponse: item.dateorder
+            ? new Date(new Date(item.dateorder).getTime() + 3 * 24 * 60 * 60 * 1000).toISOString().split("T")[0]
+            : new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+          account: item.intitulecompte || "Compte non spécifié",
+          reference: `CHQ-${new Date().getFullYear()}-${String(index + 1).padStart(3, "0")}`,
+          details: {
+            nbrechequier: item.nbrechequier || 0,
+            nbrefeuille: item.nbrefeuille || 0,
+            commentaire: item.commentaire || "",
+          },
+        }))
         allTransformedRequests = [...allTransformedRequests, ...checkbookRequests]
+        console.log("[v0] Demandes de chéquier transformées:", checkbookRequests)
       }
 
       // Traitement des demandes de crédit
-      if (creditResult.success && creditResult.data) {
-        const creditRequests = Array.isArray(creditResult.data)
-          ? creditResult.data.map((item: any, index: number) => ({
-              id: item.id || `CRD${String(index + 1).padStart(3, "0")}`,
-              type: "credit",
-              typeName: "Crédit",
-              status: "En cours", // Statut par défaut pour les crédits
-              submittedAt: item.createdAt ? item.createdAt.split("T")[0] : new Date().toISOString().split("T")[0],
-              expectedResponse: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split("T")[0], // 7 jours pour les crédits
-              account: "Compte courant", // Compte par défaut pour les crédits
-              reference: `CRD-${new Date().getFullYear()}-${String(index + 1).padStart(3, "0")}`,
-              details: {
-                applicantName: item.applicantName || "",
-                creditAmount: item.creditAmount || "",
-                durationMonths: item.durationMonths || "",
-                purpose: item.purpose || "",
-              },
-            }))
-          : []
+      if (creditResult && creditResult.success && creditResult.data) {
+        const creditData = Array.isArray(creditResult.data) ? creditResult.data : [creditResult.data]
+        const creditRequests = creditData.map((item: any, index: number) => ({
+          id: item.id || `CRD${String(index + 1).padStart(3, "0")}`,
+          type: "credit",
+          typeName: "Crédit",
+          status: item.status || "En cours", // Utilise le statut de l'API ou par défaut
+          submittedAt: item.createdAt ? item.createdAt.split("T")[0] : new Date().toISOString().split("T")[0],
+          expectedResponse: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split("T")[0], // 7 jours pour les crédits
+          account: "Compte courant", // Compte par défaut pour les crédits
+          reference: `CRD-${new Date().getFullYear()}-${String(index + 1).padStart(3, "0")}`,
+          details: {
+            applicantName: item.applicantName || "",
+            creditAmount: item.creditAmount || "",
+            durationMonths: item.durationMonths || "",
+            purpose: item.purpose || "",
+          },
+        }))
         allTransformedRequests = [...allTransformedRequests, ...creditRequests]
+        console.log("[v0] Demandes de crédit transformées:", creditRequests)
       }
 
       console.log("[v0] Toutes les demandes transformées:", allTransformedRequests)
+      console.log("[v0] Nombre total de demandes:", allTransformedRequests.length)
       setAllRequests(allTransformedRequests)
     } catch (error) {
       console.error("[v0] Erreur lors du chargement des demandes:", error)
@@ -261,7 +262,9 @@ export default function ServiceRequestsPage() {
   }
 
   useEffect(() => {
+    console.log("[v0] useEffect déclenché, activeTab:", activeTab)
     if (activeTab === "history") {
+      console.log("[v0] Chargement des demandes pour l'onglet historique")
       loadAllRequests()
     }
   }, [activeTab])
