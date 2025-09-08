@@ -452,6 +452,7 @@ export default function ServiceRequestsPage() {
         loan_amount: formData.loan_amount,
         loan_duration: formData.loan_duration,
         loan_purpose: formData.loan_purpose,
+        numcompte: selectedAccount || formData.numcompte || "",
       }
 
       const result = await submitCreditRequest(creditData)
@@ -492,6 +493,7 @@ export default function ServiceRequestsPage() {
         intitulecompte: formData.intitulecompte,
         numcompteId: selectedAccount,
         commentaire: formData.commentaire || "",
+        numcompte: selectedAccount || formData.numcompte || "",
       }
 
       const result = await submitCheckbookRequest(checkbookData)
