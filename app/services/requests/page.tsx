@@ -203,8 +203,8 @@ export default function ServiceRequestsPage() {
 
       let allTransformedRequests: any[] = []
 
-      if (checkbookResult && checkbookResult.success && checkbookResult.data) {
-        const checkbookData = Array.isArray(checkbookResult.data) ? checkbookResult.data : [checkbookResult.data]
+      if (checkbookResult && checkbookResult.rows && Array.isArray(checkbookResult.rows)) {
+        const checkbookData = checkbookResult.rows
         console.log("[v0] Données chéquier à traiter:", checkbookData)
 
         const checkbookRequests = checkbookData.map((item: any, index: number) => ({
@@ -229,7 +229,7 @@ export default function ServiceRequestsPage() {
             nbrechequier: item.nbrechequier || 0,
             nbrefeuille: item.nbrefeuille || 0,
             commentaire: item.commentaire || "",
-            numcompte: item.numcompte || "",
+            numcompteId: item.numcompteId || "",
           },
         }))
         allTransformedRequests = [...allTransformedRequests, ...checkbookRequests]
@@ -238,8 +238,8 @@ export default function ServiceRequestsPage() {
         console.log("[v0] Aucune donnée de chéquier trouvée ou structure incorrecte")
       }
 
-      if (creditResult && creditResult.success && creditResult.data) {
-        const creditData = Array.isArray(creditResult.data) ? creditResult.data : [creditResult.data]
+      if (creditResult && creditResult.rows && Array.isArray(creditResult.rows)) {
+        const creditData = creditResult.rows
         console.log("[v0] Données crédit à traiter:", creditData)
 
         const creditRequests = creditData.map((item: any, index: number) => ({
@@ -256,7 +256,6 @@ export default function ServiceRequestsPage() {
             creditAmount: item.creditAmount || "",
             durationMonths: item.durationMonths || "",
             purpose: item.purpose || "",
-            numcompte: item.numcompte || "",
           },
         }))
         allTransformedRequests = [...allTransformedRequests, ...creditRequests]

@@ -126,40 +126,52 @@ export async function getCheckbookRequest(id?: string) {
     if (!cookieToken) {
       console.log("[v0] Token d'authentification manquant, retour de données de test")
 
-      // Données de test pour les demandes de chéquier
-      const mockCheckbookRequests = [
-        {
-          id: "1",
-          dateorder: "2024-01-15",
-          nbrefeuille: 25,
-          nbrechequier: 1,
-          stepflow: 1,
-          intitulecompte: "Compte Courant Principal",
-          numcompteId: "ACC001",
-          commentaire: "Demande de chéquier standard",
-          numcompte: "1234567890",
-          status: "En cours",
-          createdAt: "2024-01-15T10:00:00Z",
-        },
-        {
-          id: "2",
-          dateorder: "2024-01-20",
-          nbrefeuille: 50,
-          nbrechequier: 2,
-          stepflow: 2,
-          intitulecompte: "Compte Épargne",
-          numcompteId: "ACC002",
-          commentaire: "Demande urgente",
-          numcompte: "0987654321",
-          status: "Approuvé",
-          createdAt: "2024-01-20T14:30:00Z",
-        },
-      ]
+      // Données de test pour les demandes de chéquier avec structure API
+      const mockCheckbookRequests = {
+        rows: [
+          {
+            id: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+            createdAt: "2024-01-15T10:00:00Z",
+            updatedAt: "2024-01-15T10:00:00Z",
+            deletedAt: null,
+            createdById: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+            updatedById: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+            importHash: "hash123",
+            tenantId: "11cacc69-5a49-4f01-8b16-e8f473746634",
+            dateorder: "2024-01-15",
+            nbrefeuille: 25,
+            nbrechequier: 1,
+            stepflow: 1,
+            intitulecompte: "Compte Courant Principal",
+            numcompteId: "ACC001",
+            commentaire: "Demande de chéquier standard",
+          },
+          {
+            id: "4fa85f64-5717-4562-b3fc-2c963f66afa7",
+            createdAt: "2024-01-20T14:30:00Z",
+            updatedAt: "2024-01-20T14:30:00Z",
+            deletedAt: null,
+            createdById: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+            updatedById: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+            importHash: "hash456",
+            tenantId: "11cacc69-5a49-4f01-8b16-e8f473746634",
+            dateorder: "2024-01-20",
+            nbrefeuille: 50,
+            nbrechequier: 2,
+            stepflow: 2,
+            intitulecompte: "Compte Épargne",
+            numcompteId: "ACC002",
+            commentaire: "Demande urgente",
+          },
+        ],
+        count: 2,
+      }
 
       if (id) {
-        return { success: true, data: mockCheckbookRequests.find((req) => req.id === id) || null }
+        const foundRow = mockCheckbookRequests.rows.find((req) => req.id === id)
+        return foundRow ? { rows: [foundRow], count: 1 } : { rows: [], count: 0 }
       }
-      return { success: true, data: mockCheckbookRequests }
+      return mockCheckbookRequests
     }
 
     // Construction de l'URL avec ou sans ID spécifique
@@ -169,44 +181,49 @@ export async function getCheckbookRequest(id?: string) {
     const response = await fetch(url, {
       method: "GET",
       headers: {
-        "Content-Type": "application/json", // Type de contenu JSON
-        Authorization: `Bearer ${usertoken}`, // Authentification via Bearer token
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${usertoken}`,
       },
     })
 
-    // Vérifie si la réponse est valide
     if (!response.ok) {
       const errorData = await response.json()
-      // Si le backend renvoie un message d'erreur, on le propage
       throw new Error(errorData.message || "Erreur lors de la récupération")
     }
 
-    // Récupération des données de la réponse (JSON)
     const data = await response.json()
     return data
   } catch (error: any) {
     console.log("[v0] Erreur lors de la récupération, retour de données de test:", error.message)
 
-    const mockCheckbookRequests = [
-      {
-        id: "1",
-        dateorder: "2024-01-15",
-        nbrefeuille: 25,
-        nbrechequier: 1,
-        stepflow: 1,
-        intitulecompte: "Compte Courant Principal",
-        numcompteId: "ACC001",
-        commentaire: "Demande de chéquier standard",
-        numcompte: "1234567890",
-        status: "En cours",
-        createdAt: "2024-01-15T10:00:00Z",
-      },
-    ]
+    const mockCheckbookRequests = {
+      rows: [
+        {
+          id: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+          createdAt: "2024-01-15T10:00:00Z",
+          updatedAt: "2024-01-15T10:00:00Z",
+          deletedAt: null,
+          createdById: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+          updatedById: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+          importHash: "hash123",
+          tenantId: "11cacc69-5a49-4f01-8b16-e8f473746634",
+          dateorder: "2024-01-15",
+          nbrefeuille: 25,
+          nbrechequier: 1,
+          stepflow: 1,
+          intitulecompte: "Compte Courant Principal",
+          numcompteId: "ACC001",
+          commentaire: "Demande de chéquier standard",
+        },
+      ],
+      count: 1,
+    }
 
     if (id) {
-      return { success: true, data: mockCheckbookRequests.find((req) => req.id === id) || null }
+      const foundRow = mockCheckbookRequests.rows.find((req) => req.id === id)
+      return foundRow ? { rows: [foundRow], count: 1 } : { rows: [], count: 0 }
     }
-    return { success: true, data: mockCheckbookRequests }
+    return mockCheckbookRequests
   }
 }
 
@@ -220,34 +237,46 @@ export async function getCreditRequest(id?: string) {
     if (!cookieToken) {
       console.log("[v0] Token d'authentification manquant, retour de données de test")
 
-      // Données de test pour les demandes de crédit
-      const mockCreditRequests = [
-        {
-          id: "1",
-          applicantName: "Jean Dupont",
-          creditAmount: "50000",
-          durationMonths: "24",
-          purpose: "Achat véhicule",
-          numcompte: "1234567890",
-          status: "En cours d'étude",
-          createdAt: "2024-01-10T09:00:00Z",
-        },
-        {
-          id: "2",
-          applicantName: "Marie Martin",
-          creditAmount: "25000",
-          durationMonths: "12",
-          purpose: "Travaux maison",
-          numcompte: "0987654321",
-          status: "Approuvé",
-          createdAt: "2024-01-18T16:45:00Z",
-        },
-      ]
+      // Données de test pour les demandes de crédit avec structure API
+      const mockCreditRequests = {
+        rows: [
+          {
+            id: "5fa85f64-5717-4562-b3fc-2c963f66afa8",
+            createdAt: "2024-01-10T09:00:00Z",
+            updatedAt: "2024-01-10T09:00:00Z",
+            deletedAt: null,
+            createdById: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+            updatedById: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+            importHash: "hash789",
+            tenantId: "11cacc69-5a49-4f01-8b16-e8f473746634",
+            applicantName: "Jean Dupont",
+            creditAmount: "50000",
+            durationMonths: "24",
+            purpose: "Achat véhicule",
+          },
+          {
+            id: "6fa85f64-5717-4562-b3fc-2c963f66afa9",
+            createdAt: "2024-01-18T16:45:00Z",
+            updatedAt: "2024-01-18T16:45:00Z",
+            deletedAt: null,
+            createdById: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+            updatedById: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+            importHash: "hash101",
+            tenantId: "11cacc69-5a49-4f01-8b16-e8f473746634",
+            applicantName: "Marie Martin",
+            creditAmount: "25000",
+            durationMonths: "12",
+            purpose: "Travaux maison",
+          },
+        ],
+        count: 2,
+      }
 
       if (id) {
-        return { success: true, data: mockCreditRequests.find((req) => req.id === id) || null }
+        const foundRow = mockCreditRequests.rows.find((req) => req.id === id)
+        return foundRow ? { rows: [foundRow], count: 1 } : { rows: [], count: 0 }
       }
-      return { success: true, data: mockCreditRequests }
+      return mockCreditRequests
     }
 
     // Construction de l'URL avec ou sans ID spécifique
@@ -259,40 +288,45 @@ export async function getCreditRequest(id?: string) {
     const response = await fetch(url, {
       method: "GET",
       headers: {
-        "Content-Type": "application/json", // Type de contenu JSON
-        Authorization: `Bearer ${usertoken}`, // Authentification via Bearer token
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${usertoken}`,
       },
     })
 
-    // Vérifie si la réponse est valide
     if (!response.ok) {
       const errorData = await response.json()
-      // Si le backend renvoie un message d'erreur, on le propage
       throw new Error(errorData.message || "Erreur lors de la récupération")
     }
 
-    // Récupération des données de la réponse (JSON)
     const data = await response.json()
     return data
   } catch (error: any) {
     console.log("[v0] Erreur lors de la récupération, retour de données de test:", error.message)
 
-    const mockCreditRequests = [
-      {
-        id: "1",
-        applicantName: "Jean Dupont",
-        creditAmount: "50000",
-        durationMonths: "24",
-        purpose: "Achat véhicule",
-        numcompte: "1234567890",
-        status: "En cours d'étude",
-        createdAt: "2024-01-10T09:00:00Z",
-      },
-    ]
+    const mockCreditRequests = {
+      rows: [
+        {
+          id: "5fa85f64-5717-4562-b3fc-2c963f66afa8",
+          createdAt: "2024-01-10T09:00:00Z",
+          updatedAt: "2024-01-10T09:00:00Z",
+          deletedAt: null,
+          createdById: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+          updatedById: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+          importHash: "hash789",
+          tenantId: "11cacc69-5a49-4f01-8b16-e8f473746634",
+          applicantName: "Jean Dupont",
+          creditAmount: "50000",
+          durationMonths: "24",
+          purpose: "Achat véhicule",
+        },
+      ],
+      count: 1,
+    }
 
     if (id) {
-      return { success: true, data: mockCreditRequests.find((req) => req.id === id) || null }
+      const foundRow = mockCreditRequests.rows.find((req) => req.id === id)
+      return foundRow ? { rows: [foundRow], count: 1 } : { rows: [], count: 0 }
     }
-    return { success: true, data: mockCreditRequests }
+    return mockCreditRequests
   }
 }
