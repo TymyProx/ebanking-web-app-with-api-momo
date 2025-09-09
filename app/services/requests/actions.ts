@@ -472,3 +472,92 @@ export async function getCommandeById(tenantId: string, id: string) {
     return mockCheckbookDetail
   }
 }
+
+// Fonction asynchrone pour modifier une demande de chéquier (commande)
+export async function updateCommande(tenantId: string, id: string, data: any) {
+  try {
+    // 🔑 Récupération du token JWT stocké dans les cookies
+    const cookieToken = (await cookies()).get("token")?.value
+    const usertoken = cookieToken
+
+    // Si aucun token n'est trouvé → erreur
+    if (!cookieToken) throw new Error("Token introuvable.")
+
+    // Envoi de la requête PUT vers l'API backend
+    const response = await fetch(`${API_BASE_URL}/tenant/${tenantId}/commande/${id}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json", // Type de contenu JSON
+        Authorization: `Bearer ${usertoken}`, // Authentification via Bearer token
+      },
+      body: JSON.stringify({
+        data: {
+          dateorder: data.dateorder,
+          nbrefeuille: data.nbrefeuille,
+          nbrechequier: data.nbrechequier,
+          stepflow: data.stepflow,
+          intitulecompte: data.intitulecompte,
+          numcompteId: data.numcompteId,
+          commentaire: data.commentaire,
+        },
+      }),
+    })
+
+    // Vérifie si la réponse est valide
+    if (!response.ok) {
+      const errorData = await response.json()
+      // Si le backend renvoie un message d'erreur, on le propage
+      throw new Error(errorData.message || "Erreur lors de la modification")
+    }
+
+    // Récupération des données de la réponse (JSON)
+    const responseData = await response.json()
+    return responseData
+  } catch (error: any) {
+    // Gestion d'erreur (propagation du message d'erreur)
+    throw new Error(error.message)
+  }
+}
+
+// Fonction asynchrone pour modifier une demande de crédit
+export async function updateDemandeCredit(tenantId: string, id: string, data: any) {
+  try {
+    // 🔑 Récupération du token JWT stocké dans les cookies
+    const cookieToken = (await cookies()).get("token")?.value
+    const usertoken = cookieToken
+
+    // Si aucun token n'est trouvé → erreur
+    if (!cookieToken) throw new Error("Token introuvable.")
+
+    // Envoi de la requête PUT vers l'API backend
+    const response = await fetch(`${API_BASE_URL}/tenant/${tenantId}/demande-credit/${id}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json", // Type de contenu JSON
+        Authorization: `Bearer ${usertoken}`, // Authentification via Bearer token
+      },
+      body: JSON.stringify({
+        data: {
+          applicantName: data.applicantName,
+          creditAmount: data.creditAmount,
+          durationMonths: data.durationMonths,
+          purpose: data.purpose,
+        },
+      }),
+    })
+
+    // Vérifie si la réponse est valide
+    if (!response.ok) {
+      const errorData = await response.json()
+      // Si le backend renvoie un message d'erreur, on le propage
+      throw new Error(errorData.message || "Erreur lors de la modification")
+    }
+
+    // Récupération des données de la réponse (JSON)
+    const responseData = await response.json()
+    return responseData
+  } catch (error: any) {
+    // Gestion d'erreur (propagation du message d'erreur)
+    throw new Error(error.message)
+  }
+}
