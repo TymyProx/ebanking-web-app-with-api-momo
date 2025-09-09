@@ -181,7 +181,7 @@ export default function ServiceRequestsPage() {
 
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [editingRequest, setEditingRequest] = useState<any>(null)
-  const [editFormData, setEditFormData] = useState<any>({})
+  const [editFormData, setEditFormData] = useState<Record<string, any>>({})
   const [isUpdating, setIsUpdating] = useState(false)
 
   const selectedServiceData = serviceTypes.find((s) => s.id === selectedService)
@@ -400,7 +400,7 @@ export default function ServiceRequestsPage() {
   }
 
   const handleEditInputChange = (field: string, value: any) => {
-    setEditFormData((prev) => ({
+    setEditFormData((prev: Record<string, any>) => ({
       ...prev,
       [field]: value,
     }))
