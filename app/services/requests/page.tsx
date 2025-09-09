@@ -640,13 +640,13 @@ export default function ServiceRequestsPage() {
               </Alert>
             )}
 
-            <div className="flex items-start space-x-2">
+            <div className="flex items-center space-x-2">
               <Checkbox
-                id="credit_terms"
+                id="checkbook_terms"
                 checked={formData.terms || false}
                 onCheckedChange={(checked) => handleInputChange("terms", checked)}
               />
-              <Label htmlFor="credit_terms" className="text-sm">
+              <Label htmlFor="checkbook_terms" className="text-sm">
                 J'accepte les{" "}
                 <a href="#" className="text-blue-600 hover:underline">
                   conditions générales
