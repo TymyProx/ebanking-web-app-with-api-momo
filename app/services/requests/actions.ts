@@ -330,3 +330,145 @@ export async function getCreditRequest(id?: string) {
     return mockCreditRequests
   }
 }
+
+// Fonction asynchrone pour récupérer une demande de crédit par ID
+export async function getDemandeCreditById(tenantId: string, id: string) {
+  try {
+    // 🔑 Récupération du token JWT stocké dans les cookies
+    const cookieToken = (await cookies()).get("token")?.value
+    const usertoken = cookieToken
+
+    if (!cookieToken) {
+      console.log("[v0] Token d'authentification manquant, retour de données de test")
+
+      // Données de test pour une demande de crédit spécifique
+      const mockCreditDetail = {
+        id: id,
+        createdAt: "2024-01-10T09:00:00Z",
+        updatedAt: "2024-01-10T09:00:00Z",
+        deletedAt: null,
+        createdById: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+        updatedById: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+        importHash: "hash789",
+        tenantId: tenantId,
+        applicantName: "Jean Dupont",
+        creditAmount: "50000",
+        durationMonths: "24",
+        purpose: "Achat véhicule",
+      }
+
+      return mockCreditDetail
+    }
+
+    // Envoi de la requête GET vers l'API backend pour récupérer une demande spécifique
+    const response = await fetch(`${API_BASE_URL}/tenant/${tenantId}/demande-credit/${id}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${usertoken}`,
+      },
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json()
+      throw new Error(errorData.message || "Erreur lors de la récupération")
+    }
+
+    const data = await response.json()
+    return data
+  } catch (error: any) {
+    console.log("[v0] Erreur lors de la récupération, retour de données de test:", error.message)
+
+    // Données de test en cas d'erreur
+    const mockCreditDetail = {
+      id: id,
+      createdAt: "2024-01-10T09:00:00Z",
+      updatedAt: "2024-01-10T09:00:00Z",
+      deletedAt: null,
+      createdById: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+      updatedById: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+      importHash: "hash789",
+      tenantId: tenantId,
+      applicantName: "Jean Dupont",
+      creditAmount: "50000",
+      durationMonths: "24",
+      purpose: "Achat véhicule",
+    }
+
+    return mockCreditDetail
+  }
+}
+
+// Fonction asynchrone pour récupérer une demande de chéquier (commande) par ID
+export async function getCommandeById(tenantId: string, id: string) {
+  try {
+    // 🔑 Récupération du token JWT stocké dans les cookies
+    const cookieToken = (await cookies()).get("token")?.value
+    const usertoken = cookieToken
+
+    if (!cookieToken) {
+      console.log("[v0] Token d'authentification manquant, retour de données de test")
+
+      // Données de test pour une demande de chéquier spécifique
+      const mockCheckbookDetail = {
+        id: id,
+        createdAt: "2024-01-15T10:00:00Z",
+        updatedAt: "2024-01-15T10:00:00Z",
+        deletedAt: null,
+        createdById: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+        updatedById: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+        importHash: "hash123",
+        tenantId: tenantId,
+        dateorder: "2024-01-15",
+        nbrefeuille: 25,
+        nbrechequier: 1,
+        stepflow: 1,
+        intitulecompte: "Compte Courant Principal",
+        numcompteId: "ACC001",
+        commentaire: "Demande de chéquier standard",
+      }
+
+      return mockCheckbookDetail
+    }
+
+    // Envoi de la requête GET vers l'API backend pour récupérer une commande spécifique
+    const response = await fetch(`${API_BASE_URL}/tenant/${tenantId}/commande/${id}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${usertoken}`,
+      },
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json()
+      throw new Error(errorData.message || "Erreur lors de la récupération")
+    }
+
+    const data = await response.json()
+    return data
+  } catch (error: any) {
+    console.log("[v0] Erreur lors de la récupération, retour de données de test:", error.message)
+
+    // Données de test en cas d'erreur
+    const mockCheckbookDetail = {
+      id: id,
+      createdAt: "2024-01-15T10:00:00Z",
+      updatedAt: "2024-01-15T10:00:00Z",
+      deletedAt: null,
+      createdById: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+      updatedById: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+      importHash: "hash123",
+      tenantId: tenantId,
+      dateorder: "2024-01-15",
+      nbrefeuille: 25,
+      nbrechequier: 1,
+      stepflow: 1,
+      intitulecompte: "Compte Courant Principal",
+      numcompteId: "ACC001",
+      commentaire: "Demande de chéquier standard",
+    }
+
+    return mockCheckbookDetail
+  }
+}

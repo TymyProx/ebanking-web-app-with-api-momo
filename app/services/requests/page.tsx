@@ -31,9 +31,17 @@ import {
   MoreVertical,
   Trash2,
 } from "lucide-react"
-import { submitCreditRequest, submitCheckbookRequest, getCheckbookRequest, getCreditRequest } from "./actions"
+import {
+  submitCreditRequest,
+  submitCheckbookRequest,
+  getCheckbookRequest,
+  getCreditRequest,
+  getDemandeCreditById,
+  getCommandeById,
+} from "./actions"
 import { useActionState } from "react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 
 const serviceTypes = [
   {
@@ -163,6 +171,10 @@ export default function ServiceRequestsPage() {
   const [allRequests, setAllRequests] = useState<any[]>([])
   const [isLoadingAllRequests, setIsLoadingAllRequests] = useState(false)
 
+  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false)
+  const [selectedRequestDetails, setSelectedRequestDetails] = useState<any>(null)
+  const [isLoadingDetails, setIsLoadingDetails] = useState(false)
+
   const selectedServiceData = serviceTypes.find((s) => s.id === selectedService)
 
   const loadCheckbookRequests = async () => {
@@ -283,6 +295,68 @@ export default function ServiceRequestsPage() {
     } finally {
       setIsLoadingAllRequests(false)
     }
+  }
+
+  const handleViewDetails = async (request: any) => {
+    setIsLoadingDetails(true)
+    setIsDetailsModalOpen(true)
+
+    try {
+      console.log("[v0] Chargement des détails pour la demande:", request.id, "type:", request.type)
+
+      let details = null
+      const tenantId = "11cacc69-5a49-4f01-8b16-e8f473746634"
+
+      if (request.type === "credit") {
+        details = await getDemandeCreditById(tenantId, request.id)
+      } else if (request.type === "checkbook") {
+        details = await getCommandeById(tenantId, request.id)
+      }
+
+      console.log("[v0] Détails récupérés:", details)
+      setSelectedRequestDetails(details)
+    } catch (error) {
+      console.error("[v0] Erreur lors du chargement des détails:", error)
+    } finally {
+      setIsLoadingDetails(false)
+    }
+  }
+
+  const closeDetailsModal = () => {
+    setIsDetailsModalOpen(false)
+    setSelectedRequestDetails(null)
+  }
+
+  const formatRequestDetails = (details: any, type: string) => {
+    if (!details) return []
+
+    const commonFields = [
+      { label: "ID", value: details.id },
+      { label: "Date de création", value: new Date(details.createdAt).toLocaleDateString("fr-FR") },
+      { label: "Dernière modification", value: new Date(details.updatedAt).toLocaleDateString("fr-FR") },
+    ]
+
+    if (type === "credit") {
+      return [
+        ...commonFields,
+        { label: "Nom du demandeur", value: details.applicantName },
+        { label: "Montant du crédit", value: `${details.creditAmount} €` },
+        { label: "Durée (mois)", value: details.durationMonths },
+        { label: "Objet du crédit", value: details.purpose },
+      ]
+    } else if (type === "checkbook") {
+      return [
+        ...commonFields,
+        { label: "Date de commande", value: new Date(details.dateorder).toLocaleDateString("fr-FR") },
+        { label: "Nombre de feuilles", value: details.nbrefeuille },
+        { label: "Nombre de chéquiers", value: details.nbrechequier },
+        { label: "Intitulé du compte", value: details.intitulecompte },
+        { label: "ID du compte", value: details.numcompteId },
+        { label: "Commentaire", value: details.commentaire || "Aucun commentaire" },
+      ]
+    }
+
+    return commonFields
   }
 
   useEffect(() => {
@@ -1442,7 +1516,7 @@ export default function ServiceRequestsPage() {
                       </div>
 
                       <div className="flex items-center space-x-2">
-                        <Button variant="ghost" size="sm">
+                        <Button variant="ghost" size="sm" onClick={() => handleViewDetails(request)}>
                           <Eye className="w-4 h-4" />
                         </Button>
 
@@ -1453,7 +1527,7 @@ export default function ServiceRequestsPage() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleViewDetails(request)}>
                               <Eye className="w-4 h-4 mr-2" />
                               Voir détails
                             </DropdownMenuItem>
@@ -1478,6 +1552,52 @@ export default function ServiceRequestsPage() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      <Dialog open={isDetailsModalOpen} onOpenChange={setIsDetailsModalOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center">
+              <FileText className="w-5 h-5 mr-2" />
+              Détails de la demande
+            </DialogTitle>
+          </DialogHeader>
+
+          {isLoadingDetails ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mr-4"></div>
+              <p className="text-gray-600">Chargement des détails...</p>
+            </div>
+          ) : selectedRequestDetails ? (
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {formatRequestDetails(
+                  selectedRequestDetails,
+                  allRequests.find((r) => r.id === selectedRequestDetails.id)?.type || "unknown",
+                ).map((field, index) => (
+                  <div key={index} className="space-y-1">
+                    <label className="text-sm font-medium text-gray-600">{field.label}</label>
+                    <p className="text-sm text-gray-900 bg-gray-50 p-2 rounded border">{field.value}</p>
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex justify-end space-x-2 pt-4 border-t">
+                <Button variant="outline" onClick={closeDetailsModal}>
+                  Fermer
+                </Button>
+                <Button>
+                  <Download className="w-4 h-4 mr-2" />
+                  Télécharger
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <p className="text-gray-500">Aucun détail disponible</p>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
