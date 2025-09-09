@@ -640,21 +640,20 @@ export default function ServiceRequestsPage() {
               </Alert>
             )}
 
-            <div className="flex items-center space-x-2">
+            <div className="flex items-start space-x-2">
               <Checkbox
-                id="checkbook_terms"
+                id="credit_terms"
                 checked={formData.terms || false}
                 onCheckedChange={(checked) => handleInputChange("terms", checked)}
-                required
               />
-              <Label htmlFor="checkbook_terms" className="text-sm">
-                J'accepte les conditions générales et autorise le traitement de ma demande
+              <Label htmlFor="credit_terms" className="text-sm">
+                J'accepte les{" "}
+                <a href="#" className="text-blue-600 hover:underline">
+                  conditions générales
+                </a>{" "}
+                et autorise le traitement de ma demande
               </Label>
             </div>
-
-            <Button type="submit" className="w-full" disabled={isCheckbookSubmitting || !formData.terms}>
-              {isCheckbookSubmitting ? "Envoi en cours..." : "Envoyer la demande"}
-            </Button>
           </form>
         )
 
