@@ -30,8 +30,6 @@ import {
   Search,
   MoreVertical,
   Trash2,
-  Edit,
-  Save,
 } from "lucide-react"
 import {
   submitCreditRequest,
@@ -40,9 +38,8 @@ import {
   getCreditRequest,
   getDemandeCreditById,
   getCommandeById,
-  updateCommande,
-  updateDemandeCredit,
 } from "./actions"
+import { useActionState } from "react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 
@@ -99,7 +96,7 @@ const serviceTypes = [
   },
 ]
 
-const accountsData = [
+const accounts = [
   {
     id: "acc_001",
     name: "Compte Courant Principal",
@@ -147,37 +144,36 @@ const recentRequests = [
 ]
 
 export default function ServiceRequestsPage() {
-  // États existants
-  const [activeTab, setActiveTab] = useState("new")
-  const [selectedService, setSelectedService] = useState<string | null>(null)
+  const [selectedService, setSelectedService] = useState<string>("")
+  const [selectedAccount, setSelectedAccount] = useState<string>("")
   const [formData, setFormData] = useState<Record<string, any>>({})
-  const [accounts, setAccounts] = useState<any[]>([])
-  const [isLoadingAccounts, setIsLoadingAccounts] = useState(false)
-  const [submitState, setSubmitState] = useState<{ success: boolean; error: string } | null>(null)
+  const [activeTab, setActiveTab] = useState("new")
+  const [submitState, submitAction, isSubmitting] = useActionState(submitCreditRequest, null)
+  const [selectedHistoryRequest, setSelectedHistoryRequest] = useState<string>("")
+  const [creditSubmitState, setCreditSubmitState] = useState<{
+    success?: boolean
+    error?: string
+    reference?: string
+  } | null>(null)
   const [isCreditSubmitting, setIsCreditSubmitting] = useState(false)
-  const [creditSubmitState, setCreditSubmitState] = useState<{ success: boolean; error: string } | null>(null)
+  const [checkbookSubmitState, setCheckbookSubmitState] = useState<{
+    success?: boolean
+    error?: string
+    reference?: string
+  } | null>(null)
   const [isCheckbookSubmitting, setIsCheckbookSubmitting] = useState(false)
-  const [checkbookSubmitState, setCheckbookSubmitState] = useState<{ success: boolean; error: string } | null>(null)
+  const [checkbookRequests, setCheckbookRequests] = useState<any[]>([])
+  const [isLoadingCheckbookRequests, setIsLoadingCheckbookRequests] = useState(false)
+  const [selectedCheckbookRequest, setSelectedCheckbookRequest] = useState<any>(null)
+
+  const [searchTerm, setSearchTerm] = useState("")
+  const [filterType, setFilterType] = useState("all")
   const [allRequests, setAllRequests] = useState<any[]>([])
   const [isLoadingAllRequests, setIsLoadingAllRequests] = useState(false)
-  const [selectedRequestType, setSelectedRequestType] = useState<string>("all")
-  const [searchTerm, setSearchTerm] = useState("")
+
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false)
   const [selectedRequestDetails, setSelectedRequestDetails] = useState<any>(null)
   const [isLoadingDetails, setIsLoadingDetails] = useState(false)
-
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
-  const [selectedRequestForEdit, setSelectedRequestForEdit] = useState<any>(null)
-  const [editFormData, setEditFormData] = useState<Record<string, any>>({})
-  const [isUpdating, setIsUpdating] = useState(false)
-  const [updateState, setUpdateState] = useState<{ success: boolean; error: string } | null>(null)
-  const [selectedAccount, setSelectedAccount] = useState<string | null>(null)
-  const [selectedHistoryRequest, setSelectedHistoryRequest] = useState<string | null>(null)
-  const [filterType, setFilterType] = useState<string>("all")
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [isLoadingCheckbookRequests, setIsLoadingCheckbookRequests] = useState(false)
-  const [checkbookRequests, setCheckbookRequests] = useState<any[]>([])
-  const [selectedCheckbookRequest, setSelectedCheckbookRequest] = useState<any>(null)
 
   const selectedServiceData = serviceTypes.find((s) => s.id === selectedService)
 
@@ -363,90 +359,6 @@ export default function ServiceRequestsPage() {
     return commonFields
   }
 
-  const handleEditRequest = async (request: any) => {
-    console.log("[v0] Ouverture modale modification pour:", request)
-    setSelectedRequestForEdit(request)
-    setIsLoadingDetails(true)
-    setIsEditModalOpen(true)
-
-    try {
-      let details
-      if (request.type === "credit") {
-        details = await getDemandeCreditById("11cacc69-5a49-4f01-8b16-e8f473746634", request.id)
-      } else if (request.type === "checkbook") {
-        details = await getCommandeById("11cacc69-5a49-4f01-8b16-e8f473746634", request.id)
-      }
-
-      if (details) {
-        setEditFormData(details)
-        console.log("[v0] Données chargées pour modification:", details)
-      }
-    } catch (error) {
-      console.error("[v0] Erreur lors du chargement des détails pour modification:", error)
-    } finally {
-      setIsLoadingDetails(false)
-    }
-  }
-
-  const closeEditModal = () => {
-    setIsEditModalOpen(false)
-    setSelectedRequestForEdit(null)
-    setEditFormData({})
-    setUpdateState(null)
-  }
-
-  const handleEditInputChange = (field: string, value: any) => {
-    setEditFormData((prev) => ({
-      ...prev,
-      [field]: value,
-    }))
-  }
-
-  const handleSaveChanges = async () => {
-    if (!selectedRequestForEdit) return
-
-    setIsUpdating(true)
-    setUpdateState(null)
-
-    try {
-      let result
-      if (selectedRequestForEdit.type === "credit") {
-        result = await updateDemandeCredit("11cacc69-5a49-4f01-8b16-e8f473746634", selectedRequestForEdit.id, {
-          applicantName: editFormData.applicantName,
-          creditAmount: editFormData.creditAmount,
-          durationMonths: editFormData.durationMonths,
-          purpose: editFormData.purpose,
-        })
-      } else if (selectedRequestForEdit.type === "checkbook") {
-        result = await updateCommande("11cacc69-5a49-4f01-8b16-e8f473746634", selectedRequestForEdit.id, {
-          dateorder: editFormData.dateorder,
-          nbrefeuille: editFormData.nbrefeuille,
-          nbrechequier: editFormData.nbrechequier,
-          stepflow: editFormData.stepflow,
-          intitulecompte: editFormData.intitulecompte,
-          numcompteId: editFormData.numcompteId,
-          commentaire: editFormData.commentaire,
-        })
-      }
-
-      console.log("[v0] Modification réussie:", result)
-      setUpdateState({ success: true, error: "" })
-
-      // Rafraîchir la liste des demandes
-      await loadAllRequests()
-
-      // Fermer la modale après un délai
-      setTimeout(() => {
-        closeEditModal()
-      }, 1500)
-    } catch (error: any) {
-      console.error("[v0] Erreur lors de la modification:", error)
-      setUpdateState({ success: false, error: error.message || "Erreur lors de la modification" })
-    } finally {
-      setIsUpdating(false)
-    }
-  }
-
   useEffect(() => {
     console.log("[v0] useEffect déclenché, activeTab:", activeTab)
     if (activeTab === "history") {
@@ -575,7 +487,7 @@ export default function ServiceRequestsPage() {
   }
 
   const getAccountIdFromName = (accountName: string): string => {
-    const account = accountsData.find((acc) => acc.name === accountName)
+    const account = accounts.find((acc) => acc.name === accountName)
     return account?.id || ""
   }
 
@@ -1385,26 +1297,25 @@ export default function ServiceRequestsPage() {
                 ) : selectedService === "credit" ? (
                   <div></div>
                 ) : (
-                  <Button
-                    type="button"
-                    disabled={isSubmitting || !formData.terms}
-                    className="w-full"
-                    onClick={() => {
-                      setSubmitState({ success: true, reference: `REF-${Date.now()}` })
-                    }}
-                  >
-                    {isSubmitting ? (
-                      <>
-                        <Clock className="w-4 h-4 mr-2 animate-spin" />
-                        Envoi en cours...
-                      </>
-                    ) : (
-                      <>
-                        <Send className="w-4 h-4 mr-2" />
-                        Envoyer la demande
-                      </>
-                    )}
-                  </Button>
+                  <form action={submitAction}>
+                    <input type="hidden" name="serviceType" value={selectedService} />
+                    <input type="hidden" name="accountId" value={selectedAccount} />
+                    <input type="hidden" name="formData" value={JSON.stringify(formData)} />
+
+                    <Button type="submit" disabled={isSubmitting || !formData.terms} className="w-full">
+                      {isSubmitting ? (
+                        <>
+                          <Clock className="w-4 h-4 mr-2 animate-spin" />
+                          Envoi en cours...
+                        </>
+                      ) : (
+                        <>
+                          <Send className="w-4 h-4 mr-2" />
+                          Envoyer la demande
+                        </>
+                      )}
+                    </Button>
+                  </form>
                 )}
 
                 {/* Feedback Messages */}
@@ -1616,10 +1527,6 @@ export default function ServiceRequestsPage() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => handleEditRequest(request)}>
-                              <Edit className="w-4 h-4 mr-2" />
-                              Modifier
-                            </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => handleViewDetails(request)}>
                               <Eye className="w-4 h-4 mr-2" />
                               Voir détails
@@ -1646,163 +1553,47 @@ export default function ServiceRequestsPage() {
         </TabsContent>
       </Tabs>
 
-      <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+      <Dialog open={isDetailsModalOpen} onOpenChange={setIsDetailsModalOpen}>
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle className="flex items-center">
-              <Edit className="w-5 h-5 mr-2" />
-              Modifier la demande
+              <FileText className="w-5 h-5 mr-2" />
+              Détails de la demande
             </DialogTitle>
           </DialogHeader>
 
           {isLoadingDetails ? (
             <div className="flex items-center justify-center py-8">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mr-4"></div>
-              <p className="text-gray-600">Chargement des données...</p>
+              <p className="text-gray-600">Chargement des détails...</p>
             </div>
-          ) : selectedRequestForEdit ? (
+          ) : selectedRequestDetails ? (
             <div className="space-y-6">
-              {updateState && (
-                <Alert variant={updateState.success ? "default" : "destructive"}>
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertDescription>
-                    {updateState.success ? "✅ Modification enregistrée avec succès" : `❌ ${updateState.error}`}
-                  </AlertDescription>
-                </Alert>
-              )}
-
-              {selectedRequestForEdit.type === "credit" && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-1">
-                    <label className="text-sm font-medium text-gray-600">Nom du demandeur</label>
-                    <Input
-                      value={editFormData.applicantName || ""}
-                      onChange={(e) => handleEditInputChange("applicantName", e.target.value)}
-                      placeholder="Nom complet"
-                    />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {formatRequestDetails(
+                  selectedRequestDetails,
+                  allRequests.find((r) => r.id === selectedRequestDetails.id)?.type || "unknown",
+                ).map((field, index) => (
+                  <div key={index} className="space-y-1">
+                    <label className="text-sm font-medium text-gray-600">{field.label}</label>
+                    <p className="text-sm text-gray-900 bg-gray-50 p-2 rounded border">{field.value}</p>
                   </div>
-                  <div className="space-y-1">
-                    <label className="text-sm font-medium text-gray-600">Montant du crédit</label>
-                    <Input
-                      value={editFormData.creditAmount || ""}
-                      onChange={(e) => handleEditInputChange("creditAmount", e.target.value)}
-                      placeholder="Montant en FCFA"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-sm font-medium text-gray-600">Durée (mois)</label>
-                    <Select
-                      value={editFormData.durationMonths || ""}
-                      onValueChange={(value) => handleEditInputChange("durationMonths", value)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Sélectionner la durée" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="6">6 mois</SelectItem>
-                        <SelectItem value="12">12 mois</SelectItem>
-                        <SelectItem value="18">18 mois</SelectItem>
-                        <SelectItem value="24">24 mois</SelectItem>
-                        <SelectItem value="36">36 mois</SelectItem>
-                        <SelectItem value="48">48 mois</SelectItem>
-                        <SelectItem value="60">60 mois</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-1 md:col-span-2">
-                    <label className="text-sm font-medium text-gray-600">Objet du crédit</label>
-                    <Input
-                      value={editFormData.purpose || ""}
-                      onChange={(e) => handleEditInputChange("purpose", e.target.value)}
-                      placeholder="Raison du crédit"
-                    />
-                  </div>
-                </div>
-              )}
-
-              {selectedRequestForEdit.type === "checkbook" && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-1">
-                    <label className="text-sm font-medium text-gray-600">Date de commande</label>
-                    <Input
-                      type="date"
-                      value={editFormData.dateorder || ""}
-                      onChange={(e) => handleEditInputChange("dateorder", e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-sm font-medium text-gray-600">Nombre de feuilles par chèque</label>
-                    <Select
-                      value={editFormData.nbrefeuille?.toString() || ""}
-                      onValueChange={(value) => handleEditInputChange("nbrefeuille", Number.parseInt(value))}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Choisir" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="25">25 feuilles</SelectItem>
-                        <SelectItem value="50">50 feuilles</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-sm font-medium text-gray-600">Nombre de chéquiers</label>
-                    <Input
-                      type="number"
-                      value={editFormData.nbrechequier || ""}
-                      onChange={(e) => handleEditInputChange("nbrechequier", Number.parseInt(e.target.value))}
-                      placeholder="Nombre"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-sm font-medium text-gray-600">Intitulé du compte</label>
-                    <Input
-                      value={editFormData.intitulecompte || ""}
-                      onChange={(e) => handleEditInputChange("intitulecompte", e.target.value)}
-                      placeholder="Nom du compte"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-sm font-medium text-gray-600">Numéro de compte</label>
-                    <Input
-                      value={editFormData.numcompteId || ""}
-                      onChange={(e) => handleEditInputChange("numcompteId", e.target.value)}
-                      placeholder="Numéro de compte"
-                    />
-                  </div>
-                  <div className="space-y-1 md:col-span-2">
-                    <label className="text-sm font-medium text-gray-600">Commentaire</label>
-                    <Input
-                      value={editFormData.commentaire || ""}
-                      onChange={(e) => handleEditInputChange("commentaire", e.target.value)}
-                      placeholder="Commentaire optionnel"
-                    />
-                  </div>
-                </div>
-              )}
+                ))}
+              </div>
 
               <div className="flex justify-end space-x-2 pt-4 border-t">
-                <Button variant="outline" onClick={closeEditModal} disabled={isUpdating}>
-                  Annuler
+                <Button variant="outline" onClick={closeDetailsModal}>
+                  Fermer
                 </Button>
-                <Button onClick={handleSaveChanges} disabled={isUpdating}>
-                  {isUpdating ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                      Enregistrement...
-                    </>
-                  ) : (
-                    <>
-                      <Save className="w-4 h-4 mr-2" />
-                      Enregistrer
-                    </>
-                  )}
+                <Button>
+                  <Download className="w-4 h-4 mr-2" />
+                  Télécharger
                 </Button>
               </div>
             </div>
           ) : (
             <div className="text-center py-8">
-              <p className="text-gray-500">Aucune donnée disponible</p>
+              <p className="text-gray-500">Aucun détail disponible</p>
             </div>
           )}
         </DialogContent>
