@@ -412,9 +412,24 @@ export default function ServiceRequestsPage() {
     setIsUpdating(true)
     try {
       if (editingRequest.type === "credit_request") {
-        await updateCreditRequest(editingRequest.id, editFormData)
+        const creditUpdateData = {
+          applicantName: editFormData.applicantName || editFormData.applicant_name || "",
+          creditAmount: editFormData.creditAmount || editFormData.credit_amount || "",
+          durationMonths: editFormData.durationMonths || editFormData.duration_months || "",
+          purpose: editFormData.purpose || "",
+        }
+        await updateCreditRequest(editingRequest.id, creditUpdateData)
       } else if (editingRequest.type === "checkbook_request") {
-        await updateCommandeRequest(editingRequest.id, editFormData)
+        const checkbookUpdateData = {
+          dateorder: editFormData.dateorder || new Date().toISOString().split("T")[0],
+          nbrefeuille: Number.parseInt(editFormData.nbrefeuille) || 0,
+          nbrechequier: Number.parseInt(editFormData.nbrechequier) || 0,
+          stepflow: Number.parseInt(editFormData.stepflow) || 0,
+          intitulecompte: editFormData.intitulecompte || "",
+          numcompteId: editFormData.numcompteId || "",
+          commentaire: editFormData.commentaire || "",
+        }
+        await updateCommandeRequest(editingRequest.id, checkbookUpdateData)
       }
 
       // Rafraîchir la liste des demandes
