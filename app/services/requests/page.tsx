@@ -1696,7 +1696,10 @@ export default function ServiceRequestsPage() {
 
           {editingRequest && (
             <div className="space-y-6">
-              {console.log("[v0] Type de demande dans modale:", editingRequest.type)}
+              {(() => {
+                console.log("[v0] Type de demande dans modale:", editingRequest.type)
+                return null
+              })()}
               {editingRequest.type === "credit_request" ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
