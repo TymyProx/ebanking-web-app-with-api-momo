@@ -1149,7 +1149,7 @@ export default function ServiceRequestsPage() {
 
                 {/* Account Selection */}
                 <div>
-                  <Label htmlFor="account">Intitulé du compte *</Label>
+                  <Label htmlFor="account">Selectionner un compte *</Label>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-2">
                     {accounts
                       .filter((account) => selectedService !== "credit" || account.type === "Courant")
