@@ -30,6 +30,8 @@ import {
   Search,
   MoreVertical,
   Trash2,
+  Edit,
+  Save,
 } from "lucide-react"
 import {
   submitCreditRequest,
@@ -38,6 +40,8 @@ import {
   getCreditRequest,
   getDemandeCreditById,
   getCommandeById,
+  updateCreditRequest,
+  updateCommandeRequest,
 } from "./actions"
 import { useActionState } from "react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
@@ -174,6 +178,11 @@ export default function ServiceRequestsPage() {
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false)
   const [selectedRequestDetails, setSelectedRequestDetails] = useState<any>(null)
   const [isLoadingDetails, setIsLoadingDetails] = useState(false)
+
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  const [editingRequest, setEditingRequest] = useState<any>(null)
+  const [editFormData, setEditFormData] = useState<any>({})
+  const [isUpdating, setIsUpdating] = useState(false)
 
   const selectedServiceData = serviceTypes.find((s) => s.id === selectedService)
 
@@ -357,6 +366,67 @@ export default function ServiceRequestsPage() {
     }
 
     return commonFields
+  }
+
+  const handleEditRequest = async (request: any) => {
+    setEditingRequest(request)
+    setIsEditModalOpen(true)
+
+    // Pré-remplir le formulaire avec les données existantes
+    if (request.type === "credit_request") {
+      setEditFormData({
+        applicantName: request.applicantName || "",
+        creditAmount: request.creditAmount || "",
+        durationMonths: request.durationMonths || "",
+        purpose: request.purpose || "",
+      })
+    } else if (request.type === "checkbook_request") {
+      setEditFormData({
+        dateorder: request.dateorder || "",
+        nbrefeuille: request.nbrefeuille || 0,
+        nbrechequier: request.nbrechequier || 0,
+        stepflow: request.stepflow || 0,
+        intitulecompte: request.intitulecompte || "",
+        numcompteId: request.numcompteId || "",
+        commentaire: request.commentaire || "",
+      })
+    }
+  }
+
+  const closeEditModal = () => {
+    setIsEditModalOpen(false)
+    setEditingRequest(null)
+    setEditFormData({})
+  }
+
+  const handleEditInputChange = (field: string, value: any) => {
+    setEditFormData((prev) => ({
+      ...prev,
+      [field]: value,
+    }))
+  }
+
+  const handleSaveEdit = async () => {
+    if (!editingRequest) return
+
+    setIsUpdating(true)
+    try {
+      if (editingRequest.type === "credit_request") {
+        await updateCreditRequest(editingRequest.id, editFormData)
+      } else if (editingRequest.type === "checkbook_request") {
+        await updateCommandeRequest(editingRequest.id, editFormData)
+      }
+
+      // Rafraîchir la liste des demandes
+      await loadAllRequests()
+
+      closeEditModal()
+      console.log("[v0] Demande modifiée avec succès")
+    } catch (error: any) {
+      console.error("[v0] Erreur lors de la modification:", error.message)
+    } finally {
+      setIsUpdating(false)
+    }
   }
 
   useEffect(() => {
@@ -1527,6 +1597,10 @@ export default function ServiceRequestsPage() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => handleEditRequest(request)}>
+                              <Edit className="w-4 h-4 mr-2" />
+                              Modifier
+                            </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => handleViewDetails(request)}>
                               <Eye className="w-4 h-4 mr-2" />
                               Voir détails
@@ -1594,6 +1668,138 @@ export default function ServiceRequestsPage() {
           ) : (
             <div className="text-center py-8">
               <p className="text-gray-500">Aucun détail disponible</p>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center">
+              <Edit className="w-5 h-5 mr-2" />
+              Modifier la demande
+            </DialogTitle>
+          </DialogHeader>
+
+          {editingRequest && (
+            <div className="space-y-6">
+              {editingRequest.type === "credit_request" ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-gray-700">Nom du demandeur</label>
+                    <Input
+                      value={editFormData.applicantName || ""}
+                      onChange={(e) => handleEditInputChange("applicantName", e.target.value)}
+                      placeholder="Nom complet"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-gray-700">Montant du crédit</label>
+                    <Input
+                      value={editFormData.creditAmount || ""}
+                      onChange={(e) => handleEditInputChange("creditAmount", e.target.value)}
+                      placeholder="Montant en FCFA"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-gray-700">Durée (mois)</label>
+                    <Input
+                      value={editFormData.durationMonths || ""}
+                      onChange={(e) => handleEditInputChange("durationMonths", e.target.value)}
+                      placeholder="Durée en mois"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-gray-700">Objet du crédit</label>
+                    <Input
+                      value={editFormData.purpose || ""}
+                      onChange={(e) => handleEditInputChange("purpose", e.target.value)}
+                      placeholder="Objet du crédit"
+                    />
+                  </div>
+                </div>
+              ) : editingRequest.type === "checkbook_request" ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-gray-700">Date de commande</label>
+                    <Input
+                      type="date"
+                      value={editFormData.dateorder || ""}
+                      onChange={(e) => handleEditInputChange("dateorder", e.target.value)}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-gray-700">Nombre de chéquiers</label>
+                    <Input
+                      type="number"
+                      value={editFormData.nbrechequier || 0}
+                      onChange={(e) => handleEditInputChange("nbrechequier", Number.parseInt(e.target.value) || 0)}
+                      placeholder="Nombre de chéquiers"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-gray-700">Feuilles par chéquier</label>
+                    <Input
+                      type="number"
+                      value={editFormData.nbrefeuille || 0}
+                      onChange={(e) => handleEditInputChange("nbrefeuille", Number.parseInt(e.target.value) || 0)}
+                      placeholder="Nombre de feuilles"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-gray-700">Intitulé du compte</label>
+                    <Input
+                      value={editFormData.intitulecompte || ""}
+                      onChange={(e) => handleEditInputChange("intitulecompte", e.target.value)}
+                      placeholder="Intitulé du compte"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-gray-700">Numéro de compte</label>
+                    <Input
+                      value={editFormData.numcompteId || ""}
+                      onChange={(e) => handleEditInputChange("numcompteId", e.target.value)}
+                      placeholder="Numéro de compte"
+                    />
+                  </div>
+
+                  <div className="space-y-2 md:col-span-2">
+                    <label className="text-sm font-medium text-gray-700">Commentaire</label>
+                    <Input
+                      value={editFormData.commentaire || ""}
+                      onChange={(e) => handleEditInputChange("commentaire", e.target.value)}
+                      placeholder="Commentaire optionnel"
+                    />
+                  </div>
+                </div>
+              ) : null}
+
+              <div className="flex justify-end space-x-2 pt-4 border-t">
+                <Button variant="outline" onClick={closeEditModal} disabled={isUpdating}>
+                  Annuler
+                </Button>
+                <Button onClick={handleSaveEdit} disabled={isUpdating}>
+                  {isUpdating ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      Enregistrement...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="w-4 h-4 mr-2" />
+                      Enregistrer
+                    </>
+                  )}
+                </Button>
+              </div>
             </div>
           )}
         </DialogContent>
