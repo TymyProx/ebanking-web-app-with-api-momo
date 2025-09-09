@@ -602,7 +602,6 @@ export default function ServiceRequestsPage() {
   const handleCreditSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    // Vérifier que tous les champs requis sont remplis
     if (
       !formData.applicant_name ||
       !formData.loan_amount ||
@@ -620,11 +619,11 @@ export default function ServiceRequestsPage() {
 
     try {
       const creditData = {
-        applicant_name: formData.applicant_name,
-        loan_amount: formData.loan_amount,
-        loan_duration: formData.loan_duration,
-        loan_purpose: formData.loan_purpose,
-        numcompte: formData.numcompte, // Ajout du numéro de compte manquant
+        applicant_name: formData.applicant_name || "",
+        loan_amount: formData.loan_amount || "",
+        loan_duration: formData.loan_duration || "",
+        loan_purpose: formData.loan_purpose || "",
+        numcompte: formData.numcompte || selectedAccount || "",
       }
 
       const result = await submitCreditRequest(creditData)
@@ -641,14 +640,7 @@ export default function ServiceRequestsPage() {
   const handleCheckbookSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    // Vérifier que tous les champs requis sont remplis
-    if (
-      !formData.nbrechequier ||
-      !formData.nbrefeuille ||
-      !formData.intitulecompte ||
-      !formData.numcompte ||
-      !formData.terms
-    ) {
+    if (!formData.nbrechequier || !formData.nbrefeuille || !formData.intitulecompte || !formData.terms) {
       setCheckbookSubmitState({ error: "Veuillez remplir tous les champs obligatoires" })
       return
     }
@@ -662,10 +654,10 @@ export default function ServiceRequestsPage() {
         nbrefeuille: Number.parseInt(formData.nbrefeuille) || 0,
         nbrechequier: Number.parseInt(formData.nbrechequier) || 0,
         stepflow: 0,
-        intitulecompte: formData.intitulecompte,
-        numcompteId: selectedAccount,
+        intitulecompte: formData.intitulecompte || "",
+        numcompteId: selectedAccount || "",
         commentaire: formData.commentaire || "",
-        numcompte: formData.numcompte, // Ajout du numéro de compte manquant
+        numcompte: formData.numcompte || selectedAccount || "",
       }
 
       const result = await submitCheckbookRequest(checkbookData)
