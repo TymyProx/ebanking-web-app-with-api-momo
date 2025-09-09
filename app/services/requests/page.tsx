@@ -677,7 +677,7 @@ export default function ServiceRequestsPage() {
                 name="nbrefeuille"
                 type="number"
                 min="25"
-                max="100"
+                max="50"
                 step="25"
                 value={formData.nbrefeuille || ""}
                 onChange={(e) => handleInputChange("nbrefeuille", e.target.value)}
