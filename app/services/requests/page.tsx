@@ -369,19 +369,22 @@ export default function ServiceRequestsPage() {
   }
 
   const handleEditRequest = async (request: any) => {
+    console.log("[v0] handleEditRequest appelé avec:", request)
     setEditingRequest(request)
     setIsEditModalOpen(true)
 
     // Pré-remplir le formulaire avec les données existantes
     if (request.type === "credit_request") {
-      setEditFormData({
-        applicantName: request.applicantName || "",
-        creditAmount: request.creditAmount || "",
-        durationMonths: request.durationMonths || "",
+      const formData = {
+        applicantName: request.applicantName || request.applicant_name || "",
+        creditAmount: request.creditAmount || request.credit_amount || "",
+        durationMonths: request.durationMonths || request.duration_months || "",
         purpose: request.purpose || "",
-      })
+      }
+      console.log("[v0] Pré-remplissage crédit:", formData)
+      setEditFormData(formData)
     } else if (request.type === "checkbook_request") {
-      setEditFormData({
+      const formData = {
         dateorder: request.dateorder || "",
         nbrefeuille: request.nbrefeuille || 0,
         nbrechequier: request.nbrechequier || 0,
@@ -389,7 +392,9 @@ export default function ServiceRequestsPage() {
         intitulecompte: request.intitulecompte || "",
         numcompteId: request.numcompteId || "",
         commentaire: request.commentaire || "",
-      })
+      }
+      console.log("[v0] Pré-remplissage chéquier:", formData)
+      setEditFormData(formData)
     }
   }
 
@@ -1691,6 +1696,7 @@ export default function ServiceRequestsPage() {
 
           {editingRequest && (
             <div className="space-y-6">
+              {console.log("[v0] Type de demande dans modale:", editingRequest.type)}
               {editingRequest.type === "credit_request" ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
