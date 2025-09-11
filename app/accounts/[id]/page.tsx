@@ -1,12 +1,13 @@
 "use client"
 
 import { useParams, useRouter } from "next/navigation"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useTransition } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { Skeleton } from "@/components/ui/skeleton"
+import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select"
 import {
   ArrowLeft,
   Download,
@@ -25,9 +26,12 @@ import {
   Shield,
   Info,
   RefreshCw,
+  Settings,
 } from "lucide-react"
 import { getAccounts } from "../actions"
 import { getTransactions } from "../../transfers/new/actions"
+import { toggleAccountStatus } from "./actions"
+import { useNotifications } from "@/contexts/notification-context"
 
 interface Account {
   id: string
@@ -36,8 +40,8 @@ interface Account {
   balance: number
   availableBalance: number
   currency: string
-  type: "Courant" | "Épargne" | "Devise"
-  status: "Actif" | "Bloqué" | "Fermé"
+  type: string //"Courant" | "Épargne" | "Devise"
+  status: string //"Actif" | "Bloqué" | "Fermé"
   iban: string
   openingDate: string
   branch: string
@@ -68,6 +72,8 @@ export default function AccountDetailsPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [isLoadingAccount, setIsLoadingAccount] = useState(true)
   const [isLoadingTransactions, setIsLoadingTransactions] = useState(true)
+  const [isPending, startTransition] = useTransition()
+  const { addNotification } = useNotifications()
 
   useEffect(() => {
     const loadAccount = async () => {
@@ -86,8 +92,8 @@ export default function AccountDetailsPage() {
               balance: Number.parseFloat(foundAccount.bookBalance || foundAccount.balance || "0"),
               availableBalance: Number.parseFloat(foundAccount.availableBalance || foundAccount.balance || "0"),
               currency: foundAccount.currency || "GNF",
-              type: "Courant" as const,
-              status: "Actif" as const,
+              type: foundAccount.type, //"Courant" as const,
+              status: foundAccount.status, //|| "Actif" as const,
               iban: `GN82 BNG 001 ${foundAccount.accountNumber}`,
               openingDate: foundAccount.createdAt || "2020-01-01",
               branch: "Agence Kaloum",
@@ -129,7 +135,7 @@ export default function AccountDetailsPage() {
                 amount: isCredit ? Math.abs(amount) : -Math.abs(amount),
                 currency: "GNF", // Par défaut
                 date: txn.valueDate || new Date().toISOString(),
-                status: txn.status === "COMPLETED" ? "Exécuté" : txn.status === "PENDING" ? "En attente" : "Rejeté",
+                status: txn.status, //txn.status === "COMPLETED" ? "Exécuté" : txn.status === "PENDING" ? "En attente" : "Rejeté",
                 counterparty: txn.beneficiaryId || "Système",
                 reference: txn.txnId || "REF-" + Date.now(),
                 balanceAfter: 0, // Calculé dynamiquement si nécessaire
@@ -168,7 +174,7 @@ export default function AccountDetailsPage() {
               amount: isCredit ? Math.abs(amount) : -Math.abs(amount),
               currency: "GNF",
               date: txn.valueDate || new Date().toISOString(),
-              status: txn.status === "COMPLETED" ? "Exécuté" : txn.status === "PENDING" ? "En attente" : "Rejeté",
+              status: txn.status, //txn.status === "COMPLETED" ? "Exécuté" : txn.status === "PENDING" ? "En attente" : "Rejeté",
               counterparty: txn.beneficiaryId || "Système",
               reference: txn.txnId || "REF-" + Date.now(),
               balanceAfter: 0,
@@ -183,6 +189,45 @@ export default function AccountDetailsPage() {
     } finally {
       setIsLoadingTransactions(false)
     }
+  }
+
+  const handleStatusChange = async (newStatus: string) => {
+    if (!account || account.status === newStatus) return
+
+    const previousStatus = account.status
+
+    startTransition(async () => {
+      try {
+        console.log("[v0] Changement de statut:", { accountId, previousStatus, newStatus })
+
+        const result = await toggleAccountStatus(accountId, newStatus)
+
+        if (result.success) {
+          // Update local account state
+          setAccount((prev) => (prev ? { ...prev, status: newStatus } : null))
+
+          // Add notification to the context
+          addNotification({
+            type: "account_status",
+            title: "Changement de statut de compte",
+            message: `Le statut de votre compte ${account.name} (${account.number}) a été modifié de "${previousStatus}" vers "${newStatus}".`,
+            timestamp: new Date(),
+            isRead: false,
+          })
+
+          console.log("[v0] Statut mis à jour avec succès")
+        }
+      } catch (error) {
+        console.error("[v0] Erreur lors du changement de statut:", error)
+        addNotification({
+          type: "error",
+          title: "Erreur",
+          message: "Impossible de modifier le statut du compte. Veuillez réessayer.",
+          timestamp: new Date(),
+          isRead: false,
+        })
+      }
+    })
   }
 
   if (isLoadingAccount) {
@@ -318,7 +363,20 @@ export default function AccountDetailsPage() {
                   <p className="text-sm text-gray-500 font-mono">{account.number}</p>
                 </div>
               </div>
-              {getStatusBadge(account.status)}
+              <div className="flex items-center space-x-2">
+                {getStatusBadge(account.status)}
+                <Select onValueChange={handleStatusChange} disabled={isPending}>
+                  <SelectTrigger className="w-auto">
+                    <Settings className="h-4 w-4" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="ACTIVE">Activer</SelectItem>
+                    <SelectItem value="BLOCKED">Bloquer</SelectItem>
+                    <SelectItem value="SUSPENDED">Suspendre</SelectItem>
+                    <SelectItem value="CLOSED">Fermer</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
@@ -442,17 +500,17 @@ export default function AccountDetailsPage() {
             <div className="space-y-2">
               <p className="text-sm font-medium">Actions disponibles</p>
               <div className="space-y-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="w-full justify-start bg-transparent"
-                  onClick={() => router.push(`/transfers/new?fromAccount=${accountId}`)}
-                >
-                  <ArrowUpRight className="w-4 h-4 mr-2" />
-                  Effectuer un virement
-                </Button>
-                {account.status === "Actif" && (
+                {account.status === "ACTIVE" && !!(account.number && String(account.number).trim()) && (
                   <>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full justify-start bg-transparent"
+                      onClick={() => router.push(`/transfers/new?fromAccount=${accountId}`)}
+                    >
+                      <ArrowUpRight className="w-4 h-4 mr-2" />
+                      Effectuer un virement
+                    </Button>
                     <Button
                       variant="outline"
                       size="sm"

@@ -197,18 +197,17 @@ export default function StatementsPage() {
     }
   }, [preSelectedAccountId, accounts])
 
-  const handlePeriodChange = (value: string) => {
-    setSelectedPeriod(value)
-    const period = predefinedPeriods.find((p) => p.value === value)
-    if (period && value !== "custom") {
-      setStartDate(period.startDate)
-      setEndDate(period.endDate)
-    } else if (value === "custom") {
-      setStartDate("")
-      setEndDate("")
-    }
+const handlePeriodChange = (value: string) => {
+  setSelectedPeriod(value)
+  const period = predefinedPeriods.find((p) => p.value === value)
+  if (period && value !== "custom") {
+    setStartDate(period.startDate ?? "")
+    setEndDate(period.endDate ?? "")
+  } else if (value === "custom") {
+    setStartDate("")
+    setEndDate("")
   }
-
+}
   const handleGenerateStatement = async () => {
     if (!selectedAccount || !startDate || !endDate) {
       return

@@ -248,7 +248,7 @@ API RESTful
 ### Sécurité
 \`\`\`
 Sécurité Multi-Niveaux
-├── HTTP/TLS 1.3
+├── HTTPS/TLS 1.3
 ├── 2FA par SMS
 ├── Chiffrement bout-en-bout
 ├── Audit trails

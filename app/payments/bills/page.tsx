@@ -351,9 +351,14 @@ export default function UnifiedPaymentPage() {
 
   // Comptes disponibles
   const accounts = [
-    { id: "1", name: "Compte Courant", number: "0001-234567-89", balance: 2400000, currency: "GNF" },
-    { id: "2", name: "Compte Épargne", number: "0002-345678-90", balance: 850000, currency: "GNF" },
-  ]
+    { id: "1", name: "Compte Courant", number: "0001-234567-89", balance: 2400000, currency: "GNF", status: "ACTIVE" },
+    { id: "2", name: "Compte Épargne", number: "0002-345678-90", balance: 850000, currency: "GNF", status: "ACTIVE" },
+  ].filter(
+    (account) =>
+      (account.status === "ACTIVE" || account.status === "Actif") &&
+      account.number &&
+      String(account.number).trim() !== "",
+  )
 
   // Paiements récents unifiés
   const recentPayments = [
@@ -692,13 +697,13 @@ export default function UnifiedPaymentPage() {
 
                     <div className="space-y-2 text-xs text-gray-500">
                       <div className="flex justify-between">
-                        <span>Frais:</span>
+                        <span className="text-gray-600">Frais:</span>
                         <span className="font-medium">
                           {provider.fee === 0 ? "Gratuit" : `${formatAmount(provider.fee)} GNF`}
                         </span>
                       </div>
                       <div className="flex justify-between">
-                        <span>Montant min/max:</span>
+                        <span className="text-gray-600">Montant min/max:</span>
                         <span className="font-medium">
                           {formatAmount(provider.minAmount)} - {formatAmount(provider.maxAmount)} GNF
                         </span>

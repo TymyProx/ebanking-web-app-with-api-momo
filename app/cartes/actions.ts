@@ -3,7 +3,7 @@
 import { cookies } from "next/headers"
 import { revalidatePath } from "next/cache"
 
-const API_BASE_URL = process.env.API_BASE_URL || "http://192.168.1.200:8080/api"
+const API_BASE_URL = process.env.API_BASE_URL || "https://192.168.1.200:8080/api"
 const TENANT_ID = process.env.TENANT_ID || "11cacc69-5a49-4f01-8b16-e8f473746634"
 
 export async function createCard(prevState: any, formData: FormData) {
@@ -207,16 +207,14 @@ export async function getCards() {
     const result = await response.json()
     console.log("[v0] Résultat récupération cartes:", result)
 
+    // Adapter les données API au format attendu par l'interface
     let cardsData = []
-    if (result.rows && Array.isArray(result.rows)) {
-      // L'API retourne { rows: [...], count: number }
-      cardsData = result.rows
-      console.log("[v0] Données extraites de result.rows:", cardsData)
-    } else if (result.data) {
-      // Fallback pour l'ancien format
+    if (result.data) {
+      // Si result.data est un tableau
       if (Array.isArray(result.data)) {
         cardsData = result.data
       } else {
+        // Si result.data est un objet unique
         cardsData = [result.data]
       }
     }
@@ -234,8 +232,6 @@ export async function getCards() {
       balance: card.balance || 1000000,
       lastTransaction: card.lastTransaction || "Aucune transaction récente",
     }))
-
-    console.log("[v0] Cartes formatées:", formattedCards)
 
     return {
       success: true,

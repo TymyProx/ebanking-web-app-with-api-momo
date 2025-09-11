@@ -431,7 +431,9 @@ export default function RIBPage() {
                   <div>
                     <p className="text-xs text-gray-500 uppercase">RIB</p>
                     <p className="font-mono font-semibold">
-                      {selectedAccount.bankCode} {selectedAccount.branchCode} {selectedAccount.number.replace(/-/g, "")}
+                     {selectedAccount?.bankCode ?? ""}{" "}
+                      {selectedAccount?.branchCode ?? ""}{" "}
+                      {(selectedAccount?.number ?? "").replace(/-/g, "")}
                     </p>
                   </div>
                   <div>
