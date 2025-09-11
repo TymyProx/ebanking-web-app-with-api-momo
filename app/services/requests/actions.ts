@@ -7,7 +7,7 @@ import { cookies } from "next/headers"
 // URL de base de l’API et ID du tenant (identifiant du client dans l’API)
 
 
-const API_BASE_URL = process.env.API_BASE_URL
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL
 const tenantId = process.env.TENANT_ID 
 
 // Fonction asynchrone pour soumettre une demande de crédit
