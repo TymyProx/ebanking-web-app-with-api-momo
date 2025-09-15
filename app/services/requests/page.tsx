@@ -55,16 +55,6 @@ const serviceTypes = [
     requirements: ["Compte actif", "Pas de chèques impayés"],
   },
   {
-    id: "certificate",
-    name: "E-attestation bancaire",
-    icon: FileText,
-    description: "Attestation de compte ou de revenus",
-    category: "documents",
-    processingTime: "24-48 heures",
-    cost: "5,000 GNF",
-    requirements: ["Compte ouvert depuis 3 mois", "Justificatifs à jour"],
-  },
-  {
     id: "credit",
     name: "Demande de crédit",
     icon: CreditCard,
@@ -73,26 +63,6 @@ const serviceTypes = [
     processingTime: "3-30 jours ouvrables",
     cost: "Gratuit",
     requirements: ["Revenus réguliers", "Garanties", "Dossier complet"],
-  },
-  {
-    id: "business_account",
-    name: "Compte professionnel",
-    icon: Briefcase,
-    description: "Ouverture de compte entreprise",
-    category: "business",
-    processingTime: "7-14 jours ouvrables",
-    cost: "25,000 GNF",
-    requirements: ["RCCM", "Statuts", "Pièces dirigeants"],
-  },
-  {
-    id: "card_request",
-    name: "Demande de carte",
-    icon: CreditCard,
-    description: "Nouvelle carte bancaire ou remplacement",
-    category: "banking",
-    processingTime: "7-10 jours ouvrables",
-    cost: "15,000 GNF",
-    requirements: ["Compte actif", "Pièce d'identité"],
   },
 ]
 
@@ -1370,9 +1340,6 @@ export default function ServiceRequestsPage() {
                     <SelectItem value="all">Toutes les demandes</SelectItem>
                     <SelectItem value="checkbook">Demande de chéquier</SelectItem>
                     <SelectItem value="credit">Demande de crédit</SelectItem>
-                    <SelectItem value="certificate">E-attestation bancaire</SelectItem>
-                    <SelectItem value="business_account">Compte professionnel</SelectItem>
-                    <SelectItem value="card_request">Demande de carte</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
