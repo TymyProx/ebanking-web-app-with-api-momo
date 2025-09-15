@@ -179,7 +179,7 @@ export default function BeneficiaryForm({
       readOnly
       className="bg-gray-50"
     />
-  ) : selectedType === "BNG-CONFRERE" ? (
+  ) : selectedType === "BNG-CONFRERE" || selectedType === "BNG-INTERNATIONAL" ? (
     <Input
       id="bank"
       name="bank"
@@ -188,32 +188,14 @@ export default function BeneficiaryForm({
     />
   ) : null}
 </div>
-
-
-      {selectedType === "BNG-INTERNATIONAL" && (
+  {selectedType === "BNG-INTERNATIONAL" && (
         <>
           <div className="space-y-2">
             <Label htmlFor="swiftCode">Code SWIFT</Label>
             <Input id="swiftCode" name="swiftCode" defaultValue={initialData.swiftCode || ""} placeholder="BNPAFRPP" />
           </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="country">Pays</Label>
-            <Select value={selectedCountry} onValueChange={setSelectedCountry}>
-              <SelectTrigger>
-                <SelectValue placeholder="Sélectionnez le pays" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="France">France</SelectItem>
-                <SelectItem value="Belgique">Belgique</SelectItem>
-                <SelectItem value="Suisse">Suisse</SelectItem>
-                <SelectItem value="Canada">Canada</SelectItem>
-                <SelectItem value="États-Unis">États-Unis</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
         </>
-      )}
+    )}
 
       <div className="flex justify-end space-x-2 pt-4">
         <Button type="button" variant="outline" onClick={onCancel} disabled={isPending}>
