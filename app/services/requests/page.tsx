@@ -1391,38 +1391,7 @@ export default function ServiceRequestsPage() {
                 </div>
               </CardContent>
             </Card>
-
-            <Card
-              className="cursor-pointer hover:bg-gray-50 transition-colors"
-              onClick={() => loadRequestsByType("certificate")}
-            >
-              <CardContent className="pt-6">
-                <div className="flex items-center">
-                  <Shield className="h-8 w-8 text-orange-600" />
-                  <div className="ml-4">
-                    <p className="text-sm font-medium text-gray-600">Attestation</p>
-                    <p className="text-2xl font-bold">{allRequests.filter((r) => r.type === "certificate").length}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card
-              className="cursor-pointer hover:bg-gray-50 transition-colors"
-              onClick={() => loadRequestsByType("card_request")}
-            >
-              <CardContent className="pt-6">
-                <div className="flex items-center">
-                  <CreditCard className="h-8 w-8 text-red-600" />
-                  <div className="ml-4">
-                    <p className="text-sm font-medium text-gray-600">Carte</p>
-                    <p className="text-2xl font-bold">{allRequests.filter((r) => r.type === "card_request").length}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
           </div>
-
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center">
