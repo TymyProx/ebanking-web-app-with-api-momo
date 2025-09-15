@@ -195,7 +195,7 @@ export default function RIBPage() {
             balance: Number.parseFloat(acc.bookBalance || acc.balance || "0"),
             currency: acc.currency || "GNF",
             type: "Courant" as const,
-            status: "Actif" as const,
+            status: (acc.status === "ACTIVE" ? "Actif" : acc.status) as "Actif" | "Bloqué" | "Fermé", // Map API status to local status
             iban: `GN82 BNG 001 ${acc.accountNumber}`,
             accountHolder: "DIALLO Mamadou",
             bankName: "Banque Nationale de Guinée",
@@ -204,7 +204,13 @@ export default function RIBPage() {
             branchName: "Agence Kaloum",
             swiftCode: "BNGNGNCX",
           }))
-          setAccounts(adaptedAccounts)
+
+          const activeAccounts = adaptedAccounts.filter(
+            (account: Account) => account.status === "Actif" && account.number && String(account.number).trim() !== "",
+          )
+
+          console.log("[v0] Comptes actifs avec numéro valide pour RIB:", activeAccounts)
+          setAccounts(activeAccounts)
         }
       } catch (error) {
         console.error("Erreur lors du chargement des comptes:", error)
@@ -431,8 +437,7 @@ export default function RIBPage() {
                   <div>
                     <p className="text-xs text-gray-500 uppercase">RIB</p>
                     <p className="font-mono font-semibold">
-                     {selectedAccount?.bankCode ?? ""}{" "}
-                      {selectedAccount?.branchCode ?? ""}{" "}
+                      {selectedAccount?.bankCode ?? ""} {selectedAccount?.branchCode ?? ""}{" "}
                       {(selectedAccount?.number ?? "").replace(/-/g, "")}
                     </p>
                   </div>
