@@ -49,7 +49,7 @@ export default function BeneficiaryForm({
   useEffect(() => {
     if (selectedType === "BNG-BNG") {
       setSelectedBank("Banque Nationale de Guinée")
-    } else if (selectedType !== "" && selectedBank === "Banque Nationale de Guinée") {
+    } else if (selectedType !== "") {
       setSelectedBank("")
     }
   }, [selectedType])
@@ -169,33 +169,30 @@ export default function BeneficiaryForm({
         )}
       </div>
 
-     <div className="space-y-2">
-  <Label htmlFor="bank">Banque *</Label>
-  {selectedType === "BNG-BNG" ? (
-    <Input
-      id="bank"
-      name="bank"
-      value="Banque Nationale de Guinée"
-      readOnly
-      className="bg-gray-50"
-    />
-  ) : selectedType === "BNG-CONFRERE" || selectedType === "BNG-INTERNATIONAL" ? (
-    <Input
-      id="bank"
-      name="bank"
-      placeholder="Saisissez le nom de la banque"
-      className="bg-white"
-    />
-  ) : null}
-</div>
-  {selectedType === "BNG-INTERNATIONAL" && (
+      <div className="space-y-2">
+        <Label htmlFor="bank">Banque *</Label>
+        {selectedType === "BNG-BNG" ? (
+          <Input id="bank" name="bank" value="Banque Nationale de Guinée" readOnly className="bg-gray-50" />
+        ) : selectedType === "BNG-CONFRERE" || selectedType === "BNG-INTERNATIONAL" ? (
+          <Input
+            id="bank"
+            name="bank"
+            value={selectedBank}
+            onChange={(e) => setSelectedBank(e.target.value)}
+            placeholder="Saisissez le nom de la banque"
+            className="bg-white"
+          />
+        ) : null}
+      </div>
+
+      {selectedType === "BNG-INTERNATIONAL" && (
         <>
           <div className="space-y-2">
             <Label htmlFor="swiftCode">Code SWIFT</Label>
             <Input id="swiftCode" name="swiftCode" defaultValue={initialData.swiftCode || ""} placeholder="BNPAFRPP" />
           </div>
         </>
-    )}
+      )}
 
       <div className="flex justify-end space-x-2 pt-4">
         <Button type="button" variant="outline" onClick={onCancel} disabled={isPending}>
