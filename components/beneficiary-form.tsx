@@ -140,9 +140,9 @@ export default function BeneficiaryForm({
             <SelectValue placeholder="Sélectionnez le type" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="BNG-BNG">BNG vers BNG (Gratuit)</SelectItem>
-            <SelectItem value="BNG-CONFRERE">BNG vers Confrère (2,500 GNF)</SelectItem>
-            <SelectItem value="BNG-INTERNATIONAL">International (Variable)</SelectItem>
+            <SelectItem value="BNG-BNG">Interne</SelectItem>
+            <SelectItem value="BNG-CONFRERE">Confrère(Guinée)</SelectItem>
+            <SelectItem value="BNG-INTERNATIONAL">International</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -169,37 +169,26 @@ export default function BeneficiaryForm({
         )}
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="bank">Banque *</Label>
-        {selectedType === "BNG-BNG" ? (
-          <Input id="bank" name="bank" value="Banque Nationale de Guinée" readOnly className="bg-gray-50" />
-        ) : (
-          <Select value={selectedBank} onValueChange={setSelectedBank} required>
-            <SelectTrigger>
-              <SelectValue placeholder="Sélectionnez la banque" />
-            </SelectTrigger>
-            <SelectContent>
-              {selectedType === "BNG-CONFRERE" ? (
-                <>
-                  <SelectItem value="BICIGUI">BICIGUI</SelectItem>
-                  <SelectItem value="SGBG">Société Générale de Banques en Guinée</SelectItem>
-                  <SelectItem value="UBA">United Bank for Africa</SelectItem>
-                  <SelectItem value="ECOBANK">Ecobank Guinée</SelectItem>
-                  <SelectItem value="VISTA BANK">Vista Bank</SelectItem>
-                </>
-              ) : (
-                <>
-                  <SelectItem value="BNP Paribas">BNP Paribas</SelectItem>
-                  <SelectItem value="Société Générale">Société Générale</SelectItem>
-                  <SelectItem value="Crédit Agricole">Crédit Agricole</SelectItem>
-                  <SelectItem value="HSBC">HSBC</SelectItem>
-                  <SelectItem value="Deutsche Bank">Deutsche Bank</SelectItem>
-                </>
-              )}
-            </SelectContent>
-          </Select>
-        )}
-      </div>
+     <div className="space-y-2">
+  <Label htmlFor="bank">Banque *</Label>
+  {selectedType === "BNG-BNG" ? (
+    <Input
+      id="bank"
+      name="bank"
+      value="Banque Nationale de Guinée"
+      readOnly
+      className="bg-gray-50"
+    />
+  ) : selectedType === "BNG-CONFRERE" ? (
+    <Input
+      id="bank"
+      name="bank"
+      placeholder="Saisissez le nom de la banque"
+      className="bg-white"
+    />
+  ) : null}
+</div>
+
 
       {selectedType === "BNG-INTERNATIONAL" && (
         <>
