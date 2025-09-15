@@ -30,6 +30,7 @@ import {
   Search,
   MoreVertical,
   Trash2,
+  Building,
 } from "lucide-react"
 import {
   submitCreditRequest,
@@ -63,6 +64,36 @@ const serviceTypes = [
     processingTime: "3-30 jours ouvrables",
     cost: "Gratuit",
     requirements: ["Revenus réguliers", "Garanties", "Dossier complet"],
+  },
+  {
+    id: "e_attestation",
+    name: "e-attestation bancaire",
+    icon: FileText,
+    description: "Obtenir une attestation bancaire électronique",
+    category: "document",
+    processingTime: "1-2 jours ouvrables",
+    cost: "5 000 FCFA",
+    requirements: ["Compte actif", "Pièce d'identité"],
+  },
+  {
+    id: "professional_account",
+    name: "Compte professionnel",
+    icon: Building,
+    description: "Ouvrir un compte bancaire professionnel",
+    category: "account",
+    processingTime: "5-10 jours ouvrables",
+    cost: "Gratuit",
+    requirements: ["Registre de commerce", "Statuts de l'entreprise", "Pièce d'identité du dirigeant"],
+  },
+  {
+    id: "card_request",
+    name: "Demande de carte",
+    icon: CreditCard,
+    description: "Demander une nouvelle carte bancaire",
+    category: "card",
+    processingTime: "7-14 jours ouvrables",
+    cost: "10 000 FCFA",
+    requirements: ["Compte actif", "Revenus réguliers"],
   },
 ]
 
@@ -1340,6 +1371,9 @@ export default function ServiceRequestsPage() {
                     <SelectItem value="all">Toutes les demandes</SelectItem>
                     <SelectItem value="checkbook">Demande de chéquier</SelectItem>
                     <SelectItem value="credit">Demande de crédit</SelectItem>
+                    <SelectItem value="e_attestation">e-attestation bancaire</SelectItem>
+                    <SelectItem value="professional_account">Compte professionnel</SelectItem>
+                    <SelectItem value="card_request">Demande de carte</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
