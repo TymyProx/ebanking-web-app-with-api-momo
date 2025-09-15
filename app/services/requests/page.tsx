@@ -65,36 +65,7 @@ const serviceTypes = [
     cost: "Gratuit",
     requirements: ["Revenus réguliers", "Garanties", "Dossier complet"],
   },
-  {
-    id: "e_attestation",
-    name: "e-attestation bancaire",
-    icon: FileText,
-    description: "Obtenir une attestation bancaire électronique",
-    category: "document",
-    processingTime: "1-2 jours ouvrables",
-    cost: "5 000 FCFA",
-    requirements: ["Compte actif", "Pièce d'identité"],
-  },
-  {
-    id: "professional_account",
-    name: "Compte professionnel",
-    icon: Building,
-    description: "Ouvrir un compte bancaire professionnel",
-    category: "account",
-    processingTime: "5-10 jours ouvrables",
-    cost: "Gratuit",
-    requirements: ["Registre de commerce", "Statuts de l'entreprise", "Pièce d'identité du dirigeant"],
-  },
-  {
-    id: "card_request",
-    name: "Demande de carte",
-    icon: CreditCard,
-    description: "Demander une nouvelle carte bancaire",
-    category: "card",
-    processingTime: "7-14 jours ouvrables",
-    cost: "10 000 FCFA",
-    requirements: ["Compte actif", "Revenus réguliers"],
-  },
+  
 ]
 
 const accounts = [
@@ -389,14 +360,10 @@ export default function ServiceRequestsPage() {
     switch (type) {
       case "checkbook":
         return <BookOpen className="w-4 h-4 text-blue-600" />
-      case "certificate":
-        return <FileText className="w-4 h-4 text-green-600" />
+
       case "credit":
         return <CreditCard className="w-4 h-4 text-purple-600" />
-      case "card_request":
-        return <CreditCard className="w-4 h-4 text-orange-600" />
-      case "business_account":
-        return <Briefcase className="w-4 h-4 text-gray-600" />
+
       default:
         return <FileText className="w-4 h-4" />
     }
@@ -479,10 +446,9 @@ export default function ServiceRequestsPage() {
   const getServiceIdFromRequestType = (requestType: string): string => {
     const typeMapping: Record<string, string> = {
       "Demande de chéquier": "checkbook",
-      "E-attestation bancaire": "certificate",
+     
       Crédit: "credit",
-      "Compte professionnel": "business_account",
-      "Demande de carte": "card_request",
+
     }
     return typeMapping[requestType] || ""
   }
@@ -732,78 +698,6 @@ export default function ServiceRequestsPage() {
           </form>
         )
 
-      case "certificate":
-        return (
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="certificate_type">Type d'attestation *</Label>
-              <Select onValueChange={(value) => handleInputChange("certificate_type", value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Sélectionnez le type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="account">Attestation de compte</SelectItem>
-                  <SelectItem value="balance">Attestation de solde</SelectItem>
-                  <SelectItem value="income">Attestation de revenus</SelectItem>
-                  <SelectItem value="domiciliation">Attestation de domiciliation</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <Label htmlFor="purpose">Motif de la demande *</Label>
-              <Select onValueChange={(value) => handleInputChange("purpose", value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Sélectionnez le motif" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="visa">Demande de visa</SelectItem>
-                  <SelectItem value="loan">Demande de prêt</SelectItem>
-                  <SelectItem value="employment">Dossier d'emploi</SelectItem>
-                  <SelectItem value="rental">Location immobilière</SelectItem>
-                  <SelectItem value="business">Création d'entreprise</SelectItem>
-                  <SelectItem value="other">Autre</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {formData.purpose === "other" && (
-              <div>
-                <Label htmlFor="purpose_details">Précisez le motif *</Label>
-                <Input
-                  id="purpose_details"
-                  placeholder="Décrivez le motif de votre demande"
-                  value={formData.purpose_details || ""}
-                  onChange={(e) => handleInputChange("purpose_details", e.target.value)}
-                />
-              </div>
-            )}
-
-            <div>
-              <Label htmlFor="language">Langue du document *</Label>
-              <Select onValueChange={(value) => handleInputChange("language", value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Sélectionnez la langue" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="fr">Français</SelectItem>
-                  <SelectItem value="en">Anglais</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <Label htmlFor="recipient">Destinataire *</Label>
-              <Input
-                id="recipient"
-                placeholder="Nom de l'organisme ou personne destinataire"
-                value={formData.recipient || ""}
-                onChange={(e) => handleInputChange("recipient", e.target.value)}
-              />
-            </div>
-          </div>
-        )
-
       case "credit":
         return (
           <form onSubmit={handleCreditSubmit} className="space-y-4">
@@ -1017,98 +911,6 @@ export default function ServiceRequestsPage() {
               )}
             </Button>
           </form>
-        )
-
-      case "card_request":
-        return (
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="card_type">Type de carte *</Label>
-              <Select onValueChange={(value) => handleInputChange("card_type", value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Sélectionnez le type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="debit">Carte de débit</SelectItem>
-                  <SelectItem value="credit">Carte de crédit</SelectItem>
-                  <SelectItem value="prepaid">Carte prépayée</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <Label htmlFor="card_category">Catégorie *</Label>
-              <Select onValueChange={(value) => handleInputChange("card_category", value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Sélectionnez la catégorie" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="classic">Classic</SelectItem>
-                  <SelectItem value="gold">Gold</SelectItem>
-                  <SelectItem value="platinum">Platinum</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <Label htmlFor="request_reason">Motif de la demande *</Label>
-              <Select onValueChange={(value) => handleInputChange("request_reason", value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Sélectionnez le motif" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="new">Nouvelle carte</SelectItem>
-                  <SelectItem value="replacement">Remplacement (perte/vol)</SelectItem>
-                  <SelectItem value="damaged">Carte endommagée</SelectItem>
-                  <SelectItem value="expired">Carte expirée</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {formData.request_reason === "replacement" && (
-              <div>
-                <Label htmlFor="incident_details">Détails de l'incident *</Label>
-                <Textarea
-                  id="incident_details"
-                  placeholder="Décrivez les circonstances (perte, vol, etc.)"
-                  value={formData.incident_details || ""}
-                  onChange={(e) => handleInputChange("incident_details", e.target.value)}
-                />
-              </div>
-            )}
-
-            <div>
-              <Label htmlFor="delivery_method">Mode de livraison *</Label>
-              <RadioGroup
-                value={formData.delivery_method}
-                onValueChange={(value) => handleInputChange("delivery_method", value)}
-              >
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="branch" id="branch" />
-                  <Label htmlFor="branch">Retrait en agence</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="courier" id="courier" />
-                  <Label htmlFor="courier">Livraison par coursier (+15,000 GNF)</Label>
-                </div>
-              </RadioGroup>
-            </div>
-          </div>
-        )
-
-      default:
-        return (
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="details">Détails de la demande *</Label>
-              <Textarea
-                id="details"
-                placeholder="Décrivez votre demande en détail"
-                value={formData.details || ""}
-                onChange={(e) => handleInputChange("details", e.target.value)}
-              />
-            </div>
-          </div>
         )
     }
   }
@@ -1371,9 +1173,6 @@ export default function ServiceRequestsPage() {
                     <SelectItem value="all">Toutes les demandes</SelectItem>
                     <SelectItem value="checkbook">Demande de chéquier</SelectItem>
                     <SelectItem value="credit">Demande de crédit</SelectItem>
-                    <SelectItem value="e_attestation">e-attestation bancaire</SelectItem>
-                    <SelectItem value="professional_account">Compte professionnel</SelectItem>
-                    <SelectItem value="card_request">Demande de carte</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
