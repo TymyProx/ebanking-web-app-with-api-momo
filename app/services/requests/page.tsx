@@ -837,6 +837,20 @@ export default function ServiceRequestsPage() {
       case "credit":
         return (
           <form onSubmit={handleCreditSubmit} className="space-y-4">
+
+             <div>
+              <Label htmlFor="numcompte_credit">Numéro de compte *</Label>
+              <Input
+                id="numcompte_credit"
+                name="numcompte_credit"
+                type="text"
+                value={formData.numcompte || ""}
+                onChange={(e) => handleInputChange("numcompte", e.target.value)}
+                placeholder="Ex: 000123456789"
+                required
+              />
+            </div>
+
             <div>
               <Label htmlFor="credit_type">Type de crédit *</Label>
               <Select onValueChange={(value) => handleInputChange("credit_type", value)} required>
