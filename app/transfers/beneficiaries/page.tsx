@@ -28,6 +28,7 @@ import {
   addBeneficiary,
   updateBeneficiary,
   deactivateBeneficiary,
+  reactivateBeneficiary,
   getBeneficiaries,
   toggleBeneficiaryFavorite,
 } from "./actions"
@@ -63,9 +64,10 @@ export default function BeneficiariesPage() {
   const [addState, addAction, isAddPending] = useActionState(addBeneficiary, null)
   const [updateState, updateAction, isUpdatePending] = useActionState(updateBeneficiary, null)
   const [deactivateState, deactivateAction, isDeactivatePending] = useActionState(deactivateBeneficiary, null)
+  const [reactivateState, reactivateAction, isReactivatePending] = useActionState(reactivateBeneficiary, null)
 
-  const [addMessage, setAddMessage] = useState<{ success?: string; error?: string } | null>(null)
-  const [updateMessage, setUpdateMessage] = useState<{ success?: string; error?: string } | null>(null)
+  const [addMessage, setAddMessage] = useState<string | null>(null)
+  const [updateMessage, setUpdateMessage] = useState<string | null>(null)
 
   const loadBeneficiaries = async () => {
     setIsLoading(true)
@@ -97,10 +99,10 @@ export default function BeneficiariesPage() {
   }, [])
 
   useEffect(() => {
-    if (addState?.success || updateState?.success || deactivateState?.success) {
+    if (addState?.success || updateState?.success || deactivateState?.success || reactivateState?.success) {
       loadBeneficiaries()
     }
-  }, [addState?.success, updateState?.success, deactivateState?.success])
+  }, [addState?.success, updateState?.success, deactivateState?.success, reactivateState?.success])
 
   const getBankNameFromCode = (bankCode: string): string => {
     const bankNames: Record<string, string> = {
@@ -141,6 +143,8 @@ export default function BeneficiariesPage() {
 
   const resetForm = () => {
     setRibValidation(null)
+    setAddMessage(null)
+    setUpdateMessage(null)
   }
 
   const handleAddBeneficiary = async (formData: FormData) => {
@@ -148,6 +152,9 @@ export default function BeneficiariesPage() {
       const result = await addAction(formData)
       if (result?.success) {
         setIsAddDialogOpen(false)
+        setAddMessage("Bénéficiaire ajouté avec succès.")
+      } else {
+        setAddMessage(result?.error || "Erreur lors de l'ajout du bénéficiaire.")
       }
     })
   }
@@ -167,6 +174,9 @@ export default function BeneficiariesPage() {
       if (result?.success) {
         setIsEditDialogOpen(false)
         setEditingBeneficiary(null)
+        setUpdateMessage("Bénéficiaire modifié avec succès.")
+      } else {
+        setUpdateMessage(result?.error || "Erreur lors de la modification du bénéficiaire.")
       }
     })
   }
@@ -176,6 +186,14 @@ export default function BeneficiariesPage() {
       const formData = new FormData()
       formData.append("id", beneficiaryId)
       await deactivateAction(formData)
+    })
+  }
+
+  const handleReactivateBeneficiary = async (beneficiaryId: string) => {
+    startTransition(async () => {
+      const formData = new FormData()
+      formData.append("id", beneficiaryId)
+      await reactivateAction(formData)
     })
   }
 
@@ -247,8 +265,8 @@ export default function BeneficiariesPage() {
             </DialogHeader>
 
             <BeneficiaryForm
-              successMessage={addMessage?.success}
-              errorMessage={addMessage?.error}
+              successMessage={addState?.success}
+              errorMessage={addState?.error}
               onMessageClear={() => setAddMessage(null)}
               onSubmit={handleAddBeneficiary}
               onCancel={() => setIsAddDialogOpen(false)}
@@ -269,6 +287,20 @@ export default function BeneficiariesPage() {
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>❌ Erreur lors de la désactivation. Veuillez réessayer.</AlertDescription>
+        </Alert>
+      )}
+
+      {reactivateState?.success && (
+        <Alert className="border-green-200 bg-green-50">
+          <CheckCircle className="h-4 w-4 text-green-600" />
+          <AlertDescription className="text-green-800">✅ Bénéficiaire réactivé avec succès.</AlertDescription>
+        </Alert>
+      )}
+
+      {reactivateState?.error && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>❌ Erreur lors de la réactivation. Veuillez réessayer.</AlertDescription>
         </Alert>
       )}
 
@@ -406,13 +438,15 @@ export default function BeneficiariesPage() {
                   </div>
 
                   <div className="flex items-center space-x-2">
-                    <Button variant="ghost" size="sm" onClick={() => toggleFavorite(beneficiary.id)}>
-                      {beneficiary.favorite ? (
-                        <Star className="w-4 h-4 text-yellow-500 fill-current" />
-                      ) : (
-                        <StarOff className="w-4 h-4 text-gray-400" />
-                      )}
-                    </Button>
+                    {beneficiary.status === 0 && (
+                      <Button variant="ghost" size="sm" onClick={() => toggleFavorite(beneficiary.id)}>
+                        {beneficiary.favorite ? (
+                          <Star className="w-4 h-4 text-yellow-500 fill-current" />
+                        ) : (
+                          <StarOff className="w-4 h-4 text-gray-400" />
+                        )}
+                      </Button>
+                    )}
 
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -421,22 +455,35 @@ export default function BeneficiariesPage() {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => openEditDialog(beneficiary)}>
-                          <Edit className="w-4 h-4 mr-2" />
-                          Modifier
-                        </DropdownMenuItem>
-                        <DropdownMenuItem>
-                          <Users className="w-4 h-4 mr-2" />
-                          Faire un virement
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          className="text-orange-600"
-                          onClick={() => handleDeactivateBeneficiary(beneficiary.id)}
-                          disabled={isDeactivatePending}
-                        >
-                          <UserX className="w-4 h-4 mr-2" />
-                          Désactiver
-                        </DropdownMenuItem>
+                        {beneficiary.status === 0 ? (
+                          <>
+                            <DropdownMenuItem onClick={() => openEditDialog(beneficiary)}>
+                              <Edit className="w-4 h-4 mr-2" />
+                              Modifier
+                            </DropdownMenuItem>
+                            <DropdownMenuItem>
+                              <Users className="w-4 h-4 mr-2" />
+                              Faire un virement
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              className="text-orange-600"
+                              onClick={() => handleDeactivateBeneficiary(beneficiary.id)}
+                              disabled={isDeactivatePending}
+                            >
+                              <UserX className="w-4 h-4 mr-2" />
+                              Désactiver
+                            </DropdownMenuItem>
+                          </>
+                        ) : (
+                          <DropdownMenuItem
+                            className="text-green-600"
+                            onClick={() => handleReactivateBeneficiary(beneficiary.id)}
+                            disabled={isReactivatePending}
+                          >
+                            <CheckCircle className="w-4 h-4 mr-2" />
+                            Réactiver
+                          </DropdownMenuItem>
+                        )}
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </div>
@@ -464,8 +511,8 @@ export default function BeneficiariesPage() {
               swiftCode: editingBeneficiary?.swiftCode,
               country: editingBeneficiary?.country,
             }}
-            successMessage={updateMessage?.success}
-            errorMessage={updateMessage?.error}
+            successMessage={updateState?.success}
+            errorMessage={updateState?.error}
             onMessageClear={() => setUpdateMessage(null)}
             onSubmit={handleEditBeneficiary}
             onCancel={() => {
