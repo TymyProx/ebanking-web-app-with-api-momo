@@ -68,6 +68,8 @@ export default function BeneficiariesPage() {
 
   const [addMessage, setAddMessage] = useState<string | null>(null)
   const [updateMessage, setUpdateMessage] = useState<string | null>(null)
+  const [showDeactivateSuccess, setShowDeactivateSuccess] = useState(false)
+  const [showReactivateSuccess, setShowReactivateSuccess] = useState(false)
 
   const loadBeneficiaries = async () => {
     setIsLoading(true)
@@ -103,6 +105,26 @@ export default function BeneficiariesPage() {
       loadBeneficiaries()
     }
   }, [addState?.success, updateState?.success, deactivateState?.success, reactivateState?.success])
+
+  useEffect(() => {
+    if (deactivateState?.success) {
+      setShowDeactivateSuccess(true)
+      const timer = setTimeout(() => {
+        setShowDeactivateSuccess(false)
+      }, 5000)
+      return () => clearTimeout(timer)
+    }
+  }, [deactivateState?.success])
+
+  useEffect(() => {
+    if (reactivateState?.success) {
+      setShowReactivateSuccess(true)
+      const timer = setTimeout(() => {
+        setShowReactivateSuccess(false)
+      }, 5000)
+      return () => clearTimeout(timer)
+    }
+  }, [reactivateState?.success])
 
   const getBankNameFromCode = (bankCode: string): string => {
     const bankNames: Record<string, string> = {
@@ -276,7 +298,7 @@ export default function BeneficiariesPage() {
         </Dialog>
       </div>
 
-      {deactivateState?.success && (
+      {showDeactivateSuccess && (
         <Alert className="border-green-200 bg-green-50">
           <CheckCircle className="h-4 w-4 text-green-600" />
           <AlertDescription className="text-green-800">✅ Bénéficiaire désactivé avec succès.</AlertDescription>
@@ -290,7 +312,7 @@ export default function BeneficiariesPage() {
         </Alert>
       )}
 
-      {reactivateState?.success && (
+      {showReactivateSuccess && (
         <Alert className="border-green-200 bg-green-50">
           <CheckCircle className="h-4 w-4 text-green-600" />
           <AlertDescription className="text-green-800">✅ Bénéficiaire réactivé avec succès.</AlertDescription>
