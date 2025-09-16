@@ -40,7 +40,7 @@ interface Beneficiary {
   name: string
   account: string
   bank: string
-  type: string//"BNG-BNG" | "BNG-CONFRERE" | "BNG-INTERNATIONAL"
+  type: string //"BNG-BNG" | "BNG-CONFRERE" | "BNG-INTERNATIONAL"
   favorite: boolean
   lastUsed: string
   addedDate: string
@@ -87,7 +87,7 @@ export default function BeneficiariesPage() {
         name: apiB.name,
         account: apiB.accountNumber,
         bank: getBankNameFromCode(apiB.bankCode),
-        type: getBeneficiaryType(apiB.bankCode),
+        type: apiB.typeBeneficiary,
         favorite: apiB.favoris || false,
         lastUsed: "Jamais",
         addedDate: new Date(apiB.createdAt).toLocaleDateString("fr-FR"),
@@ -142,16 +142,6 @@ export default function BeneficiariesPage() {
       DB: "Deutsche Bank",
     }
     return bankNames[bankCode] || bankCode
-  }
-
-  const getBeneficiaryType = (bankCode: string): "BNG-BNG" | "BNG-CONFRERE" | "BNG-INTERNATIONAL" => {
-    if (bankCode === "BNG") {
-      return "BNG-BNG"
-    } else if (["BICI", "SGBG", "UBA", "ECO", "VISTA"].includes(bankCode)) {
-      return "BNG-CONFRERE"
-    } else {
-      return "BNG-INTERNATIONAL"
-    }
   }
 
   const filteredBeneficiaries = beneficiaries.filter((beneficiary) => {
