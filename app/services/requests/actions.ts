@@ -8,7 +8,7 @@ import { cookies } from "next/headers"
 
 
 const API_BASE_URL = process.env.API_BASE_URL || "https://192.168.1.200:8080/api"
-const tenantId = process.env.TENANT_ID || "11cacc69-5a49-4f01-8b16-e8f473746634"
+const tenantId = process.env.TENANT_ID || "aa1287f6-06af-45b7-a905-8c57363565c2"
 
 // Fonction asynchrone pour soumettre une demande de crédit
 export async function submitCreditRequest(formData: {
@@ -139,7 +139,7 @@ export async function getCheckbookRequest(id?: string) {
             createdById: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
             updatedById: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
             importHash: "hash123",
-            tenantId: "11cacc69-5a49-4f01-8b16-e8f473746634",
+            tenantId: "aa1287f6-06af-45b7-a905-8c57363565c2",
             dateorder: "2024-01-15",
             nbrefeuille: 25,
             nbrechequier: 1,
@@ -156,7 +156,7 @@ export async function getCheckbookRequest(id?: string) {
             createdById: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
             updatedById: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
             importHash: "hash456",
-            tenantId: "11cacc69-5a49-4f01-8b16-e8f473746634",
+            tenantId: "aa1287f6-06af-45b7-a905-8c57363565c2",
             dateorder: "2024-01-20",
             nbrefeuille: 50,
             nbrechequier: 2,
@@ -208,7 +208,7 @@ export async function getCheckbookRequest(id?: string) {
           createdById: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
           updatedById: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
           importHash: "hash123",
-          tenantId: "11cacc69-5a49-4f01-8b16-e8f473746634",
+          tenantId: "aa1287f6-06af-45b7-a905-8c57363565c2",
           dateorder: "2024-01-15",
           nbrefeuille: 25,
           nbrechequier: 1,
@@ -250,7 +250,7 @@ export async function getCreditRequest(id?: string) {
             createdById: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
             updatedById: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
             importHash: "hash789",
-            tenantId: "11cacc69-5a49-4f01-8b16-e8f473746634",
+            tenantId: "aa1287f6-06af-45b7-a905-8c57363565c2",
             applicantName: "Jean Dupont",
             creditAmount: "50000",
             durationMonths: "24",
@@ -264,7 +264,7 @@ export async function getCreditRequest(id?: string) {
             createdById: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
             updatedById: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
             importHash: "hash101",
-            tenantId: "11cacc69-5a49-4f01-8b16-e8f473746634",
+            tenantId: "aa1287f6-06af-45b7-a905-8c57363565c2",
             applicantName: "Marie Martin",
             creditAmount: "25000",
             durationMonths: "12",
@@ -315,7 +315,7 @@ export async function getCreditRequest(id?: string) {
           createdById: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
           updatedById: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
           importHash: "hash789",
-          tenantId: "11cacc69-5a49-4f01-8b16-e8f473746634",
+          tenantId: "aa1287f6-06af-45b7-a905-8c57363565c2",
           applicantName: "Jean Dupont",
           creditAmount: "50000",
           durationMonths: "24",

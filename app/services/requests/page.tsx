@@ -277,7 +277,7 @@ export default function ServiceRequestsPage() {
       console.log("[v0] Chargement des détails pour la demande:", request.id, "type:", request.type)
 
       let details = null
-      const tenantId = "11cacc69-5a49-4f01-8b16-e8f473746634"
+      const tenantId = "aa1287f6-06af-45b7-a905-8c57363565c2"
 
       if (request.type === "credit") {
         details = await getDemandeCreditById(tenantId, request.id)
