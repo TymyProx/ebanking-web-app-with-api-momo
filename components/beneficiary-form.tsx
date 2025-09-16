@@ -159,6 +159,7 @@ export default function BeneficiaryForm({
             onChange={(e) => setSelectedBank(e.target.value)}
             placeholder="Saisissez le nom de la banque"
             className="bg-white"
+            required
           />
         ) : null}
       </div>

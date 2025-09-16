@@ -102,10 +102,26 @@ export async function addBeneficiary(prevState: ActionResult | null, formData: F
     const type = formData.get("type") as string
 
     // Validation des données
-    if (!name || !account || !bank || !type) {
+    if (!name || !account || !type) {
       return {
         success: false,
         error: "Tous les champs obligatoires doivent être remplis",
+      }
+    }
+
+    // Special validation for international type - bank name is required
+    if (type === "BNG-INTERNATIONAL" && !bank) {
+      return {
+        success: false,
+        error: "Le nom de la banque est obligatoire pour les bénéficiaires internationaux",
+      }
+    }
+
+    // For other types, bank is also required
+    if (type === "BNG-CONFRERE" && !bank) {
+      return {
+        success: false,
+        error: "Le nom de la banque est obligatoire",
       }
     }
 
@@ -210,11 +226,12 @@ export async function validateRIB(account: string, type: string): Promise<{ isVa
         }
 
       case "BNG-INTERNATIONAL":
-        const ibanPattern = /^[A-Z]{2}\d{2}\s?[\d\s]+$/
-        if (ibanPattern.test(account.replace(/\s/g, ""))) {
+        const cleanedAccount = account.replace(/\s/g, "")
+        const ibanPattern = /^[A-Z]{2}\d{2}[A-Z0-9]{4,30}$/
+        if (cleanedAccount.length >= 15 && cleanedAccount.length <= 34 && ibanPattern.test(cleanedAccount)) {
           return { isValid: true, message: "IBAN valide" }
         } else {
-          return { isValid: false, message: "Format IBAN invalide. Ex: FR76 1234 5678 9012 3456 78" }
+          return { isValid: false, message: "Format IBAN invalide. Ex: FR7612345678901234567890 (15-34 caractères)" }
         }
 
       default:
@@ -237,11 +254,26 @@ export async function updateBeneficiary(prevState: ActionResult | null, formData
     const bank = formData.get("bank") as string
     const type = formData.get("type") as string
 
-    // Validation des données
-    if (!id || !name || !account || !bank || !type) {
+    if (!id || !name || !account || !type) {
       return {
         success: false,
         error: "Tous les champs obligatoires doivent être remplis",
+      }
+    }
+
+    // Special validation for international type - bank name is required
+    if (type === "BNG-INTERNATIONAL" && !bank) {
+      return {
+        success: false,
+        error: "Le nom de la banque est obligatoire pour les bénéficiaires internationaux",
+      }
+    }
+
+    // For other types, bank is also required
+    if (type === "BNG-CONFRERE" && !bank) {
+      return {
+        success: false,
+        error: "Le nom de la banque est obligatoire",
       }
     }
 
