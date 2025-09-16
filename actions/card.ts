@@ -3,7 +3,7 @@
 import { cookies } from "next/headers"
 
 const BASE_URL = process.env.API_BASE_URL || process.env.NEXT_PUBLIC_API_BASE_URL || "https://192.168.1.200:8080/api"
-const TENANT_ID = process.env.TENANT_ID || "11cacc69-5a49-4f01-8b16-e8f473746634"
+const TENANT_ID = process.env.TENANT_ID || "aa1287f6-06af-45b7-a905-8c57363565c2"
 const API_TOKEN =
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjJhYWY0OWMzLThlOGUtNDZkYS1iZDM4LWIwZDlmNTFiODAzNyIsImlhdCI6MTc1NjQ1OTYzMCwiZXhwIjoxNzU3MDY0NDMwfQ.F1glqniLIDoTxs6PmLa6AEiuaHvAQqWSyCkPswF7n80"
 
