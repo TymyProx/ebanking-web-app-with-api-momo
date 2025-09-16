@@ -261,8 +261,13 @@ export default function NewTransferPage() {
           bank: apiBeneficiary.bankName,
           type: apiBeneficiary.beneficiaryType || "BNG-BNG",
         }))
-        console.log("[v0] Bénéficiaires adaptés:", adaptedBeneficiaries)
-        setBeneficiaries(adaptedBeneficiaries)
+        const activeBeneficiaries = adaptedBeneficiaries.filter((beneficiary: any) => {
+          // Check if the original API data has status field and filter by status 0
+          const originalBeneficiary = result.find((api: any) => api.id === beneficiary.id)
+          return originalBeneficiary && (originalBeneficiary.status === 0 || originalBeneficiary.status === "0")
+        })
+        console.log("[v0] Bénéficiaires actifs:", activeBeneficiaries)
+        setBeneficiaries(activeBeneficiaries)
       } else {
         console.log("[v0] Aucun bénéficiaire trouvé")
         setBeneficiaries([])
