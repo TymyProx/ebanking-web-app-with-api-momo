@@ -12,7 +12,6 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import {
   BookOpen,
   CreditCard,
@@ -25,12 +24,10 @@ import {
   Download,
   Banknote,
   Shield,
-  Briefcase,
   Plus,
   Search,
   MoreVertical,
   Trash2,
-  Building,
 } from "lucide-react"
 import {
   submitCreditRequest,
@@ -65,7 +62,16 @@ const serviceTypes = [
     cost: "Gratuit",
     requirements: ["Revenus réguliers", "Garanties", "Dossier complet"],
   },
-  
+  {
+    id: "e-demande",
+    name: "E-demande",
+    icon: FileText,
+    description: "Demande électronique pour divers services bancaires",
+    category: "electronic",
+    processingTime: "1-3 jours ouvrables",
+    cost: "Gratuit",
+    requirements: ["Compte actif", "Pièces justificatives"],
+  },
 ]
 
 const accounts = [
@@ -446,9 +452,8 @@ export default function ServiceRequestsPage() {
   const getServiceIdFromRequestType = (requestType: string): string => {
     const typeMapping: Record<string, string> = {
       "Demande de chéquier": "checkbook",
-     
-      Crédit: "credit",
 
+      Crédit: "credit",
     }
     return typeMapping[requestType] || ""
   }
@@ -573,6 +578,55 @@ export default function ServiceRequestsPage() {
       setCheckbookSubmitState({ error: error.message || "Une erreur s'est produite lors de la soumission" })
     } finally {
       setIsCheckbookSubmitting(false)
+    }
+  }
+
+  const [eDemandeSubmitState, setEDemandeSubmitState] = useState<{
+    success?: boolean
+    error?: string
+    reference?: string
+  } | null>(null)
+  const [isEDemandeSubmitting, setIsEDemandeSubmitting] = useState(false)
+
+  const handleEDemandeSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+
+    // Vérifier que tous les champs requis sont remplis
+    if (
+      !formData.demande_type ||
+      !formData.objet_demande ||
+      !formData.numcompte_edemande ||
+      !formData.motif_demande ||
+      !formData.contact_edemande ||
+      !formData.edemande_terms
+    ) {
+      setEDemandeSubmitState({ error: "Veuillez remplir tous les champs obligatoires" })
+      return
+    }
+
+    setIsEDemandeSubmitting(true)
+    setEDemandeSubmitState(null)
+
+    try {
+      const eDemandeData = {
+        demande_type: formData.demande_type,
+        objet_demande: formData.objet_demande,
+        numcompte_edemande: formData.numcompte_edemande,
+        motif_demande: formData.motif_demande,
+        date_besoin: formData.date_besoin || new Date().toISOString().split("T")[0],
+        contact_edemande: formData.contact_edemande,
+      }
+
+      // Simuler la soumission de la demande (à remplacer par l'appel API réel)
+      await new Promise((resolve) => setTimeout(resolve, 1000))
+
+      setEDemandeSubmitState({ success: true, reference: "EDM-" + Date.now() })
+      // Réinitialiser le formulaire après succès
+      setFormData({})
+    } catch (error: any) {
+      setEDemandeSubmitState({ error: error.message || "Une erreur s'est produite lors de la soumission" })
+    } finally {
+      setIsEDemandeSubmitting(false)
     }
   }
 
@@ -912,6 +966,141 @@ export default function ServiceRequestsPage() {
             </Button>
           </form>
         )
+
+      case "e-demande":
+        return (
+          <form onSubmit={handleEDemandeSubmit} className="space-y-4">
+            <div>
+              <Label htmlFor="demande_type">Type de demande *</Label>
+              <Select onValueChange={(value) => handleInputChange("demande_type", value)} required>
+                <SelectTrigger>
+                  <SelectValue placeholder="Sélectionnez le type de demande" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="attestation">Attestation bancaire</SelectItem>
+                  <SelectItem value="releve">Relevé de compte</SelectItem>
+                  <SelectItem value="certificat">Certificat de non-endettement</SelectItem>
+                  <SelectItem value="autre">Autre demande</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label htmlFor="objet_demande">Objet de la demande *</Label>
+              <Input
+                id="objet_demande"
+                name="objet_demande"
+                type="text"
+                value={formData.objet_demande || ""}
+                onChange={(e) => handleInputChange("objet_demande", e.target.value)}
+                placeholder="Ex: Attestation pour visa"
+                required
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="numcompte_edemande">Numéro de compte *</Label>
+              <Input
+                id="numcompte_edemande"
+                name="numcompte_edemande"
+                type="text"
+                value={formData.numcompte_edemande || ""}
+                onChange={(e) => handleInputChange("numcompte_edemande", e.target.value)}
+                placeholder="Ex: 123456789"
+                required
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="motif_demande">Motif de la demande *</Label>
+              <textarea
+                id="motif_demande"
+                name="motif_demande"
+                className="w-full p-2 border border-gray-300 rounded-md"
+                rows={4}
+                value={formData.motif_demande || ""}
+                onChange={(e) => handleInputChange("motif_demande", e.target.value)}
+                placeholder="Expliquez le motif de votre demande..."
+                required
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="date_besoin">Date de besoin</Label>
+              <Input
+                id="date_besoin"
+                name="date_besoin"
+                type="date"
+                value={formData.date_besoin || ""}
+                onChange={(e) => handleInputChange("date_besoin", e.target.value)}
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="contact_edemande">Téléphone de contact *</Label>
+              <Input
+                id="contact_edemande"
+                name="contact_edemande"
+                type="tel"
+                value={formData.contact_edemande || ""}
+                onChange={(e) => handleInputChange("contact_edemande", e.target.value)}
+                placeholder="+224 6XX XXX XXX"
+                required
+              />
+            </div>
+
+            {eDemandeSubmitState?.success && (
+              <Alert className="border-green-200 bg-green-50">
+                <CheckCircle className="h-4 w-4 text-green-600" />
+                <AlertDescription className="text-green-800">
+                  ✅ Votre e-demande a été envoyée avec succès. Référence: {eDemandeSubmitState.reference}. Réponse sous{" "}
+                  {selectedServiceData?.processingTime}.
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {eDemandeSubmitState?.error && (
+              <Alert className="border-red-200 bg-red-50">
+                <AlertCircle className="h-4 w-4 text-red-600" />
+                <AlertDescription className="text-red-800">
+                  ❌ Une erreur est survenue: {eDemandeSubmitState.error}. Veuillez réessayer.
+                </AlertDescription>
+              </Alert>
+            )}
+
+            <div className="flex items-start space-x-2">
+              <Checkbox
+                id="edemande_terms"
+                checked={formData.edemande_terms || false}
+                onCheckedChange={(checked) => handleInputChange("edemande_terms", checked)}
+              />
+              <Label htmlFor="edemande_terms" className="text-sm">
+                J'accepte les{" "}
+                <a href="#" className="text-blue-600 hover:underline">
+                  conditions générales
+                </a>{" "}
+                et autorise le traitement de ma demande
+              </Label>
+            </div>
+
+            <Button type="submit" disabled={isEDemandeSubmitting || !formData.edemande_terms} className="w-full">
+              {isEDemandeSubmitting ? (
+                <>
+                  <Clock className="w-4 h-4 mr-2 animate-spin" />
+                  Envoi en cours...
+                </>
+              ) : (
+                <>
+                  <Send className="w-4 h-4 mr-2" />
+                  Envoyer la demande
+                </>
+              )}
+            </Button>
+          </form>
+        )
+
+      default:
+        return null
     }
   }
 
@@ -1173,13 +1362,14 @@ export default function ServiceRequestsPage() {
                     <SelectItem value="all">Toutes les demandes</SelectItem>
                     <SelectItem value="checkbook">Demande de chéquier</SelectItem>
                     <SelectItem value="credit">Demande de crédit</SelectItem>
+                    <SelectItem value="e-demande">E-demande</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             </CardContent>
           </Card>
 
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <Card
               className="cursor-pointer hover:bg-gray-50 transition-colors"
               onClick={() => loadRequestsByType("all")}
@@ -1220,6 +1410,21 @@ export default function ServiceRequestsPage() {
                   <div className="ml-4">
                     <p className="text-sm font-medium text-gray-600">Crédit</p>
                     <p className="text-2xl font-bold">{allRequests.filter((r) => r.type === "credit").length}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card
+              className="cursor-pointer hover:bg-gray-50 transition-colors"
+              onClick={() => loadRequestsByType("e-demande")}
+            >
+              <CardContent className="pt-6">
+                <div className="flex items-center">
+                  <FileText className="h-8 w-8 text-orange-600" />
+                  <div className="ml-4">
+                    <p className="text-sm font-medium text-gray-600">E-demande</p>
+                    <p className="text-2xl font-bold">{allRequests.filter((r) => r.type === "e-demande").length}</p>
                   </div>
                 </div>
               </CardContent>
