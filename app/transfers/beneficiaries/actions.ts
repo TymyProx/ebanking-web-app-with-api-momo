@@ -459,3 +459,79 @@ export async function toggleBeneficiaryFavorite(
     }
   }
 }
+
+export async function deactivateBeneficiary(prevState: ActionResult | null, formData: FormData): Promise<ActionResult> {
+  try {
+    // Simulation d'un délai de traitement
+    await new Promise((resolve) => setTimeout(resolve, 800))
+
+    const id = formData.get("id") as string
+
+    if (!id) {
+      return {
+        success: false,
+        error: "Identifiant du bénéficiaire manquant",
+      }
+    }
+
+    const cookieToken = (await cookies()).get("token")?.value
+    const usertoken = cookieToken
+
+    const currentBeneficiaries = await getBeneficiaries()
+    const currentBeneficiary = currentBeneficiaries.find((b) => b.id === id)
+
+    if (!currentBeneficiary) {
+      return {
+        success: false,
+        error: "Bénéficiaire non trouvé",
+      }
+    }
+
+    const apiData = {
+      data: {
+        beneficiaryId: currentBeneficiary.beneficiaryId,
+        customerId: currentBeneficiary.customerId,
+        name: currentBeneficiary.name,
+        accountNumber: currentBeneficiary.accountNumber,
+        bankCode: currentBeneficiary.bankCode,
+        bankName: currentBeneficiary.bankName,
+        status: 1, // Set status to 1 to deactivate
+        typeBeneficiary: currentBeneficiary.typeBeneficiary,
+        favoris: currentBeneficiary.favoris,
+      },
+    }
+
+    const response = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/beneficiaire/${id}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${usertoken}`,
+      },
+      body: JSON.stringify(apiData),
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}))
+      return {
+        success: false,
+        error: errorData.message || `Erreur API: ${response.status} ${response.statusText}`,
+      }
+    }
+
+    console.log("Bénéficiaire désactivé via API:", id)
+
+    revalidatePath("/transfers/beneficiaries")
+    revalidatePath("/transfers/new")
+
+    return {
+      success: true,
+      message: "Bénéficiaire désactivé avec succès",
+    }
+  } catch (error) {
+    console.error("Erreur lors de la désactivation du bénéficiaire:", error)
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Une erreur inattendue s'est produite",
+    }
+  }
+}

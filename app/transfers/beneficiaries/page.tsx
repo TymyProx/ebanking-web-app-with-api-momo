@@ -13,7 +13,7 @@ import {
   Plus,
   Search,
   Edit,
-  Trash2,
+  UserX,
   Building,
   User,
   Globe,
@@ -27,8 +27,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import {
   addBeneficiary,
   updateBeneficiary,
-  deleteBeneficiary,
-  validateRIB,
+  deactivateBeneficiary,
   getBeneficiaries,
   toggleBeneficiaryFavorite,
 } from "./actions"
@@ -40,23 +39,14 @@ interface Beneficiary {
   name: string
   account: string
   bank: string
-  type: string //"BNG-BNG" | "BNG-CONFRERE" | "BNG-INTERNATIONAL"
+  type: string //\"BNG-BNG\" | \"BNG-CONFRERE\" | \"BNG-INTERNATIONAL\"
   favorite: boolean
   lastUsed: string
   addedDate: string
   iban?: string
   swiftCode?: string
   country?: string
-}
-
-interface BeneficiaryFormData {
-  name: string
-  account: string
-  bank: string
-  type: string
-  iban?: string
-  swiftCode?: string
-  country?: string
+  status: number // Added status field to track active/inactive beneficiaries
 }
 
 export default function BeneficiariesPage() {
@@ -72,7 +62,7 @@ export default function BeneficiariesPage() {
 
   const [addState, addAction, isAddPending] = useActionState(addBeneficiary, null)
   const [updateState, updateAction, isUpdatePending] = useActionState(updateBeneficiary, null)
-  const [deleteState, deleteAction, isDeletePending] = useActionState(deleteBeneficiary, null)
+  const [deactivateState, deactivateAction, isDeactivatePending] = useActionState(deactivateBeneficiary, null)
 
   const [addMessage, setAddMessage] = useState<{ success?: string; error?: string } | null>(null)
   const [updateMessage, setUpdateMessage] = useState<{ success?: string; error?: string } | null>(null)
@@ -91,6 +81,7 @@ export default function BeneficiariesPage() {
         favorite: apiB.favoris || false,
         lastUsed: "Jamais",
         addedDate: new Date(apiB.createdAt).toLocaleDateString("fr-FR"),
+        status: apiB.status, // Include status from API response
       }))
       console.log("Transformed Beneficiaries", transformedBeneficiaries)
       setBeneficiaries(transformedBeneficiaries)
@@ -106,26 +97,10 @@ export default function BeneficiariesPage() {
   }, [])
 
   useEffect(() => {
-    if (addState?.success || updateState?.success || deleteState?.success) {
+    if (addState?.success || updateState?.success || deactivateState?.success) {
       loadBeneficiaries()
     }
-  }, [addState?.success, updateState?.success, deleteState?.success])
-
-  useEffect(() => {
-    if (addState?.success) {
-      setAddMessage({ success: "✅ Bénéficiaire ajouté avec succès." })
-    } else if (addState?.error) {
-      setAddMessage({ error: "❌ Erreur lors de l'ajout. Veuillez vérifier les informations." })
-    }
-  }, [addState])
-
-  useEffect(() => {
-    if (updateState?.success) {
-      setUpdateMessage({ success: "✅ Bénéficiaire modifié avec succès." })
-    } else if (updateState?.error) {
-      setUpdateMessage({ error: "❌ Erreur lors de la modification. Veuillez vérifier les informations." })
-    }
-  }, [updateState])
+  }, [addState?.success, updateState?.success, deactivateState?.success])
 
   const getBankNameFromCode = (bankCode: string): string => {
     const bankNames: Record<string, string> = {
@@ -150,8 +125,16 @@ export default function BeneficiariesPage() {
       beneficiary.account.toLowerCase().includes(searchTerm.toLowerCase()) ||
       beneficiary.bank.toLowerCase().includes(searchTerm.toLowerCase())
 
-    const matchesFilter =
-      filterType === "all" || (filterType === "favorites" && beneficiary.favorite) || beneficiary.type === filterType
+    let matchesFilter = false
+    if (filterType === "all") {
+      matchesFilter = beneficiary.status === 0 // Only show active beneficiaries by default
+    } else if (filterType === "inactive") {
+      matchesFilter = beneficiary.status === 1 // Show inactive beneficiaries
+    } else if (filterType === "favorites") {
+      matchesFilter = beneficiary.favorite && beneficiary.status === 0 // Only active favorites
+    } else {
+      matchesFilter = beneficiary.type === filterType && beneficiary.status === 0 // Only active of specific type
+    }
 
     return matchesSearch && matchesFilter
   })
@@ -188,29 +171,12 @@ export default function BeneficiariesPage() {
     })
   }
 
-  const handleDeleteBeneficiary = async (beneficiaryId: string) => {
+  const handleDeactivateBeneficiary = async (beneficiaryId: string) => {
     startTransition(async () => {
       const formData = new FormData()
       formData.append("id", beneficiaryId)
-      await deleteAction(formData)
+      await deactivateAction(formData)
     })
-  }
-
-  const validateRIBField = async (account: string, type: string) => {
-    if (!account) {
-      setRibValidation(null)
-      return
-    }
-
-    try {
-      const result = await validateRIB(account, type)
-      setRibValidation(result)
-    } catch (error) {
-      setRibValidation({
-        isValid: false,
-        message: "Erreur lors de la validation",
-      })
-    }
   }
 
   const toggleFavorite = async (id: string) => {
@@ -292,17 +258,17 @@ export default function BeneficiariesPage() {
         </Dialog>
       </div>
 
-      {deleteState?.success && (
+      {deactivateState?.success && (
         <Alert className="border-green-200 bg-green-50">
           <CheckCircle className="h-4 w-4 text-green-600" />
-          <AlertDescription className="text-green-800">✅ Bénéficiaire supprimé avec succès.</AlertDescription>
+          <AlertDescription className="text-green-800">✅ Bénéficiaire désactivé avec succès.</AlertDescription>
         </Alert>
       )}
 
-      {deleteState?.error && (
+      {deactivateState?.error && (
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
-          <AlertDescription>❌ Erreur lors de la suppression. Veuillez réessayer.</AlertDescription>
+          <AlertDescription>❌ Erreur lors de la désactivation. Veuillez réessayer.</AlertDescription>
         </Alert>
       )}
 
@@ -325,6 +291,7 @@ export default function BeneficiariesPage() {
               <SelectContent>
                 <SelectItem value="all">Tous les bénéficiaires</SelectItem>
                 <SelectItem value="favorites">Favoris</SelectItem>
+                <SelectItem value="inactive">Inactifs</SelectItem>
                 <SelectItem value="BNG-BNG">BNG vers BNG</SelectItem>
                 <SelectItem value="BNG-CONFRERE">BNG vers Confrère</SelectItem>
                 <SelectItem value="BNG-INTERNATIONAL">International</SelectItem>
@@ -463,12 +430,12 @@ export default function BeneficiariesPage() {
                           Faire un virement
                         </DropdownMenuItem>
                         <DropdownMenuItem
-                          className="text-red-600"
-                          onClick={() => handleDeleteBeneficiary(beneficiary.id)}
-                          disabled={isDeletePending}
+                          className="text-orange-600"
+                          onClick={() => handleDeactivateBeneficiary(beneficiary.id)}
+                          disabled={isDeactivatePending}
                         >
-                          <Trash2 className="w-4 h-4 mr-2" />
-                          Supprimer
+                          <UserX className="w-4 h-4 mr-2" />
+                          Désactiver
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
