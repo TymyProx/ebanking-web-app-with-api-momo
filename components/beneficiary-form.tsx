@@ -56,7 +56,7 @@ export default function BeneficiaryForm({
   const loadBanks = async () => {
     try {
       setLoadingBanks(true)
-      const tenantId = process.env.NEXT_PUBLIC_TENANT_ID || localStorage.getItem("tenantId")
+      const tenantId = process.env.TENANT_ID || "aa1287f6-06af-45b7-a905-8c57363565c2"
       const token = localStorage.getItem("authToken")
 
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/tenant/${tenantId}/banque`, {
