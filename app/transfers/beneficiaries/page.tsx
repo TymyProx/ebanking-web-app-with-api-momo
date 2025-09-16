@@ -196,7 +196,6 @@ export default function BeneficiariesPage() {
       const result = await addAction(formData)
       if (result?.success) {
         setIsAddDialogOpen(false)
-        setAddMessage(null) // Clear form messages when closing modal
       } else {
         setAddMessage(result?.error || "Erreur lors de l'ajout du bénéficiaire.")
       }
@@ -308,8 +307,8 @@ export default function BeneficiariesPage() {
             </DialogHeader>
 
             <BeneficiaryForm
-              successMessage={addState?.success ? "✅ Bénéficiaire ajouté avec succès." : undefined}
-              errorMessage={addMessage || addState?.error}
+              successMessage={addState?.success}
+              errorMessage={addState?.error}
               onMessageClear={() => setAddMessage(null)}
               onSubmit={handleAddBeneficiary}
               onCancel={() => setIsAddDialogOpen(false)}
@@ -568,8 +567,8 @@ export default function BeneficiariesPage() {
               swiftCode: editingBeneficiary?.swiftCode,
               country: editingBeneficiary?.country,
             }}
-            successMessage={updateState?.success ? "✅ Bénéficiaire modifié avec succès." : undefined}
-            errorMessage={updateMessage || updateState?.error}
+            successMessage={updateState?.success}
+            errorMessage={updateState?.error}
             onMessageClear={() => setUpdateMessage(null)}
             onSubmit={handleEditBeneficiary}
             onCancel={() => {
