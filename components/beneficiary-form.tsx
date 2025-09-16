@@ -57,12 +57,14 @@ export default function BeneficiaryForm({
     try {
       setLoadingBanks(true)
       const tenantId = process.env.TENANT_ID || "aa1287f6-06af-45b7-a905-8c57363565c2"
+      const apiBaseUrl = process.env.API_BASE_URL || "http://localhost:3001/api"
       const token = localStorage.getItem("authToken")
 
       console.log("[v0] Loading banks for tenant:", tenantId)
-      console.log("[v0] API URL:", `${process.env.API_BASE_URL}/tenant/${tenantId}/banque`)
+      console.log("[v0] API Base URL:", apiBaseUrl)
+      console.log("[v0] Full API URL:", `${apiBaseUrl}/tenant/${tenantId}/banque`)
 
-      const response = await fetch(`${process.env.API_BASE_URL}/tenant/${tenantId}/banque`, {
+      const response = await fetch(`${apiBaseUrl}/tenant/${tenantId}/banque`, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
@@ -248,7 +250,17 @@ export default function BeneficiaryForm({
       </div>
 
       {selectedType === "BNG-CONFRERE" && selectedBankCode && (
-        <input type="hidden" name="codeBank" value={selectedBankCode} />
+        <div className="space-y-2">
+          <Label htmlFor="bankCode">Code Banque</Label>
+          <Input
+            id="bankCode"
+            name="bankCode"
+            value={selectedBankCode}
+            readOnly
+            className="bg-gray-50"
+            placeholder="Code banque automatique"
+          />
+        </div>
       )}
 
       <div className="flex justify-end space-x-2 pt-4">
