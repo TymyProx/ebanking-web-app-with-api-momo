@@ -40,7 +40,7 @@ interface Beneficiary {
   name: string
   account: string
   bank: string
-  type: "BNG-BNG" | "BNG-CONFRERE" | "BNG-INTERNATIONAL"
+  type: string//"BNG-BNG" | "BNG-CONFRERE" | "BNG-INTERNATIONAL"
   favorite: boolean
   lastUsed: string
   addedDate: string
