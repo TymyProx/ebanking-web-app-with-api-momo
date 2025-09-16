@@ -966,7 +966,7 @@ export default function ServiceRequestsPage() {
             </Button>
           </form>
         )
-
+// E-DEMANDE PAGE
       case "e-demande":
         return (
           <form onSubmit={handleEDemandeSubmit} className="space-y-4">
@@ -1068,34 +1068,9 @@ export default function ServiceRequestsPage() {
               </Alert>
             )}
 
-            <div className="flex items-start space-x-2">
-              <Checkbox
-                id="edemande_terms"
-                checked={formData.edemande_terms || false}
-                onCheckedChange={(checked) => handleInputChange("edemande_terms", checked)}
-              />
-              <Label htmlFor="edemande_terms" className="text-sm">
-                J'accepte les{" "}
-                <a href="#" className="text-blue-600 hover:underline">
-                  conditions générales
-                </a>{" "}
-                et autorise le traitement de ma demande
-              </Label>
-            </div>
+      
 
-            <Button type="submit" disabled={isEDemandeSubmitting || !formData.edemande_terms} className="w-full">
-              {isEDemandeSubmitting ? (
-                <>
-                  <Clock className="w-4 h-4 mr-2 animate-spin" />
-                  Envoi en cours...
-                </>
-              ) : (
-                <>
-                  <Send className="w-4 h-4 mr-2" />
-                  Envoyer la demande
-                </>
-              )}
-            </Button>
+            
           </form>
         )
 
