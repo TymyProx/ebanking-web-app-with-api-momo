@@ -634,23 +634,12 @@ export default function ServiceRequestsPage() {
     if (!selectedServiceData) return null
 
     switch (selectedService) {
-      // COMMANDES CHEQUIER PAGE
+// COMMANDE CHEQUIER PAGE
       case "checkbook":
         return (
           <form onSubmit={handleCheckbookSubmit} className="space-y-4">
-            <div>
-              <Label htmlFor="dateorder">Date de commande *</Label>
-              <Input
-                id="dateorder"
-                name="dateorder"
-                type="date"
-                value={formData.dateorder || new Date().toISOString().split("T")[0]}
-                onChange={(e) => handleInputChange("dateorder", e.target.value)}
-                required
-              />
-            </div>
 
-            <div>
+              <div>
               <Label htmlFor="intitulecompte">Intitulé du compte *</Label>
               <Input
                 id="intitulecompte"
@@ -671,10 +660,24 @@ export default function ServiceRequestsPage() {
                 type="text"
                 value={formData.numcompte || ""}
                 onChange={(e) => handleInputChange("numcompte", e.target.value)}
-                placeholder="Ex: 123456789"
+                placeholder="Ex: 000123456789"
                 required
               />
             </div>
+
+            <div>
+              <Label htmlFor="dateorder">Date de commande *</Label>
+              <Input
+                id="dateorder"
+                name="dateorder"
+                type="date"
+                value={formData.dateorder || new Date().toISOString().split("T")[0]}
+                onChange={(e) => handleInputChange("dateorder", e.target.value)}
+                required
+              />
+            </div>
+
+          
 
             <div>
               <Label htmlFor="nbrechequier">Nombre de chéquiers *</Label>
@@ -751,7 +754,7 @@ export default function ServiceRequestsPage() {
             </div>
           </form>
         )
-
+// DEMANDE CREDIT PAGE
       case "credit":
         return (
           <form onSubmit={handleCreditSubmit} className="space-y-4">
@@ -778,7 +781,7 @@ export default function ServiceRequestsPage() {
                 type="text"
                 value={formData.numcompte || ""}
                 onChange={(e) => handleInputChange("numcompte", e.target.value)}
-                placeholder="Ex: 123456789"
+                placeholder="Ex: 000123456789"
                 required
               />
             </div>
@@ -868,28 +871,6 @@ export default function ServiceRequestsPage() {
               />
             </div>
 
-            <div>
-              <Label htmlFor="guarantor_name">Nom du garant *</Label>
-              <Input
-                id="guarantor_name"
-                placeholder="Nom complet du garant"
-                value={formData.guarantor_name || ""}
-                onChange={(e) => handleInputChange("guarantor_name", e.target.value)}
-                required
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="guarantor_phone">Téléphone du garant *</Label>
-              <Input
-                id="guarantor_phone"
-                placeholder="Ex: +224 6XX XXX XXX"
-                value={formData.guarantor_phone || ""}
-                onChange={(e) => handleInputChange("guarantor_phone", e.target.value)}
-                required
-              />
-            </div>
-
             {/* Contact Information */}
             <div className="space-y-4">
               <h4 className="font-medium">Informations de contact</h4>
@@ -966,7 +947,7 @@ export default function ServiceRequestsPage() {
             </Button>
           </form>
         )
-// E-DEMANDE page 
+// E-DEMANDE PAGE
       case "e-demande":
         return (
           <form onSubmit={handleEDemandeSubmit} className="space-y-4">
@@ -1067,35 +1048,6 @@ export default function ServiceRequestsPage() {
                 </AlertDescription>
               </Alert>
             )}
-
-            <div className="flex items-start space-x-2">
-              <Checkbox
-                id="edemande_terms"
-                checked={formData.edemande_terms || false}
-                onCheckedChange={(checked) => handleInputChange("edemande_terms", checked)}
-              />
-              <Label htmlFor="edemande_terms" className="text-sm">
-                J'accepte les{" "}
-                <a href="#" className="text-blue-600 hover:underline">
-                  conditions générales
-                </a>{" "}
-                et autorise le traitement de ma demande
-              </Label>
-            </div>
-
-            <Button type="submit" disabled={isEDemandeSubmitting || !formData.edemande_terms} className="w-full">
-              {isEDemandeSubmitting ? (
-                <>
-                  <Clock className="w-4 h-4 mr-2 animate-spin" />
-                  Envoi en cours...
-                </>
-              ) : (
-                <>
-                  <Send className="w-4 h-4 mr-2" />
-                  Envoyer la demande
-                </>
-              )}
-            </Button>
           </form>
         )
 
@@ -1199,52 +1151,9 @@ export default function ServiceRequestsPage() {
                   </div>
                 </div>
 
-                {/* Requirements */}
-                <div>
-                  <h4 className="font-medium mb-2">Prérequis</h4>
-                  <ul className="space-y-1">
-                    {selectedServiceData.requirements.map((req, index) => (
-                      <li key={index} className="flex items-center space-x-2 text-sm">
-                        <CheckCircle className="w-4 h-4 text-green-500" />
-                        <span>{req}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
+                
 
-                {/* Account Selection */}
-                <div>
-                  <Label htmlFor="account">Selectionner un compte *</Label>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-2">
-                    {accounts
-                      .filter((account) => selectedService !== "credit" || account.type === "Courant")
-                      .map((account) => (
-                        <div
-                          key={account.id}
-                          className={`p-3 border rounded-lg cursor-pointer transition-all ${
-                            selectedAccount === account.id
-                              ? "border-blue-500 bg-blue-50 ring-2 ring-blue-200"
-                              : "border-gray-200 hover:border-gray-300"
-                          }`}
-                          onClick={() => {
-                            setSelectedAccount(account.id)
-                            handleInputChange("intitulecompte", account.name)
-                            handleInputChange("numcompte", account.number)
-                          }}
-                        >
-                          <div className="flex items-center space-x-2">
-                            <CreditCard className="w-4 h-4 text-gray-500" />
-                            <span className="font-medium text-sm">{account.name}</span>
-                          </div>
-                          <p className="text-xs text-gray-500 mt-1">***{account.number.slice(-4)}</p>
-                          <p className="text-sm font-bold mt-1">
-                            {formatAmount(account.balance, account.currency)} {account.currency}
-                          </p>
-                        </div>
-                      ))}
-                  </div>
-                </div>
-
+                
                 {/* Dynamic Form */}
                 {renderServiceForm()}
 
