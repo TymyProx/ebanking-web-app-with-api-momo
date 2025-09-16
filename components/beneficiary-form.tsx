@@ -41,9 +41,6 @@ export default function BeneficiaryForm({
 }: BeneficiaryFormProps) {
   const [selectedType, setSelectedType] = useState(initialData.type || "")
   const [selectedBank, setSelectedBank] = useState(initialData.bank || "")
-  const [selectedCountry, setSelectedCountry] = useState(initialData.country || "")
-  const [ribValidation, setRibValidation] = useState<{ isValid: boolean; message: string } | null>(null)
-
   const formRef = useRef<HTMLFormElement>(null)
 
   useEffect(() => {
@@ -70,8 +67,6 @@ export default function BeneficiaryForm({
     if (successMessage && !isEdit) {
       setSelectedType("")
       setSelectedBank("")
-      setSelectedCountry("")
-      setRibValidation(null)
 
       if (formRef.current) {
         formRef.current.reset()
@@ -81,15 +76,11 @@ export default function BeneficiaryForm({
 
   const validateRIBField = async (account: string, type: string) => {
     if (!account || account.length <= 5) {
-      setRibValidation(null)
       return
     }
 
     const isValid = account.length >= 10
-    setRibValidation({
-      isValid,
-      message: isValid ? "RIB valide" : "RIB invalide",
-    })
+    console.log(isValid ? "RIB valide" : "RIB invalide")
   }
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
@@ -99,9 +90,6 @@ export default function BeneficiaryForm({
     formData.set("type", selectedType)
     const bankValue = selectedType === "BNG-BNG" ? "Banque Nationale de Guinée" : selectedBank
     formData.set("bank", bankValue)
-    if (selectedCountry) {
-      formData.set("country", selectedCountry)
-    }
 
     onSubmit(formData)
   }
@@ -157,16 +145,6 @@ export default function BeneficiaryForm({
           placeholder={selectedType === "BNG-INTERNATIONAL" ? "FR76 1234 5678 9012 3456 78" : "0001-234567-89"}
           required
         />
-        {ribValidation && (
-          <div
-            className={`flex items-center space-x-2 text-sm ${
-              ribValidation.isValid ? "text-green-600" : "text-red-600"
-            }`}
-          >
-            {ribValidation.isValid ? <CheckCircle className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}
-            <span>{ribValidation.message}</span>
-          </div>
-        )}
       </div>
 
       <div className="space-y-2">
@@ -185,20 +163,11 @@ export default function BeneficiaryForm({
         ) : null}
       </div>
 
-      {selectedType === "BNG-INTERNATIONAL" && (
-        <>
-          <div className="space-y-2">
-            <Label htmlFor="swiftCode">Code SWIFT</Label>
-            <Input id="swiftCode" name="swiftCode" defaultValue={initialData.swiftCode || ""} placeholder="BNPAFRPP" />
-          </div>
-        </>
-      )}
-
       <div className="flex justify-end space-x-2 pt-4">
         <Button type="button" variant="outline" onClick={onCancel} disabled={isPending}>
           Annuler
         </Button>
-        <Button type="submit" disabled={isPending || (ribValidation && !ribValidation.isValid)}>
+        <Button type="submit" disabled={isPending}>
           {isPending ? "Traitement..." : isEdit ? "Modifier" : "Ajouter"}
         </Button>
       </div>

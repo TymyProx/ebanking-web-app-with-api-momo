@@ -24,7 +24,14 @@ import {
   AlertCircle,
 } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { addBeneficiary, updateBeneficiary, deleteBeneficiary, validateRIB, getBeneficiaries } from "./actions"
+import {
+  addBeneficiary,
+  updateBeneficiary,
+  deleteBeneficiary,
+  validateRIB,
+  getBeneficiaries,
+  toggleBeneficiaryFavorite,
+} from "./actions"
 import { useActionState } from "react"
 import BeneficiaryForm from "@/components/beneficiary-form"
 
@@ -81,7 +88,7 @@ export default function BeneficiariesPage() {
         account: apiB.accountNumber,
         bank: getBankNameFromCode(apiB.bankCode),
         type: getBeneficiaryType(apiB.bankCode),
-        favorite: false,
+        favorite: apiB.favoris || false,
         lastUsed: "Jamais",
         addedDate: new Date(apiB.createdAt).toLocaleDateString("fr-FR"),
       }))
@@ -216,8 +223,20 @@ export default function BeneficiariesPage() {
     }
   }
 
-  const toggleFavorite = (id: string) => {
-    setBeneficiaries((prev) => prev.map((b) => (b.id === id ? { ...b, favorite: !b.favorite } : b)))
+  const toggleFavorite = async (id: string) => {
+    const beneficiary = beneficiaries.find((b) => b.id === id)
+    if (!beneficiary) return
+
+    try {
+      const result = await toggleBeneficiaryFavorite(id, beneficiary.favorite)
+      if (result.success) {
+        setBeneficiaries((prev) => prev.map((b) => (b.id === id ? { ...b, favorite: !b.favorite } : b)))
+      } else {
+        console.error("Erreur lors de la modification du favori:", result.error)
+      }
+    } catch (error) {
+      console.error("Erreur lors de la modification du favori:", error)
+    }
   }
 
   const openEditDialog = (beneficiary: Beneficiary) => {

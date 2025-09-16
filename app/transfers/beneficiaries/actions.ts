@@ -22,9 +22,14 @@ interface ApiBeneficiary {
   name: string
   accountNumber: string
   bankCode: string
+  bankName: string
+  status: number
+  typeBeneficiary: string
+  favoris: boolean
 }
 
-const API_BASE_URL = process.env.API_BASE_URL || process.env.NEXT_PUBLIC_API_BASE_URL || "https://192.168.1.200:8080/api"
+const API_BASE_URL =
+  process.env.API_BASE_URL || process.env.NEXT_PUBLIC_API_BASE_URL || "https://192.168.1.200:8080/api"
 const TENANT_ID = process.env.TENANT_ID || "aa1287f6-06af-45b7-a905-8c57363565c2"
 
 export async function getBeneficiaries(): Promise<ApiBeneficiary[]> {
@@ -119,6 +124,10 @@ export async function addBeneficiary(prevState: ActionResult | null, formData: F
         name: name,
         accountNumber: account,
         bankCode: getBankCode(bank, type),
+        bankName: bank,
+        status: 0,
+        typeBeneficiary: type,
+        favoris: false, // Default value as requested
       },
     }
     const cookieToken = (await cookies()).get("token")?.value
@@ -246,11 +255,15 @@ export async function updateBeneficiary(prevState: ActionResult | null, formData
 
     const apiData = {
       data: {
-        beneficiaryId: beneficiaryId || `BEN_${Date.now()}`, // Utiliser l'ID existant ou générer un nouveau
+        beneficiaryId: beneficiaryId || `BEN_${Date.now()}`,
         customerId: "CUSTOMER_ID_PLACEHOLDER", // À remplacer par l'ID du client connecté
         name: name,
         accountNumber: account,
         bankCode: getBankCode(bank, type),
+        bankName: bank,
+        status: 0,
+        typeBeneficiary: type,
+        favoris: false, // Keep existing favorite status or set default
       },
     }
     const cookieToken = (await cookies()).get("token")?.value
@@ -337,6 +350,56 @@ export async function deleteBeneficiary(prevState: ActionResult | null, formData
     }
   } catch (error) {
     console.error("Erreur lors de la suppression du bénéficiaire:", error)
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Une erreur inattendue s'est produite",
+    }
+  }
+}
+
+export async function toggleBeneficiaryFavorite(
+  beneficiaryId: string,
+  currentFavoriteStatus: boolean,
+): Promise<ActionResult> {
+  try {
+    const cookieToken = (await cookies()).get("token")?.value
+    const usertoken = cookieToken
+
+    const apiData = {
+      data: {
+        favoris: !currentFavoriteStatus, // Toggle the current status
+      },
+    }
+
+    const response = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/beneficiaire/${beneficiaryId}`, {
+      method: "PATCH", // Use PATCH for partial updates
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${usertoken}`,
+      },
+      body: JSON.stringify(apiData),
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}))
+      return {
+        success: false,
+        error: errorData.message || `Erreur API: ${response.status} ${response.statusText}`,
+      }
+    }
+
+    const result = await response.json()
+    console.log("Statut favori modifié via API:", result)
+
+    revalidatePath("/transfers/beneficiaries")
+    revalidatePath("/transfers/new")
+
+    return {
+      success: true,
+      message: "Statut favori modifié avec succès",
+    }
+  } catch (error) {
+    console.error("Erreur lors de la modification du statut favori:", error)
     return {
       success: false,
       error: error instanceof Error ? error.message : "Une erreur inattendue s'est produite",
