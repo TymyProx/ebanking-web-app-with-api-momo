@@ -29,6 +29,13 @@ interface BeneficiaryFormProps {
   onMessageClear?: () => void
 }
 
+interface Bank {
+  id: string
+  bankName: string
+  swiftCode: string
+  codeBank: string
+}
+
 export default function BeneficiaryForm({
   isEdit = false,
   initialData = {},
@@ -41,13 +48,47 @@ export default function BeneficiaryForm({
 }: BeneficiaryFormProps) {
   const [selectedType, setSelectedType] = useState(initialData.type || "")
   const [selectedBank, setSelectedBank] = useState(initialData.bank || "")
+  const [banks, setBanks] = useState<Bank[]>([])
+  const [selectedBankCode, setSelectedBankCode] = useState("")
+  const [loadingBanks, setLoadingBanks] = useState(false)
   const formRef = useRef<HTMLFormElement>(null)
+
+  const loadBanks = async () => {
+    try {
+      setLoadingBanks(true)
+      const tenantId = process.env.NEXT_PUBLIC_TENANT_ID || localStorage.getItem("tenantId")
+      const token = localStorage.getItem("authToken")
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/tenant/${tenantId}/banque`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        setBanks(data.rows || [])
+      }
+    } catch (error) {
+      console.error("Erreur lors du chargement des banques:", error)
+    } finally {
+      setLoadingBanks(false)
+    }
+  }
+
+  useEffect(() => {
+    if (selectedType === "BNG-CONFRERE") {
+      loadBanks()
+    }
+  }, [selectedType])
 
   useEffect(() => {
     if (selectedType === "BNG-BNG") {
       setSelectedBank("Banque Nationale de Guinée")
     } else if (selectedType !== "") {
       setSelectedBank("")
+      setSelectedBankCode("")
     }
   }, [selectedType])
 
@@ -90,8 +131,19 @@ export default function BeneficiaryForm({
     formData.set("type", selectedType)
     const bankValue = selectedType === "BNG-BNG" ? "Banque Nationale de Guinée" : selectedBank
     formData.set("bank", bankValue)
+    if (selectedType === "BNG-CONFRERE" && selectedBankCode) {
+      formData.set("bankCode", selectedBankCode)
+    }
 
     onSubmit(formData)
+  }
+
+  const handleBankSelection = (bankName: string) => {
+    setSelectedBank(bankName)
+    const selectedBankData = banks.find((bank) => bank.bankName === bankName)
+    if (selectedBankData) {
+      setSelectedBankCode(selectedBankData.codeBank)
+    }
   }
 
   return (
@@ -151,7 +203,20 @@ export default function BeneficiaryForm({
         <Label htmlFor="bank">Banque *</Label>
         {selectedType === "BNG-BNG" ? (
           <Input id="bank" name="bank" value="Banque Nationale de Guinée" readOnly className="bg-gray-50" />
-        ) : selectedType === "BNG-CONFRERE" || selectedType === "BNG-INTERNATIONAL" ? (
+        ) : selectedType === "BNG-CONFRERE" ? (
+          <Select value={selectedBank} onValueChange={handleBankSelection} required>
+            <SelectTrigger>
+              <SelectValue placeholder={loadingBanks ? "Chargement..." : "Sélectionnez une banque"} />
+            </SelectTrigger>
+            <SelectContent>
+              {banks.map((bank) => (
+                <SelectItem key={bank.id} value={bank.bankName}>
+                  {bank.bankName}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        ) : selectedType === "BNG-INTERNATIONAL" ? (
           <Input
             id="bank"
             name="bank"
@@ -163,6 +228,10 @@ export default function BeneficiaryForm({
           />
         ) : null}
       </div>
+
+      {selectedType === "BNG-CONFRERE" && selectedBankCode && (
+        <input type="hidden" name="codeBank" value={selectedBankCode} />
+      )}
 
       <div className="flex justify-end space-x-2 pt-4">
         <Button type="button" variant="outline" onClick={onCancel} disabled={isPending}>
