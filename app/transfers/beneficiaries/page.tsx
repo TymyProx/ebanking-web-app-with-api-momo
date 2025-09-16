@@ -218,13 +218,11 @@ export default function BeneficiariesPage() {
     if (!beneficiary) return
 
     try {
-      if (!beneficiary.favorite) {
-        const result = await toggleBeneficiaryFavorite(id, beneficiary.favorite)
-        if (result.success) {
-          setBeneficiaries((prev) => prev.map((b) => (b.id === id ? { ...b, favorite: true } : b)))
-        } else {
-          console.error("Erreur lors de la modification du favori:", result.error)
-        }
+      const result = await toggleBeneficiaryFavorite(id, beneficiary.favorite)
+      if (result.success) {
+        setBeneficiaries((prev) => prev.map((b) => (b.id === id ? { ...b, favorite: !b.favorite } : b)))
+      } else {
+        console.error("Erreur lors de la modification du favori:", result.error)
       }
     } catch (error) {
       console.error("Erreur lors de la modification du favori:", error)
