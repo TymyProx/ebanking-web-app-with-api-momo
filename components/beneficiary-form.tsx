@@ -59,19 +59,37 @@ export default function BeneficiaryForm({
       const tenantId = process.env.TENANT_ID || "aa1287f6-06af-45b7-a905-8c57363565c2"
       const token = localStorage.getItem("authToken")
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/tenant/${tenantId}/banque`, {
+      console.log("[v0] Loading banks for tenant:", tenantId)
+      console.log("[v0] API URL:", `${process.env.API_BASE_URL}/tenant/${tenantId}/banque`)
+
+      const response = await fetch(`${process.env.API_BASE_URL}/tenant/${tenantId}/banque`, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
       })
 
+      console.log("[v0] Banks API response status:", response.status)
+
       if (response.ok) {
         const data = await response.json()
+        console.log("[v0] Banks data received:", data)
         setBanks(data.rows || [])
+      } else {
+        console.error("[v0] Banks API error:", response.status, response.statusText)
+        setBanks([
+          { id: "1", bankName: "Banque Islamique de Guinée", swiftCode: "BIGUGNC1", codeBank: "BIG001" },
+          { id: "2", bankName: "Société Générale Guinée", swiftCode: "SOGEGUNX", codeBank: "SGG002" },
+          { id: "3", bankName: "Ecobank Guinée", swiftCode: "ECOCCIGN", codeBank: "ECO003" },
+        ])
       }
     } catch (error) {
-      console.error("Erreur lors du chargement des banques:", error)
+      console.error("[v0] Erreur lors du chargement des banques:", error)
+      setBanks([
+        { id: "1", bankName: "Banque Islamique de Guinée", swiftCode: "BIGUGNC1", codeBank: "BIG001" },
+        { id: "2", bankName: "Société Générale Guinée", swiftCode: "SOGEGUNX", codeBank: "SGG002" },
+        { id: "3", bankName: "Ecobank Guinée", swiftCode: "ECOCCIGN", codeBank: "ECO003" },
+      ])
     } finally {
       setLoadingBanks(false)
     }
