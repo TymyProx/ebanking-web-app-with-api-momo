@@ -118,7 +118,7 @@ export default function BeneficiaryForm({
         if (onMessageClear) {
           onMessageClear()
         }
-      }, 8000)
+      }, 5000) // Changed from 8000 to 5000 milliseconds
 
       return () => clearTimeout(timer)
     }

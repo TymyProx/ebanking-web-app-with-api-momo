@@ -70,6 +70,8 @@ export default function BeneficiariesPage() {
   const [updateMessage, setUpdateMessage] = useState<string | null>(null)
   const [showDeactivateSuccess, setShowDeactivateSuccess] = useState(false)
   const [showReactivateSuccess, setShowReactivateSuccess] = useState(false)
+  const [showAddSuccess, setShowAddSuccess] = useState(false)
+  const [showUpdateSuccess, setShowUpdateSuccess] = useState(false)
 
   const loadBeneficiaries = async () => {
     setIsLoading(true)
@@ -105,6 +107,26 @@ export default function BeneficiariesPage() {
       loadBeneficiaries()
     }
   }, [addState?.success, updateState?.success, deactivateState?.success, reactivateState?.success])
+
+  useEffect(() => {
+    if (addState?.success) {
+      setShowAddSuccess(true)
+      const timer = setTimeout(() => {
+        setShowAddSuccess(false)
+      }, 5000)
+      return () => clearTimeout(timer)
+    }
+  }, [addState?.success])
+
+  useEffect(() => {
+    if (updateState?.success) {
+      setShowUpdateSuccess(true)
+      const timer = setTimeout(() => {
+        setShowUpdateSuccess(false)
+      }, 5000)
+      return () => clearTimeout(timer)
+    }
+  }, [updateState?.success])
 
   useEffect(() => {
     if (deactivateState?.success) {
@@ -174,7 +196,6 @@ export default function BeneficiariesPage() {
       const result = await addAction(formData)
       if (result?.success) {
         setIsAddDialogOpen(false)
-        setAddMessage("Bénéficiaire ajouté avec succès.")
       } else {
         setAddMessage(result?.error || "Erreur lors de l'ajout du bénéficiaire.")
       }
@@ -196,7 +217,6 @@ export default function BeneficiariesPage() {
       if (result?.success) {
         setIsEditDialogOpen(false)
         setEditingBeneficiary(null)
-        setUpdateMessage("Bénéficiaire modifié avec succès.")
       } else {
         setUpdateMessage(result?.error || "Erreur lors de la modification du bénéficiaire.")
       }
@@ -298,24 +318,38 @@ export default function BeneficiariesPage() {
         </Dialog>
       </div>
 
+      {showAddSuccess && (
+        <Alert className="border-green-200 bg-green-50">
+          <CheckCircle className="h-4 w-4 text-green-600" />
+          <AlertDescription className="text-green-800">✅ Bénéficiaire ajouté avec succès.</AlertDescription>
+        </Alert>
+      )}
+
+      {addState?.error && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>❌ {addState.error}</AlertDescription>
+        </Alert>
+      )}
+
+      {showUpdateSuccess && (
+        <Alert className="border-green-200 bg-green-50">
+          <CheckCircle className="h-4 w-4 text-green-600" />
+          <AlertDescription className="text-green-800">✅ Bénéficiaire modifié avec succès.</AlertDescription>
+        </Alert>
+      )}
+
+      {updateState?.error && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>❌ {updateState.error}</AlertDescription>
+        </Alert>
+      )}
+
       {showDeactivateSuccess && (
         <Alert className="border-green-200 bg-green-50">
           <CheckCircle className="h-4 w-4 text-green-600" />
           <AlertDescription className="text-green-800">✅ Bénéficiaire désactivé avec succès.</AlertDescription>
-        </Alert>
-      )}
-
-      {deactivateState?.error && (
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>❌ Erreur lors de la désactivation. Veuillez réessayer.</AlertDescription>
-        </Alert>
-      )}
-
-      {showReactivateSuccess && (
-        <Alert className="border-green-200 bg-green-50">
-          <CheckCircle className="h-4 w-4 text-green-600" />
-          <AlertDescription className="text-green-800">✅ Bénéficiaire réactivé avec succès.</AlertDescription>
         </Alert>
       )}
 
