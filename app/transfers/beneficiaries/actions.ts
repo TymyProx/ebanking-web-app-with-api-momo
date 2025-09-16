@@ -253,6 +253,9 @@ export async function updateBeneficiary(prevState: ActionResult | null, formData
       }
     }
 
+    const currentBeneficiaries = await getBeneficiaries()
+    const currentBeneficiary = currentBeneficiaries.find((b) => b.id === id)
+
     const apiData = {
       data: {
         beneficiaryId: beneficiaryId || `BEN_${Date.now()}`,
@@ -263,7 +266,7 @@ export async function updateBeneficiary(prevState: ActionResult | null, formData
         bankName: bank,
         status: 0,
         typeBeneficiary: type,
-        favoris: false, // Keep existing favorite status or set default
+        favoris: currentBeneficiary?.favoris || false, // Preserve existing favoris status
       },
     }
     const cookieToken = (await cookies()).get("token")?.value
@@ -365,14 +368,32 @@ export async function toggleBeneficiaryFavorite(
     const cookieToken = (await cookies()).get("token")?.value
     const usertoken = cookieToken
 
+    const currentBeneficiaries = await getBeneficiaries()
+    const currentBeneficiary = currentBeneficiaries.find((b) => b.id === beneficiaryId)
+
+    if (!currentBeneficiary) {
+      return {
+        success: false,
+        error: "Bénéficiaire non trouvé",
+      }
+    }
+
     const apiData = {
       data: {
-        favoris: !currentFavoriteStatus, // Toggle the current status
+        beneficiaryId: currentBeneficiary.beneficiaryId,
+        customerId: currentBeneficiary.customerId,
+        name: currentBeneficiary.name,
+        accountNumber: currentBeneficiary.accountNumber,
+        bankCode: currentBeneficiary.bankCode,
+        bankName: currentBeneficiary.bankName,
+        status: currentBeneficiary.status,
+        typeBeneficiary: currentBeneficiary.typeBeneficiary,
+        favoris: true, // Always set to true when clicking star
       },
     }
 
     const response = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/beneficiaire/${beneficiaryId}`, {
-      method: "PATCH", // Use PATCH for partial updates
+      method: "PUT", // Use PUT instead of PATCH to send complete data
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${usertoken}`,
