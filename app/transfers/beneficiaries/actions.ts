@@ -388,7 +388,7 @@ export async function toggleBeneficiaryFavorite(
         bankName: currentBeneficiary.bankName,
         status: currentBeneficiary.status,
         typeBeneficiary: currentBeneficiary.typeBeneficiary,
-        favoris: true, // Always set to true when clicking star
+        favoris: !currentFavoriteStatus, // Toggle the current status
       },
     }
 
