@@ -40,6 +40,7 @@ import {
 import { useActionState } from "react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { getAccounts } from "../../accounts/actions"
 
 const serviceTypes = [
   {
@@ -74,7 +75,7 @@ const serviceTypes = [
   },
 ]
 
-const accounts = [
+const accountsData = [
   {
     id: "acc_001",
     name: "Compte Courant Principal",
@@ -152,6 +153,8 @@ export default function ServiceRequestsPage() {
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false)
   const [selectedRequestDetails, setSelectedRequestDetails] = useState<any>(null)
   const [isLoadingDetails, setIsLoadingDetails] = useState(false)
+  const [accounts, setAccounts] = useState<any[]>([])
+  const [isLoadingAccounts, setIsLoadingAccounts] = useState(true)
 
   const selectedServiceData = serviceTypes.find((s) => s.id === selectedService)
 
@@ -351,6 +354,51 @@ export default function ServiceRequestsPage() {
     }
   }, [activeTab])
 
+  useEffect(() => {
+    loadAccounts()
+  }, [])
+
+  const loadAccounts = async () => {
+    try {
+      console.log("[v0] Chargement des comptes...")
+      setIsLoadingAccounts(true)
+      const result = await getAccounts()
+      console.log("[v0] Résultat getAccounts:", result)
+
+      if (Array.isArray(result) && result.length > 0) {
+        // Adapter les données API au format Account
+        const adaptedAccounts = result.map((apiAccount: any) => ({
+          id: apiAccount.id || apiAccount.accountId,
+          name: apiAccount.accountName || apiAccount.name || `Compte ${apiAccount.accountNumber || apiAccount.number}`,
+          number: apiAccount.accountNumber || apiAccount.number || apiAccount.id,
+          balance: apiAccount.bookBalance || apiAccount.balance || 0,
+          currency: apiAccount.currency || "GNF",
+          status: apiAccount.status,
+          type: apiAccount.accountType || apiAccount.type,
+        }))
+
+        // Filtrer pour ne garder que les comptes courants actifs
+        const currentAccounts = adaptedAccounts.filter(
+          (account: any) =>
+            (account.status === "ACTIVE" || account.status === "Actif") &&
+            (account.type === "CURRENT" || account.type === "Courant") &&
+            account.number &&
+            String(account.number).trim() !== "",
+        )
+        console.log("[v0] Comptes courants actifs:", currentAccounts)
+        setAccounts(currentAccounts)
+      } else {
+        console.log("[v0] Aucun compte trouvé")
+        setAccounts([])
+      }
+    } catch (error) {
+      console.error("[v0] Erreur lors du chargement des comptes:", error)
+      setAccounts([])
+    } finally {
+      setIsLoadingAccounts(false)
+    }
+  }
+
   const filteredRequests = allRequests.filter((request) => {
     const matchesSearch =
       request.typeName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -459,7 +507,7 @@ export default function ServiceRequestsPage() {
   }
 
   const getAccountIdFromName = (accountName: string): string => {
-    const account = accounts.find((acc) => acc.name === accountName)
+    const account = accountsData.find((acc) => acc.name === accountName)
     return account?.id || ""
   }
 
@@ -634,22 +682,53 @@ export default function ServiceRequestsPage() {
     if (!selectedServiceData) return null
 
     switch (selectedService) {
-// COMMANDE CHEQUIER PAGE
+      // COMMANDE CHEQUIER PAGE
       case "checkbook":
         return (
           <form onSubmit={handleCheckbookSubmit} className="space-y-4">
-
-              <div>
-              <Label htmlFor="intitulecompte">Intitulé du compte *</Label>
-              <Input
-                id="intitulecompte"
-                name="intitulecompte"
-                type="text"
+            <div>
+              <Label htmlFor="intitulecompte">Sélectionner un compte *</Label>
+              <Select
                 value={formData.intitulecompte || ""}
-                onChange={(e) => handleInputChange("intitulecompte", e.target.value)}
-                placeholder="Ex: Compte Courant Principal"
-                required
-              />
+                onValueChange={(value) => {
+                  const selectedAccount = accounts.find((acc) => acc.id === value)
+                  if (selectedAccount) {
+                    handleInputChange("intitulecompte", selectedAccount.name)
+                    handleInputChange("numcompte", selectedAccount.number)
+                  }
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder={isLoadingAccounts ? "Chargement..." : "Choisir un compte"} />
+                </SelectTrigger>
+                <SelectContent>
+                  {isLoadingAccounts ? (
+                    <SelectItem value="loading" disabled>
+                      Chargement des comptes...
+                    </SelectItem>
+                  ) : accounts.length === 0 ? (
+                    <SelectItem value="empty" disabled>
+                      Aucun compte courant trouvé
+                    </SelectItem>
+                  ) : (
+                    accounts.map((account) => (
+                      <SelectItem key={account.id} value={account.id}>
+                        <div className="flex flex-col">
+                          <span className="font-medium">{account.name}</span>
+                          <span className="text-sm text-gray-500">
+                            {account.number} •{" "}
+                            {new Intl.NumberFormat("fr-FR", {
+                              style: "currency",
+                              currency: account.currency === "GNF" ? "GNF" : account.currency,
+                              minimumFractionDigits: account.currency === "GNF" ? 0 : 2,
+                            }).format(account.balance)}
+                          </span>
+                        </div>
+                      </SelectItem>
+                    ))
+                  )}
+                </SelectContent>
+              </Select>
             </div>
 
             <div>
@@ -662,6 +741,8 @@ export default function ServiceRequestsPage() {
                 onChange={(e) => handleInputChange("numcompte", e.target.value)}
                 placeholder="Ex: 000123456789"
                 required
+                readOnly
+                className="bg-gray-50"
               />
             </div>
 
@@ -676,8 +757,6 @@ export default function ServiceRequestsPage() {
                 required
               />
             </div>
-
-          
 
             <div>
               <Label htmlFor="nbrechequier">Nombre de chéquiers *</Label>
@@ -696,18 +775,18 @@ export default function ServiceRequestsPage() {
 
             <div>
               <Label htmlFor="nbrefeuille">Nombre de feuilles par chéquier *</Label>
-              <Input
-                id="nbrefeuille"
-                name="nbrefeuille"
-                type="number"
-                min="25"
-                max="50"
-                step="25"
+              <Select
                 value={formData.nbrefeuille || ""}
-                onChange={(e) => handleInputChange("nbrefeuille", e.target.value)}
-                placeholder="Ex: 50"
-                required
-              />
+                onValueChange={(value) => handleInputChange("nbrefeuille", value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Choisir le nombre de feuilles" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="25">25 feuilles</SelectItem>
+                  <SelectItem value="50">50 feuilles</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             <div>
@@ -754,7 +833,7 @@ export default function ServiceRequestsPage() {
             </div>
           </form>
         )
-// DEMANDE CREDIT PAGE
+      // DEMANDE CREDIT PAGE
       case "credit":
         return (
           <form onSubmit={handleCreditSubmit} className="space-y-4">
@@ -947,7 +1026,7 @@ export default function ServiceRequestsPage() {
             </Button>
           </form>
         )
-// E-DEMANDE PAGE
+      // E-DEMANDE PAGE
       case "e-demande":
         return (
           <form onSubmit={handleEDemandeSubmit} className="space-y-4">
@@ -1151,9 +1230,6 @@ export default function ServiceRequestsPage() {
                   </div>
                 </div>
 
-                
-
-                
                 {/* Dynamic Form */}
                 {renderServiceForm()}
 
