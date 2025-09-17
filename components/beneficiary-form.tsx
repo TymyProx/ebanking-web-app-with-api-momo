@@ -51,17 +51,20 @@ export default function BeneficiaryForm({
   const [banks, setBanks] = useState<Bank[]>([])
   const [selectedBankCode, setSelectedBankCode] = useState("")
   const [loadingBanks, setLoadingBanks] = useState(false)
+  const [localSuccessMessage, setLocalSuccessMessage] = useState<string | null>(null)
+  const [localErrorMessage, setLocalErrorMessage] = useState<string | null>(null)
   const formRef = useRef<HTMLFormElement>(null)
 
   const loadBanks = async () => {
     try {
       setLoadingBanks(true)
-      const API_BASE_URL = process.env.API_BASE_URL || process.env.NEXT_PUBLIC_API_BASE_URL || "https://192.168.1.200:8080/api"
+      const API_BASE_URL =
+        process.env.API_BASE_URL || process.env.NEXT_PUBLIC_API_BASE_URL || "https://192.168.1.200:8080/api"
       const tenantId = process.env.TENANT_ID || "aa1287f6-06af-45b7-a905-8c57363565c2"
       const token = localStorage.getItem("token")
 
       console.log("[v0] Loading banks for tenant:", tenantId)
-      console.log("[v0] API URL:", (`${API_BASE_URL}/tenant/${tenantId}/banque`))
+      console.log("[v0] API URL:", `${API_BASE_URL}/tenant/${tenantId}/banque`)
 
       const response = await fetch(`${API_BASE_URL}/tenant/${tenantId}/banque`, {
         headers: {
@@ -112,21 +115,37 @@ export default function BeneficiaryForm({
   }, [selectedType])
 
   useEffect(() => {
-    if (successMessage || errorMessage) {
+    if (successMessage) {
+      setLocalSuccessMessage(successMessage)
       const timer = setTimeout(() => {
+        setLocalSuccessMessage(null)
         if (onMessageClear) {
           onMessageClear()
         }
-      }, 5000) // Changed from 8000 to 5000 milliseconds
-
+      }, 5000)
       return () => clearTimeout(timer)
     }
-  }, [successMessage, errorMessage, onMessageClear])
+  }, [successMessage, onMessageClear])
+
+  useEffect(() => {
+    if (errorMessage) {
+      setLocalErrorMessage(errorMessage)
+      const timer = setTimeout(() => {
+        setLocalErrorMessage(null)
+        if (onMessageClear) {
+          onMessageClear()
+        }
+      }, 5000)
+      return () => clearTimeout(timer)
+    }
+  }, [errorMessage, onMessageClear])
 
   useEffect(() => {
     if (successMessage && !isEdit) {
       setSelectedType("")
       setSelectedBank("")
+      setLocalSuccessMessage(null)
+      setLocalErrorMessage(null)
 
       if (formRef.current) {
         formRef.current.reset()
@@ -167,17 +186,17 @@ export default function BeneficiaryForm({
 
   return (
     <form ref={formRef} onSubmit={handleSubmit} className="space-y-4">
-      {successMessage && (
+      {localSuccessMessage && (
         <Alert variant="default" className="border-green-200 bg-green-50">
           <CheckCircle className="h-4 w-4 text-green-600" />
-          <AlertDescription className="text-green-800">{successMessage}</AlertDescription>
+          <AlertDescription className="text-green-800">{localSuccessMessage}</AlertDescription>
         </Alert>
       )}
 
-      {errorMessage && (
+      {localErrorMessage && (
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
-          <AlertDescription>{errorMessage}</AlertDescription>
+          <AlertDescription>{localErrorMessage}</AlertDescription>
         </Alert>
       )}
 

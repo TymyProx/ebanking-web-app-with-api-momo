@@ -310,12 +310,7 @@ export default function BeneficiariesPage() {
               successMessage={addState?.success ? "✅ Bénéficiaire ajouté avec succès." : undefined}
               errorMessage={addState?.error}
               onMessageClear={() => {
-                setAddMessage(null)
-                // Reset the add state to clear the success message
-                if (addState?.success) {
-                  // Force a re-render by updating a local state
-                  setShowAddSuccess(false)
-                }
+                // Clear any local message states - the form component handles its own cleanup
               }}
               onSubmit={handleAddBeneficiary}
               onCancel={() => setIsAddDialogOpen(false)}
@@ -577,11 +572,7 @@ export default function BeneficiariesPage() {
             successMessage={updateState?.success ? "✅ Bénéficiaire modifié avec succès." : undefined}
             errorMessage={updateState?.error}
             onMessageClear={() => {
-              setUpdateMessage(null)
-              // Reset the update state to clear the success message
-              if (updateState?.success) {
-                setShowUpdateSuccess(false)
-              }
+              // Clear any local message states - the form component handles its own cleanup
             }}
             onSubmit={handleEditBeneficiary}
             onCancel={() => {
