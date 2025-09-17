@@ -552,6 +552,17 @@ export default function ServiceRequestsPage() {
   const handleCreditSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
+    console.log("[v0] FormData au moment de la soumission:", formData)
+    console.log("[v0] Vérification des champs:")
+    console.log("[v0] applicant_name:", formData.applicant_name)
+    console.log("[v0] loan_amount:", formData.loan_amount)
+    console.log("[v0] loan_duration:", formData.loan_duration)
+    console.log("[v0] loan_purpose:", formData.loan_purpose)
+    console.log("[v0] terms:", formData.terms)
+    console.log("[v0] numcompte:", formData.numcompte)
+    console.log("[v0] typedemande:", formData.typedemande)
+    console.log("[v0] accountId:", formData.accountId)
+
     // Vérifier que tous les champs requis sont remplis
     if (
       !formData.applicant_name ||
@@ -563,6 +574,7 @@ export default function ServiceRequestsPage() {
       !formData.typedemande ||
       !formData.accountId
     ) {
+      console.log("[v0] Validation échouée - champs manquants")
       setCreditSubmitState({ error: "Veuillez remplir tous les champs obligatoires" })
       return
     }
