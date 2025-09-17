@@ -151,6 +151,16 @@ export default function BalancesPage() {
     }
   }, [createAccountState?.success])
 
+  useEffect(() => {
+    if (refreshState?.success) {
+      const timer = setTimeout(() => {
+        setRefreshState(null)
+      }, 5000) // 5 secondes
+
+      return () => clearTimeout(timer)
+    }
+  }, [refreshState?.success])
+
   const handleRefresh = () => {
     startTransition(async () => {
       try {
