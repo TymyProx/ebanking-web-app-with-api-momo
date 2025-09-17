@@ -686,13 +686,14 @@ export default function ServiceRequestsPage() {
       case "checkbook":
         return (
           <form onSubmit={handleCheckbookSubmit} className="space-y-4">
-            <div>
+            <div className="space-y-2">
               <Label htmlFor="intitulecompte">Sélectionner un compte *</Label>
               <Select
-                value={formData.intitulecompte || ""}
+                value={formData.accountId || ""}
                 onValueChange={(value) => {
                   const selectedAccount = accounts.find((acc) => acc.id === value)
                   if (selectedAccount) {
+                    handleInputChange("accountId", selectedAccount.id)
                     handleInputChange("intitulecompte", selectedAccount.name)
                     handleInputChange("numcompte", selectedAccount.number)
                   }
@@ -837,13 +838,14 @@ export default function ServiceRequestsPage() {
       case "credit":
         return (
           <form onSubmit={handleCreditSubmit} className="space-y-4">
-            <div>
+            <div className="space-y-2">
               <Label htmlFor="intitulecompte">Sélectionner un compte *</Label>
               <Select
-                value={formData.intitulecompte || ""}
+                value={formData.accountId || ""}
                 onValueChange={(value) => {
                   const selectedAccount = accounts.find((acc) => acc.id === value)
                   if (selectedAccount) {
+                    handleInputChange("accountId", selectedAccount.id)
                     handleInputChange("intitulecompte", selectedAccount.name)
                     handleInputChange("numcompte", selectedAccount.number)
                   }
