@@ -572,14 +572,13 @@ export default function ServiceRequestsPage() {
 
     try {
       const creditData = {
-        data: {
-          applicantName: formData.applicant_name,
-          creditAmount: formData.loan_amount,
-          durationMonths: formData.loan_duration,
-          purpose: formData.loan_purpose,
-          typedemande: formData.typedemande || "credit", // Valeur par défaut
-          accountNumber: formData.numcompte,
-        },
+        applicant_name: formData.applicant_name,
+        loan_amount: formData.loan_amount,
+        loan_duration: formData.loan_duration,
+        loan_purpose: formData.loan_purpose,
+        numcompte: formData.numcompte,
+        typedemande: formData.typedemande || "credit",
+        accountNumber: formData.numcompte,
       }
 
       const result = await submitCreditRequest(creditData)
