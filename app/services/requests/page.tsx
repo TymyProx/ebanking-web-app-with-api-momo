@@ -559,7 +559,9 @@ export default function ServiceRequestsPage() {
       !formData.loan_duration ||
       !formData.loan_purpose ||
       !formData.terms ||
-      !formData.numcompte
+      !formData.numcompte ||
+      !formData.typedemande ||
+      !formData.accountId
     ) {
       setCreditSubmitState({ error: "Veuillez remplir tous les champs obligatoires" })
       return
@@ -570,11 +572,14 @@ export default function ServiceRequestsPage() {
 
     try {
       const creditData = {
-        applicant_name: formData.applicant_name,
-        loan_amount: formData.loan_amount,
-        loan_duration: formData.loan_duration,
-        loan_purpose: formData.loan_purpose,
-        numcompte: formData.numcompte, // Ajout du numéro de compte manquant
+        data: {
+          applicantName: formData.applicant_name,
+          creditAmount: formData.loan_amount,
+          durationMonths: formData.loan_duration,
+          purpose: formData.loan_purpose,
+          typedemande: formData.typedemande || "credit", // Valeur par défaut
+          accountNumber: formData.numcompte,
+        },
       }
 
       const result = await submitCreditRequest(creditData)
