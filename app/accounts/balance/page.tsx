@@ -45,7 +45,7 @@ interface Account {
   availableBalance: number
   currency: string
   type: "Courant" | "Épargne" | "Devise"
-  status: string // "Actif" | "Bloqué" | "Fermé"
+  status: string // "Actif" | "Bloqué" | "Fermé" | "En attente"
   lastUpdate: string
   trend: "up" | "down" | "stable"
   trendPercentage: number
@@ -83,6 +83,9 @@ export default function BalancesPage() {
       }
       if (status === "CLOSED") {
         return accountStatus === "CLOSED" || accountStatus === "FERMÉ"
+      }
+      if (status === "PENDING") {
+        return accountStatus === "PENDING" || accountStatus === "EN ATTENTE"
       }
       return accountStatus === status
     })
@@ -281,6 +284,8 @@ export default function BalancesPage() {
         return "Bloqués"
       case "CLOSED":
         return "Fermés"
+      case "PENDING":
+        return "En attente"
       default:
         return status
     }
@@ -304,6 +309,7 @@ export default function BalancesPage() {
                 <SelectItem value="ACTIVE">Actifs</SelectItem>
                 <SelectItem value="BLOCKED">Bloqués</SelectItem>
                 <SelectItem value="CLOSED">Fermés</SelectItem>
+                <SelectItem value="PENDING">En attente</SelectItem>
                 <SelectItem value="ALL">Tous</SelectItem>
               </SelectContent>
             </Select>
@@ -377,22 +383,21 @@ export default function BalancesPage() {
                       </SelectContent>
                     </Select>
                   </div>
-                    <div className="space-y-2">
-                  <Label htmlFor="purpose">Objectif du compte</Label>
-                  <Select name="purpose" required>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Sélectionner l'objectif" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="personnel">Usage personnel</SelectItem>
-                      <SelectItem value="professionnel">Usage professionnel</SelectItem>
-                      <SelectItem value="epargne">Épargne</SelectItem>
-                      <SelectItem value="investissement">Investissement</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <div className="space-y-2">
+                    <Label htmlFor="purpose">Objectif du compte</Label>
+                    <Select name="purpose" required>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Sélectionner l'objectif" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="personnel">Usage personnel</SelectItem>
+                        <SelectItem value="professionnel">Usage professionnel</SelectItem>
+                        <SelectItem value="epargne">Épargne</SelectItem>
+                        <SelectItem value="investissement">Investissement</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
-                </div>
-
 
                 <div className="flex justify-end space-x-2 pt-4">
                   <Button
