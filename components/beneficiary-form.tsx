@@ -271,6 +271,19 @@ export default function BeneficiaryForm({
         <input type="hidden" name="codeBank" value={selectedBankCode} />
       )}
 
+      {selectedType === "BNG-CONFRERE" && selectedBankCode && (
+        <div className="space-y-2">
+          <Label htmlFor="displayBankCode">Code Banque</Label>
+          <Input
+            id="displayBankCode"
+            value={selectedBankCode}
+            readOnly
+            className="bg-gray-50 text-gray-700"
+            placeholder="Code banque automatique"
+          />
+        </div>
+      )}
+
       <div className="flex justify-end space-x-2 pt-4">
         <Button type="button" variant="outline" onClick={onCancel} disabled={isPending}>
           Annuler
