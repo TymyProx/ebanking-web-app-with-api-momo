@@ -169,13 +169,17 @@ export default function BeneficiaryForm({
 
     formData.set("type", selectedType)
 
-    if (selectedType === "BNG-CONFRERE") {
+    if (selectedType === "BNG-BNG") {
+      // Pour le type interne: bank = GNXXX, bankname = Banque Nationale de Guinée
+      formData.set("bank", "GNXXX")
+      formData.set("bankname", "Banque Nationale de Guinée")
+    } else if (selectedType === "BNG-CONFRERE") {
       // bank = code banque (valeur du champ grisé)
       formData.set("bank", selectedBankCode)
       // bankname = nom de la banque sélectionnée
       formData.set("bankname", selectedBank)
     } else {
-      const bankValue = selectedType === "BNG-BNG" ? "Banque Nationale de Guinée" : selectedBank
+      const bankValue = selectedBank
       formData.set("bank", bankValue)
     }
 
@@ -251,8 +255,7 @@ export default function BeneficiaryForm({
         <Label htmlFor="bank">Banque *</Label>
         {selectedType === "BNG-BNG" ? (
           <>
-          <Input id="bank" name="bankname" value="Banque Nationale de Guinée" readOnly className="bg-gray-50" />
-          <input type="hidden" name="codeBank" value="BQNGGNGNXXX"/>
+            <Input id="bank" name="bankname" value="Banque Nationale de Guinée" readOnly className="bg-gray-50" />
           </>
         ) : selectedType === "BNG-CONFRERE" ? (
           <Select name="bankname" value={selectedBank} onValueChange={handleBankSelection} required>
