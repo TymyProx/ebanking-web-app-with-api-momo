@@ -15,6 +15,7 @@ export type Card = {
   dateEmission: string
   dateExpiration: string
   idClient: string
+  accountNumber?: string
   createdAt?: string
   updatedAt?: string
   deletedAt?: string | null
@@ -32,6 +33,7 @@ export type CardsResponse = {
 export type NewCardRequest = {
   typCard: string
   idClient: string
+  accountNumber?: string
 }
 
 export async function fetchAllCards(): Promise<CardsResponse> {
@@ -83,6 +85,7 @@ export async function createCardRequest(cardData: NewCardRequest): Promise<Card>
   const usertoken = cookieToken
 
   console.log("[v0] Envoi de la demande avec type:", cardData.typCard)
+  console.log("[v0] Compte sélectionné:", cardData.accountNumber)
   console.log("[v0] Token d'authentification:", usertoken ? "présent" : "manquant")
 
   if (!usertoken) {
@@ -102,7 +105,8 @@ export async function createCardRequest(cardData: NewCardRequest): Promise<Card>
       status: "EN_ATTENTE",
       dateEmission: today,
       dateExpiration: dateExpiration,
-      idClient: "USER_123", // TODO: Récupérer l'ID du client connecté
+      idClient: cardData.idClient,
+      accountNumber: cardData.accountNumber || "",
     },
   }
 
