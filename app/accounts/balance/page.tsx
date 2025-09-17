@@ -33,6 +33,7 @@ import {
   AlertCircle,
   CheckCircle,
   Plus,
+  Filter,
 } from "lucide-react"
 import { createAccount, getAccounts } from "../actions"
 
@@ -54,15 +55,38 @@ interface Account {
 export default function BalancesPage() {
   const [showBalance, setShowBalance] = useState(true)
   const [accounts, setAccounts] = useState<Account[]>([])
+  const [filteredAccounts, setFilteredAccounts] = useState<Account[]>([])
   const [isLoaded, setIsLoaded] = useState(false)
   const [isPending, startTransition] = useTransition()
   const [balanceState, setBalanceState] = useState<any>(null)
   const [refreshState, setRefreshState] = useState<any>(null)
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date())
 
+  const [statusFilter, setStatusFilter] = useState<string>("ACTIVE")
+
   const [isNewAccountDialogOpen, setIsNewAccountDialogOpen] = useState(false)
   const [isCreatingAccount, setIsCreatingAccount] = useState(false)
   const [createAccountState, setCreateAccountState] = useState<any>(null)
+
+  const filterAccountsByStatus = (accountsList: Account[], status: string) => {
+    if (status === "ALL") {
+      return accountsList
+    }
+    return accountsList.filter((account) => {
+      // Normalize status values for comparison
+      const accountStatus = account.status?.toUpperCase()
+      if (status === "ACTIVE") {
+        return accountStatus === "ACTIVE" || accountStatus === "ACTIF"
+      }
+      if (status === "BLOCKED") {
+        return accountStatus === "BLOCKED" || accountStatus === "BLOQUÉ"
+      }
+      if (status === "CLOSED") {
+        return accountStatus === "CLOSED" || accountStatus === "FERMÉ"
+      }
+      return accountStatus === status
+    })
+  }
 
   useEffect(() => {
     const loadBalances = () => {
@@ -88,15 +112,19 @@ export default function BalancesPage() {
             }))
 
             setAccounts(adaptedAccounts)
+            const filtered = filterAccountsByStatus(adaptedAccounts, statusFilter)
+            setFilteredAccounts(filtered)
             setBalanceState({ success: true, message: "Comptes chargés avec succès" })
           } else {
             setAccounts([])
+            setFilteredAccounts([])
             setBalanceState({ success: true, message: "Aucun compte disponible" })
           }
           setIsLoaded(true)
         } catch (error) {
           console.error("Erreur lors du chargement des soldes:", error)
           setAccounts([])
+          setFilteredAccounts([])
           setBalanceState({ success: false, error: "Erreur de connexion. Données non disponibles." })
           setIsLoaded(true)
         }
@@ -104,6 +132,11 @@ export default function BalancesPage() {
     }
     loadBalances()
   }, [])
+
+  useEffect(() => {
+    const filtered = filterAccountsByStatus(accounts, statusFilter)
+    setFilteredAccounts(filtered)
+  }, [accounts, statusFilter])
 
   useEffect(() => {
     if (createAccountState?.success) {
@@ -138,6 +171,8 @@ export default function BalancesPage() {
           }))
 
           setAccounts(adaptedAccounts)
+          const filtered = filterAccountsByStatus(adaptedAccounts, statusFilter)
+          setFilteredAccounts(filtered)
           setRefreshState({ success: true, message: "Comptes actualisés" })
         } else {
           setRefreshState({ success: true, message: "Aucun compte disponible" })
@@ -178,6 +213,8 @@ export default function BalancesPage() {
             iban: account.accountNumber || "",
           }))
           setAccounts(adaptedAccounts)
+          const filtered = filterAccountsByStatus(adaptedAccounts, statusFilter)
+          setFilteredAccounts(filtered)
         }
         if (form) {
           form.reset()
@@ -229,9 +266,24 @@ export default function BalancesPage() {
   }
 
   const getTotalBalance = (currency: string) => {
-    return accounts
+    return filteredAccounts
       .filter((account) => account.currency === currency)
       .reduce((total, account) => total + account.balance, 0)
+  }
+
+  const getStatusDisplayText = (status: string) => {
+    switch (status) {
+      case "ALL":
+        return "Tous les statuts"
+      case "ACTIVE":
+        return "Actifs"
+      case "BLOCKED":
+        return "Bloqués"
+      case "CLOSED":
+        return "Fermés"
+      default:
+        return status
+    }
   }
 
   return (
@@ -242,6 +294,21 @@ export default function BalancesPage() {
           <p className="text-gray-600">Vue d'ensemble de tous vos comptes</p>
         </div>
         <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-2">
+            <Filter className="h-4 w-4 text-gray-500" />
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-40">
+                <SelectValue placeholder="Filtrer par statut" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ACTIVE">Actifs</SelectItem>
+                <SelectItem value="BLOCKED">Bloqués</SelectItem>
+                <SelectItem value="CLOSED">Fermés</SelectItem>
+                <SelectItem value="ALL">Tous</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
           <Dialog open={isNewAccountDialogOpen} onOpenChange={setIsNewAccountDialogOpen}>
             <DialogTrigger asChild>
               <Button className="bg-blue-600 hover:bg-blue-700">
@@ -365,6 +432,17 @@ export default function BalancesPage() {
         </div>
       </div>
 
+      <div className="flex items-center justify-between bg-gray-50 p-3 rounded-lg">
+        <div className="text-sm text-gray-600">
+          Affichage: <span className="font-medium">{getStatusDisplayText(statusFilter)}</span>
+          {statusFilter !== "ALL" && (
+            <span className="ml-2">
+              ({filteredAccounts.length} compte{filteredAccounts.length !== 1 ? "s" : ""})
+            </span>
+          )}
+        </div>
+      </div>
+
       {balanceState?.success && (
         <Alert className="border-green-200 bg-green-50">
           <CheckCircle className="h-4 w-4 text-green-600" />
@@ -419,7 +497,7 @@ export default function BalancesPage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {(accounts || []).map((account) => (
+          {(filteredAccounts || []).map((account) => (
             <Link key={account.id} href={`/accounts/${account.id}`}>
               <Card className="hover:shadow-lg transition-all duration-200 cursor-pointer border-2 hover:border-blue-200">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -482,29 +560,37 @@ export default function BalancesPage() {
         </div>
       )}
 
-      {isLoaded && (accounts?.length === 0 || !accounts) && (
+      {isLoaded && (filteredAccounts?.length === 0 || !filteredAccounts) && (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
             <Wallet className="h-12 w-12 text-gray-400 mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Aucun compte trouvé</h3>
-            <p className="text-gray-600 text-center">Aucun compte n'est disponible pour le moment.</p>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">
+              {statusFilter === "ALL"
+                ? "Aucun compte trouvé"
+                : `Aucun compte ${getStatusDisplayText(statusFilter).toLowerCase()}`}
+            </h3>
+            <p className="text-gray-600 text-center">
+              {statusFilter === "ALL"
+                ? "Aucun compte n'est disponible pour le moment."
+                : `Aucun compte avec le statut "${getStatusDisplayText(statusFilter).toLowerCase()}" n'a été trouvé.`}
+            </p>
           </CardContent>
         </Card>
       )}
 
-      {isLoaded && accounts && accounts.length > 0 && (
+      {isLoaded && filteredAccounts && filteredAccounts.length > 0 && (
         <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
           <CardHeader>
             <CardTitle className="flex items-center text-blue-900">
               <TrendingUp className="h-5 w-5 mr-2" />
-              Résumé global
+              Résumé global - {getStatusDisplayText(statusFilter)}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="text-center">
-                <div className="text-2xl font-bold text-blue-900">{accounts.length}</div>
-                <div className="text-sm text-blue-700">Comptes actifs</div>
+                <div className="text-2xl font-bold text-blue-900">{filteredAccounts.length}</div>
+                <div className="text-sm text-blue-700">Comptes {getStatusDisplayText(statusFilter).toLowerCase()}</div>
               </div>
               <div className="text-center">
                 <div className="text-2xl font-bold text-blue-900">
