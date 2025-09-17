@@ -169,8 +169,9 @@ export default function BeneficiaryForm({
     formData.set("type", selectedType)
     const bankValue = selectedType === "BNG-BNG" ? "Banque Nationale de Guinée" : selectedBank
     formData.set("bank", bankValue)
+
     if (selectedType === "BNG-CONFRERE" && selectedBankCode) {
-      formData.set("bankCode", selectedBankCode)
+      formData.set("codebank", selectedBankCode)
     }
 
     onSubmit(formData)
@@ -268,7 +269,7 @@ export default function BeneficiaryForm({
       </div>
 
       {selectedType === "BNG-CONFRERE" && selectedBankCode && (
-        <input type="hidden" name="codeBank" value={selectedBankCode} />
+        <input type="hidden" name="codebank" value={selectedBankCode} />
       )}
 
       {selectedType === "BNG-CONFRERE" && selectedBankCode && (
