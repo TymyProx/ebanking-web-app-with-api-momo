@@ -143,17 +143,21 @@ export default function BeneficiaryForm({
 
   useEffect(() => {
     if (successMessage && !isEdit) {
-      // Reset all form states
-      setSelectedType("")
-      setSelectedBank("")
-      setSelectedBankCode("")
-      setLocalSuccessMessage(null)
-      setLocalErrorMessage(null)
+      const timer = setTimeout(() => {
+        // Reset all form states
+        setSelectedType("")
+        setSelectedBank("")
+        setSelectedBankCode("")
+        setLocalSuccessMessage(null)
+        setLocalErrorMessage(null)
 
-      // Reset the form element
-      if (formRef.current) {
-        formRef.current.reset()
-      }
+        // Reset the form element
+        if (formRef.current) {
+          formRef.current.reset()
+        }
+      }, 100) // Small delay to ensure success message is shown first
+
+      return () => clearTimeout(timer)
     }
   }, [successMessage, isEdit])
 
