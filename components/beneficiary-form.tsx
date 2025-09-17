@@ -167,12 +167,7 @@ export default function BeneficiaryForm({
     const formData = new FormData(e.currentTarget)
 
     formData.set("type", selectedType)
-    const bankValue =
-      selectedType === "BNG-BNG"
-        ? "Banque Nationale de Guinée"
-        : selectedType === "BNG-CONFRERE" && selectedBankCode
-          ? selectedBankCode
-          : selectedBank
+    const bankValue = selectedType === "BNG-BNG" ? "Banque Nationale de Guinée" : selectedBank
     formData.set("bank", bankValue)
     if (selectedType === "BNG-CONFRERE" && selectedBankCode) {
       formData.set("bankCode", selectedBankCode)
