@@ -106,22 +106,22 @@ const navigationData = {
         },
       ],
     },
-    {
-      title: "Paiements",
-      icon: Receipt,
-      items: [
-        {
-          title: "Payer une facture",
-          url: "/payments/bills",
-          icon: Receipt,
-        },
-        {
-          title: "Paiements groupés",
-          url: "/payments/bulk",
-          icon: FileText,
-        },
-      ],
-    },
+    // {
+    //   title: "Paiements",
+    //   icon: Receipt,
+    //   items: [
+    //     {
+    //       title: "Payer une facture",
+    //       url: "/payments/bills",
+    //       icon: Receipt,
+    //     },
+    //     {
+    //       title: "Paiements groupés",
+    //       url: "/payments/bulk",
+    //       icon: FileText,
+    //     },
+    //   ],
+    // },
     {
       title: "Cartes",
       url: "/cartes",
@@ -167,40 +167,40 @@ const navigationData = {
       ],
     },
   ],
-  investments: [
-    {
-      title: "Investissements",
-      icon: TrendingUp,
-      items: [
-        {
-          title: "Mes investissements",
-          url: "/investments",
-          icon: TrendingUp,
-        },
-        {
-          title: "Nouveau placement",
-          url: "/investments/new",
-          icon: TrendingUp,
-        },
-      ],
-    },
-    {
-      title: "Budget",
-      icon: PiggyBank,
-      items: [
-        {
-          title: "Vue d'ensemble",
-          url: "/budget",
-          icon: BarChart3,
-        },
-        {
-          title: "Budget personnel",
-          url: "/budget/personal",
-          icon: PiggyBank,
-        },
-      ],
-    },
-  ],
+  // investments: [
+  //   {
+  //     title: "Investissements",
+  //     icon: TrendingUp,
+  //     items: [
+  //       {
+  //         title: "Mes investissements",
+  //         url: "/investments",
+  //         icon: TrendingUp,
+  //       },
+  //       {
+  //         title: "Nouveau placement",
+  //         url: "/investments/new",
+  //         icon: TrendingUp,
+  //       },
+  //     ],
+  //   },
+  //   {
+  //     title: "Budget",
+  //     icon: PiggyBank,
+  //     items: [
+  //       {
+  //         title: "Vue d'ensemble",
+  //         url: "/budget",
+  //         icon: BarChart3,
+  //       },
+  //       {
+  //         title: "Budget personnel",
+  //         url: "/budget/personal",
+  //         icon: PiggyBank,
+  //       },
+  //     ],
+  //   },
+  // ],
   support: [
     {
       title: "Support",
@@ -429,7 +429,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         </SidebarGroup>
 
         {/* Investissements */}
-        <SidebarGroup>
+        {/* <SidebarGroup>
           <SidebarGroupLabel>Investissements</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
@@ -462,7 +462,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               ))}
             </SidebarMenu>
           </SidebarGroupContent>
-        </SidebarGroup>
+        </SidebarGroup> */}
 
         {/* Support */}
         <SidebarGroup>
