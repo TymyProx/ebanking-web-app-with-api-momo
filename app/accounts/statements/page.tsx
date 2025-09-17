@@ -275,11 +275,16 @@ export default function StatementsPage() {
 
   const formatAmount = (amount: number, currency = "GNF") => {
     if (currency === "GNF") {
-      return new Intl.NumberFormat("fr-FR").format(amount)
+      return new Intl.NumberFormat("fr-FR", {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0,
+      })
+        .format(amount)
+        .replace(/\s/g, " ")
     }
     return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: currency,
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
     }).format(amount)
   }
 
@@ -780,7 +785,11 @@ export default function StatementsPage() {
         doc.text(new Date(txn.valueDate || txn.date).toLocaleDateString("fr-FR"), 20, yPos)
         doc.text((txn.description || "Transaction").substring(0, 25), 50, yPos)
         doc.setTextColor(isCredit ? 0 : 200, isCredit ? 150 : 0, 0)
-        doc.text(`${formatAmount(Math.abs(displayAmount))} GNF`, 140, yPos)
+        doc.text(
+          `${isCredit ? "+" : "-"}${formatAmount(Math.abs(displayAmount), selectedAccountData.currency)} ${selectedAccountData.currency}`,
+          140,
+          yPos,
+        )
         doc.setTextColor(40, 40, 40)
         doc.text(isCredit ? "CRÉDIT" : "DÉBIT", 170, yPos)
         yPos += 8
@@ -846,7 +855,7 @@ export default function StatementsPage() {
 
         csvContent += `${new Date(txn.valueDate || txn.date).toLocaleDateString("fr-FR")},`
         csvContent += `"${(txn.description || "Transaction").replace(/"/g, '""')}",`
-        csvContent += `${Math.abs(displayAmount)},`
+        csvContent += `"${isCredit ? "+" : "-"}${formatAmount(Math.abs(displayAmount), selectedAccountData.currency)} ${selectedAccountData.currency}",`
         csvContent += `${isCredit ? "CRÉDIT" : "DÉBIT"},`
         csvContent += `${txn.txnId || txn.id}\n`
       })
@@ -898,7 +907,7 @@ export default function StatementsPage() {
 
       content += `Date: ${new Date(txn.valueDate || txn.date).toLocaleDateString("fr-FR")}\n`
       content += `Description: ${txn.description || "Transaction"}\n`
-      content += `Montant: ${displayAmount > 0 ? "+" : ""}${formatAmount(displayAmount)} GNF\n`
+      content += `Montant: ${isCredit ? "+" : "-"}${formatAmount(Math.abs(displayAmount), selectedAccountData.currency)} ${selectedAccountData.currency}\n`
       content += `Type: ${isCredit ? "CRÉDIT" : "DÉBIT"}\n`
       content += `Référence: ${txn.txnId || txn.id}\n`
       content += `---\n\n`
