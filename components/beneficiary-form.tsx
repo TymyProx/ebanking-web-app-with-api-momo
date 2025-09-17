@@ -145,23 +145,23 @@ export default function BeneficiaryForm({
 
   useEffect(() => {
     if (successMessage && !isEdit) {
-      setSelectedType("")
-      setSelectedBank("")
-      setSelectedBankCode("")
-      setLocalSuccessMessage(null)
-      setLocalErrorMessage(null)
+      const timer = setTimeout(() => {
+        // Reset all form states
+        setSelectedType("")
+        setSelectedBank("")
+        setSelectedBankCode("")
+        setLocalSuccessMessage(null)
+        setLocalErrorMessage(null)
 
-      // Reset the form element
-      if (formRef.current) {
-        formRef.current.reset()
-      }
+        // Reset the form element
+        if (formRef.current) {
+          formRef.current.reset()
+        }
+      }, 100) // Small delay to ensure success message is shown first
 
-      // Call onSuccess callback to refresh the list
-      if (onSuccess) {
-        onSuccess()
-      }
+      return () => clearTimeout(timer)
     }
-  }, [successMessage, isEdit, onSuccess])
+  }, [successMessage, isEdit])
 
   const validateRIBField = async (account: string, type: string) => {
     if (!account || account.length <= 5) {
@@ -197,6 +197,9 @@ export default function BeneficiaryForm({
     }
 
     onSubmit(formData)
+    if (onSuccess) {
+      onSuccess()
+    }
   }
 
   const handleBankSelection = (bankName: string) => {
