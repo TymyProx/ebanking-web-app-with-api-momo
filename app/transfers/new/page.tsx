@@ -174,6 +174,15 @@ export default function NewTransferPage() {
       setTransferValidationError("Veuillez saisir un montant valide")
       return
     }
+
+    const debitAccount = accounts.find((acc) => acc.id === selectedAccount)
+    if (debitAccount && Number.parseFloat(amount) > debitAccount.balance) {
+      setTransferValidationError(
+        `Le montant saisi (${formatCurrency(Number.parseFloat(amount), debitAccount.currency)}) dépasse le solde disponible (${formatCurrency(debitAccount.balance, debitAccount.currency)})`,
+      )
+      return
+    }
+
     if (!motif.trim()) {
       setTransferValidationError("Veuillez saisir le motif du virement")
       return
