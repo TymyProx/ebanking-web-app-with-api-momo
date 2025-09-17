@@ -144,7 +144,11 @@ export default function StatementsPage() {
             status: acc.status,
             iban: `GN82 BNG 001 ${acc.accountNumber}`,
           }))
-          setAccounts(adaptedAccounts)
+
+          const activeAccounts = adaptedAccounts.filter(
+            (account) => account.status === "Actif" || account.status === "ACTIVE",
+          )
+          setAccounts(activeAccounts)
         }
       } catch (error) {
         console.error("Erreur lors du chargement des comptes:", error)
@@ -197,17 +201,17 @@ export default function StatementsPage() {
     }
   }, [preSelectedAccountId, accounts])
 
-const handlePeriodChange = (value: string) => {
-  setSelectedPeriod(value)
-  const period = predefinedPeriods.find((p) => p.value === value)
-  if (period && value !== "custom") {
-    setStartDate(period.startDate ?? "")
-    setEndDate(period.endDate ?? "")
-  } else if (value === "custom") {
-    setStartDate("")
-    setEndDate("")
+  const handlePeriodChange = (value: string) => {
+    setSelectedPeriod(value)
+    const period = predefinedPeriods.find((p) => p.value === value)
+    if (period && value !== "custom") {
+      setStartDate(period.startDate ?? "")
+      setEndDate(period.endDate ?? "")
+    } else if (value === "custom") {
+      setStartDate("")
+      setEndDate("")
+    }
   }
-}
   const handleGenerateStatement = async () => {
     if (!selectedAccount || !startDate || !endDate) {
       return
