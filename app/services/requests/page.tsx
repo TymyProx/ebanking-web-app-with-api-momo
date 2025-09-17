@@ -839,6 +839,51 @@ export default function ServiceRequestsPage() {
           <form onSubmit={handleCreditSubmit} className="space-y-4">
 
              <div>
+              <Label htmlFor="intitulecompte">Sélectionner un compte *</Label>
+              <Select
+                value={formData.intitulecompte || ""}
+                onValueChange={(value) => {
+                  const selectedAccount = accounts.find((acc) => acc.id === value)
+                  if (selectedAccount) {
+                    handleInputChange("intitulecompte", selectedAccount.name)
+                    handleInputChange("numcompte", selectedAccount.number)
+                  }
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder={isLoadingAccounts ? "Chargement..." : "Choisir un compte"} />
+                </SelectTrigger>
+                <SelectContent>
+                  {isLoadingAccounts ? (
+                    <SelectItem value="loading" disabled>
+                      Chargement des comptes...
+                    </SelectItem>
+                  ) : accounts.length === 0 ? (
+                    <SelectItem value="empty" disabled>
+                      Aucun compte courant trouvé
+                    </SelectItem>
+                  ) : (
+                    accounts.map((account) => (
+                      <SelectItem key={account.id} value={account.id}>
+                        <div className="flex flex-col">
+                          <span className="font-medium">{account.name}</span>
+                          <span className="text-sm text-gray-500">
+                            {account.number} •{" "}
+                            {new Intl.NumberFormat("fr-FR", {
+                              style: "currency",
+                              currency: account.currency === "GNF" ? "GNF" : account.currency,
+                              minimumFractionDigits: account.currency === "GNF" ? 0 : 2,
+                            }).format(account.balance)}
+                          </span>
+                        </div>
+                      </SelectItem>
+                    ))
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+
+             <div>
               <Label htmlFor="numcompte_credit">Numéro de compte *</Label>
               <Input
                 id="numcompte_credit"
@@ -864,19 +909,6 @@ export default function ServiceRequestsPage() {
                   <SelectItem value="auto">Crédit automobile</SelectItem>
                 </SelectContent>
               </Select>
-            </div>
-
-            <div>
-              <Label htmlFor="numcompte_credit">Numéro de compte *</Label>
-              <Input
-                id="numcompte_credit"
-                name="numcompte_credit"
-                type="text"
-                value={formData.numcompte || ""}
-                onChange={(e) => handleInputChange("numcompte", e.target.value)}
-                placeholder="Ex: 000123456789"
-                required
-              />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
