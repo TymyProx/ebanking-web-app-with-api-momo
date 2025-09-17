@@ -100,6 +100,7 @@ export async function addBeneficiary(prevState: ActionResult | null, formData: F
     const account = formData.get("account") as string
     const bank = formData.get("bank") as string
     const type = formData.get("type") as string
+    const bankname = formData.get("bankname") as string
 
     // Validation des données
     if (!name || !account || !type) {
@@ -139,8 +140,8 @@ export async function addBeneficiary(prevState: ActionResult | null, formData: F
         customerId: "CUSTOMER_ID_PLACEHOLDER", // À remplacer par l'ID du client connecté
         name: name,
         accountNumber: account,
-        bankCode: getBankCode(bank, type),
-        bankName: bank,
+        bankCode: bank,//getBankCode(bank, type),
+        bankName: bankname,
         status: 0,
         typeBeneficiary: type,
         favoris: false, // Default value as requested

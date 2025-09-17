@@ -16,6 +16,7 @@ interface BeneficiaryFormProps {
     name?: string
     account?: string
     bank?: string
+    bankname?: string
     type?: string
     iban?: string
     swiftCode?: string
@@ -249,9 +250,12 @@ export default function BeneficiaryForm({
       <div className="space-y-2">
         <Label htmlFor="bank">Banque *</Label>
         {selectedType === "BNG-BNG" ? (
-          <Input id="bank" name="bank" value="Banque Nationale de Guinée" readOnly className="bg-gray-50" />
+          <>
+          <Input id="bank" name="bankname" value="Banque Nationale de Guinée" readOnly className="bg-gray-50" />
+          <input type="hidden" name="codeBank" value="BQNGGNGNXXX"/>
+          </>
         ) : selectedType === "BNG-CONFRERE" ? (
-          <Select value={selectedBank} onValueChange={handleBankSelection} required>
+          <Select name="bankname" value={selectedBank} onValueChange={handleBankSelection} required>
             <SelectTrigger>
               <SelectValue placeholder={loadingBanks ? "Chargement..." : "Sélectionnez une banque"} />
             </SelectTrigger>
