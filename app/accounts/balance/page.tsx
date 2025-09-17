@@ -309,34 +309,20 @@ export default function BalancesPage() {
           <p className="text-gray-600">Vue d'ensemble de tous vos comptes</p>
         </div>
         <div className="flex items-center space-x-2">
-          <div className="flex items-center space-x-2">
-            <Filter className="h-4 w-4 text-gray-500" />
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-40">
-                <SelectValue placeholder="Filtrer par statut" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="ACTIVE">Actifs</SelectItem>
-                <SelectItem value="BLOCKED">Bloqués</SelectItem>
-                <SelectItem value="CLOSED">Fermés</SelectItem>
-                <SelectItem value="PENDING">En attente</SelectItem>
-                <SelectItem value="ALL">Tous</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+         
 
           <Dialog open={isNewAccountDialogOpen} onOpenChange={setIsNewAccountDialogOpen}>
             <DialogTrigger asChild>
               <Button className="bg-blue-600 hover:bg-blue-700">
                 <Plus className="h-4 w-4 mr-2" />
-                Ouvrir un nouveau compte
+                Demander d'un nouveau compte
               </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[500px]">
               <DialogHeader>
                 <DialogTitle>Demande d'ouverture de compte</DialogTitle>
                 <DialogDescription>
-                  Remplissez les informations ci-dessous pour ouvrir un nouveau compte bancaire.
+                  Remplissez les informations ci-dessous pour la demande d'ouverture d'un nouveau compte bancaire.
                 </DialogDescription>
               </DialogHeader>
 
@@ -432,6 +418,20 @@ export default function BalancesPage() {
               </form>
             </DialogContent>
           </Dialog>
+           <div className="flex items-center space-x-2">
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-40">
+                <SelectValue placeholder="Filtrer par statut" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ACTIVE">Actifs</SelectItem>
+                <SelectItem value="BLOCKED">Bloqués</SelectItem>
+                <SelectItem value="CLOSED">Fermés</SelectItem>
+                <SelectItem value="PENDING">En attente</SelectItem>
+                <SelectItem value="ALL">Tous</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
 
           <Button onClick={handleRefresh} disabled={isPending} variant="outline" size="sm">
             <RefreshCw className={`h-4 w-4 mr-2 ${isPending ? "animate-spin" : ""}`} />
