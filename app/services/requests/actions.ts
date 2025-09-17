@@ -6,7 +6,6 @@ import { cookies } from "next/headers"
 
 // URL de base de l’API et ID du tenant (identifiant du client dans l’API)
 
-
 const API_BASE_URL = process.env.API_BASE_URL || "https://192.168.1.200:8080/api"
 const tenantId = process.env.TENANT_ID || "aa1287f6-06af-45b7-a905-8c57363565c2"
 
@@ -17,6 +16,8 @@ export async function submitCreditRequest(formData: {
   loan_duration: string // Durée du crédit en mois
   loan_purpose: string // Objet / raison du crédit
   numcompte: string // Nouveau champ numéro de compte
+  typedemande: string // Type de demande
+  accountNumber: string // Numéro de compte (nouveau format)
 }) {
   try {
     // 🔑 Récupération du token JWT stocké dans les cookies
@@ -41,6 +42,8 @@ export async function submitCreditRequest(formData: {
           durationMonths: formData.loan_duration,
           purpose: formData.loan_purpose,
           numcompte: formData.numcompte, // Ajout du numéro de compte dans l'API
+          typedemande: formData.typedemande,
+          accountNumber: formData.accountNumber,
         },
       }),
     })
