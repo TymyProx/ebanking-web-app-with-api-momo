@@ -307,9 +307,16 @@ export default function BeneficiariesPage() {
             </DialogHeader>
 
             <BeneficiaryForm
-              successMessage={addState?.success}
+              successMessage={addState?.success ? "✅ Bénéficiaire ajouté avec succès." : undefined}
               errorMessage={addState?.error}
-              onMessageClear={() => setAddMessage(null)}
+              onMessageClear={() => {
+                setAddMessage(null)
+                // Reset the add state to clear the success message
+                if (addState?.success) {
+                  // Force a re-render by updating a local state
+                  setShowAddSuccess(false)
+                }
+              }}
               onSubmit={handleAddBeneficiary}
               onCancel={() => setIsAddDialogOpen(false)}
               isPending={isAddPending}
@@ -567,9 +574,15 @@ export default function BeneficiariesPage() {
               swiftCode: editingBeneficiary?.swiftCode,
               country: editingBeneficiary?.country,
             }}
-            successMessage={updateState?.success}
+            successMessage={updateState?.success ? "✅ Bénéficiaire modifié avec succès." : undefined}
             errorMessage={updateState?.error}
-            onMessageClear={() => setUpdateMessage(null)}
+            onMessageClear={() => {
+              setUpdateMessage(null)
+              // Reset the update state to clear the success message
+              if (updateState?.success) {
+                setShowUpdateSuccess(false)
+              }
+            }}
             onSubmit={handleEditBeneficiary}
             onCancel={() => {
               setIsEditDialogOpen(false)
