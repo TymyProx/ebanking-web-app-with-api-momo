@@ -94,7 +94,7 @@ export default function AccountDetailsPage() {
               currency: foundAccount.currency || "GNF",
               type: foundAccount.type, //"Courant" as const,
               status: foundAccount.status, //|| "Actif" as const,
-              iban: `GN82 BNG 001 ${foundAccount.accountNumber}`,
+              iban: `GN82BNG001${foundAccount.accountNumber}`,
               openingDate: foundAccount.createdAt || "2020-01-01",
               branch: "Agence Kaloum",
               overdraftLimit: foundAccount.currency === "GNF" ? 500000 : undefined,
@@ -365,17 +365,6 @@ export default function AccountDetailsPage() {
               </div>
               <div className="flex items-center space-x-2">
                 {getStatusBadge(account.status)}
-                <Select onValueChange={handleStatusChange} disabled={isPending}>
-                  <SelectTrigger className="w-auto">
-                    <Settings className="h-4 w-4" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="ACTIVE">Activer</SelectItem>
-                    <SelectItem value="BLOCKED">Bloquer</SelectItem>
-                    <SelectItem value="SUSPENDED">Suspendre</SelectItem>
-                    <SelectItem value="CLOSED">Fermer</SelectItem>
-                  </SelectContent>
-                </Select>
               </div>
             </CardTitle>
           </CardHeader>
