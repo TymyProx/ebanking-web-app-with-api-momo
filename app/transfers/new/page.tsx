@@ -664,7 +664,7 @@ export default function NewTransferPage() {
 
               {selectedAccountData && (
                 <div>
-                  <h4 className="font-medium text-sm text-gray-600 mb-2">Compte débiteur</h4>
+                  <h4 className="font-medium text-sm text-gray-600 mb-2">Compte à débiter</h4>
                   <div className="p-3 bg-gray-50 rounded-lg">
                     <p className="font-medium">{selectedAccountData.name}</p>
                     <p className="text-sm text-gray-600">{selectedAccountData.number}</p>
@@ -691,7 +691,7 @@ export default function NewTransferPage() {
 
               {transferType === "account-to-account" && selectedCreditAccountData && (
                 <div>
-                  <h4 className="font-medium text-sm text-gray-600 mb-2">Compte créditeur</h4>
+                  <h4 className="font-medium text-sm text-gray-600 mb-2">Compte à créditer</h4>
                   <div className="p-3 bg-gray-50 rounded-lg">
                     <p className="font-medium">{selectedCreditAccountData.name}</p>
                     <p className="text-sm text-gray-600">{selectedCreditAccountData.number}</p>
