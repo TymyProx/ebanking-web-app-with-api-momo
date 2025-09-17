@@ -143,11 +143,14 @@ export default function BeneficiaryForm({
 
   useEffect(() => {
     if (successMessage && !isEdit) {
+      // Reset all form states
       setSelectedType("")
       setSelectedBank("")
+      setSelectedBankCode("")
       setLocalSuccessMessage(null)
       setLocalErrorMessage(null)
 
+      // Reset the form element
       if (formRef.current) {
         formRef.current.reset()
       }

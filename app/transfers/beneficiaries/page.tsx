@@ -196,6 +196,7 @@ export default function BeneficiariesPage() {
       const result = await addAction(formData)
       if (result?.success) {
         setIsAddDialogOpen(false)
+        await loadBeneficiaries() // Refresh the list immediately
       } else {
         setAddMessage(result?.error || "Erreur lors de l'ajout du bénéficiaire.")
       }
@@ -217,6 +218,7 @@ export default function BeneficiariesPage() {
       if (result?.success) {
         setIsEditDialogOpen(false)
         setEditingBeneficiary(null)
+        await loadBeneficiaries() // Refresh the list immediately
       } else {
         setUpdateMessage(result?.error || "Erreur lors de la modification du bénéficiaire.")
       }
