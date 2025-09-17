@@ -558,9 +558,13 @@ export default function ServiceRequestsPage() {
     console.log("[v0] loan_amount:", formData.loan_amount)
     console.log("[v0] loan_duration:", formData.loan_duration)
     console.log("[v0] loan_purpose:", formData.loan_purpose)
+    console.log("[v0] credit_type:", formData.credit_type)
+    console.log("[v0] monthly_income:", formData.monthly_income)
+    console.log("[v0] employment_type:", formData.employment_type)
+    console.log("[v0] contact_phone:", formData.contact_phone)
+    console.log("[v0] contact_email:", formData.contact_email)
     console.log("[v0] terms:", formData.terms)
     console.log("[v0] numcompte:", formData.numcompte)
-    console.log("[v0] typedemande:", formData.typedemande)
     console.log("[v0] accountId:", formData.accountId)
 
     // Vérifier que tous les champs requis sont remplis
@@ -569,9 +573,13 @@ export default function ServiceRequestsPage() {
       !formData.loan_amount ||
       !formData.loan_duration ||
       !formData.loan_purpose ||
+      !formData.credit_type ||
+      !formData.monthly_income ||
+      !formData.employment_type ||
+      !formData.contact_phone ||
+      !formData.contact_email ||
       !formData.terms ||
       !formData.numcompte ||
-      !formData.typedemande ||
       !formData.accountId
     ) {
       console.log("[v0] Validation échouée - champs manquants")
@@ -589,15 +597,17 @@ export default function ServiceRequestsPage() {
         loan_duration: formData.loan_duration,
         loan_purpose: formData.loan_purpose,
         numcompte: formData.numcompte,
-        typedemande: formData.typedemande || "credit",
+        typedemande: formData.credit_type || "credit",
         accountNumber: formData.numcompte,
       }
 
+      console.log("[v0] Données envoyées à l'API:", creditData)
       const result = await submitCreditRequest(creditData)
       setCreditSubmitState({ success: true, reference: result.referenceId || "REF-" + Date.now() })
       // Réinitialiser le formulaire après succès
       setFormData({})
     } catch (error: any) {
+      console.log("[v0] Erreur lors de la soumission:", error.message)
       setCreditSubmitState({ error: error.message || "Une erreur s'est produite lors de la soumission" })
     } finally {
       setIsCreditSubmitting(false)
