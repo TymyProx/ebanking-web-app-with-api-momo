@@ -197,7 +197,7 @@ export default function BeneficiariesPage() {
       if (result?.success) {
         setIsAddDialogOpen(false)
         await loadBeneficiaries() // Force refresh the list immediately
-        resetForm() // Clear any form states
+        resetForm()
       } else {
         setAddMessage(result?.error || "Erreur lors de l'ajout du bénéficiaire.")
       }
@@ -220,7 +220,7 @@ export default function BeneficiariesPage() {
         setIsEditDialogOpen(false)
         setEditingBeneficiary(null)
         await loadBeneficiaries() // Force refresh the list immediately
-        resetForm() // Clear any form states
+        resetForm()
       } else {
         setUpdateMessage(result?.error || "Erreur lors de la modification du bénéficiaire.")
       }
@@ -290,6 +290,11 @@ export default function BeneficiariesPage() {
     }
   }
 
+  const handleFormSuccess = async () => {
+    console.log("[v0] Form submitted successfully, refreshing list...")
+    await loadBeneficiaries()
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -319,6 +324,7 @@ export default function BeneficiariesPage() {
               onSubmit={handleAddBeneficiary}
               onCancel={() => setIsAddDialogOpen(false)}
               isPending={isAddPending}
+              onSuccess={handleFormSuccess}
             />
           </DialogContent>
         </Dialog>
@@ -584,6 +590,7 @@ export default function BeneficiariesPage() {
               setEditingBeneficiary(null)
             }}
             isPending={isUpdatePending}
+            onSuccess={handleFormSuccess}
           />
         </DialogContent>
       </Dialog>

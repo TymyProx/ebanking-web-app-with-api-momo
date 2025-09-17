@@ -28,6 +28,7 @@ interface BeneficiaryFormProps {
   successMessage?: string
   errorMessage?: string
   onMessageClear?: () => void
+  onSuccess?: () => void
 }
 
 interface Bank {
@@ -46,6 +47,7 @@ export default function BeneficiaryForm({
   successMessage,
   errorMessage,
   onMessageClear,
+  onSuccess,
 }: BeneficiaryFormProps) {
   const [selectedType, setSelectedType] = useState(initialData.type || "")
   const [selectedBank, setSelectedBank] = useState(initialData.bank || "")
@@ -195,6 +197,9 @@ export default function BeneficiaryForm({
     }
 
     onSubmit(formData)
+    if (onSuccess) {
+      onSuccess()
+    }
   }
 
   const handleBankSelection = (bankName: string) => {
