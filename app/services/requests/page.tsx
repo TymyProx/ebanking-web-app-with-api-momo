@@ -837,8 +837,7 @@ export default function ServiceRequestsPage() {
       case "credit":
         return (
           <form onSubmit={handleCreditSubmit} className="space-y-4">
-
-             <div>
+            <div>
               <Label htmlFor="intitulecompte">Sélectionner un compte *</Label>
               <Select
                 value={formData.intitulecompte || ""}
@@ -883,7 +882,7 @@ export default function ServiceRequestsPage() {
               </Select>
             </div>
 
-             <div>
+            <div>
               <Label htmlFor="numcompte_credit">Numéro de compte *</Label>
               <Input
                 id="numcompte_credit"
@@ -893,6 +892,8 @@ export default function ServiceRequestsPage() {
                 onChange={(e) => handleInputChange("numcompte", e.target.value)}
                 placeholder="Ex: 000123456789"
                 required
+                readOnly
+                className="bg-gray-50"
               />
             </div>
 
