@@ -65,14 +65,18 @@ export default async function Dashboard() {
     return "+2.5%" // Placeholder - could be calculated from transaction history
   }
 
-  const formatTransaction = (transaction: any) => {
+  const formatTransaction = (transaction: any, accounts: any[]) => {
     const amount = Number.parseFloat(transaction.amount)
     const isCredit = transaction.txnType === "CREDIT"
+
+    // Find the account to get its currency
+    const account = accounts.find((acc) => acc.id === transaction.accountId || acc.accountId === transaction.accountId)
+    const currency = account?.currency || "GNF"
 
     return {
       type: isCredit ? "Virement reçu" : "Virement émis",
       from: transaction.description || "Transaction",
-      amount: `${isCredit ? "+" : "-"}${formatAmount(Math.abs(amount))} GNF`,
+      amount: `${isCredit ? "+" : "-"}${formatAmount(Math.abs(amount), currency)} ${currency}`,
       date: new Date(transaction.valueDate).toLocaleDateString("fr-FR", {
         day: "numeric",
         month: "short",
@@ -175,7 +179,7 @@ export default async function Dashboard() {
             <div className="space-y-4">
               {transactions.length > 0 ? (
                 transactions.slice(0, 3).map((transaction: any, index: number) => {
-                  const formattedTransaction = formatTransaction(transaction)
+                  const formattedTransaction = formatTransaction(transaction, accounts)
                   return (
                     <div
                       key={transaction.txnId || index}
