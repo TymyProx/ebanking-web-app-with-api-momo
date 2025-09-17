@@ -424,11 +424,11 @@ export default function BalancesPage() {
                 <SelectValue placeholder="Filtrer par statut" />
               </SelectTrigger>
               <SelectContent>
+                 <SelectItem value="ALL">Tous</SelectItem>
                 <SelectItem value="ACTIVE">Actifs</SelectItem>
-                <SelectItem value="BLOCKED">Bloqués</SelectItem>
-                <SelectItem value="CLOSED">Fermés</SelectItem>
+                {/* <SelectItem value="BLOCKED">Bloqués</SelectItem>
+                <SelectItem value="CLOSED">Fermés</SelectItem> */}
                 <SelectItem value="PENDING">En attente</SelectItem>
-                <SelectItem value="ALL">Tous</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -534,7 +534,7 @@ export default function BalancesPage() {
                           ? `${formatAmount(account.availableBalance, account.currency)} ${account.currency}`
                           : "••••••••"}
                       </p>
-                      <p className="text-xs text-muted-foreground font-mono">{account.number}</p>
+                      <p className="text-l text-muted-foreground font-bold">{account.number}</p>
                     </div>
 
                     <div className="flex items-center justify-between pt-2 border-t">
