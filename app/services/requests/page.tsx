@@ -932,10 +932,10 @@ export default function ServiceRequestsPage() {
                   <SelectValue placeholder="Sélectionnez le type de crédit" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="personal">Crédit personnel</SelectItem>
-                  <SelectItem value="mortgage">Crédit immobilier</SelectItem>
-                  <SelectItem value="student">Crédit étudiant</SelectItem>
-                  <SelectItem value="auto">Crédit automobile</SelectItem>
+                  <SelectItem value="personnel">Crédit personnel</SelectItem>
+                  <SelectItem value="immobilier">Crédit immobilier</SelectItem>
+                  <SelectItem value="étudiant">Crédit étudiant</SelectItem>
+                  <SelectItem value="automobile">Crédit automobile</SelectItem>
                 </SelectContent>
               </Select>
             </div>
