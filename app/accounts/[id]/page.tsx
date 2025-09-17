@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select"
 import {
   ArrowLeft,
   Download,
@@ -26,7 +25,6 @@ import {
   Shield,
   Info,
   RefreshCw,
-  Settings,
 } from "lucide-react"
 import { getAccounts } from "../actions"
 import { getTransactions } from "../../transfers/new/actions"
@@ -133,7 +131,7 @@ export default function AccountDetailsPage() {
                 type: isCredit ? "Virement reçu" : "Virement émis",
                 description: txn.description || "Transaction",
                 amount: isCredit ? Math.abs(amount) : -Math.abs(amount),
-                currency: "GNF", // Par défaut
+                currency: account?.currency || "GNF",
                 date: txn.valueDate || new Date().toISOString(),
                 status: txn.status, //txn.status === "COMPLETED" ? "Exécuté" : txn.status === "PENDING" ? "En attente" : "Rejeté",
                 counterparty: txn.beneficiaryId || "Système",
@@ -152,8 +150,10 @@ export default function AccountDetailsPage() {
       }
     }
 
-    loadTransactions()
-  }, [accountId])
+    if (account) {
+      loadTransactions()
+    }
+  }, [accountId, account])
 
   const handleRefreshTransactions = async () => {
     setIsLoadingTransactions(true)
@@ -172,7 +172,7 @@ export default function AccountDetailsPage() {
               type: isCredit ? "Virement reçu" : "Virement émis",
               description: txn.description || "Transaction",
               amount: isCredit ? Math.abs(amount) : -Math.abs(amount),
-              currency: "GNF",
+              currency: account?.currency || "GNF",
               date: txn.valueDate || new Date().toISOString(),
               status: txn.status, //txn.status === "COMPLETED" ? "Exécuté" : txn.status === "PENDING" ? "En attente" : "Rejeté",
               counterparty: txn.beneficiaryId || "Système",
@@ -363,9 +363,7 @@ export default function AccountDetailsPage() {
                   <p className="text-sm text-gray-500 font-mono">{account.number}</p>
                 </div>
               </div>
-              <div className="flex items-center space-x-2">
-                {getStatusBadge(account.status)}
-              </div>
+              <div className="flex items-center space-x-2">{getStatusBadge(account.status)}</div>
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
@@ -589,8 +587,9 @@ export default function AccountDetailsPage() {
                     <p
                       className={`text-lg font-semibold ${transaction.amount > 0 ? "text-green-600" : "text-red-600"}`}
                     >
-                      {transaction.amount > 0 ? "+" : ""}
-                      {formatAmount(transaction.amount, transaction.currency)} {transaction.currency}
+                      {transaction.amount > 0 ? "+" : "-"}
+                      {formatAmount(Math.abs(transaction.amount), account?.currency || transaction.currency)}{" "}
+                      {account?.currency || transaction.currency}
                     </p>
                     <p className="text-sm text-gray-500">{formatDateTime(transaction.date)}</p>
                     <Badge
