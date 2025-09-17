@@ -120,6 +120,14 @@ export default function NewTransferPage() {
     setTransferSubmitted(false)
   }
 
+  const handleDebitAccountChange = (accountId: string) => {
+    setSelectedAccount(accountId)
+    // Reset credit account selection when debit account changes to ensure currency compatibility
+    if (transferType === "account-to-account") {
+      setSelectedCreditAccount("")
+    }
+  }
+
   const handleAddBeneficiary = (formData: FormData) => {
     startTransition(() => {
       addBeneficiaryAction(formData)
@@ -150,6 +158,14 @@ export default function NewTransferPage() {
       }
       if (selectedAccount === selectedCreditAccount) {
         setTransferValidationError("Le compte débiteur et créditeur ne peuvent pas être identiques")
+        return
+      }
+      const debitAccount = accounts.find((acc) => acc.id === selectedAccount)
+      const creditAccount = accounts.find((acc) => acc.id === selectedCreditAccount)
+      if (debitAccount && creditAccount && debitAccount.currency !== creditAccount.currency) {
+        setTransferValidationError(
+          "Les virements compte à compte ne peuvent être effectués qu'entre des comptes de même devise",
+        )
         return
       }
     }
@@ -403,7 +419,7 @@ export default function NewTransferPage() {
             <CardContent className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="account">Sélectionner le compte à débiter *</Label>
-                <Select value={selectedAccount} onValueChange={setSelectedAccount}>
+                <Select value={selectedAccount} onValueChange={handleDebitAccountChange}>
                   <SelectTrigger>
                     <SelectValue placeholder={isLoadingAccounts ? "Chargement..." : "Choisir un compte"} />
                   </SelectTrigger>
@@ -461,7 +477,13 @@ export default function NewTransferPage() {
                         </SelectItem>
                       ) : (
                         accounts
-                          .filter((account) => account.id !== selectedAccount) // Exclure le compte débiteur
+                          .filter((account) => {
+                            const debitAccount = accounts.find((acc) => acc.id === selectedAccount)
+                            return (
+                              account.id !== selectedAccount &&
+                              (!debitAccount || account.currency === debitAccount.currency)
+                            )
+                          })
                           .map((account) => (
                             <SelectItem key={account.id} value={account.id}>
                               <div className="flex flex-col">
@@ -475,6 +497,11 @@ export default function NewTransferPage() {
                       )}
                     </SelectContent>
                   </Select>
+                  {selectedAccountData && transferType === "account-to-account" && (
+                    <p className="text-sm text-blue-600">
+                      Seuls les comptes en {selectedAccountData.currency} sont disponibles pour ce virement
+                    </p>
+                  )}
                 </div>
               </CardContent>
             </Card>
