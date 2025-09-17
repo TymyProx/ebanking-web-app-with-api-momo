@@ -390,10 +390,10 @@ export default function BeneficiariesPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Tous les bénéficiaires</SelectItem>
+                <SelectItem value="BNG-CONFRERE">Confrère(Guinée)</SelectItem>
                 <SelectItem value="favorites">Favoris</SelectItem>
                 <SelectItem value="inactive">Inactifs</SelectItem>
-                <SelectItem value="BNG-BNG">BNG vers BNG</SelectItem>
-                <SelectItem value="BNG-CONFRERE">BNG vers Confrère</SelectItem>
+                <SelectItem value="BNG-BNG">Interne</SelectItem>
                 <SelectItem value="BNG-INTERNATIONAL">International</SelectItem>
               </SelectContent>
             </Select>

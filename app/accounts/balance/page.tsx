@@ -377,13 +377,7 @@ export default function BalancesPage() {
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="initialDeposit">Dépôt initial (optionnel)</Label>
-                    <Input id="initialDeposit" name="initialDeposit" type="number" placeholder="0" min="0" />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
+                    <div className="space-y-2">
                   <Label htmlFor="purpose">Objectif du compte</Label>
                   <Select name="purpose" required>
                     <SelectTrigger>
@@ -397,6 +391,8 @@ export default function BalancesPage() {
                     </SelectContent>
                   </Select>
                 </div>
+                </div>
+
 
                 <div className="flex justify-end space-x-2 pt-4">
                   <Button
@@ -414,7 +410,7 @@ export default function BalancesPage() {
                         Création...
                       </>
                     ) : (
-                      "Créer le compte"
+                      "Envoyer la demande d'ouverture"
                     )}
                   </Button>
                 </div>
