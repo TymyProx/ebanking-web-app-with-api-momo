@@ -269,12 +269,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     <Sidebar variant="inset" {...props}>
       <SidebarHeader>
         <div className="flex items-center gap-2 px-4 py-2">
-          <div className="flex h-10 w-10 items-center justify-center">
-            <Image src="/images/logo-bng.png" alt="BNG Logo" width={40} height={40} className="object-contain" />
-          </div>
-          <div className="grid flex-1 text-left text-sm leading-tight">
-            <span className="truncate font-semibold">BNG eBanking</span>
-            <span className="truncate text-xs text-muted-foreground">Banque Nationale de Guinée</span>
+          <div className="flex h-120 w-120 items-center justify-center">
+            <Image src="/images/logo-bng.png" alt="BNG Logo" width={120} height={120} className="object-contain" />
           </div>
         </div>
       </SidebarHeader>

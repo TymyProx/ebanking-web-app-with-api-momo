@@ -59,12 +59,8 @@ export default function LoginPage() {
         <div className="text-center space-y-4">
           <div className="flex justify-center">
             <div className="bg-white p-3 rounded-2xl shadow-lg">
-              <Image src="/images/logo-bng.png" alt="BNG Logo" width={64} height={64} className="object-contain" />
+              <Image src="/images/logo-bng.png" alt="BNG Logo" width={264} height={264} className="object-contain" />
             </div>
-          </div>
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">BNG eBanking</h1>
-            <p className="text-gray-600 mt-2">Banque Nationale de Guinée</p>
           </div>
         </div>
 
