@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-
+import Image from "next/image"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Eye, EyeOff, Lock, Mail, AlertCircle, Building2 } from "lucide-react"
+import { Eye, EyeOff, Lock, Mail, AlertCircle } from "lucide-react"
 import AuthService from "@/lib/auth-service"
 
 export default function LoginPage() {
@@ -58,12 +58,12 @@ export default function LoginPage() {
         {/* Logo et titre */}
         <div className="text-center space-y-4">
           <div className="flex justify-center">
-            <div className="bg-blue-600 p-3 rounded-2xl">
-              <Building2 className="h-8 w-8 text-white" />
+            <div className="bg-white p-3 rounded-2xl shadow-lg">
+              <Image src="/images/logo-bng.png" alt="BNG Logo" width={64} height={64} className="object-contain" />
             </div>
           </div>
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Astra eBanking</h1>
+            <h1 className="text-3xl font-bold text-gray-900">BNG eBanking</h1>
             <p className="text-gray-600 mt-2">Banque Nationale de Guinée</p>
           </div>
         </div>

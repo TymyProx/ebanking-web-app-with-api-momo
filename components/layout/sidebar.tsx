@@ -9,8 +9,6 @@ import {
   CreditCard,
   ArrowLeftRight,
   Receipt,
-  TrendingUp,
-  PiggyBank,
   Settings,
   FileText,
   MessageSquare,
@@ -28,6 +26,7 @@ import {
   AlertTriangle,
   Sparkles,
 } from "lucide-react"
+import Image from "next/image"
 
 import {
   Sidebar,
@@ -270,12 +269,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     <Sidebar variant="inset" {...props}>
       <SidebarHeader>
         <div className="flex items-center gap-2 px-4 py-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-blue-600 to-blue-800 text-white font-bold text-sm">
-            A
+          <div className="flex h-10 w-10 items-center justify-center">
+            <Image src="/images/logo-bng.png" alt="BNG Logo" width={40} height={40} className="object-contain" />
           </div>
           <div className="grid flex-1 text-left text-sm leading-tight">
-            <span className="truncate font-semibold">Astra eBanking</span>
-            <span className="truncate text-xs text-muted-foreground">BNG Digital</span>
+            <span className="truncate font-semibold">BNG eBanking</span>
+            <span className="truncate text-xs text-muted-foreground">Banque Nationale de Guinée</span>
           </div>
         </div>
       </SidebarHeader>
