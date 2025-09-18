@@ -14,6 +14,7 @@ import {
   Wallet,
   PiggyBank,
   DollarSign,
+  TrendingUp,
 } from "lucide-react"
 import { getTransactions } from "@/app/transfers/new/actions"
 import { getAccounts } from "@/app/accounts/actions"
@@ -39,14 +40,14 @@ export default async function Dashboard() {
     switch (type) {
       case "CURRENT":
       case "Courant":
-        return <Wallet className="h-4 w-4 text-blue-600" />
+        return <Wallet className="h-5 w-5 text-primary" />
       case "SAVINGS":
       case "Épargne":
-        return <PiggyBank className="h-4 w-4 text-green-600" />
+        return <PiggyBank className="h-5 w-5 text-secondary" />
       case "Devise":
-        return <DollarSign className="h-4 w-4 text-purple-600" />
+        return <DollarSign className="h-5 w-5 text-accent" />
       default:
-        return <Eye className="h-4 w-4 text-muted-foreground" />
+        return <Eye className="h-5 w-5 text-muted-foreground" />
     }
   }
 
@@ -87,37 +88,45 @@ export default async function Dashboard() {
   }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Tableau de bord</h1>
-        <p className="text-gray-600">Bienvenue sur votre espace Astra eBanking</p>
+    <div className="space-y-8 fade-in">
+      <div className="space-y-2">
+        <h1 className="text-3xl font-heading font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+          Tableau de bord
+        </h1>
+        <p className="text-muted-foreground text-lg">Bienvenue sur votre espace Astra eBanking</p>
       </div>
 
-      {/* Soldes des comptes - US005 avec liens cliquables */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {accounts.length > 0 ? (
           accounts
             .filter((account) => account.status === "ACTIVE")
             .map((account) => (
               <Link key={account.id} href={`/accounts/${account.id}`}>
-                <Card className="hover:shadow-md transition-shadow cursor-pointer">
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <div className="flex items-center space-x-2">
-                      {getAccountIcon(account.type)}
-                      <CardTitle className="text-sm font-medium">{account.accountName}</CardTitle>
+                <Card className="card-hover border-0 shadow-md bg-gradient-to-br from-card to-card/50 backdrop-blur-sm">
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+                    <div className="flex items-center space-x-3">
+                      <div className="p-2 rounded-lg bg-primary/10">{getAccountIcon(account.type)}</div>
+                      <CardTitle className="text-base font-heading font-semibold">{account.accountName}</CardTitle>
                     </div>
-                    <Badge variant="secondary">{getAccountTypeDisplay(account.type)}</Badge>
+                    <Badge
+                      variant="secondary"
+                      className="bg-secondary/20 text-secondary-foreground border-secondary/30"
+                    >
+                      {getAccountTypeDisplay(account.type)}
+                    </Badge>
                   </CardHeader>
-                  <CardContent>
-                    <div className="space-y-2">
-                      {/* ✅ Solde affiché selon US005 */}
-                      <div className="text-2xl font-bold">
-                        {formatAmount(account.availableBalance, account.currency)} {account.currency}
-                      </div>
-                      <p className="text-xs text-muted-foreground font-mono">{account.accountNumber}</p>
-                      <div className="flex items-center pt-1">
-                        <ArrowUpRight className="h-4 w-4 text-green-600" />
-                        <span className="text-xs text-green-600 ml-1">{getAccountTrend()} ce mois</span>
+                  <CardContent className="space-y-4">
+                    <div className="text-2xl font-heading font-bold text-foreground">
+                      {formatAmount(account.availableBalance, account.currency)} {account.currency}
+                    </div>
+                    <p className="text-sm text-muted-foreground font-mono bg-muted/50 px-2 py-1 rounded">
+                      {account.accountNumber}
+                    </p>
+                    <div className="flex items-center justify-between pt-2">
+                      <div className="flex items-center space-x-1">
+                        <TrendingUp className="h-4 w-4 text-secondary" />
+                        <span className="text-sm text-secondary font-medium">{getAccountTrend()}</span>
+                        <span className="text-xs text-muted-foreground">ce mois</span>
                       </div>
                     </div>
                   </CardContent>
@@ -126,54 +135,62 @@ export default async function Dashboard() {
             ))
         ) : (
           <div className="col-span-full">
-            <Card>
-              <CardContent className="flex flex-col items-center justify-center py-12">
-                <Wallet className="h-12 w-12 text-gray-400 mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">Aucun compte</h3>
-                <p className="text-gray-600 text-center">Aucun compte n'est disponible pour le moment.</p>
+            <Card className="border-dashed border-2 border-muted">
+              <CardContent className="flex flex-col items-center justify-center py-16">
+                <div className="p-4 rounded-full bg-muted/50 mb-4">
+                  <Wallet className="h-8 w-8 text-muted-foreground" />
+                </div>
+                <h3 className="text-lg font-heading font-semibold mb-2">Aucun compte</h3>
+                <p className="text-muted-foreground text-center">Aucun compte n'est disponible pour le moment.</p>
               </CardContent>
             </Card>
           </div>
         )}
       </div>
 
-      {/* Actions rapides */}
-      <Card>
+      <Card className="border-0 shadow-lg bg-gradient-to-r from-primary/5 to-secondary/5">
         <CardHeader>
-          <CardTitle className="flex items-center">
-            <Plus className="h-5 w-5 mr-2" />
+          <CardTitle className="flex items-center font-heading text-xl">
+            <div className="p-2 rounded-lg bg-primary/10 mr-3">
+              <Plus className="h-5 w-5 text-primary" />
+            </div>
             Actions rapides
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <Link href="/transfers/new">
-              <Button className="h-16 flex flex-col space-y-2 w-full">
-                <Send className="h-6 w-6" />
-                <span>Nouveau virement</span>
+              <Button className="h-20 flex flex-col space-y-3 w-full btn-primary group">
+                <Send className="h-6 w-6 group-hover:scale-110 transition-transform" />
+                <span className="font-medium">Nouveau virement</span>
               </Button>
             </Link>
             <Link href="/payments/bills">
-              <Button variant="outline" className="h-16 flex flex-col space-y-2 bg-transparent w-full">
-                <Receipt className="h-6 w-6" />
-                <span>Payer une facture</span>
+              <Button
+                variant="outline"
+                className="h-20 flex flex-col space-y-3 w-full border-2 hover:bg-secondary/10 hover:border-secondary group bg-transparent"
+              >
+                <Receipt className="h-6 w-6 group-hover:scale-110 transition-transform" />
+                <span className="font-medium">Payer une facture</span>
               </Button>
             </Link>
             <Link href="/accounts/balance">
-              <Button variant="outline" className="h-16 flex flex-col space-y-2 bg-transparent w-full">
-                <Eye className="h-6 w-6" />
-                <span>Consulter soldes</span>
+              <Button
+                variant="outline"
+                className="h-20 flex flex-col space-y-3 w-full border-2 hover:bg-accent/10 hover:border-accent group bg-transparent"
+              >
+                <Eye className="h-6 w-6 group-hover:scale-110 transition-transform" />
+                <span className="font-medium">Consulter soldes</span>
               </Button>
             </Link>
           </div>
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Dernières transactions */}
-        <Card>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <Card className="border-0 shadow-lg">
           <CardHeader>
-            <CardTitle>Dernières transactions</CardTitle>
+            <CardTitle className="font-heading text-xl">Dernières transactions</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
@@ -183,36 +200,45 @@ export default async function Dashboard() {
                   return (
                     <div
                       key={transaction.txnId || index}
-                      className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                      className="flex items-center justify-between p-4 bg-gradient-to-r from-muted/50 to-muted/30 rounded-xl border border-border/50 hover:shadow-md transition-all duration-200"
                     >
-                      <div className="flex items-center space-x-3">
-                        <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                      <div className="flex items-center space-x-4">
+                        <div
+                          className={`w-12 h-12 rounded-full flex items-center justify-center ${
+                            formattedTransaction.amount.startsWith("+")
+                              ? "bg-secondary/20 text-secondary"
+                              : "bg-destructive/20 text-destructive"
+                          }`}
+                        >
                           {formattedTransaction.amount.startsWith("+") ? (
-                            <ArrowDownRight className="w-4 h-4 text-green-600" />
+                            <ArrowDownRight className="w-5 h-5" />
                           ) : (
-                            <ArrowUpRight className="w-4 h-4 text-red-600" />
+                            <ArrowUpRight className="w-5 h-5" />
                           )}
                         </div>
                         <div>
                           <p className="font-medium text-sm">{formattedTransaction.type}</p>
-                          <p className="text-xs text-gray-500">{formattedTransaction.from}</p>
+                          <p className="text-xs text-muted-foreground">{formattedTransaction.from}</p>
                         </div>
                       </div>
                       <div className="text-right">
                         <p
                           className={`font-semibold text-sm ${
-                            formattedTransaction.amount.startsWith("+") ? "text-green-600" : "text-red-600"
+                            formattedTransaction.amount.startsWith("+") ? "text-secondary" : "text-destructive"
                           }`}
                         >
                           {formattedTransaction.amount}
                         </p>
-                        <p className="text-xs text-gray-500">{formattedTransaction.date}</p>
+                        <p className="text-xs text-muted-foreground">{formattedTransaction.date}</p>
                       </div>
                     </div>
                   )
                 })
               ) : (
-                <div className="text-center py-8 text-gray-500">
+                <div className="text-center py-12 text-muted-foreground">
+                  <div className="p-4 rounded-full bg-muted/50 mx-auto mb-4 w-fit">
+                    <Receipt className="h-6 w-6" />
+                  </div>
                   <p className="text-sm">Aucune transaction récente</p>
                 </div>
               )}
@@ -220,47 +246,60 @@ export default async function Dashboard() {
           </CardContent>
         </Card>
 
-        {/* Alertes et notifications */}
-        <Card>
+        <Card className="border-0 shadow-lg">
           <CardHeader>
-            <CardTitle className="flex items-center">
-              <AlertCircle className="mr-2 h-5 w-5" />
+            <CardTitle className="flex items-center font-heading text-xl">
+              <div className="p-2 rounded-lg bg-accent/10 mr-3">
+                <AlertCircle className="h-5 w-5 text-accent" />
+              </div>
               Alertes & Notifications
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              <div className="flex items-start space-x-3 p-3 bg-yellow-50 rounded-lg border border-yellow-200">
-                <AlertCircle className="w-5 h-5 text-yellow-600 mt-0.5" />
-                <div>
-                  <p className="font-medium text-sm text-yellow-800">Virement programmé</p>
-                  <p className="text-xs text-yellow-700">
+              <div className="flex items-start space-x-4 p-4 bg-gradient-to-r from-accent/10 to-accent/5 rounded-xl border border-accent/20">
+                <div className="p-2 rounded-lg bg-accent/20">
+                  <AlertCircle className="w-4 h-4 text-accent" />
+                </div>
+                <div className="flex-1">
+                  <p className="font-medium text-sm text-accent-foreground">Virement programmé</p>
+                  <p className="text-xs text-muted-foreground mt-1">
                     Un virement de 150,000 GNF vers Fatoumata Diallo est programmé pour demain
                   </p>
-                  <Badge variant="outline" className="mt-1 text-xs">
+                  <Badge variant="outline" className="mt-2 text-xs bg-accent/10 border-accent/30">
                     <Calendar className="w-3 h-3 mr-1" />
                     14 Jan 2024
                   </Badge>
                 </div>
               </div>
 
-              <div className="flex items-start space-x-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
-                <AlertCircle className="w-5 h-5 text-blue-600 mt-0.5" />
-                <div>
-                  <p className="font-medium text-sm text-blue-800">Nouveau service</p>
-                  <p className="text-xs text-blue-700">Le service de paiement mobile est maintenant disponible</p>
-                  <Button size="sm" variant="outline" className="mt-2 text-xs bg-transparent">
+              <div className="flex items-start space-x-4 p-4 bg-gradient-to-r from-primary/10 to-primary/5 rounded-xl border border-primary/20">
+                <div className="p-2 rounded-lg bg-primary/20">
+                  <AlertCircle className="w-4 h-4 text-primary" />
+                </div>
+                <div className="flex-1">
+                  <p className="font-medium text-sm">Nouveau service</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Le service de paiement mobile est maintenant disponible
+                  </p>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="mt-2 text-xs border-primary/30 hover:bg-primary/10 bg-transparent"
+                  >
                     Découvrir
                   </Button>
                 </div>
               </div>
 
-              <div className="flex items-start space-x-3 p-3 bg-green-50 rounded-lg border border-green-200">
-                <AlertCircle className="w-5 h-5 text-green-600 mt-0.5" />
-                <div>
-                  <p className="font-medium text-sm text-green-800">✅ Solde : 2,400,000 GNF</p>
-                  <p className="text-xs text-green-700">Votre compte courant a été crédité avec succès</p>
-                  <Badge variant="outline" className="mt-1 text-xs bg-green-100">
+              <div className="flex items-start space-x-4 p-4 bg-gradient-to-r from-secondary/10 to-secondary/5 rounded-xl border border-secondary/20">
+                <div className="p-2 rounded-lg bg-secondary/20">
+                  <AlertCircle className="w-4 h-4 text-secondary" />
+                </div>
+                <div className="flex-1">
+                  <p className="font-medium text-sm text-secondary">✅ Solde : 2,400,000 GNF</p>
+                  <p className="text-xs text-muted-foreground mt-1">Votre compte courant a été crédité avec succès</p>
+                  <Badge variant="outline" className="mt-2 text-xs bg-secondary/10 border-secondary/30">
                     Mis à jour
                   </Badge>
                 </div>
