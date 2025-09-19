@@ -10,32 +10,32 @@
 
 @layer base {
   :root {
-    /* Updated color palette for modern e-banking design */
+    /* Updated color palette for modern gradient design */
     --background: 0 0% 100%;
-    --foreground: 220 13% 29%;
-    --card: 210 40% 98%;
-    --card-foreground: 220 13% 23%;
+    --foreground: 220 13% 13%;
+    --card: 0 0% 100%;
+    --card-foreground: 220 13% 13%;
     --popover: 0 0% 100%;
-    --popover-foreground: 220 13% 23%;
-    --primary: 188 78% 41%;
+    --popover-foreground: 220 13% 13%;
+    --primary: 123 38% 57%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 237 49% 64%;
-    --secondary-foreground: 0 0% 100%;
-    --muted: 210 40% 98%;
-    --muted-foreground: 220 13% 29%;
+    --secondary: 45 93% 47%;
+    --secondary-foreground: 220 13% 13%;
+    --muted: 210 40% 96%;
+    --muted-foreground: 220 13% 46%;
     --accent: 25 95% 53%;
     --accent-foreground: 0 0% 100%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
     --border: 220 13% 91%;
-    --input: 210 40% 98%;
-    --ring: 188 78% 41%;
-    --chart-1: 237 49% 64%;
-    --chart-2: 25 95% 53%;
-    --chart-3: 0 84% 60%;
-    --chart-4: 142 76% 36%;
-    --chart-5: 220 13% 29%;
-    --radius: 0.75rem;
+    --input: 210 40% 96%;
+    --ring: 25 95% 53%;
+    --chart-1: 123 38% 57%;
+    --chart-2: 45 93% 47%;
+    --chart-3: 25 95% 53%;
+    --chart-4: 0 84% 60%;
+    --chart-5: 217 91% 60%;
+    --radius: 1rem;
     --sidebar-background: 210 40% 98%;
     --sidebar-foreground: 220 13% 23%;
     --sidebar-primary: 0 0% 100%;
@@ -46,17 +46,16 @@
     --sidebar-ring: 188 78% 41%;
   }
   .dark {
-    /* Updated dark theme colors for consistency */
     --background: 220 13% 9%;
     --foreground: 210 40% 98%;
     --card: 220 13% 11%;
     --card-foreground: 210 40% 98%;
     --popover: 220 13% 11%;
     --popover-foreground: 210 40% 98%;
-    --primary: 188 78% 41%;
+    --primary: 123 38% 57%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 237 49% 64%;
-    --secondary-foreground: 0 0% 100%;
+    --secondary: 45 93% 47%;
+    --secondary-foreground: 220 13% 9%;
     --muted: 220 13% 15%;
     --muted-foreground: 220 13% 64%;
     --accent: 25 95% 53%;
@@ -65,12 +64,12 @@
     --destructive-foreground: 0 0% 100%;
     --border: 220 13% 15%;
     --input: 220 13% 15%;
-    --ring: 188 78% 41%;
-    --chart-1: 237 49% 64%;
-    --chart-2: 25 95% 53%;
-    --chart-3: 0 84% 60%;
-    --chart-4: 142 76% 36%;
-    --chart-5: 220 13% 64%;
+    --ring: 25 95% 53%;
+    --chart-1: 123 38% 57%;
+    --chart-2: 45 93% 47%;
+    --chart-3: 25 95% 53%;
+    --chart-4: 0 84% 60%;
+    --chart-5: 217 91% 60%;
     --sidebar-background: 220 13% 11%;
     --sidebar-foreground: 210 40% 98%;
     --sidebar-primary: 237 49% 64%;
@@ -137,17 +136,19 @@
     }
   }
 
-  /* Premium button styles */
-  .btn-primary {
-    @apply bg-primary text-primary-foreground hover:bg-primary/90 shadow-md hover:shadow-lg;
+  /* Premium gradient button styles */
+  .btn-gradient {
+    background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--secondary)));
+    @apply text-white shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-300;
   }
 
-  .btn-secondary {
-    @apply bg-secondary text-secondary-foreground hover:bg-secondary/90 shadow-sm hover:shadow-md;
+  .btn-gradient:hover {
+    background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--secondary)) 100%);
+    filter: brightness(1.1);
   }
 }
 
-/* Added custom scrollbar styling for modern look */
+/* Added custom scrollbar styling and gradient utilities */
 @layer utilities {
   .scrollbar-thin {
     scrollbar-width: thin;
@@ -170,5 +171,16 @@
 
   .scrollbar-thin::-webkit-scrollbar-thumb:hover {
     background: hsl(var(--foreground));
+  }
+
+  .gradient-bg {
+    background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--secondary)) 50%, hsl(var(--accent)) 100%);
+  }
+
+  .gradient-text {
+    background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--secondary)));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
   }
 }
