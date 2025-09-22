@@ -587,7 +587,7 @@ export default function StatementsPage() {
                   )}
                 </Button>
 
-                <Button variant="outline" disabled={!isFormValid}>
+                {/* <Button variant="outline" disabled={!isFormValid}>
                   <Eye className="w-4 h-4 mr-2" />
                   Aperçu
                 </Button>
@@ -595,7 +595,7 @@ export default function StatementsPage() {
                 <Button variant="outline" disabled={!isFormValid}>
                   <Printer className="w-4 h-4 mr-2" />
                   Imprimer
-                </Button>
+                </Button> */}
               </div>
 
               {/* Envoi par email */}

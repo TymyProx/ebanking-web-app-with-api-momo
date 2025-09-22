@@ -313,9 +313,9 @@ export default function BalancesPage() {
 
           <Dialog open={isNewAccountDialogOpen} onOpenChange={setIsNewAccountDialogOpen}>
             <DialogTrigger asChild>
-              <Button className="bg-blue-600 hover:bg-blue-700">
+              <Button>
                 <Plus className="h-4 w-4 mr-2" />
-                Demander d'un nouveau compte
+                Demande d'un nouveau compte
               </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[500px]">
