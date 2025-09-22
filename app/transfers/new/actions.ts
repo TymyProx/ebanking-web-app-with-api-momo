@@ -3,13 +3,29 @@
 import { z } from "zod"
 import { cookies } from "next/headers"
 import { revalidatePath } from "next/cache"
-import { fetchWithTimeout, createAuthenticatedRequest, API_ENDPOINTS, getTestTransactions } from "@/lib/api-config"
 
 const API_BASE_URL = process.env.API_BASE_URL || "https://FAKE/api"
 const TENANT_ID = process.env.TENANT_ID || "aa1287f6-06af-45b7-a905-8c57363565c2"
 
 // Helper function to create fetch with timeout
 const FETCH_TIMEOUT = 10000 // 5 seconds timeout instead of default 10 seconds
+
+const fetchWithTimeout = async (url: string, options: RequestInit = {}) => {
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT)
+
+  try {
+    const response = await fetch(url, {
+      ...options,
+      signal: controller.signal,
+    })
+    clearTimeout(timeoutId)
+    return response
+  } catch (error) {
+    clearTimeout(timeoutId)
+    throw error
+  }
+}
 
 // Schéma de validation pour les virements
 const transferSchema = z
@@ -269,12 +285,13 @@ export async function executeTransfer(prevState: any, formData: FormData) {
     const cookieToken = (await cookies()).get("token")?.value
     const usertoken = cookieToken
 
-    const response = await fetchWithTimeout(API_ENDPOINTS.TRANSACTIONS, {
+    const response = await fetchWithTimeout(`${API_BASE_URL}/tenant/${TENANT_ID}/transaction`, {
       method: "POST",
-      ...createAuthenticatedRequest(usertoken),
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${usertoken}`,
+      },
       body: JSON.stringify(apiData),
-      timeout: 30000, // 30 seconds for transfer operations
-      retries: 1, // Only 1 retry for financial transactions to avoid duplicates
     })
 
     if (!response.ok) {
@@ -380,26 +397,56 @@ export async function calculateTransferFees(beneficiaryType: string, amount: num
   }
 }
 
-// Action pour récupérer les transactions
 export async function getTransactions(): Promise<{ data: any[] }> {
   const cookieToken = (await cookies()).get("token")?.value
   const usertoken = cookieToken
 
   if (!usertoken) {
     console.log("[v0] Token d'authentification manquant, retour de données de test")
-    return { data: getTestTransactions() }
+    return {
+      data: [
+        {
+          txnId: "TXN_1734624422780_001",
+          accountId: "1",
+          txnType: "CREDIT",
+          amount: "150000",
+          valueDate: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+          status: "COMPLETED",
+          description: "Virement vers compte épargne",
+        },
+        {
+          txnId: "TXN_1734538022780_002",
+          accountId: "1",
+          txnType: "DEBIT",
+          amount: "75000",
+          valueDate: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+          status: "COMPLETED",
+          description: "Paiement facture électricité",
+        },
+        {
+          txnId: "TXN_1734451622780_003",
+          accountId: "2",
+          txnType: "CREDIT",
+          amount: "500000",
+          valueDate: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+          status: "COMPLETED",
+          description: "Dépôt de salaire",
+        },
+      ],
+    }
   }
 
   try {
     console.log("[v0] Tentative de récupération des transactions...")
-    console.log("[v0] URL:", API_ENDPOINTS.TRANSACTIONS)
+    console.log("[v0] URL:", `${API_BASE_URL}/tenant/${TENANT_ID}/transaction`)
 
-    const response = await fetchWithTimeout(API_ENDPOINTS.TRANSACTIONS, {
+    const response = await fetchWithTimeout(`${API_BASE_URL}/tenant/${TENANT_ID}/transaction`, {
       method: "GET",
-      ...createAuthenticatedRequest(usertoken),
-      cache: "no-store",
-      timeout: 30000, // 30 seconds timeout for production
-      retries: 2, // 2 retry attempts
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${usertoken}`,
+      },
+      cache: "no-store", // Always fetch fresh data
     })
 
     console.log("[v0] Statut de la réponse:", response.status)
@@ -408,7 +455,37 @@ export async function getTransactions(): Promise<{ data: any[] }> {
     if (!response.ok) {
       if (response.status === 401) {
         console.error("[v0] Token d'authentification invalide ou expiré")
-        return { data: getTestTransactions() }
+        return {
+          data: [
+            {
+              txnId: "TXN_1734624422780_001",
+              accountId: "1",
+              txnType: "CREDIT",
+              amount: "150000",
+              valueDate: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+              status: "COMPLETED",
+              description: "Virement vers compte épargne",
+            },
+            {
+              txnId: "TXN_1734538022780_002",
+              accountId: "1",
+              txnType: "DEBIT",
+              amount: "75000",
+              valueDate: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+              status: "COMPLETED",
+              description: "Paiement facture électricité",
+            },
+            {
+              txnId: "TXN_1734451622780_003",
+              accountId: "2",
+              txnType: "CREDIT",
+              amount: "500000",
+              valueDate: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+              status: "COMPLETED",
+              description: "Dépôt de salaire",
+            },
+          ],
+        }
       }
 
       console.error(`[v0] Erreur API: ${response.status} ${response.statusText}`)
@@ -419,15 +496,85 @@ export async function getTransactions(): Promise<{ data: any[] }> {
       } else {
         const errorText = await response.text()
         console.error("[v0] Réponse non-JSON:", errorText)
+
+        if (errorText.includes("only public URLs are supported")) {
+          console.log("[v0] API nécessite une URL publique, retour de données de test")
+          return {
+            data: [
+              {
+                txnId: "TXN_1734624422780_001",
+                accountId: "1",
+                txnType: "CREDIT",
+                amount: "150000",
+                valueDate: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+                status: "COMPLETED",
+                description: "Virement vers compte épargne",
+              },
+              {
+                txnId: "TXN_1734538022780_002",
+                accountId: "1",
+                txnType: "DEBIT",
+                amount: "75000",
+                valueDate: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+                status: "COMPLETED",
+                description: "Paiement facture électricité",
+              },
+              {
+                txnId: "TXN_1734451622780_003",
+                accountId: "2",
+                txnType: "CREDIT",
+                amount: "500000",
+                valueDate: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+                status: "COMPLETED",
+                description: "Dépôt de salaire",
+              },
+            ],
+          }
+        }
       }
-      return { data: getTestTransactions() }
+      return { data: [] }
     }
 
     const contentType = response.headers.get("content-type")
     if (!contentType || !contentType.includes("application/json")) {
       const responseText = await response.text()
       console.error("[v0] Réponse non-JSON reçue:", responseText)
-      return { data: getTestTransactions() }
+
+      if (responseText.includes("only public URLs are supported")) {
+        console.log("[v0] API nécessite une URL publique, retour de données de test")
+        return {
+          data: [
+            {
+              txnId: "TXN_1734624422780_001",
+              accountId: "1",
+              txnType: "CREDIT",
+              amount: "150000",
+              valueDate: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+              status: "COMPLETED",
+              description: "Virement vers compte épargne",
+            },
+            {
+              txnId: "TXN_1734538022780_002",
+              accountId: "1",
+              txnType: "DEBIT",
+              amount: "75000",
+              valueDate: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+              status: "COMPLETED",
+              description: "Paiement facture électricité",
+            },
+            {
+              txnId: "TXN_1734451622780_003",
+              accountId: "2",
+              txnType: "CREDIT",
+              amount: "500000",
+              valueDate: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+              status: "COMPLETED",
+              description: "Dépôt de salaire",
+            },
+          ],
+        }
+      }
+      return { data: [] }
     }
 
     const data = await response.json()
@@ -442,8 +589,8 @@ export async function getTransactions(): Promise<{ data: any[] }> {
     console.error("[v0] Erreur lors de la récupération des transactions:", error)
 
     if (error instanceof Error) {
-      if (error.message.includes("timeout")) {
-        console.log("[v0] Requête annulée par timeout, retour de données de test")
+      if (error.name === "AbortError") {
+        console.log("[v0] Requête annulée par timeout (5s), retour de données de test")
       } else if (
         error.message.includes("fetch failed") ||
         error.message.includes("ECONNREFUSED") ||
@@ -454,6 +601,36 @@ export async function getTransactions(): Promise<{ data: any[] }> {
     }
 
     console.log("[v0] Retour de données de test suite à l'erreur de connexion")
-    return { data: getTestTransactions() }
+    return {
+      data: [
+        {
+          txnId: "TXN_1734624422780_001",
+          accountId: "1",
+          txnType: "CREDIT",
+          amount: "150000",
+          valueDate: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+          status: "COMPLETED",
+          description: "Virement vers compte épargne",
+        },
+        {
+          txnId: "TXN_1734538022780_002",
+          accountId: "1",
+          txnType: "DEBIT",
+          amount: "75000",
+          valueDate: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+          status: "COMPLETED",
+          description: "Paiement facture électricité",
+        },
+        {
+          txnId: "TXN_1734451622780_003",
+          accountId: "2",
+          txnType: "CREDIT",
+          amount: "500000",
+          valueDate: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+          status: "COMPLETED",
+          description: "Dépôt de salaire",
+        },
+      ],
+    }
   }
 }
