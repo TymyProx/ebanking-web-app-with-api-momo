@@ -1,14 +1,16 @@
 import axios from "axios"
 import Cookies from "js-cookie"
+import { API_ENDPOINTS } from "@/lib/api-config"
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "https://192.168.1.200:8080/api"
 
 // Configuration de l'instance axios pour l'authentification
 const authAxios = axios.create({
-  baseURL: API_BASE_URL,
+  baseURL: API_ENDPOINTS.AUTH.SIGN_IN.replace("/auth/sign-in", ""),
   headers: {
     "Content-Type": "application/json",
   },
+  timeout: 30000, // 30 seconds timeout
 })
 
 // Intercepteur pour ajouter le token aux requêtes
@@ -72,10 +74,9 @@ export interface User {
 }
 
 export class AuthService {
-  // Méthode pour se connecter
   static async signIn(email: string, password: string, tenantId: string, invitationToken = "") {
     try {
-      const response = await authAxios.post("/auth/sign-in", {
+      const response = await authAxios.post(API_ENDPOINTS.AUTH.SIGN_IN, {
         email,
         password,
         tenantId,
@@ -96,13 +97,11 @@ export class AuthService {
     }
   }
 
-  // Méthode pour récupérer les informations utilisateur
   static async fetchMe(): Promise<User> {
     try {
-      const response = await authAxios.get("/auth/me")
+      const response = await authAxios.get(API_ENDPOINTS.AUTH.FETCH_ME)
       const userData = response.data
 
-      // Stocker les informations utilisateur
       localStorage.setItem("user", JSON.stringify(userData))
       console.log("Informations utilisateur récupérées et stockées:", userData)
       return userData
