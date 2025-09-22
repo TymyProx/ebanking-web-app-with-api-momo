@@ -385,7 +385,7 @@ export default function CardsPage() {
 
               {/* Card Info */}
               <CardContent className="p-4 space-y-4">
-                <div className="grid grid-cols-2 gap-4 text-sm">
+                {/* <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
                     <div className="text-gray-500">Plafond jour</div>
                     <div className="font-medium">{formatAmount(card.dailyLimit || 0)} GNF</div>
@@ -399,10 +399,10 @@ export default function CardsPage() {
                 <div className="text-sm">
                   <div className="text-gray-500">Dernière transaction</div>
                   <div className="font-medium">{card.lastTransaction}</div>
-                </div>
+                </div> */}
 
                 {/* Action Buttons */}
-                <div className="flex gap-2">
+                {/* <div className="flex gap-2">
                   {card.status?.toUpperCase() === "ACTIVE" ? (
                     <Button variant="outline" size="sm" className="flex-1 bg-transparent">
                       <Lock className="w-4 h-4 mr-1" />
@@ -516,7 +516,7 @@ export default function CardsPage() {
                       </Tabs>
                     </DialogContent>
                   </Dialog>
-                </div>
+                </div> */}
               </CardContent>
             </Card>
           ))}

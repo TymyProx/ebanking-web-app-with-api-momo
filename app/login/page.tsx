@@ -63,12 +63,12 @@ export default function LoginPage() {
       <div className="w-full max-w-md space-y-8 relative z-10 fade-in">
         <div className="text-center space-y-6">
           <div className="flex justify-center">
-            <div className="bg-white/95 backdrop-blur-sm p-4 rounded-3xl shadow-2xl border border-white/20">
+            <div className="backdrop-blur-sm p-4 rounded-3xl ">
               <Image src="/images/logo-bng.png" alt="BNG Logo" width={200} height={200} className="object-contain" />
             </div>
           </div>
           <div className="space-y-2">
-            <h1 className="text-3xl font-bold gradient-text">Bienvenue</h1>
+          <h1 className="text-3xl font-bold text-white">Bienvenue</h1>
             <p className="text-white/80 text-lg">Votre banque digitale nouvelle génération</p>
           </div>
         </div>
@@ -188,17 +188,6 @@ export default function LoginPage() {
             <Button variant="link" className="text-white hover:text-white/80 p-0 font-medium">
               Contactez votre conseiller
             </Button>
-          </div>
-
-          <div className="flex flex-col items-center space-y-3">
-            <div className="flex items-center space-x-2 text-white/70">
-              <Shield className="h-4 w-4" />
-              <span className="text-sm">Connexion sécurisée SSL 256 bits</span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-              <span className="text-sm text-white/60">Serveurs opérationnels</span>
-            </div>
           </div>
         </div>
       </div>
