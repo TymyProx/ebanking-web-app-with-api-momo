@@ -91,31 +91,6 @@ function getBeneficiaryType(bankCode: string): "BNG-BNG" | "BNG-CONFRERE" | "BNG
   }
 }
 
-export async function checkAccountUniqueness(
-  accountNumber: string,
-  excludeId?: string,
-): Promise<{ exists: boolean; message?: string }> {
-  try {
-    const beneficiaries = await getBeneficiaries()
-
-    const existingBeneficiary = beneficiaries.find(
-      (b) => b.accountNumber === accountNumber && (!excludeId || b.id !== excludeId),
-    )
-
-    if (existingBeneficiary) {
-      return {
-        exists: true,
-        message: "Ce numéro de compte est déjà enregistré",
-      }
-    }
-
-    return { exists: false }
-  } catch (error) {
-    console.error("Erreur lors de la vérification d'unicité:", error)
-    return { exists: false }
-  }
-}
-
 export async function addBeneficiary(prevState: ActionResult | null, formData: FormData): Promise<ActionResult> {
   try {
     // Simulation d'un délai de traitement
@@ -132,14 +107,6 @@ export async function addBeneficiary(prevState: ActionResult | null, formData: F
       return {
         success: false,
         error: "Tous les champs obligatoires doivent être remplis",
-      }
-    }
-
-    const uniquenessCheck = await checkAccountUniqueness(account)
-    if (uniquenessCheck.exists) {
-      return {
-        success: false,
-        error: uniquenessCheck.message || "Ce numéro de compte existe déjà",
       }
     }
 
@@ -173,7 +140,7 @@ export async function addBeneficiary(prevState: ActionResult | null, formData: F
         customerId: "CUSTOMER_ID_PLACEHOLDER", // À remplacer par l'ID du client connecté
         name: name,
         accountNumber: account,
-        bankCode: bank, //getBankCode(bank, type),
+        bankCode: bank,//getBankCode(bank, type),
         bankName: bankname,
         status: 0,
         typeBeneficiary: type,
@@ -218,6 +185,64 @@ export async function addBeneficiary(prevState: ActionResult | null, formData: F
   }
 }
 
+function getBankCode(bankName: string, type: string): string {
+  const bankCodes: Record<string, string> = {
+    "Banque Nationale de Guinée": "bng",
+    BICIGUI: "bici",
+    "Société Générale de Banques en Guinée": "sgbg",
+    "United Bank for Africa": "uba",
+    "Ecobank Guinée": "eco",
+    "VISTA BANK": "vista",
+    "BNP Paribas": "bnpp",
+    "Société Générale": "sg",
+    "Crédit Agricole": "ca",
+    HSBC: "hsbc",
+    "Deutsche Bank": "db",
+  }
+
+  return bankCodes[bankName] || bankName.substring(0, 4).toLowerCase()
+}
+
+export async function validateRIB(account: string, type: string): Promise<{ isValid: boolean; message: string }> {
+  try {
+    // Simulation d'un délai de validation
+    await new Promise((resolve) => setTimeout(resolve, 500))
+
+    // Validation selon le type
+    switch (type) {
+      case "BNG-BNG":
+        const bngPattern = /^\d{4}-\d{6}-\d{2}$/
+        if (bngPattern.test(account)) {
+          return { isValid: true, message: "Numéro de compte BNG valide" }
+        } else {
+          return { isValid: false, message: "Format invalide. Utilisez: 0001-234567-89" }
+        }
+
+      case "BNG-CONFRERE":
+        const confrerePattern = /^\d{4}-\d{6}-\d{2}$/
+        if (confrerePattern.test(account)) {
+          return { isValid: true, message: "Numéro de compte confrère valide" }
+        } else {
+          return { isValid: false, message: "Format invalide. Utilisez: 0002-234567-89" }
+        }
+
+      case "BNG-INTERNATIONAL":
+        const cleanedAccount = account.replace(/\s/g, "")
+        const ibanPattern = /^[A-Z]{2}\d{2}[A-Z0-9]{4,30}$/
+        if (cleanedAccount.length >= 15 && cleanedAccount.length <= 34 && ibanPattern.test(cleanedAccount)) {
+          return { isValid: true, message: "IBAN valide" }
+        } else {
+          return { isValid: false, message: "Format IBAN invalide. Ex: FR7612345678901234567890 (15-34 caractères)" }
+        }
+
+      default:
+        return { isValid: false, message: "Type de compte non reconnu" }
+    }
+  } catch (error) {
+    return { isValid: false, message: "Erreur lors de la validation" }
+  }
+}
+
 export async function updateBeneficiary(prevState: ActionResult | null, formData: FormData): Promise<ActionResult> {
   try {
     // Simulation d'un délai de traitement
@@ -234,14 +259,6 @@ export async function updateBeneficiary(prevState: ActionResult | null, formData
       return {
         success: false,
         error: "Tous les champs obligatoires doivent être remplis",
-      }
-    }
-
-    const uniquenessCheck = await checkAccountUniqueness(account, id)
-    if (uniquenessCheck.exists) {
-      return {
-        success: false,
-        error: uniquenessCheck.message || "Ce numéro de compte existe déjà",
       }
     }
 
@@ -593,63 +610,5 @@ export async function reactivateBeneficiary(prevState: ActionResult | null, form
       success: false,
       error: error instanceof Error ? error.message : "Une erreur inattendue s'est produite",
     }
-  }
-}
-
-function getBankCode(bankName: string, type: string): string {
-  const bankCodes: Record<string, string> = {
-    "Banque Nationale de Guinée": "bng",
-    BICIGUI: "bici",
-    "Société Générale de Banques en Guinée": "sgbg",
-    "United Bank for Africa": "uba",
-    "Ecobank Guinée": "eco",
-    "VISTA BANK": "vista",
-    "BNP Paribas": "bnpp",
-    "Société Générale": "sg",
-    "Crédit Agricole": "ca",
-    HSBC: "hsbc",
-    "Deutsche Bank": "db",
-  }
-
-  return bankCodes[bankName] || bankName.substring(0, 4).toLowerCase()
-}
-
-export async function validateRIB(account: string, type: string): Promise<{ isValid: boolean; message: string }> {
-  try {
-    // Simulation d'un délai de validation
-    await new Promise((resolve) => setTimeout(resolve, 500))
-
-    // Validation selon le type
-    switch (type) {
-      case "BNG-BNG":
-        const bngPattern = /^\d{4}-\d{6}-\d{2}$/
-        if (bngPattern.test(account)) {
-          return { isValid: true, message: "Numéro de compte BNG valide" }
-        } else {
-          return { isValid: false, message: "Format invalide. Utilisez: 0001-234567-89" }
-        }
-
-      case "BNG-CONFRERE":
-        const confrerePattern = /^\d{4}-\d{6}-\d{2}$/
-        if (confrerePattern.test(account)) {
-          return { isValid: true, message: "Numéro de compte confrère valide" }
-        } else {
-          return { isValid: false, message: "Format invalide. Utilisez: 0002-234567-89" }
-        }
-
-      case "BNG-INTERNATIONAL":
-        const cleanedAccount = account.replace(/\s/g, "")
-        const ibanPattern = /^[A-Z]{2}\d{2}[A-Z0-9]{4,30}$/
-        if (cleanedAccount.length >= 15 && cleanedAccount.length <= 34 && ibanPattern.test(cleanedAccount)) {
-          return { isValid: true, message: "IBAN valide" }
-        } else {
-          return { isValid: false, message: "Format IBAN invalide. Ex: FR7612345678901234567890 (15-34 caractères)" }
-        }
-
-      default:
-        return { isValid: false, message: "Type de compte non reconnu" }
-    }
-  } catch (error) {
-    return { isValid: false, message: "Erreur lors de la validation" }
   }
 }
