@@ -104,13 +104,13 @@ export default function BeneficiaryForm({
       const accountExists = await checkAccountExists(account)
       if (accountExists) {
         setAccountValidationError("Ce numéro de compte est déjà enregistré")
-        setIsValidatingAccount(false)
-        return
-      }
+      } else {
+        setAccountValidationError(null)
 
-      const isValid = account.length >= 10
-      if (!isValid) {
-        setAccountValidationError("Format de compte invalide")
+        const isValid = account.length >= 10
+        if (!isValid) {
+          setAccountValidationError("Format de compte invalide")
+        }
       }
     } catch (error) {
       setAccountValidationError("Erreur lors de la validation")
@@ -224,10 +224,12 @@ export default function BeneficiaryForm({
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
 
-    if (accountValidationError) {
+    if (accountValidationError || isValidatingAccount) {
       setLocalErrorMessage("Veuillez corriger les erreurs avant de soumettre le formulaire")
       return
     }
+
+    setLocalErrorMessage(null)
 
     const formData = new FormData(e.currentTarget)
 
