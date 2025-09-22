@@ -4,11 +4,11 @@ import { z } from "zod"
 import { cookies } from "next/headers"
 import { revalidatePath } from "next/cache"
 
-const API_BASE_URL = process.env.API_BASE_URL || process.env.NEXT_PUBLIC_API_BASE_URL || "https://192.168.1.200:8080/api"
+const API_BASE_URL = process.env.API_BASE_URL || "https://FAKE/api"
 const TENANT_ID = process.env.TENANT_ID || "aa1287f6-06af-45b7-a905-8c57363565c2"
 
 // Helper function to create fetch with timeout
-const FETCH_TIMEOUT = 5000 // 5 seconds timeout instead of default 10 seconds
+const FETCH_TIMEOUT = 10000 // 5 seconds timeout instead of default 10 seconds
 
 const fetchWithTimeout = async (url: string, options: RequestInit = {}) => {
   const controller = new AbortController()
