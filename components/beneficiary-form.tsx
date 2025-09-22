@@ -56,7 +56,68 @@ export default function BeneficiaryForm({
   const [loadingBanks, setLoadingBanks] = useState(false)
   const [localSuccessMessage, setLocalSuccessMessage] = useState<string | null>(null)
   const [localErrorMessage, setLocalErrorMessage] = useState<string | null>(null)
+  const [accountValidationError, setAccountValidationError] = useState<string | null>(null)
+  const [isValidatingAccount, setIsValidatingAccount] = useState(false)
   const formRef = useRef<HTMLFormElement>(null)
+
+  const checkAccountExists = async (accountNumber: string): Promise<boolean> => {
+    try {
+      const API_BASE_URL =
+        process.env.API_BASE_URL || process.env.NEXT_PUBLIC_API_BASE_URL || "https://192.168.1.200:8080/api"
+      const tenantId = process.env.TENANT_ID || "aa1287f6-06af-45b7-a905-8c57363565c2"
+      const token = localStorage.getItem("token")
+
+      const response = await fetch(`${API_BASE_URL}/tenant/${tenantId}/beneficiaire`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        const beneficiaries = data.rows || []
+
+        const existingBeneficiary = beneficiaries.find(
+          (b: any) => b.accountNumber === accountNumber && (!isEdit || b.accountNumber !== initialData.account),
+        )
+
+        return !!existingBeneficiary
+      }
+      return false
+    } catch (error) {
+      console.error("Erreur lors de la vérification du compte:", error)
+      return false
+    }
+  }
+
+  const validateAccountField = async (account: string, type: string) => {
+    if (!account || account.length <= 5) {
+      setAccountValidationError(null)
+      return
+    }
+
+    setIsValidatingAccount(true)
+    setAccountValidationError(null)
+
+    try {
+      const accountExists = await checkAccountExists(account)
+      if (accountExists) {
+        setAccountValidationError("Ce numéro de compte est déjà enregistré")
+        setIsValidatingAccount(false)
+        return
+      }
+
+      const isValid = account.length >= 10
+      if (!isValid) {
+        setAccountValidationError("Format de compte invalide")
+      }
+    } catch (error) {
+      setAccountValidationError("Erreur lors de la validation")
+    } finally {
+      setIsValidatingAccount(false)
+    }
+  }
 
   const loadBanks = async () => {
     try {
@@ -146,46 +207,37 @@ export default function BeneficiaryForm({
   useEffect(() => {
     if (successMessage && !isEdit) {
       const timer = setTimeout(() => {
-        // Reset all form states
         setSelectedType("")
         setSelectedBank("")
         setSelectedBankCode("")
         setLocalSuccessMessage(null)
         setLocalErrorMessage(null)
 
-        // Reset the form element
         if (formRef.current) {
           formRef.current.reset()
         }
-      }, 100) // Small delay to ensure success message is shown first
-
+      }, 100)
       return () => clearTimeout(timer)
     }
   }, [successMessage, isEdit])
 
-  const validateRIBField = async (account: string, type: string) => {
-    if (!account || account.length <= 5) {
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+
+    if (accountValidationError) {
+      setLocalErrorMessage("Veuillez corriger les erreurs avant de soumettre le formulaire")
       return
     }
 
-    const isValid = account.length >= 10
-    console.log(isValid ? "RIB valide" : "RIB invalide")
-  }
-
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
     const formData = new FormData(e.currentTarget)
 
     formData.set("type", selectedType)
 
     if (selectedType === "BNG-BNG") {
-      // Pour le type interne: bank = GNXXX, bankname = Banque Nationale de Guinée
       formData.set("bank", "GNXXX")
       formData.set("bankname", "Banque Nationale de Guinée")
     } else if (selectedType === "BNG-CONFRERE") {
-      // bank = code banque (valeur du champ grisé)
       formData.set("bank", selectedBankCode)
-      // bankname = nom de la banque sélectionnée
       formData.set("bankname", selectedBank)
     } else {
       const bankValue = selectedBank
@@ -257,10 +309,13 @@ export default function BeneficiaryForm({
           id="account"
           name="account"
           defaultValue={initialData.account || ""}
-          onChange={(e) => validateRIBField(e.target.value, selectedType)}
+          onChange={(e) => validateAccountField(e.target.value, selectedType)}
           placeholder={selectedType === "BNG-INTERNATIONAL" ? "FR76 1234 5678 9012 3456 78" : "0001-234567-89"}
           required
+          className={accountValidationError ? "border-red-500" : ""}
         />
+        {isValidatingAccount && <p className="text-sm text-blue-600">Vérification en cours...</p>}
+        {accountValidationError && <p className="text-sm text-red-600">{accountValidationError}</p>}
       </div>
 
       <div className="space-y-2">
@@ -316,7 +371,7 @@ export default function BeneficiaryForm({
         <Button type="button" variant="outline" onClick={onCancel} disabled={isPending}>
           Annuler
         </Button>
-        <Button type="submit" disabled={isPending}>
+        <Button type="submit" disabled={isPending || !!accountValidationError || isValidatingAccount}>
           {isPending ? "Traitement..." : isEdit ? "Modifier" : "Ajouter"}
         </Button>
       </div>
