@@ -307,7 +307,7 @@ export default function CardsPage() {
           <p className="text-gray-600">Gérez vos cartes bancaires et leurs paramètres</p>
         </div>
         <div className="flex gap-2">
-          <Button onClick={() => setShowNewCardForm(true)} className="bg-blue-600 hover:bg-blue-700">
+          <Button onClick={() => setShowNewCardForm(true)}>
             <Plus className="w-4 h-4 mr-2" />
             Nouvelle carte
           </Button>
