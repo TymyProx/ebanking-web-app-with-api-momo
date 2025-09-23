@@ -55,51 +55,12 @@ export async function submitCreditRequest(formData: {
       throw new Error(errorData.message || "Erreur lors de la soumission")
     }
 
-    const { serviceType, accountId, formData: formDataString } = validatedFields.data
-    const parsedFormData = JSON.parse(formDataString)
-
-    // Validate required fields based on service type
-    const validationResult = validateServiceSpecificFields(serviceType, parsedFormData)
-    if (!validationResult.success) {
-      return {
-        success: false,
-        error: validationResult.error,
-      }
-    }
-
-    // Simulate random error (5% chance)
-    if (Math.random() < 0.05) {
-      return {
-        success: false,
-        error: "Erreur technique temporaire. Veuillez réessayer dans quelques minutes.",
-      }
-    }
-
-    // Generate request reference
-    const reference = generateRequestReference(serviceType)
-
-    // Log the request for audit
-    //console.log(
-    //   `[AUDIT] Nouvelle demande de service - Type: ${serviceType}, Compte: ${accountId}, Référence: ${reference}`,
-    // )
-    //console.log(`[AUDIT] Données de la demande:`, parsedFormData)
-
-    // Simulate business logic
-    const processingInfo = getProcessingInfo(serviceType)
-
-    return {
-      success: true,
-      reference,
-      serviceType,
-      processingTime: processingInfo.processingTime,
-      nextSteps: processingInfo.nextSteps,
-    }
-  } catch (error) {
-    console.error("Erreur lors de la soumission de la demande:", error)
-    return {
-      success: false,
-      error: "Une erreur inattendue s'est produite. Veuillez réessayer.",
-    }
+    // Récupération des données de la réponse (JSON)
+    const data = await response.json()
+    return data
+  } catch (error: any) {
+    // Gestion d’erreur (propagation du message d’erreur)
+    throw new Error(error.message)
   }
 }
 
