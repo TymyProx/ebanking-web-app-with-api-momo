@@ -215,8 +215,8 @@ export async function addBudgetExpense(prevState: any, formData: FormData) {
 
     // Log d'audit
     //console.log(
-      `[AUDIT] Dépense ajoutée - Catégorie: ${validatedFields.category} - Montant: ${validatedFields.amount} GNF - Client: ${validatedFields.fullName}`,
-    )
+    //   `[AUDIT] Dépense ajoutée - Catégorie: ${validatedFields.category} - Montant: ${validatedFields.amount} GNF - Client: ${validatedFields.fullName}`,
+    // )
 
     return {
       success: true,
@@ -283,8 +283,8 @@ export async function updateBudgetSettings(formData: FormData) {
 
     // Log d'audit
     //console.log(
-      `[AUDIT] Paramètres budgétaires mis à jour - Client: ${validatedFields.fullName} à ${new Date().toISOString()}`,
-    )
+    //   `[AUDIT] Paramètres budgétaires mis à jour - Client: ${validatedFields.fullName} à ${new Date().toISOString()}`,
+    // )
 
     return {
       success: true,
@@ -407,8 +407,8 @@ export async function exportBudgetReport(format: string, period: string) {
 
     // Log d'audit
     //console.log(
-      `[AUDIT] Export rapport budgétaire - Format: ${format} - Période: ${period} - Client: USER123 à ${new Date().toISOString()}`,
-    )
+    //   `[AUDIT] Export rapport budgétaire - Format: ${format} - Période: ${period} - Client: USER123 à ${new Date().toISOString()}`,
+    // )
 
     return {
       success: true,
@@ -450,8 +450,8 @@ export async function sendBudgetAlert(alertData: any) {
 
     // Log d'audit
     //console.log(
-      `[AUDIT] Alerte budgétaire envoyée - Type: ${alertData.type} - Usage: ${alertData.globalUsage}% - Client: USER123 à ${new Date().toISOString()}`,
-    )
+    //   `[AUDIT] Alerte budgétaire envoyée - Type: ${alertData.type} - Usage: ${alertData.globalUsage}% - Client: USER123 à ${new Date().toISOString()}`,
+    // )
 
     return {
       success: true,
