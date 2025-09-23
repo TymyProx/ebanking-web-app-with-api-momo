@@ -217,10 +217,10 @@ export async function uploadBulkPaymentFile(formData: FormData): Promise<ActionR
     }
 
     //console.log("📊 Fichier Excel validé avec succès:", {
-      fileName: file.name,
-      beneficiaryCount: beneficiaries.length,
-      totalAmount: fileTotal,
-    })
+    //   fileName: file.name,
+    //   beneficiaryCount: beneficiaries.length,
+    //   totalAmount: fileTotal,
+    // })
 
     return {
       success: true,
