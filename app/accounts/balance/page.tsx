@@ -96,7 +96,7 @@ export default function BalancesPage() {
       startTransition(async () => {
         try {
           const result = await getAccounts()
-          console.log("[v0] Résultat de getAccounts:", result)
+          //console.log("[v0] Résultat de getAccounts:", result)
 
           if (Array.isArray(result) && result.length > 0) {
             const adaptedAccounts: Account[] = result.map((account: any) => ({

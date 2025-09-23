@@ -77,7 +77,7 @@ export default function BeneficiariesPage() {
     setIsLoading(true)
     try {
       const apiBeneficiaries = await getBeneficiaries()
-      console.log("ApiBeneficiaire", apiBeneficiaries)
+      //console.log("ApiBeneficiaire", apiBeneficiaries)
       const transformedBeneficiaries: Beneficiary[] = apiBeneficiaries.map((apiB) => ({
         id: apiB.id,
         name: apiB.name,
@@ -89,7 +89,7 @@ export default function BeneficiariesPage() {
         addedDate: new Date(apiB.createdAt).toLocaleDateString("fr-FR"),
         status: apiB.status, // Include status from API response
       }))
-      console.log("Transformed Beneficiaries", transformedBeneficiaries)
+      //console.log("Transformed Beneficiaries", transformedBeneficiaries)
       setBeneficiaries(transformedBeneficiaries)
     } catch (error) {
       console.error("Erreur lors du chargement des bénéficiaires:", error)
@@ -291,7 +291,7 @@ export default function BeneficiariesPage() {
   }
 
   const handleFormSuccess = async () => {
-    console.log("[v0] Form submitted successfully, refreshing list...")
+    //console.log("[v0] Form submitted successfully, refreshing list...")
     await loadBeneficiaries()
   }
 

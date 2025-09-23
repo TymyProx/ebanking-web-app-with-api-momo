@@ -40,7 +40,7 @@ export async function getAccountBalances(prevState: any, formData: FormData) {
     ]
 
     // Log d'audit
-    console.log(`[AUDIT] Consultation soldes - Client: USER123 à ${new Date().toISOString()}`)
+    //console.log(`[AUDIT] Consultation soldes - Client: USER123 à ${new Date().toISOString()}`)
 
     return {
       success: true,
@@ -71,10 +71,10 @@ export async function refreshBalances(prevState: any, formData: FormData) {
     }
 
     // Simulation de l'actualisation des données
-    console.log("Actualisation des soldes en temps réel...")
+    //console.log("Actualisation des soldes en temps réel...")
 
     // Log d'audit
-    console.log(`[AUDIT] Actualisation soldes - Client: USER123 à ${new Date().toISOString()}`)
+    //console.log(`[AUDIT] Actualisation soldes - Client: USER123 à ${new Date().toISOString()}`)
 
     return {
       success: true,

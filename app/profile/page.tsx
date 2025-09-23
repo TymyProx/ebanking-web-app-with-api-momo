@@ -65,7 +65,7 @@ export default function ProfilePage() {
     const loadUserData = () => {
       try {
         const user = AuthService.getCurrentUser()
-        console.log("[v0] Données utilisateur récupérées:", user)
+        //console.log("[v0] Données utilisateur récupérées:", user)
 
         if (user) {
           setCurrentUser(user)

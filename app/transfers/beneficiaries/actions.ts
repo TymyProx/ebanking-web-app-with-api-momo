@@ -28,9 +28,8 @@ interface ApiBeneficiary {
   favoris: boolean
 }
 
-const API_BASE_URL =
-  process.env.API_BASE_URL || process.env.NEXT_PUBLIC_API_BASE_URL || "https://192.168.1.200:8080/api"
-const TENANT_ID = process.env.TENANT_ID || "aa1287f6-06af-45b7-a905-8c57363565c2"
+const API_BASE_URL = process.env.API_BASE_URL
+const TENANT_ID = process.env.TENANT_ID
 
 export async function getBeneficiaries(): Promise<ApiBeneficiary[]> {
   const cookieToken = (await cookies()).get("token")?.value
@@ -167,7 +166,7 @@ export async function addBeneficiary(prevState: ActionResult | null, formData: F
     }
 
     const result = await response.json()
-    console.log("Bénéficiaire ajouté via API:", result)
+    //console.log("Bénéficiaire ajouté via API:", result)
 
     revalidatePath("/transfers/beneficiaries")
     revalidatePath("/transfers/new")
@@ -322,7 +321,7 @@ export async function updateBeneficiary(prevState: ActionResult | null, formData
     }
 
     const result = await response.json()
-    console.log("Bénéficiaire modifié via API:", result)
+    //console.log("Bénéficiaire modifié via API:", result)
 
     revalidatePath("/transfers/beneficiaries")
     revalidatePath("/transfers/new")
@@ -375,7 +374,7 @@ export async function deleteBeneficiary(prevState: ActionResult | null, formData
       }
     }
 
-    console.log("Bénéficiaire supprimé via API:", id)
+    //console.log("Bénéficiaire supprimé via API:", id)
 
     revalidatePath("/transfers/beneficiaries")
     revalidatePath("/transfers/new")
@@ -443,7 +442,7 @@ export async function toggleBeneficiaryFavorite(
     }
 
     const result = await response.json()
-    console.log("Statut favori modifié via API:", result)
+    //console.log("Statut favori modifié via API:", result)
 
     revalidatePath("/transfers/beneficiaries")
     revalidatePath("/transfers/new")
@@ -519,7 +518,7 @@ export async function deactivateBeneficiary(prevState: ActionResult | null, form
       }
     }
 
-    console.log("Bénéficiaire désactivé via API:", id)
+    //console.log("Bénéficiaire désactivé via API:", id)
 
     revalidatePath("/transfers/beneficiaries")
     revalidatePath("/transfers/new")
@@ -595,7 +594,7 @@ export async function reactivateBeneficiary(prevState: ActionResult | null, form
       }
     }
 
-    console.log("Bénéficiaire réactivé via API:", id)
+    //console.log("Bénéficiaire réactivé via API:", id)
 
     revalidatePath("/transfers/beneficiaries")
     revalidatePath("/transfers/new")

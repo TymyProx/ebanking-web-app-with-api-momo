@@ -77,7 +77,7 @@ export default function AccountDetailsPage() {
     const loadAccount = async () => {
       try {
         const accountsData = await getAccounts()
-        console.log("[v0] Comptes récupérés:", accountsData)
+        //console.log("[v0] Comptes récupérés:", accountsData)
 
         if (Array.isArray(accountsData)) {
           const foundAccount = accountsData.find((acc: any) => acc.id === accountId || acc.accountId === accountId)
@@ -114,7 +114,7 @@ export default function AccountDetailsPage() {
     const loadTransactions = async () => {
       try {
         const transactionsData = await getTransactions()
-        console.log("[v0] Transactions récupérées:", transactionsData)
+        //console.log("[v0] Transactions récupérées:", transactionsData)
 
         if (transactionsData.data && Array.isArray(transactionsData.data)) {
           // Filtrer les transactions pour ce compte spécifique
@@ -198,7 +198,7 @@ export default function AccountDetailsPage() {
 
     startTransition(async () => {
       try {
-        console.log("[v0] Changement de statut:", { accountId, previousStatus, newStatus })
+        //console.log("[v0] Changement de statut:", { accountId, previousStatus, newStatus })
 
         const result = await toggleAccountStatus(accountId, newStatus)
 
@@ -215,7 +215,7 @@ export default function AccountDetailsPage() {
             isRead: false,
           })
 
-          console.log("[v0] Statut mis à jour avec succès")
+          //console.log("[v0] Statut mis à jour avec succès")
         }
       } catch (error) {
         console.error("[v0] Erreur lors du changement de statut:", error)

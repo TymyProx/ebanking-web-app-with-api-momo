@@ -60,12 +60,12 @@ export async function startChatSession(data: ChatSessionData) {
   }
 
   // Simulation de l'envoi d'email de confirmation
-  console.log(`Email de confirmation envoyé à ${data.email}`)
+  //console.log(`Email de confirmation envoyé à ${data.email}`)
 
   // Simulation de notification au back-office
-  console.log(`Nouvelle session de chat créée: ${sessionId}`)
-  console.log(`Agent assigné: ${availableAgent.name}`)
-  console.log(`Sujet: ${data.subject}`)
+  //console.log(`Nouvelle session de chat créée: ${sessionId}`)
+  //console.log(`Agent assigné: ${availableAgent.name}`)
+  //console.log(`Sujet: ${data.subject}`)
 
   return {
     sessionId,
@@ -89,7 +89,7 @@ export async function sendMessage(sessionId: string, message: string, sender: "u
   }
 
   // Simulation de sauvegarde en base
-  console.log(`Message envoyé dans la session ${sessionId}:`, messageData)
+  //console.log(`Message envoyé dans la session ${sessionId}:`, messageData)
 
   return messageData
 }
@@ -101,12 +101,12 @@ export async function endChatSession(sessionId: string, rating?: number, feedbac
   const endTime = new Date()
 
   // Simulation de sauvegarde des données de session
-  console.log(`Session ${sessionId} terminée à ${endTime.toISOString()}`)
+  //console.log(`Session ${sessionId} terminée à ${endTime.toISOString()}`)
 
   if (rating) {
-    console.log(`Évaluation reçue: ${rating}/5 étoiles`)
+    //console.log(`Évaluation reçue: ${rating}/5 étoiles`)
     if (feedback) {
-      console.log(`Commentaire: ${feedback}`)
+      //console.log(`Commentaire: ${feedback}`)
     }
   }
 
@@ -117,7 +117,7 @@ export async function endChatSession(sessionId: string, rating?: number, feedbac
     body: "Votre transcription de chat est en pièce jointe.",
   }
 
-  console.log("Transcription envoyée par email:", transcriptEmail)
+  //console.log("Transcription envoyée par email:", transcriptEmail)
 
   return {
     success: true,
@@ -137,11 +137,11 @@ export async function rateChatSession(sessionId: string, rating: number, feedbac
     timestamp: new Date(),
   }
 
-  console.log("Évaluation sauvegardée:", ratingData)
+  //console.log("Évaluation sauvegardée:", ratingData)
 
   // Simulation de notification au service qualité
   if (rating <= 2) {
-    console.log(`Alerte qualité: Session ${sessionId} évaluée à ${rating}/5`)
+    //console.log(`Alerte qualité: Session ${sessionId} évaluée à ${rating}/5`)
   }
 
   return {

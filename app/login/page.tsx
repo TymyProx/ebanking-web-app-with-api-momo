@@ -34,7 +34,7 @@ export default function LoginPage() {
       const invitationToken = ""
 
       const loginResult = await AuthService.signIn(email, password, tenantId, invitationToken)
-      console.log("Résultat de la connexion:", loginResult)
+      //console.log("Résultat de la connexion:", loginResult)
       if (loginResult.success) {
         await AuthService.fetchMe()
 

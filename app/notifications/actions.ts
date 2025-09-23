@@ -118,7 +118,7 @@ export async function getNotifications(filters?: {
     }
 
     // Log d'audit
-    console.log(`[AUDIT] Consultation notifications - Client: USER123 à ${new Date().toISOString()}`)
+    //console.log(`[AUDIT] Consultation notifications - Client: USER123 à ${new Date().toISOString()}`)
 
     return {
       success: true,
@@ -152,7 +152,7 @@ export async function markAsRead(notificationId: number) {
     }
 
     // Log d'audit
-    console.log(
+    //console.log(
       `[AUDIT] Notification marquée comme lue - ID: ${notificationId} - Client: USER123 à ${new Date().toISOString()}`,
     )
 
@@ -191,10 +191,10 @@ export async function updateNotificationSettings(settings: NotificationSettings)
     }
 
     // Simulation de la sauvegarde en base
-    console.log("Paramètres de notification mis à jour:", settings)
+    //console.log("Paramètres de notification mis à jour:", settings)
 
     // Log d'audit
-    console.log(`[AUDIT] Paramètres de notification mis à jour - Client: USER123 à ${new Date().toISOString()}`)
+    //console.log(`[AUDIT] Paramètres de notification mis à jour - Client: USER123 à ${new Date().toISOString()}`)
 
     return {
       success: true,
@@ -299,7 +299,7 @@ export async function exportNotifications(
     const filename = `notifications_${new Date().toISOString().split("T")[0]}.${format}`
 
     // Log d'audit
-    console.log(
+    //console.log(
       `[AUDIT] Export historique notifications - Format: ${format} - Client: USER123 à ${new Date().toISOString()}`,
     )
 
@@ -359,7 +359,7 @@ export async function createTransactionNotification(transaction: {
       sender: transaction.sender,
     }
 
-    console.log("Notification créée:", notification)
+    //console.log("Notification créée:", notification)
 
     // Ici on enverrait les notifications via les différents canaux
     await sendNotificationChannels(notification)
@@ -407,13 +407,13 @@ function generateNotificationMessage(transaction: {
 
 async function sendNotificationChannels(notification: any) {
   // Simulation d'envoi par email
-  console.log("📧 Email envoyé:", notification.message)
+  //console.log("📧 Email envoyé:", notification.message)
 
   // Simulation d'envoi par SMS
-  console.log("📱 SMS envoyé:", notification.message)
+  //console.log("📱 SMS envoyé:", notification.message)
 
   // Simulation de notification push
-  console.log("🔔 Push notification:", notification.message)
+  //console.log("🔔 Push notification:", notification.message)
 
   return {
     email: { sent: true, timestamp: new Date().toISOString() },

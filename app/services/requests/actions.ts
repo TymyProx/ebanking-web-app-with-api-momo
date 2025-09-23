@@ -50,10 +50,10 @@ export async function submitServiceRequest(prevState: any, formData: FormData) {
     const reference = generateRequestReference(serviceType)
 
     // Log the request for audit
-    console.log(
+    //console.log(
       `[AUDIT] Nouvelle demande de service - Type: ${serviceType}, Compte: ${accountId}, Référence: ${reference}`,
     )
-    console.log(`[AUDIT] Données de la demande:`, parsedFormData)
+    //console.log(`[AUDIT] Données de la demande:`, parsedFormData)
 
     // Simulate business logic
     const processingInfo = getProcessingInfo(serviceType)

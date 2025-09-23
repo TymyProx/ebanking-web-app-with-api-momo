@@ -143,8 +143,8 @@ export default function CardsPage() {
     setSubmitSuccess(null)
 
     try {
-      console.log("[v0] Type de carte sélectionné:", newCardData.typCard)
-      console.log("[v0] Compte sélectionné:", newCardData.selectedAccount)
+      //console.log("[v0] Type de carte sélectionné:", newCardData.typCard)
+      //console.log("[v0] Compte sélectionné:", newCardData.selectedAccount)
 
       const selectedAccount = accounts.find((acc) => acc.id === newCardData.selectedAccount)
 
@@ -158,7 +158,7 @@ export default function CardsPage() {
       setShowNewCardForm(false)
       await loadCards()
     } catch (e: any) {
-      console.log("[v0] Erreur lors de la création:", e)
+      //console.log("[v0] Erreur lors de la création:", e)
       setSubmitError(e?.message ?? "Erreur lors de la création de la demande")
     } finally {
       setSubmitting(false)
@@ -307,7 +307,7 @@ export default function CardsPage() {
           <p className="text-gray-600">Gérez vos cartes bancaires et leurs paramètres</p>
         </div>
         <div className="flex gap-2">
-          <Button onClick={() => setShowNewCardForm(true)} className="bg-blue-600 hover:bg-blue-700">
+          <Button onClick={() => setShowNewCardForm(true)}>
             <Plus className="w-4 h-4 mr-2" />
             Nouvelle carte
           </Button>

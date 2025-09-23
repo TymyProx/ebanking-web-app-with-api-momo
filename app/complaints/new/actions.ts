@@ -125,13 +125,13 @@ export async function submitComplaint(prevState: ComplaintState | null, formData
     await new Promise((resolve) => setTimeout(resolve, 1000))
 
     // Log pour le développement (à remplacer par une vraie sauvegarde)
-    console.log("Nouvelle réclamation enregistrée:", complaint)
+    //console.log("Nouvelle réclamation enregistrée:", complaint)
 
     // Simulation d'envoi d'email de confirmation
-    console.log(`Email de confirmation envoyé à ${data.email}`)
+    //console.log(`Email de confirmation envoyé à ${data.email}`)
 
     // Simulation de notification au back-office
-    console.log(`Notification back-office pour réclamation ${reference}`)
+    //console.log(`Notification back-office pour réclamation ${reference}`)
 
     return {
       success: true,

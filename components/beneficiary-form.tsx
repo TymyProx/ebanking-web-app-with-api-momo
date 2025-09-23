@@ -62,12 +62,12 @@ export default function BeneficiaryForm({
     try {
       setLoadingBanks(true)
       const API_BASE_URL =
-        process.env.API_BASE_URL || process.env.NEXT_PUBLIC_API_BASE_URL || "https://192.168.1.200:8080/api"
-      const tenantId = process.env.TENANT_ID || "aa1287f6-06af-45b7-a905-8c57363565c2"
+        process.env.API_BASE_URL
+      const tenantId = process.env.TENANT_ID
       const token = localStorage.getItem("token")
 
-      console.log("[v0] Loading banks for tenant:", tenantId)
-      console.log("[v0] API URL:", `${API_BASE_URL}/tenant/${tenantId}/banque`)
+      //console.log("[v0] Loading banks for tenant:", tenantId)
+      //console.log("[v0] API URL:", `${API_BASE_URL}/tenant/${tenantId}/banque`)
 
       const response = await fetch(`${API_BASE_URL}/tenant/${tenantId}/banque`, {
         headers: {
@@ -76,11 +76,11 @@ export default function BeneficiaryForm({
         },
       })
 
-      console.log("[v0] Banks API response status:", response.status)
+      //console.log("[v0] Banks API response status:", response.status)
 
       if (response.ok) {
         const data = await response.json()
-        console.log("[v0] Banks data received:", data)
+        //console.log("[v0] Banks data received:", data)
         setBanks(data.rows || [])
       } else {
         console.error("[v0] Banks API error:", response.status, response.statusText)
@@ -169,7 +169,7 @@ export default function BeneficiaryForm({
     }
 
     const isValid = account.length >= 10
-    console.log(isValid ? "RIB valide" : "RIB invalide")
+    //console.log(isValid ? "RIB valide" : "RIB invalide")
   }
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {

@@ -131,7 +131,7 @@ export default function StatementsPage() {
     const loadAccounts = async () => {
       try {
         const accountsData = await getAccounts()
-        console.log("[v0] Comptes récupérés pour relevés:", accountsData)
+        //console.log("[v0] Comptes récupérés pour relevés:", accountsData)
 
         if (Array.isArray(accountsData)) {
           const adaptedAccounts: Account[] = accountsData.map((acc: any) => ({
@@ -151,7 +151,7 @@ export default function StatementsPage() {
           setAccounts(activeAccounts)
         }
       } catch (error) {
-        console.error("Erreur lors du chargement des comptes:", error)
+       // console.error("Erreur lors du chargement des comptes:", error)
         // Fallback vers des données de test en cas d'erreur
         setAccounts([
           {
@@ -179,7 +179,7 @@ export default function StatementsPage() {
 
       try {
         const transactionsData = await getTransactions()
-        console.log("[v0] Transactions récupérées pour relevé:", transactionsData)
+        //console.log("[v0] Transactions récupérées pour relevé:", transactionsData)
 
         if (transactionsData.data && Array.isArray(transactionsData.data)) {
           const accountTransactions = transactionsData.data.filter((txn: any) => txn.accountId === selectedAccount)
@@ -225,12 +225,12 @@ export default function StatementsPage() {
       return txnDate >= start && txnDate <= end
     })
 
-    console.log("[v0] Génération relevé avec transactions filtrées:", {
-      compte: selectedAccount,
-      période: `${startDate} à ${endDate}`,
-      nombreTransactions: filteredTransactions.length,
-      format,
-    })
+    // console.log("[v0] Génération relevé avec transactions filtrées:", {
+    //   compte: selectedAccount,
+    //   période: `${startDate} à ${endDate}`,
+    //   nombreTransactions: filteredTransactions.length,
+    //   format,
+    // })
 
     const formData = new FormData()
     formData.append("accountId", selectedAccount)
@@ -813,7 +813,7 @@ export default function StatementsPage() {
       const fileName = `releve_${selectedAccountData.number}_${startDate}_${endDate}.pdf`
       doc.save(fileName)
 
-      console.log("[v0] PDF généré et téléchargé:", fileName)
+      //console.log("[v0] PDF généré et téléchargé:", fileName)
     } catch (error) {
       console.error("Erreur lors de la génération PDF:", error)
       // Fallback vers téléchargement texte
@@ -870,7 +870,7 @@ export default function StatementsPage() {
       document.body.removeChild(link)
       URL.revokeObjectURL(link.href)
 
-      console.log("[v0] Excel/CSV généré et téléchargé")
+      //console.log("[v0] Excel/CSV généré et téléchargé")
     } catch (error) {
       console.error("Erreur lors de la génération Excel:", error)
       // Fallback vers téléchargement texte
@@ -925,6 +925,6 @@ export default function StatementsPage() {
     document.body.removeChild(link)
     URL.revokeObjectURL(link.href)
 
-    console.log("[v0] Relevé texte généré et téléchargé")
+    //console.log("[v0] Relevé texte généré et téléchargé")
   }
 }

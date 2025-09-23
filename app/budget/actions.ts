@@ -74,7 +74,7 @@ export async function addExpense(prevState: any, formData: FormData) {
     const newTotal = currentExpenses + validatedFields.amount
 
     // Simulation de l'enregistrement en base de données
-    console.log("Nouvelle dépense enregistrée:", validatedFields)
+    //console.log("Nouvelle dépense enregistrée:", validatedFields)
 
     // Calcul du pourcentage d'utilisation du budget
     const budgetUsagePercent = Math.round((newTotal / currentBudget) * 100)
@@ -149,10 +149,10 @@ export async function updateBudgetSettings(formData: FormData) {
     }
 
     // Simulation de la sauvegarde en base de données
-    console.log("Paramètres budgétaires mis à jour:", validatedFields)
+    //console.log("Paramètres budgétaires mis à jour:", validatedFields)
 
     // Log d'audit
-    console.log(`[AUDIT] Paramètres budgétaires mis à jour - Client: USER123 à ${new Date().toISOString()}`)
+    //console.log(`[AUDIT] Paramètres budgétaires mis à jour - Client: USER123 à ${new Date().toISOString()}`)
 
     return {
       success: true,
@@ -236,10 +236,10 @@ export async function exportExpenses(format: string, category?: string, period?:
     // Simulation de génération du fichier
     const filename = `budget_report_${period}_${new Date().toISOString().split("T")[0]}.${format}`
 
-    console.log(`Génération du rapport budgétaire ${filename} pour la catégorie ${category || "toutes"}`)
+    //console.log(`Génération du rapport budgétaire ${filename} pour la catégorie ${category || "toutes"}`)
 
     // Log d'audit
-    console.log(`[AUDIT] Export rapport budgétaire - Format: ${format} - Client: USER123 à ${new Date().toISOString()}`)
+    //console.log(`[AUDIT] Export rapport budgétaire - Format: ${format} - Client: USER123 à ${new Date().toISOString()}`)
 
     return {
       success: true,
@@ -272,11 +272,11 @@ export async function sendBudgetAlert(alertType: "approaching" | "exceeded", dat
     }
 
     // Simulation d'envoi des notifications
-    console.log(`[ALERT] ${alertType.toUpperCase()} - ${message}`)
-    console.log(`[CHANNELS] Envoyé via: ${channels.join(", ")}`)
+    //console.log(`[ALERT] ${alertType.toUpperCase()} - ${message}`)
+    //console.log(`[CHANNELS] Envoyé via: ${channels.join(", ")}`)
 
     // Log d'audit
-    console.log(
+    //console.log(
       `[AUDIT] Alerte budgétaire envoyée - Type: ${alertType} - Client: USER123 à ${new Date().toISOString()}`,
     )
 

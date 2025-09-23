@@ -185,7 +185,7 @@ export default function RIBPage() {
     const loadAccounts = async () => {
       try {
         const accountsData = await getAccounts()
-        console.log("[v0] Comptes récupérés pour RIB:", accountsData)
+        //console.log("[v0] Comptes récupérés pour RIB:", accountsData)
 
         if (Array.isArray(accountsData)) {
           const adaptedAccounts: Account[] = accountsData.map((acc: any) => ({
@@ -209,7 +209,7 @@ export default function RIBPage() {
             (account: Account) => account.status === "Actif" && account.number && String(account.number).trim() !== "",
           )
 
-          console.log("[v0] Comptes actifs avec numéro valide pour RIB:", activeAccounts)
+          //console.log("[v0] Comptes actifs avec numéro valide pour RIB:", activeAccounts)
           setAccounts(activeAccounts)
         }
       } catch (error) {

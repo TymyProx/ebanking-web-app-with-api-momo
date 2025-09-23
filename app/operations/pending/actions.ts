@@ -80,7 +80,7 @@ export async function getPendingOperations() {
     ]
 
     // Log d'audit
-    console.log(`[AUDIT] Consultation opérations en attente - Client: USER123 à ${new Date().toISOString()}`)
+    //console.log(`[AUDIT] Consultation opérations en attente - Client: USER123 à ${new Date().toISOString()}`)
 
     return {
       success: true,
@@ -111,7 +111,7 @@ export async function cancelOperation(operationId: string) {
     }
 
     // Log d'audit
-    console.log(`[AUDIT] Annulation opération ${operationId} - Client: USER123 à ${new Date().toISOString()}`)
+    //console.log(`[AUDIT] Annulation opération ${operationId} - Client: USER123 à ${new Date().toISOString()}`)
 
     return {
       success: true,
@@ -141,7 +141,7 @@ export async function retryOperation(operationId: string) {
     }
 
     // Log d'audit
-    console.log(`[AUDIT] Relance opération ${operationId} - Client: USER123 à ${new Date().toISOString()}`)
+    //console.log(`[AUDIT] Relance opération ${operationId} - Client: USER123 à ${new Date().toISOString()}`)
 
     return {
       success: true,

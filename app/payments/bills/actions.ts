@@ -357,7 +357,7 @@ export async function payBill(prevState: any, formData: FormData) {
       .padStart(3, "0")}`
 
     // Simulation du traitement du paiement
-    console.log("Paiement unifié traité:", {
+    //console.log("Paiement unifié traité:", {
       reference,
       provider: validatedData.providerId,
       type: provider.type,
@@ -370,21 +370,21 @@ export async function payBill(prevState: any, formData: FormData) {
     })
 
     // Log d'audit
-    console.log(
+    //console.log(
       `[AUDIT] Paiement ${provider.type} - Réf: ${reference}, Fournisseur: ${validatedData.providerId}, Montant: ${paymentAmount} GNF à ${new Date().toISOString()}`,
     )
 
     // Simulation des notifications
     if (provider.type === "utility") {
-      console.log(
+      //console.log(
         `[SMS] Paiement facture ${validatedData.providerId} de ${paymentAmount} GNF effectué. Réf: ${reference}`,
       )
-      console.log(`[API] Notification fournisseur ${validatedData.providerId} - Paiement reçu: ${reference}`)
+      //console.log(`[API] Notification fournisseur ${validatedData.providerId} - Paiement reçu: ${reference}`)
     } else {
-      console.log(
+      //console.log(
         `[SMS] Paiement commerçant ${validatedData.providerId} de ${paymentAmount} GNF effectué. Réf: ${reference}`,
       )
-      console.log(`[API] Notification commerçant ${validatedData.providerId} - Paiement reçu: ${reference}`)
+      //console.log(`[API] Notification commerçant ${validatedData.providerId} - Paiement reçu: ${reference}`)
     }
 
     return {

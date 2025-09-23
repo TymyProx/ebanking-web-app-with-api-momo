@@ -20,7 +20,7 @@ export async function toggleAccountStatus(accountId: string, newStatus: string) 
   // Simulation d'un appel API
   await new Promise((resolve) => setTimeout(resolve, 500))
 
-  console.log("[v0] Server action - Changement de statut:", { accountId, newStatus })
+  //console.log("[v0] Server action - Changement de statut:", { accountId, newStatus })
 
   try {
     const statusMessages = {
@@ -33,7 +33,7 @@ export async function toggleAccountStatus(accountId: string, newStatus: string) 
 
     const message = `Le statut de votre compte ${accountId} a été modifié vers "${statusMessages[newStatus as keyof typeof statusMessages] || newStatus.toLowerCase()}".`
 
-    console.log("[v0] Notification de changement de statut créée:", {
+    //console.log("[v0] Notification de changement de statut créée:", {
       type: "account_status",
       title: "Changement de statut de compte",
       message,

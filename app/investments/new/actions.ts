@@ -118,7 +118,7 @@ export async function submitInvestment(prevState: any, formData: FormData) {
     investments.push(newInvestment)
 
     // Simulation d'envoi d'email de confirmation
-    console.log(`Email de confirmation envoyé à ${email} pour le placement ${reference}`)
+    //console.log(`Email de confirmation envoyé à ${email} pour le placement ${reference}`)
 
     return {
       success: true,

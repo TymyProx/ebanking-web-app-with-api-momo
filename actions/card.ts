@@ -2,11 +2,8 @@
 
 import { cookies } from "next/headers"
 
-const BASE_URL = process.env.API_BASE_URL || process.env.NEXT_PUBLIC_API_BASE_URL || "https://192.168.1.200:8080/api"
-const TENANT_ID = process.env.TENANT_ID || "aa1287f6-06af-45b7-a905-8c57363565c2"
-const API_TOKEN =
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjJhYWY0OWMzLThlOGUtNDZkYS1iZDM4LWIwZDlmNTFiODAzNyIsImlhdCI6MTc1NjQ1OTYzMCwiZXhwIjoxNzU3MDY0NDMwfQ.F1glqniLIDoTxs6PmLa6AEiuaHvAQqWSyCkPswF7n80"
-
+const BASE_URL = process.env.API_BASE_URL
+const TENANT_ID = process.env.TENANT_ID
 export type Card = {
   id: string
   numCard: string
@@ -40,10 +37,10 @@ export async function fetchAllCards(): Promise<CardsResponse> {
   const cookieToken = (await cookies()).get("token")?.value
   const usertoken = cookieToken
 
-  console.log("[v0] Token d'authentification:", usertoken ? "présent" : "manquant")
+  //console.log("[v0] Token d'authentification:", usertoken ? "présent" : "manquant")
 
   if (!usertoken) {
-    console.log("[v0] Token d'authentification manquant, retour de données de test")
+    //console.log("[v0] Token d'authentification manquant, retour de données de test")
     return {
       rows: [],
       count: 0,
@@ -63,7 +60,7 @@ export async function fetchAllCards(): Promise<CardsResponse> {
   const contentType = res.headers.get("content-type") || ""
   const bodyText = await res.text()
 
-  console.log("[v0] Réponse API cartes:", res.status, bodyText)
+  //console.log("[v0] Réponse API cartes:", res.status, bodyText)
 
   if (!res.ok) {
     throw new Error(`API ${res.status}: ${bodyText || "Erreur inconnue"}`)
@@ -84,9 +81,9 @@ export async function createCardRequest(cardData: NewCardRequest): Promise<Card>
   const cookieToken = (await cookies()).get("token")?.value
   const usertoken = cookieToken
 
-  console.log("[v0] Envoi de la demande avec type:", cardData.typCard)
-  console.log("[v0] Compte sélectionné:", cardData.accountNumber)
-  console.log("[v0] Token d'authentification:", usertoken ? "présent" : "manquant")
+   //console.log("[v0] Envoi de la demande avec type:", cardData.typCard)
+   //console.log("[v0] Compte sélectionné:", cardData.accountNumber)
+   //console.log("[v0] Token d'authentification:", usertoken ? "présent" : "manquant")
 
   if (!usertoken) {
     throw new Error("Token d'authentification manquant")
@@ -110,7 +107,7 @@ export async function createCardRequest(cardData: NewCardRequest): Promise<Card>
     },
   }
 
-  console.log("[v0] Corps de la requête:", JSON.stringify(requestBody))
+  //console.log("[v0] Corps de la requête:", JSON.stringify(requestBody))
 
   const res = await fetch(`${BASE_URL}/tenant/${TENANT_ID}/card`, {
     method: "POST",
@@ -125,7 +122,7 @@ export async function createCardRequest(cardData: NewCardRequest): Promise<Card>
   const contentType = res.headers.get("content-type") || ""
   const bodyText = await res.text()
 
-  console.log("[v0] Réponse API:", res.status, bodyText)
+  //console.log("[v0] Réponse API:", res.status, bodyText)
 
   if (!res.ok) {
     throw new Error(`API ${res.status}: ${bodyText || "Erreur lors de la création"}`)

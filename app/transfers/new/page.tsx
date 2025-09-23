@@ -235,10 +235,10 @@ export default function NewTransferPage() {
 
   const loadAccounts = async () => {
     try {
-      console.log("[v0] Chargement des comptes...")
+      //console.log("[v0] Chargement des comptes...")
       setIsLoadingAccounts(true)
       const result = await getAccounts()
-      console.log("[v0] Résultat getAccounts:", result)
+      //console.log("[v0] Résultat getAccounts:", result)
 
       if (Array.isArray(result) && result.length > 0) {
         // Adapter les données API au format Account
@@ -256,10 +256,10 @@ export default function NewTransferPage() {
             account.number &&
             String(account.number).trim() !== "",
         )
-        console.log("[v0] Comptes actifs avec numéro valide:", activeAccounts)
+        //console.log("[v0] Comptes actifs avec numéro valide:", activeAccounts)
         setAccounts(activeAccounts)
       } else {
-        console.log("[v0] Aucun compte trouvé, utilisation des données de test")
+        //console.log("[v0] Aucun compte trouvé, utilisation des données de test")
         setAccounts([])
       }
     } catch (error) {
@@ -272,10 +272,10 @@ export default function NewTransferPage() {
 
   const loadBeneficiaries = async () => {
     try {
-      console.log("[v0] Chargement des bénéficiaires...")
+      //console.log("[v0] Chargement des bénéficiaires...")
       setIsLoadingBeneficiaries(true)
       const result = await getBeneficiaries()
-      console.log("[v0] Résultat getBeneficiaries:", result)
+      //console.log("[v0] Résultat getBeneficiaries:", result)
 
       if (Array.isArray(result) && result.length > 0) {
         // Adapter les données API au format Beneficiary
@@ -291,10 +291,10 @@ export default function NewTransferPage() {
           const originalBeneficiary = result.find((api: any) => api.id === beneficiary.id)
           return originalBeneficiary && (originalBeneficiary.status === 0 || originalBeneficiary.status === "0")
         })
-        console.log("[v0] Bénéficiaires actifs:", activeBeneficiaries)
+        //console.log("[v0] Bénéficiaires actifs:", activeBeneficiaries)
         setBeneficiaries(activeBeneficiaries)
       } else {
-        console.log("[v0] Aucun bénéficiaire trouvé")
+        //console.log("[v0] Aucun bénéficiaire trouvé")
         setBeneficiaries([])
       }
     } catch (error) {

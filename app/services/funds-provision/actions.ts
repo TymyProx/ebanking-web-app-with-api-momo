@@ -77,7 +77,7 @@ export async function validateFundsProvision(formData: FormData): Promise<Action
       }
     }
 
-    console.log("📱 Code OTP envoyé pour validation de mise à disposition")
+    //console.log("📱 Code OTP envoyé pour validation de mise à disposition")
 
     return {
       success: true,
@@ -205,7 +205,7 @@ export async function createFundsProvision(formData: FormData): Promise<ActionRe
       createdBy: "demo@astrabng.com",
     }
 
-    console.log("💰 Mise à disposition créée:", provisionData)
+    //console.log("💰 Mise à disposition créée:", provisionData)
 
     // Revalider la page pour mettre à jour l'interface
     revalidatePath("/services/funds-provision")
