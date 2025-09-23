@@ -195,7 +195,7 @@ export default function RIBPage() {
             balance: Number.parseFloat(acc.bookBalance || acc.balance || "0"),
             currency: acc.currency || "GNF",
             type: "Courant" as const,
-            status: (acc.status === "ACTIF" ? "Actif" : acc.status) as "Actif" | "Bloqué" | "Fermé", // Map API status to local status
+            status: (acc.status === "ACTIVE" ? "Actif" : acc.status) as "Actif" | "Bloqué" | "Fermé", // Map API status to local status
             iban: `GN82 BNG 001 ${acc.accountNumber}`,
             accountHolder: "DIALLO Mamadou",
             bankName: "Banque Nationale de Guinée",

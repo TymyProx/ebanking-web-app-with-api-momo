@@ -209,7 +209,7 @@ export default function CardsPage() {
     ]
 
     // Filter card types based on account type and status
-    if (account.status !== "ACTIF") {
+    if (account.status !== "ACTIVE") {
       return [] // No cards for inactive accounts
     }
 
@@ -256,7 +256,7 @@ export default function CardsPage() {
 
   function getStatusBadge(status: string) {
     switch (status?.toUpperCase()) {
-      case "ACTIF":
+      case "ACTIVE":
       case "ACTIF":
         return <Badge className="bg-green-100 text-green-800">Actif</Badge>
       case "BLOCKED":
@@ -403,7 +403,7 @@ export default function CardsPage() {
 
                 {/* Action Buttons */}
                 {/* <div className="flex gap-2">
-                  {card.status?.toUpperCase() === "ACTIF" ? (
+                  {card.status?.toUpperCase() === "ACTIVE" ? (
                     <Button variant="outline" size="sm" className="flex-1 bg-transparent">
                       <Lock className="w-4 h-4 mr-1" />
                       Bloquer
@@ -565,7 +565,7 @@ export default function CardsPage() {
                     </SelectItem>
                   ) : accounts.length > 0 ? (
                     accounts
-                      .filter((account) => account.status === "ACTIF") // Only active accounts
+                      .filter((account) => account.status === "ACTIVE") // Only active accounts
                       .map((account) => (
                         <SelectItem key={account.id} value={account.id}>
                           <div className="flex flex-col">
@@ -717,7 +717,7 @@ export default function CardsPage() {
               <div>
                 <div className="text-sm text-gray-500">Cartes actives</div>
                 <div className="text-2xl font-bold text-green-600">
-                  {cards.filter((c) => c.status?.toUpperCase() === "ACTIF").length}
+                  {cards.filter((c) => c.status?.toUpperCase() === "ACTIVE").length}
                 </div>
               </div>
               <Shield className="w-8 h-8 text-green-500" />

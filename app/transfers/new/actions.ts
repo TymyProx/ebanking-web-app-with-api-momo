@@ -337,7 +337,7 @@ export async function validateBeneficiary(accountNumber: string, bankCode: strin
     return {
       success: true,
       message: "Bénéficiaire validé avec succès",
-      accountStatus: "ACTIF",
+      accountStatus: "ACTIVE",
     }
   } catch (error) {
     return {

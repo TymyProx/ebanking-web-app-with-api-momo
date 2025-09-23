@@ -252,7 +252,7 @@ export default function NewTransferPage() {
         }))
         const activeAccounts = adaptedAccounts.filter(
           (account: Account) =>
-            (account.status === "ACTIF" || account.status === "Actif") &&
+            (account.status === "ACTIVE" || account.status === "Actif") &&
             account.number &&
             String(account.number).trim() !== "",
         )

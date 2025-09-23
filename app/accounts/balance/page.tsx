@@ -62,7 +62,7 @@ export default function BalancesPage() {
   const [refreshState, setRefreshState] = useState<any>(null)
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date())
 
-  const [statusFilter, setStatusFilter] = useState<string>("ACTIF")
+  const [statusFilter, setStatusFilter] = useState<string>("ACTIVE")
 
   const [isNewAccountDialogOpen, setIsNewAccountDialogOpen] = useState(false)
   const [isCreatingAccount, setIsCreatingAccount] = useState(false)
@@ -75,8 +75,8 @@ export default function BalancesPage() {
     return accountsList.filter((account) => {
       // Normalize status values for comparison
       const accountStatus = account.status?.toUpperCase()
-      if (status === "ACTIF") {
-        return accountStatus === "ACTIF" || accountStatus === "ACTIF"
+      if (status === "ACTIVE") {
+        return accountStatus === "ACTIVE" || accountStatus === "ACTIF"
       }
       if (status === "BLOCKED") {
         return accountStatus === "BLOCKED" || accountStatus === "BLOQUÉ"
@@ -288,7 +288,7 @@ export default function BalancesPage() {
     switch (status) {
       case "ALL":
         return "Tous les statuts"
-      case "ACTIF":
+      case "ACTIVE":
         return "Actifs"
       case "BLOCKED":
         return "Bloqués"
@@ -425,7 +425,7 @@ export default function BalancesPage() {
               </SelectTrigger>
               <SelectContent>
                  <SelectItem value="ALL">Tous</SelectItem>
-                <SelectItem value="ACTIF">Actifs</SelectItem>
+                <SelectItem value="ACTIVE">Actifs</SelectItem>
                 {/* <SelectItem value="BLOCKED">Bloqués</SelectItem>
                 <SelectItem value="CLOSED">Fermés</SelectItem> */}
                 <SelectItem value="PENDING">En attente</SelectItem>

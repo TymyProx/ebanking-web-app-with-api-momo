@@ -487,7 +487,7 @@ export default function AccountDetailsPage() {
             <div className="space-y-2">
               <p className="text-sm font-medium">Actions disponibles</p>
               <div className="space-y-2">
-                {account.status === "ACTIF" && !!(account.number && String(account.number).trim()) && (
+                {account.status === "ACTIVE" && !!(account.number && String(account.number).trim()) && (
                   <>
                     <Button
                       variant="outline"

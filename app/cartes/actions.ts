@@ -128,7 +128,7 @@ export async function getCards() {
             id: "1",
             numCard: "4532 **** **** 1234",
             typCard: "GOLD",
-            status: "ACTIF",
+            status: "ACTIVE",
             dateEmission: "2024-01-01",
             dateExpiration: "2026-12-31",
             idClient: "CLIENT_001",
@@ -176,7 +176,7 @@ export async function getCards() {
             id: "1",
             numCard: "4532 **** **** 1234",
             typCard: "GOLD",
-            status: "ACTIF",
+            status: "ACTIVE",
             dateEmission: "2024-01-01",
             dateExpiration: "2026-12-31",
             idClient: "CLIENT_001",
@@ -247,7 +247,7 @@ export async function getCards() {
           id: "1",
           numCard: "4532 **** **** 1234",
           typCard: "GOLD",
-          status: "ACTIF",
+          status: "ACTIVE",
           dateEmission: "2024-01-01",
           dateExpiration: "2026-12-31",
           idClient: "CLIENT_001",
@@ -276,7 +276,7 @@ function getCardTypeFromTypCard(typCard: string): "visa" | "mastercard" | "amex"
 
 function mapApiStatusToUIStatus(apiStatus: string): "active" | "blocked" | "expired" | "pending" {
   switch (apiStatus?.toUpperCase()) {
-    case "ACTIF":
+    case "ACTIVE":
     case "ACTIF":
       return "active"
     case "BLOCKED":
