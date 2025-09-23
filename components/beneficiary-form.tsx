@@ -63,13 +63,13 @@ export default function BeneficiaryForm({
       setLoadingBanks(true)
       const API_BASE_URL =
         process.env.API_BASE_URL
-      const tenantId = process.env.TENANT_ID
+      const TENANT_ID = process.env.TENANT_ID
       const token = localStorage.getItem("token")
 
-      //console.log("[v0] Loading banks for tenant:", tenantId)
-      //console.log("[v0] API URL:", `${API_BASE_URL}/tenant/${tenantId}/banque`)
+      //console.log("[v0] Loading banks for tenant:", TENANT_ID)
+      //console.log("[v0] API URL:", `${API_BASE_URL}/tenant/${TENANT_ID}/banque`)
 
-      const response = await fetch(`${API_BASE_URL}/tenant/${tenantId}/banque`, {
+      const response = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/banque`, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",

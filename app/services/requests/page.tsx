@@ -286,12 +286,12 @@ export default function ServiceRequestsPage() {
       console.log("[v0] Chargement des détails pour la demande:", request.id, "type:", request.type)
 
       let details = null
-      const tenantId = "aa1287f6-06af-45b7-a905-8c57363565c2"
+      const TENANT_ID = "aa1287f6-06af-45b7-a905-8c57363565c2"
 
       if (request.type === "credit") {
-        details = await getDemandeCreditById(tenantId, request.id)
+        details = await getDemandeCreditById(TENANT_ID, request.id)
       } else if (request.type === "checkbook") {
-        details = await getCommandeById(tenantId, request.id)
+        details = await getCommandeById(TENANT_ID, request.id)
       }
 
       console.log("[v0] Détails récupérés:", details)

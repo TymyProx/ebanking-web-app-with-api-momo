@@ -6,8 +6,9 @@ import { cookies } from "next/headers"
 
 // URL de base de l’API et ID du tenant (identifiant du client dans l’API)
 
-const API_BASE_URL = process.env.API_BASE_URL || "https://192.168.1.200:8080/api"
-const tenantId = process.env.TENANT_ID || "aa1287f6-06af-45b7-a905-8c57363565c2"
+
+const API_BASE_URL = process.env.API_BASE_URL
+const TENANT_ID = process.env.TENANT_ID
 
 // Fonction asynchrone pour soumettre une demande de crédit
 export async function submitCreditRequest(formData: {
@@ -28,7 +29,7 @@ export async function submitCreditRequest(formData: {
     if (!cookieToken) throw new Error("Token introuvable.")
 
     // Envoi de la requête POST vers l’API backend
-    const response = await fetch(`${API_BASE_URL}/tenant/${tenantId}/demande-credit`, {
+    const response = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/demande-credit`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json", // Type de contenu JSON
@@ -84,7 +85,7 @@ export async function submitCheckbookRequest(formData: {
     if (!cookieToken) throw new Error("Token introuvable.")
 
     // Envoi de la requête POST vers l'API backend
-    const response = await fetch(`${API_BASE_URL}/tenant/${tenantId}/commande`, {
+    const response = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/commande`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json", // Type de contenu JSON
@@ -142,7 +143,7 @@ export async function getCheckbookRequest(id?: string) {
             createdById: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
             updatedById: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
             importHash: "hash123",
-            tenantId: "aa1287f6-06af-45b7-a905-8c57363565c2",
+            TENANT_ID: "aa1287f6-06af-45b7-a905-8c57363565c2",
             dateorder: "2024-01-15",
             nbrefeuille: 25,
             nbrechequier: 1,
@@ -159,7 +160,7 @@ export async function getCheckbookRequest(id?: string) {
             createdById: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
             updatedById: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
             importHash: "hash456",
-            tenantId: "aa1287f6-06af-45b7-a905-8c57363565c2",
+            TENANT_ID: "aa1287f6-06af-45b7-a905-8c57363565c2",
             dateorder: "2024-01-20",
             nbrefeuille: 50,
             nbrechequier: 2,
@@ -180,7 +181,7 @@ export async function getCheckbookRequest(id?: string) {
     }
 
     // Construction de l'URL avec ou sans ID spécifique
-    const url = id ? `${API_BASE_URL}/tenant/${tenantId}/commande/${id}` : `${API_BASE_URL}/tenant/${tenantId}/commande`
+    const url = id ? `${API_BASE_URL}/tenant/${TENANT_ID}/commande/${id}` : `${API_BASE_URL}/tenant/${TENANT_ID}/commande`
 
     // Envoi de la requête GET vers l'API backend
     const response = await fetch(url, {
@@ -211,7 +212,7 @@ export async function getCheckbookRequest(id?: string) {
           createdById: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
           updatedById: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
           importHash: "hash123",
-          tenantId: "aa1287f6-06af-45b7-a905-8c57363565c2",
+          TENANT_ID: "aa1287f6-06af-45b7-a905-8c57363565c2",
           dateorder: "2024-01-15",
           nbrefeuille: 25,
           nbrechequier: 1,
@@ -253,7 +254,7 @@ export async function getCreditRequest(id?: string) {
             createdById: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
             updatedById: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
             importHash: "hash789",
-            tenantId: "aa1287f6-06af-45b7-a905-8c57363565c2",
+            TENANT_ID: "aa1287f6-06af-45b7-a905-8c57363565c2",
             applicantName: "Jean Dupont",
             creditAmount: "50000",
             durationMonths: "24",
@@ -267,7 +268,7 @@ export async function getCreditRequest(id?: string) {
             createdById: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
             updatedById: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
             importHash: "hash101",
-            tenantId: "aa1287f6-06af-45b7-a905-8c57363565c2",
+            TENANT_ID: "aa1287f6-06af-45b7-a905-8c57363565c2",
             applicantName: "Marie Martin",
             creditAmount: "25000",
             durationMonths: "12",
@@ -286,8 +287,8 @@ export async function getCreditRequest(id?: string) {
 
     // Construction de l'URL avec ou sans ID spécifique
     const url = id
-      ? `${API_BASE_URL}/tenant/${tenantId}/demande-credit/${id}`
-      : `${API_BASE_URL}/tenant/${tenantId}/demande-credit`
+      ? `${API_BASE_URL}/tenant/${TENANT_ID}/demande-credit/${id}`
+      : `${API_BASE_URL}/tenant/${TENANT_ID}/demande-credit`
 
     // Envoi de la requête GET vers l'API backend
     const response = await fetch(url, {
@@ -318,7 +319,7 @@ export async function getCreditRequest(id?: string) {
           createdById: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
           updatedById: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
           importHash: "hash789",
-          tenantId: "aa1287f6-06af-45b7-a905-8c57363565c2",
+          TENANT_ID: "aa1287f6-06af-45b7-a905-8c57363565c2",
           applicantName: "Jean Dupont",
           creditAmount: "50000",
           durationMonths: "24",
@@ -337,7 +338,7 @@ export async function getCreditRequest(id?: string) {
 }
 
 // Fonction asynchrone pour récupérer une demande de crédit par ID
-export async function getDemandeCreditById(tenantId: string, id: string) {
+export async function getDemandeCreditById(TENANT_ID: string, id: string) {
   try {
     // 🔑 Récupération du token JWT stocké dans les cookies
     const cookieToken = (await cookies()).get("token")?.value
@@ -355,7 +356,7 @@ export async function getDemandeCreditById(tenantId: string, id: string) {
         createdById: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
         updatedById: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
         importHash: "hash789",
-        tenantId: tenantId,
+        TENANT_ID: TENANT_ID,
         applicantName: "Jean Dupont",
         creditAmount: "50000",
         durationMonths: "24",
@@ -366,7 +367,7 @@ export async function getDemandeCreditById(tenantId: string, id: string) {
     }
 
     // Envoi de la requête GET vers l'API backend pour récupérer une demande spécifique
-    const response = await fetch(`${API_BASE_URL}/tenant/${tenantId}/demande-credit/${id}`, {
+    const response = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/demande-credit/${id}`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -393,7 +394,7 @@ export async function getDemandeCreditById(tenantId: string, id: string) {
       createdById: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
       updatedById: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
       importHash: "hash789",
-      tenantId: tenantId,
+      TENANT_ID: TENANT_ID,
       applicantName: "Jean Dupont",
       creditAmount: "50000",
       durationMonths: "24",
@@ -405,7 +406,7 @@ export async function getDemandeCreditById(tenantId: string, id: string) {
 }
 
 // Fonction asynchrone pour récupérer une demande de chéquier (commande) par ID
-export async function getCommandeById(tenantId: string, id: string) {
+export async function getCommandeById(TENANT_ID: string, id: string) {
   try {
     // 🔑 Récupération du token JWT stocké dans les cookies
     const cookieToken = (await cookies()).get("token")?.value
@@ -423,7 +424,7 @@ export async function getCommandeById(tenantId: string, id: string) {
         createdById: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
         updatedById: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
         importHash: "hash123",
-        tenantId: tenantId,
+        TENANT_ID: TENANT_ID,
         dateorder: "2024-01-15",
         nbrefeuille: 25,
         nbrechequier: 1,
@@ -437,7 +438,7 @@ export async function getCommandeById(tenantId: string, id: string) {
     }
 
     // Envoi de la requête GET vers l'API backend pour récupérer une commande spécifique
-    const response = await fetch(`${API_BASE_URL}/tenant/${tenantId}/commande/${id}`, {
+    const response = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/commande/${id}`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -464,7 +465,7 @@ export async function getCommandeById(tenantId: string, id: string) {
       createdById: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
       updatedById: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
       importHash: "hash123",
-      tenantId: tenantId,
+      TENANT_ID: TENANT_ID,
       dateorder: "2024-01-15",
       nbrefeuille: 25,
       nbrechequier: 1,
