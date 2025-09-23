@@ -24,7 +24,7 @@ export async function toggleAccountStatus(accountId: string, newStatus: string) 
 
   try {
     const statusMessages = {
-      ACTIVE: "activé",
+      ACTIF: "activé",
       BLOCKED: "bloqué",
       SUSPENDED: "suspendu",
       CLOSED: "fermé",
