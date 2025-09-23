@@ -51,8 +51,8 @@ export async function submitServiceRequest(prevState: any, formData: FormData) {
 
     // Log the request for audit
     //console.log(
-      `[AUDIT] Nouvelle demande de service - Type: ${serviceType}, Compte: ${accountId}, Référence: ${reference}`,
-    )
+    //   `[AUDIT] Nouvelle demande de service - Type: ${serviceType}, Compte: ${accountId}, Référence: ${reference}`,
+    // )
     //console.log(`[AUDIT] Données de la demande:`, parsedFormData)
 
     // Simulate business logic

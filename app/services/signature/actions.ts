@@ -166,10 +166,10 @@ Date d'ouverture : ${currentDate}
     }
 
     //console.log("📄 Document généré:", {
-      type: data.type,
-      accountId: data.accountId,
-      timestamp: new Date().toISOString(),
-    })
+    //   type: data.type,
+    //   accountId: data.accountId,
+    //   timestamp: new Date().toISOString(),
+    // })
 
     return {
       success: true,

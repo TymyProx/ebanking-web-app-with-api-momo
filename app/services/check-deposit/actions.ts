@@ -216,10 +216,10 @@ async function saveCheckDeposit(depositData: any): Promise<void> {
   await new Promise((resolve) => setTimeout(resolve, 800))
 
   //console.log("Dépôt de chèque enregistré:", {
-    id: depositData.id,
-    amount: depositData.amount,
-    status: depositData.status,
-  })
+  //   id: depositData.id,
+  //   amount: depositData.amount,
+  //   status: depositData.status,
+  // })
 }
 
 async function sendDepositNotification(depositData: any): Promise<void> {
