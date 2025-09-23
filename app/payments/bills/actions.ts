@@ -357,34 +357,34 @@ export async function payBill(prevState: any, formData: FormData) {
       .padStart(3, "0")}`
 
     // Simulation du traitement du paiement
-    console.log("Paiement unifié traité:", {
-      reference,
-      provider: validatedData.providerId,
-      type: provider.type,
-      billNumber: validatedData.billNumber,
-      amount: paymentAmount,
-      fee,
-      total: totalAmount,
-      account: validatedData.sourceAccount,
-      method: validatedData.paymentMethod,
-    })
+    //console.log("Paiement unifié traité:", {
+    //   reference,
+    //   provider: validatedData.providerId,
+    //   type: provider.type,
+    //   billNumber: validatedData.billNumber,
+    //   amount: paymentAmount,
+    //   fee,
+    //   total: totalAmount,
+    //   account: validatedData.sourceAccount,
+    //   method: validatedData.paymentMethod,
+    // })
 
     // Log d'audit
-    console.log(
-      `[AUDIT] Paiement ${provider.type} - Réf: ${reference}, Fournisseur: ${validatedData.providerId}, Montant: ${paymentAmount} GNF à ${new Date().toISOString()}`,
-    )
+    //console.log(
+    //   `[AUDIT] Paiement ${provider.type} - Réf: ${reference}, Fournisseur: ${validatedData.providerId}, Montant: ${paymentAmount} GNF à ${new Date().toISOString()}`,
+    // )
 
     // Simulation des notifications
     if (provider.type === "utility") {
-      console.log(
-        `[SMS] Paiement facture ${validatedData.providerId} de ${paymentAmount} GNF effectué. Réf: ${reference}`,
-      )
-      console.log(`[API] Notification fournisseur ${validatedData.providerId} - Paiement reçu: ${reference}`)
+      //console.log(
+      //   `[SMS] Paiement facture ${validatedData.providerId} de ${paymentAmount} GNF effectué. Réf: ${reference}`,
+      // )
+      //console.log(`[API] Notification fournisseur ${validatedData.providerId} - Paiement reçu: ${reference}`)
     } else {
-      console.log(
-        `[SMS] Paiement commerçant ${validatedData.providerId} de ${paymentAmount} GNF effectué. Réf: ${reference}`,
-      )
-      console.log(`[API] Notification commerçant ${validatedData.providerId} - Paiement reçu: ${reference}`)
+      //console.log(
+      //   `[SMS] Paiement commerçant ${validatedData.providerId} de ${paymentAmount} GNF effectué. Réf: ${reference}`,
+      // )
+      //console.log(`[API] Notification commerçant ${validatedData.providerId} - Paiement reçu: ${reference}`)
     }
 
     return {

@@ -216,11 +216,11 @@ export async function uploadBulkPaymentFile(formData: FormData): Promise<ActionR
       }
     }
 
-    console.log("📊 Fichier Excel validé avec succès:", {
-      fileName: file.name,
-      beneficiaryCount: beneficiaries.length,
-      totalAmount: fileTotal,
-    })
+    //console.log("📊 Fichier Excel validé avec succès:", {
+    //   fileName: file.name,
+    //   beneficiaryCount: beneficiaries.length,
+    //   totalAmount: fileTotal,
+    // })
 
     return {
       success: true,
@@ -253,7 +253,7 @@ export async function validateBulkPayment(formData: FormData): Promise<ActionRes
       }
     }
 
-    console.log("📱 Code OTP envoyé pour validation de paiement de masse")
+    //console.log("📱 Code OTP envoyé pour validation de paiement de masse")
 
     return {
       success: true,
@@ -332,7 +332,7 @@ export async function processBulkPayment(formData: FormData): Promise<ActionResu
       createdBy: "demo@astrabng.com",
     }
 
-    console.log("💳 Paiement de masse traité:", batchData)
+    //console.log("💳 Paiement de masse traité:", batchData)
 
     // Revalider la page pour mettre à jour l'interface
     revalidatePath("/payments/bulk")

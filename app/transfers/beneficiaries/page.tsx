@@ -13,7 +13,7 @@ import {
   Plus,
   Search,
   Edit,
-  Trash2,
+  UserX,
   Building,
   User,
   Globe,
@@ -24,7 +24,14 @@ import {
   AlertCircle,
 } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { addBeneficiary, updateBeneficiary, deleteBeneficiary, validateRIB, getBeneficiaries } from "./actions"
+import {
+  addBeneficiary,
+  updateBeneficiary,
+  deactivateBeneficiary,
+  reactivateBeneficiary,
+  getBeneficiaries,
+  toggleBeneficiaryFavorite,
+} from "./actions"
 import { useActionState } from "react"
 import BeneficiaryForm from "@/components/beneficiary-form"
 
@@ -33,23 +40,14 @@ interface Beneficiary {
   name: string
   account: string
   bank: string
-  type: "BNG-BNG" | "BNG-CONFRERE" | "BNG-INTERNATIONAL"
+  type: string //\"BNG-BNG\" | \"BNG-CONFRERE\" | \"BNG-INTERNATIONAL\"
   favorite: boolean
   lastUsed: string
   addedDate: string
   iban?: string
   swiftCode?: string
   country?: string
-}
-
-interface BeneficiaryFormData {
-  name: string
-  account: string
-  bank: string
-  type: string
-  iban?: string
-  swiftCode?: string
-  country?: string
+  status: number // Added status field to track active/inactive beneficiaries
 }
 
 export default function BeneficiariesPage() {
@@ -65,27 +63,33 @@ export default function BeneficiariesPage() {
 
   const [addState, addAction, isAddPending] = useActionState(addBeneficiary, null)
   const [updateState, updateAction, isUpdatePending] = useActionState(updateBeneficiary, null)
-  const [deleteState, deleteAction, isDeletePending] = useActionState(deleteBeneficiary, null)
+  const [deactivateState, deactivateAction, isDeactivatePending] = useActionState(deactivateBeneficiary, null)
+  const [reactivateState, reactivateAction, isReactivatePending] = useActionState(reactivateBeneficiary, null)
 
-  const [addMessage, setAddMessage] = useState<{ success?: string; error?: string } | null>(null)
-  const [updateMessage, setUpdateMessage] = useState<{ success?: string; error?: string } | null>(null)
+  const [addMessage, setAddMessage] = useState<string | null>(null)
+  const [updateMessage, setUpdateMessage] = useState<string | null>(null)
+  const [showDeactivateSuccess, setShowDeactivateSuccess] = useState(false)
+  const [showReactivateSuccess, setShowReactivateSuccess] = useState(false)
+  const [showAddSuccess, setShowAddSuccess] = useState(false)
+  const [showUpdateSuccess, setShowUpdateSuccess] = useState(false)
 
   const loadBeneficiaries = async () => {
     setIsLoading(true)
     try {
       const apiBeneficiaries = await getBeneficiaries()
-      console.log("ApiBeneficiaire", apiBeneficiaries)
+      //console.log("ApiBeneficiaire", apiBeneficiaries)
       const transformedBeneficiaries: Beneficiary[] = apiBeneficiaries.map((apiB) => ({
         id: apiB.id,
         name: apiB.name,
         account: apiB.accountNumber,
         bank: getBankNameFromCode(apiB.bankCode),
-        type: getBeneficiaryType(apiB.bankCode),
-        favorite: false,
+        type: apiB.typeBeneficiary,
+        favorite: apiB.favoris || false,
         lastUsed: "Jamais",
         addedDate: new Date(apiB.createdAt).toLocaleDateString("fr-FR"),
+        status: apiB.status, // Include status from API response
       }))
-      console.log("Transformed Beneficiaries", transformedBeneficiaries)
+      //console.log("Transformed Beneficiaries", transformedBeneficiaries)
       setBeneficiaries(transformedBeneficiaries)
     } catch (error) {
       console.error("Erreur lors du chargement des bénéficiaires:", error)
@@ -99,26 +103,50 @@ export default function BeneficiariesPage() {
   }, [])
 
   useEffect(() => {
-    if (addState?.success || updateState?.success || deleteState?.success) {
+    if (addState?.success || updateState?.success || deactivateState?.success || reactivateState?.success) {
       loadBeneficiaries()
     }
-  }, [addState?.success, updateState?.success, deleteState?.success])
+  }, [addState?.success, updateState?.success, deactivateState?.success, reactivateState?.success])
 
   useEffect(() => {
     if (addState?.success) {
-      setAddMessage({ success: "✅ Bénéficiaire ajouté avec succès." })
-    } else if (addState?.error) {
-      setAddMessage({ error: "❌ Erreur lors de l'ajout. Veuillez vérifier les informations." })
+      setShowAddSuccess(true)
+      const timer = setTimeout(() => {
+        setShowAddSuccess(false)
+      }, 5000)
+      return () => clearTimeout(timer)
     }
-  }, [addState])
+  }, [addState?.success])
 
   useEffect(() => {
     if (updateState?.success) {
-      setUpdateMessage({ success: "✅ Bénéficiaire modifié avec succès." })
-    } else if (updateState?.error) {
-      setUpdateMessage({ error: "❌ Erreur lors de la modification. Veuillez vérifier les informations." })
+      setShowUpdateSuccess(true)
+      const timer = setTimeout(() => {
+        setShowUpdateSuccess(false)
+      }, 5000)
+      return () => clearTimeout(timer)
     }
-  }, [updateState])
+  }, [updateState?.success])
+
+  useEffect(() => {
+    if (deactivateState?.success) {
+      setShowDeactivateSuccess(true)
+      const timer = setTimeout(() => {
+        setShowDeactivateSuccess(false)
+      }, 5000)
+      return () => clearTimeout(timer)
+    }
+  }, [deactivateState?.success])
+
+  useEffect(() => {
+    if (reactivateState?.success) {
+      setShowReactivateSuccess(true)
+      const timer = setTimeout(() => {
+        setShowReactivateSuccess(false)
+      }, 5000)
+      return () => clearTimeout(timer)
+    }
+  }, [reactivateState?.success])
 
   const getBankNameFromCode = (bankCode: string): string => {
     const bankNames: Record<string, string> = {
@@ -137,30 +165,30 @@ export default function BeneficiariesPage() {
     return bankNames[bankCode] || bankCode
   }
 
-  const getBeneficiaryType = (bankCode: string): "BNG-BNG" | "BNG-CONFRERE" | "BNG-INTERNATIONAL" => {
-    if (bankCode === "BNG") {
-      return "BNG-BNG"
-    } else if (["BICI", "SGBG", "UBA", "ECO", "VISTA"].includes(bankCode)) {
-      return "BNG-CONFRERE"
-    } else {
-      return "BNG-INTERNATIONAL"
-    }
-  }
-
   const filteredBeneficiaries = beneficiaries.filter((beneficiary) => {
     const matchesSearch =
       beneficiary.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       beneficiary.account.toLowerCase().includes(searchTerm.toLowerCase()) ||
       beneficiary.bank.toLowerCase().includes(searchTerm.toLowerCase())
 
-    const matchesFilter =
-      filterType === "all" || (filterType === "favorites" && beneficiary.favorite) || beneficiary.type === filterType
+    let matchesFilter = false
+    if (filterType === "all") {
+      matchesFilter = beneficiary.status === 0 // Only show active beneficiaries by default
+    } else if (filterType === "inactive") {
+      matchesFilter = beneficiary.status === 1 // Show inactive beneficiaries
+    } else if (filterType === "favorites") {
+      matchesFilter = beneficiary.favorite && beneficiary.status === 0 // Only active favorites
+    } else {
+      matchesFilter = beneficiary.type === filterType && beneficiary.status === 0 // Only active of specific type
+    }
 
     return matchesSearch && matchesFilter
   })
 
   const resetForm = () => {
     setRibValidation(null)
+    setAddMessage(null)
+    setUpdateMessage(null)
   }
 
   const handleAddBeneficiary = async (formData: FormData) => {
@@ -168,6 +196,10 @@ export default function BeneficiariesPage() {
       const result = await addAction(formData)
       if (result?.success) {
         setIsAddDialogOpen(false)
+        await loadBeneficiaries() // Force refresh the list immediately
+        resetForm()
+      } else {
+        setAddMessage(result?.error || "Erreur lors de l'ajout du bénéficiaire.")
       }
     })
   }
@@ -187,37 +219,44 @@ export default function BeneficiariesPage() {
       if (result?.success) {
         setIsEditDialogOpen(false)
         setEditingBeneficiary(null)
+        await loadBeneficiaries() // Force refresh the list immediately
+        resetForm()
+      } else {
+        setUpdateMessage(result?.error || "Erreur lors de la modification du bénéficiaire.")
       }
     })
   }
 
-  const handleDeleteBeneficiary = async (beneficiaryId: string) => {
+  const handleDeactivateBeneficiary = async (beneficiaryId: string) => {
     startTransition(async () => {
       const formData = new FormData()
       formData.append("id", beneficiaryId)
-      await deleteAction(formData)
+      await deactivateAction(formData)
     })
   }
 
-  const validateRIBField = async (account: string, type: string) => {
-    if (!account) {
-      setRibValidation(null)
-      return
-    }
-
-    try {
-      const result = await validateRIB(account, type)
-      setRibValidation(result)
-    } catch (error) {
-      setRibValidation({
-        isValid: false,
-        message: "Erreur lors de la validation",
-      })
-    }
+  const handleReactivateBeneficiary = async (beneficiaryId: string) => {
+    startTransition(async () => {
+      const formData = new FormData()
+      formData.append("id", beneficiaryId)
+      await reactivateAction(formData)
+    })
   }
 
-  const toggleFavorite = (id: string) => {
-    setBeneficiaries((prev) => prev.map((b) => (b.id === id ? { ...b, favorite: !b.favorite } : b)))
+  const toggleFavorite = async (id: string) => {
+    const beneficiary = beneficiaries.find((b) => b.id === id)
+    if (!beneficiary) return
+
+    try {
+      const result = await toggleBeneficiaryFavorite(id, beneficiary.favorite)
+      if (result.success) {
+        setBeneficiaries((prev) => prev.map((b) => (b.id === id ? { ...b, favorite: !b.favorite } : b)))
+      } else {
+        console.error("Erreur lors de la modification du favori:", result.error)
+      }
+    } catch (error) {
+      console.error("Erreur lors de la modification du favori:", error)
+    }
   }
 
   const openEditDialog = (beneficiary: Beneficiary) => {
@@ -251,6 +290,11 @@ export default function BeneficiariesPage() {
     }
   }
 
+  const handleFormSuccess = async () => {
+    //console.log("[v0] Form submitted successfully, refreshing list...")
+    await loadBeneficiaries()
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -272,28 +316,59 @@ export default function BeneficiariesPage() {
             </DialogHeader>
 
             <BeneficiaryForm
-              successMessage={addMessage?.success}
-              errorMessage={addMessage?.error}
-              onMessageClear={() => setAddMessage(null)}
+              successMessage={addState?.success ? "✅ Bénéficiaire ajouté avec succès." : undefined}
+              errorMessage={addState?.error}
+              onMessageClear={() => {
+                // Clear any local message states - the form component handles its own cleanup
+              }}
               onSubmit={handleAddBeneficiary}
               onCancel={() => setIsAddDialogOpen(false)}
               isPending={isAddPending}
+              onSuccess={handleFormSuccess}
             />
           </DialogContent>
         </Dialog>
       </div>
 
-      {deleteState?.success && (
+      {showAddSuccess && (
         <Alert className="border-green-200 bg-green-50">
           <CheckCircle className="h-4 w-4 text-green-600" />
-          <AlertDescription className="text-green-800">✅ Bénéficiaire supprimé avec succès.</AlertDescription>
+          <AlertDescription className="text-green-800">✅ Bénéficiaire ajouté avec succès.</AlertDescription>
         </Alert>
       )}
 
-      {deleteState?.error && (
+      {addState?.error && (
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
-          <AlertDescription>❌ Erreur lors de la suppression. Veuillez réessayer.</AlertDescription>
+          <AlertDescription>❌ {addState.error}</AlertDescription>
+        </Alert>
+      )}
+
+      {showUpdateSuccess && (
+        <Alert className="border-green-200 bg-green-50">
+          <CheckCircle className="h-4 w-4 text-green-600" />
+          <AlertDescription className="text-green-800">✅ Bénéficiaire modifié avec succès.</AlertDescription>
+        </Alert>
+      )}
+
+      {updateState?.error && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>❌ {updateState.error}</AlertDescription>
+        </Alert>
+      )}
+
+      {showDeactivateSuccess && (
+        <Alert className="border-green-200 bg-green-50">
+          <CheckCircle className="h-4 w-4 text-green-600" />
+          <AlertDescription className="text-green-800">✅ Bénéficiaire désactivé avec succès.</AlertDescription>
+        </Alert>
+      )}
+
+      {reactivateState?.error && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>❌ Erreur lors de la réactivation. Veuillez réessayer.</AlertDescription>
         </Alert>
       )}
 
@@ -315,9 +390,10 @@ export default function BeneficiariesPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Tous les bénéficiaires</SelectItem>
+                <SelectItem value="BNG-CONFRERE">Confrère(Guinée)</SelectItem>
                 <SelectItem value="favorites">Favoris</SelectItem>
-                <SelectItem value="BNG-BNG">BNG vers BNG</SelectItem>
-                <SelectItem value="BNG-CONFRERE">BNG vers Confrère</SelectItem>
+                <SelectItem value="inactive">Inactifs</SelectItem>
+                <SelectItem value="BNG-BNG">Interne</SelectItem>
                 <SelectItem value="BNG-INTERNATIONAL">International</SelectItem>
               </SelectContent>
             </Select>
@@ -430,13 +506,15 @@ export default function BeneficiariesPage() {
                   </div>
 
                   <div className="flex items-center space-x-2">
-                    <Button variant="ghost" size="sm" onClick={() => toggleFavorite(beneficiary.id)}>
-                      {beneficiary.favorite ? (
-                        <Star className="w-4 h-4 text-yellow-500 fill-current" />
-                      ) : (
-                        <StarOff className="w-4 h-4 text-gray-400" />
-                      )}
-                    </Button>
+                    {beneficiary.status === 0 && (
+                      <Button variant="ghost" size="sm" onClick={() => toggleFavorite(beneficiary.id)}>
+                        {beneficiary.favorite ? (
+                          <Star className="w-4 h-4 text-yellow-500 fill-current" />
+                        ) : (
+                          <StarOff className="w-4 h-4 text-gray-400" />
+                        )}
+                      </Button>
+                    )}
 
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -445,22 +523,35 @@ export default function BeneficiariesPage() {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => openEditDialog(beneficiary)}>
-                          <Edit className="w-4 h-4 mr-2" />
-                          Modifier
-                        </DropdownMenuItem>
-                        <DropdownMenuItem>
-                          <Users className="w-4 h-4 mr-2" />
-                          Faire un virement
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          className="text-red-600"
-                          onClick={() => handleDeleteBeneficiary(beneficiary.id)}
-                          disabled={isDeletePending}
-                        >
-                          <Trash2 className="w-4 h-4 mr-2" />
-                          Supprimer
-                        </DropdownMenuItem>
+                        {beneficiary.status === 0 ? (
+                          <>
+                            <DropdownMenuItem onClick={() => openEditDialog(beneficiary)}>
+                              <Edit className="w-4 h-4 mr-2" />
+                              Modifier
+                            </DropdownMenuItem>
+                            <DropdownMenuItem>
+                              <Users className="w-4 h-4 mr-2" />
+                              Faire un virement
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              className="text-orange-600"
+                              onClick={() => handleDeactivateBeneficiary(beneficiary.id)}
+                              disabled={isDeactivatePending}
+                            >
+                              <UserX className="w-4 h-4 mr-2" />
+                              Désactiver
+                            </DropdownMenuItem>
+                          </>
+                        ) : (
+                          <DropdownMenuItem
+                            className="text-green-600"
+                            onClick={() => handleReactivateBeneficiary(beneficiary.id)}
+                            disabled={isReactivatePending}
+                          >
+                            <CheckCircle className="w-4 h-4 mr-2" />
+                            Réactiver
+                          </DropdownMenuItem>
+                        )}
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </div>
@@ -488,15 +579,18 @@ export default function BeneficiariesPage() {
               swiftCode: editingBeneficiary?.swiftCode,
               country: editingBeneficiary?.country,
             }}
-            successMessage={updateMessage?.success}
-            errorMessage={updateMessage?.error}
-            onMessageClear={() => setUpdateMessage(null)}
+            successMessage={updateState?.success ? "✅ Bénéficiaire modifié avec succès." : undefined}
+            errorMessage={updateState?.error}
+            onMessageClear={() => {
+              // Clear any local message states - the form component handles its own cleanup
+            }}
             onSubmit={handleEditBeneficiary}
             onCancel={() => {
               setIsEditDialogOpen(false)
               setEditingBeneficiary(null)
             }}
             isPending={isUpdatePending}
+            onSuccess={handleFormSuccess}
           />
         </DialogContent>
       </Dialog>

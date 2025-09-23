@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import {
   Dialog,
   DialogContent,
@@ -38,6 +39,7 @@ import {
 } from "lucide-react"
 
 import { fetchAllCards, createCardRequest, type Card as CardType, type NewCardRequest } from "../../actions/card"
+import { getAccounts } from "../accounts/actions"
 
 type CardWithUI = CardType & {
   holder?: string
@@ -48,16 +50,32 @@ type CardWithUI = CardType & {
   isNumberVisible?: boolean
 }
 
+type Account = {
+  id: string
+  accountId: string
+  accountNumber: string
+  accountName: string
+  currency: string
+  bookBalance: string
+  availableBalance: string
+  status: string
+  type: string
+}
+
 export default function CardsPage() {
   const [cards, setCards] = useState<CardWithUI[]>([])
   const [total, setTotal] = useState<number>(0)
   const [loading, setLoading] = useState<boolean>(false)
   const [error, setError] = useState<string | null>(null)
 
+  const [accounts, setAccounts] = useState<Account[]>([])
+  const [loadingAccounts, setLoadingAccounts] = useState<boolean>(false)
+
   // New card request state
   const [showNewCardForm, setShowNewCardForm] = useState<boolean>(false)
-  const [newCardData, setNewCardData] = useState<Pick<NewCardRequest, "typCard">>({
+  const [newCardData, setNewCardData] = useState<Pick<NewCardRequest, "typCard"> & { selectedAccount?: string }>({
     typCard: "",
+    selectedAccount: "",
   })
   const [submitting, setSubmitting] = useState<boolean>(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
@@ -69,6 +87,19 @@ export default function CardsPage() {
   const [showHistoryDialog, setShowHistoryDialog] = useState<boolean>(false)
   const [showSecurityDialog, setShowSecurityDialog] = useState<boolean>(false)
   const [tempLimits, setTempLimits] = useState({ daily: 0, monthly: 0 })
+
+  async function loadAccounts() {
+    setLoadingAccounts(true)
+    try {
+      const accountsData = await getAccounts()
+      setAccounts(accountsData || [])
+    } catch (e: any) {
+      console.error("[v0] Erreur lors du chargement des comptes:", e)
+      setAccounts([])
+    } finally {
+      setLoadingAccounts(false)
+    }
+  }
 
   async function loadCards() {
     setLoading(true)
@@ -97,6 +128,11 @@ export default function CardsPage() {
   }
 
   async function handleNewCardRequest() {
+    if (!newCardData.selectedAccount) {
+      setSubmitError("Veuillez sélectionner un compte")
+      return
+    }
+
     if (!newCardData.typCard.trim()) {
       setSubmitError("Veuillez sélectionner un type de carte")
       return
@@ -107,18 +143,94 @@ export default function CardsPage() {
     setSubmitSuccess(null)
 
     try {
-      console.log("[v0] Type de carte sélectionné:", newCardData.typCard)
-      await createCardRequest({ typCard: newCardData.typCard, idClient: "AUTO" })
+      //console.log("[v0] Type de carte sélectionné:", newCardData.typCard)
+      //console.log("[v0] Compte sélectionné:", newCardData.selectedAccount)
+
+      const selectedAccount = accounts.find((acc) => acc.id === newCardData.selectedAccount)
+
+      await createCardRequest({
+        typCard: newCardData.typCard,
+        idClient: "AUTO",
+        accountNumber: selectedAccount?.accountNumber || "",
+      })
       setSubmitSuccess("Demande de carte créée avec succès !")
-      setNewCardData({ typCard: "" })
+      setNewCardData({ typCard: "", selectedAccount: "" })
       setShowNewCardForm(false)
       await loadCards()
     } catch (e: any) {
-      console.log("[v0] Erreur lors de la création:", e)
+      //console.log("[v0] Erreur lors de la création:", e)
       setSubmitError(e?.message ?? "Erreur lors de la création de la demande")
     } finally {
       setSubmitting(false)
     }
+  }
+
+  function getAvailableCardTypes(accountId: string) {
+    const account = accounts.find((acc) => acc.id === accountId)
+    if (!account) return []
+
+    // Define card types based on account type and currency
+    const allCardTypes = [
+      {
+        type: "DEBIT",
+        name: "Carte de Débit",
+        color: "bg-gradient-to-r from-green-500 to-green-700",
+        advantages: ["Accès aux DAB", "Paiements en magasin", "Plafond quotidien flexible"],
+        icon: <CreditCard className="w-8 h-8" />,
+      },
+      {
+        type: "CREDIT",
+        name: "Carte de Crédit",
+        color: "bg-gradient-to-r from-blue-500 to-blue-700",
+        advantages: ["Crédit renouvelable", "Paiements différés", "Assurance voyage"],
+        icon: <DollarSign className="w-8 h-8" />,
+      },
+      {
+        type: "PREPAID",
+        name: "Carte Prépayée",
+        color: "bg-gradient-to-r from-purple-500 to-purple-700",
+        advantages: ["Contrôle des dépenses", "Rechargeable", "Idéale pour les jeunes"],
+        icon: <Shield className="w-8 h-8" />,
+      },
+      {
+        type: "GOLD",
+        name: "Carte Gold",
+        color: "bg-gradient-to-r from-yellow-400 to-yellow-600",
+        advantages: ["Services premium", "Plafonds élevés", "Assistance 24h/7j"],
+        icon: <CheckCircle className="w-8 h-8" />,
+      },
+      {
+        type: "PLATINUM",
+        name: "Carte Platinum",
+        color: "bg-gradient-to-r from-gray-400 to-gray-600",
+        advantages: ["Services VIP", "Plafonds illimités", "Conciergerie privée"],
+        icon: <Settings className="w-8 h-8" />,
+      },
+    ]
+
+    // Filter card types based on account type and status
+    if (account.status !== "ACTIF") {
+      return [] // No cards for inactive accounts
+    }
+
+    // Basic cards for all active accounts
+    const availableTypes = allCardTypes.filter((cardType) => ["DEBIT", "PREPAID"].includes(cardType.type))
+
+    // Credit cards only for current accounts with sufficient balance
+    if (account.type === "CURRENT" && Number.parseFloat(account.availableBalance) >= 1000000) {
+      availableTypes.push(allCardTypes.find((ct) => ct.type === "CREDIT")!)
+    }
+
+    // Premium cards for accounts with high balance
+    if (Number.parseFloat(account.availableBalance) >= 5000000) {
+      availableTypes.push(allCardTypes.find((ct) => ct.type === "GOLD")!)
+    }
+
+    if (Number.parseFloat(account.availableBalance) >= 10000000) {
+      availableTypes.push(allCardTypes.find((ct) => ct.type === "PLATINUM")!)
+    }
+
+    return availableTypes
   }
 
   function toggleCardNumberVisibility(cardId: string) {
@@ -144,7 +256,7 @@ export default function CardsPage() {
 
   function getStatusBadge(status: string) {
     switch (status?.toUpperCase()) {
-      case "ACTIVE":
+      case "ACTIF":
       case "ACTIF":
         return <Badge className="bg-green-100 text-green-800">Actif</Badge>
       case "BLOCKED":
@@ -183,6 +295,7 @@ export default function CardsPage() {
 
   useEffect(() => {
     loadCards()
+    loadAccounts()
   }, [])
 
   return (
@@ -194,7 +307,7 @@ export default function CardsPage() {
           <p className="text-gray-600">Gérez vos cartes bancaires et leurs paramètres</p>
         </div>
         <div className="flex gap-2">
-          <Button onClick={() => setShowNewCardForm(true)} className="bg-blue-600 hover:bg-blue-700">
+          <Button onClick={() => setShowNewCardForm(true)}>
             <Plus className="w-4 h-4 mr-2" />
             Nouvelle carte
           </Button>
@@ -272,7 +385,7 @@ export default function CardsPage() {
 
               {/* Card Info */}
               <CardContent className="p-4 space-y-4">
-                <div className="grid grid-cols-2 gap-4 text-sm">
+                {/* <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
                     <div className="text-gray-500">Plafond jour</div>
                     <div className="font-medium">{formatAmount(card.dailyLimit || 0)} GNF</div>
@@ -286,11 +399,11 @@ export default function CardsPage() {
                 <div className="text-sm">
                   <div className="text-gray-500">Dernière transaction</div>
                   <div className="font-medium">{card.lastTransaction}</div>
-                </div>
+                </div> */}
 
                 {/* Action Buttons */}
-                <div className="flex gap-2">
-                  {card.status?.toUpperCase() === "ACTIVE" ? (
+                {/* <div className="flex gap-2">
+                  {card.status?.toUpperCase() === "ACTIF" ? (
                     <Button variant="outline" size="sm" className="flex-1 bg-transparent">
                       <Lock className="w-4 h-4 mr-1" />
                       Bloquer
@@ -403,7 +516,7 @@ export default function CardsPage() {
                       </Tabs>
                     </DialogContent>
                   </Dialog>
-                </div>
+                </div> */}
               </CardContent>
             </Card>
           ))}
@@ -425,7 +538,7 @@ export default function CardsPage() {
         <DialogContent className="max-w-4xl">
           <DialogHeader>
             <DialogTitle>Demande de nouvelle carte</DialogTitle>
-            <DialogDescription>Choisissez le type de carte qui vous convient</DialogDescription>
+            <DialogDescription>Sélectionnez d'abord le compte puis choisissez le type de carte</DialogDescription>
           </DialogHeader>
 
           {submitError && (
@@ -435,82 +548,100 @@ export default function CardsPage() {
             </Alert>
           )}
 
-          {/* Visual card type selection */}
           <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {[
-                {
-                  type: "DEBIT",
-                  name: "Carte de Débit",
-                  color: "bg-gradient-to-r from-green-500 to-green-700",
-                  advantages: ["Accès aux DAB", "Paiements en magasin", "Plafond quotidien flexible"],
-                  icon: <CreditCard className="w-8 h-8" />,
-                },
-                {
-                  type: "CREDIT",
-                  name: "Carte de Crédit",
-                  color: "bg-gradient-to-r from-blue-500 to-blue-700",
-                  advantages: ["Crédit renouvelable", "Paiements différés", "Assurance voyage"],
-                  icon: <DollarSign className="w-8 h-8" />,
-                },
-                {
-                  type: "PREPAID",
-                  name: "Carte Prépayée",
-                  color: "bg-gradient-to-r from-purple-500 to-purple-700",
-                  advantages: ["Contrôle des dépenses", "Rechargeable", "Idéale pour les jeunes"],
-                  icon: <Shield className="w-8 h-8" />,
-                },
-                {
-                  type: "GOLD",
-                  name: "Carte Gold",
-                  color: "bg-gradient-to-r from-yellow-400 to-yellow-600",
-                  advantages: ["Services premium", "Plafonds élevés", "Assistance 24h/7j"],
-                  icon: <CheckCircle className="w-8 h-8" />,
-                },
-                {
-                  type: "PLATINUM",
-                  name: "Carte Platinum",
-                  color: "bg-gradient-to-r from-gray-400 to-gray-600",
-                  advantages: ["Services VIP", "Plafonds illimités", "Conciergerie privée"],
-                  icon: <Settings className="w-8 h-8" />,
-                },
-              ].map((cardType) => (
-                <Card
-                  key={cardType.type}
-                  className={`cursor-pointer transition-all hover:scale-105 border-2 ${
-                    newCardData.typCard === cardType.type
-                      ? "border-blue-500 ring-2 ring-blue-200"
-                      : "border-gray-200 hover:border-gray-300"
-                  }`}
-                  onClick={() => setNewCardData((prev) => ({ ...prev, typCard: cardType.type }))}
-                >
-                  <div className={`${cardType.color} p-4 text-white`}>
-                    <div className="flex items-center justify-between mb-2">
-                      {cardType.icon}
-                      {newCardData.typCard === cardType.type && <CheckCircle className="w-6 h-6 text-white" />}
-                    </div>
-                    <h3 className="font-bold text-lg">{cardType.name}</h3>
-                  </div>
-                  <CardContent className="p-4">
-                    <div className="space-y-2">
-                      <h4 className="font-medium text-sm text-gray-700">Avantages :</h4>
-                      <ul className="space-y-1">
-                        {cardType.advantages.map((advantage, index) => (
-                          <li key={index} className="text-sm text-gray-600 flex items-center">
-                            <CheckCircle className="w-3 h-3 text-green-500 mr-2 flex-shrink-0" />
-                            {advantage}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+            <div>
+              <Label htmlFor="account-select">Sélectionner le compte *</Label>
+              <Select
+                value={newCardData.selectedAccount}
+                onValueChange={(value) => setNewCardData((prev) => ({ ...prev, selectedAccount: value, typCard: "" }))}
+              >
+                <SelectTrigger className="mt-2">
+                  <SelectValue placeholder="Choisissez le compte pour la carte" />
+                </SelectTrigger>
+                <SelectContent>
+                  {loadingAccounts ? (
+                    <SelectItem value="" disabled>
+                      Chargement des comptes...
+                    </SelectItem>
+                  ) : accounts.length > 0 ? (
+                    accounts
+                      .filter((account) => account.status === "ACTIF") // Only active accounts
+                      .map((account) => (
+                        <SelectItem key={account.id} value={account.id}>
+                          <div className="flex flex-col">
+                            <span className="font-medium">{account.accountName}</span>
+                            <span className="text-sm text-gray-500">
+                              {account.accountNumber} • {formatAmount(Number.parseFloat(account.availableBalance))}{" "}
+                              {account.currency}
+                            </span>
+                          </div>
+                        </SelectItem>
+                      ))
+                  ) : (
+                    <SelectItem value="" disabled>
+                      Aucun compte disponible
+                    </SelectItem>
+                  )}
+                </SelectContent>
+              </Select>
             </div>
+
+            {newCardData.selectedAccount && (
+              <div>
+                <Label>Types de cartes disponibles pour ce compte</Label>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
+                  {getAvailableCardTypes(newCardData.selectedAccount).map((cardType) => (
+                    <Card
+                      key={cardType.type}
+                      className={`cursor-pointer transition-all hover:scale-105 border-2 ${
+                        newCardData.typCard === cardType.type
+                          ? "border-blue-500 ring-2 ring-blue-200"
+                          : "border-gray-200 hover:border-gray-300"
+                      }`}
+                      onClick={() => setNewCardData((prev) => ({ ...prev, typCard: cardType.type }))}
+                    >
+                      <div className={`${cardType.color} p-4 text-white`}>
+                        <div className="flex items-center justify-between mb-2">
+                          {cardType.icon}
+                          {newCardData.typCard === cardType.type && <CheckCircle className="w-6 h-6 text-white" />}
+                        </div>
+                        <h3 className="font-bold text-lg">{cardType.name}</h3>
+                      </div>
+                      <CardContent className="p-4">
+                        <div className="space-y-2">
+                          <h4 className="font-medium text-sm text-gray-700">Avantages :</h4>
+                          <ul className="space-y-1">
+                            {cardType.advantages.map((advantage, index) => (
+                              <li key={index} className="text-sm text-gray-600 flex items-center">
+                                <CheckCircle className="w-3 h-3 text-green-500 mr-2 flex-shrink-0" />
+                                {advantage}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+
+                {getAvailableCardTypes(newCardData.selectedAccount).length === 0 && (
+                  <Alert className="mt-4">
+                    <AlertTriangle className="h-4 w-4" />
+                    <AlertDescription>
+                      Aucun type de carte n'est disponible pour ce compte. Vérifiez le statut et le solde du compte.
+                    </AlertDescription>
+                  </Alert>
+                )}
+              </div>
+            )}
 
             {/* Action Buttons */}
             <div className="flex gap-2 pt-4">
-              <Button onClick={handleNewCardRequest} disabled={submitting || !newCardData.typCard} className="flex-1">
+              <Button
+                onClick={handleNewCardRequest}
+                disabled={submitting || !newCardData.typCard || !newCardData.selectedAccount}
+                className="flex-1"
+              >
                 {submitting ? (
                   <>
                     <Clock className="w-4 h-4 mr-2 animate-spin" />
@@ -528,7 +659,7 @@ export default function CardsPage() {
                 variant="outline"
                 onClick={() => {
                   setShowNewCardForm(false)
-                  setNewCardData({ typCard: "" })
+                  setNewCardData({ typCard: "", selectedAccount: "" })
                   setSubmitError(null)
                 }}
                 disabled={submitting}
@@ -586,7 +717,7 @@ export default function CardsPage() {
               <div>
                 <div className="text-sm text-gray-500">Cartes actives</div>
                 <div className="text-2xl font-bold text-green-600">
-                  {cards.filter((c) => c.status?.toUpperCase() === "ACTIVE").length}
+                  {cards.filter((c) => c.status?.toUpperCase() === "ACTIF").length}
                 </div>
               </div>
               <Shield className="w-8 h-8 text-green-500" />

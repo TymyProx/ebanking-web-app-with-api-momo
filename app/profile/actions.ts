@@ -48,7 +48,7 @@ export async function updateProfile(data: ProfileData) {
   }
 
   // Simulate successful update
-  console.log("Profile updated:", data)
+  //console.log("Profile updated:", data)
 
   return {
     success: true,

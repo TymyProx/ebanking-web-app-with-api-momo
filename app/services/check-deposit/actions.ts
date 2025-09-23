@@ -215,25 +215,25 @@ async function saveCheckDeposit(depositData: any): Promise<void> {
   // Simulation de sauvegarde en base de données
   await new Promise((resolve) => setTimeout(resolve, 800))
 
-  console.log("Dépôt de chèque enregistré:", {
-    id: depositData.id,
-    amount: depositData.amount,
-    status: depositData.status,
-  })
+  //console.log("Dépôt de chèque enregistré:", {
+  //   id: depositData.id,
+  //   amount: depositData.amount,
+  //   status: depositData.status,
+  // })
 }
 
 async function sendDepositNotification(depositData: any): Promise<void> {
   // Simulation d'envoi de notification
   await new Promise((resolve) => setTimeout(resolve, 300))
 
-  console.log("Notification envoyée pour le dépôt:", depositData.id)
+  //console.log("Notification envoyée pour le dépôt:", depositData.id)
 }
 
 async function secureImageCleanup(imageId: string): Promise<void> {
   // Simulation de nettoyage sécurisé
   await new Promise((resolve) => setTimeout(resolve, 200))
 
-  console.log("Nettoyage sécurisé de l'image:", imageId)
+  //console.log("Nettoyage sécurisé de l'image:", imageId)
 }
 
 // Action pour récupérer l'historique des dépôts

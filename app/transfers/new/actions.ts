@@ -4,8 +4,8 @@ import { z } from "zod"
 import { cookies } from "next/headers"
 import { revalidatePath } from "next/cache"
 
-const API_BASE_URL = process.env.API_BASE_URL || process.env.NEXT_PUBLIC_API_BASE_URL || "https://192.168.1.200:8080/api"
-const TENANT_ID = process.env.TENANT_ID || "aa1287f6-06af-45b7-a905-8c57363565c2"
+const API_BASE_URL = process.env.API_BASE_URL
+const TENANT_ID = process.env.TENANT_ID
 
 // Schéma de validation pour les virements
 const transferSchema = z
@@ -88,10 +88,10 @@ export async function sendOTP(prevState: any, formData: FormData) {
     }
 
     // Log pour le développement (en production, envoyer vraiment le SMS)
-    console.log(`[SMS] Code OTP ${otpCode} envoyé au ${phone} pour virement de ${amount} GNF`)
+    //console.log(`[SMS] Code OTP ${otpCode} envoyé au ${phone} pour virement de ${amount} GNF`)
 
     // Log d'audit
-    console.log(`[AUDIT] OTP envoyé - Téléphone: ${phone} à ${new Date().toISOString()}`)
+    //console.log(`[AUDIT] OTP envoyé - Téléphone: ${phone} à ${new Date().toISOString()}`)
 
     return {
       success: true,
@@ -162,7 +162,7 @@ export async function validateOTP(prevState: any, formData: FormData) {
     otpStorage.delete(phone)
 
     // Log d'audit
-    console.log(`[AUDIT] OTP validé avec succès - Téléphone: ${phone} à ${new Date().toISOString()}`)
+    //console.log(`[AUDIT] OTP validé avec succès - Téléphone: ${phone} à ${new Date().toISOString()}`)
 
     return {
       success: true,
@@ -211,8 +211,8 @@ export async function executeTransfer(prevState: any, formData: FormData) {
       transferDate: formData.get("transferDate") as string,
     }
 
-    console.log("[v0] Données brutes du formulaire:", data)
-    console.log("[v0] targetAccount reçu:", data.targetAccount, "Type:", typeof data.targetAccount)
+    //console.log("[v0] Données brutes du formulaire:", data)
+    //console.log("[v0] targetAccount reçu:", data.targetAccount, "Type:", typeof data.targetAccount)
 
     const cleanedData = {
       sourceAccount: data.sourceAccount,
@@ -224,12 +224,12 @@ export async function executeTransfer(prevState: any, formData: FormData) {
       transferDate: data.transferDate,
     }
 
-    console.log("[v0] Données nettoyées:", cleanedData)
+    //console.log("[v0] Données nettoyées:", cleanedData)
 
     // Validation des données
     const validatedData = transferSchema.parse(cleanedData)
 
-    console.log("[v0] Données validées:", validatedData)
+    //console.log("[v0] Données validées:", validatedData)
 
     const transactionId = `TXN_${Date.now()}_${Math.floor(Math.random() * 1000)
       .toString()
@@ -260,7 +260,7 @@ export async function executeTransfer(prevState: any, formData: FormData) {
       },
     }
 
-    console.log("[v0] Données envoyées à l'API:", apiData)
+    //console.log("[v0] Données envoyées à l'API:", apiData)
 
     const cookieToken = (await cookies()).get("token")?.value
     const usertoken = cookieToken
@@ -283,11 +283,11 @@ export async function executeTransfer(prevState: any, formData: FormData) {
     }
 
     const result = await response.json()
-    console.log("Virement exécuté via API:", result)
+    //console.log("Virement exécuté via API:", result)
 
-    console.log(
-      `[AUDIT] Virement exécuté via API - ID: ${transactionId}, Montant: ${validatedData.amount} GNF, Compte: ${validatedData.sourceAccount} à ${new Date().toISOString()}`,
-    )
+    //console.log(
+     // `[AUDIT] Virement exécuté via API - ID: ${transactionId}, Montant: ${validatedData.amount} GNF, Compte: ${validatedData.sourceAccount} à ${new Date().toISOString()}`,
+    //)
 
     revalidatePath("/transfers/new")
     revalidatePath("/accounts")
@@ -304,7 +304,7 @@ export async function executeTransfer(prevState: any, formData: FormData) {
     console.error("Erreur lors de l'exécution du virement:", error)
 
     if (error instanceof z.ZodError) {
-      console.log("[v0] Erreurs de validation Zod:", error.errors)
+      //console.log("[v0] Erreurs de validation Zod:", error.errors)
       return {
         success: false,
         error: error.errors[0].message,
@@ -337,7 +337,7 @@ export async function validateBeneficiary(accountNumber: string, bankCode: strin
     return {
       success: true,
       message: "Bénéficiaire validé avec succès",
-      accountStatus: "ACTIVE",
+      accountStatus: "ACTIF",
     }
   } catch (error) {
     return {
@@ -382,7 +382,7 @@ export async function getTransactions(): Promise<{ data: any[] }> {
   const usertoken = cookieToken
 
   if (!usertoken) {
-    console.log("[v0] Token d'authentification manquant, retour de données de test")
+    //console.log("[v0] Token d'authentification manquant, retour de données de test")
     return {
       data: [
         {
@@ -417,8 +417,8 @@ export async function getTransactions(): Promise<{ data: any[] }> {
   }
 
   try {
-    console.log("[v0] Tentative de récupération des transactions...")
-    console.log("[v0] URL:", `${API_BASE_URL}/tenant/${TENANT_ID}/transaction`)
+    //console.log("[v0] Tentative de récupération des transactions...")
+    //console.log("[v0] URL:", `${API_BASE_URL}/tenant/${TENANT_ID}/transaction`)
 
     const response = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/transaction`, {
       method: "GET",
@@ -429,8 +429,8 @@ export async function getTransactions(): Promise<{ data: any[] }> {
       cache: "no-store", // Always fetch fresh data
     })
 
-    console.log("[v0] Statut de la réponse:", response.status)
-    console.log("[v0] Headers de la réponse:", Object.fromEntries(response.headers.entries()))
+    //console.log("[v0] Statut de la réponse:", response.status)
+    //console.log("[v0] Headers de la réponse:", Object.fromEntries(response.headers.entries()))
 
     if (!response.ok) {
       if (response.status === 401) {
@@ -478,7 +478,7 @@ export async function getTransactions(): Promise<{ data: any[] }> {
         console.error("[v0] Réponse non-JSON:", errorText)
 
         if (errorText.includes("only public URLs are supported")) {
-          console.log("[v0] API nécessite une URL publique, retour de données de test")
+          //console.log("[v0] API nécessite une URL publique, retour de données de test")
           return {
             data: [
               {
@@ -521,7 +521,7 @@ export async function getTransactions(): Promise<{ data: any[] }> {
       console.error("[v0] Réponse non-JSON reçue:", responseText)
 
       if (responseText.includes("only public URLs are supported")) {
-        console.log("[v0] API nécessite une URL publique, retour de données de test")
+        //console.log("[v0] API nécessite une URL publique, retour de données de test")
         return {
           data: [
             {
@@ -558,7 +558,7 @@ export async function getTransactions(): Promise<{ data: any[] }> {
     }
 
     const data = await response.json()
-    console.log("[v0] Données reçues:", data)
+    //console.log("[v0] Données reçues:", data)
 
     // Retourne la réponse sous forme de tableau dans un objet data
     if (Array.isArray(data.rows)) {
@@ -568,7 +568,7 @@ export async function getTransactions(): Promise<{ data: any[] }> {
   } catch (error) {
     console.error("[v0] Erreur lors de la récupération des transactions:", error)
 
-    console.log("[v0] Retour de données de test suite à l'erreur de connexion")
+    //console.log("[v0] Retour de données de test suite à l'erreur de connexion")
     return {
       data: [
         {

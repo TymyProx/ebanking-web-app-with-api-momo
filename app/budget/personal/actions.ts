@@ -99,13 +99,13 @@ export async function createPersonalBudget(prevState: any, formData: FormData) {
     }
 
     // Simulation de l'enregistrement en base de données
-    console.log("Budget personnel créé:", validatedFields)
+    //console.log("Budget personnel créé:", validatedFields)
 
     // Calcul des recommandations budgétaires
     const budgetRecommendations = generateBudgetRecommendations(validatedFields)
 
     // Log d'audit
-    console.log(`[AUDIT] Budget personnel créé - Client: ${validatedFields.fullName} à ${new Date().toISOString()}`)
+    //console.log(`[AUDIT] Budget personnel créé - Client: ${validatedFields.fullName} à ${new Date().toISOString()}`)
 
     return {
       success: true,
@@ -177,7 +177,7 @@ export async function addBudgetExpense(prevState: any, formData: FormData) {
     const globalUsagePercent = Math.round((newTotalExpenses / currentBudget.monthlyBudget) * 100)
 
     // Simulation de l'enregistrement
-    console.log("Nouvelle dépense budgétaire enregistrée:", validatedFields)
+    //console.log("Nouvelle dépense budgétaire enregistrée:", validatedFields)
 
     // Génération des messages de feedback
     const categoryName = getCategoryName(validatedFields.category)
@@ -214,9 +214,9 @@ export async function addBudgetExpense(prevState: any, formData: FormData) {
     }
 
     // Log d'audit
-    console.log(
-      `[AUDIT] Dépense ajoutée - Catégorie: ${validatedFields.category} - Montant: ${validatedFields.amount} GNF - Client: ${validatedFields.fullName}`,
-    )
+    //console.log(
+    //   `[AUDIT] Dépense ajoutée - Catégorie: ${validatedFields.category} - Montant: ${validatedFields.amount} GNF - Client: ${validatedFields.fullName}`,
+    // )
 
     return {
       success: true,
@@ -279,12 +279,12 @@ export async function updateBudgetSettings(formData: FormData) {
     }
 
     // Simulation de la mise à jour
-    console.log("Paramètres budgétaires mis à jour:", validatedFields)
+    //console.log("Paramètres budgétaires mis à jour:", validatedFields)
 
     // Log d'audit
-    console.log(
-      `[AUDIT] Paramètres budgétaires mis à jour - Client: ${validatedFields.fullName} à ${new Date().toISOString()}`,
-    )
+    //console.log(
+    //   `[AUDIT] Paramètres budgétaires mis à jour - Client: ${validatedFields.fullName} à ${new Date().toISOString()}`,
+    // )
 
     return {
       success: true,
@@ -402,13 +402,13 @@ export async function exportBudgetReport(format: string, period: string) {
       ],
     }
 
-    console.log(`Génération du rapport budgétaire ${filename}`)
-    console.log("Données du rapport:", reportData)
+    //console.log(`Génération du rapport budgétaire ${filename}`)
+    //console.log("Données du rapport:", reportData)
 
     // Log d'audit
-    console.log(
-      `[AUDIT] Export rapport budgétaire - Format: ${format} - Période: ${period} - Client: USER123 à ${new Date().toISOString()}`,
-    )
+    //console.log(
+    //   `[AUDIT] Export rapport budgétaire - Format: ${format} - Période: ${period} - Client: USER123 à ${new Date().toISOString()}`,
+    // )
 
     return {
       success: true,
@@ -445,13 +445,13 @@ export async function sendBudgetAlert(alertData: any) {
     }
 
     // Simulation d'envoi des notifications
-    console.log(`[ALERT] ${alertData.type.toUpperCase()} - ${message}`)
-    console.log(`[CHANNELS] Envoyé via: ${channels.join(", ")}`)
+    //console.log(`[ALERT] ${alertData.type.toUpperCase()} - ${message}`)
+    //console.log(`[CHANNELS] Envoyé via: ${channels.join(", ")}`)
 
     // Log d'audit
-    console.log(
-      `[AUDIT] Alerte budgétaire envoyée - Type: ${alertData.type} - Usage: ${alertData.globalUsage}% - Client: USER123 à ${new Date().toISOString()}`,
-    )
+    //console.log(
+    //   `[AUDIT] Alerte budgétaire envoyée - Type: ${alertData.type} - Usage: ${alertData.globalUsage}% - Client: USER123 à ${new Date().toISOString()}`,
+    // )
 
     return {
       success: true,

@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select"
 import {
   ArrowLeft,
   Download,
@@ -26,7 +25,6 @@ import {
   Shield,
   Info,
   RefreshCw,
-  Settings,
 } from "lucide-react"
 import { getAccounts } from "../actions"
 import { getTransactions } from "../../transfers/new/actions"
@@ -79,7 +77,7 @@ export default function AccountDetailsPage() {
     const loadAccount = async () => {
       try {
         const accountsData = await getAccounts()
-        console.log("[v0] Comptes récupérés:", accountsData)
+        //console.log("[v0] Comptes récupérés:", accountsData)
 
         if (Array.isArray(accountsData)) {
           const foundAccount = accountsData.find((acc: any) => acc.id === accountId || acc.accountId === accountId)
@@ -94,7 +92,7 @@ export default function AccountDetailsPage() {
               currency: foundAccount.currency || "GNF",
               type: foundAccount.type, //"Courant" as const,
               status: foundAccount.status, //|| "Actif" as const,
-              iban: `GN82 BNG 001 ${foundAccount.accountNumber}`,
+              iban: `GN82BNG001${foundAccount.accountNumber}`,
               openingDate: foundAccount.createdAt || "2020-01-01",
               branch: "Agence Kaloum",
               overdraftLimit: foundAccount.currency === "GNF" ? 500000 : undefined,
@@ -116,7 +114,7 @@ export default function AccountDetailsPage() {
     const loadTransactions = async () => {
       try {
         const transactionsData = await getTransactions()
-        console.log("[v0] Transactions récupérées:", transactionsData)
+        //console.log("[v0] Transactions récupérées:", transactionsData)
 
         if (transactionsData.data && Array.isArray(transactionsData.data)) {
           // Filtrer les transactions pour ce compte spécifique
@@ -133,7 +131,7 @@ export default function AccountDetailsPage() {
                 type: isCredit ? "Virement reçu" : "Virement émis",
                 description: txn.description || "Transaction",
                 amount: isCredit ? Math.abs(amount) : -Math.abs(amount),
-                currency: "GNF", // Par défaut
+                currency: account?.currency || "GNF",
                 date: txn.valueDate || new Date().toISOString(),
                 status: txn.status, //txn.status === "COMPLETED" ? "Exécuté" : txn.status === "PENDING" ? "En attente" : "Rejeté",
                 counterparty: txn.beneficiaryId || "Système",
@@ -152,8 +150,10 @@ export default function AccountDetailsPage() {
       }
     }
 
-    loadTransactions()
-  }, [accountId])
+    if (account) {
+      loadTransactions()
+    }
+  }, [accountId, account])
 
   const handleRefreshTransactions = async () => {
     setIsLoadingTransactions(true)
@@ -172,7 +172,7 @@ export default function AccountDetailsPage() {
               type: isCredit ? "Virement reçu" : "Virement émis",
               description: txn.description || "Transaction",
               amount: isCredit ? Math.abs(amount) : -Math.abs(amount),
-              currency: "GNF",
+              currency: account?.currency || "GNF",
               date: txn.valueDate || new Date().toISOString(),
               status: txn.status, //txn.status === "COMPLETED" ? "Exécuté" : txn.status === "PENDING" ? "En attente" : "Rejeté",
               counterparty: txn.beneficiaryId || "Système",
@@ -198,7 +198,7 @@ export default function AccountDetailsPage() {
 
     startTransition(async () => {
       try {
-        console.log("[v0] Changement de statut:", { accountId, previousStatus, newStatus })
+        //console.log("[v0] Changement de statut:", { accountId, previousStatus, newStatus })
 
         const result = await toggleAccountStatus(accountId, newStatus)
 
@@ -207,25 +207,25 @@ export default function AccountDetailsPage() {
           setAccount((prev) => (prev ? { ...prev, status: newStatus } : null))
 
           // Add notification to the context
-          addNotification({
-            type: "account_status",
-            title: "Changement de statut de compte",
-            message: `Le statut de votre compte ${account.name} (${account.number}) a été modifié de "${previousStatus}" vers "${newStatus}".`,
-            timestamp: new Date(),
-            isRead: false,
-          })
+          // addNotification({
+          //   type: "account_status",
+          //   title: "Changement de statut de compte",
+          //   message: `Le statut de votre compte ${account.name} (${account.number}) a été modifié de "${previousStatus}" vers "${newStatus}".`,
+          //   timestamp: new Date(),
+          //   isRead: false,
+          // })
 
-          console.log("[v0] Statut mis à jour avec succès")
+          //console.log("[v0] Statut mis à jour avec succès")
         }
       } catch (error) {
-        console.error("[v0] Erreur lors du changement de statut:", error)
-        addNotification({
-          type: "error",
-          title: "Erreur",
-          message: "Impossible de modifier le statut du compte. Veuillez réessayer.",
-          timestamp: new Date(),
-          isRead: false,
-        })
+        //console.error("[v0] Erreur lors du changement de statut:", error)
+        // addNotification({
+        //   type: "error",
+        //   title: "Erreur",
+        //   message: "Impossible de modifier le statut du compte. Veuillez réessayer.",
+        //   timestamp: new Date(),
+        //   isRead: false,
+        // })
       }
     })
   }
@@ -363,20 +363,7 @@ export default function AccountDetailsPage() {
                   <p className="text-sm text-gray-500 font-mono">{account.number}</p>
                 </div>
               </div>
-              <div className="flex items-center space-x-2">
-                {getStatusBadge(account.status)}
-                <Select onValueChange={handleStatusChange} disabled={isPending}>
-                  <SelectTrigger className="w-auto">
-                    <Settings className="h-4 w-4" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="ACTIVE">Activer</SelectItem>
-                    <SelectItem value="BLOCKED">Bloquer</SelectItem>
-                    <SelectItem value="SUSPENDED">Suspendre</SelectItem>
-                    <SelectItem value="CLOSED">Fermer</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+              <div className="flex items-center space-x-2">{getStatusBadge(account.status)}</div>
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
@@ -500,7 +487,7 @@ export default function AccountDetailsPage() {
             <div className="space-y-2">
               <p className="text-sm font-medium">Actions disponibles</p>
               <div className="space-y-2">
-                {account.status === "ACTIVE" && !!(account.number && String(account.number).trim()) && (
+                {account.status === "ACTIF" && !!(account.number && String(account.number).trim()) && (
                   <>
                     <Button
                       variant="outline"
@@ -600,8 +587,9 @@ export default function AccountDetailsPage() {
                     <p
                       className={`text-lg font-semibold ${transaction.amount > 0 ? "text-green-600" : "text-red-600"}`}
                     >
-                      {transaction.amount > 0 ? "+" : ""}
-                      {formatAmount(transaction.amount, transaction.currency)} {transaction.currency}
+                      {transaction.amount > 0 ? "+" : "-"}
+                      {formatAmount(Math.abs(transaction.amount), account?.currency || transaction.currency)}{" "}
+                      {account?.currency || transaction.currency}
                     </p>
                     <p className="text-sm text-gray-500">{formatDateTime(transaction.date)}</p>
                     <Badge

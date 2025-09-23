@@ -41,7 +41,7 @@ interface Account {
   balance: number
   currency: string
   type: "Courant" | "Épargne" | "Devise"
-  status: "Actif" | "Bloqué" | "Fermé"
+  status: "Actif" | "Bloqué" | "Fermé" | "ACTIF"
   iban: string
 }
 
@@ -131,7 +131,7 @@ export default function StatementsPage() {
     const loadAccounts = async () => {
       try {
         const accountsData = await getAccounts()
-        console.log("[v0] Comptes récupérés pour relevés:", accountsData)
+        //console.log("[v0] Comptes récupérés pour relevés:", accountsData)
 
         if (Array.isArray(accountsData)) {
           const adaptedAccounts: Account[] = accountsData.map((acc: any) => ({
@@ -144,10 +144,14 @@ export default function StatementsPage() {
             status: acc.status,
             iban: `GN82 BNG 001 ${acc.accountNumber}`,
           }))
-          setAccounts(adaptedAccounts)
+
+          const activeAccounts = adaptedAccounts.filter(
+            (account) => account.status === "Actif" || account.status === "ACTIF",
+          )
+          setAccounts(activeAccounts)
         }
       } catch (error) {
-        console.error("Erreur lors du chargement des comptes:", error)
+       // console.error("Erreur lors du chargement des comptes:", error)
         // Fallback vers des données de test en cas d'erreur
         setAccounts([
           {
@@ -175,7 +179,7 @@ export default function StatementsPage() {
 
       try {
         const transactionsData = await getTransactions()
-        console.log("[v0] Transactions récupérées pour relevé:", transactionsData)
+        //console.log("[v0] Transactions récupérées pour relevé:", transactionsData)
 
         if (transactionsData.data && Array.isArray(transactionsData.data)) {
           const accountTransactions = transactionsData.data.filter((txn: any) => txn.accountId === selectedAccount)
@@ -197,17 +201,17 @@ export default function StatementsPage() {
     }
   }, [preSelectedAccountId, accounts])
 
-const handlePeriodChange = (value: string) => {
-  setSelectedPeriod(value)
-  const period = predefinedPeriods.find((p) => p.value === value)
-  if (period && value !== "custom") {
-    setStartDate(period.startDate ?? "")
-    setEndDate(period.endDate ?? "")
-  } else if (value === "custom") {
-    setStartDate("")
-    setEndDate("")
+  const handlePeriodChange = (value: string) => {
+    setSelectedPeriod(value)
+    const period = predefinedPeriods.find((p) => p.value === value)
+    if (period && value !== "custom") {
+      setStartDate(period.startDate ?? "")
+      setEndDate(period.endDate ?? "")
+    } else if (value === "custom") {
+      setStartDate("")
+      setEndDate("")
+    }
   }
-}
   const handleGenerateStatement = async () => {
     if (!selectedAccount || !startDate || !endDate) {
       return
@@ -221,12 +225,12 @@ const handlePeriodChange = (value: string) => {
       return txnDate >= start && txnDate <= end
     })
 
-    console.log("[v0] Génération relevé avec transactions filtrées:", {
-      compte: selectedAccount,
-      période: `${startDate} à ${endDate}`,
-      nombreTransactions: filteredTransactions.length,
-      format,
-    })
+    // console.log("[v0] Génération relevé avec transactions filtrées:", {
+    //   compte: selectedAccount,
+    //   période: `${startDate} à ${endDate}`,
+    //   nombreTransactions: filteredTransactions.length,
+    //   format,
+    // })
 
     const formData = new FormData()
     formData.append("accountId", selectedAccount)
@@ -271,11 +275,16 @@ const handlePeriodChange = (value: string) => {
 
   const formatAmount = (amount: number, currency = "GNF") => {
     if (currency === "GNF") {
-      return new Intl.NumberFormat("fr-FR").format(amount)
+      return new Intl.NumberFormat("fr-FR", {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0,
+      })
+        .format(amount)
+        .replace(/\s/g, " ")
     }
     return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: currency,
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
     }).format(amount)
   }
 
@@ -578,7 +587,7 @@ const handlePeriodChange = (value: string) => {
                   )}
                 </Button>
 
-                <Button variant="outline" disabled={!isFormValid}>
+                {/* <Button variant="outline" disabled={!isFormValid}>
                   <Eye className="w-4 h-4 mr-2" />
                   Aperçu
                 </Button>
@@ -586,7 +595,7 @@ const handlePeriodChange = (value: string) => {
                 <Button variant="outline" disabled={!isFormValid}>
                   <Printer className="w-4 h-4 mr-2" />
                   Imprimer
-                </Button>
+                </Button> */}
               </div>
 
               {/* Envoi par email */}
@@ -776,7 +785,11 @@ const handlePeriodChange = (value: string) => {
         doc.text(new Date(txn.valueDate || txn.date).toLocaleDateString("fr-FR"), 20, yPos)
         doc.text((txn.description || "Transaction").substring(0, 25), 50, yPos)
         doc.setTextColor(isCredit ? 0 : 200, isCredit ? 150 : 0, 0)
-        doc.text(`${formatAmount(Math.abs(displayAmount))} GNF`, 140, yPos)
+        doc.text(
+          `${isCredit ? "+" : "-"}${formatAmount(Math.abs(displayAmount), selectedAccountData.currency)} ${selectedAccountData.currency}`,
+          140,
+          yPos,
+        )
         doc.setTextColor(40, 40, 40)
         doc.text(isCredit ? "CRÉDIT" : "DÉBIT", 170, yPos)
         yPos += 8
@@ -800,9 +813,9 @@ const handlePeriodChange = (value: string) => {
       const fileName = `releve_${selectedAccountData.number}_${startDate}_${endDate}.pdf`
       doc.save(fileName)
 
-      console.log("[v0] PDF généré et téléchargé:", fileName)
+      //console.log("[v0] PDF généré et téléchargé:", fileName)
     } catch (error) {
-      console.error("Erreur lors de la génération PDF:", error)
+      //console.error("Erreur lors de la génération PDF:", error)
       // Fallback vers téléchargement texte
       generateAndDownloadText()
     }
@@ -842,7 +855,7 @@ const handlePeriodChange = (value: string) => {
 
         csvContent += `${new Date(txn.valueDate || txn.date).toLocaleDateString("fr-FR")},`
         csvContent += `"${(txn.description || "Transaction").replace(/"/g, '""')}",`
-        csvContent += `${Math.abs(displayAmount)},`
+        csvContent += `"${isCredit ? "+" : "-"}${formatAmount(Math.abs(displayAmount), selectedAccountData.currency)} ${selectedAccountData.currency}",`
         csvContent += `${isCredit ? "CRÉDIT" : "DÉBIT"},`
         csvContent += `${txn.txnId || txn.id}\n`
       })
@@ -857,9 +870,9 @@ const handlePeriodChange = (value: string) => {
       document.body.removeChild(link)
       URL.revokeObjectURL(link.href)
 
-      console.log("[v0] Excel/CSV généré et téléchargé")
+      //console.log("[v0] Excel/CSV généré et téléchargé")
     } catch (error) {
-      console.error("Erreur lors de la génération Excel:", error)
+      //console.error("Erreur lors de la génération Excel:", error)
       // Fallback vers téléchargement texte
       generateAndDownloadText()
     }
@@ -894,7 +907,7 @@ const handlePeriodChange = (value: string) => {
 
       content += `Date: ${new Date(txn.valueDate || txn.date).toLocaleDateString("fr-FR")}\n`
       content += `Description: ${txn.description || "Transaction"}\n`
-      content += `Montant: ${displayAmount > 0 ? "+" : ""}${formatAmount(displayAmount)} GNF\n`
+      content += `Montant: ${isCredit ? "+" : "-"}${formatAmount(Math.abs(displayAmount), selectedAccountData.currency)} ${selectedAccountData.currency}\n`
       content += `Type: ${isCredit ? "CRÉDIT" : "DÉBIT"}\n`
       content += `Référence: ${txn.txnId || txn.id}\n`
       content += `---\n\n`
@@ -912,6 +925,6 @@ const handlePeriodChange = (value: string) => {
     document.body.removeChild(link)
     URL.revokeObjectURL(link.href)
 
-    console.log("[v0] Relevé texte généré et téléchargé")
+    //console.log("[v0] Relevé texte généré et téléchargé")
   }
 }

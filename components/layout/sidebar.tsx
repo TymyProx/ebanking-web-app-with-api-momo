@@ -9,8 +9,6 @@ import {
   CreditCard,
   ArrowLeftRight,
   Receipt,
-  TrendingUp,
-  PiggyBank,
   Settings,
   FileText,
   MessageSquare,
@@ -28,6 +26,7 @@ import {
   AlertTriangle,
   Sparkles,
 } from "lucide-react"
+import Image from "next/image"
 
 import {
   Sidebar,
@@ -106,22 +105,22 @@ const navigationData = {
         },
       ],
     },
-    {
-      title: "Paiements",
-      icon: Receipt,
-      items: [
-        {
-          title: "Payer une facture",
-          url: "/payments/bills",
-          icon: Receipt,
-        },
-        {
-          title: "Paiements groupés",
-          url: "/payments/bulk",
-          icon: FileText,
-        },
-      ],
-    },
+    // {
+    //   title: "Paiements",
+    //   icon: Receipt,
+    //   items: [
+    //     {
+    //       title: "Payer une facture",
+    //       url: "/payments/bills",
+    //       icon: Receipt,
+    //     },
+    //     {
+    //       title: "Paiements groupés",
+    //       url: "/payments/bulk",
+    //       icon: FileText,
+    //     },
+    //   ],
+    // },
     {
       title: "Cartes",
       url: "/cartes",
@@ -167,40 +166,40 @@ const navigationData = {
       ],
     },
   ],
-  investments: [
-    {
-      title: "Investissements",
-      icon: TrendingUp,
-      items: [
-        {
-          title: "Mes investissements",
-          url: "/investments",
-          icon: TrendingUp,
-        },
-        {
-          title: "Nouveau placement",
-          url: "/investments/new",
-          icon: TrendingUp,
-        },
-      ],
-    },
-    {
-      title: "Budget",
-      icon: PiggyBank,
-      items: [
-        {
-          title: "Vue d'ensemble",
-          url: "/budget",
-          icon: BarChart3,
-        },
-        {
-          title: "Budget personnel",
-          url: "/budget/personal",
-          icon: PiggyBank,
-        },
-      ],
-    },
-  ],
+  // investments: [
+  //   {
+  //     title: "Investissements",
+  //     icon: TrendingUp,
+  //     items: [
+  //       {
+  //         title: "Mes investissements",
+  //         url: "/investments",
+  //         icon: TrendingUp,
+  //       },
+  //       {
+  //         title: "Nouveau placement",
+  //         url: "/investments/new",
+  //         icon: TrendingUp,
+  //       },
+  //     ],
+  //   },
+  //   {
+  //     title: "Budget",
+  //     icon: PiggyBank,
+  //     items: [
+  //       {
+  //         title: "Vue d'ensemble",
+  //         url: "/budget",
+  //         icon: BarChart3,
+  //       },
+  //       {
+  //         title: "Budget personnel",
+  //         url: "/budget/personal",
+  //         icon: PiggyBank,
+  //       },
+  //     ],
+  //   },
+  // ],
   support: [
     {
       title: "Support",
@@ -270,12 +269,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     <Sidebar variant="inset" {...props}>
       <SidebarHeader>
         <div className="flex items-center gap-2 px-4 py-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-blue-600 to-blue-800 text-white font-bold text-sm">
-            A
-          </div>
-          <div className="grid flex-1 text-left text-sm leading-tight">
-            <span className="truncate font-semibold">Astra eBanking</span>
-            <span className="truncate text-xs text-muted-foreground">BNG Digital</span>
+          <div className="flex h-120 w-120 items-center justify-center">
+            <Image src="/images/logo-bng.png" alt="BNG Logo" width={120} height={120} className="object-contain" />
           </div>
         </div>
       </SidebarHeader>
@@ -429,7 +424,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         </SidebarGroup>
 
         {/* Investissements */}
-        <SidebarGroup>
+        {/* <SidebarGroup>
           <SidebarGroupLabel>Investissements</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
@@ -462,7 +457,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               ))}
             </SidebarMenu>
           </SidebarGroupContent>
-        </SidebarGroup>
+        </SidebarGroup> */}
 
         {/* Support */}
         <SidebarGroup>

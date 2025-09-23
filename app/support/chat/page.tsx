@@ -217,7 +217,7 @@ export default function LiveChatPage() {
   const handleRating = async () => {
     if (rating > 0) {
       // Simulation de sauvegarde de la notation
-      console.log("Rating:", rating, "Feedback:", feedback)
+      //console.log("Rating:", rating, "Feedback:", feedback)
       setShowRating(false)
     }
   }

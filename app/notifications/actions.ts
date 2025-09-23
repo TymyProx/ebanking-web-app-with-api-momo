@@ -56,7 +56,7 @@ const mockNotifications: Notification[] = [
     type: "account_status",
     title: "Changement de statut de compte",
     message:
-      'Le statut de votre compte 0001-234567-89 a été modifié de "PENDING" vers "ACTIVE". Votre compte est maintenant activé.',
+      'Le statut de votre compte 0001-234567-89 a été modifié de "PENDING" vers "ACTIF". Votre compte est maintenant activé.',
     date: "2024-01-14T16:45:00Z",
     read: false,
     channels: ["email", "sms", "push"],
@@ -118,7 +118,7 @@ export async function getNotifications(filters?: {
     }
 
     // Log d'audit
-    console.log(`[AUDIT] Consultation notifications - Client: USER123 à ${new Date().toISOString()}`)
+    //console.log(`[AUDIT] Consultation notifications - Client: USER123 à ${new Date().toISOString()}`)
 
     return {
       success: true,
@@ -152,9 +152,9 @@ export async function markAsRead(notificationId: number) {
     }
 
     // Log d'audit
-    console.log(
-      `[AUDIT] Notification marquée comme lue - ID: ${notificationId} - Client: USER123 à ${new Date().toISOString()}`,
-    )
+    //console.log(
+    //   `[AUDIT] Notification marquée comme lue - ID: ${notificationId} - Client: USER123 à ${new Date().toISOString()}`,
+    // )
 
     return {
       success: true,
@@ -191,10 +191,10 @@ export async function updateNotificationSettings(settings: NotificationSettings)
     }
 
     // Simulation de la sauvegarde en base
-    console.log("Paramètres de notification mis à jour:", settings)
+    //console.log("Paramètres de notification mis à jour:", settings)
 
     // Log d'audit
-    console.log(`[AUDIT] Paramètres de notification mis à jour - Client: USER123 à ${new Date().toISOString()}`)
+    //console.log(`[AUDIT] Paramètres de notification mis à jour - Client: USER123 à ${new Date().toISOString()}`)
 
     return {
       success: true,
@@ -231,12 +231,20 @@ export async function sendDebitNotification(transactionData: {
       recipient: transactionData.recipient,
     })
 
-    return {
-      success: true,
-      notificationId: notification.id,
-      channelsSent: notification.channels,
-      message: "Notification de débit envoyée avec succès",
-      timestamp: new Date().toISOString(),
+    if ("id" in notification) {
+      return {
+        success: true,
+        notificationId: notification.id,
+        channelsSent: "channels" in notification ? notification.channels : [],
+        message: "Notification de débit envoyée avec succès",
+        timestamp: new Date().toISOString(),
+      }
+    } else {
+      return {
+        success: false,
+        error: "Impossible de créer la notification de débit",
+        timestamp: new Date().toISOString(),
+      }
     }
   } catch (error) {
     console.error("Erreur lors de l'envoi de la notification de débit:", error)
@@ -267,12 +275,20 @@ export async function sendCreditNotification(transactionData: {
       sender: transactionData.sender,
     })
 
-    return {
-      success: true,
-      notificationId: notification.id,
-      channelsSent: notification.channels,
-      message: "Notification de crédit envoyée avec succès",
-      timestamp: new Date().toISOString(),
+    if ("id" in notification) {
+      return {
+        success: true,
+        notificationId: notification.id,
+        channelsSent: "channels" in notification ? notification.channels : [],
+        message: "Notification de crédit envoyée avec succès",
+        timestamp: new Date().toISOString(),
+      }
+    } else {
+      return {
+        success: false,
+        error: "Impossible de créer la notification de crédit",
+        timestamp: new Date().toISOString(),
+      }
     }
   } catch (error) {
     console.error("Erreur lors de l'envoi de la notification de crédit:", error)
@@ -299,9 +315,9 @@ export async function exportNotifications(
     const filename = `notifications_${new Date().toISOString().split("T")[0]}.${format}`
 
     // Log d'audit
-    console.log(
-      `[AUDIT] Export historique notifications - Format: ${format} - Client: USER123 à ${new Date().toISOString()}`,
-    )
+    //console.log(
+    //   `[AUDIT] Export historique notifications - Format: ${format} - Client: USER123 à ${new Date().toISOString()}`,
+    // )
 
     return {
       success: true,
@@ -359,7 +375,7 @@ export async function createTransactionNotification(transaction: {
       sender: transaction.sender,
     }
 
-    console.log("Notification créée:", notification)
+    //console.log("Notification créée:", notification)
 
     // Ici on enverrait les notifications via les différents canaux
     await sendNotificationChannels(notification)
@@ -407,13 +423,13 @@ function generateNotificationMessage(transaction: {
 
 async function sendNotificationChannels(notification: any) {
   // Simulation d'envoi par email
-  console.log("📧 Email envoyé:", notification.message)
+  //console.log("📧 Email envoyé:", notification.message)
 
   // Simulation d'envoi par SMS
-  console.log("📱 SMS envoyé:", notification.message)
+  //console.log("📱 SMS envoyé:", notification.message)
 
   // Simulation de notification push
-  console.log("🔔 Push notification:", notification.message)
+  //console.log("🔔 Push notification:", notification.message)
 
   return {
     email: { sent: true, timestamp: new Date().toISOString() },

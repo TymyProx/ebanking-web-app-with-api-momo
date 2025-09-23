@@ -3,17 +3,17 @@
 import { cookies } from "next/headers"
 import { revalidatePath } from "next/cache"
 
-const API_BASE_URL = process.env.API_BASE_URL || process.env.NEXT_PUBLIC_API_BASE_URL || "https://192.168.1.200:8080/api"
-const TENANT_ID = process.env.TENANT_ID || "aa1287f6-06af-45b7-a905-8c57363565c2"
+const API_BASE_URL = process.env.API_BASE_URL
+const TENANT_ID = process.env.TENANT_ID
 
 export async function getAccounts() {
   const cookieToken = (await cookies()).get("token")?.value
   const usertoken = cookieToken
   try {
-    console.log("[v0] Récupération des comptes...")
+    //console.log("[v0] Récupération des comptes...")
 
     if (!usertoken) {
-      console.log("[v0] Token manquant")
+      //console.log("[v0] Token manquant")
       return []
     }
 
@@ -26,21 +26,21 @@ export async function getAccounts() {
       cache: "no-store",
     })
 
-    console.log("[v0] Statut réponse:", response.status)
+    //console.log("[v0] Statut réponse:", response.status)
 
     if (!response.ok) {
       const contentType = response.headers.get("content-type")
       if (contentType && contentType.includes("application/json")) {
         const errorData = await response.json()
-        console.log("[v0] Erreur API:", errorData)
+        //console.log("[v0] Erreur API:", errorData)
         throw new Error(errorData.message || "Erreur lors de la récupération des comptes")
       } else {
         const errorText = await response.text()
-        console.log("[v0] Réponse non-JSON reçue:", errorText)
+        //console.log("[v0] Réponse non-JSON reçue:", errorText)
 
         // Si l'API n'est pas accessible, retourner des données de test
         if (errorText.includes("only public URLs are supported") || errorText.includes("only https is supported")) {
-          console.log("[v0] API non accessible, utilisation de données de test")
+          //console.log("[v0] API non accessible, utilisation de données de test")
           return [
             {
               id: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
@@ -51,7 +51,7 @@ export async function getAccounts() {
               currency: "GNF",
               bookBalance: "2500000",
               availableBalance: "2350000",
-              status: "ACTIVE",
+              status: "ACTIF",
               type: "CURRENT",
               agency: "Agence Centrale",
               createdAt: "2023-01-15T10:00:00Z",
@@ -66,7 +66,7 @@ export async function getAccounts() {
               currency: "GNF",
               bookBalance: "5000000",
               availableBalance: "5000000",
-              status: "ACTIVE",
+              status: "ACTIF",
               type: "SAVINGS",
               agency: "Agence Centrale",
               createdAt: "2023-03-20T10:00:00Z",
@@ -81,7 +81,7 @@ export async function getAccounts() {
               currency: "USD",
               bookBalance: "1200",
               availableBalance: "1150",
-              status: "ACTIVE",
+              status: "ACTIF",
               type: "CURRENT",
               agency: "Agence Internationale",
               createdAt: "2023-06-10T10:00:00Z",
@@ -95,7 +95,7 @@ export async function getAccounts() {
     }
 
     const responseData = await response.json()
-    console.log("[v0] Données reçues:", responseData)
+    //console.log("[v0] Données reçues:", responseData)
 
     // Gérer les différents formats de réponse possibles
     if (responseData.data) {
@@ -131,7 +131,7 @@ export async function createAccount(prevState: any, formData: FormData) {
   const cookieToken = (await cookies()).get("token")?.value
   const usertoken = cookieToken
   try {
-    console.log("[v0] Création d'un nouveau compte...")
+    //console.log("[v0] Création d'un nouveau compte...")
 
     if (!usertoken) {
       return {
@@ -154,7 +154,7 @@ export async function createAccount(prevState: any, formData: FormData) {
       agency: "Agence Principale",
     }
 
-    console.log("[v0] Données du compte:", accountData)
+    //console.log("[v0] Données du compte:", accountData)
 
     // Validation des champs requis
     if (!accountData.accountName || !accountData.currency) {
@@ -175,24 +175,24 @@ export async function createAccount(prevState: any, formData: FormData) {
       }),
     })
 
-    console.log("[v0] Statut réponse création:", response.status)
+    //console.log("[v0] Statut réponse création:", response.status)
 
     if (!response.ok) {
       const contentType = response.headers.get("content-type")
       if (contentType && contentType.includes("application/json")) {
         const errorData = await response.json()
-        console.log("[v0] Erreur API création:", errorData)
+        //console.log("[v0] Erreur API création:", errorData)
         return {
           success: false,
           error: errorData.message || "Erreur lors de la création du compte",
         }
       } else {
         const errorText = await response.text()
-        console.log("[v0] Réponse non-JSON reçue:", errorText)
+        //console.log("[v0] Réponse non-JSON reçue:", errorText)
 
         // Si l'API n'est pas accessible, simuler le succès
         if (errorText.includes("only public URLs are supported") || errorText.includes("only https is supported")) {
-          console.log("[v0] API non accessible, simulation du succès")
+          //console.log("[v0] API non accessible, simulation du succès")
           revalidatePath("/accounts")
           return {
             success: true,
@@ -208,7 +208,7 @@ export async function createAccount(prevState: any, formData: FormData) {
     }
 
     const result = await response.json()
-    console.log("[v0] Résultat création:", result)
+    //console.log("[v0] Résultat création:", result)
 
     // Rafraîchir la page des comptes
     revalidatePath("/accounts")
@@ -229,13 +229,13 @@ export async function createAccount(prevState: any, formData: FormData) {
 
 export async function getAccountById(accountId: string) {
   try {
-    console.log("[v0] Récupération du compte:", accountId)
+    //console.log("[v0] Récupération du compte:", accountId)
 
     const cookieStore = await cookies()
     const token = cookieStore.get("token")?.value
 
     if (!token) {
-      console.log("[v0] Token manquant")
+      //console.log("[v0] Token manquant")
       return { data: null }
     }
 
@@ -248,21 +248,21 @@ export async function getAccountById(accountId: string) {
       cache: "no-store",
     })
 
-    console.log("[v0] Statut réponse détail compte:", response.status)
+    //console.log("[v0] Statut réponse détail compte:", response.status)
 
     if (!response.ok) {
       const contentType = response.headers.get("content-type")
       if (contentType && contentType.includes("application/json")) {
         const errorData = await response.json()
-        console.log("[v0] Erreur API détail:", errorData)
+        //console.log("[v0] Erreur API détail:", errorData)
         throw new Error(errorData.message || "Erreur lors de la récupération du compte")
       } else {
         const errorText = await response.text()
-        console.log("[v0] Réponse non-JSON reçue:", errorText)
+        //console.log("[v0] Réponse non-JSON reçue:", errorText)
 
         // Si l'API n'est pas accessible, retourner des données de test
         if (errorText.includes("only public URLs are supported") || errorText.includes("only https is supported")) {
-          console.log("[v0] API non accessible, utilisation de données de test")
+          //console.log("[v0] API non accessible, utilisation de données de test")
           return {
             data: {
               id: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
@@ -273,7 +273,7 @@ export async function getAccountById(accountId: string) {
               currency: "GNF",
               bookBalance: "2500000",
               availableBalance: "2350000",
-              status: "ACTIVE",
+              status: "ACTIF",
               type: "CURRENT",
               agency: "Agence Centrale",
               createdAt: "2023-01-15T10:00:00Z",
@@ -287,7 +287,7 @@ export async function getAccountById(accountId: string) {
     }
 
     const data = await response.json()
-    console.log("[v0] Données compte reçues:", data)
+    //console.log("[v0] Données compte reçues:", data)
 
     return { data: data.data || data }
   } catch (error) {

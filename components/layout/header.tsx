@@ -33,7 +33,7 @@ export function Header() {
   useEffect(() => {
     const storedUserData = localStorage.getItem("userData")
     const token = localStorage.getItem("token")
-    console.log("Token récupéré:", token)
+    //console.log("Token récupéré:", token)
 
     if (storedUserData) {
       setUserData(JSON.parse(storedUserData))

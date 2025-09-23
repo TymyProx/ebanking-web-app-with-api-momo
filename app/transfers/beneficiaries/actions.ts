@@ -22,10 +22,14 @@ interface ApiBeneficiary {
   name: string
   accountNumber: string
   bankCode: string
+  bankName: string
+  status: number
+  typeBeneficiary: string
+  favoris: boolean
 }
 
-const API_BASE_URL = process.env.API_BASE_URL || process.env.NEXT_PUBLIC_API_BASE_URL || "https://192.168.1.200:8080/api"
-const TENANT_ID = process.env.TENANT_ID || "aa1287f6-06af-45b7-a905-8c57363565c2"
+const API_BASE_URL = process.env.API_BASE_URL
+const TENANT_ID = process.env.TENANT_ID
 
 export async function getBeneficiaries(): Promise<ApiBeneficiary[]> {
   const cookieToken = (await cookies()).get("token")?.value
@@ -95,12 +99,29 @@ export async function addBeneficiary(prevState: ActionResult | null, formData: F
     const account = formData.get("account") as string
     const bank = formData.get("bank") as string
     const type = formData.get("type") as string
+    const bankname = formData.get("bankname") as string
 
     // Validation des données
-    if (!name || !account || !bank || !type) {
+    if (!name || !account || !type) {
       return {
         success: false,
         error: "Tous les champs obligatoires doivent être remplis",
+      }
+    }
+
+    // Special validation for international type - bank name is required
+    if (type === "BNG-INTERNATIONAL" && !bank) {
+      return {
+        success: false,
+        error: "Le nom de la banque est obligatoire pour les bénéficiaires internationaux",
+      }
+    }
+
+    // For other types, bank is also required
+    if (type === "BNG-CONFRERE" && !bank) {
+      return {
+        success: false,
+        error: "Le nom de la banque est obligatoire",
       }
     }
 
@@ -118,7 +139,11 @@ export async function addBeneficiary(prevState: ActionResult | null, formData: F
         customerId: "CUSTOMER_ID_PLACEHOLDER", // À remplacer par l'ID du client connecté
         name: name,
         accountNumber: account,
-        bankCode: getBankCode(bank, type),
+        bankCode: bank,//getBankCode(bank, type),
+        bankName: bankname,
+        status: 0,
+        typeBeneficiary: type,
+        favoris: false, // Default value as requested
       },
     }
     const cookieToken = (await cookies()).get("token")?.value
@@ -141,7 +166,7 @@ export async function addBeneficiary(prevState: ActionResult | null, formData: F
     }
 
     const result = await response.json()
-    console.log("Bénéficiaire ajouté via API:", result)
+    //console.log("Bénéficiaire ajouté via API:", result)
 
     revalidatePath("/transfers/beneficiaries")
     revalidatePath("/transfers/new")
@@ -201,11 +226,12 @@ export async function validateRIB(account: string, type: string): Promise<{ isVa
         }
 
       case "BNG-INTERNATIONAL":
-        const ibanPattern = /^[A-Z]{2}\d{2}\s?[\d\s]+$/
-        if (ibanPattern.test(account.replace(/\s/g, ""))) {
+        const cleanedAccount = account.replace(/\s/g, "")
+        const ibanPattern = /^[A-Z]{2}\d{2}[A-Z0-9]{4,30}$/
+        if (cleanedAccount.length >= 15 && cleanedAccount.length <= 34 && ibanPattern.test(cleanedAccount)) {
           return { isValid: true, message: "IBAN valide" }
         } else {
-          return { isValid: false, message: "Format IBAN invalide. Ex: FR76 1234 5678 9012 3456 78" }
+          return { isValid: false, message: "Format IBAN invalide. Ex: FR7612345678901234567890 (15-34 caractères)" }
         }
 
       default:
@@ -228,11 +254,26 @@ export async function updateBeneficiary(prevState: ActionResult | null, formData
     const bank = formData.get("bank") as string
     const type = formData.get("type") as string
 
-    // Validation des données
-    if (!id || !name || !account || !bank || !type) {
+    if (!id || !name || !account || !type) {
       return {
         success: false,
         error: "Tous les champs obligatoires doivent être remplis",
+      }
+    }
+
+    // Special validation for international type - bank name is required
+    if (type === "BNG-INTERNATIONAL" && !bank) {
+      return {
+        success: false,
+        error: "Le nom de la banque est obligatoire pour les bénéficiaires internationaux",
+      }
+    }
+
+    // For other types, bank is also required
+    if (type === "BNG-CONFRERE" && !bank) {
+      return {
+        success: false,
+        error: "Le nom de la banque est obligatoire",
       }
     }
 
@@ -244,13 +285,20 @@ export async function updateBeneficiary(prevState: ActionResult | null, formData
       }
     }
 
+    const currentBeneficiaries = await getBeneficiaries()
+    const currentBeneficiary = currentBeneficiaries.find((b) => b.id === id)
+
     const apiData = {
       data: {
-        beneficiaryId: beneficiaryId || `BEN_${Date.now()}`, // Utiliser l'ID existant ou générer un nouveau
+        beneficiaryId: beneficiaryId || `BEN_${Date.now()}`,
         customerId: "CUSTOMER_ID_PLACEHOLDER", // À remplacer par l'ID du client connecté
         name: name,
         accountNumber: account,
         bankCode: getBankCode(bank, type),
+        bankName: bank,
+        status: 0,
+        typeBeneficiary: type,
+        favoris: currentBeneficiary?.favoris || false, // Preserve existing favoris status
       },
     }
     const cookieToken = (await cookies()).get("token")?.value
@@ -273,7 +321,7 @@ export async function updateBeneficiary(prevState: ActionResult | null, formData
     }
 
     const result = await response.json()
-    console.log("Bénéficiaire modifié via API:", result)
+    //console.log("Bénéficiaire modifié via API:", result)
 
     revalidatePath("/transfers/beneficiaries")
     revalidatePath("/transfers/new")
@@ -326,7 +374,7 @@ export async function deleteBeneficiary(prevState: ActionResult | null, formData
       }
     }
 
-    console.log("Bénéficiaire supprimé via API:", id)
+    //console.log("Bénéficiaire supprimé via API:", id)
 
     revalidatePath("/transfers/beneficiaries")
     revalidatePath("/transfers/new")
@@ -337,6 +385,226 @@ export async function deleteBeneficiary(prevState: ActionResult | null, formData
     }
   } catch (error) {
     console.error("Erreur lors de la suppression du bénéficiaire:", error)
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Une erreur inattendue s'est produite",
+    }
+  }
+}
+
+export async function toggleBeneficiaryFavorite(
+  beneficiaryId: string,
+  currentFavoriteStatus: boolean,
+): Promise<ActionResult> {
+  try {
+    const cookieToken = (await cookies()).get("token")?.value
+    const usertoken = cookieToken
+
+    const currentBeneficiaries = await getBeneficiaries()
+    const currentBeneficiary = currentBeneficiaries.find((b) => b.id === beneficiaryId)
+
+    if (!currentBeneficiary) {
+      return {
+        success: false,
+        error: "Bénéficiaire non trouvé",
+      }
+    }
+
+    const apiData = {
+      data: {
+        beneficiaryId: currentBeneficiary.beneficiaryId,
+        customerId: currentBeneficiary.customerId,
+        name: currentBeneficiary.name,
+        accountNumber: currentBeneficiary.accountNumber,
+        bankCode: currentBeneficiary.bankCode,
+        bankName: currentBeneficiary.bankName,
+        status: currentBeneficiary.status,
+        typeBeneficiary: currentBeneficiary.typeBeneficiary,
+        favoris: !currentFavoriteStatus, // Toggle the current status
+      },
+    }
+
+    const response = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/beneficiaire/${beneficiaryId}`, {
+      method: "PUT", // Use PUT instead of PATCH to send complete data
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${usertoken}`,
+      },
+      body: JSON.stringify(apiData),
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}))
+      return {
+        success: false,
+        error: errorData.message || `Erreur API: ${response.status} ${response.statusText}`,
+      }
+    }
+
+    const result = await response.json()
+    //console.log("Statut favori modifié via API:", result)
+
+    revalidatePath("/transfers/beneficiaries")
+    revalidatePath("/transfers/new")
+
+    return {
+      success: true,
+      message: "Statut favori modifié avec succès",
+    }
+  } catch (error) {
+    console.error("Erreur lors de la modification du statut favori:", error)
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Une erreur inattendue s'est produite",
+    }
+  }
+}
+
+export async function deactivateBeneficiary(prevState: ActionResult | null, formData: FormData): Promise<ActionResult> {
+  try {
+    // Simulation d'un délai de traitement
+    await new Promise((resolve) => setTimeout(resolve, 800))
+
+    const id = formData.get("id") as string
+
+    if (!id) {
+      return {
+        success: false,
+        error: "Identifiant du bénéficiaire manquant",
+      }
+    }
+
+    const cookieToken = (await cookies()).get("token")?.value
+    const usertoken = cookieToken
+
+    const currentBeneficiaries = await getBeneficiaries()
+    const currentBeneficiary = currentBeneficiaries.find((b) => b.id === id)
+
+    if (!currentBeneficiary) {
+      return {
+        success: false,
+        error: "Bénéficiaire non trouvé",
+      }
+    }
+
+    const apiData = {
+      data: {
+        beneficiaryId: currentBeneficiary.beneficiaryId,
+        customerId: currentBeneficiary.customerId,
+        name: currentBeneficiary.name,
+        accountNumber: currentBeneficiary.accountNumber,
+        bankCode: currentBeneficiary.bankCode,
+        bankName: currentBeneficiary.bankName,
+        status: 1, // Set status to 1 to deactivate
+        typeBeneficiary: currentBeneficiary.typeBeneficiary,
+        favoris: currentBeneficiary.favoris,
+      },
+    }
+
+    const response = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/beneficiaire/${id}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${usertoken}`,
+      },
+      body: JSON.stringify(apiData),
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}))
+      return {
+        success: false,
+        error: errorData.message || `Erreur API: ${response.status} ${response.statusText}`,
+      }
+    }
+
+    //console.log("Bénéficiaire désactivé via API:", id)
+
+    revalidatePath("/transfers/beneficiaries")
+    revalidatePath("/transfers/new")
+
+    return {
+      success: true,
+      message: "Bénéficiaire désactivé avec succès",
+    }
+  } catch (error) {
+    console.error("Erreur lors de la désactivation du bénéficiaire:", error)
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Une erreur inattendue s'est produite",
+    }
+  }
+}
+
+export async function reactivateBeneficiary(prevState: ActionResult | null, formData: FormData): Promise<ActionResult> {
+  try {
+    // Simulation d'un délai de traitement
+    await new Promise((resolve) => setTimeout(resolve, 800))
+
+    const id = formData.get("id") as string
+
+    if (!id) {
+      return {
+        success: false,
+        error: "Identifiant du bénéficiaire manquant",
+      }
+    }
+
+    const cookieToken = (await cookies()).get("token")?.value
+    const usertoken = cookieToken
+
+    const currentBeneficiaries = await getBeneficiaries()
+    const currentBeneficiary = currentBeneficiaries.find((b) => b.id === id)
+
+    if (!currentBeneficiary) {
+      return {
+        success: false,
+        error: "Bénéficiaire non trouvé",
+      }
+    }
+
+    const apiData = {
+      data: {
+        beneficiaryId: currentBeneficiary.beneficiaryId,
+        customerId: currentBeneficiary.customerId,
+        name: currentBeneficiary.name,
+        accountNumber: currentBeneficiary.accountNumber,
+        bankCode: currentBeneficiary.bankCode,
+        bankName: currentBeneficiary.bankName,
+        status: 0, // Set status to 0 to reactivate
+        typeBeneficiary: currentBeneficiary.typeBeneficiary,
+        favoris: currentBeneficiary.favoris,
+      },
+    }
+
+    const response = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/beneficiaire/${id}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${usertoken}`,
+      },
+      body: JSON.stringify(apiData),
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}))
+      return {
+        success: false,
+        error: errorData.message || `Erreur API: ${response.status} ${response.statusText}`,
+      }
+    }
+
+    //console.log("Bénéficiaire réactivé via API:", id)
+
+    revalidatePath("/transfers/beneficiaries")
+    revalidatePath("/transfers/new")
+
+    return {
+      success: true,
+      message: "Bénéficiaire réactivé avec succès",
+    }
+  } catch (error) {
+    console.error("Erreur lors de la réactivation du bénéficiaire:", error)
     return {
       success: false,
       error: error instanceof Error ? error.message : "Une erreur inattendue s'est produite",

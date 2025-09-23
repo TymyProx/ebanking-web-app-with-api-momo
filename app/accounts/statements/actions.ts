@@ -72,9 +72,9 @@ export async function generateStatement(prevState: any, formData: FormData) {
       }
     }
 
-    console.log(
-      `[AUDIT] Génération relevé - Compte: ${accountId}, Période: ${startDate} à ${endDate}, Transactions: ${realTransactions.length}`,
-    )
+    // console.log(
+    //   `[AUDIT] Génération relevé - Compte: ${accountId}, Période: ${startDate} à ${endDate}, Transactions: ${realTransactions.length}`,
+    // )
 
     // Simulation d'un délai de génération
     await new Promise((resolve) => setTimeout(resolve, 2000))
@@ -129,21 +129,21 @@ export async function generateStatement(prevState: any, formData: FormData) {
       fileSize = "245 KB"
       downloadUrl = `/api/statements/download/${statementId}.pdf`
 
-      console.log("Génération PDF:", {
-        pages: Math.ceil(statementData.transactions.length / 20),
-        includeImages,
-        language,
-      })
+      // console.log("Génération PDF:", {
+      //   pages: Math.ceil(statementData.transactions.length / 20),
+      //   includeImages,
+      //   language,
+      // })
     } else {
       // Génération Excel avec ExcelJS ou similaire
       fileSize = "89 KB"
       downloadUrl = `/api/statements/download/${statementId}.xlsx`
 
-      console.log("Génération Excel:", {
-        sheets: ["Résumé", "Transactions", "Graphiques"],
-        includeImages,
-        language,
-      })
+      // console.log("Génération Excel:", {
+      //   sheets: ["Résumé", "Transactions", "Graphiques"],
+      //   includeImages,
+      //   language,
+      // })
     }
 
     // Sauvegarde des métadonnées du relevé
@@ -159,9 +159,9 @@ export async function generateStatement(prevState: any, formData: FormData) {
     })
 
     // Log d'audit avec vraies données
-    console.log(
-      `[AUDIT] Relevé généré avec succès - ID: ${statementId}, Format: ${format.toUpperCase()}, Transactions: ${realTransactions.length}`,
-    )
+    // console.log(
+    //   `[AUDIT] Relevé généré avec succès - ID: ${statementId}, Format: ${format.toUpperCase()}, Transactions: ${realTransactions.length}`,
+    // )
 
     return {
       success: true,
@@ -221,14 +221,14 @@ export async function sendStatementByEmail(prevState: any, formData: FormData) {
     }
 
     // Simulation de l'envoi d'email
-    console.log(`Envoi email à ${email}:`, {
-      subject: `Relevé de compte - ${statementMetadata.period}`,
-      attachmentName: statementMetadata.fileName,
-      attachmentSize: statementMetadata.fileSize,
-    })
+    // console.log(`Envoi email à ${email}:`, {
+    //   subject: `Relevé de compte - ${statementMetadata.period}`,
+    //   attachmentName: statementMetadata.fileName,
+    //   attachmentSize: statementMetadata.fileSize,
+    // })
 
     // Log d'audit
-    console.log(`[AUDIT] Relevé envoyé par email - ID: ${statementId}, Destinataire: ${email}`)
+    //console.log(`[AUDIT] Relevé envoyé par email - ID: ${statementId}, Destinataire: ${email}`)
 
     return {
       success: true,
@@ -372,7 +372,7 @@ function getAccountNumber(accountId: string): string {
 
 async function saveStatementMetadata(metadata: any) {
   // Simulation de la sauvegarde en base de données
-  console.log("Sauvegarde métadonnées relevé:", metadata)
+  //console.log("Sauvegarde métadonnées relevé:", metadata)
   return true
 }
 

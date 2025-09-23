@@ -16,6 +16,7 @@ interface BeneficiaryFormProps {
     name?: string
     account?: string
     bank?: string
+    bankname?: string
     type?: string
     iban?: string
     swiftCode?: string
@@ -27,6 +28,14 @@ interface BeneficiaryFormProps {
   successMessage?: string
   errorMessage?: string
   onMessageClear?: () => void
+  onSuccess?: () => void
+}
+
+interface Bank {
+  id: string
+  bankName: string
+  swiftCode: string
+  codeBank: string
 }
 
 export default function BeneficiaryForm({
@@ -38,58 +47,129 @@ export default function BeneficiaryForm({
   successMessage,
   errorMessage,
   onMessageClear,
+  onSuccess,
 }: BeneficiaryFormProps) {
   const [selectedType, setSelectedType] = useState(initialData.type || "")
   const [selectedBank, setSelectedBank] = useState(initialData.bank || "")
-  const [selectedCountry, setSelectedCountry] = useState(initialData.country || "")
-  const [ribValidation, setRibValidation] = useState<{ isValid: boolean; message: string } | null>(null)
-
+  const [banks, setBanks] = useState<Bank[]>([])
+  const [selectedBankCode, setSelectedBankCode] = useState("")
+  const [loadingBanks, setLoadingBanks] = useState(false)
+  const [localSuccessMessage, setLocalSuccessMessage] = useState<string | null>(null)
+  const [localErrorMessage, setLocalErrorMessage] = useState<string | null>(null)
   const formRef = useRef<HTMLFormElement>(null)
 
+  const loadBanks = async () => {
+    try {
+      setLoadingBanks(true)
+      const API_BASE_URL =
+        process.env.API_BASE_URL
+      const tenantId = process.env.TENANT_ID
+      const token = localStorage.getItem("token")
+
+      //console.log("[v0] Loading banks for tenant:", tenantId)
+      //console.log("[v0] API URL:", `${API_BASE_URL}/tenant/${tenantId}/banque`)
+
+      const response = await fetch(`${API_BASE_URL}/tenant/${tenantId}/banque`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      })
+
+      //console.log("[v0] Banks API response status:", response.status)
+
+      if (response.ok) {
+        const data = await response.json()
+        //console.log("[v0] Banks data received:", data)
+        setBanks(data.rows || [])
+      } else {
+        console.error("[v0] Banks API error:", response.status, response.statusText)
+        setBanks([
+          { id: "1", bankName: "Banque Islamique de Guinée", swiftCode: "BIGUGNC1", codeBank: "BIG001" },
+          { id: "2", bankName: "Société Générale Guinée", swiftCode: "SOGEGUNX", codeBank: "SGG002" },
+          { id: "3", bankName: "Ecobank Guinée", swiftCode: "ECOCCIGN", codeBank: "ECO003" },
+        ])
+      }
+    } catch (error) {
+      console.error("[v0] Erreur lors du chargement des banques:", error)
+      setBanks([
+        { id: "1", bankName: "Banque Islamique de Guinée", swiftCode: "BIGUGNC1", codeBank: "BIG001" },
+        { id: "2", bankName: "Société Générale Guinée", swiftCode: "SOGEGUNX", codeBank: "SGG002" },
+        { id: "3", bankName: "Ecobank Guinée", swiftCode: "ECOCCIGN", codeBank: "ECO003" },
+      ])
+    } finally {
+      setLoadingBanks(false)
+    }
+  }
+
   useEffect(() => {
-    if (selectedType === "BNG-BNG") {
-      setSelectedBank("Banque Nationale de Guinée")
-    } else if (selectedType !== "" && selectedBank === "Banque Nationale de Guinée") {
-      setSelectedBank("")
+    if (selectedType === "BNG-CONFRERE") {
+      loadBanks()
     }
   }, [selectedType])
 
   useEffect(() => {
-    if (successMessage || errorMessage) {
+    if (selectedType === "BNG-BNG") {
+      setSelectedBank("Banque Nationale de Guinée")
+    } else if (selectedType !== "") {
+      setSelectedBank("")
+      setSelectedBankCode("")
+    }
+  }, [selectedType])
+
+  useEffect(() => {
+    if (successMessage) {
+      setLocalSuccessMessage(successMessage)
       const timer = setTimeout(() => {
+        setLocalSuccessMessage(null)
         if (onMessageClear) {
           onMessageClear()
         }
-      }, 8000)
-
+      }, 5000)
       return () => clearTimeout(timer)
     }
-  }, [successMessage, errorMessage, onMessageClear])
+  }, [successMessage, onMessageClear])
+
+  useEffect(() => {
+    if (errorMessage) {
+      setLocalErrorMessage(errorMessage)
+      const timer = setTimeout(() => {
+        setLocalErrorMessage(null)
+        if (onMessageClear) {
+          onMessageClear()
+        }
+      }, 5000)
+      return () => clearTimeout(timer)
+    }
+  }, [errorMessage, onMessageClear])
 
   useEffect(() => {
     if (successMessage && !isEdit) {
-      setSelectedType("")
-      setSelectedBank("")
-      setSelectedCountry("")
-      setRibValidation(null)
+      const timer = setTimeout(() => {
+        // Reset all form states
+        setSelectedType("")
+        setSelectedBank("")
+        setSelectedBankCode("")
+        setLocalSuccessMessage(null)
+        setLocalErrorMessage(null)
 
-      if (formRef.current) {
-        formRef.current.reset()
-      }
+        // Reset the form element
+        if (formRef.current) {
+          formRef.current.reset()
+        }
+      }, 100) // Small delay to ensure success message is shown first
+
+      return () => clearTimeout(timer)
     }
   }, [successMessage, isEdit])
 
   const validateRIBField = async (account: string, type: string) => {
     if (!account || account.length <= 5) {
-      setRibValidation(null)
       return
     }
 
     const isValid = account.length >= 10
-    setRibValidation({
-      isValid,
-      message: isValid ? "RIB valide" : "RIB invalide",
-    })
+    //console.log(isValid ? "RIB valide" : "RIB invalide")
   }
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
@@ -97,28 +177,52 @@ export default function BeneficiaryForm({
     const formData = new FormData(e.currentTarget)
 
     formData.set("type", selectedType)
-    const bankValue = selectedType === "BNG-BNG" ? "Banque Nationale de Guinée" : selectedBank
-    formData.set("bank", bankValue)
-    if (selectedCountry) {
-      formData.set("country", selectedCountry)
+
+    if (selectedType === "BNG-BNG") {
+      // Pour le type interne: bank = GNXXX, bankname = Banque Nationale de Guinée
+      formData.set("bank", "GNXXX")
+      formData.set("bankname", "Banque Nationale de Guinée")
+    } else if (selectedType === "BNG-CONFRERE") {
+      // bank = code banque (valeur du champ grisé)
+      formData.set("bank", selectedBankCode)
+      // bankname = nom de la banque sélectionnée
+      formData.set("bankname", selectedBank)
+    } else {
+      const bankValue = selectedBank
+      formData.set("bank", bankValue)
+    }
+
+    if (selectedType === "BNG-CONFRERE" && selectedBankCode) {
+      formData.set("bankCode", selectedBankCode)
     }
 
     onSubmit(formData)
+    if (onSuccess) {
+      onSuccess()
+    }
+  }
+
+  const handleBankSelection = (bankName: string) => {
+    setSelectedBank(bankName)
+    const selectedBankData = banks.find((bank) => bank.bankName === bankName)
+    if (selectedBankData) {
+      setSelectedBankCode(selectedBankData.codeBank)
+    }
   }
 
   return (
     <form ref={formRef} onSubmit={handleSubmit} className="space-y-4">
-      {successMessage && (
+      {localSuccessMessage && (
         <Alert variant="default" className="border-green-200 bg-green-50">
           <CheckCircle className="h-4 w-4 text-green-600" />
-          <AlertDescription className="text-green-800">{successMessage}</AlertDescription>
+          <AlertDescription className="text-green-800">{localSuccessMessage}</AlertDescription>
         </Alert>
       )}
 
-      {errorMessage && (
+      {localErrorMessage && (
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
-          <AlertDescription>{errorMessage}</AlertDescription>
+          <AlertDescription>{localErrorMessage}</AlertDescription>
         </Alert>
       )}
 
@@ -140,9 +244,9 @@ export default function BeneficiaryForm({
             <SelectValue placeholder="Sélectionnez le type" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="BNG-BNG">BNG vers BNG (Gratuit)</SelectItem>
-            <SelectItem value="BNG-CONFRERE">BNG vers Confrère (2,500 GNF)</SelectItem>
-            <SelectItem value="BNG-INTERNATIONAL">International (Variable)</SelectItem>
+            <SelectItem value="BNG-BNG">Interne</SelectItem>
+            <SelectItem value="BNG-CONFRERE">Confrère(Guinée)</SelectItem>
+            <SelectItem value="BNG-INTERNATIONAL">International</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -157,80 +261,62 @@ export default function BeneficiaryForm({
           placeholder={selectedType === "BNG-INTERNATIONAL" ? "FR76 1234 5678 9012 3456 78" : "0001-234567-89"}
           required
         />
-        {ribValidation && (
-          <div
-            className={`flex items-center space-x-2 text-sm ${
-              ribValidation.isValid ? "text-green-600" : "text-red-600"
-            }`}
-          >
-            {ribValidation.isValid ? <CheckCircle className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}
-            <span>{ribValidation.message}</span>
-          </div>
-        )}
       </div>
 
       <div className="space-y-2">
         <Label htmlFor="bank">Banque *</Label>
         {selectedType === "BNG-BNG" ? (
-          <Input id="bank" name="bank" value="Banque Nationale de Guinée" readOnly className="bg-gray-50" />
-        ) : (
-          <Select value={selectedBank} onValueChange={setSelectedBank} required>
+          <>
+            <Input id="bank" name="bankname" value="Banque Nationale de Guinée" readOnly className="bg-gray-50" />
+          </>
+        ) : selectedType === "BNG-CONFRERE" ? (
+          <Select name="bankname" value={selectedBank} onValueChange={handleBankSelection} required>
             <SelectTrigger>
-              <SelectValue placeholder="Sélectionnez la banque" />
+              <SelectValue placeholder={loadingBanks ? "Chargement..." : "Sélectionnez une banque"} />
             </SelectTrigger>
             <SelectContent>
-              {selectedType === "BNG-CONFRERE" ? (
-                <>
-                  <SelectItem value="BICIGUI">BICIGUI</SelectItem>
-                  <SelectItem value="SGBG">Société Générale de Banques en Guinée</SelectItem>
-                  <SelectItem value="UBA">United Bank for Africa</SelectItem>
-                  <SelectItem value="ECOBANK">Ecobank Guinée</SelectItem>
-                  <SelectItem value="VISTA BANK">Vista Bank</SelectItem>
-                </>
-              ) : (
-                <>
-                  <SelectItem value="BNP Paribas">BNP Paribas</SelectItem>
-                  <SelectItem value="Société Générale">Société Générale</SelectItem>
-                  <SelectItem value="Crédit Agricole">Crédit Agricole</SelectItem>
-                  <SelectItem value="HSBC">HSBC</SelectItem>
-                  <SelectItem value="Deutsche Bank">Deutsche Bank</SelectItem>
-                </>
-              )}
+              {banks.map((bank) => (
+                <SelectItem key={bank.id} value={bank.bankName}>
+                  {bank.bankName}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
-        )}
+        ) : selectedType === "BNG-INTERNATIONAL" ? (
+          <Input
+            id="bank"
+            name="bank"
+            value={selectedBank}
+            onChange={(e) => setSelectedBank(e.target.value)}
+            placeholder="Saisissez le nom de la banque"
+            className="bg-white"
+            required
+          />
+        ) : null}
       </div>
 
-      {selectedType === "BNG-INTERNATIONAL" && (
-        <>
-          <div className="space-y-2">
-            <Label htmlFor="swiftCode">Code SWIFT</Label>
-            <Input id="swiftCode" name="swiftCode" defaultValue={initialData.swiftCode || ""} placeholder="BNPAFRPP" />
-          </div>
+      {selectedType === "BNG-CONFRERE" && selectedBankCode && (
+        <input type="hidden" name="codeBank" value={selectedBankCode} />
+      )}
 
-          <div className="space-y-2">
-            <Label htmlFor="country">Pays</Label>
-            <Select value={selectedCountry} onValueChange={setSelectedCountry}>
-              <SelectTrigger>
-                <SelectValue placeholder="Sélectionnez le pays" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="France">France</SelectItem>
-                <SelectItem value="Belgique">Belgique</SelectItem>
-                <SelectItem value="Suisse">Suisse</SelectItem>
-                <SelectItem value="Canada">Canada</SelectItem>
-                <SelectItem value="États-Unis">États-Unis</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </>
+      {selectedType === "BNG-CONFRERE" && selectedBankCode && (
+        <div className="space-y-2">
+          <Label htmlFor="displayBankCode">Code Banque</Label>
+          <Input
+            id="displayBankCode"
+            value={selectedBankCode}
+            readOnly
+            className="bg-gray-50 text-gray-700"
+            placeholder="Code banque automatique"
+          />
+        </div>
       )}
 
       <div className="flex justify-end space-x-2 pt-4">
         <Button type="button" variant="outline" onClick={onCancel} disabled={isPending}>
           Annuler
         </Button>
-        <Button type="submit" disabled={isPending || (ribValidation && !ribValidation.isValid)}>
+        <Button type="submit" disabled={isPending}>
           {isPending ? "Traitement..." : isEdit ? "Modifier" : "Ajouter"}
         </Button>
       </div>

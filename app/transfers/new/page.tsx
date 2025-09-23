@@ -120,6 +120,14 @@ export default function NewTransferPage() {
     setTransferSubmitted(false)
   }
 
+  const handleDebitAccountChange = (accountId: string) => {
+    setSelectedAccount(accountId)
+    // Reset credit account selection when debit account changes to ensure currency compatibility
+    if (transferType === "account-to-account") {
+      setSelectedCreditAccount("")
+    }
+  }
+
   const handleAddBeneficiary = (formData: FormData) => {
     startTransition(() => {
       addBeneficiaryAction(formData)
@@ -152,12 +160,29 @@ export default function NewTransferPage() {
         setTransferValidationError("Le compte débiteur et créditeur ne peuvent pas être identiques")
         return
       }
+      const debitAccount = accounts.find((acc) => acc.id === selectedAccount)
+      const creditAccount = accounts.find((acc) => acc.id === selectedCreditAccount)
+      if (debitAccount && creditAccount && debitAccount.currency !== creditAccount.currency) {
+        setTransferValidationError(
+          "Les virements compte à compte ne peuvent être effectués qu'entre des comptes de même devise",
+        )
+        return
+      }
     }
 
     if (!amount || Number.parseFloat(amount) <= 0) {
       setTransferValidationError("Veuillez saisir un montant valide")
       return
     }
+
+    const debitAccount = accounts.find((acc) => acc.id === selectedAccount)
+    if (debitAccount && Number.parseFloat(amount) > debitAccount.balance) {
+      setTransferValidationError(
+        `Le montant saisi (${formatCurrency(Number.parseFloat(amount), debitAccount.currency)}) dépasse le solde disponible (${formatCurrency(debitAccount.balance, debitAccount.currency)})`,
+      )
+      return
+    }
+
     if (!motif.trim()) {
       setTransferValidationError("Veuillez saisir le motif du virement")
       return
@@ -210,10 +235,10 @@ export default function NewTransferPage() {
 
   const loadAccounts = async () => {
     try {
-      console.log("[v0] Chargement des comptes...")
+      //console.log("[v0] Chargement des comptes...")
       setIsLoadingAccounts(true)
       const result = await getAccounts()
-      console.log("[v0] Résultat getAccounts:", result)
+      //console.log("[v0] Résultat getAccounts:", result)
 
       if (Array.isArray(result) && result.length > 0) {
         // Adapter les données API au format Account
@@ -227,14 +252,14 @@ export default function NewTransferPage() {
         }))
         const activeAccounts = adaptedAccounts.filter(
           (account: Account) =>
-            (account.status === "ACTIVE" || account.status === "Actif") &&
+            (account.status === "ACTIF" || account.status === "Actif") &&
             account.number &&
             String(account.number).trim() !== "",
         )
-        console.log("[v0] Comptes actifs avec numéro valide:", activeAccounts)
+        //console.log("[v0] Comptes actifs avec numéro valide:", activeAccounts)
         setAccounts(activeAccounts)
       } else {
-        console.log("[v0] Aucun compte trouvé, utilisation des données de test")
+        //console.log("[v0] Aucun compte trouvé, utilisation des données de test")
         setAccounts([])
       }
     } catch (error) {
@@ -247,10 +272,10 @@ export default function NewTransferPage() {
 
   const loadBeneficiaries = async () => {
     try {
-      console.log("[v0] Chargement des bénéficiaires...")
+      //console.log("[v0] Chargement des bénéficiaires...")
       setIsLoadingBeneficiaries(true)
       const result = await getBeneficiaries()
-      console.log("[v0] Résultat getBeneficiaries:", result)
+      //console.log("[v0] Résultat getBeneficiaries:", result)
 
       if (Array.isArray(result) && result.length > 0) {
         // Adapter les données API au format Beneficiary
@@ -261,10 +286,15 @@ export default function NewTransferPage() {
           bank: apiBeneficiary.bankName,
           type: apiBeneficiary.beneficiaryType || "BNG-BNG",
         }))
-        console.log("[v0] Bénéficiaires adaptés:", adaptedBeneficiaries)
-        setBeneficiaries(adaptedBeneficiaries)
+        const activeBeneficiaries = adaptedBeneficiaries.filter((beneficiary: any) => {
+          // Check if the original API data has status field and filter by status 0
+          const originalBeneficiary = result.find((api: any) => api.id === beneficiary.id)
+          return originalBeneficiary && (String(originalBeneficiary.status) === "0")
+        })
+        //console.log("[v0] Bénéficiaires actifs:", activeBeneficiaries)
+        setBeneficiaries(activeBeneficiaries)
       } else {
-        console.log("[v0] Aucun bénéficiaire trouvé")
+        //console.log("[v0] Aucun bénéficiaire trouvé")
         setBeneficiaries([])
       }
     } catch (error) {
@@ -398,7 +428,7 @@ export default function NewTransferPage() {
             <CardContent className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="account">Sélectionner le compte à débiter *</Label>
-                <Select value={selectedAccount} onValueChange={setSelectedAccount}>
+                <Select value={selectedAccount} onValueChange={handleDebitAccountChange}>
                   <SelectTrigger>
                     <SelectValue placeholder={isLoadingAccounts ? "Chargement..." : "Choisir un compte"} />
                   </SelectTrigger>
@@ -456,7 +486,13 @@ export default function NewTransferPage() {
                         </SelectItem>
                       ) : (
                         accounts
-                          .filter((account) => account.id !== selectedAccount) // Exclure le compte débiteur
+                          .filter((account) => {
+                            const debitAccount = accounts.find((acc) => acc.id === selectedAccount)
+                            return (
+                              account.id !== selectedAccount &&
+                              (!debitAccount || account.currency === debitAccount.currency)
+                            )
+                          })
                           .map((account) => (
                             <SelectItem key={account.id} value={account.id}>
                               <div className="flex flex-col">
@@ -470,6 +506,11 @@ export default function NewTransferPage() {
                       )}
                     </SelectContent>
                   </Select>
+                  {selectedAccountData && transferType === "account-to-account" && (
+                    <p className="text-sm text-blue-600">
+                      Seuls les comptes en {selectedAccountData.currency} sont disponibles pour ce virement
+                    </p>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -632,7 +673,7 @@ export default function NewTransferPage() {
 
               {selectedAccountData && (
                 <div>
-                  <h4 className="font-medium text-sm text-gray-600 mb-2">Compte débiteur</h4>
+                  <h4 className="font-medium text-sm text-gray-600 mb-2">Compte à débiter</h4>
                   <div className="p-3 bg-gray-50 rounded-lg">
                     <p className="font-medium">{selectedAccountData.name}</p>
                     <p className="text-sm text-gray-600">{selectedAccountData.number}</p>
@@ -659,7 +700,7 @@ export default function NewTransferPage() {
 
               {transferType === "account-to-account" && selectedCreditAccountData && (
                 <div>
-                  <h4 className="font-medium text-sm text-gray-600 mb-2">Compte créditeur</h4>
+                  <h4 className="font-medium text-sm text-gray-600 mb-2">Compte à créditer</h4>
                   <div className="p-3 bg-gray-50 rounded-lg">
                     <p className="font-medium">{selectedCreditAccountData.name}</p>
                     <p className="text-sm text-gray-600">{selectedCreditAccountData.number}</p>

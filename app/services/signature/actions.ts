@@ -165,11 +165,11 @@ Date d'ouverture : ${currentDate}
         break
     }
 
-    console.log("📄 Document généré:", {
-      type: data.type,
-      accountId: data.accountId,
-      timestamp: new Date().toISOString(),
-    })
+    //console.log("📄 Document généré:", {
+    //   type: data.type,
+    //   accountId: data.accountId,
+    //   timestamp: new Date().toISOString(),
+    // })
 
     return {
       success: true,
@@ -198,7 +198,7 @@ export async function sendOTP(): Promise<ActionResult> {
       }
     }
 
-    console.log("📱 Code OTP envoyé pour signature électronique")
+    //console.log("📱 Code OTP envoyé pour signature électronique")
 
     return {
       success: true,
@@ -273,7 +273,7 @@ export async function signDocument(formData: FormData): Promise<ActionResult> {
       signedBy: "demo@astrabng.com",
     }
 
-    console.log("✍️ Document signé électroniquement:", signatureData)
+    //console.log("✍️ Document signé électroniquement:", signatureData)
 
     // Revalider la page pour mettre à jour l'interface
     revalidatePath("/services/signature")
