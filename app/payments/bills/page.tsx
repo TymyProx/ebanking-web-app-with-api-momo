@@ -351,11 +351,11 @@ export default function UnifiedPaymentPage() {
 
   // Comptes disponibles
   const accounts = [
-    { id: "1", name: "Compte Courant", number: "0001-234567-89", balance: 2400000, currency: "GNF", status: "ACTIVE" },
-    { id: "2", name: "Compte Épargne", number: "0002-345678-90", balance: 850000, currency: "GNF", status: "ACTIVE" },
+    { id: "1", name: "Compte Courant", number: "0001-234567-89", balance: 2400000, currency: "GNF", status: "ACTIF" },
+    { id: "2", name: "Compte Épargne", number: "0002-345678-90", balance: 850000, currency: "GNF", status: "ACTIF" },
   ].filter(
     (account) =>
-      (account.status === "ACTIVE" || account.status === "Actif") &&
+      (account.status === "ACTIF" || account.status === "Actif") &&
       account.number &&
       String(account.number).trim() !== "",
   )

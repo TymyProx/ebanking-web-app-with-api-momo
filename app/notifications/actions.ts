@@ -56,7 +56,7 @@ const mockNotifications: Notification[] = [
     type: "account_status",
     title: "Changement de statut de compte",
     message:
-      'Le statut de votre compte 0001-234567-89 a été modifié de "PENDING" vers "ACTIVE". Votre compte est maintenant activé.',
+      'Le statut de votre compte 0001-234567-89 a été modifié de "PENDING" vers "ACTIF". Votre compte est maintenant activé.',
     date: "2024-01-14T16:45:00Z",
     read: false,
     channels: ["email", "sms", "push"],

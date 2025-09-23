@@ -19,7 +19,7 @@ export async function getAccountBalances(prevState: any, formData: FormData) {
         availableBalance: 2350000,
         currency: "GNF",
         lastUpdate: new Date().toISOString(),
-        status: "ACTIVE",
+        status: "ACTIF",
       },
       {
         accountId: "0002-345678-90",
@@ -27,7 +27,7 @@ export async function getAccountBalances(prevState: any, formData: FormData) {
         availableBalance: 850000,
         currency: "GNF",
         lastUpdate: new Date().toISOString(),
-        status: "ACTIVE",
+        status: "ACTIF",
       },
       {
         accountId: "0003-456789-01",
@@ -35,7 +35,7 @@ export async function getAccountBalances(prevState: any, formData: FormData) {
         availableBalance: 1250,
         currency: "USD",
         lastUpdate: new Date().toISOString(),
-        status: "ACTIVE",
+        status: "ACTIF",
       },
     ]
 

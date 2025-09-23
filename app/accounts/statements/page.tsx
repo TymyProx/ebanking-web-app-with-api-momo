@@ -41,7 +41,7 @@ interface Account {
   balance: number
   currency: string
   type: "Courant" | "Épargne" | "Devise"
-  status: "Actif" | "Bloqué" | "Fermé"
+  status: "Actif" | "Bloqué" | "Fermé" | "ACTIF"
   iban: string
 }
 
@@ -146,7 +146,7 @@ export default function StatementsPage() {
           }))
 
           const activeAccounts = adaptedAccounts.filter(
-            (account) => account.status === "Actif" || account.status === "ACTIVE",
+            (account) => account.status === "Actif" || account.status === "ACTIF",
           )
           setAccounts(activeAccounts)
         }
