@@ -41,7 +41,7 @@ interface Account {
   balance: number
   currency: string
   type: "Courant" | "Épargne" | "Devise"
-  status: "Actif" | "Bloqué" | "Fermé"
+  status: "Actif" | "Bloqué" | "Fermé" | "ACTIF"
   iban: string
 }
 
@@ -146,7 +146,7 @@ export default function StatementsPage() {
           }))
 
           const activeAccounts = adaptedAccounts.filter(
-            (account) => account.status === "Actif" || account.status === "ACTIVE",
+            (account) => account.status === "Actif" || account.status === "ACTIF",
           )
           setAccounts(activeAccounts)
         }
@@ -815,7 +815,7 @@ export default function StatementsPage() {
 
       //console.log("[v0] PDF généré et téléchargé:", fileName)
     } catch (error) {
-      console.error("Erreur lors de la génération PDF:", error)
+      //console.error("Erreur lors de la génération PDF:", error)
       // Fallback vers téléchargement texte
       generateAndDownloadText()
     }
@@ -872,7 +872,7 @@ export default function StatementsPage() {
 
       //console.log("[v0] Excel/CSV généré et téléchargé")
     } catch (error) {
-      console.error("Erreur lors de la génération Excel:", error)
+      //console.error("Erreur lors de la génération Excel:", error)
       // Fallback vers téléchargement texte
       generateAndDownloadText()
     }

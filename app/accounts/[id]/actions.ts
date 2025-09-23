@@ -34,12 +34,12 @@ export async function toggleAccountStatus(accountId: string, newStatus: string) 
     const message = `Le statut de votre compte ${accountId} a été modifié vers "${statusMessages[newStatus as keyof typeof statusMessages] || newStatus.toLowerCase()}".`
 
     //console.log("[v0] Notification de changement de statut créée:", {
-      type: "account_status",
-      title: "Changement de statut de compte",
-      message,
-      account: accountId,
-      newStatus,
-    })
+    //   type: "account_status",
+    //   title: "Changement de statut de compte",
+    //   message,
+    //   account: accountId,
+    //   newStatus,
+    // })
 
     revalidatePath(`/accounts/${accountId}`)
 

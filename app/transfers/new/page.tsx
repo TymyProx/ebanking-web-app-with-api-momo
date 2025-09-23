@@ -289,7 +289,7 @@ export default function NewTransferPage() {
         const activeBeneficiaries = adaptedBeneficiaries.filter((beneficiary: any) => {
           // Check if the original API data has status field and filter by status 0
           const originalBeneficiary = result.find((api: any) => api.id === beneficiary.id)
-          return originalBeneficiary && (originalBeneficiary.status === 0 || originalBeneficiary.status === "0")
+          return originalBeneficiary && (String(originalBeneficiary.status) === "0")
         })
         //console.log("[v0] Bénéficiaires actifs:", activeBeneficiaries)
         setBeneficiaries(activeBeneficiaries)

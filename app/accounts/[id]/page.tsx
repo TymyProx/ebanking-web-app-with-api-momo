@@ -207,25 +207,25 @@ export default function AccountDetailsPage() {
           setAccount((prev) => (prev ? { ...prev, status: newStatus } : null))
 
           // Add notification to the context
-          addNotification({
-            type: "account_status",
-            title: "Changement de statut de compte",
-            message: `Le statut de votre compte ${account.name} (${account.number}) a été modifié de "${previousStatus}" vers "${newStatus}".`,
-            timestamp: new Date(),
-            isRead: false,
-          })
+          // addNotification({
+          //   type: "account_status",
+          //   title: "Changement de statut de compte",
+          //   message: `Le statut de votre compte ${account.name} (${account.number}) a été modifié de "${previousStatus}" vers "${newStatus}".`,
+          //   timestamp: new Date(),
+          //   isRead: false,
+          // })
 
           //console.log("[v0] Statut mis à jour avec succès")
         }
       } catch (error) {
-        console.error("[v0] Erreur lors du changement de statut:", error)
-        addNotification({
-          type: "error",
-          title: "Erreur",
-          message: "Impossible de modifier le statut du compte. Veuillez réessayer.",
-          timestamp: new Date(),
-          isRead: false,
-        })
+        //console.error("[v0] Erreur lors du changement de statut:", error)
+        // addNotification({
+        //   type: "error",
+        //   title: "Erreur",
+        //   message: "Impossible de modifier le statut du compte. Veuillez réessayer.",
+        //   timestamp: new Date(),
+        //   isRead: false,
+        // })
       }
     })
   }

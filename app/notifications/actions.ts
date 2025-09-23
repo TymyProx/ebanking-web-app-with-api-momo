@@ -153,8 +153,8 @@ export async function markAsRead(notificationId: number) {
 
     // Log d'audit
     //console.log(
-      `[AUDIT] Notification marquée comme lue - ID: ${notificationId} - Client: USER123 à ${new Date().toISOString()}`,
-    )
+    //   `[AUDIT] Notification marquée comme lue - ID: ${notificationId} - Client: USER123 à ${new Date().toISOString()}`,
+    // )
 
     return {
       success: true,
@@ -231,12 +231,20 @@ export async function sendDebitNotification(transactionData: {
       recipient: transactionData.recipient,
     })
 
-    return {
-      success: true,
-      notificationId: notification.id,
-      channelsSent: notification.channels,
-      message: "Notification de débit envoyée avec succès",
-      timestamp: new Date().toISOString(),
+    if ("id" in notification) {
+      return {
+        success: true,
+        notificationId: notification.id,
+        channelsSent: "channels" in notification ? notification.channels : [],
+        message: "Notification de débit envoyée avec succès",
+        timestamp: new Date().toISOString(),
+      }
+    } else {
+      return {
+        success: false,
+        error: "Impossible de créer la notification de débit",
+        timestamp: new Date().toISOString(),
+      }
     }
   } catch (error) {
     console.error("Erreur lors de l'envoi de la notification de débit:", error)
@@ -267,12 +275,20 @@ export async function sendCreditNotification(transactionData: {
       sender: transactionData.sender,
     })
 
-    return {
-      success: true,
-      notificationId: notification.id,
-      channelsSent: notification.channels,
-      message: "Notification de crédit envoyée avec succès",
-      timestamp: new Date().toISOString(),
+    if ("id" in notification) {
+      return {
+        success: true,
+        notificationId: notification.id,
+        channelsSent: "channels" in notification ? notification.channels : [],
+        message: "Notification de crédit envoyée avec succès",
+        timestamp: new Date().toISOString(),
+      }
+    } else {
+      return {
+        success: false,
+        error: "Impossible de créer la notification de crédit",
+        timestamp: new Date().toISOString(),
+      }
     }
   } catch (error) {
     console.error("Erreur lors de l'envoi de la notification de crédit:", error)
@@ -300,8 +316,8 @@ export async function exportNotifications(
 
     // Log d'audit
     //console.log(
-      `[AUDIT] Export historique notifications - Format: ${format} - Client: USER123 à ${new Date().toISOString()}`,
-    )
+    //   `[AUDIT] Export historique notifications - Format: ${format} - Client: USER123 à ${new Date().toISOString()}`,
+    // )
 
     return {
       success: true,
