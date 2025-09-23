@@ -277,8 +277,8 @@ export async function sendBudgetAlert(alertType: "approaching" | "exceeded", dat
 
     // Log d'audit
     //console.log(
-      `[AUDIT] Alerte budgétaire envoyée - Type: ${alertType} - Client: USER123 à ${new Date().toISOString()}`,
-    )
+    //   `[AUDIT] Alerte budgétaire envoyée - Type: ${alertType} - Client: USER123 à ${new Date().toISOString()}`,
+    // )
 
     return {
       success: true,
