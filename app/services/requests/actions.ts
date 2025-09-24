@@ -1,6 +1,6 @@
 "use server"
 // Indique à Next.js que ce fichier contient du code côté serveur
-
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 import { cookies } from "next/headers"
 // Importation de la méthode cookies() pour accéder aux cookies côté serveur
 
