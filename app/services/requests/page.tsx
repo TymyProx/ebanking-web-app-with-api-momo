@@ -63,16 +63,16 @@ const serviceTypes = [
     cost: "Gratuit",
     requirements: ["Revenus réguliers", "Garanties", "Dossier complet"],
   },
-  {
-    id: "e-demande",
-    name: "E-demande",
-    icon: FileText,
-    description: "Demande électronique pour divers services bancaires",
-    category: "electronic",
-    processingTime: "1-3 jours ouvrables",
-    cost: "Gratuit",
-    requirements: ["Compte actif", "Pièces justificatives"],
-  },
+  // {
+  //   id: "e-demande",
+  //   name: "E-demande",
+  //   icon: FileText,
+  //   description: "Demande électronique pour divers services bancaires",
+  //   category: "electronic",
+  //   processingTime: "1-3 jours ouvrables",
+  //   cost: "Gratuit",
+  //   requirements: ["Compte actif", "Pièces justificatives"],
+  // },
 ]
 
 const accountsData = [
@@ -1404,7 +1404,7 @@ export default function ServiceRequestsPage() {
                     <SelectItem value="all">Toutes les demandes</SelectItem>
                     <SelectItem value="checkbook">Demande de chéquier</SelectItem>
                     <SelectItem value="credit">Demande de crédit</SelectItem>
-                    <SelectItem value="e-demande">E-demande</SelectItem>
+                    {/* <SelectItem value="e-demande">E-demande</SelectItem> */}
                   </SelectContent>
                 </Select>
               </div>
@@ -1457,7 +1457,7 @@ export default function ServiceRequestsPage() {
               </CardContent>
             </Card>
 
-            <Card
+            {/* <Card
               className="cursor-pointer hover:bg-gray-50 transition-colors"
               onClick={() => loadRequestsByType("e-demande")}
             >
@@ -1470,7 +1470,7 @@ export default function ServiceRequestsPage() {
                   </div>
                 </div>
               </CardContent>
-            </Card>
+            </Card> */}
           </div>
           <Card>
             <CardHeader>
