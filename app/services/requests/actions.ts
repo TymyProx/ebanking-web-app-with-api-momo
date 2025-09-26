@@ -1,11 +1,10 @@
 "use server"
 // Indique à Next.js que ce fichier contient du code côté serveur
-process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0"
 import { cookies } from "next/headers"
 // Importation de la méthode cookies() pour accéder aux cookies côté serveur
 
 // URL de base de l’API et ID du tenant (identifiant du client dans l’API)
-
 
 const API_BASE_URL = process.env.API_BASE_URL
 const TENANT_ID = process.env.TENANT_ID
@@ -132,39 +131,22 @@ export async function getCheckbookRequest(id?: string) {
     if (!cookieToken) {
       console.log("[v0] Token d'authentification manquant, retour de données de test")
 
-      // Données de test pour les demandes de chéquier avec structure API
       const mockCheckbookRequests = {
         rows: [
           {
             id: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-            createdAt: "2024-01-15T10:00:00Z",
-            updatedAt: "2024-01-15T10:00:00Z",
-            deletedAt: null,
-            createdById: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-            updatedById: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-            importHash: "hash123",
-            TENANT_ID: "aa1287f6-06af-45b7-a905-8c57363565c2",
             dateorder: "2024-01-15",
             nbrefeuille: 25,
             nbrechequier: 1,
-            stepflow: 1,
             intitulecompte: "Compte Courant Principal",
             numcompteId: "ACC001",
             commentaire: "Demande de chéquier standard",
           },
           {
             id: "4fa85f64-5717-4562-b3fc-2c963f66afa7",
-            createdAt: "2024-01-20T14:30:00Z",
-            updatedAt: "2024-01-20T14:30:00Z",
-            deletedAt: null,
-            createdById: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-            updatedById: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-            importHash: "hash456",
-            TENANT_ID: "aa1287f6-06af-45b7-a905-8c57363565c2",
             dateorder: "2024-01-20",
             nbrefeuille: 50,
             nbrechequier: 2,
-            stepflow: 2,
             intitulecompte: "Compte Épargne",
             numcompteId: "ACC002",
             commentaire: "Demande urgente",
@@ -181,7 +163,9 @@ export async function getCheckbookRequest(id?: string) {
     }
 
     // Construction de l'URL avec ou sans ID spécifique
-    const url = id ? `${API_BASE_URL}/tenant/${TENANT_ID}/commande/${id}` : `${API_BASE_URL}/tenant/${TENANT_ID}/commande`
+    const url = id
+      ? `${API_BASE_URL}/tenant/${TENANT_ID}/commande/${id}`
+      : `${API_BASE_URL}/tenant/${TENANT_ID}/commande`
 
     // Envoi de la requête GET vers l'API backend
     const response = await fetch(url, {
@@ -198,6 +182,31 @@ export async function getCheckbookRequest(id?: string) {
     }
 
     const data = await response.json()
+
+    if (data.rows && Array.isArray(data.rows)) {
+      const filteredRows = data.rows.map((item: any) => ({
+        id: item.id,
+        dateorder: item.dateorder,
+        nbrefeuille: item.nbrefeuille,
+        nbrechequier: item.nbrechequier,
+        intitulecompte: item.intitulecompte,
+        numcompteId: item.numcompteId,
+        commentaire: item.commentaire,
+      }))
+      return { ...data, rows: filteredRows }
+    } else if (data.id) {
+      // Pour une seule demande
+      return {
+        id: data.id,
+        dateorder: data.dateorder,
+        nbrefeuille: data.nbrefeuille,
+        nbrechequier: data.nbrechequier,
+        intitulecompte: data.intitulecompte,
+        numcompteId: data.numcompteId,
+        commentaire: data.commentaire,
+      }
+    }
+
     return data
   } catch (error: any) {
     console.log("[v0] Erreur lors de la récupération, retour de données de test:", error.message)
@@ -206,17 +215,9 @@ export async function getCheckbookRequest(id?: string) {
       rows: [
         {
           id: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-          createdAt: "2024-01-15T10:00:00Z",
-          updatedAt: "2024-01-15T10:00:00Z",
-          deletedAt: null,
-          createdById: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-          updatedById: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-          importHash: "hash123",
-          TENANT_ID: "aa1287f6-06af-45b7-a905-8c57363565c2",
           dateorder: "2024-01-15",
           nbrefeuille: 25,
           nbrechequier: 1,
-          stepflow: 1,
           intitulecompte: "Compte Courant Principal",
           numcompteId: "ACC001",
           commentaire: "Demande de chéquier standard",
@@ -415,20 +416,11 @@ export async function getCommandeById(TENANT_ID: string, id: string) {
     if (!cookieToken) {
       console.log("[v0] Token d'authentification manquant, retour de données de test")
 
-      // Données de test pour une demande de chéquier spécifique
       const mockCheckbookDetail = {
         id: id,
-        createdAt: "2024-01-15T10:00:00Z",
-        updatedAt: "2024-01-15T10:00:00Z",
-        deletedAt: null,
-        createdById: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-        updatedById: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-        importHash: "hash123",
-        TENANT_ID: TENANT_ID,
         dateorder: "2024-01-15",
         nbrefeuille: 25,
         nbrechequier: 1,
-        stepflow: 1,
         intitulecompte: "Compte Courant Principal",
         numcompteId: "ACC001",
         commentaire: "Demande de chéquier standard",
@@ -452,24 +444,24 @@ export async function getCommandeById(TENANT_ID: string, id: string) {
     }
 
     const data = await response.json()
-    return data
+
+    return {
+      id: data.id,
+      dateorder: data.dateorder,
+      nbrefeuille: data.nbrefeuille,
+      nbrechequier: data.nbrechequier,
+      intitulecompte: data.intitulecompte,
+      numcompteId: data.numcompteId,
+      commentaire: data.commentaire,
+    }
   } catch (error: any) {
     console.log("[v0] Erreur lors de la récupération, retour de données de test:", error.message)
 
-    // Données de test en cas d'erreur
     const mockCheckbookDetail = {
       id: id,
-      createdAt: "2024-01-15T10:00:00Z",
-      updatedAt: "2024-01-15T10:00:00Z",
-      deletedAt: null,
-      createdById: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-      updatedById: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-      importHash: "hash123",
-      TENANT_ID: TENANT_ID,
       dateorder: "2024-01-15",
       nbrefeuille: 25,
       nbrechequier: 1,
-      stepflow: 1,
       intitulecompte: "Compte Courant Principal",
       numcompteId: "ACC001",
       commentaire: "Demande de chéquier standard",

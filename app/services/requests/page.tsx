@@ -311,11 +311,7 @@ export default function ServiceRequestsPage() {
   const formatRequestDetails = (details: any, type: string) => {
     if (!details) return []
 
-    const commonFields = [
-      { label: "ID", value: details.id },
-      { label: "Date de création", value: new Date(details.createdAt).toLocaleDateString("fr-FR") },
-      { label: "Dernière modification", value: new Date(details.updatedAt).toLocaleDateString("fr-FR") },
-    ]
+    const commonFields = [{ label: "ID", value: details.id }]
 
     if (type === "credit") {
       return [
@@ -1085,20 +1081,6 @@ export default function ServiceRequestsPage() {
                 et autorise le traitement de ma demande
               </Label>
             </div>
-
-            <Button type="submit" disabled={isCreditSubmitting || !formData.terms} className="w-full">
-              {isCreditSubmitting ? (
-                <>
-                  <Clock className="w-4 h-4 mr-2 animate-spin" />
-                  Envoi en cours...
-                </>
-              ) : (
-                <>
-                  <Send className="w-4 h-4 mr-2" />
-                  Envoyer la demande
-                </>
-              )}
-            </Button>
           </form>
         )
       // E-DEMANDE PAGE
