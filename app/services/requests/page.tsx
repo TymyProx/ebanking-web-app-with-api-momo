@@ -238,8 +238,8 @@ export default function ServiceRequestsPage() {
         const creditRequests = creditData.map((item: any, index: number) => ({
           id: item.id || `CRD${String(index + 1).padStart(3, "0")}`,
           type: "credit",
-          typeName: "Crédit",
-          status: item.status || "En cours",
+          typeName: "Demande de crédit",
+          status: item.status || "En attente",
           submittedAt: item.createdAt ? item.createdAt.split("T")[0] : new Date().toISOString().split("T")[0],
           expectedResponse: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
           account: "Compte courant",
@@ -380,8 +380,8 @@ export default function ServiceRequestsPage() {
         // Filtrer pour ne garder que les comptes courants actifs
         const currentAccounts = adaptedAccounts.filter(
           (account: any) =>
-            (account.status === "ACTIVE" || account.status === "Actif") &&
-            (account.type === "CURRENT" || account.type === "Courant") &&
+            (account.status === "ACTIF" || account.status === "Actif") &&
+            (account.type === "Courant" || account.type === "Courant") &&
             account.number &&
             String(account.number).trim() !== "",
         )
