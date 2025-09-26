@@ -211,7 +211,7 @@ export default function ServiceRequestsPage() {
                 ? "En cours"
                 : item.stepflow === 2
                   ? "Approuvé"
-                  : item.status || "En cours",
+                  : item.status || "En attente",
           submittedAt: item.dateorder || item.createdAt?.split("T")[0] || new Date().toISOString().split("T")[0],
           expectedResponse: item.dateorder
             ? new Date(new Date(item.dateorder).getTime() + 3 * 24 * 60 * 60 * 1000).toISOString().split("T")[0]
