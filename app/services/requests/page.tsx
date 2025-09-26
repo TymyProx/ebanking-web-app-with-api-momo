@@ -972,12 +972,12 @@ export default function ServiceRequestsPage() {
                   <SelectValue placeholder="Sélectionnez l'objet" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="consumption">Consommation</SelectItem>
-                  <SelectItem value="equipment">Équipement</SelectItem>
-                  <SelectItem value="renovation">Rénovation</SelectItem>
-                  <SelectItem value="education">Éducation</SelectItem>
-                  <SelectItem value="health">Santé</SelectItem>
-                  <SelectItem value="other">Autre</SelectItem>
+                  <SelectItem value="Consommation">Consommation</SelectItem>
+                  <SelectItem value="Équipement">Équipement</SelectItem>
+                  <SelectItem value="Rénovation">Rénovation</SelectItem>
+                  <SelectItem value="Éducation">Éducation</SelectItem>
+                  <SelectItem value="Santé">Santé</SelectItem>
+                  <SelectItem value="Autre">Autre</SelectItem>
                 </SelectContent>
               </Select>
             </div>
