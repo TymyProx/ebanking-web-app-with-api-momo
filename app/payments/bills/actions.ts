@@ -1,5 +1,5 @@
 "use server"
-
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0"
 import { z } from "zod"
 
 // Schéma de validation unifié pour les paiements

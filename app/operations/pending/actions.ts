@@ -1,5 +1,5 @@
 "use server"
-
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0"
 // Simulation des opérations en attente
 export async function getPendingOperations() {
   try {

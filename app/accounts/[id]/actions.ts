@@ -1,5 +1,5 @@
 "use server"
-
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0"
 import { revalidatePath } from "next/cache"
 
 export async function getAccountDetails(accountId: string) {
