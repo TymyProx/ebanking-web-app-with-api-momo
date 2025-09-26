@@ -311,7 +311,7 @@ export default function ServiceRequestsPage() {
   const formatRequestDetails = (details: any, type: string) => {
     if (!details) return []
 
-    const commonFields = [{ label: "ID", value: details.id }]
+    const commonFields = [{ label: "Numéro de compte", value: details.accountNumber || details.numcompteId }]
 
     if (type === "credit") {
       return [
@@ -328,7 +328,6 @@ export default function ServiceRequestsPage() {
         { label: "Nombre de feuilles", value: details.nbrefeuille },
         { label: "Nombre de chéquiers", value: details.nbrechequier },
         { label: "Intitulé du compte", value: details.intitulecompte },
-        { label: "ID du compte", value: details.numcompteId },
         { label: "Commentaire", value: details.commentaire || "Aucun commentaire" },
       ]
     }
@@ -366,7 +365,7 @@ export default function ServiceRequestsPage() {
         const adaptedAccounts = result.map((apiAccount: any) => ({
           id: apiAccount.id || apiAccount.accountId,
           name: apiAccount.accountName || apiAccount.name || `Compte ${apiAccount.accountNumber || apiAccount.number}`,
-          number: apiAccount.accountNumber || apiAccount.number || apiAccount.id,
+          number: apiAccount.accountNumber || apiAccount.number, //|| apiAccount.id,
           balance: apiAccount.bookBalance || apiAccount.balance || 0,
           currency: apiAccount.currency || "GNF",
           status: apiAccount.status,
@@ -635,9 +634,9 @@ export default function ServiceRequestsPage() {
         nbrechequier: Number.parseInt(formData.nbrechequier) || 0,
         stepflow: 0,
         intitulecompte: formData.intitulecompte,
-        numcompteId: selectedAccount,
+        numcompteId: formData.numcompte,
         commentaire: formData.commentaire || "",
-        numcompte: formData.numcompte, // Ajout du numéro de compte manquant
+       // numcompte: formData.numcompte, // Ajout du numéro de compte manquant
       }
 
       const result = await submitCheckbookRequest(checkbookData)
@@ -711,7 +710,7 @@ export default function ServiceRequestsPage() {
             <div className="space-y-2">
               <Label htmlFor="intitulecompte">Sélectionner un compte *</Label>
               <Select
-                value={formData.accountId || ""}
+                value={formData.numcompteId || ""}
                 onValueChange={(value) => {
                   const selectedAccount = accounts.find((acc) => acc.id === value)
                   if (selectedAccount) {
@@ -806,8 +805,8 @@ export default function ServiceRequestsPage() {
                   <SelectValue placeholder="Choisir le nombre de feuilles" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="25">25 feuilles</SelectItem>
-                  <SelectItem value="50">50 feuilles</SelectItem>
+                  <SelectItem value="25">25 feuillets</SelectItem>
+                  <SelectItem value="50">50 feuillets</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -1536,7 +1535,7 @@ export default function ServiceRequestsPage() {
                           <Eye className="w-4 h-4" />
                         </Button>
 
-                        <DropdownMenu>
+                        {/* <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button variant="ghost" size="sm">
                               <MoreVertical className="w-4 h-4" />
@@ -1558,7 +1557,7 @@ export default function ServiceRequestsPage() {
                               </DropdownMenuItem>
                             )}
                           </DropdownMenuContent>
-                        </DropdownMenu>
+                        </DropdownMenu> */}
                       </div>
                     </div>
                   ))}
@@ -1601,10 +1600,10 @@ export default function ServiceRequestsPage() {
                 <Button variant="outline" onClick={closeDetailsModal}>
                   Fermer
                 </Button>
-                <Button>
+                {/* <Button>
                   <Download className="w-4 h-4 mr-2" />
                   Télécharger
-                </Button>
+                </Button> */}
               </div>
             </div>
           ) : (

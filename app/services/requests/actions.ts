@@ -73,7 +73,7 @@ export async function submitCheckbookRequest(formData: {
   intitulecompte: string // Intitulé du compte
   numcompteId: string // ID du compte
   commentaire: string // Commentaire
-  numcompte: string // Nouveau champ numéro de compte
+  //numcompte: string // Nouveau champ numéro de compte
 }) {
   try {
     // 🔑 Récupération du token JWT stocké dans les cookies
@@ -100,7 +100,7 @@ export async function submitCheckbookRequest(formData: {
           intitulecompte: formData.intitulecompte,
           numcompteId: formData.numcompteId,
           commentaire: formData.commentaire,
-          numcompte: formData.numcompte, // Ajout du numéro de compte dans l'API
+          //numcompte: formData.numcompte, // Ajout du numéro de compte dans l'API
         },
       }),
     })
