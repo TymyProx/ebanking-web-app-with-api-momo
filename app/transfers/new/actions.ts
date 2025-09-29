@@ -407,9 +407,22 @@ export async function executeTransfer(prevState: any, formData: FormData) {
       }
     } else if (validatedData.beneficiaryId) {
       // Pour les virements compte à bénéficiaire : beneficiaryId = numéro de compte du bénéficiaire
-      txnType = getTransactionType("BNG-BNG")
+      console.log(`[v0] Récupération des informations du bénéficiaire: ${validatedData.beneficiaryId}`)
+      const beneficiary = await getBeneficiaryById(validatedData.beneficiaryId)
+
+      if (!beneficiary) {
+        console.log("[v0] Bénéficiaire non trouvé, restauration du solde source")
+        await debitAccountBalance(validatedData.sourceAccount, -transferAmount)
+        return {
+          success: false,
+          error: "Bénéficiaire non trouvé",
+        }
+      }
+
+      txnType = getTransactionType(beneficiary.typeBeneficiary || "BNG-BNG")
       finalBeneficiaryId = validatedData.beneficiaryId
-      creditAccount = validatedData.beneficiaryId
+      creditAccount = beneficiary.accountNumber // Utiliser le accountNumber du bénéficiaire
+      console.log(`[v0] Bénéficiaire trouvé - accountNumber: ${creditAccount}`)
     }
 
     const apiData = {
@@ -782,5 +795,36 @@ export async function getTransactions(): Promise<{ data: any[] }> {
         },
       ],
     }
+  }
+}
+
+async function getBeneficiaryById(beneficiaryId: string) {
+  const cookieToken = (await cookies()).get("token")?.value
+  const usertoken = cookieToken
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/beneficiaire`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${usertoken}`,
+      },
+      cache: "no-store",
+    })
+
+    if (!response.ok) {
+      console.error(`[v0] Erreur lors de la récupération des bénéficiaires: ${response.status}`)
+      return null
+    }
+
+    const data = await response.json()
+    const beneficiaries = Array.isArray(data.rows) ? data.rows : Array.isArray(data) ? data : [data]
+
+    // Trouver le bénéficiaire par son ID
+    const beneficiary = beneficiaries.find((b: any) => b.id === beneficiaryId)
+    return beneficiary || null
+  } catch (error) {
+    console.error("[v0] Erreur lors de la récupération du bénéficiaire:", error)
+    return null
   }
 }
