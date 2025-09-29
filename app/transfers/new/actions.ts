@@ -380,11 +380,13 @@ export async function executeTransfer(prevState: any, formData: FormData) {
 
     let txnType = "TRANSFER"
     let finalBeneficiaryId = validatedData.beneficiaryId
+    let creditAccount = ""
 
     if (validatedData.transferType === "account-to-account") {
       // Pour les virements compte à compte : beneficiaryId = ID du compte à créditer
       txnType = "INTERNAL_TRANSFER"
       finalBeneficiaryId = validatedData.targetAccount
+      creditAccount = validatedData.targetAccount || ""
 
       // Crédit automatique du compte destinataire pour les virements internes
       if (validatedData.targetAccount) {
@@ -407,6 +409,7 @@ export async function executeTransfer(prevState: any, formData: FormData) {
       // Pour les virements compte à bénéficiaire : beneficiaryId = numéro de compte du bénéficiaire
       txnType = getTransactionType("BNG-BNG")
       finalBeneficiaryId = validatedData.beneficiaryId
+      creditAccount = validatedData.beneficiaryId
     }
 
     const apiData = {
@@ -419,6 +422,7 @@ export async function executeTransfer(prevState: any, formData: FormData) {
         status: "PENDING",
         description: validatedData.purpose,
         beneficiaryId: finalBeneficiaryId,
+        accoundcredit: creditAccount, // Champ pour identifier le compte à créditer
       },
     }
 
@@ -461,7 +465,7 @@ export async function executeTransfer(prevState: any, formData: FormData) {
     }
 
     console.log(
-      `[AUDIT] Virement exécuté avec débit immédiat - ID: ${transactionId}, Type: ${validatedData.transferType}, Montant: ${validatedData.amount} GNF, Compte source: ${validatedData.sourceAccount}, BeneficiaryId: ${finalBeneficiaryId}, Nouveau solde disponible: ${debitResult.newBalance} à ${new Date().toISOString()}`,
+      `[AUDIT] Virement exécuté avec débit immédiat - ID: ${transactionId}, Type: ${validatedData.transferType}, Montant: ${validatedData.amount} GNF, Compte source: ${validatedData.sourceAccount}, BeneficiaryId: ${finalBeneficiaryId}, CreditAccount: ${creditAccount}, Nouveau solde disponible: ${debitResult.newBalance} à ${new Date().toISOString()}`,
     )
 
     revalidatePath("/transfers/new")
