@@ -114,7 +114,6 @@ export default function AccountDetailsPage() {
     const loadTransactions = async () => {
       try {
         const transactionsData = await getTransactions()
-        //console.log("[v0] Transactions récupérées:", transactionsData)
 
         if (transactionsData.data && Array.isArray(transactionsData.data)) {
           // Filtrer les transactions pour ce compte spécifique
@@ -125,6 +124,15 @@ export default function AccountDetailsPage() {
               const isCredit = txn.txnType === "CREDIT"
               const isDebit = txn.txnType === "DEBIT"
 
+              let displayStatus: "Exécuté" | "En attente" | "Rejeté"
+              if (txn.status === "COMPLETED") {
+                displayStatus = "Exécuté"
+              } else if (txn.status === "PENDING") {
+                displayStatus = "En attente"
+              } else {
+                displayStatus = "Rejeté"
+              }
+
               return {
                 id: txn.txnId || txn.id,
                 accountId: txn.accountId,
@@ -133,7 +141,7 @@ export default function AccountDetailsPage() {
                 amount: isCredit ? Math.abs(amount) : -Math.abs(amount),
                 currency: account?.currency || "GNF",
                 date: txn.valueDate || new Date().toISOString(),
-                status: txn.status, //txn.status === "COMPLETED" ? "Exécuté" : txn.status === "PENDING" ? "En attente" : "Rejeté",
+                status: displayStatus,
                 counterparty: txn.beneficiaryId || "Système",
                 reference: txn.txnId || "REF-" + Date.now(),
                 balanceAfter: 0, // Calculé dynamiquement si nécessaire
@@ -166,6 +174,15 @@ export default function AccountDetailsPage() {
             const amount = Number.parseFloat(txn.amount || "0")
             const isCredit = txn.txnType === "CREDIT"
 
+            let displayStatus: "Exécuté" | "En attente" | "Rejeté"
+            if (txn.status === "COMPLETED") {
+              displayStatus = "Exécuté"
+            } else if (txn.status === "PENDING") {
+              displayStatus = "En attente"
+            } else {
+              displayStatus = "Rejeté"
+            }
+
             return {
               id: txn.txnId || txn.id,
               accountId: txn.accountId,
@@ -174,7 +191,7 @@ export default function AccountDetailsPage() {
               amount: isCredit ? Math.abs(amount) : -Math.abs(amount),
               currency: account?.currency || "GNF",
               date: txn.valueDate || new Date().toISOString(),
-              status: txn.status, //txn.status === "COMPLETED" ? "Exécuté" : txn.status === "PENDING" ? "En attente" : "Rejeté",
+              status: displayStatus,
               counterparty: txn.beneficiaryId || "Système",
               reference: txn.txnId || "REF-" + Date.now(),
               balanceAfter: 0,
@@ -229,6 +246,8 @@ export default function AccountDetailsPage() {
       }
     })
   }
+
+  const hasPendingTransactions = transactions.some((transaction) => transaction.status === "En attente")
 
   if (isLoadingAccount) {
     return (
@@ -396,12 +415,16 @@ export default function AccountDetailsPage() {
                 <div className="text-2xl font-semibold text-green-600">
                   {showBalance ? (
                     <>
+                      {hasPendingTransactions && <span className="text-orange-500 mr-1">*</span>}
                       {formatAmount(account.availableBalance, account.currency)} {account.currency}
                     </>
                   ) : (
                     "••••••••"
                   )}
                 </div>
+                {hasPendingTransactions && showBalance && (
+                  <p className="text-xs text-orange-600">* Transactions en attente affectant le solde</p>
+                )}
               </div>
             </div>
 
@@ -587,6 +610,7 @@ export default function AccountDetailsPage() {
                     <p
                       className={`text-lg font-semibold ${transaction.amount > 0 ? "text-green-600" : "text-red-600"}`}
                     >
+                      {transaction.status === "En attente" && <span className="text-orange-500">*</span>}
                       {transaction.amount > 0 ? "+" : "-"}
                       {formatAmount(Math.abs(transaction.amount), account?.currency || transaction.currency)}{" "}
                       {account?.currency || transaction.currency}

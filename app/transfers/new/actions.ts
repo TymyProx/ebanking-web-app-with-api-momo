@@ -1,5 +1,5 @@
 "use server"
-process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0"
 import { z } from "zod"
 import { cookies } from "next/headers"
 import { revalidatePath } from "next/cache"
@@ -198,6 +198,80 @@ function getTransactionType(beneficiaryType: string): string {
   }
 }
 
+export async function debitAccountBalance(accountId: string, amount: number) {
+  const cookieToken = (await cookies()).get("token")?.value
+  const usertoken = cookieToken
+
+  try {
+    console.log(`[v0] Débit du solde disponible - Compte: ${accountId}, Montant: ${amount}`)
+
+    if (!usertoken) {
+      console.log("[v0] Token manquant pour le débit du solde")
+      return { success: false, error: "Token d'authentification manquant" }
+    }
+
+    // Récupérer d'abord les informations du compte
+    const accountResponse = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/compte/${accountId}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${usertoken}`,
+      },
+    })
+
+    if (!accountResponse.ok) {
+      console.log("[v0] Impossible de récupérer les informations du compte")
+      return { success: false, error: "Impossible de récupérer les informations du compte" }
+    }
+
+    const accountData = await accountResponse.json()
+    const account = accountData.data || accountData
+
+    const currentAvailableBalance = Number.parseFloat(account.availableBalance || "0")
+    const newAvailableBalance = currentAvailableBalance - amount
+
+    // Vérifier que le solde est suffisant
+    if (newAvailableBalance < 0) {
+      return {
+        success: false,
+        error: `Solde insuffisant. Solde disponible: ${currentAvailableBalance}, Montant demandé: ${amount}`,
+      }
+    }
+
+    // Mettre à jour le solde disponible
+    const updateData = {
+      data: {
+        ...account,
+        availableBalance: newAvailableBalance.toString(),
+      },
+    }
+
+    const updateResponse = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/compte/${accountId}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${usertoken}`,
+      },
+      body: JSON.stringify(updateData),
+    })
+
+    if (!updateResponse.ok) {
+      console.log("[v0] Erreur lors de la mise à jour du solde disponible")
+      return { success: false, error: "Erreur lors de la mise à jour du solde disponible" }
+    }
+
+    console.log(`[v0] Solde disponible débité avec succès - Nouveau solde: ${newAvailableBalance}`)
+    return {
+      success: true,
+      previousBalance: currentAvailableBalance,
+      newBalance: newAvailableBalance,
+    }
+  } catch (error) {
+    console.error("[v0] Erreur lors du débit du solde disponible:", error)
+    return { success: false, error: "Erreur lors du débit du solde disponible" }
+  }
+}
+
 // Action pour exécuter le virement
 export async function executeTransfer(prevState: any, formData: FormData) {
   try {
@@ -211,9 +285,6 @@ export async function executeTransfer(prevState: any, formData: FormData) {
       transferDate: formData.get("transferDate") as string,
     }
 
-    //console.log("[v0] Données brutes du formulaire:", data)
-    //console.log("[v0] targetAccount reçu:", data.targetAccount, "Type:", typeof data.targetAccount)
-
     const cleanedData = {
       sourceAccount: data.sourceAccount,
       transferType: data.transferType,
@@ -224,12 +295,18 @@ export async function executeTransfer(prevState: any, formData: FormData) {
       transferDate: data.transferDate,
     }
 
-    //console.log("[v0] Données nettoyées:", cleanedData)
-
     // Validation des données
     const validatedData = transferSchema.parse(cleanedData)
+    const transferAmount = Number.parseFloat(validatedData.amount)
 
-    //console.log("[v0] Données validées:", validatedData)
+    const debitResult = await debitAccountBalance(validatedData.sourceAccount, transferAmount)
+
+    if (!debitResult.success) {
+      return {
+        success: false,
+        error: debitResult.error || "Impossible de débiter le compte source",
+      }
+    }
 
     const transactionId = `TXN_${Date.now()}_${Math.floor(Math.random() * 1000)
       .toString()
@@ -240,11 +317,9 @@ export async function executeTransfer(prevState: any, formData: FormData) {
 
     if (validatedData.transferType === "account-to-account") {
       txnType = "INTERNAL_TRANSFER"
-      // Pour les virements compte à compte, utiliser targetAccount comme beneficiaryId
       finalBeneficiaryId = validatedData.targetAccount
     } else if (validatedData.beneficiaryId) {
-      // Pour les virements vers bénéficiaires, utiliser le type du bénéficiaire
-      txnType = getTransactionType("BNG-BNG") // Par défaut, peut être déterminé dynamiquement
+      txnType = getTransactionType("BNG-BNG")
     }
 
     const apiData = {
@@ -260,8 +335,6 @@ export async function executeTransfer(prevState: any, formData: FormData) {
       },
     }
 
-    //console.log("[v0] Données envoyées à l'API:", apiData)
-
     const cookieToken = (await cookies()).get("token")?.value
     const usertoken = cookieToken
 
@@ -275,6 +348,9 @@ export async function executeTransfer(prevState: any, formData: FormData) {
     })
 
     if (!response.ok) {
+      console.log("[v0] Erreur API, restauration du solde disponible")
+      await debitAccountBalance(validatedData.sourceAccount, -transferAmount) // Montant négatif pour créditer
+
       const errorData = await response.json().catch(() => ({}))
       return {
         success: false,
@@ -283,28 +359,30 @@ export async function executeTransfer(prevState: any, formData: FormData) {
     }
 
     const result = await response.json()
-    //console.log("Virement exécuté via API:", result)
 
-    //console.log(
-     // `[AUDIT] Virement exécuté via API - ID: ${transactionId}, Montant: ${validatedData.amount} GNF, Compte: ${validatedData.sourceAccount} à ${new Date().toISOString()}`,
-    //)
+    console.log(
+      `[AUDIT] Virement exécuté avec débit immédiat - ID: ${transactionId}, Montant: ${validatedData.amount} GNF, Compte: ${validatedData.sourceAccount}, Nouveau solde disponible: ${debitResult.newBalance} à ${new Date().toISOString()}`,
+    )
 
     revalidatePath("/transfers/new")
     revalidatePath("/accounts")
 
     return {
       success: true,
-      message: `✅ Virement de ${new Intl.NumberFormat("fr-FR").format(Number.parseFloat(validatedData.amount))} GNF effectué avec succès`,
+      message: `✅ Virement de ${new Intl.NumberFormat("fr-FR").format(transferAmount)} GNF effectué avec succès. Solde disponible débité.`,
       transactionId,
-      amount: Number.parseFloat(validatedData.amount),
+      amount: transferAmount,
       executedAt: new Date().toISOString(),
       apiResponse: result,
+      balanceInfo: {
+        previousBalance: debitResult.previousBalance,
+        newBalance: debitResult.newBalance,
+      },
     }
   } catch (error) {
     console.error("Erreur lors de l'exécution du virement:", error)
 
     if (error instanceof z.ZodError) {
-      //console.log("[v0] Erreurs de validation Zod:", error.errors)
       return {
         success: false,
         error: error.errors[0].message,
