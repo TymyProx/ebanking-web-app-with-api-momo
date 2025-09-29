@@ -21,13 +21,10 @@ import {
   AlertCircle,
   Send,
   Eye,
-  Download,
   Banknote,
   Shield,
   Plus,
   Search,
-  MoreVertical,
-  Trash2,
 } from "lucide-react"
 import {
   submitCreditRequest,
@@ -38,7 +35,6 @@ import {
   getCommandeById,
 } from "./actions"
 import { useActionState } from "react"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { getAccounts } from "../../accounts/actions"
 
@@ -636,7 +632,7 @@ export default function ServiceRequestsPage() {
         intitulecompte: formData.intitulecompte,
         numcompteId: formData.numcompte,
         commentaire: formData.commentaire || "",
-       // numcompte: formData.numcompte, // Ajout du numéro de compte manquant
+        // numcompte: formData.numcompte, // Ajout du numéro de compte manquant
       }
 
       const result = await submitCheckbookRequest(checkbookData)
@@ -1328,7 +1324,24 @@ export default function ServiceRequestsPage() {
                     )}
                   </Button>
                 ) : selectedService === "credit" ? (
-                  <div></div>
+                  <Button
+                    type="button"
+                    onClick={handleCreditSubmit}
+                    disabled={isCreditSubmitting || !formData.terms}
+                    className="w-full"
+                  >
+                    {isCreditSubmitting ? (
+                      <>
+                        <Clock className="w-4 h-4 mr-2 animate-spin" />
+                        Envoi en cours...
+                      </>
+                    ) : (
+                      <>
+                        <Send className="w-4 h-4 mr-2" />
+                        Envoyer la demande
+                      </>
+                    )}
+                  </Button>
                 ) : (
                   <form action={submitAction}>
                     <input type="hidden" name="serviceType" value={selectedService} />
