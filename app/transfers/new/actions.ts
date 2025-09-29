@@ -272,6 +272,72 @@ export async function debitAccountBalance(accountId: string, amount: number) {
   }
 }
 
+export async function creditAccountBalance(accountId: string, amount: number) {
+  const cookieToken = (await cookies()).get("token")?.value
+  const usertoken = cookieToken
+
+  try {
+    console.log(`[v0] Crédit du solde disponible - Compte: ${accountId}, Montant: ${amount}`)
+
+    if (!usertoken) {
+      console.log("[v0] Token manquant pour le crédit du solde")
+      return { success: false, error: "Token d'authentification manquant" }
+    }
+
+    // Récupérer d'abord les informations du compte
+    const accountResponse = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/compte/${accountId}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${usertoken}`,
+      },
+    })
+
+    if (!accountResponse.ok) {
+      console.log("[v0] Impossible de récupérer les informations du compte destinataire")
+      return { success: false, error: "Impossible de récupérer les informations du compte destinataire" }
+    }
+
+    const accountData = await accountResponse.json()
+    const account = accountData.data || accountData
+
+    const currentAvailableBalance = Number.parseFloat(account.availableBalance || "0")
+    const newAvailableBalance = currentAvailableBalance + amount
+
+    // Mettre à jour le solde disponible
+    const updateData = {
+      data: {
+        ...account,
+        availableBalance: newAvailableBalance.toString(),
+      },
+    }
+
+    const updateResponse = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/compte/${accountId}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${usertoken}`,
+      },
+      body: JSON.stringify(updateData),
+    })
+
+    if (!updateResponse.ok) {
+      console.log("[v0] Erreur lors de la mise à jour du solde disponible du destinataire")
+      return { success: false, error: "Erreur lors de la mise à jour du solde disponible du destinataire" }
+    }
+
+    console.log(`[v0] Solde disponible crédité avec succès - Nouveau solde: ${newAvailableBalance}`)
+    return {
+      success: true,
+      previousBalance: currentAvailableBalance,
+      newBalance: newAvailableBalance,
+    }
+  } catch (error) {
+    console.error("[v0] Erreur lors du crédit du solde disponible:", error)
+    return { success: false, error: "Erreur lors du crédit du solde disponible" }
+  }
+}
+
 // Action pour exécuter le virement
 export async function executeTransfer(prevState: any, formData: FormData) {
   try {
@@ -316,10 +382,31 @@ export async function executeTransfer(prevState: any, formData: FormData) {
     let finalBeneficiaryId = validatedData.beneficiaryId
 
     if (validatedData.transferType === "account-to-account") {
+      // Pour les virements compte à compte : beneficiaryId = ID du compte à créditer
       txnType = "INTERNAL_TRANSFER"
       finalBeneficiaryId = validatedData.targetAccount
+
+      // Crédit automatique du compte destinataire pour les virements internes
+      if (validatedData.targetAccount) {
+        console.log(`[v0] Crédit automatique du compte destinataire: ${validatedData.targetAccount}`)
+        const creditResult = await creditAccountBalance(validatedData.targetAccount, transferAmount)
+
+        if (!creditResult.success) {
+          console.log("[v0] Erreur lors du crédit, restauration du solde source")
+          // Restaurer le solde du compte source en cas d'erreur
+          await debitAccountBalance(validatedData.sourceAccount, -transferAmount)
+          return {
+            success: false,
+            error: creditResult.error || "Impossible de créditer le compte destinataire",
+          }
+        }
+
+        console.log(`[v0] Compte destinataire crédité avec succès - Nouveau solde: ${creditResult.newBalance}`)
+      }
     } else if (validatedData.beneficiaryId) {
+      // Pour les virements compte à bénéficiaire : beneficiaryId = numéro de compte du bénéficiaire
       txnType = getTransactionType("BNG-BNG")
+      finalBeneficiaryId = validatedData.beneficiaryId
     }
 
     const apiData = {
@@ -351,6 +438,11 @@ export async function executeTransfer(prevState: any, formData: FormData) {
       console.log("[v0] Erreur API, restauration du solde disponible")
       await debitAccountBalance(validatedData.sourceAccount, -transferAmount) // Montant négatif pour créditer
 
+      // Si c'était un virement interne et que le destinataire avait été crédité, le débiter aussi
+      if (validatedData.transferType === "account-to-account" && validatedData.targetAccount) {
+        await debitAccountBalance(validatedData.targetAccount, transferAmount) // Débiter le montant crédité
+      }
+
       const errorData = await response.json().catch(() => ({}))
       return {
         success: false,
@@ -360,8 +452,16 @@ export async function executeTransfer(prevState: any, formData: FormData) {
 
     const result = await response.json()
 
+    let successMessage = `✅ Virement de ${new Intl.NumberFormat("fr-FR").format(transferAmount)} GNF effectué avec succès.`
+
+    if (validatedData.transferType === "account-to-account") {
+      successMessage += " Comptes débité et crédité automatiquement."
+    } else {
+      successMessage += " Compte source débité, virement vers bénéficiaire en cours."
+    }
+
     console.log(
-      `[AUDIT] Virement exécuté avec débit immédiat - ID: ${transactionId}, Montant: ${validatedData.amount} GNF, Compte: ${validatedData.sourceAccount}, Nouveau solde disponible: ${debitResult.newBalance} à ${new Date().toISOString()}`,
+      `[AUDIT] Virement exécuté avec débit immédiat - ID: ${transactionId}, Type: ${validatedData.transferType}, Montant: ${validatedData.amount} GNF, Compte source: ${validatedData.sourceAccount}, BeneficiaryId: ${finalBeneficiaryId}, Nouveau solde disponible: ${debitResult.newBalance} à ${new Date().toISOString()}`,
     )
 
     revalidatePath("/transfers/new")
@@ -369,7 +469,7 @@ export async function executeTransfer(prevState: any, formData: FormData) {
 
     return {
       success: true,
-      message: `✅ Virement de ${new Intl.NumberFormat("fr-FR").format(transferAmount)} GNF effectué avec succès. Solde disponible débité.`,
+      message: successMessage,
       transactionId,
       amount: transferAmount,
       executedAt: new Date().toISOString(),
