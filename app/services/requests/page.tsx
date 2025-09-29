@@ -16,7 +16,6 @@ import {
   getCreditRequest,
   getCommandeById,
 } from "./actions"
-import { generateReference, getNextReferenceNumber } from "./utils"
 import { useActionState } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { getAccounts } from "../../accounts/actions"
@@ -256,9 +255,8 @@ export default function ServiceRequestsPage() {
     if (selectedService === "checkbook") {
       setIsCheckbookSubmitting(true)
       try {
-        const nextNumber = await getNextReferenceNumber("checkbook")
-        const reference = generateReference("checkbook", nextNumber)
         const response = await submitCheckbookRequest(formData)
+        const reference = `REF-${Date.now()}`
         setCheckbookSubmitState({ success: true, reference })
       } catch (error) {
         setCheckbookSubmitState({ error: "Erreur lors de la soumission de la demande de chéquier" })
@@ -268,9 +266,8 @@ export default function ServiceRequestsPage() {
     } else if (selectedService === "credit") {
       setIsCreditSubmitting(true)
       try {
-        const nextNumber = await getNextReferenceNumber("credit")
-        const reference = generateReference("credit", nextNumber)
         const response = await submitCreditRequest(formData)
+        const reference = `REF-${Date.now()}`
         setCreditSubmitState({ success: true, reference })
       } catch (error) {
         setCreditSubmitState({ error: "Erreur lors de la soumission de la demande de crédit" })

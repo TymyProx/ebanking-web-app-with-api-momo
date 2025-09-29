@@ -3,7 +3,6 @@
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0"
 import { cookies } from "next/headers"
 // Importation de la méthode cookies() pour accéder aux cookies côté serveur
-import { generateReference, getNextReferenceNumber } from "./utils"
 
 // URL de base de l’API et ID du tenant (identifiant du client dans l’API)
 
@@ -28,9 +27,6 @@ export async function submitCreditRequest(formData: {
     // Si aucun token n’est trouvé → erreur
     if (!cookieToken) throw new Error("Token introuvable.")
 
-    const nextNumber = await getNextReferenceNumber("credit")
-    const reference = generateReference("credit", nextNumber)
-
     // Envoi de la requête POST vers l’API backend
     const response = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/demande-credit`, {
       method: "POST",
@@ -45,7 +41,7 @@ export async function submitCreditRequest(formData: {
           creditAmount: formData.loan_amount,
           durationMonths: formData.loan_duration,
           purpose: formData.loan_purpose,
-          numcompte: formData.numcompte, // Ajout du numéro de compte dans l'API
+          numcompte: formData.numcompte, // Ajout du numéro de compte dans l’API
           typedemande: formData.typedemande,
           accountNumber: formData.accountNumber,
         },
@@ -61,7 +57,7 @@ export async function submitCreditRequest(formData: {
 
     // Récupération des données de la réponse (JSON)
     const data = await response.json()
-    return { ...data, referenceId: reference }
+    return data
   } catch (error: any) {
     // Gestion d’erreur (propagation du message d’erreur)
     throw new Error(error.message)
@@ -86,9 +82,6 @@ export async function submitCheckbookRequest(formData: {
 
     // Si aucun token n'est trouvé → erreur
     if (!cookieToken) throw new Error("Token introuvable.")
-
-    const nextNumber = await getNextReferenceNumber("checkbook")
-    const reference = generateReference("checkbook", nextNumber)
 
     // Envoi de la requête POST vers l'API backend
     const response = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/commande`, {
@@ -121,7 +114,7 @@ export async function submitCheckbookRequest(formData: {
 
     // Récupération des données de la réponse (JSON)
     const data = await response.json()
-    return { ...data, referenceId: reference }
+    return data
   } catch (error: any) {
     // Gestion d'erreur (propagation du message d'erreur)
     throw new Error(error.message)
