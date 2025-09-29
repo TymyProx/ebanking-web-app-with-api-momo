@@ -1,5 +1,5 @@
 "use server"
-
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 import { revalidatePath } from "next/cache"
 import { cookies } from "next/headers"
 interface ActionResult {
@@ -7,7 +7,6 @@ interface ActionResult {
   error?: string
   message?: string
 }
-
 interface ApiBeneficiary {
   id: string
   createdAt: string
