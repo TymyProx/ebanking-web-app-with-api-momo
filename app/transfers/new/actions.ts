@@ -422,7 +422,7 @@ export async function executeTransfer(prevState: any, formData: FormData) {
         status: "PENDING",
         description: validatedData.purpose,
         beneficiaryId: finalBeneficiaryId,
-        creditaccount: creditAccount,
+        creditAccount: creditAccount,
       },
     }
 
