@@ -117,11 +117,11 @@ export default function AccountDetailsPage() {
 
         if (transactionsData.data && Array.isArray(transactionsData.data)) {
           const accountTransactions = transactionsData.data
-            .filter((txn: any) => txn.accountId === accountId || txn.creditaccount === accountId)
+            .filter((txn: any) => txn.accountId === accountId || txn.creditAccount === accountId)
             .map((txn: any) => {
               const amount = Number.parseFloat(txn.amount || "0")
 
-              const isCredit = txn.creditaccount === accountId || txn.txnType === "CREDIT"
+              const isCredit = txn.creditAccount === accountId || txn.txnType === "CREDIT"
               const isDebit = txn.accountId === accountId || txn.txnType === "DEBIT"
 
               let displayStatus: "Exécuté" | "En attente" | "Rejeté"
@@ -169,11 +169,11 @@ export default function AccountDetailsPage() {
       const transactionsData = await getTransactions()
       if (transactionsData.data && Array.isArray(transactionsData.data)) {
         const accountTransactions = transactionsData.data
-          .filter((txn: any) => txn.accountId === accountId || txn.creditaccount === accountId)
+          .filter((txn: any) => txn.accountId === accountId || txn.creditAccount === accountId)
           .map((txn: any) => {
             const amount = Number.parseFloat(txn.amount || "0")
 
-            const isCredit = txn.creditaccount === accountId || txn.txnType === "CREDIT"
+            const isCredit = txn.creditAccount === accountId || txn.txnType === "CREDIT"
 
             let displayStatus: "Exécuté" | "En attente" | "Rejeté"
             if (txn.status === "COMPLETED") {
@@ -416,8 +416,8 @@ export default function AccountDetailsPage() {
                 <div className="text-2xl font-semibold text-green-600">
                   {showBalance ? (
                     <>
-                      {hasPendingTransactions}
-                      {formatAmount(account.availableBalance, account.currency)} {account.currency}<span className="text-orange-500 mr-1">*</span>
+                      {formatAmount(account.availableBalance, account.currency)} {account.currency}
+                      {hasPendingTransactions && <span className="text-orange-500 mr-1">*</span>}
                     </>
                   ) : (
                     "••••••••"
@@ -611,7 +611,6 @@ export default function AccountDetailsPage() {
                     <p
                       className={`text-lg font-semibold ${transaction.amount > 0 ? "text-green-600" : "text-red-600"}`}
                     >
-                      {transaction.status === "En attente"}
                       {transaction.amount > 0 ? "+" : "-"}
                       {formatAmount(Math.abs(transaction.amount), account?.currency || transaction.currency)}{" "}
                       {account?.currency || transaction.currency}
