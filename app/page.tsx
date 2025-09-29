@@ -116,8 +116,19 @@ export default async function Dashboard() {
                     </Badge>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    <div className="text-2xl font-heading font-bold text-foreground">
-                      {formatAmount(account.availableBalance, account.currency)} {account.currency}
+                    <div className="space-y-2">
+                      <div>
+                        <p className="text-xs text-muted-foreground mb-1">Solde disponible</p>
+                        <div className="text-2xl font-heading font-bold text-foreground">
+                          {formatAmount(account.availableBalance, account.currency)} {account.currency}
+                        </div>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground mb-1">Solde comptable</p>
+                        <div className="text-lg font-heading font-semibold text-muted-foreground">
+                          {formatAmount(account.bookBalance, account.currency)} {account.currency}
+                        </div>
+                      </div>
                     </div>
                     <p className="text-sm text-muted-foreground font-mono bg-muted/50 px-2 py-1 rounded">
                       {account.accountNumber}
