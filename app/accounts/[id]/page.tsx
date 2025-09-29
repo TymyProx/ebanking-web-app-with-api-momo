@@ -416,8 +416,8 @@ export default function AccountDetailsPage() {
                 <div className="text-2xl font-semibold text-green-600">
                   {showBalance ? (
                     <>
-                      {hasPendingTransactions && <span className="text-orange-500 mr-1">*</span>}
-                      {formatAmount(account.availableBalance, account.currency)} {account.currency}
+                      {hasPendingTransactions}
+                      {formatAmount(account.availableBalance, account.currency)} {account.currency}<span className="text-orange-500 mr-1">*</span>
                     </>
                   ) : (
                     "••••••••"
@@ -611,7 +611,7 @@ export default function AccountDetailsPage() {
                     <p
                       className={`text-lg font-semibold ${transaction.amount > 0 ? "text-green-600" : "text-red-600"}`}
                     >
-                      {transaction.status === "En attente" && <span className="text-orange-500 mr-1">*</span>}
+                      {transaction.status === "En attente"}
                       {transaction.amount > 0 ? "+" : "-"}
                       {formatAmount(Math.abs(transaction.amount), account?.currency || transaction.currency)}{" "}
                       {account?.currency || transaction.currency}
