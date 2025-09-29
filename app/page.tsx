@@ -99,8 +99,8 @@ export default async function Dashboard() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {accounts.length > 0 ? (
           accounts
-            .filter((account: any) => account.status === "ACTIF")
-            .map((account: any) => (
+            .filter((account) => account.status === "ACTIF")
+            .map((account) => (
               <Link key={account.id} href={`/accounts/${account.id}`}>
                 <Card className="card-hover border-0 shadow-md bg-gradient-to-br from-card to-card/50 backdrop-blur-sm">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
