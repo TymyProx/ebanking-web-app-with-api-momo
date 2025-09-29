@@ -1,5 +1,5 @@
 "use server"
-
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 import { z } from "zod"
 import { cookies } from "next/headers"
 import { revalidatePath } from "next/cache"

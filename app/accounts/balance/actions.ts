@@ -1,5 +1,5 @@
 "use server"
-process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0"
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 // Simulation d'une connexion à l'API bancaire T24/CBS
 export async function getAccountBalances(prevState: any, formData: FormData) {
   try {
