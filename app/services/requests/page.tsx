@@ -8,7 +8,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { BookOpen, CreditCard, AlertCircle } from "lucide-react"
+import { BookOpen, CreditCard, AlertCircle, Download, Eye, MoreVertical } from "lucide-react"
 import {
   submitCreditRequest,
   submitCheckbookRequest,
@@ -16,10 +16,12 @@ import {
   getCreditRequest,
   getCommandeById,
 } from "./actions"
-import { generateReference } from "./utils"
+import { generateReference, getNextReferenceNumber } from "./utils"
 import { useActionState } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { getAccounts } from "../../accounts/actions"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import jsPDF from "jspdf"
 
 const serviceTypes = [
   {
@@ -42,16 +44,6 @@ const serviceTypes = [
     cost: "Gratuit",
     requirements: ["Revenus réguliers", "Garanties", "Dossier complet"],
   },
-  // {
-  //   id: "e-demande",
-  //   name: "E-demande",
-  //   icon: FileText,
-  //   description: "Demande électronique pour divers services bancaires",
-  //   category: "electronic",
-  //   processingTime: "1-3 jours ouvrables",
-  //   cost: "Gratuit",
-  //   requirements: ["Compte actif", "Pièces justificatives"],
-  // },
 ]
 
 const accountsData = [
@@ -100,6 +92,15 @@ const recentRequests = [
     account: "Compte Courant Principal",
   },
 ]
+
+interface Request {
+  id: string
+  type: string
+  status: string
+  submittedAt: string
+  expectedResponse?: string
+  account: string
+}
 
 export default function ServiceRequestsPage() {
   const [selectedService, setSelectedService] = useState<string>("")
@@ -171,19 +172,19 @@ export default function ServiceRequestsPage() {
       const creditResult = await getCreditRequest()
       console.log("[v0] Résultat API crédit:", creditResult)
 
-      let allTransformedRequests: any[] = []
+      let allTransformedRequests: Request[] = []
 
       if (checkbookResult && checkbookResult.rows && Array.isArray(checkbookResult.rows)) {
         const checkbookData = checkbookResult.rows
         console.log("[v0] Données chéquier à traiter:", checkbookData)
 
-        const checkbookRequests = checkbookData.map((request) => ({
+        const checkbookRequests = checkbookData.map((request: any) => ({
           id: request.id,
           type: "Demande de chéquier",
-          status: request.status,
-          submittedAt: request.submitted_at,
+          status: request.status || "En cours",
+          submittedAt: request.dateorder || request.submitted_at,
           expectedResponse: request.expected_response,
-          account: request.account_name,
+          account: request.intitulecompte || request.account_name,
         }))
 
         allTransformedRequests = [...allTransformedRequests, ...checkbookRequests]
@@ -193,13 +194,13 @@ export default function ServiceRequestsPage() {
         const creditData = creditResult.rows
         console.log("[v0] Données crédit à traiter:", creditData)
 
-        const creditRequests = creditData.map((request) => ({
+        const creditRequests = creditData.map((request: any) => ({
           id: request.id,
-          type: request.type,
-          status: request.status,
-          submittedAt: request.submitted_at,
+          type: "Demande de crédit",
+          status: request.status || "En cours",
+          submittedAt: request.createdAt || request.submitted_at,
           expectedResponse: request.expected_response,
-          account: request.account_name,
+          account: request.accountNumber || request.account_name,
         }))
 
         allTransformedRequests = [...allTransformedRequests, ...creditRequests]
@@ -255,8 +256,9 @@ export default function ServiceRequestsPage() {
     if (selectedService === "checkbook") {
       setIsCheckbookSubmitting(true)
       try {
-        const reference = generateReference()
-        const response = await submitCheckbookRequest(selectedAccount, formData, reference)
+        const nextNumber = await getNextReferenceNumber("checkbook")
+        const reference = generateReference("checkbook", nextNumber)
+        const response = await submitCheckbookRequest(formData)
         setCheckbookSubmitState({ success: true, reference })
       } catch (error) {
         setCheckbookSubmitState({ error: "Erreur lors de la soumission de la demande de chéquier" })
@@ -266,8 +268,9 @@ export default function ServiceRequestsPage() {
     } else if (selectedService === "credit") {
       setIsCreditSubmitting(true)
       try {
-        const reference = generateReference()
-        const response = await submitCreditRequest(selectedAccount, formData, reference)
+        const nextNumber = await getNextReferenceNumber("credit")
+        const reference = generateReference("credit", nextNumber)
+        const response = await submitCreditRequest(formData)
         setCreditSubmitState({ success: true, reference })
       } catch (error) {
         setCreditSubmitState({ error: "Erreur lors de la soumission de la demande de crédit" })
@@ -279,8 +282,10 @@ export default function ServiceRequestsPage() {
 
   const handleRequestDetails = async (requestId: string) => {
     setIsLoadingDetails(true)
+    setIsDetailsModalOpen(true)
     try {
-      const requestDetails = await getCommandeById(requestId)
+      const TENANT_ID = process.env.NEXT_PUBLIC_TENANT_ID || ""
+      const requestDetails = await getCommandeById(TENANT_ID, requestId)
       setSelectedRequestDetails(requestDetails)
     } catch (error) {
       console.error("Erreur lors du chargement des détails de la demande:", error)
@@ -288,7 +293,62 @@ export default function ServiceRequestsPage() {
     } finally {
       setIsLoadingDetails(false)
     }
-    setIsDetailsModalOpen(true)
+  }
+
+  const generateRequestPDF = (request: any) => {
+    const doc = new jsPDF()
+
+    doc.setFontSize(20)
+    doc.text("Détails de la Demande", 20, 20)
+
+    doc.setFontSize(12)
+    let yPosition = 40
+
+    const addLine = (label: string, value: string) => {
+      doc.text(`${label}: ${value}`, 20, yPosition)
+      yPosition += 10
+    }
+
+    addLine("Type", request.type || "N/A")
+    addLine("Référence", request.id || "N/A")
+    addLine("Compte", request.account || "N/A")
+    addLine("Statut", request.status || "N/A")
+    addLine("Date de soumission", request.submittedAt || "N/A")
+
+    if (request.expectedResponse) {
+      addLine("Réponse attendue", request.expectedResponse)
+    }
+
+    return doc
+  }
+
+  const downloadRequestPDF = (request: any) => {
+    try {
+      const doc = generateRequestPDF(request)
+      doc.save(`demande-${request.id}.pdf`)
+    } catch (error) {
+      console.error("Erreur lors de la génération du PDF:", error)
+      const fallbackContent = `
+Détails de la Demande
+=====================
+
+Type: ${request.type || "N/A"}
+Référence: ${request.id || "N/A"}
+Compte: ${request.account || "N/A"}
+Statut: ${request.status || "N/A"}
+Date de soumission: ${request.submittedAt || "N/A"}
+${request.expectedResponse ? `Réponse attendue: ${request.expectedResponse}` : ""}
+      `
+      const blob = new Blob([fallbackContent], { type: "text/plain" })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement("a")
+      a.href = url
+      a.download = `demande-${request.id}.txt`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(url)
+    }
   }
 
   const handleCloseDetailsModal = () => {
@@ -301,7 +361,7 @@ export default function ServiceRequestsPage() {
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
           <TabsTrigger value="new">Nouvelle Demande</TabsTrigger>
-          <TabsTrigger value="history">Historique des Demandes</TabsTrigger>
+          <TabsTrigger value="history">Mes demandes</TabsTrigger>
         </TabsList>
         <TabsContent value="new">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -377,49 +437,55 @@ export default function ServiceRequestsPage() {
           </div>
         </TabsContent>
         <TabsContent value="history">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Card>
-                <CardHeader>
-                  <CardTitle>Filtrer les Demandes</CardTitle>
-                  <CardDescription>Filtrez les demandes par type ou par statut.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 gap-4">
-                    <Input
-                      type="text"
-                      placeholder="Rechercher..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                    />
-                    <Select value={filterType} onValueChange={setFilterType}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Tous les types" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">Tous les types</SelectItem>
-                        <SelectItem value="checkbook">Demande de chéquier</SelectItem>
-                        <SelectItem value="credit">Demande de crédit</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-            <div>
-              <Card>
-                <CardHeader>
-                  <CardTitle>Liste des Demandes</CardTitle>
-                  <CardDescription>Liste des demandes récentes.</CardDescription>
-                </CardHeader>
-                <CardContent>
+          <div className="grid grid-cols-1 gap-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Filtrer les Demandes</CardTitle>
+                <CardDescription>Filtrez les demandes par type ou recherchez par mot-clé.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Input
+                    type="text"
+                    placeholder="Rechercher..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                  <Select value={filterType} onValueChange={setFilterType}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Tous les types" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Tous les types</SelectItem>
+                      <SelectItem value="checkbook">Demande de chéquier</SelectItem>
+                      <SelectItem value="credit">Demande de crédit</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Liste des Demandes</CardTitle>
+                <CardDescription>Historique de vos demandes de services.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {isLoadingAllRequests ? (
+                  <div className="text-center py-8">Chargement des demandes...</div>
+                ) : allRequests.length === 0 ? (
+                  <Alert>
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription>Aucune demande trouvée.</AlertDescription>
+                  </Alert>
+                ) : (
                   <div className="space-y-4">
                     {allRequests
                       .filter(
                         (request) =>
                           filterType === "all" ||
                           (filterType === "checkbook" && request.type === "Demande de chéquier") ||
-                          (filterType === "credit" && request.type !== "Demande de chéquier"),
+                          (filterType === "credit" && request.type === "Demande de crédit"),
                       )
                       .filter(
                         (request) =>
@@ -428,59 +494,90 @@ export default function ServiceRequestsPage() {
                           request.account.toLowerCase().includes(searchTerm.toLowerCase()),
                       )
                       .map((request) => (
-                        <div
-                          key={request.id}
-                          className="flex items-center justify-between p-4 border rounded"
-                          onClick={() => handleRequestDetails(request.id)}
-                        >
-                          <div>
-                            <div className="font-bold">{request.type}</div>
+                        <div key={request.id} className="flex items-center justify-between p-4 border rounded-lg">
+                          <div className="flex-1">
+                            <div className="font-semibold">{request.type}</div>
                             <div className="text-sm text-muted-foreground">Compte: {request.account}</div>
-                            <div className="text-sm text-muted-foreground">Statut: {request.status}</div>
+                            <div className="text-sm text-muted-foreground">
+                              Soumise le: {new Date(request.submittedAt).toLocaleDateString()}
+                            </div>
                           </div>
-                          <div>
-                            <Badge variant={request.status === "Approuvée" ? "success" : "default"}>
+                          <div className="flex items-center gap-2">
+                            <Badge variant={request.status === "Approuvée" ? "secondary" : "default"}>
                               {request.status}
                             </Badge>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon">
+                                  <MoreVertical className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={() => handleRequestDetails(request.id)}>
+                                  <Eye className="mr-2 h-4 w-4" />
+                                  Voir détails
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => downloadRequestPDF(request)}>
+                                  <Download className="mr-2 h-4 w-4" />
+                                  Télécharger
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
                           </div>
                         </div>
                       ))}
                   </div>
-                </CardContent>
-              </Card>
-            </div>
+                )}
+              </CardContent>
+            </Card>
           </div>
         </TabsContent>
       </Tabs>
-      {isDetailsModalOpen && (
-        <Dialog open={isDetailsModalOpen} onOpenChange={setIsDetailsModalOpen}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Détails de la Demande</DialogTitle>
-            </DialogHeader>
-            <div className="p-4">
-              {selectedRequestDetails ? (
-                <div className="space-y-4">
-                  <div className="font-bold">Type de Demande: {selectedRequestDetails.type}</div>
-                  <div className="text-sm text-muted-foreground">Compte: {selectedRequestDetails.account_name}</div>
-                  <div className="text-sm text-muted-foreground">Statut: {selectedRequestDetails.status}</div>
-                  <div className="text-sm text-muted-foreground">Soumise le: {selectedRequestDetails.submitted_at}</div>
-                  {selectedRequestDetails.completed_at && (
-                    <div className="text-sm text-muted-foreground">
-                      Terminée le: {selectedRequestDetails.completed_at}
-                    </div>
-                  )}
+
+      <Dialog open={isDetailsModalOpen} onOpenChange={setIsDetailsModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Détails de la Demande</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            {isLoadingDetails ? (
+              <div className="text-center py-8">Chargement des détails...</div>
+            ) : selectedRequestDetails ? (
+              <div className="space-y-2">
+                <div>
+                  <span className="font-semibold">Intitulé du compte:</span> {selectedRequestDetails.intitulecompte}
                 </div>
-              ) : (
-                <Alert>
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertDescription>Aucune demande sélectionnée.</AlertDescription>
-                </Alert>
-              )}
-            </div>
-          </DialogContent>
-        </Dialog>
-      )}
+                <div>
+                  <span className="font-semibold">Numéro de compte:</span> {selectedRequestDetails.numcompteId}
+                </div>
+                <div>
+                  <span className="font-semibold">Date de commande:</span> {selectedRequestDetails.dateorder}
+                </div>
+                <div>
+                  <span className="font-semibold">Nombre de chéquiers:</span> {selectedRequestDetails.nbrechequier}
+                </div>
+                <div>
+                  <span className="font-semibold">Nombre de feuilles:</span> {selectedRequestDetails.nbrefeuille}
+                </div>
+                <div>
+                  <span className="font-semibold">Commentaire:</span> {selectedRequestDetails.commentaire}
+                </div>
+                <div className="pt-4">
+                  <Button onClick={() => downloadRequestPDF(selectedRequestDetails)} className="w-full">
+                    <Download className="mr-2 h-4 w-4" />
+                    Télécharger le PDF
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <Alert>
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>Impossible de charger les détails de la demande.</AlertDescription>
+              </Alert>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
