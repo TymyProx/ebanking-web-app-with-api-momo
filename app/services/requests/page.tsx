@@ -792,13 +792,13 @@ export default function ServiceRequestsPage() {
             </div>
 
             <div>
-              <Label htmlFor="nbrefeuille">Nombre de feuilles par chéquier *</Label>
+              <Label htmlFor="nbrefeuille">Nombre de feuillets par chéquier *</Label>
               <Select
                 value={formData.nbrefeuille || ""}
                 onValueChange={(value) => handleInputChange("nbrefeuille", value)}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Choisir le nombre de feuilles" />
+                  <SelectValue placeholder="Choisir le nombre de feuillets" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="25">25 feuillets</SelectItem>
