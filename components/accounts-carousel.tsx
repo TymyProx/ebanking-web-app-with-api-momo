@@ -111,7 +111,7 @@ export function AccountsCarousel({ accounts }: AccountsCarouselProps) {
   }
 
   return (
-    <Card className="border-0 shadow-lg bg-gradient-to-br from-card to-card/50 backdrop-blur-sm">
+    <Card className="border-0 shadow-lg bg-gradient-to-br from-primary/5 via-card to-secondary/5 backdrop-blur-sm">
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle className="font-heading text-xl">Mes Comptes</CardTitle>
@@ -143,7 +143,7 @@ export function AccountsCarousel({ accounts }: AccountsCarouselProps) {
             {activeAccounts.map((account) => (
               <CarouselItem key={account.id}>
                 <Link href={`/accounts/${account.id}`}>
-                  <Card className="card-hover border-0 shadow-md bg-gradient-to-br from-primary/5 to-secondary/5 backdrop-blur-sm">
+                  <Card className="card-hover border-0 shadow-md bg-gradient-to-br from-primary/10 via-background to-secondary/10 backdrop-blur-sm">
                     <CardContent className="p-6">
                       <div className="flex items-center justify-between gap-6">
                         {/* Left section: Account info and type */}
@@ -164,14 +164,10 @@ export function AccountsCarousel({ accounts }: AccountsCarouselProps) {
                           </div>
 
                           <div>
-                            <p className="text-sm font-semibold text-muted-foreground mb-1">
-                            Numéro de compte
+                            <p className="text-xs text-muted-foreground mb-1">Numéro de compte</p>
+                            <p className="text-sm font-mono bg-muted/50 px-3 py-1.5 rounded inline-block">
+                              {account.accountNumber}
                             </p>
-
-                          <p className="text-base font-mono font-semibold bg-muted/50 px-4 py-2 rounded-md inline-block">
-                          {account.accountNumber}
-                          </p>
-
                           </div>
 
                           <div className="flex items-center gap-2 pt-2">
