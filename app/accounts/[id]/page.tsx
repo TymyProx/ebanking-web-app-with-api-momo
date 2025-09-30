@@ -128,7 +128,8 @@ export default function AccountDetailsPage() {
               if (txn.status === "COMPLETED") {
                 displayStatus = "Exécuté"
               } else if (txn.status === "PENDING") {
-                displayStatus = "En attente"
+                // Pour les crédits, on affiche "Exécuté" au lieu de "En attente"
+                displayStatus = isCredit ? "Exécuté" : "En attente"
               } else {
                 displayStatus = "Rejeté"
               }
@@ -179,7 +180,8 @@ export default function AccountDetailsPage() {
             if (txn.status === "COMPLETED") {
               displayStatus = "Exécuté"
             } else if (txn.status === "PENDING") {
-              displayStatus = "En attente"
+              // Pour les crédits, on affiche "Exécuté" au lieu de "En attente"
+              displayStatus = isCredit ? "Exécuté" : "En attente"
             } else {
               displayStatus = "Rejeté"
             }
