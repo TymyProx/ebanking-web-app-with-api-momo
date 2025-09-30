@@ -14,10 +14,10 @@ import {
   Wallet,
   PiggyBank,
   DollarSign,
+  TrendingUp,
 } from "lucide-react"
 import { getTransactions } from "@/app/transfers/new/actions"
 import { getAccounts } from "@/app/accounts/actions"
-import { AccountsModal } from "@/components/accounts-modal"
 
 export default async function Dashboard() {
   const transactionsResult = await getTransactions()
@@ -87,8 +87,6 @@ export default async function Dashboard() {
     }
   }
 
-  const activeAccountsCount = accounts.filter((account: any) => account.status === "ACTIF").length
-
   return (
     <div className="space-y-8 fade-in">
       <div className="space-y-2">
@@ -98,29 +96,75 @@ export default async function Dashboard() {
         <p className="text-muted-foreground text-lg">Bienvenue sur votre espace Astra eBanking</p>
       </div>
 
-      <Card className="border-0 shadow-lg bg-gradient-to-r from-primary/5 to-secondary/5">
-        <CardHeader>
-          <CardTitle className="flex items-center justify-between font-heading text-xl">
-            <div className="flex items-center">
-              <div className="p-2 rounded-lg bg-primary/10 mr-3">
-                <Wallet className="h-5 w-5 text-primary" />
+      <div className="relative">
+        <div className="overflow-x-auto pb-4 -mx-4 px-4 scrollbar-thin scrollbar-thumb-primary/20 scrollbar-track-transparent hover:scrollbar-thumb-primary/40">
+          <div className="flex gap-6 min-w-max">
+            {accounts.length > 0 ? (
+              accounts
+                .filter((account: any) => account.status === "ACTIF")
+                .map((account: any) => (
+                  <Link key={account.id} href={`/accounts/${account.id}`} className="flex-shrink-0 w-[380px]">
+                    <Card className="card-hover border-0 shadow-md bg-gradient-to-br from-card to-card/50 backdrop-blur-sm h-full">
+                      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+                        <div className="flex items-center space-x-3">
+                          <div className="p-2 rounded-lg bg-primary/10">{getAccountIcon(account.type)}</div>
+                          <CardTitle className="text-base font-heading font-semibold">{account.accountName}</CardTitle>
+                        </div>
+                        <Badge
+                          variant="secondary"
+                          className="bg-secondary/20 text-secondary-foreground border-secondary/30"
+                        >
+                          {getAccountTypeDisplay(account.type)}
+                        </Badge>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div className="space-y-2">
+                          <div>
+                            <p className="text-xs text-muted-foreground mb-1">Solde disponible</p>
+                            <div className="text-2xl font-heading font-bold text-foreground">
+                              {formatAmount(account.availableBalance, account.currency)} {account.currency}
+                            </div>
+                          </div>
+                          <div>
+                            <p className="text-xs text-muted-foreground mb-1">Solde comptable</p>
+                            <div className="text-lg font-heading font-semibold text-muted-foreground">
+                              {formatAmount(account.bookBalance, account.currency)} {account.currency}
+                            </div>
+                          </div>
+                        </div>
+                        <p className="text-sm text-muted-foreground font-mono bg-muted/50 px-2 py-1 rounded">
+                          {account.accountNumber}
+                        </p>
+                        <div className="flex items-center justify-between pt-2">
+                          <div className="flex items-center space-x-1">
+                            <TrendingUp className="h-4 w-4 text-secondary" />
+                            <span className="text-sm text-secondary font-medium">{getAccountTrend()}</span>
+                            <span className="text-xs text-muted-foreground">ce mois</span>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </Link>
+                ))
+            ) : (
+              <div className="w-full">
+                <Card className="border-dashed border-2 border-muted">
+                  <CardContent className="flex flex-col items-center justify-center py-16">
+                    <div className="p-4 rounded-full bg-muted/50 mb-4">
+                      <Wallet className="h-8 w-8 text-muted-foreground" />
+                    </div>
+                    <h3 className="text-lg font-heading font-semibold mb-2">Aucun compte</h3>
+                    <p className="text-muted-foreground text-center">Aucun compte n'est disponible pour le moment.</p>
+                  </CardContent>
+                </Card>
               </div>
-              Mes comptes
-            </div>
-            <Badge variant="secondary" className="text-base">
-              {activeAccountsCount} compte{activeAccountsCount > 1 ? "s" : ""}
-            </Badge>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-col items-center justify-center py-8 space-y-4">
-            <p className="text-muted-foreground text-center">
-              Consultez tous vos comptes et leurs détails en un seul endroit
-            </p>
-            <AccountsModal accounts={accounts} />
+            )}
           </div>
-        </CardContent>
-      </Card>
+        </div>
+        {accounts.filter((account: any) => account.status === "ACTIF").length > 2 && (
+          <div className="absolute right-0 top-0 bottom-4 w-16 bg-gradient-to-l from-background to-transparent pointer-events-none" />
+        )}
+      </div>
 
       <Card className="border-0 shadow-lg bg-gradient-to-r from-primary/5 to-secondary/5">
         <CardHeader>
