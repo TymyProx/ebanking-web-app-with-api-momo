@@ -144,41 +144,55 @@ export function AccountsCarousel({ accounts }: AccountsCarouselProps) {
               <CarouselItem key={account.id}>
                 <Link href={`/accounts/${account.id}`}>
                   <Card className="card-hover border-0 shadow-md bg-gradient-to-br from-primary/5 to-secondary/5 backdrop-blur-sm">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-                      <div className="flex items-center space-x-3">
-                        <div className="p-2 rounded-lg bg-primary/10">{getAccountIcon(account.type)}</div>
-                        <CardTitle className="text-base font-heading font-semibold">{account.accountName}</CardTitle>
-                      </div>
-                      <Badge
-                        variant="secondary"
-                        className="bg-secondary/20 text-secondary-foreground border-secondary/30"
-                      >
-                        {getAccountTypeDisplay(account.type)}
-                      </Badge>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div className="space-y-2">
-                        <div>
-                          <p className="text-xs text-muted-foreground mb-1">Solde disponible</p>
-                          <div className="text-3xl font-heading font-bold text-foreground">
-                            {formatAmount(account.availableBalance, account.currency)} {account.currency}
+                    <CardContent className="p-6">
+                      <div className="flex items-center justify-between gap-6">
+                        {/* Left section: Account info and type */}
+                        <div className="flex-1 space-y-4">
+                          <div className="flex items-center gap-3">
+                            <div className="p-3 rounded-lg bg-primary/10">{getAccountIcon(account.type)}</div>
+                            <div>
+                              <CardTitle className="text-lg font-heading font-semibold mb-1">
+                                {account.accountName}
+                              </CardTitle>
+                              <Badge
+                                variant="secondary"
+                                className="bg-secondary/20 text-secondary-foreground border-secondary/30"
+                              >
+                                {getAccountTypeDisplay(account.type)}
+                              </Badge>
+                            </div>
+                          </div>
+
+                          <div>
+                            <p className="text-xs text-muted-foreground mb-1">Numéro de compte</p>
+                            <p className="text-sm font-mono bg-muted/50 px-3 py-1.5 rounded inline-block">
+                              {account.accountNumber}
+                            </p>
+                          </div>
+
+                          <div className="flex items-center gap-2 pt-2">
+                            <TrendingUp className="h-4 w-4 text-secondary" />
+                            <span className="text-sm text-secondary font-medium">{getAccountTrend()}</span>
+                            <span className="text-xs text-muted-foreground">ce mois</span>
                           </div>
                         </div>
-                        <div>
-                          <p className="text-xs text-muted-foreground mb-1">Solde comptable</p>
-                          <div className="text-xl font-heading font-semibold text-muted-foreground">
-                            {formatAmount(account.bookBalance, account.currency)} {account.currency}
+
+                        {/* Right section: Balances */}
+                        <div className="flex-1 space-y-4 text-right">
+                          <div>
+                            <p className="text-xs text-muted-foreground mb-2">Solde disponible</p>
+                            <div className="text-3xl font-heading font-bold text-foreground">
+                              {formatAmount(account.availableBalance, account.currency)}
+                            </div>
+                            <div className="text-sm text-muted-foreground mt-1">{account.currency}</div>
                           </div>
-                        </div>
-                      </div>
-                      <p className="text-sm text-muted-foreground font-mono bg-muted/50 px-2 py-1 rounded">
-                        {account.accountNumber}
-                      </p>
-                      <div className="flex items-center justify-between pt-2">
-                        <div className="flex items-center space-x-1">
-                          <TrendingUp className="h-4 w-4 text-secondary" />
-                          <span className="text-sm text-secondary font-medium">{getAccountTrend()}</span>
-                          <span className="text-xs text-muted-foreground">ce mois</span>
+
+                          <div className="pt-2 border-t border-border/50">
+                            <p className="text-xs text-muted-foreground mb-1">Solde comptable</p>
+                            <div className="text-xl font-heading font-semibold text-muted-foreground">
+                              {formatAmount(account.bookBalance, account.currency)} {account.currency}
+                            </div>
+                          </div>
                         </div>
                       </div>
                     </CardContent>
