@@ -128,8 +128,7 @@ export default function AccountDetailsPage() {
               if (txn.status === "COMPLETED") {
                 displayStatus = "Exécuté"
               } else if (txn.status === "PENDING") {
-                // Pour les crédits, on affiche "Exécuté" au lieu de "En attente"
-                displayStatus = isCredit ? "Exécuté" : "En attente"
+                displayStatus = "En attente"
               } else {
                 displayStatus = "Rejeté"
               }
@@ -180,8 +179,7 @@ export default function AccountDetailsPage() {
             if (txn.status === "COMPLETED") {
               displayStatus = "Exécuté"
             } else if (txn.status === "PENDING") {
-              // Pour les crédits, on affiche "Exécuté" au lieu de "En attente"
-              displayStatus = isCredit ? "Exécuté" : "En attente"
+              displayStatus = "En attente"
             } else {
               displayStatus = "Rejeté"
             }
@@ -618,17 +616,19 @@ export default function AccountDetailsPage() {
                       {account?.currency || transaction.currency}
                     </p>
                     <p className="text-sm text-gray-500">{formatDateTime(transaction.date)}</p>
-                    <Badge
-                      variant={
-                        transaction.status === "Exécuté"
-                          ? "default"
-                          : transaction.status === "En attente"
-                            ? "secondary"
-                            : "destructive"
-                      }
-                    >
-                      {transaction.status}
-                    </Badge>
+                    {!(transaction.amount > 0 && transaction.status === "En attente") && (
+                      <Badge
+                        variant={
+                          transaction.status === "Exécuté"
+                            ? "default"
+                            : transaction.status === "En attente"
+                              ? "secondary"
+                              : "destructive"
+                        }
+                      >
+                        {transaction.status}
+                      </Badge>
+                    )}
                   </div>
                 </div>
               ))}
