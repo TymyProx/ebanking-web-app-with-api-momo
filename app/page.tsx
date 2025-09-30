@@ -14,10 +14,10 @@ import {
   Wallet,
   PiggyBank,
   DollarSign,
-  TrendingUp,
 } from "lucide-react"
 import { getTransactions } from "@/app/transfers/new/actions"
 import { getAccounts } from "@/app/accounts/actions"
+import { AccountsModal } from "@/components/accounts-modal"
 
 export default async function Dashboard() {
   const transactionsResult = await getTransactions()
@@ -87,6 +87,8 @@ export default async function Dashboard() {
     }
   }
 
+  const activeAccountsCount = accounts.filter((account: any) => account.status === "ACTIF").length
+
   return (
     <div className="space-y-8 fade-in">
       <div className="space-y-2">
@@ -96,68 +98,29 @@ export default async function Dashboard() {
         <p className="text-muted-foreground text-lg">Bienvenue sur votre espace Astra eBanking</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {accounts.length > 0 ? (
-          accounts
-            .filter((account) => account.status === "ACTIF")
-            .map((account) => (
-              <Link key={account.id} href={`/accounts/${account.id}`}>
-                <Card className="card-hover border-0 shadow-md bg-gradient-to-br from-card to-card/50 backdrop-blur-sm">
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-                    <div className="flex items-center space-x-3">
-                      <div className="p-2 rounded-lg bg-primary/10">{getAccountIcon(account.type)}</div>
-                      <CardTitle className="text-base font-heading font-semibold">{account.accountName}</CardTitle>
-                    </div>
-                    <Badge
-                      variant="secondary"
-                      className="bg-secondary/20 text-secondary-foreground border-secondary/30"
-                    >
-                      {getAccountTypeDisplay(account.type)}
-                    </Badge>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="space-y-2">
-                      <div>
-                        <p className="text-xs text-muted-foreground mb-1">Solde disponible</p>
-                        <div className="text-2xl font-heading font-bold text-foreground">
-                          {formatAmount(account.availableBalance, account.currency)} {account.currency}
-                        </div>
-                      </div>
-                      <div>
-                        <p className="text-xs text-muted-foreground mb-1">Solde comptable</p>
-                        <div className="text-lg font-heading font-semibold text-muted-foreground">
-                          {formatAmount(account.bookBalance, account.currency)} {account.currency}
-                        </div>
-                      </div>
-                    </div>
-                    <p className="text-sm text-muted-foreground font-mono bg-muted/50 px-2 py-1 rounded">
-                      {account.accountNumber}
-                    </p>
-                    <div className="flex items-center justify-between pt-2">
-                      <div className="flex items-center space-x-1">
-                        <TrendingUp className="h-4 w-4 text-secondary" />
-                        <span className="text-sm text-secondary font-medium">{getAccountTrend()}</span>
-                        <span className="text-xs text-muted-foreground">ce mois</span>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </Link>
-            ))
-        ) : (
-          <div className="col-span-full">
-            <Card className="border-dashed border-2 border-muted">
-              <CardContent className="flex flex-col items-center justify-center py-16">
-                <div className="p-4 rounded-full bg-muted/50 mb-4">
-                  <Wallet className="h-8 w-8 text-muted-foreground" />
-                </div>
-                <h3 className="text-lg font-heading font-semibold mb-2">Aucun compte</h3>
-                <p className="text-muted-foreground text-center">Aucun compte n'est disponible pour le moment.</p>
-              </CardContent>
-            </Card>
+      <Card className="border-0 shadow-lg bg-gradient-to-r from-primary/5 to-secondary/5">
+        <CardHeader>
+          <CardTitle className="flex items-center justify-between font-heading text-xl">
+            <div className="flex items-center">
+              <div className="p-2 rounded-lg bg-primary/10 mr-3">
+                <Wallet className="h-5 w-5 text-primary" />
+              </div>
+              Mes comptes
+            </div>
+            <Badge variant="secondary" className="text-base">
+              {activeAccountsCount} compte{activeAccountsCount > 1 ? "s" : ""}
+            </Badge>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col items-center justify-center py-8 space-y-4">
+            <p className="text-muted-foreground text-center">
+              Consultez tous vos comptes et leurs détails en un seul endroit
+            </p>
+            <AccountsModal accounts={accounts} />
           </div>
-        )}
-      </div>
+        </CardContent>
+      </Card>
 
       <Card className="border-0 shadow-lg bg-gradient-to-r from-primary/5 to-secondary/5">
         <CardHeader>
