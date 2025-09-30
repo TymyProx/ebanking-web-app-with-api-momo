@@ -165,8 +165,8 @@ export function AccountsCarousel({ accounts }: AccountsCarouselProps) {
 
                           <div>
                             <p className="text-xs text-muted-foreground mb-1">Numéro de compte</p>
-                            <p className="text-sm font-mono bg-muted/50 px-3 py-1.5 rounded inline-block">
-                              {account.accountNumber}
+                           <p className="text-base font-mono font-semibold bg-muted/50 px-4 py-2 rounded-md inline-block">
+                            {account.accountNumber}
                             </p>
                           </div>
 
