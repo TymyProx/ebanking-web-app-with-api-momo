@@ -45,8 +45,8 @@ const serviceTypes = [
     icon: BookOpen,
     description: "Commander un nouveau carnet de chèques",
     category: "banking",
-    processingTime: "3-5 jours ouvrables",
-    cost: "",
+ 
+    
     requirements: ["Compte actif", "Pas de chèques impayés"],
   },
   {
@@ -55,8 +55,8 @@ const serviceTypes = [
     icon: CreditCard,
     description: "Demande de crédit (personnel, immobilier, etc...)",
     category: "credit",
-    processingTime: "3-30 jours ouvrables",
-    cost: "",
+  
+   
     requirements: ["Revenus réguliers", "Garanties", "Dossier complet"],
   },
 ]
@@ -1052,8 +1052,7 @@ export default function ServiceRequestsPage() {
               <Alert className="border-green-200 bg-green-50">
                 <CheckCircle className="h-4 w-4 text-green-600" />
                 <AlertDescription className="text-green-800">
-                  ✅ Votre demande de crédit a été envoyée avec succès. Référence: {creditSubmitState.reference}.
-                  Réponse sous {selectedServiceData?.processingTime}.
+                  ✅ Votre demande de crédit a été envoyée avec succès. Référence: {creditSubmitState.reference}
                 </AlertDescription>
               </Alert>
             )}
@@ -1170,8 +1169,7 @@ export default function ServiceRequestsPage() {
               <Alert className="border-green-200 bg-green-50">
                 <CheckCircle className="h-4 w-4 text-green-600" />
                 <AlertDescription className="text-green-800">
-                  ✅ Votre e-demande a été envoyée avec succès. Référence: {eDemandeSubmitState.reference}. Réponse sous{" "}
-                  {selectedServiceData?.processingTime}.
+                  ✅ Votre e-demande a été envoyée avec succès. Référence: {eDemandeSubmitState.reference}
                 </AlertDescription>
               </Alert>
             )}
@@ -1236,12 +1234,7 @@ export default function ServiceRequestsPage() {
                         <div className="flex-1">
                           <h3 className="font-medium text-sm">{service.name}</h3>
                           <p className="text-xs text-gray-500 mt-1">{service.description}</p>
-                          <div className="flex items-center justify-between mt-2">
-                            <Badge variant="outline" className="text-xs">
-                              {service.processingTime}
-                            </Badge>
-                            <span className="text-xs font-medium text-green-600">{service.cost}</span>
-                          </div>
+                          
                         </div>
                       </div>
                     </div>
@@ -1264,20 +1257,7 @@ export default function ServiceRequestsPage() {
               <CardContent className="space-y-6">
                 {/* Service Info */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-gray-50 rounded-lg">
-                  <div className="flex items-center space-x-2">
-                    <Clock className="w-4 h-4 text-gray-500" />
-                    <div>
-                      <p className="text-sm font-medium">Délai de traitement</p>
-                      <p className="text-xs text-gray-600">{selectedServiceData.processingTime}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Banknote className="w-4 h-4 text-gray-500" />
-                    <div>
-                      <p className="text-sm font-medium">Coût</p>
-                      <p className="text-xs text-gray-600">{selectedServiceData.cost}</p>
-                    </div>
-                  </div>
+                  
                   <div className="flex items-center space-x-2">
                     <Shield className="w-4 h-4 text-gray-500" />
                     <div>
@@ -1356,8 +1336,7 @@ export default function ServiceRequestsPage() {
                   <Alert className="border-green-200 bg-green-50">
                     <CheckCircle className="h-4 w-4 text-green-600" />
                     <AlertDescription className="text-green-800">
-                      ✅ Votre demande a été envoyée avec succès. Référence: {submitState.reference}. Réponse sous{" "}
-                      {selectedServiceData?.processingTime}.
+                      ✅ Votre demande a été envoyée avec succès. Référence: {submitState.reference}
                     </AlertDescription>
                   </Alert>
                 )}
