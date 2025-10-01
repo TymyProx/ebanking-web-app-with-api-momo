@@ -21,7 +21,6 @@ import {
   AlertCircle,
   Send,
   Eye,
-  Banknote,
   Shield,
   Plus,
   Search,
@@ -45,8 +44,7 @@ const serviceTypes = [
     icon: BookOpen,
     description: "Commander un nouveau carnet de chèques",
     category: "banking",
- 
-    
+
     requirements: ["Compte actif", "Pas de chèques impayés"],
   },
   {
@@ -55,8 +53,7 @@ const serviceTypes = [
     icon: CreditCard,
     description: "Demande de crédit (personnel, immobilier, etc...)",
     category: "credit",
-  
-   
+
     requirements: ["Revenus réguliers", "Garanties", "Dossier complet"],
   },
 ]
@@ -299,7 +296,7 @@ export default function ServiceRequestsPage() {
 
     const commonFields = [
       { label: "Référence", value: details.reference || "Non attribuée" },
-      { label: "Numéro de compte", value: details.accountNumber || details.numcompteId || "Non spécifié" }
+      { label: "Numéro de compte", value: details.accountNumber || details.numcompteId || "Non spécifié" },
     ]
 
     if (type === "credit") {
@@ -586,9 +583,9 @@ export default function ServiceRequestsPage() {
 
       console.log("[v0] Données envoyées à l'API:", creditData)
       const result = await submitCreditRequest(creditData)
-      setCreditSubmitState({ 
-        success: true, 
-        reference: result.reference || "CRD-" + new Date().getFullYear() + "-" + String(Date.now()).slice(-3)
+      setCreditSubmitState({
+        success: true,
+        reference: result.reference || "CRD-" + new Date().getFullYear() + "-" + String(Date.now()).slice(-3),
       })
       // Réinitialiser le formulaire après succès
       setFormData({})
@@ -631,12 +628,14 @@ export default function ServiceRequestsPage() {
         intitulecompte: formData.intitulecompte,
         numcompteId: formData.numcompte,
         commentaire: formData.commentaire || "",
+        type_chequier: formData.type_chequier,
+        cheque_talon: formData.cheque_talon === "oui",
       }
 
       const result = await submitCheckbookRequest(checkbookData)
-      setCheckbookSubmitState({ 
-        success: true, 
-        reference: result.reference || "CHQ-" + new Date().getFullYear() + "-" + String(Date.now()).slice(-3)
+      setCheckbookSubmitState({
+        success: true,
+        reference: result.reference || "CHQ-" + new Date().getFullYear() + "-" + String(Date.now()).slice(-3),
       })
       // Réinitialiser le formulaire après succès
       setFormData({})
@@ -779,6 +778,56 @@ export default function ServiceRequestsPage() {
                 onChange={(e) => handleInputChange("dateorder", e.target.value)}
                 required
               />
+            </div>
+
+            <div>
+              <Label htmlFor="type_chequier">Type de chéquier *</Label>
+              <Select
+                value={formData.type_chequier || ""}
+                onValueChange={(value) => handleInputChange("type_chequier", value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Choisir le type de chéquier" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="barre">Barré</SelectItem>
+                  <SelectItem value="non_barre">Non barré</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Chèque à talon *</Label>
+              <div className="flex items-center space-x-6">
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="radio"
+                    id="talon_oui"
+                    name="cheque_talon"
+                    value="oui"
+                    checked={formData.cheque_talon === "oui"}
+                    onChange={(e) => handleInputChange("cheque_talon", e.target.value)}
+                    className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+                  />
+                  <Label htmlFor="talon_oui" className="font-normal cursor-pointer">
+                    Oui
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="radio"
+                    id="talon_non"
+                    name="cheque_talon"
+                    value="non"
+                    checked={formData.cheque_talon === "non"}
+                    onChange={(e) => handleInputChange("cheque_talon", e.target.value)}
+                    className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+                  />
+                  <Label htmlFor="talon_non" className="font-normal cursor-pointer">
+                    Non
+                  </Label>
+                </div>
+              </div>
             </div>
 
             <div>
@@ -1234,7 +1283,6 @@ export default function ServiceRequestsPage() {
                         <div className="flex-1">
                           <h3 className="font-medium text-sm">{service.name}</h3>
                           <p className="text-xs text-gray-500 mt-1">{service.description}</p>
-                          
                         </div>
                       </div>
                     </div>
@@ -1257,7 +1305,6 @@ export default function ServiceRequestsPage() {
               <CardContent className="space-y-6">
                 {/* Service Info */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-gray-50 rounded-lg">
-                  
                   <div className="flex items-center space-x-2">
                     <Shield className="w-4 h-4 text-gray-500" />
                     <div>
@@ -1480,7 +1527,7 @@ export default function ServiceRequestsPage() {
                         <div className="text-right text-sm text-gray-500">
                           <p>Soumise le</p>
                           <p className="font-medium">{new Date(request.submittedAt).toLocaleDateString("fr-FR")}</p>
-                        
+
                           {request.completedAt && (
                             <p className="text-xs text-green-600">
                               Complétée le: {new Date(request.completedAt).toLocaleDateString("fr-FR")}
