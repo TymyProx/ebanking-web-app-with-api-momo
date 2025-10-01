@@ -306,7 +306,7 @@ export default function ServiceRequestsPage() {
       return [
         ...commonFields,
         { label: "Nom du demandeur", value: details.applicantName },
-        { label: "Montant du crédit", value: `${details.creditAmount} €` },
+        { label: "Montant du crédit", value: `${details.creditAmount} GNF` },
         { label: "Durée (mois)", value: details.durationMonths },
         { label: "Objet du crédit", value: details.purpose },
       ]
