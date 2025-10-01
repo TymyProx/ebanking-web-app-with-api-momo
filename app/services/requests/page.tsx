@@ -790,8 +790,8 @@ export default function ServiceRequestsPage() {
                   <SelectValue placeholder="Choisir le type de chéquier" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="barre">Barré</SelectItem>
-                  <SelectItem value="non_barre">Non barré</SelectItem>
+                  <SelectItem value="barré">Barré</SelectItem>
+                  <SelectItem value="non_barré">Non barré</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -803,7 +803,7 @@ export default function ServiceRequestsPage() {
                   <input
                     type="radio"
                     id="talon_oui"
-                    name="cheque_talon"
+                    name="talonCheque"
                     value="oui"
                     checked={formData.cheque_talon === "oui"}
                     onChange={(e) => handleInputChange("cheque_talon", e.target.value)}
@@ -817,7 +817,7 @@ export default function ServiceRequestsPage() {
                   <input
                     type="radio"
                     id="talon_non"
-                    name="cheque_talon"
+                    name="talonCheque"
                     value="non"
                     checked={formData.cheque_talon === "non"}
                     onChange={(e) => handleInputChange("cheque_talon", e.target.value)}
@@ -837,7 +837,7 @@ export default function ServiceRequestsPage() {
                 name="nbrechequier"
                 type="number"
                 min="1"
-                max="10"
+                max="100"
                 value={formData.nbrechequier || ""}
                 onChange={(e) => handleInputChange("nbrechequier", e.target.value)}
                 placeholder="Ex: 2"
@@ -857,6 +857,7 @@ export default function ServiceRequestsPage() {
                 <SelectContent>
                   <SelectItem value="25">25 feuillets</SelectItem>
                   <SelectItem value="50">50 feuillets</SelectItem>
+                  <SelectItem value="100">100 feuillets</SelectItem>
                 </SelectContent>
               </Select>
             </div>
