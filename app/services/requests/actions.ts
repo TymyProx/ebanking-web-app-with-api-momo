@@ -4,10 +4,44 @@ process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0"
 import { cookies } from "next/headers"
 // Importation de la méthode cookies() pour accéder aux cookies côté serveur
 
-// URL de base de l’API et ID du tenant (identifiant du client dans l’API)
+// URL de base de l'API et ID du tenant (identifiant du client dans l'API)
 
 const API_BASE_URL = process.env.API_BASE_URL
 const TENANT_ID = process.env.TENANT_ID
+
+// Fonction pour générer une référence unique
+async function generateReference(prefix: string): Promise<string> {
+  try {
+    // Récupérer le token
+    const cookieToken = (await cookies()).get("token")?.value
+    const usertoken = cookieToken
+
+    if (!cookieToken) {
+      throw new Error("Token introuvable.")
+    }
+
+    // Récupérer toutes les demandes existantes pour compter
+    let existingCount = 0
+    
+    if (prefix === "CHQ") {
+      const checkbookRequests = await getCheckbookRequest()
+      existingCount = checkbookRequests?.rows?.length || 0
+    } else if (prefix === "CRD") {
+      const creditRequests = await getCreditRequest()
+      existingCount = creditRequests?.rows?.length || 0
+    }
+
+    const currentYear = new Date().getFullYear()
+    const sequence = String(existingCount + 1).padStart(3, "0")
+    
+    return `${prefix}-${currentYear}-${sequence}`
+  } catch (error) {
+    // En cas d'erreur, générer une référence basée sur le timestamp
+    const currentYear = new Date().getFullYear()
+    const timestamp = Date.now().toString().slice(-3)
+    return `${prefix}-${currentYear}-${timestamp}`
+  }
+}
 
 // Fonction asynchrone pour soumettre une demande de crédit
 export async function submitCreditRequest(formData: {
@@ -24,10 +58,12 @@ export async function submitCreditRequest(formData: {
     const cookieToken = (await cookies()).get("token")?.value
     const usertoken = cookieToken
 
-    // Si aucun token n’est trouvé → erreur
+    // Si aucun token n'est trouvé → erreur
     if (!cookieToken) throw new Error("Token introuvable.")
 
-    // Envoi de la requête POST vers l’API backend
+    // Générer la référence avant la soumission
+    const reference = await generateReference("CRD")
+
     const response = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/demande-credit`, {
       method: "POST",
       headers: {
@@ -36,7 +72,7 @@ export async function submitCreditRequest(formData: {
       },
       body: JSON.stringify({
         data: {
-          //  Mapping des données du formulaire vers les champs attendus par l’API
+          //  Mapping des données du formulaire vers les champs attendus par l'API
           applicantName: formData.applicant_name,
           creditAmount: formData.loan_amount,
           durationMonths: formData.loan_duration,
@@ -44,6 +80,7 @@ export async function submitCreditRequest(formData: {
           numcompte: formData.numcompte, // Ajout du numéro de compte dans l'API
           typedemande: formData.typedemande,
           accountNumber: formData.accountNumber,
+          reference: reference, // Ajout de la référence
         },
       }),
     })
@@ -51,15 +88,20 @@ export async function submitCreditRequest(formData: {
     // Vérifie si la réponse est valide
     if (!response.ok) {
       const errorData = await response.json()
-      // Si le backend renvoie un message d’erreur, on le propage
+      // Si le backend renvoie un message d'erreur, on le propage
       throw new Error(errorData.message || "Erreur lors de la soumission")
     }
 
     // Récupération des données de la réponse (JSON)
     const data = await response.json()
-    return data
+    
+    // Retourner la référence avec la réponse
+    return {
+      ...data,
+      reference: reference
+    }
   } catch (error: any) {
-    // Gestion d’erreur (propagation du message d’erreur)
+    // Gestion d'erreur (propagation du message d'erreur)
     throw new Error(error.message)
   }
 }
@@ -73,7 +115,6 @@ export async function submitCheckbookRequest(formData: {
   intitulecompte: string // Intitulé du compte
   numcompteId: string // ID du compte
   commentaire: string // Commentaire
-  //numcompte: string // Nouveau champ numéro de compte
 }) {
   try {
     // 🔑 Récupération du token JWT stocké dans les cookies
@@ -83,7 +124,9 @@ export async function submitCheckbookRequest(formData: {
     // Si aucun token n'est trouvé → erreur
     if (!cookieToken) throw new Error("Token introuvable.")
 
-    // Envoi de la requête POST vers l'API backend
+    // Générer la référence avant la soumission
+    const reference = await generateReference("CHQ")
+
     const response = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/commande`, {
       method: "POST",
       headers: {
@@ -100,7 +143,7 @@ export async function submitCheckbookRequest(formData: {
           intitulecompte: formData.intitulecompte,
           numcompteId: formData.numcompteId,
           commentaire: formData.commentaire,
-          //numcompte: formData.numcompte, // Ajout du numéro de compte dans l'API
+          reference: reference, // Ajout de la référence
         },
       }),
     })
@@ -114,7 +157,12 @@ export async function submitCheckbookRequest(formData: {
 
     // Récupération des données de la réponse (JSON)
     const data = await response.json()
-    return data
+    
+    // Retourner la référence avec la réponse
+    return {
+      ...data,
+      reference: reference
+    }
   } catch (error: any) {
     // Gestion d'erreur (propagation du message d'erreur)
     throw new Error(error.message)
@@ -141,6 +189,7 @@ export async function getCheckbookRequest(id?: string) {
             intitulecompte: "Compte Courant Principal",
             numcompteId: "ACC001",
             commentaire: "Demande de chéquier standard",
+            reference: "CHQ-2024-001", // Ajout de la référence
           },
           {
             id: "4fa85f64-5717-4562-b3fc-2c963f66afa7",
@@ -150,6 +199,7 @@ export async function getCheckbookRequest(id?: string) {
             intitulecompte: "Compte Épargne",
             numcompteId: "ACC002",
             commentaire: "Demande urgente",
+            reference: "CHQ-2024-002", // Ajout de la référence
           },
         ],
         count: 2,
@@ -192,6 +242,7 @@ export async function getCheckbookRequest(id?: string) {
         intitulecompte: item.intitulecompte,
         numcompteId: item.numcompteId,
         commentaire: item.commentaire,
+        reference: item.reference, // Inclure la référence
       }))
       return { ...data, rows: filteredRows }
     } else if (data.id) {
@@ -204,6 +255,7 @@ export async function getCheckbookRequest(id?: string) {
         intitulecompte: data.intitulecompte,
         numcompteId: data.numcompteId,
         commentaire: data.commentaire,
+        reference: data.reference, // Inclure la référence
       }
     }
 
@@ -221,6 +273,7 @@ export async function getCheckbookRequest(id?: string) {
           intitulecompte: "Compte Courant Principal",
           numcompteId: "ACC001",
           commentaire: "Demande de chéquier standard",
+          reference: "CHQ-2024-001",
         },
       ],
       count: 1,
@@ -260,6 +313,7 @@ export async function getCreditRequest(id?: string) {
             creditAmount: "50000",
             durationMonths: "24",
             purpose: "Achat véhicule",
+            reference: "CRD-2024-001", // Ajout de la référence
           },
           {
             id: "6fa85f64-5717-4562-b3fc-2c963f66afa9",
@@ -274,6 +328,7 @@ export async function getCreditRequest(id?: string) {
             creditAmount: "25000",
             durationMonths: "12",
             purpose: "Travaux maison",
+            reference: "CRD-2024-002", // Ajout de la référence
           },
         ],
         count: 2,
@@ -325,6 +380,7 @@ export async function getCreditRequest(id?: string) {
           creditAmount: "50000",
           durationMonths: "24",
           purpose: "Achat véhicule",
+          reference: "CRD-2024-001",
         },
       ],
       count: 1,
@@ -362,6 +418,7 @@ export async function getDemandeCreditById(TENANT_ID: string, id: string) {
         creditAmount: "50000",
         durationMonths: "24",
         purpose: "Achat véhicule",
+        reference: "CRD-2024-001", // Ajout de la référence
       }
 
       return mockCreditDetail
@@ -400,6 +457,7 @@ export async function getDemandeCreditById(TENANT_ID: string, id: string) {
       creditAmount: "50000",
       durationMonths: "24",
       purpose: "Achat véhicule",
+      reference: "CRD-2024-001",
     }
 
     return mockCreditDetail
@@ -424,6 +482,7 @@ export async function getCommandeById(TENANT_ID: string, id: string) {
         intitulecompte: "Compte Courant Principal",
         numcompteId: "ACC001",
         commentaire: "Demande de chéquier standard",
+        reference: "CHQ-2024-001", // Ajout de la référence
       }
 
       return mockCheckbookDetail
@@ -453,6 +512,7 @@ export async function getCommandeById(TENANT_ID: string, id: string) {
       intitulecompte: data.intitulecompte,
       numcompteId: data.numcompteId,
       commentaire: data.commentaire,
+      reference: data.reference, // Inclure la référence
     }
   } catch (error: any) {
     console.log("[v0] Erreur lors de la récupération, retour de données de test:", error.message)
@@ -465,6 +525,7 @@ export async function getCommandeById(TENANT_ID: string, id: string) {
       intitulecompte: "Compte Courant Principal",
       numcompteId: "ACC001",
       commentaire: "Demande de chéquier standard",
+      reference: "CHQ-2024-001",
     }
 
     return mockCheckbookDetail

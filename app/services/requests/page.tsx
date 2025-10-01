@@ -21,13 +21,10 @@ import {
   AlertCircle,
   Send,
   Eye,
-  Download,
   Banknote,
   Shield,
   Plus,
   Search,
-  MoreVertical,
-  Trash2,
 } from "lucide-react"
 import {
   submitCreditRequest,
@@ -38,7 +35,6 @@ import {
   getCommandeById,
 } from "./actions"
 import { useActionState } from "react"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { getAccounts } from "../../accounts/actions"
 
@@ -63,16 +59,6 @@ const serviceTypes = [
     cost: "Gratuit",
     requirements: ["Revenus réguliers", "Garanties", "Dossier complet"],
   },
-  // {
-  //   id: "e-demande",
-  //   name: "E-demande",
-  //   icon: FileText,
-  //   description: "Demande électronique pour divers services bancaires",
-  //   category: "electronic",
-  //   processingTime: "1-3 jours ouvrables",
-  //   cost: "Gratuit",
-  //   requirements: ["Compte actif", "Pièces justificatives"],
-  // },
 ]
 
 const accountsData = [
@@ -217,7 +203,7 @@ export default function ServiceRequestsPage() {
             ? new Date(new Date(item.dateorder).getTime() + 3 * 24 * 60 * 60 * 1000).toISOString().split("T")[0]
             : new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
           account: item.intitulecompte || "Compte non spécifié",
-          reference: `CHQ-${new Date().getFullYear()}-${String(index + 1).padStart(3, "0")}`,
+          reference: item.reference || `CHQ-${new Date().getFullYear()}-${String(index + 1).padStart(3, "0")}`,
           details: {
             nbrechequier: item.nbrechequier || 0,
             nbrefeuille: item.nbrefeuille || 0,
@@ -243,7 +229,7 @@ export default function ServiceRequestsPage() {
           submittedAt: item.createdAt ? item.createdAt.split("T")[0] : new Date().toISOString().split("T")[0],
           expectedResponse: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
           account: "Compte courant",
-          reference: `CRD-${new Date().getFullYear()}-${String(index + 1).padStart(3, "0")}`,
+          reference: item.reference || `CRD-${new Date().getFullYear()}-${String(index + 1).padStart(3, "0")}`,
           details: {
             applicantName: item.applicantName || "",
             creditAmount: item.creditAmount || "",
@@ -311,7 +297,10 @@ export default function ServiceRequestsPage() {
   const formatRequestDetails = (details: any, type: string) => {
     if (!details) return []
 
-    const commonFields = [{ label: "Numéro de compte", value: details.accountNumber || details.numcompteId }]
+    const commonFields = [
+      { label: "Référence", value: details.reference || "Non attribuée" },
+      { label: "Numéro de compte", value: details.accountNumber || details.numcompteId || "Non spécifié" }
+    ]
 
     if (type === "credit") {
       return [
@@ -365,7 +354,7 @@ export default function ServiceRequestsPage() {
         const adaptedAccounts = result.map((apiAccount: any) => ({
           id: apiAccount.id || apiAccount.accountId,
           name: apiAccount.accountName || apiAccount.name || `Compte ${apiAccount.accountNumber || apiAccount.number}`,
-          number: apiAccount.accountNumber || apiAccount.number, //|| apiAccount.id,
+          number: apiAccount.accountNumber || apiAccount.number,
           balance: apiAccount.bookBalance || apiAccount.balance || 0,
           currency: apiAccount.currency || "GNF",
           status: apiAccount.status,
@@ -447,7 +436,7 @@ export default function ServiceRequestsPage() {
                     ? new Date(new Date(item.dateorder).getTime() + 3 * 24 * 60 * 60 * 1000).toISOString().split("T")[0]
                     : new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
                   account: item.intitulecompte || "Compte non spécifié",
-                  reference: `CHQ-${new Date().getFullYear()}-${String(index + 1).padStart(3, "0")}`,
+                  reference: item.reference || `CHQ-${new Date().getFullYear()}-${String(index + 1).padStart(3, "0")}`,
                   details: {
                     nbrechequier: item.nbrechequier || 0,
                     nbrefeuille: item.nbrefeuille || 0,
@@ -463,7 +452,7 @@ export default function ServiceRequestsPage() {
                   submittedAt: item.createdAt ? item.createdAt.split("T")[0] : new Date().toISOString().split("T")[0],
                   expectedResponse: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
                   account: "Compte courant",
-                  reference: `CRD-${new Date().getFullYear()}-${String(index + 1).padStart(3, "0")}`,
+                  reference: item.reference || `CRD-${new Date().getFullYear()}-${String(index + 1).padStart(3, "0")}`,
                   details: {
                     applicantName: item.applicantName || "",
                     creditAmount: item.creditAmount || "",
@@ -495,7 +484,6 @@ export default function ServiceRequestsPage() {
   const getServiceIdFromRequestType = (requestType: string): string => {
     const typeMapping: Record<string, string> = {
       "Demande de chéquier": "checkbook",
-
       Crédit: "credit",
     }
     return typeMapping[requestType] || ""
@@ -598,9 +586,16 @@ export default function ServiceRequestsPage() {
 
       console.log("[v0] Données envoyées à l'API:", creditData)
       const result = await submitCreditRequest(creditData)
-      setCreditSubmitState({ success: true, reference: result.referenceId || "REF-" + Date.now() })
+      setCreditSubmitState({ 
+        success: true, 
+        reference: result.reference || "CRD-" + new Date().getFullYear() + "-" + String(Date.now()).slice(-3)
+      })
       // Réinitialiser le formulaire après succès
       setFormData({})
+      // Recharger les demandes
+      if (activeTab === "history") {
+        loadAllRequests()
+      }
     } catch (error: any) {
       console.log("[v0] Erreur lors de la soumission:", error.message)
       setCreditSubmitState({ error: error.message || "Une erreur s'est produite lors de la soumission" })
@@ -636,13 +631,19 @@ export default function ServiceRequestsPage() {
         intitulecompte: formData.intitulecompte,
         numcompteId: formData.numcompte,
         commentaire: formData.commentaire || "",
-       // numcompte: formData.numcompte, // Ajout du numéro de compte manquant
       }
 
       const result = await submitCheckbookRequest(checkbookData)
-      setCheckbookSubmitState({ success: true, reference: result.referenceId || "REF-" + Date.now() })
+      setCheckbookSubmitState({ 
+        success: true, 
+        reference: result.reference || "CHQ-" + new Date().getFullYear() + "-" + String(Date.now()).slice(-3)
+      })
       // Réinitialiser le formulaire après succès
       setFormData({})
+      // Recharger les demandes
+      if (activeTab === "history") {
+        loadAllRequests()
+      }
     } catch (error: any) {
       setCheckbookSubmitState({ error: error.message || "Une erreur s'est produite lors de la soumission" })
     } finally {
@@ -796,13 +797,13 @@ export default function ServiceRequestsPage() {
             </div>
 
             <div>
-              <Label htmlFor="nbrefeuille">Nombre de feuilles par chéquier *</Label>
+              <Label htmlFor="nbrefeuille">Nombre de feuillets par chéquier *</Label>
               <Select
                 value={formData.nbrefeuille || ""}
                 onValueChange={(value) => handleInputChange("nbrefeuille", value)}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Choisir le nombre de feuilles" />
+                  <SelectValue placeholder="Choisir le nombre de feuillets" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="25">25 feuillets</SelectItem>
@@ -1289,24 +1290,6 @@ export default function ServiceRequestsPage() {
                 {/* Dynamic Form */}
                 {renderServiceForm()}
 
-                {/* Terms and Conditions */}
-                {selectedService && selectedService !== "checkbook" && selectedService !== "credit" && (
-                  <div className="flex items-start space-x-2">
-                    <Checkbox
-                      id="terms"
-                      checked={formData.terms || false}
-                      onCheckedChange={(checked) => handleInputChange("terms", checked)}
-                    />
-                    <Label htmlFor="terms" className="text-sm">
-                      J'accepte les{" "}
-                      <a href="#" className="text-blue-600 hover:underline">
-                        conditions générales
-                      </a>{" "}
-                      et autorise le traitement de ma demande
-                    </Label>
-                  </div>
-                )}
-
                 {/* Submit Button */}
                 {selectedService === "checkbook" ? (
                   <Button
@@ -1328,7 +1311,24 @@ export default function ServiceRequestsPage() {
                     )}
                   </Button>
                 ) : selectedService === "credit" ? (
-                  <div></div>
+                  <Button
+                    type="button"
+                    onClick={handleCreditSubmit}
+                    disabled={isCreditSubmitting || !formData.terms}
+                    className="w-full"
+                  >
+                    {isCreditSubmitting ? (
+                      <>
+                        <Clock className="w-4 h-4 mr-2 animate-spin" />
+                        Envoi en cours...
+                      </>
+                    ) : (
+                      <>
+                        <Send className="w-4 h-4 mr-2" />
+                        Envoyer la demande
+                      </>
+                    )}
+                  </Button>
                 ) : (
                   <form action={submitAction}>
                     <input type="hidden" name="serviceType" value={selectedService} />
@@ -1403,7 +1403,6 @@ export default function ServiceRequestsPage() {
                     <SelectItem value="all">Toutes les demandes</SelectItem>
                     <SelectItem value="checkbook">Demande de chéquier</SelectItem>
                     <SelectItem value="credit">Demande de crédit</SelectItem>
-                    {/* <SelectItem value="e-demande">E-demande</SelectItem> */}
                   </SelectContent>
                 </Select>
               </div>
@@ -1455,21 +1454,6 @@ export default function ServiceRequestsPage() {
                 </div>
               </CardContent>
             </Card>
-
-            {/* <Card
-              className="cursor-pointer hover:bg-gray-50 transition-colors"
-              onClick={() => loadRequestsByType("e-demande")}
-            >
-              <CardContent className="pt-6">
-                <div className="flex items-center">
-                  <FileText className="h-8 w-8 text-orange-600" />
-                  <div className="ml-4">
-                    <p className="text-sm font-medium text-gray-600">E-demande</p>
-                    <p className="text-2xl font-bold">{allRequests.filter((r) => r.type === "e-demande").length}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card> */}
           </div>
           <Card>
             <CardHeader>
@@ -1534,30 +1518,6 @@ export default function ServiceRequestsPage() {
                         <Button variant="ghost" size="sm" onClick={() => handleViewDetails(request)}>
                           <Eye className="w-4 h-4" />
                         </Button>
-
-                        {/* <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="sm">
-                              <MoreVertical className="w-4 h-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => handleViewDetails(request)}>
-                              <Eye className="w-4 h-4 mr-2" />
-                              Voir détails
-                            </DropdownMenuItem>
-                            <DropdownMenuItem>
-                              <Download className="w-4 h-4 mr-2" />
-                              Télécharger
-                            </DropdownMenuItem>
-                            {request.status === "En cours" && (
-                              <DropdownMenuItem className="text-red-600">
-                                <Trash2 className="w-4 h-4 mr-2" />
-                                Annuler
-                              </DropdownMenuItem>
-                            )}
-                          </DropdownMenuContent>
-                        </DropdownMenu> */}
                       </div>
                     </div>
                   ))}
@@ -1600,10 +1560,6 @@ export default function ServiceRequestsPage() {
                 <Button variant="outline" onClick={closeDetailsModal}>
                   Fermer
                 </Button>
-                {/* <Button>
-                  <Download className="w-4 h-4 mr-2" />
-                  Télécharger
-                </Button> */}
               </div>
             </div>
           ) : (
