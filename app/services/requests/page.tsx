@@ -837,7 +837,7 @@ export default function ServiceRequestsPage() {
                 name="nbrechequier"
                 type="number"
                 min="1"
-                max="100"
+                max="2"
                 value={formData.nbrechequier || ""}
                 onChange={(e) => handleInputChange("nbrechequier", e.target.value)}
                 placeholder="Ex: 2"
