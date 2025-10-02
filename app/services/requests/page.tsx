@@ -797,7 +797,7 @@ export default function ServiceRequestsPage() {
             </div>
 
             <div className="space-y-2">
-              <Label>Chèque à talon *</Label>
+              <Label>Chèque avec talon *</Label>
               <div className="flex items-center space-x-6">
                 <div className="flex items-center space-x-2">
                   <input
