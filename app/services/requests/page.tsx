@@ -982,6 +982,7 @@ export default function ServiceRequestsPage() {
                   <SelectItem value="immobilier">Crédit immobilier</SelectItem>
                   <SelectItem value="étudiant">Crédit étudiant</SelectItem>
                   <SelectItem value="automobile">Crédit automobile</SelectItem>
+                  <SelectItem value="other">Autre</SelectItem>
                 </SelectContent>
               </Select>
             </div>
