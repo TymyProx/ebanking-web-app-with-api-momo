@@ -269,7 +269,8 @@ export default function ServiceRequestsPage() {
       console.log("[v0] Chargement des détails pour la demande:", request.id, "type:", request.type)
 
       let details = null
-      const TENANT_ID = "aa1287f6-06af-45b7-a905-8c57363565c2"
+      const TENANT_ID =
+        process.env.NEXT_PUBLIC_TENANT_ID || process.env.TENANT_ID || "aa1287f6-06af-45b7-a905-8c57363565c2"
 
       if (request.type === "credit") {
         details = await getDemandeCreditById(TENANT_ID, request.id)
@@ -922,7 +923,7 @@ export default function ServiceRequestsPage() {
       case "credit":
         return (
           <form onSubmit={handleCreditSubmit} className="space-y-4">
-             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="intitulecompte">Sélectionner un compte *</Label>
                 <Select
