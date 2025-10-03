@@ -339,6 +339,12 @@ export default function ServiceRequestsPage() {
     loadAccounts()
   }, [])
 
+  useEffect(() => {
+    if (selectedService === "checkbook" && !formData.cheque_talon) {
+      handleInputChange("cheque_talon", "non")
+    }
+  }, [selectedService])
+
   const loadAccounts = async () => {
     try {
       console.log("[v0] Chargement des comptes...")
