@@ -916,81 +916,102 @@ export default function ServiceRequestsPage() {
       case "credit":
         return (
           <form onSubmit={handleCreditSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="intitulecompte">Sélectionner un compte *</Label>
-              <Select
-                value={formData.accountId || ""}
-                onValueChange={(value) => {
-                  const selectedAccount = accounts.find((acc) => acc.id === value)
-                  if (selectedAccount) {
-                    handleInputChange("accountId", selectedAccount.id)
-                    handleInputChange("intitulecompte", selectedAccount.name)
-                    handleInputChange("numcompte", selectedAccount.number)
-                  }
-                }}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder={isLoadingAccounts ? "Chargement..." : "Choisir un compte"} />
-                </SelectTrigger>
-                <SelectContent>
-                  {isLoadingAccounts ? (
-                    <SelectItem value="loading" disabled>
-                      Chargement des comptes...
-                    </SelectItem>
-                  ) : accounts.length === 0 ? (
-                    <SelectItem value="empty" disabled>
-                      Aucun compte courant trouvé
-                    </SelectItem>
-                  ) : (
-                    accounts.map((account) => (
-                      <SelectItem key={account.id} value={account.id}>
-                        <div className="flex flex-col">
-                          <span className="font-medium">{account.name}</span>
-                          <span className="text-sm text-gray-500">
-                            {account.number} •{" "}
-                            {new Intl.NumberFormat("fr-FR", {
-                              style: "currency",
-                              currency: account.currency === "GNF" ? "GNF" : account.currency,
-                              minimumFractionDigits: account.currency === "GNF" ? 0 : 2,
-                            }).format(account.balance)}
-                          </span>
-                        </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="intitulecompte">Sélectionner un compte *</Label>
+                <Select
+                  value={formData.accountId || ""}
+                  onValueChange={(value) => {
+                    const selectedAccount = accounts.find((acc) => acc.id === value)
+                    if (selectedAccount) {
+                      handleInputChange("accountId", selectedAccount.id)
+                      handleInputChange("intitulecompte", selectedAccount.name)
+                      handleInputChange("numcompte", selectedAccount.number)
+                    }
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder={isLoadingAccounts ? "Chargement..." : "Choisir un compte"} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {isLoadingAccounts ? (
+                      <SelectItem value="loading" disabled>
+                        Chargement des comptes...
                       </SelectItem>
-                    ))
-                  )}
-                </SelectContent>
-              </Select>
+                    ) : accounts.length === 0 ? (
+                      <SelectItem value="empty" disabled>
+                        Aucun compte courant trouvé
+                      </SelectItem>
+                    ) : (
+                      accounts.map((account) => (
+                        <SelectItem key={account.id} value={account.id}>
+                          <div className="flex flex-col">
+                            <span className="font-medium">{account.name}</span>
+                            <span className="text-sm text-gray-500">
+                              {account.number} •{" "}
+                              {new Intl.NumberFormat("fr-FR", {
+                                style: "currency",
+                                currency: account.currency === "GNF" ? "GNF" : account.currency,
+                                minimumFractionDigits: account.currency === "GNF" ? 0 : 2,
+                              }).format(account.balance)}
+                            </span>
+                          </div>
+                        </SelectItem>
+                      ))
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="numcompte_credit">Numéro de compte *</Label>
+                <Input
+                  id="numcompte_credit"
+                  name="numcompte_credit"
+                  type="text"
+                  value={formData.numcompte || ""}
+                  onChange={(e) => handleInputChange("numcompte", e.target.value)}
+                  placeholder="Ex: 000123456789"
+                  required
+                  readOnly
+                  className="bg-gray-50"
+                />
+              </div>
             </div>
 
-            <div>
-              <Label htmlFor="numcompte_credit">Numéro de compte *</Label>
-              <Input
-                id="numcompte_credit"
-                name="numcompte_credit"
-                type="text"
-                value={formData.numcompte || ""}
-                onChange={(e) => handleInputChange("numcompte", e.target.value)}
-                placeholder="Ex: 000123456789"
-                required
-                readOnly
-                className="bg-gray-50"
-              />
-            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="credit_type">Type de crédit *</Label>
+                <Select onValueChange={(value) => handleInputChange("credit_type", value)} required>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Sélectionnez le type de crédit" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="personnel">Crédit personnel</SelectItem>
+                    <SelectItem value="immobilier">Crédit immobilier</SelectItem>
+                    <SelectItem value="étudiant">Crédit étudiant</SelectItem>
+                    <SelectItem value="automobile">Crédit automobile</SelectItem>
+                    <SelectItem value="other">Autre</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
 
-            <div>
-              <Label htmlFor="credit_type">Type de crédit *</Label>
-              <Select onValueChange={(value) => handleInputChange("credit_type", value)} required>
-                <SelectTrigger>
-                  <SelectValue placeholder="Sélectionnez le type de crédit" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="personnel">Crédit personnel</SelectItem>
-                  <SelectItem value="immobilier">Crédit immobilier</SelectItem>
-                  <SelectItem value="étudiant">Crédit étudiant</SelectItem>
-                  <SelectItem value="automobile">Crédit automobile</SelectItem>
-                  <SelectItem value="other">Autre</SelectItem>
-                </SelectContent>
-              </Select>
+              <div>
+                <Label htmlFor="loan_purpose">Objet du crédit *</Label>
+                <Select onValueChange={(value) => handleInputChange("loan_purpose", value)} required>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Sélectionnez l'objet" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Consommation">Consommation</SelectItem>
+                    <SelectItem value="Équipement">Équipement</SelectItem>
+                    <SelectItem value="Rénovation">Rénovation</SelectItem>
+                    <SelectItem value="Éducation">Éducation</SelectItem>
+                    <SelectItem value="Santé">Santé</SelectItem>
+                    <SelectItem value="Autre">Autre</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1017,51 +1038,6 @@ export default function ServiceRequestsPage() {
                     <SelectItem value="36">36 mois</SelectItem>
                     <SelectItem value="48">48 mois</SelectItem>
                     <SelectItem value="60">60 mois</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            <div>
-              <Label htmlFor="loan_purpose">Objet du crédit *</Label>
-              <Select onValueChange={(value) => handleInputChange("loan_purpose", value)} required>
-                <SelectTrigger>
-                  <SelectValue placeholder="Sélectionnez l'objet" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Consommation">Consommation</SelectItem>
-                  <SelectItem value="Équipement">Équipement</SelectItem>
-                  <SelectItem value="Rénovation">Rénovation</SelectItem>
-                  <SelectItem value="Éducation">Éducation</SelectItem>
-                  <SelectItem value="Santé">Santé</SelectItem>
-                  <SelectItem value="Autre">Autre</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="monthly_income">Revenus mensuels (GNF) *</Label>
-                <Input
-                  id="monthly_income"
-                  type="number"
-                  placeholder="Ex: 2000000"
-                  value={formData.monthly_income || ""}
-                  onChange={(e) => handleInputChange("monthly_income", e.target.value)}
-                  required
-                />
-              </div>
-              <div>
-                <Label htmlFor="employment_type">Type d'emploi *</Label>
-                <Select onValueChange={(value) => handleInputChange("employment_type", value)} required>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Type d'emploi" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="employee">Salarié</SelectItem>
-                    <SelectItem value="civil_servant">Fonctionnaire</SelectItem>
-                    <SelectItem value="self_employed">Indépendant</SelectItem>
-                    <SelectItem value="business_owner">Chef d'entreprise</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -1101,6 +1077,34 @@ export default function ServiceRequestsPage() {
                     onChange={(e) => handleInputChange("contact_email", e.target.value)}
                   />
                 </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="monthly_income">Revenus mensuels (GNF) *</Label>
+                <Input
+                  id="monthly_income"
+                  type="number"
+                  placeholder="Ex: 2000000"
+                  value={formData.monthly_income || ""}
+                  onChange={(e) => handleInputChange("monthly_income", e.target.value)}
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="employment_type">Type d'emploi *</Label>
+                <Select onValueChange={(value) => handleInputChange("employment_type", value)} required>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Type d'emploi" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="employee">Salarié</SelectItem>
+                    <SelectItem value="civil_servant">Fonctionnaire</SelectItem>
+                    <SelectItem value="self_employed">Indépendant</SelectItem>
+                    <SelectItem value="business_owner">Chef d'entreprise</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 
