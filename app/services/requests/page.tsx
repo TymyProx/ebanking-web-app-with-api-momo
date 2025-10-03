@@ -276,11 +276,11 @@ export default function ServiceRequestsPage() {
       if (request.type === "credit") {
         const response = await getDemandeCreditById(TENANT_ID, request.id)
         console.log("[v0] Réponse API crédit complète:", response)
-        details = response?.data || response
+        details = (response as any)?.data || response
       } else if (request.type === "checkbook") {
         const response = await getCommandeById(TENANT_ID, request.id)
         console.log("[v0] Réponse API chéquier complète:", response)
-        details = response?.data || response
+        details = (response as any)?.data || response
       }
 
       console.log("[v0] Détails extraits:", details)
