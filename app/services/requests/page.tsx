@@ -249,7 +249,7 @@ export default function ServiceRequestsPage() {
         total: allTransformedRequests.length,
         checkbook: allTransformedRequests.filter((req) => req.type === "checkbook").length,
         credit: allTransformedRequests.filter((req) => req.type === "credit").length,
-        card: allTransformedRequests.filter((req) => req.type === "card").length,
+        card: allTransformedRequests.filter((req) => req.type === "account").length,
         account: allTransformedRequests.filter((req) => req.type === "account").length,
       }
       console.log("[v0] Statistiques calculées:", stats)
@@ -1049,15 +1049,32 @@ export default function ServiceRequestsPage() {
               </div>
             </div>
 
-            <div>
-              <Label htmlFor="applicant_name">Nom du demandeur *</Label>
-              <Input
-                id="applicant_name"
-                placeholder="Nom du demandeur"
-                value={formData.applicant_name || ""}
-                onChange={(e) => handleInputChange("applicant_name", e.target.value)}
-                required
-              />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="applicant_name">Nom du demandeur *</Label>
+                <Input
+                  id="applicant_name"
+                  placeholder="Nom du demandeur"
+                  value={formData.applicant_name || ""}
+                  onChange={(e) => handleInputChange("applicant_name", e.target.value)}
+                  required
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="employment_type">Type d'emploi *</Label>
+                <Select onValueChange={(value) => handleInputChange("employment_type", value)} required>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Type d'emploi" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="employee">Salarié</SelectItem>
+                    <SelectItem value="civil_servant">Fonctionnaire</SelectItem>
+                    <SelectItem value="self_employed">Indépendant</SelectItem>
+                    <SelectItem value="business_owner">Chef d'entreprise</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
 
             {/* Contact Information */}
@@ -1086,32 +1103,16 @@ export default function ServiceRequestsPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="monthly_income">Revenus mensuels (GNF) *</Label>
-                <Input
-                  id="monthly_income"
-                  type="number"
-                  placeholder="Ex: 2000000"
-                  value={formData.monthly_income || ""}
-                  onChange={(e) => handleInputChange("monthly_income", e.target.value)}
-                  required
-                />
-              </div>
-              <div>
-                <Label htmlFor="employment_type">Type d'emploi *</Label>
-                <Select onValueChange={(value) => handleInputChange("employment_type", value)} required>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Type d'emploi" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="employee">Salarié</SelectItem>
-                    <SelectItem value="civil_servant">Fonctionnaire</SelectItem>
-                    <SelectItem value="self_employed">Indépendant</SelectItem>
-                    <SelectItem value="business_owner">Chef d'entreprise</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+            <div>
+              <Label htmlFor="monthly_income">Revenus mensuels (GNF) *</Label>
+              <Input
+                id="monthly_income"
+                type="number"
+                placeholder="Ex: 2000000"
+                value={formData.monthly_income || ""}
+                onChange={(e) => handleInputChange("monthly_income", e.target.value)}
+                required
+              />
             </div>
 
             {/* Feedback Messages */}
