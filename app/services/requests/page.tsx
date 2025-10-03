@@ -1020,6 +1020,18 @@ export default function ServiceRequestsPage() {
               </div>
             </div>
 
+               <div>
+              <Label htmlFor="monthly_income">Revenus mensuels (GNF) *</Label>
+              <Input
+                id="monthly_income"
+                type="number"
+                placeholder="Ex: 2000000"
+                value={formData.monthly_income || ""}
+                onChange={(e) => handleInputChange("monthly_income", e.target.value)}
+                required
+              />
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="loan_amount">Montant du crédit (GNF) *</Label>
@@ -1103,17 +1115,7 @@ export default function ServiceRequestsPage() {
               </div>
             </div>
 
-            <div>
-              <Label htmlFor="monthly_income">Revenus mensuels (GNF) *</Label>
-              <Input
-                id="monthly_income"
-                type="number"
-                placeholder="Ex: 2000000"
-                value={formData.monthly_income || ""}
-                onChange={(e) => handleInputChange("monthly_income", e.target.value)}
-                required
-              />
-            </div>
+         
 
             {/* Feedback Messages */}
             {creditSubmitState?.success && (
