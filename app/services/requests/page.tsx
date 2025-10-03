@@ -707,93 +707,97 @@ export default function ServiceRequestsPage() {
       case "checkbook":
         return (
           <form onSubmit={handleCheckbookSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="intitulecompte">Sélectionner un compte *</Label>
-              <Select
-                value={formData.numcompteId || ""}
-                onValueChange={(value) => {
-                  const selectedAccount = accounts.find((acc) => acc.id === value)
-                  if (selectedAccount) {
-                    handleInputChange("accountId", selectedAccount.id)
-                    handleInputChange("intitulecompte", selectedAccount.name)
-                    handleInputChange("numcompte", selectedAccount.number)
-                  }
-                }}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder={isLoadingAccounts ? "Chargement..." : "Choisir un compte"} />
-                </SelectTrigger>
-                <SelectContent>
-                  {isLoadingAccounts ? (
-                    <SelectItem value="loading" disabled>
-                      Chargement des comptes...
-                    </SelectItem>
-                  ) : accounts.length === 0 ? (
-                    <SelectItem value="empty" disabled>
-                      Aucun compte courant trouvé
-                    </SelectItem>
-                  ) : (
-                    accounts.map((account) => (
-                      <SelectItem key={account.id} value={account.id}>
-                        <div className="flex flex-col">
-                          <span className="font-medium">{account.name}</span>
-                          <span className="text-sm text-gray-500">
-                            {account.number} •{" "}
-                            {new Intl.NumberFormat("fr-FR", {
-                              style: "currency",
-                              currency: account.currency === "GNF" ? "GNF" : account.currency,
-                              minimumFractionDigits: account.currency === "GNF" ? 0 : 2,
-                            }).format(account.balance)}
-                          </span>
-                        </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="intitulecompte">Sélectionner un compte *</Label>
+                <Select
+                  value={formData.numcompteId || ""}
+                  onValueChange={(value) => {
+                    const selectedAccount = accounts.find((acc) => acc.id === value)
+                    if (selectedAccount) {
+                      handleInputChange("accountId", selectedAccount.id)
+                      handleInputChange("intitulecompte", selectedAccount.name)
+                      handleInputChange("numcompte", selectedAccount.number)
+                    }
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder={isLoadingAccounts ? "Chargement..." : "Choisir un compte"} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {isLoadingAccounts ? (
+                      <SelectItem value="loading" disabled>
+                        Chargement des comptes...
                       </SelectItem>
-                    ))
-                  )}
-                </SelectContent>
-              </Select>
+                    ) : accounts.length === 0 ? (
+                      <SelectItem value="empty" disabled>
+                        Aucun compte courant trouvé
+                      </SelectItem>
+                    ) : (
+                      accounts.map((account) => (
+                        <SelectItem key={account.id} value={account.id}>
+                          <div className="flex flex-col">
+                            <span className="font-medium">{account.name}</span>
+                            <span className="text-sm text-gray-500">
+                              {account.number} •{" "}
+                              {new Intl.NumberFormat("fr-FR", {
+                                style: "currency",
+                                currency: account.currency === "GNF" ? "GNF" : account.currency,
+                                minimumFractionDigits: account.currency === "GNF" ? 0 : 2,
+                              }).format(account.balance)}
+                            </span>
+                          </div>
+                        </SelectItem>
+                      ))
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="numcompte">Numéro de compte *</Label>
+                <Input
+                  id="numcompte"
+                  name="numcompte"
+                  type="text"
+                  value={formData.numcompte || ""}
+                  onChange={(e) => handleInputChange("numcompte", e.target.value)}
+                  placeholder="Ex: 000123456789"
+                  required
+                  readOnly
+                  className="bg-gray-50"
+                />
+              </div>
             </div>
 
-            <div>
-              <Label htmlFor="numcompte">Numéro de compte *</Label>
-              <Input
-                id="numcompte"
-                name="numcompte"
-                type="text"
-                value={formData.numcompte || ""}
-                onChange={(e) => handleInputChange("numcompte", e.target.value)}
-                placeholder="Ex: 000123456789"
-                required
-                readOnly
-                className="bg-gray-50"
-              />
-            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="dateorder">Date de commande *</Label>
+                <Input
+                  id="dateorder"
+                  name="dateorder"
+                  type="date"
+                  value={formData.dateorder || new Date().toISOString().split("T")[0]}
+                  onChange={(e) => handleInputChange("dateorder", e.target.value)}
+                  required
+                />
+              </div>
 
-            <div>
-              <Label htmlFor="dateorder">Date de commande *</Label>
-              <Input
-                id="dateorder"
-                name="dateorder"
-                type="date"
-                value={formData.dateorder || new Date().toISOString().split("T")[0]}
-                onChange={(e) => handleInputChange("dateorder", e.target.value)}
-                required
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="type_chequier">Type de chéquier *</Label>
-              <Select
-                value={formData.type_chequier || ""}
-                onValueChange={(value) => handleInputChange("type_chequier", value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Choisir le type de chéquier" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="barré">Barré</SelectItem>
-                  <SelectItem value="non_barré">Non barré</SelectItem>
-                </SelectContent>
-              </Select>
+              <div>
+                <Label htmlFor="type_chequier">Type de chéquier *</Label>
+                <Select
+                  value={formData.type_chequier || ""}
+                  onValueChange={(value) => handleInputChange("type_chequier", value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choisir le type de chéquier" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="barré">Barré</SelectItem>
+                    <SelectItem value="non_barré">Non barré</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
 
             <div className="space-y-2">
@@ -830,36 +834,38 @@ export default function ServiceRequestsPage() {
               </div>
             </div>
 
-            <div>
-              <Label htmlFor="nbrechequier">Nombre de chéquiers *</Label>
-              <Input
-                id="nbrechequier"
-                name="nbrechequier"
-                type="number"
-                min="1"
-                max="2"
-                value={formData.nbrechequier || ""}
-                onChange={(e) => handleInputChange("nbrechequier", e.target.value)}
-                placeholder="Ex: 2"
-                required
-              />
-            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="nbrechequier">Nombre de chéquiers *</Label>
+                <Input
+                  id="nbrechequier"
+                  name="nbrechequier"
+                  type="number"
+                  min="1"
+                  max="2"
+                  value={formData.nbrechequier || ""}
+                  onChange={(e) => handleInputChange("nbrechequier", e.target.value)}
+                  placeholder="Ex: 2"
+                  required
+                />
+              </div>
 
-            <div>
-              <Label htmlFor="nbrefeuille">Nombre de feuillets par chéquier *</Label>
-              <Select
-                value={formData.nbrefeuille || ""}
-                onValueChange={(value) => handleInputChange("nbrefeuille", value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Choisir le nombre de feuillets" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="25">25 feuillets</SelectItem>
-                  <SelectItem value="50">50 feuillets</SelectItem>
-                  <SelectItem value="100">100 feuillets</SelectItem>
-                </SelectContent>
-              </Select>
+              <div>
+                <Label htmlFor="nbrefeuille">Nombre de feuillets par chéquier *</Label>
+                <Select
+                  value={formData.nbrefeuille || ""}
+                  onValueChange={(value) => handleInputChange("nbrefeuille", value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choisir le nombre de feuillets" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="25">25 feuillets</SelectItem>
+                    <SelectItem value="50">50 feuillets</SelectItem>
+                    <SelectItem value="100">100 feuillets</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
 
             <div>
