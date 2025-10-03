@@ -262,6 +262,7 @@ export default function ServiceRequestsPage() {
   }
 
   const handleViewDetails = async (request: any) => {
+    setSelectedRequestDetails(null)
     setIsLoadingDetails(true)
     setIsDetailsModalOpen(true)
 
@@ -273,15 +274,23 @@ export default function ServiceRequestsPage() {
         process.env.NEXT_PUBLIC_TENANT_ID || process.env.TENANT_ID || "aa1287f6-06af-45b7-a905-8c57363565c2"
 
       if (request.type === "credit") {
-        details = await getDemandeCreditById(TENANT_ID, request.id)
+        const response = await getDemandeCreditById(TENANT_ID, request.id)
+        console.log("[v0] Réponse API crédit complète:", response)
+        details = response?.data || response
       } else if (request.type === "checkbook") {
-        details = await getCommandeById(TENANT_ID, request.id)
+        const response = await getCommandeById(TENANT_ID, request.id)
+        console.log("[v0] Réponse API chéquier complète:", response)
+        details = response?.data || response
       }
 
-      console.log("[v0] Détails récupérés:", details)
+      console.log("[v0] Détails extraits:", details)
+      if (details) {
+        details.requestType = request.type
+      }
       setSelectedRequestDetails(details)
     } catch (error) {
       console.error("[v0] Erreur lors du chargement des détails:", error)
+      setSelectedRequestDetails(null)
     } finally {
       setIsLoadingDetails(false)
     }
@@ -295,27 +304,85 @@ export default function ServiceRequestsPage() {
   const formatRequestDetails = (details: any, type: string) => {
     if (!details) return []
 
+    console.log("[v0] Formatage des détails:", details, "type:", type)
+
     const commonFields = [
-      { label: "Référence", value: details.reference || "Non attribuée" },
-      { label: "Numéro de compte", value: details.accountNumber || details.numcompteId || "Non spécifié" },
+      { label: "Référence", value: details.reference || details.id || "Non attribuée" },
+      {
+        label: "Numéro de compte",
+        value: details.accountNumber || details.numcompteId || details.numcompte || "Non spécifié",
+      },
     ]
 
     if (type === "credit") {
       return [
         ...commonFields,
-        { label: "Nom du demandeur", value: details.applicantName },
-        { label: "Montant du crédit", value: `${details.creditAmount} GNF` },
-        { label: "Durée (mois)", value: details.durationMonths },
-        { label: "Objet du crédit", value: details.purpose },
+        {
+          label: "Nom du demandeur",
+          value: details.applicantName || details.applicant_name || "Non spécifié",
+        },
+        {
+          label: "Montant du crédit",
+          value:
+            details.creditAmount || details.loan_amount
+              ? `${details.creditAmount || details.loan_amount} GNF`
+              : "Non spécifié",
+        },
+        {
+          label: "Durée (mois)",
+          value: details.durationMonths || details.loan_duration || "Non spécifié",
+        },
+        {
+          label: "Objet du crédit",
+          value: details.purpose || details.loan_purpose || "Non spécifié",
+        },
+        {
+          label: "Type de crédit",
+          value: details.creditType || details.credit_type || details.typedemande || "Non spécifié",
+        },
+        {
+          label: "Revenus mensuels",
+          value:
+            details.monthlyIncome || details.monthly_income
+              ? `${details.monthlyIncome || details.monthly_income} GNF`
+              : "Non spécifié",
+        },
+        {
+          label: "Type d'emploi",
+          value: details.employmentType || details.employment_type || "Non spécifié",
+        },
       ]
     } else if (type === "checkbook") {
       return [
         ...commonFields,
-        { label: "Date de commande", value: new Date(details.dateorder).toLocaleDateString("fr-FR") },
-        { label: "Nombre de feuilles", value: details.nbrefeuille },
-        { label: "Nombre de chéquiers", value: details.nbrechequier },
-        { label: "Intitulé du compte", value: details.intitulecompte },
-        { label: "Commentaire", value: details.commentaire || "Aucun commentaire" },
+        {
+          label: "Intitulé du compte",
+          value: details.intitulecompte || "Non spécifié",
+        },
+        {
+          label: "Date de commande",
+          value: details.dateorder ? new Date(details.dateorder).toLocaleDateString("fr-FR") : "Non spécifiée",
+        },
+        {
+          label: "Type de chéquier",
+          value: details.type_chequier || "Non spécifié",
+        },
+        {
+          label: "Chèque avec talon",
+          value: details.cheque_talon === true || details.cheque_talon === "oui" ? "Oui" : "Non",
+        },
+        {
+          label: "Nombre de chéquiers",
+          value: details.nbrechequier || "0",
+        },
+        {
+          label: "Nombre de feuillets",
+          value: details.nbrefeuille || "0",
+        },
+        {
+          label: "Commentaire",
+          value: details.commentaire || "Aucun commentaire",
+        },
       ]
     }
 
@@ -1591,7 +1658,9 @@ export default function ServiceRequestsPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {formatRequestDetails(
                   selectedRequestDetails,
-                  allRequests.find((r) => r.id === selectedRequestDetails.id)?.type || "unknown",
+                  selectedRequestDetails.requestType ||
+                    allRequests.find((r) => r.id === selectedRequestDetails.id)?.type ||
+                    "unknown",
                 ).map((field, index) => (
                   <div key={index} className="space-y-1">
                     <label className="text-sm font-medium text-gray-600">{field.label}</label>
