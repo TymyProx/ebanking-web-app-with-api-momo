@@ -922,11 +922,11 @@ export default function ServiceRequestsPage() {
       case "credit":
         return (
           <form onSubmit={handleCreditSubmit} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="intitulecompte">Sélectionner un compte *</Label>
                 <Select
-                  value={formData.accountId || ""}
+                  value={formData.numcompteId || ""}
                   onValueChange={(value) => {
                     const selectedAccount = accounts.find((acc) => acc.id === value)
                     if (selectedAccount) {
