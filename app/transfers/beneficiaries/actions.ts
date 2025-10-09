@@ -15,7 +15,7 @@ interface ApiBeneficiary {
   createdById: string
   updatedById: string
   importHash?: string
-  tenantId: string
+  TENANT_ID: string
   beneficiaryId: string
   customerId: string
   name: string

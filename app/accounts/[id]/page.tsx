@@ -25,7 +25,6 @@ import {
   Shield,
   Info,
   RefreshCw,
-  Sparkles,
 } from "lucide-react"
 import { getAccounts } from "../actions"
 import { getTransactions } from "../../transfers/new/actions"
@@ -115,16 +114,24 @@ export default function AccountDetailsPage() {
     const loadTransactions = async () => {
       try {
         const transactionsData = await getTransactions()
-        //console.log("[v0] Transactions récupérées:", transactionsData)
 
         if (transactionsData.data && Array.isArray(transactionsData.data)) {
-          // Filtrer les transactions pour ce compte spécifique
           const accountTransactions = transactionsData.data
-            .filter((txn: any) => txn.accountId === accountId)
+            .filter((txn: any) => txn.accountId === accountId || txn.creditAccount === accountId)
             .map((txn: any) => {
               const amount = Number.parseFloat(txn.amount || "0")
-              const isCredit = txn.txnType === "CREDIT"
-              const isDebit = txn.txnType === "DEBIT"
+
+              const isCredit = txn.creditAccount === accountId || txn.txnType === "CREDIT"
+              const isDebit = txn.accountId === accountId || txn.txnType === "DEBIT"
+
+              let displayStatus: "Exécuté" | "En attente" | "Rejeté"
+              if (txn.status === "COMPLETED") {
+                displayStatus = "Exécuté"
+              } else if (txn.status === "PENDING") {
+                displayStatus = "En attente"
+              } else {
+                displayStatus = "Rejeté"
+              }
 
               return {
                 id: txn.txnId || txn.id,
@@ -134,7 +141,7 @@ export default function AccountDetailsPage() {
                 amount: isCredit ? Math.abs(amount) : -Math.abs(amount),
                 currency: account?.currency || "GNF",
                 date: txn.valueDate || new Date().toISOString(),
-                status: txn.status, //txn.status === "COMPLETED" ? "Exécuté" : txn.status === "PENDING" ? "En attente" : "Rejeté",
+                status: displayStatus,
                 counterparty: txn.beneficiaryId || "Système",
                 reference: txn.txnId || "REF-" + Date.now(),
                 balanceAfter: 0, // Calculé dynamiquement si nécessaire
@@ -162,10 +169,20 @@ export default function AccountDetailsPage() {
       const transactionsData = await getTransactions()
       if (transactionsData.data && Array.isArray(transactionsData.data)) {
         const accountTransactions = transactionsData.data
-          .filter((txn: any) => txn.accountId === accountId)
+          .filter((txn: any) => txn.accountId === accountId || txn.creditAccount === accountId)
           .map((txn: any) => {
             const amount = Number.parseFloat(txn.amount || "0")
-            const isCredit = txn.txnType === "CREDIT"
+
+            const isCredit = txn.creditAccount === accountId || txn.txnType === "CREDIT"
+
+            let displayStatus: "Exécuté" | "En attente" | "Rejeté"
+            if (txn.status === "COMPLETED") {
+              displayStatus = "Exécuté"
+            } else if (txn.status === "PENDING") {
+              displayStatus = "En attente"
+            } else {
+              displayStatus = "Rejeté"
+            }
 
             return {
               id: txn.txnId || txn.id,
@@ -175,7 +192,7 @@ export default function AccountDetailsPage() {
               amount: isCredit ? Math.abs(amount) : -Math.abs(amount),
               currency: account?.currency || "GNF",
               date: txn.valueDate || new Date().toISOString(),
-              status: txn.status, //txn.status === "COMPLETED" ? "Exécuté" : txn.status === "PENDING" ? "En attente" : "Rejeté",
+              status: displayStatus,
               counterparty: txn.beneficiaryId || "Système",
               reference: txn.txnId || "REF-" + Date.now(),
               balanceAfter: 0,
@@ -230,6 +247,8 @@ export default function AccountDetailsPage() {
       }
     })
   }
+
+  const hasPendingTransactions = transactions.some((transaction) => transaction.status === "En attente")
 
   if (isLoadingAccount) {
     return (
@@ -334,64 +353,45 @@ export default function AccountDetailsPage() {
   }
 
   return (
-    <div className="space-y-8">
-      <div className="relative">
-        <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-secondary/10 to-primary/10 rounded-2xl blur-3xl -z-10" />
-        <div className="flex items-center justify-between p-6 bg-white/80 backdrop-blur-sm rounded-2xl border border-border/50 shadow-sm">
-          <div className="flex items-center space-x-4">
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={() => router.back()}
-              className="bg-white/80 backdrop-blur-sm"
-            >
-              <ArrowLeft className="w-4 h-4" />
-            </Button>
-            <div>
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-primary via-secondary to-primary bg-clip-text text-transparent">
-                Détails du Compte
-              </h1>
-              <p className="text-muted-foreground">
-                {account.name} • {account.number}
-              </p>
-            </div>
+    <div className="space-y-6">
+      {/* En-tête avec navigation */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center space-x-4">
+          <Button variant="outline" size="sm" onClick={() => router.back()}>
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Retour
+          </Button>
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Détails du compte</h1>
+            <p className="text-gray-600">
+              {account.name} • {account.number}
+            </p>
           </div>
         </div>
       </div>
 
+      {/* Informations principales du compte */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Main balance card */}
-        <Card className="lg:col-span-2 relative overflow-hidden border-2 hover:border-primary/50 transition-all duration-300 shadow-lg">
-          <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-secondary/5" />
-
-          <CardHeader className="relative">
+        {/* Soldes */}
+        <Card className="lg:col-span-2">
+          <CardHeader>
             <CardTitle className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
-                <div className="p-3 rounded-xl bg-gradient-to-br from-primary/10 to-secondary/10">
-                  {getAccountIcon(account.type)}
-                </div>
+                {getAccountIcon(account.type)}
                 <div>
-                  <h3 className="text-xl font-bold">{account.name}</h3>
-                  <p className="text-sm text-muted-foreground font-mono">{account.number}</p>
+                  <h3 className="text-lg font-semibold">{account.name}</h3>
+                  <p className="text-sm text-gray-500 font-mono">{account.number}</p>
                 </div>
               </div>
-              <div className="flex items-center space-x-2">
-                <Badge
-                  variant={account.status === "Actif" ? "default" : "secondary"}
-                  className={account.status === "Actif" ? "bg-gradient-to-r from-primary to-secondary text-white" : ""}
-                >
-                  {account.status}
-                </Badge>
-              </div>
+              <div className="flex items-center space-x-2">{getStatusBadge(account.status)}</div>
             </CardTitle>
           </CardHeader>
-
-          <CardContent className="relative space-y-6">
-            {/* Balance display */}
+          <CardContent className="space-y-6">
+            {/* Soldes avec option masquer/afficher */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-2 p-4 rounded-xl bg-gradient-to-br from-primary/5 to-transparent">
+              <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <p className="text-sm font-medium text-muted-foreground">Solde comptable</p>
+                  <p className="text-sm font-medium text-gray-600">Solde comptable</p>
                   <Button
                     variant="ghost"
                     size="sm"
@@ -401,7 +401,7 @@ export default function AccountDetailsPage() {
                     {showBalance ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </Button>
                 </div>
-                <div className="text-3xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">
+                <div className="text-3xl font-bold text-gray-900">
                   {showBalance ? (
                     <>
                       {formatAmount(account.balance, account.currency)} {account.currency}
@@ -411,63 +411,67 @@ export default function AccountDetailsPage() {
                   )}
                 </div>
               </div>
-              <div className="space-y-2 p-4 rounded-xl bg-gradient-to-br from-secondary/5 to-transparent">
-                <p className="text-sm font-medium text-muted-foreground">Solde disponible</p>
-                <div className="text-2xl font-bold text-primary">
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-gray-600">Solde disponible</p>
+                <div className="text-2xl font-semibold text-green-600">
                   {showBalance ? (
                     <>
                       {formatAmount(account.availableBalance, account.currency)} {account.currency}
+                      {hasPendingTransactions && <span className="text-orange-500 mr-1">*</span>}
                     </>
                   ) : (
                     "••••••••"
                   )}
                 </div>
+                {hasPendingTransactions && showBalance && (
+                  <p className="text-xs text-orange-600">* Transactions en attente affectant le solde</p>
+                )}
               </div>
             </div>
 
             <Separator />
 
-            {/* Account details grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-4">
-                <div className="flex items-start space-x-3 p-3 rounded-lg bg-muted/30">
-                  <Building className="h-5 w-5 text-primary mt-0.5" />
+            {/* Informations détaillées */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-3">
+                <div className="flex items-center space-x-2">
+                  <Building className="h-4 w-4 text-gray-400" />
                   <div>
-                    <p className="text-xs text-muted-foreground font-medium">Agence</p>
-                    <p className="text-sm font-semibold">{account.branch}</p>
+                    <p className="text-xs text-gray-500">Agence</p>
+                    <p className="text-sm font-medium">{account.branch}</p>
                   </div>
                 </div>
-                <div className="flex items-start space-x-3 p-3 rounded-lg bg-muted/30">
-                  <Calendar className="h-5 w-5 text-secondary mt-0.5" />
+                <div className="flex items-center space-x-2">
+                  <Calendar className="h-4 w-4 text-gray-400" />
                   <div>
-                    <p className="text-xs text-muted-foreground font-medium">Date d'ouverture</p>
-                    <p className="text-sm font-semibold">{formatDate(account.openingDate)}</p>
+                    <p className="text-xs text-gray-500">Date d'ouverture</p>
+                    <p className="text-sm font-medium">{formatDate(account.openingDate)}</p>
                   </div>
                 </div>
               </div>
-              <div className="space-y-4">
-                <div className="flex items-start space-x-3 p-3 rounded-lg bg-muted/30">
-                  <CreditCard className="h-5 w-5 text-primary mt-0.5" />
+              <div className="space-y-3">
+                <div className="flex items-center space-x-2">
+                  <CreditCard className="h-4 w-4 text-gray-400" />
                   <div>
-                    <p className="text-xs text-muted-foreground font-medium">IBAN</p>
-                    <p className="text-sm font-semibold font-mono">{account.iban}</p>
+                    <p className="text-xs text-gray-500">IBAN</p>
+                    <p className="text-sm font-medium font-mono">{account.iban}</p>
                   </div>
                 </div>
                 {account.interestRate && (
-                  <div className="flex items-start space-x-3 p-3 rounded-lg bg-muted/30">
-                    <TrendingUp className="h-5 w-5 text-secondary mt-0.5" />
+                  <div className="flex items-center space-x-2">
+                    <TrendingUp className="h-4 w-4 text-gray-400" />
                     <div>
-                      <p className="text-xs text-muted-foreground font-medium">Taux d'intérêt</p>
-                      <p className="text-sm font-semibold">{account.interestRate}% par an</p>
+                      <p className="text-xs text-gray-500">Taux d'intérêt</p>
+                      <p className="text-sm font-medium">{account.interestRate}% par an</p>
                     </div>
                   </div>
                 )}
                 {account.overdraftLimit && (
-                  <div className="flex items-start space-x-3 p-3 rounded-lg bg-muted/30">
-                    <Shield className="h-5 w-5 text-primary mt-0.5" />
+                  <div className="flex items-center space-x-2">
+                    <Shield className="h-4 w-4 text-gray-400" />
                     <div>
-                      <p className="text-xs text-muted-foreground font-medium">Découvert autorisé</p>
-                      <p className="text-sm font-semibold">
+                      <p className="text-xs text-gray-500">Découvert autorisé</p>
+                      <p className="text-sm font-medium">
                         {formatAmount(account.overdraftLimit, account.currency)} {account.currency}
                       </p>
                     </div>
@@ -478,49 +482,41 @@ export default function AccountDetailsPage() {
           </CardContent>
         </Card>
 
-        <Card className="relative overflow-hidden border-2 shadow-lg">
-          <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-secondary/5" />
-
-          <CardHeader className="relative">
+        {/* Informations complémentaires */}
+        <Card>
+          <CardHeader>
             <CardTitle className="flex items-center">
-              <div className="p-2 rounded-lg bg-gradient-to-br from-primary to-secondary mr-2">
-                <Info className="w-5 h-5 text-white" />
-              </div>
+              <Info className="w-5 h-5 mr-2" />
               Informations
             </CardTitle>
           </CardHeader>
-          <CardContent className="relative space-y-6">
-            <div className="space-y-4">
-              <div className="p-3 rounded-lg bg-white/50 backdrop-blur-sm">
-                <p className="text-xs text-muted-foreground uppercase font-medium mb-1">Type de compte</p>
-                <p className="font-semibold">{account.type}</p>
+          <CardContent className="space-y-4">
+            <div className="space-y-3">
+              <div>
+                <p className="text-xs text-gray-500 uppercase">Type de compte</p>
+                <p className="font-medium">{account.type}</p>
               </div>
-              <div className="p-3 rounded-lg bg-white/50 backdrop-blur-sm">
-                <p className="text-xs text-muted-foreground uppercase font-medium mb-1">Devise</p>
-                <p className="font-semibold">{account.currency}</p>
+              <div>
+                <p className="text-xs text-gray-500 uppercase">Devise</p>
+                <p className="font-medium">{account.currency}</p>
               </div>
-              <div className="p-3 rounded-lg bg-white/50 backdrop-blur-sm">
-                <p className="text-xs text-muted-foreground uppercase font-medium mb-1">Statut</p>
-                <Badge
-                  variant={account.status === "ACTIF" ? "default" : "secondary"}
-                  className={account.status === "ACTIF" ? "bg-gradient-to-r from-primary to-secondary text-white" : ""}
-                >
-                  {account.status}
-                </Badge>
+              <div>
+                <p className="text-xs text-gray-500 uppercase">Statut</p>
+                {getStatusBadge(account.status)}
               </div>
             </div>
 
             <Separator />
 
             <div className="space-y-2">
-              <p className="text-sm font-semibold mb-3">Actions disponibles</p>
+              <p className="text-sm font-medium">Actions disponibles</p>
               <div className="space-y-2">
                 {account.status === "ACTIF" && !!(account.number && String(account.number).trim()) && (
                   <>
                     <Button
                       variant="outline"
                       size="sm"
-                      className="w-full justify-start bg-white/50 hover:bg-primary/10 hover:border-primary/50 transition-all"
+                      className="w-full justify-start bg-transparent"
                       onClick={() => router.push(`/transfers/new?fromAccount=${accountId}`)}
                     >
                       <ArrowUpRight className="w-4 h-4 mr-2" />
@@ -529,7 +525,7 @@ export default function AccountDetailsPage() {
                     <Button
                       variant="outline"
                       size="sm"
-                      className="w-full justify-start bg-white/50 hover:bg-primary/10 hover:border-primary/50 transition-all"
+                      className="w-full justify-start bg-transparent"
                       onClick={() => router.push(`/accounts/statements?accountId=${accountId}`)}
                     >
                       <Download className="w-4 h-4 mr-2" />
@@ -538,7 +534,7 @@ export default function AccountDetailsPage() {
                     <Button
                       variant="outline"
                       size="sm"
-                      className="w-full justify-start bg-white/50 hover:bg-primary/10 hover:border-primary/50 transition-all"
+                      className="w-full justify-start bg-transparent"
                       onClick={() => router.push(`/services/rib?accountId=${accountId}`)}
                     >
                       <FileText className="w-4 h-4 mr-2" />
@@ -552,28 +548,22 @@ export default function AccountDetailsPage() {
         </Card>
       </div>
 
-      <Card className="relative overflow-hidden border-2 shadow-lg">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-secondary/5" />
-
-        <CardHeader className="relative">
+      {/* Historique des transactions */}
+      <Card>
+        <CardHeader>
           <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center">
-              <div className="p-2 rounded-lg bg-gradient-to-br from-primary to-secondary mr-3">
-                <Sparkles className="h-5 w-5 text-white" />
-              </div>
-              Transactions du compte
-            </CardTitle>
+            <CardTitle>Transactions du compte</CardTitle>
             <Button onClick={handleRefreshTransactions} disabled={isLoadingTransactions} variant="outline" size="sm">
               <RefreshCw className={`h-4 w-4 mr-2 ${isLoadingTransactions ? "animate-spin" : ""}`} />
               {isLoadingTransactions ? "Actualisation..." : "Actualiser"}
             </Button>
           </div>
         </CardHeader>
-        <CardContent className="relative">
+        <CardContent>
           {isLoadingTransactions ? (
             <div className="space-y-4">
               {[1, 2, 3].map((i) => (
-                <div key={i} className="flex items-center justify-between p-4 border rounded-xl bg-white/50">
+                <div key={i} className="flex items-center justify-between p-4 border rounded-lg">
                   <div className="flex items-center space-x-4">
                     <Skeleton className="w-12 h-12 rounded-full" />
                     <div className="space-y-2">
@@ -591,62 +581,54 @@ export default function AccountDetailsPage() {
               ))}
             </div>
           ) : transactions.length === 0 ? (
-            <div className="text-center py-12">
-              <div className="p-4 rounded-full bg-gradient-to-br from-primary/10 to-secondary/10 inline-block mb-4">
-                <FileText className="h-12 w-12 text-primary" />
-              </div>
-              <p className="text-muted-foreground">Aucune transaction trouvée pour ce compte</p>
+            <div className="text-center py-8">
+              <p className="text-gray-500">Aucune transaction trouvée pour ce compte</p>
             </div>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-4">
               {transactions.map((transaction) => (
                 <div
                   key={transaction.id}
-                  className="flex items-center justify-between p-4 border-2 rounded-xl hover:border-primary/50 hover:shadow-md transition-all duration-300 bg-white/50 backdrop-blur-sm group"
+                  className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50"
                 >
                   <div className="flex items-center space-x-4">
-                    <div
-                      className={`w-12 h-12 rounded-full flex items-center justify-center ${
-                        transaction.amount > 0
-                          ? "bg-gradient-to-br from-primary/20 to-secondary/20"
-                          : "bg-gradient-to-br from-destructive/20 to-destructive/10"
-                      }`}
-                    >
+                    <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
                       {transaction.amount > 0 ? (
-                        <ArrowDownRight className="w-5 h-5 text-primary" />
+                        <ArrowDownRight className="w-5 h-5 text-green-600" />
                       ) : (
-                        <ArrowUpRight className="w-5 h-5 text-destructive" />
+                        <ArrowUpRight className="w-5 h-5 text-red-600" />
                       )}
                     </div>
                     <div>
-                      <p className="font-semibold">{transaction.type}</p>
-                      <p className="text-sm text-muted-foreground">{transaction.description}</p>
-                      <p className="text-xs text-muted-foreground">
+                      <p className="font-medium">{transaction.type}</p>
+                      <p className="text-sm text-gray-600">{transaction.description}</p>
+                      <p className="text-xs text-gray-500">
                         {transaction.counterparty} • Réf: {transaction.reference}
                       </p>
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className={`text-lg font-bold ${transaction.amount > 0 ? "text-primary" : "text-destructive"}`}>
+                    <p
+                      className={`text-lg font-semibold ${transaction.amount > 0 ? "text-green-600" : "text-red-600"}`}
+                    >
                       {transaction.amount > 0 ? "+" : "-"}
                       {formatAmount(Math.abs(transaction.amount), account?.currency || transaction.currency)}{" "}
                       {account?.currency || transaction.currency}
                     </p>
-                    <p className="text-sm text-muted-foreground">{formatDateTime(transaction.date)}</p>
-                    <Badge
-                      variant={
-                        transaction.status === "Exécuté"
-                          ? "default"
-                          : transaction.status === "En attente"
-                            ? "secondary"
-                            : "destructive"
-                      }
-                      className={
-                        transaction.status === "Exécuté" ? "bg-gradient-to-r from-primary to-secondary text-white" : ""
-                      }
-                    >
-                      {transaction.status}
-                    </Badge>
+                    <p className="text-sm text-gray-500">{formatDateTime(transaction.date)}</p>
+                    {!(transaction.amount > 0 && transaction.status === "En attente") && (
+                      <Badge
+                        variant={
+                          transaction.status === "Exécuté"
+                            ? "default"
+                            : transaction.status === "En attente"
+                              ? "secondary"
+                              : "destructive"
+                        }
+                      >
+                        {transaction.status}
+                      </Badge>
+                    )}
                   </div>
                 </div>
               ))}

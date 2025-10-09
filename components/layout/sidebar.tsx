@@ -76,7 +76,7 @@ const navigationData = {
       icon: Wallet,
       items: [
         {
-          title: "Soldes",
+          title: "Soldes et positions",
           url: "/accounts/balance",
           icon: BarChart3,
         },
@@ -94,7 +94,7 @@ const navigationData = {
       icon: ArrowLeftRight,
       items: [
         {
-          title: "Effectuer un virement",
+          title: "Nouveau virement",
           url: "/transfers/new",
           icon: ArrowLeftRight,
         },
@@ -143,26 +143,26 @@ const navigationData = {
           url: "/services/rib",
           icon: FileText,
         },
-        {
-          title: "Signature électronique",
-          url: "/services/signature",
-          icon: Shield,
-        },
-        {
-          title: "Provision de fonds",
-          url: "/services/funds-provision",
-          icon: DollarSign,
-        },
-        {
-          title: "Dépôt de chèque",
-          url: "/services/check-deposit",
-          icon: Receipt,
-        },
-        {
-          title: "Réclamations",
-          url: "/complaints",
-          icon: AlertTriangle,
-        },
+        // {
+        //   title: "Signature électronique",
+        //   url: "/services/signature",
+        //   icon: Shield,
+        // },
+        // {
+        //   title: "Provision de fonds",
+        //   url: "/services/funds-provision",
+        //   icon: DollarSign,
+        // },
+        // {
+        //   title: "Dépôt de chèque",
+        //   url: "/services/check-deposit",
+        //   icon: Receipt,
+        // },
+        // {
+        //   title: "Réclamations",
+        //   url: "/complaints",
+        //   icon: AlertTriangle,
+        // },
       ],
     },
   ],
