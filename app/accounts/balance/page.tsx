@@ -33,7 +33,7 @@ import {
   AlertCircle,
   CheckCircle,
   Plus,
-  Filter,
+  Sparkles,
 } from "lucide-react"
 import { createAccount, getAccounts } from "../actions"
 
@@ -302,194 +302,194 @@ export default function BalancesPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Mes comptes</h1>
-          <p className="text-gray-600">Vue d'ensemble de tous vos comptes</p>
-        </div>
-        <div className="flex items-center space-x-2">
-         
+    <div className="space-y-8">
+      <div className="relative">
+        <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-secondary/10 to-primary/10 rounded-2xl blur-3xl -z-10" />
+        <div className="flex items-center justify-between p-6 bg-white/80 backdrop-blur-sm rounded-2xl border border-border/50 shadow-sm">
+          <div className="space-y-1">
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-primary via-secondary to-primary bg-clip-text text-transparent">
+              Mes Comptes
+            </h1>
+            <p className="text-muted-foreground">Gérez tous vos comptes en un seul endroit</p>
+          </div>
+          <div className="flex items-center gap-3">
+            <Dialog open={isNewAccountDialogOpen} onOpenChange={setIsNewAccountDialogOpen}>
+              <DialogTrigger asChild>
+                <Button className="bg-gradient-to-r from-primary to-secondary hover:opacity-90 transition-opacity shadow-lg">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Nouveau Compte
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[500px]">
+                {/* ... existing dialog content ... */}
+                <DialogHeader>
+                  <DialogTitle>Demande d'ouverture de compte</DialogTitle>
+                  <DialogDescription>
+                    Remplissez les informations ci-dessous pour la demande d'ouverture d'un nouveau compte bancaire.
+                  </DialogDescription>
+                </DialogHeader>
 
-          <Dialog open={isNewAccountDialogOpen} onOpenChange={setIsNewAccountDialogOpen}>
-            <DialogTrigger asChild>
-              <Button>
-                <Plus className="h-4 w-4 mr-2" />
-                Demande d'un nouveau compte
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[500px]">
-              <DialogHeader>
-                <DialogTitle>Demande d'ouverture de compte</DialogTitle>
-                <DialogDescription>
-                  Remplissez les informations ci-dessous pour la demande d'ouverture d'un nouveau compte bancaire.
-                </DialogDescription>
-              </DialogHeader>
+                <form onSubmit={handleCreateAccount} className="space-y-4">
+                  {createAccountState?.success && (
+                    <Alert className="border-green-200 bg-green-50">
+                      <CheckCircle className="h-4 w-4 text-green-600" />
+                      <AlertDescription className="text-green-800">
+                        Votre demande d'ouverture de compte a été prise en compte
+                      </AlertDescription>
+                    </Alert>
+                  )}
 
-              <form onSubmit={handleCreateAccount} className="space-y-4">
-                {createAccountState?.success && (
-                  <Alert className="border-green-200 bg-green-50">
-                    <CheckCircle className="h-4 w-4 text-green-600" />
-                    <AlertDescription className="text-green-800">
-                      Votre demande d'ouverture de compte a été prise en compte
-                    </AlertDescription>
-                  </Alert>
-                )}
+                  {createAccountState?.error && (
+                    <Alert variant="destructive">
+                      <AlertCircle className="h-4 w-4" />
+                      <AlertDescription>
+                        Erreur lors de la création du compte: {createAccountState.error}
+                      </AlertDescription>
+                    </Alert>
+                  )}
 
-                {createAccountState?.error && (
-                  <Alert variant="destructive">
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertDescription>
-                      Erreur lors de la création du compte: {createAccountState.error}
-                    </AlertDescription>
-                  </Alert>
-                )}
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="accountName">Nom du compte</Label>
-                    <Input id="accountName" name="accountName" placeholder="Ex: Compte Épargne" required />
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="accountName">Nom du compte</Label>
+                      <Input id="accountName" name="accountName" placeholder="Ex: Compte Épargne" required />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="accountType">Type de compte</Label>
+                      <Select name="accountType" required>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Sélectionner le type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Courant">Compte Courant</SelectItem>
+                          <SelectItem value="Épargne">Compte Épargne</SelectItem>
+                          <SelectItem value="Devise">Compte Devise</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="accountType">Type de compte</Label>
-                    <Select name="accountType" required>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Sélectionner le type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Courant">Compte Courant</SelectItem>
-                        <SelectItem value="Épargne">Compte Épargne</SelectItem>
-                        <SelectItem value="Devise">Compte Devise</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="currency">Devise</Label>
-                    <Select name="currency" required>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Sélectionner la devise" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="GNF">Franc Guinéen (GNF)</SelectItem>
-                        <SelectItem value="USD">Dollar US (USD)</SelectItem>
-                        <SelectItem value="EUR">Euro (EUR)</SelectItem>
-                      </SelectContent>
-                    </Select>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="currency">Devise</Label>
+                      <Select name="currency" required>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Sélectionner la devise" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="GNF">Franc Guinéen (GNF)</SelectItem>
+                          <SelectItem value="USD">Dollar US (USD)</SelectItem>
+                          <SelectItem value="EUR">Euro (EUR)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="purpose">Objectif du compte</Label>
+                      <Select name="purpose" required>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Sélectionner l'objectif" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="personnel">Usage personnel</SelectItem>
+                          <SelectItem value="professionnel">Usage professionnel</SelectItem>
+                          <SelectItem value="epargne">Épargne</SelectItem>
+                          <SelectItem value="investissement">Investissement</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="purpose">Objectif du compte</Label>
-                    <Select name="purpose" required>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Sélectionner l'objectif" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="personnel">Usage personnel</SelectItem>
-                        <SelectItem value="professionnel">Usage professionnel</SelectItem>
-                        <SelectItem value="epargne">Épargne</SelectItem>
-                        <SelectItem value="investissement">Investissement</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
 
-                <div className="flex justify-end space-x-2 pt-4">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setIsNewAccountDialogOpen(false)}
-                    disabled={isCreatingAccount}
-                  >
-                    Annuler
-                  </Button>
-                  <Button type="submit" disabled={isCreatingAccount}>
-                    {isCreatingAccount ? (
-                      <>
-                        <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                        Création...
-                      </>
-                    ) : (
-                      "Envoyer la demande d'ouverture"
-                    )}
-                  </Button>
-                </div>
-              </form>
-            </DialogContent>
-          </Dialog>
-           <div className="flex items-center space-x-2">
+                  <div className="flex justify-end space-x-2 pt-4">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setIsNewAccountDialogOpen(false)}
+                      disabled={isCreatingAccount}
+                    >
+                      Annuler
+                    </Button>
+                    <Button type="submit" disabled={isCreatingAccount}>
+                      {isCreatingAccount ? (
+                        <>
+                          <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                          Création...
+                        </>
+                      ) : (
+                        "Envoyer la demande d'ouverture"
+                      )}
+                    </Button>
+                  </div>
+                </form>
+              </DialogContent>
+            </Dialog>
+
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-40">
-                <SelectValue placeholder="Filtrer par statut" />
+              <SelectTrigger className="w-40 bg-white/80 backdrop-blur-sm">
+                <SelectValue placeholder="Filtrer" />
               </SelectTrigger>
               <SelectContent>
-                 <SelectItem value="ALL">Tous</SelectItem>
+                <SelectItem value="ALL">Tous</SelectItem>
                 <SelectItem value="ACTIF">Actifs</SelectItem>
-                {/* <SelectItem value="BLOCKED">Bloqués</SelectItem>
-                <SelectItem value="CLOSED">Fermés</SelectItem> */}
                 <SelectItem value="PENDING">En attente</SelectItem>
               </SelectContent>
             </Select>
+
+            <Button
+              onClick={handleRefresh}
+              disabled={isPending}
+              variant="outline"
+              size="icon"
+              className="bg-white/80 backdrop-blur-sm"
+            >
+              <RefreshCw className={`h-4 w-4 ${isPending ? "animate-spin" : ""}`} />
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => setShowBalance(!showBalance)}
+              className="bg-white/80 backdrop-blur-sm"
+            >
+              {showBalance ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            </Button>
           </div>
-
-          <Button onClick={handleRefresh} disabled={isPending} variant="outline" size="sm">
-            <RefreshCw className={`h-4 w-4 mr-2 ${isPending ? "animate-spin" : ""}`} />
-            {isPending ? "Actualisation..." : "Actualiser"}
-          </Button>
-          <Button variant="outline" size="sm" onClick={() => setShowBalance(!showBalance)}>
-            {showBalance ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-          </Button>
-        </div>
-      </div>
-
-      <div className="flex items-center justify-between bg-gray-50 p-3 rounded-lg">
-        <div className="text-sm text-gray-600">
-          Affichage: <span className="font-medium">{getStatusDisplayText(statusFilter)}</span>
-          {statusFilter !== "ALL" && (
-            <span className="ml-2">
-              ({filteredAccounts.length} compte{filteredAccounts.length !== 1 ? "s" : ""})
-            </span>
-          )}
         </div>
       </div>
 
       {balanceState?.success && (
-        <Alert className="border-green-200 bg-green-50">
-          <CheckCircle className="h-4 w-4 text-green-600" />
-          <AlertDescription className="text-green-800">
-            ✅ Soldes mis à jour avec succès. Dernière actualisation : {lastRefresh.toLocaleTimeString("fr-FR")}
+        <Alert className="border-primary/20 bg-gradient-to-r from-primary/5 to-secondary/5 backdrop-blur-sm">
+          <CheckCircle className="h-4 w-4 text-primary" />
+          <AlertDescription className="text-foreground">
+            Soldes mis à jour • {lastRefresh.toLocaleTimeString("fr-FR")}
           </AlertDescription>
         </Alert>
       )}
 
       {balanceState?.error && (
-        <Alert variant="destructive">
+        <Alert variant="destructive" className="backdrop-blur-sm">
           <AlertCircle className="h-4 w-4" />
-          <AlertDescription>❌ {balanceState.error} Veuillez réessayer.</AlertDescription>
+          <AlertDescription>{balanceState.error}</AlertDescription>
         </Alert>
       )}
 
       {refreshState?.success && (
-        <Alert className="border-green-200 bg-green-50">
-          <CheckCircle className="h-4 w-4 text-green-600" />
-          <AlertDescription className="text-green-800">
-            ✅ Soldes actualisés avec succès à {lastRefresh.toLocaleTimeString("fr-FR")}
+        <Alert className="border-primary/20 bg-gradient-to-r from-primary/5 to-secondary/5 backdrop-blur-sm">
+          <CheckCircle className="h-4 w-4 text-primary" />
+          <AlertDescription className="text-foreground">
+            Actualisé à {lastRefresh.toLocaleTimeString("fr-FR")}
           </AlertDescription>
         </Alert>
       )}
 
       {refreshState?.error && (
-        <Alert variant="destructive">
+        <Alert variant="destructive" className="backdrop-blur-sm">
           <AlertCircle className="h-4 w-4" />
-          <AlertDescription>❌ Impossible d'actualiser les soldes. Vérifiez votre connexion.</AlertDescription>
+          <AlertDescription>Impossible d'actualiser les soldes</AlertDescription>
         </Alert>
       )}
 
       {!isLoaded ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {[1, 2, 3].map((i) => (
-            <Card key={i}>
+            <Card key={i} className="overflow-hidden">
               <CardHeader className="space-y-0 pb-2">
                 <div className="flex items-center justify-between">
                   <Skeleton className="h-4 w-24" />
@@ -510,59 +510,69 @@ export default function BalancesPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {(filteredAccounts || []).map((account) => (
             <Link key={account.id} href={`/accounts/${account.id}`}>
-              <Card className="hover:shadow-lg transition-all duration-200 cursor-pointer border-2 hover:border-blue-200">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <div className="flex items-center space-x-2">
-                    {getAccountIcon(account.type)}
-                    <CardTitle className="text-sm font-medium">{account.name}</CardTitle>
+              <Card className="group relative overflow-hidden border-2 hover:border-primary/50 transition-all duration-300 hover:shadow-2xl hover:-translate-y-1 bg-gradient-to-br from-white to-gray-50/50">
+                <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-secondary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+
+                <CardHeader className="relative flex flex-row items-center justify-between space-y-0 pb-3">
+                  <div className="flex items-center space-x-3">
+                    <div className="p-2 rounded-xl bg-gradient-to-br from-primary/10 to-secondary/10 group-hover:from-primary/20 group-hover:to-secondary/20 transition-colors">
+                      {getAccountIcon(account.type)}
+                    </div>
+                    <CardTitle className="text-sm font-semibold">{account.name}</CardTitle>
                   </div>
-                  <Badge variant={account.status === "Actif" ? "default" : "secondary"} className="text-xs">
+                  <Badge
+                    variant={account.status === "Actif" ? "default" : "secondary"}
+                    className={
+                      account.status === "Actif" ? "bg-gradient-to-r from-primary to-secondary text-white" : ""
+                    }
+                  >
                     {account.status}
                   </Badge>
                 </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    <div className="space-y-1">
+
+                <CardContent className="relative space-y-4">
+                  <div className="space-y-2">
+                    <div className="text-2xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">
+                      {showBalance
+                        ? `${formatAmount(account.balance, account.currency)} ${account.currency}`
+                        : "••••••••"}
+                    </div>
+                    <p className="text-xs text-muted-foreground">
                       Disponible:{" "}
-                      <div className="text-2xl font-bold text-gray-900">
-                        {showBalance
-                          ? `${formatAmount(account.availableBalance, account.currency)} ${account.currency}`
-                          : "••••••••"}
-                      </div>
-                       Comptable:{" "}
-                      <p className="text-xl text-muted-foreground">
-                         {showBalance
-                          ? `${formatAmount(account.balance, account.currency)} ${account.currency}`
-                          : "••••••••"}
-                      </p>
-                      <p className="text-l text-muted-foreground font-bold">{account.number}</p>
-                    </div>
+                      {showBalance
+                        ? `${formatAmount(account.availableBalance, account.currency)} ${account.currency}`
+                        : "••••••••"}
+                    </p>
+                    <p className="text-sm text-muted-foreground font-mono font-semibold">{account.number}</p>
+                  </div>
 
-                    <div className="flex items-center justify-between pt-2 border-t">
-                      <div className="flex items-center space-x-1">
-                        {getTrendIcon(account.trend, account.trendPercentage)}
-                        <span className={`text-xs font-medium ${getTrendColor(account.trend)}`}>
-                          {account.trendPercentage !== 0 && (
-                            <>
-                              {account.trend === "up" ? "+" : account.trend === "down" ? "-" : ""}
-                              {account.trendPercentage}% ce mois
-                            </>
-                          )}
-                          {account.trendPercentage === 0 && "Stable"}
-                        </span>
-                      </div>
-                      <div className="text-xs text-blue-600 font-medium">Voir détails →</div>
+                  <div className="flex items-center justify-between pt-3 border-t border-border/50">
+                    <div className="flex items-center space-x-1">
+                      {getTrendIcon(account.trend, account.trendPercentage)}
+                      <span className={`text-xs font-medium ${getTrendColor(account.trend)}`}>
+                        {account.trendPercentage !== 0 && (
+                          <>
+                            {account.trend === "up" ? "+" : account.trend === "down" ? "-" : ""}
+                            {account.trendPercentage}% ce mois
+                          </>
+                        )}
+                        {account.trendPercentage === 0 && "Stable"}
+                      </span>
                     </div>
+                    <div className="flex items-center text-xs font-medium text-primary group-hover:text-secondary transition-colors">
+                      Détails
+                      <ArrowUpRight className="h-3 w-3 ml-1 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+                    </div>
+                  </div>
 
-                    <div className="grid grid-cols-2 gap-2 text-xs text-gray-600">
-                      <div>
-                        <span className="font-medium">Type:</span>
-                        <div className="mt-1">{account.type}</div>
-                      </div>
-                      <div>
-                        <span className="font-medium">Dernière MAJ:</span>
-                        <div className="mt-1">{account.lastUpdate}</div>
-                      </div>
+                  <div className="grid grid-cols-2 gap-3 text-xs pt-2">
+                    <div className="space-y-1">
+                      <span className="text-muted-foreground">Type</span>
+                      <div className="font-medium">{account.type}</div>
+                    </div>
+                    <div className="space-y-1">
+                      <span className="text-muted-foreground">Dernière MAJ</span>
+                      <div className="font-medium">{account.lastUpdate}</div>
                     </div>
                   </div>
                 </CardContent>
@@ -573,48 +583,57 @@ export default function BalancesPage() {
       )}
 
       {isLoaded && (filteredAccounts?.length === 0 || !filteredAccounts) && (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <Wallet className="h-12 w-12 text-gray-400 mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">
+        <Card className="border-2 border-dashed border-border/50">
+          <CardContent className="flex flex-col items-center justify-center py-16">
+            <div className="p-4 rounded-full bg-gradient-to-br from-primary/10 to-secondary/10 mb-4">
+              <Wallet className="h-12 w-12 text-primary" />
+            </div>
+            <h3 className="text-lg font-semibold text-foreground mb-2">
               {statusFilter === "ALL"
                 ? "Aucun compte trouvé"
                 : `Aucun compte ${getStatusDisplayText(statusFilter).toLowerCase()}`}
             </h3>
-            <p className="text-gray-600 text-center">
+            <p className="text-muted-foreground text-center max-w-sm">
               {statusFilter === "ALL"
-                ? "Aucun compte n'est disponible pour le moment."
-                : `Aucun compte avec le statut "${getStatusDisplayText(statusFilter).toLowerCase()}" n'a été trouvé.`}
+                ? "Commencez par créer votre premier compte bancaire"
+                : `Aucun compte avec le statut "${getStatusDisplayText(statusFilter).toLowerCase()}"`}
             </p>
           </CardContent>
         </Card>
       )}
 
       {isLoaded && filteredAccounts && filteredAccounts.length > 0 && (
-        <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
-          <CardHeader>
-            <CardTitle className="flex items-center text-blue-900">
-              <TrendingUp className="h-5 w-5 mr-2" />
-              Résumé global - {getStatusDisplayText(statusFilter)}
+        <Card className="relative overflow-hidden border-2 border-primary/20 shadow-xl">
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-secondary/5 to-primary/10" />
+          <CardHeader className="relative">
+            <CardTitle className="flex items-center text-foreground">
+              <div className="p-2 rounded-lg bg-gradient-to-br from-primary to-secondary mr-3">
+                <Sparkles className="h-5 w-5 text-white" />
+              </div>
+              Résumé Global - {getStatusDisplayText(statusFilter)}
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="text-center">
-                <div className="text-2xl font-bold text-blue-900">{filteredAccounts.length}</div>
-                <div className="text-sm text-blue-700">Comptes {getStatusDisplayText(statusFilter).toLowerCase()}</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-blue-900">
-                  {showBalance ? `${formatAmount(getTotalBalance("GNF"))} GNF` : "••••••••"}
+          <CardContent className="relative">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="text-center p-4 rounded-xl bg-white/50 backdrop-blur-sm">
+                <div className="text-3xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+                  {filteredAccounts.length}
                 </div>
-                <div className="text-sm text-blue-700">Total GNF</div>
+                <div className="text-sm text-muted-foreground mt-1">
+                  Comptes {getStatusDisplayText(statusFilter).toLowerCase()}
+                </div>
               </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-blue-900">
+              <div className="text-center p-4 rounded-xl bg-white/50 backdrop-blur-sm">
+                <div className="text-3xl font-bold text-foreground">
+                  {showBalance ? `${formatAmount(getTotalBalance("GNF"))}` : "••••••••"}
+                </div>
+                <div className="text-sm text-muted-foreground mt-1">Total GNF</div>
+              </div>
+              <div className="text-center p-4 rounded-xl bg-white/50 backdrop-blur-sm">
+                <div className="text-3xl font-bold text-foreground">
                   {showBalance ? formatAmount(getTotalBalance("USD"), "USD") : "••••••••"}
                 </div>
-                <div className="text-sm text-blue-700">Total USD</div>
+                <div className="text-sm text-muted-foreground mt-1">Total USD</div>
               </div>
             </div>
           </CardContent>
