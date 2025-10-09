@@ -1,6 +1,8 @@
 "use client"
 
-import type * as React from "react"
+import React from "react"
+
+import type { ReactElement } from "react"
 import { usePathname } from "next/navigation"
 import Link from "next/link"
 import { useState, useEffect } from "react"
@@ -8,7 +10,6 @@ import {
   Home,
   CreditCard,
   ArrowLeftRight,
-  Receipt,
   Settings,
   FileText,
   MessageSquare,
@@ -18,15 +19,14 @@ import {
   ChevronRight,
   LogOut,
   HelpCircle,
-  DollarSign,
   Wallet,
   BarChart3,
-  Shield,
   Clock,
-  AlertTriangle,
   Sparkles,
 } from "lucide-react"
 import Image from "next/image"
+import { cn } from "@/lib/utils"
+import { Slot } from "@radix-ui/react-slot"
 
 import {
   Sidebar,
@@ -34,7 +34,6 @@ import {
   SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
-  SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
@@ -244,7 +243,26 @@ const navigationData = {
   ],
 }
 
-export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+const SidebarGroupLabel = React.forwardRef<HTMLDivElement, React.ComponentProps<"div"> & { asChild?: boolean }>(
+  ({ className, asChild = false, ...props }, ref) => {
+    const Comp = asChild ? Slot : "div"
+
+    return (
+      <Comp
+        ref={ref}
+        data-sidebar="group-label"
+        className={cn(
+          "duration-200 flex h-9 shrink-0 items-center rounded-md px-2.5 text-xs font-semibold uppercase tracking-wider text-sidebar-foreground/60 outline-none ring-sidebar-ring transition-[margin,opacity] ease-linear focus-visible:ring-2 [&>svg]:size-4 [&>svg]:shrink-0",
+          "group-data-[collapsible=icon]:-mt-8 group-data-[collapsible=icon]:opacity-0",
+          className,
+        )}
+        {...props}
+      />
+    )
+  },
+)
+
+export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>): ReactElement {
   const pathname = usePathname()
   const [userData, setUserData] = useState<any>(null)
 
@@ -278,6 +296,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       <SidebarContent>
         {/* Navigation principale */}
         <SidebarGroup>
+          <SidebarGroupLabel asChild>
+            <div>Principal</div>
+          </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {navigationData.main.map((item) => (
@@ -301,7 +322,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
         {/* Comptes */}
         <SidebarGroup>
-          <SidebarGroupLabel>Comptes</SidebarGroupLabel>
+          <SidebarGroupLabel asChild>
+            <div>Comptes</div>
+          </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {navigationData.accounts.map((item) => (
@@ -337,7 +360,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
         {/* Opérations */}
         <SidebarGroup>
-          <SidebarGroupLabel>Opérations</SidebarGroupLabel>
+          <SidebarGroupLabel asChild>
+            <div>Opérations</div>
+          </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {navigationData.operations.map((item) => (
@@ -389,7 +414,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
         {/* Services */}
         <SidebarGroup>
-          <SidebarGroupLabel>Services</SidebarGroupLabel>
+          <SidebarGroupLabel asChild>
+            <div>Services</div>
+          </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {navigationData.services.map((item) => (
@@ -425,7 +452,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
         {/* Investissements */}
         {/* <SidebarGroup>
-          <SidebarGroupLabel>Investissements</SidebarGroupLabel>
+          <SidebarGroupLabel asChild>
+            <div>Investissements</div>
+          </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {navigationData.investments.map((item) => (
@@ -461,7 +490,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
         {/* Support */}
         <SidebarGroup>
-          <SidebarGroupLabel>Support</SidebarGroupLabel>
+          <SidebarGroupLabel asChild>
+            <div>Support</div>
+          </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {navigationData.support.map((item) => (
@@ -513,7 +544,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
         {/* Autres */}
         <SidebarGroup>
-          <SidebarGroupLabel>Autres</SidebarGroupLabel>
+          <SidebarGroupLabel asChild>
+            <div>Autres</div>
+          </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {navigationData.other.map((item) => (
