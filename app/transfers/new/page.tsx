@@ -235,20 +235,17 @@ export default function NewTransferPage() {
 
   const loadAccounts = async () => {
     try {
-      //console.log("[v0] Chargement des comptes...")
       setIsLoadingAccounts(true)
       const result = await getAccounts()
-      //console.log("[v0] Résultat getAccounts:", result)
 
       if (Array.isArray(result) && result.length > 0) {
-        // Adapter les données API au format Account
         const adaptedAccounts = result.map((apiAccount: any) => ({
           id: apiAccount.id || apiAccount.accountId,
           name: apiAccount.accountName || apiAccount.name || `Compte ${apiAccount.accountNumber || apiAccount.number}`,
           number: apiAccount.accountNumber || apiAccount.number || apiAccount.id,
-          balance: apiAccount.bookBalance || apiAccount.balance || 0,
+          balance: apiAccount.availableBalance || apiAccount.balance || 0,
           currency: apiAccount.currency || "GNF",
-          status: apiAccount.status, // Added status field mapping
+          status: apiAccount.status,
         }))
         const activeAccounts = adaptedAccounts.filter(
           (account: Account) =>
@@ -256,10 +253,8 @@ export default function NewTransferPage() {
             account.number &&
             String(account.number).trim() !== "",
         )
-        //console.log("[v0] Comptes actifs avec numéro valide:", activeAccounts)
         setAccounts(activeAccounts)
       } else {
-        //console.log("[v0] Aucun compte trouvé, utilisation des données de test")
         setAccounts([])
       }
     } catch (error) {
@@ -272,10 +267,8 @@ export default function NewTransferPage() {
 
   const loadBeneficiaries = async () => {
     try {
-      //console.log("[v0] Chargement des bénéficiaires...")
       setIsLoadingBeneficiaries(true)
       const result = await getBeneficiaries()
-      //console.log("[v0] Résultat getBeneficiaries:", result)
 
       if (Array.isArray(result) && result.length > 0) {
         // Adapter les données API au format Beneficiary
@@ -291,10 +284,8 @@ export default function NewTransferPage() {
           const originalBeneficiary = result.find((api: any) => api.id === beneficiary.id)
           return originalBeneficiary && String(originalBeneficiary.status) === "0"
         })
-        //console.log("[v0] Bénéficiaires actifs:", activeBeneficiaries)
         setBeneficiaries(activeBeneficiaries)
       } else {
-        //console.log("[v0] Aucun bénéficiaire trouvé")
         setBeneficiaries([])
       }
     } catch (error) {
@@ -628,7 +619,7 @@ export default function NewTransferPage() {
                               <div className="flex flex-col">
                                 <span className="font-semibold text-base">{beneficiary.name}</span>
                                 <span className="text-sm text-muted-foreground">{beneficiary.account}</span>
-                                <span className="text-xs text-muted-foreground">{beneficiary.bank}</span>
+                                <span className="text-sm text-muted-foreground">{beneficiary.bank}</span>
                               </div>
                             </div>
                           </SelectItem>
