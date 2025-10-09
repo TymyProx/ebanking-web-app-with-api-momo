@@ -76,7 +76,7 @@ const navigationData = {
       icon: Wallet,
       items: [
         {
-          title: "Soldes et positions",
+          title: "Soldes",
           url: "/accounts/balance",
           icon: BarChart3,
         },
@@ -94,7 +94,7 @@ const navigationData = {
       icon: ArrowLeftRight,
       items: [
         {
-          title: "Nouveau virement",
+          title: "Effectuer un virement",
           url: "/transfers/new",
           icon: ArrowLeftRight,
         },
