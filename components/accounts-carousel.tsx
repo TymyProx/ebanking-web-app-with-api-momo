@@ -165,8 +165,8 @@ export function AccountsCarousel({ accounts }: AccountsCarouselProps) {
 
                           <div>
                             <p className="text-xs text-muted-foreground mb-1">Numéro de compte</p>
-                           <p className="text-base font-mono font-semibold bg-muted/50 px-4 py-2 rounded-md inline-block">
-                            {account.accountNumber}
+                            <p className="text-base font-mono font-semibold bg-muted/50 px-4 py-2 rounded-md inline-block">
+                              {account.accountNumber}
                             </p>
                           </div>
 
@@ -180,16 +180,16 @@ export function AccountsCarousel({ accounts }: AccountsCarouselProps) {
                         {/* Right section: Balances */}
                         <div className="flex-1 space-y-4 text-right">
                           <div>
-                            <p className="text-xs text-muted-foreground mb-2">Solde disponible</p>
-                            <div className="text-3xl font-heading font-bold text-foreground">
+                            <p className="text-sm font-medium text-muted-foreground mb-2">Solde disponible</p>
+                            <div className="text-4xl font-heading font-extrabold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
                               {formatAmount(account.availableBalance, account.currency)}
                             </div>
-                            <div className="text-sm text-muted-foreground mt-1">{account.currency}</div>
+                            <div className="text-base font-semibold text-foreground mt-1">{account.currency}</div>
                           </div>
 
-                          <div className="pt-2 border-t border-border/50">
-                            <p className="text-xs text-muted-foreground mb-1">Solde comptable</p>
-                            <div className="text-xl font-heading font-semibold text-muted-foreground">
+                          <div className="pt-2 border-t border-border/30">
+                            <p className="text-xs text-muted-foreground/70 mb-1">Solde comptable</p>
+                            <div className="text-base font-medium text-muted-foreground/60">
                               {formatAmount(account.bookBalance, account.currency)} {account.currency}
                             </div>
                           </div>

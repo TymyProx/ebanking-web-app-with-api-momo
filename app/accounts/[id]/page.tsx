@@ -389,9 +389,9 @@ export default function AccountDetailsPage() {
           <CardContent className="relative space-y-6">
             {/* Balance display */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-2 p-4 rounded-xl bg-gradient-to-br from-primary/5 to-transparent">
+              <div className="space-y-2 p-6 rounded-xl bg-gradient-to-br from-primary/10 to-secondary/10 border-2 border-primary/20">
                 <div className="flex items-center justify-between">
-                  <p className="text-sm font-medium text-muted-foreground">Solde comptable</p>
+                  <p className="text-sm font-semibold text-foreground">Solde disponible</p>
                   <Button
                     variant="ghost"
                     size="sm"
@@ -401,22 +401,22 @@ export default function AccountDetailsPage() {
                     {showBalance ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </Button>
                 </div>
-                <div className="text-3xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">
+                <div className="text-4xl font-extrabold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
                   {showBalance ? (
                     <>
-                      {formatAmount(account.balance, account.currency)} {account.currency}
+                      {formatAmount(account.availableBalance, account.currency)} {account.currency}
                     </>
                   ) : (
                     "••••••••"
                   )}
                 </div>
               </div>
-              <div className="space-y-2 p-4 rounded-xl bg-gradient-to-br from-secondary/5 to-transparent">
-                <p className="text-sm font-medium text-muted-foreground">Solde disponible</p>
-                <div className="text-2xl font-bold text-primary">
+              <div className="space-y-2 p-6 rounded-xl bg-gradient-to-br from-muted/30 to-transparent border border-border/30">
+                <p className="text-xs font-medium text-muted-foreground/70">Solde comptable</p>
+                <div className="text-2xl font-semibold text-muted-foreground/80">
                   {showBalance ? (
                     <>
-                      {formatAmount(account.availableBalance, account.currency)} {account.currency}
+                      {formatAmount(account.balance, account.currency)} {account.currency}
                     </>
                   ) : (
                     "••••••••"
