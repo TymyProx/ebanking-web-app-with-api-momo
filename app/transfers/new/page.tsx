@@ -90,6 +90,10 @@ export default function NewTransferPage() {
 
   const [beneficiaryMessage, setBeneficiaryMessage] = useState<{ type: "success" | "error"; text: string } | null>(null)
 
+  // États pour la validation en temps réel du montant
+  const [amountError, setAmountError] = useState<string>("")
+  const [isAmountValid, setIsAmountValid] = useState(true)
+
   // Fonctions utilitaires
   const formatCurrency = (amount: number, currency: string) => {
     return new Intl.NumberFormat("fr-FR", {
@@ -341,6 +345,49 @@ export default function NewTransferPage() {
       return () => clearTimeout(timer)
     }
   }, [transferState?.error])
+
+  // Fonction de validation en temps réel du montant
+  const validateAmount = (value: string) => {
+    if (!value || Number.parseFloat(value) <= 0) {
+      setAmountError("")
+      setIsAmountValid(false)
+      return false
+    }
+
+    const debitAccount = accounts.find((acc) => acc.id === selectedAccount)
+    if (!debitAccount) {
+      setAmountError("")
+      setIsAmountValid(false)
+      return false
+    }
+
+    const amountValue = Number.parseFloat(value)
+    if (amountValue > debitAccount.balance) {
+      setAmountError(
+        `Le montant saisi (${formatCurrency(amountValue, debitAccount.currency)}) dépasse le solde disponible (${formatCurrency(debitAccount.balance, debitAccount.currency)})`,
+      )
+      setIsAmountValid(false)
+      return false
+    }
+
+    setAmountError("")
+    setIsAmountValid(true)
+    return true
+  }
+
+  // Gestionnaire de changement du montant avec validation en temps réel
+  const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value
+    setAmount(value)
+    validateAmount(value)
+  }
+
+  // Révalider le montant lorsque le compte change
+  useEffect(() => {
+    if (amount && selectedAccount) {
+      validateAmount(amount)
+    }
+  }, [selectedAccount])
 
   return (
     <div className="space-y-6">
@@ -650,12 +697,22 @@ export default function NewTransferPage() {
                   id="amount"
                   type="number"
                   value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
+                  onChange={handleAmountChange}
                   placeholder="0"
                   min="1"
                   required
-                  className="h-12 text-lg border-2 hover:border-orange-500/50 focus:border-orange-500 transition-all duration-200"
+                  className={`h-12 text-lg border-2 transition-all duration-200 ${
+                    amountError
+                      ? "border-destructive focus:border-destructive hover:border-destructive"
+                      : "hover:border-orange-500/50 focus:border-orange-500"
+                  }`}
                 />
+                {amountError && (
+                  <Alert variant="destructive" className="border-l-4">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription className="text-sm">{amountError}</AlertDescription>
+                  </Alert>
+                )}
                 {selectedAccountData && (
                   <div className="p-3 rounded-lg bg-muted/50 border">
                     <p className="text-sm font-medium">
@@ -708,7 +765,8 @@ export default function NewTransferPage() {
                 !selectedAccount ||
                 (transferType === "account-to-beneficiary" ? !selectedBeneficiary : !selectedCreditAccount) ||
                 !amount ||
-                !motif
+                !motif ||
+                !isAmountValid
               }
               className="h-12 px-8 text-base font-semibold bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
             >
