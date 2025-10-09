@@ -534,16 +534,16 @@ export default function BalancesPage() {
                   <div className="space-y-2">
                     <div className="text-2xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">
                       {showBalance
-                        ? `${formatAmount(account.balance, account.currency)} ${account.currency}`
+                        ? `${formatAmount(account.availableBalance, account.currency)} ${account.currency}`
                         : "••••••••"}
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      Disponible:{" "}
+                      Solde comptable:{" "}
                       {showBalance
-                        ? `${formatAmount(account.availableBalance, account.currency)} ${account.currency}`
+                        ? `${formatAmount(account.balance, account.currency)} ${account.currency}`
                         : "••••••••"}
                     </p>
-                    <p className="text-sm text-muted-foreground font-mono font-semibold">{account.number}</p>
+                    <p className="text-xl text-muted-foreground font-mono font-semibold">{account.number}</p>
                   </div>
 
                   <div className="flex items-center justify-between pt-3 border-t border-border/50">
