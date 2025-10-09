@@ -289,7 +289,7 @@ export default function NewTransferPage() {
         const activeBeneficiaries = adaptedBeneficiaries.filter((beneficiary: any) => {
           // Check if the original API data has status field and filter by status 0
           const originalBeneficiary = result.find((api: any) => api.id === beneficiary.id)
-          return originalBeneficiary && (String(originalBeneficiary.status) === "0")
+          return originalBeneficiary && String(originalBeneficiary.status) === "0"
         })
         //console.log("[v0] Bénéficiaires actifs:", activeBeneficiaries)
         setBeneficiaries(activeBeneficiaries)
@@ -353,29 +353,31 @@ export default function NewTransferPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Nouveau virement</h1>
-        <p className="text-gray-600">Effectuer un virement vers un bénéficiaire ou un autre compte</p>
+      <div className="space-y-2">
+        <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+          Nouveau virement
+        </h1>
+        <p className="text-muted-foreground">Effectuer un virement vers un bénéficiaire ou un autre compte</p>
       </div>
 
       {transferValidationError && transferSubmitted && !isDialogOpen && (
-        <Alert variant="destructive">
+        <Alert variant="destructive" className="border-l-4 border-destructive">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>{transferValidationError}</AlertDescription>
         </Alert>
       )}
 
       {transferState?.success && !isDialogOpen && (
-        <Alert className="border-green-200 bg-green-50">
+        <Alert className="border-l-4 border-green-500 bg-green-50/50 dark:bg-green-950/20">
           <Check className="h-4 w-4 text-green-600" />
-          <AlertDescription className="text-green-800">
+          <AlertDescription className="text-green-800 dark:text-green-400">
             {transferState.message || "Virement effectué avec succès !"}
           </AlertDescription>
         </Alert>
       )}
 
       {transferState?.error && !isDialogOpen && (
-        <Alert variant="destructive">
+        <Alert variant="destructive" className="border-l-4 border-destructive">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>{transferState.error}</AlertDescription>
         </Alert>
@@ -384,31 +386,47 @@ export default function NewTransferPage() {
       <form onSubmit={handleTransferSubmit} className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Formulaire principal */}
         <div className="lg:col-span-2 space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <ArrowRight className="h-5 w-5" />
+          <Card className="border-2 hover:border-primary/50 transition-all duration-300 bg-gradient-to-br from-background via-background to-primary/5">
+            <CardHeader className="space-y-1">
+              <CardTitle className="flex items-center space-x-3 text-xl">
+                <div className="p-2 rounded-lg bg-primary/10">
+                  <ArrowRight className="h-5 w-5 text-primary" />
+                </div>
                 <span>Type de virement</span>
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="transferType">Sélectionner le type de virement *</Label>
+              <div className="space-y-3">
+                <Label htmlFor="transferType" className="text-base font-semibold">
+                  Sélectionner le type de virement *
+                </Label>
                 <Select value={transferType} onValueChange={handleTransferTypeChange}>
-                  <SelectTrigger>
+                  <SelectTrigger className="h-auto py-3 border-2 hover:border-primary/50 focus:border-primary transition-all duration-200 bg-gradient-to-r from-background to-muted/20">
                     <SelectValue placeholder="Choisir le type de virement" />
                   </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="account-to-beneficiary">
-                      <div className="flex flex-col">
-                        <span className="font-medium">Compte vers bénéficiaire</span>
-                        <span className="text-sm text-gray-500">Virement vers un bénéficiaire enregistré</span>
+                  <SelectContent className="border-2">
+                    <SelectItem value="account-to-beneficiary" className="py-4 cursor-pointer hover:bg-primary/5">
+                      <div className="flex items-start space-x-3">
+                        <div className="p-2 rounded-md bg-blue-100 dark:bg-blue-950">
+                          <User className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="font-semibold text-base">Compte vers bénéficiaire</span>
+                          <span className="text-sm text-muted-foreground">
+                            Virement vers un bénéficiaire enregistré
+                          </span>
+                        </div>
                       </div>
                     </SelectItem>
-                    <SelectItem value="account-to-account">
-                      <div className="flex flex-col">
-                        <span className="font-medium">Compte à compte</span>
-                        <span className="text-sm text-gray-500">Virement entre vos comptes</span>
+                    <SelectItem value="account-to-account" className="py-4 cursor-pointer hover:bg-primary/5">
+                      <div className="flex items-start space-x-3">
+                        <div className="p-2 rounded-md bg-green-100 dark:bg-green-950">
+                          <ArrowRight className="h-4 w-4 text-green-600 dark:text-green-400" />
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="font-semibold text-base">Compte à compte</span>
+                          <span className="text-sm text-muted-foreground">Virement entre vos comptes</span>
+                        </div>
                       </div>
                     </SelectItem>
                   </SelectContent>
@@ -417,22 +435,25 @@ export default function NewTransferPage() {
             </CardContent>
           </Card>
 
-          {/* Compte débiteur */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <User className="h-5 w-5" />
+          <Card className="border-2 hover:border-primary/50 transition-all duration-300 bg-gradient-to-br from-background via-background to-blue-500/5">
+            <CardHeader className="space-y-1">
+              <CardTitle className="flex items-center space-x-3 text-xl">
+                <div className="p-2 rounded-lg bg-blue-100 dark:bg-blue-950">
+                  <User className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                </div>
                 <span>Compte débiteur</span>
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="account">Sélectionner le compte à débiter *</Label>
+              <div className="space-y-3">
+                <Label htmlFor="account" className="text-base font-semibold">
+                  Sélectionner le compte à débiter *
+                </Label>
                 <Select value={selectedAccount} onValueChange={handleDebitAccountChange}>
-                  <SelectTrigger>
+                  <SelectTrigger className="h-auto py-3 border-2 hover:border-blue-500/50 focus:border-blue-500 transition-all duration-200 bg-gradient-to-r from-background to-blue-500/10">
                     <SelectValue placeholder={isLoadingAccounts ? "Chargement..." : "Choisir un compte"} />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="border-2">
                     {isLoadingAccounts ? (
                       <SelectItem value="loading" disabled>
                         Chargement des comptes...
@@ -443,11 +464,18 @@ export default function NewTransferPage() {
                       </SelectItem>
                     ) : (
                       accounts.map((account) => (
-                        <SelectItem key={account.id} value={account.id}>
-                          <div className="flex flex-col">
-                            <span className="font-medium">{account.name}</span>
-                            <span className="text-sm text-gray-500">
-                              {account.number} • {formatCurrency(account.balance, account.currency)}
+                        <SelectItem
+                          key={account.id}
+                          value={account.id}
+                          className="py-4 cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-950/20"
+                        >
+                          <div className="flex items-center justify-between w-full">
+                            <div className="flex flex-col">
+                              <span className="font-semibold text-base">{account.name}</span>
+                              <span className="text-sm text-muted-foreground">{account.number}</span>
+                            </div>
+                            <span className="font-bold text-blue-600 dark:text-blue-400 ml-4">
+                              {formatCurrency(account.balance, account.currency)}
                             </span>
                           </div>
                         </SelectItem>
@@ -460,22 +488,26 @@ export default function NewTransferPage() {
           </Card>
 
           {transferType === "account-to-account" ? (
-            /* Compte créditeur pour compte à compte */
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <Building className="h-5 w-5" />
+            /* Modernized credit account card */
+            <Card className="border-2 hover:border-primary/50 transition-all duration-300 bg-gradient-to-br from-background via-background to-green-500/5">
+              <CardHeader className="space-y-1">
+                <CardTitle className="flex items-center space-x-3 text-xl">
+                  <div className="p-2 rounded-lg bg-green-100 dark:bg-green-950">
+                    <Building className="h-5 w-5 text-green-600 dark:text-green-400" />
+                  </div>
                   <span>Compte créditeur</span>
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="creditAccount">Sélectionner le compte à créditer *</Label>
+                <div className="space-y-3">
+                  <Label htmlFor="creditAccount" className="text-base font-semibold">
+                    Sélectionner le compte à créditer *
+                  </Label>
                   <Select value={selectedCreditAccount} onValueChange={setSelectedCreditAccount}>
-                    <SelectTrigger>
+                    <SelectTrigger className="h-auto py-3 border-2 hover:border-green-500/50 focus:border-green-500 transition-all duration-200 bg-gradient-to-r from-background to-green-500/10">
                       <SelectValue placeholder={isLoadingAccounts ? "Chargement..." : "Choisir un compte"} />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="border-2">
                       {isLoadingAccounts ? (
                         <SelectItem value="loading" disabled>
                           Chargement des comptes...
@@ -494,11 +526,18 @@ export default function NewTransferPage() {
                             )
                           })
                           .map((account) => (
-                            <SelectItem key={account.id} value={account.id}>
-                              <div className="flex flex-col">
-                                <span className="font-medium">{account.name}</span>
-                                <span className="text-sm text-gray-500">
-                                  {account.number} • {formatCurrency(account.balance, account.currency)}
+                            <SelectItem
+                              key={account.id}
+                              value={account.id}
+                              className="py-4 cursor-pointer hover:bg-green-50 dark:hover:bg-green-950/20"
+                            >
+                              <div className="flex items-center justify-between w-full">
+                                <div className="flex flex-col">
+                                  <span className="font-semibold text-base">{account.name}</span>
+                                  <span className="text-sm text-muted-foreground">{account.number}</span>
+                                </div>
+                                <span className="font-bold text-green-600 dark:text-green-400 ml-4">
+                                  {formatCurrency(account.balance, account.currency)}
                                 </span>
                               </div>
                             </SelectItem>
@@ -507,27 +546,35 @@ export default function NewTransferPage() {
                     </SelectContent>
                   </Select>
                   {selectedAccountData && transferType === "account-to-account" && (
-                    <p className="text-sm text-blue-600">
-                      Seuls les comptes en {selectedAccountData.currency} sont disponibles pour ce virement
-                    </p>
+                    <div className="p-3 rounded-lg bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800">
+                      <p className="text-sm text-blue-700 dark:text-blue-300 font-medium">
+                        💡 Seuls les comptes en {selectedAccountData.currency} sont disponibles pour ce virement
+                      </p>
+                    </div>
                   )}
                 </div>
               </CardContent>
             </Card>
           ) : (
-            /* Bénéficiaire pour compte vers bénéficiaire */
-            <Card>
-              <CardHeader>
+            /* Modernized beneficiary card */
+            <Card className="border-2 hover:border-primary/50 transition-all duration-300 bg-gradient-to-br from-background via-background to-purple-500/5">
+              <CardHeader className="space-y-1">
                 <CardTitle className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    <Building className="h-5 w-5" />
+                  <div className="flex items-center space-x-3 text-xl">
+                    <div className="p-2 rounded-lg bg-purple-100 dark:bg-purple-950">
+                      <Building className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+                    </div>
                     <span>Bénéficiaire</span>
                   </div>
                   <Dialog open={isDialogOpen} onOpenChange={handleDialogClose}>
                     <DialogTrigger asChild>
-                      <Button variant="outline" size="sm" className="flex items-center space-x-2 bg-transparent">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex items-center space-x-2 border-2 hover:border-primary hover:bg-primary/5 transition-all duration-200 bg-transparent"
+                      >
                         <Plus className="h-4 w-4" />
-                        <span>Nouveau bénéficiaire</span>
+                        <span>Nouveau</span>
                       </Button>
                     </DialogTrigger>
                     <DialogContent className="sm:max-w-[500px]">
@@ -550,13 +597,15 @@ export default function NewTransferPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="beneficiary">Sélectionner le bénéficiaire *</Label>
+                <div className="space-y-3">
+                  <Label htmlFor="beneficiary" className="text-base font-semibold">
+                    Sélectionner le bénéficiaire *
+                  </Label>
                   <Select value={selectedBeneficiary} onValueChange={setSelectedBeneficiary}>
-                    <SelectTrigger>
+                    <SelectTrigger className="h-auto py-3 border-2 hover:border-purple-500/50 focus:border-purple-500 transition-all duration-200 bg-gradient-to-r from-background to-purple-500/10">
                       <SelectValue placeholder={isLoadingBeneficiaries ? "Chargement..." : "Choisir un bénéficiaire"} />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="border-2">
                       {isLoadingBeneficiaries ? (
                         <SelectItem value="loading" disabled>
                           Chargement des bénéficiaires...
@@ -567,12 +616,20 @@ export default function NewTransferPage() {
                         </SelectItem>
                       ) : (
                         beneficiaries.map((beneficiary) => (
-                          <SelectItem key={beneficiary.id} value={beneficiary.id}>
-                            <div className="flex flex-col">
-                              <span className="font-medium">{beneficiary.name}</span>
-                              <span className="text-sm text-gray-500">
-                                {beneficiary.account} • {beneficiary.bank}
-                              </span>
+                          <SelectItem
+                            key={beneficiary.id}
+                            value={beneficiary.id}
+                            className="py-4 cursor-pointer hover:bg-purple-50 dark:hover:bg-purple-950/20"
+                          >
+                            <div className="flex items-start space-x-3">
+                              <div className="p-2 rounded-md bg-purple-100 dark:bg-purple-950">
+                                <User className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                              </div>
+                              <div className="flex flex-col">
+                                <span className="font-semibold text-base">{beneficiary.name}</span>
+                                <span className="text-sm text-muted-foreground">{beneficiary.account}</span>
+                                <span className="text-xs text-muted-foreground">{beneficiary.bank}</span>
+                              </div>
                             </div>
                           </SelectItem>
                         ))
@@ -584,17 +641,20 @@ export default function NewTransferPage() {
             </Card>
           )}
 
-          {/* Détails du virement */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <ArrowRight className="h-5 w-5" />
+          <Card className="border-2 hover:border-primary/50 transition-all duration-300 bg-gradient-to-br from-background via-background to-orange-500/5">
+            <CardHeader className="space-y-1">
+              <CardTitle className="flex items-center space-x-3 text-xl">
+                <div className="p-2 rounded-lg bg-orange-100 dark:bg-orange-950">
+                  <ArrowRight className="h-5 w-5 text-orange-600 dark:text-orange-400" />
+                </div>
                 <span>Détails du virement</span>
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="amount">Montant *</Label>
+            <CardContent className="space-y-5">
+              <div className="space-y-3">
+                <Label htmlFor="amount" className="text-base font-semibold">
+                  Montant *
+                </Label>
                 <Input
                   id="amount"
                   type="number"
@@ -603,16 +663,24 @@ export default function NewTransferPage() {
                   placeholder="0"
                   min="1"
                   required
+                  className="h-12 text-lg border-2 hover:border-orange-500/50 focus:border-orange-500 transition-all duration-200"
                 />
                 {selectedAccountData && (
-                  <p className="text-sm text-gray-500">
-                    Solde disponible: {formatCurrency(selectedAccountData.balance, selectedAccountData.currency)}
-                  </p>
+                  <div className="p-3 rounded-lg bg-muted/50 border">
+                    <p className="text-sm font-medium">
+                      💰 Solde disponible:{" "}
+                      <span className="text-primary">
+                        {formatCurrency(selectedAccountData.balance, selectedAccountData.currency)}
+                      </span>
+                    </p>
+                  </div>
                 )}
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="motif">Motif du virement *</Label>
+              <div className="space-y-3">
+                <Label htmlFor="motif" className="text-base font-semibold">
+                  Motif du virement *
+                </Label>
                 <Textarea
                   id="motif"
                   value={motif}
@@ -620,11 +688,14 @@ export default function NewTransferPage() {
                   placeholder="Indiquez le motif du virement..."
                   rows={3}
                   required
+                  className="border-2 hover:border-orange-500/50 focus:border-orange-500 transition-all duration-200 resize-none"
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="transferDate">Date d'exécution *</Label>
+              <div className="space-y-3">
+                <Label htmlFor="transferDate" className="text-base font-semibold">
+                  Date d'exécution *
+                </Label>
                 <Input
                   id="transferDate"
                   type="date"
@@ -632,6 +703,7 @@ export default function NewTransferPage() {
                   onChange={(e) => setTransferDate(e.target.value)}
                   min={new Date().toISOString().split("T")[0]}
                   required
+                  className="h-12 border-2 hover:border-orange-500/50 focus:border-orange-500 transition-all duration-200"
                 />
               </div>
             </CardContent>
@@ -647,25 +719,24 @@ export default function NewTransferPage() {
                 !amount ||
                 !motif
               }
-              className="flex items-center space-x-2"
+              className="h-12 px-8 text-base font-semibold bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <ArrowRight className="h-4 w-4" />
-              <span>{isTransferPending ? "Traitement..." : "Effectuer le virement"}</span>
+              <ArrowRight className="h-5 w-5 mr-2" />
+              <span>{isTransferPending ? "Traitement en cours..." : "Effectuer le virement"}</span>
             </Button>
           </div>
         </div>
 
-        {/* Résumé */}
         <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Résumé du virement</CardTitle>
+          <Card className="sticky top-6 border-2 bg-gradient-to-br from-background via-background to-primary/10 shadow-lg">
+            <CardHeader className="space-y-1 border-b bg-gradient-to-r from-primary/5 to-primary/10">
+              <CardTitle className="text-xl">📋 Résumé du virement</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-4 pt-6">
               <div>
-                <h4 className="font-medium text-sm text-gray-600 mb-2">Type de virement</h4>
-                <div className="p-3 bg-gray-50 rounded-lg">
-                  <p className="font-medium">
+                <h4 className="font-semibold text-sm text-muted-foreground mb-2">Type de virement</h4>
+                <div className="p-3 bg-gradient-to-r from-muted/50 to-muted/30 rounded-lg border">
+                  <p className="font-semibold">
                     {transferType === "account-to-beneficiary" ? "Compte vers bénéficiaire" : "Compte à compte"}
                   </p>
                 </div>
@@ -673,11 +744,11 @@ export default function NewTransferPage() {
 
               {selectedAccountData && (
                 <div>
-                  <h4 className="font-medium text-sm text-gray-600 mb-2">Compte à débiter</h4>
-                  <div className="p-3 bg-gray-50 rounded-lg">
-                    <p className="font-medium">{selectedAccountData.name}</p>
-                    <p className="text-sm text-gray-600">{selectedAccountData.number}</p>
-                    <p className="text-sm text-gray-600">
+                  <h4 className="font-semibold text-sm text-muted-foreground mb-2">Compte à débiter</h4>
+                  <div className="p-3 bg-gradient-to-r from-blue-50 to-blue-100/50 dark:from-blue-950/30 dark:to-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                    <p className="font-semibold">{selectedAccountData.name}</p>
+                    <p className="text-sm text-muted-foreground">{selectedAccountData.number}</p>
+                    <p className="text-sm font-medium text-blue-600 dark:text-blue-400 mt-1">
                       {formatCurrency(selectedAccountData.balance, selectedAccountData.currency)}
                     </p>
                   </div>
@@ -686,12 +757,12 @@ export default function NewTransferPage() {
 
               {transferType === "account-to-beneficiary" && selectedBeneficiaryData && (
                 <div>
-                  <h4 className="font-medium text-sm text-gray-600 mb-2">Bénéficiaire</h4>
-                  <div className="p-3 bg-gray-50 rounded-lg">
-                    <p className="font-medium">{selectedBeneficiaryData.name}</p>
-                    <p className="text-sm text-gray-600">{selectedBeneficiaryData.account}</p>
-                    <p className="text-sm text-gray-600">{selectedBeneficiaryData.bank}</p>
-                    <Badge variant="outline" className="mt-2">
+                  <h4 className="font-semibold text-sm text-muted-foreground mb-2">Bénéficiaire</h4>
+                  <div className="p-3 bg-gradient-to-r from-purple-50 to-purple-100/50 dark:from-purple-950/30 dark:to-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-800">
+                    <p className="font-semibold">{selectedBeneficiaryData.name}</p>
+                    <p className="text-sm text-muted-foreground">{selectedBeneficiaryData.account}</p>
+                    <p className="text-sm text-muted-foreground">{selectedBeneficiaryData.bank}</p>
+                    <Badge variant="outline" className="mt-2 border-purple-300 dark:border-purple-700">
                       {selectedBeneficiaryData.type}
                     </Badge>
                   </div>
@@ -700,11 +771,11 @@ export default function NewTransferPage() {
 
               {transferType === "account-to-account" && selectedCreditAccountData && (
                 <div>
-                  <h4 className="font-medium text-sm text-gray-600 mb-2">Compte à créditer</h4>
-                  <div className="p-3 bg-gray-50 rounded-lg">
-                    <p className="font-medium">{selectedCreditAccountData.name}</p>
-                    <p className="text-sm text-gray-600">{selectedCreditAccountData.number}</p>
-                    <p className="text-sm text-gray-600">
+                  <h4 className="font-semibold text-sm text-muted-foreground mb-2">Compte à créditer</h4>
+                  <div className="p-3 bg-gradient-to-r from-green-50 to-green-100/50 dark:from-green-950/30 dark:to-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+                    <p className="font-semibold">{selectedCreditAccountData.name}</p>
+                    <p className="text-sm text-muted-foreground">{selectedCreditAccountData.number}</p>
+                    <p className="text-sm font-medium text-green-600 dark:text-green-400 mt-1">
                       {formatCurrency(selectedCreditAccountData.balance, selectedCreditAccountData.currency)}
                     </p>
                   </div>
@@ -713,9 +784,9 @@ export default function NewTransferPage() {
 
               {amount && (
                 <div>
-                  <h4 className="font-medium text-sm text-gray-600 mb-2">Montant</h4>
-                  <div className="p-3 bg-blue-50 rounded-lg">
-                    <p className="text-lg font-bold text-blue-900">
+                  <h4 className="font-semibold text-sm text-muted-foreground mb-2">Montant</h4>
+                  <div className="p-4 bg-gradient-to-r from-primary/10 to-primary/5 rounded-lg border-2 border-primary/20">
+                    <p className="text-2xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
                       {formatCurrency(Number.parseFloat(amount), selectedAccountData?.currency || "GNF")}
                     </p>
                   </div>
@@ -724,8 +795,8 @@ export default function NewTransferPage() {
 
               {motif && (
                 <div>
-                  <h4 className="font-medium text-sm text-gray-600 mb-2">Motif</h4>
-                  <div className="p-3 bg-gray-50 rounded-lg">
+                  <h4 className="font-semibold text-sm text-muted-foreground mb-2">Motif</h4>
+                  <div className="p-3 bg-muted/50 rounded-lg border">
                     <p className="text-sm">{motif}</p>
                   </div>
                 </div>
@@ -733,9 +804,16 @@ export default function NewTransferPage() {
 
               {transferDate && (
                 <div>
-                  <h4 className="font-medium text-sm text-gray-600 mb-2">Date d'exécution</h4>
-                  <div className="p-3 bg-gray-50 rounded-lg">
-                    <p className="text-sm">{transferDate}</p>
+                  <h4 className="font-semibold text-sm text-muted-foreground mb-2">Date d'exécution</h4>
+                  <div className="p-3 bg-muted/50 rounded-lg border">
+                    <p className="text-sm font-medium">
+                      {new Date(transferDate).toLocaleDateString("fr-FR", {
+                        weekday: "long",
+                        year: "numeric",
+                        month: "long",
+                        day: "numeric",
+                      })}
+                    </p>
                   </div>
                 </div>
               )}
