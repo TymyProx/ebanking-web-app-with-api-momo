@@ -114,24 +114,16 @@ export default function AccountDetailsPage() {
     const loadTransactions = async () => {
       try {
         const transactionsData = await getTransactions()
+        //console.log("[v0] Transactions récupérées:", transactionsData)
 
         if (transactionsData.data && Array.isArray(transactionsData.data)) {
+          // Filtrer les transactions pour ce compte spécifique
           const accountTransactions = transactionsData.data
-            .filter((txn: any) => txn.accountId === accountId || txn.creditAccount === accountId)
+            .filter((txn: any) => txn.accountId === accountId)
             .map((txn: any) => {
               const amount = Number.parseFloat(txn.amount || "0")
-
-              const isCredit = txn.creditAccount === accountId || txn.txnType === "CREDIT"
-              const isDebit = txn.accountId === accountId || txn.txnType === "DEBIT"
-
-              let displayStatus: "Exécuté" | "En attente" | "Rejeté"
-              if (txn.status === "COMPLETED") {
-                displayStatus = "Exécuté"
-              } else if (txn.status === "PENDING") {
-                displayStatus = "En attente"
-              } else {
-                displayStatus = "Rejeté"
-              }
+              const isCredit = txn.txnType === "CREDIT"
+              const isDebit = txn.txnType === "DEBIT"
 
               return {
                 id: txn.txnId || txn.id,
@@ -141,7 +133,7 @@ export default function AccountDetailsPage() {
                 amount: isCredit ? Math.abs(amount) : -Math.abs(amount),
                 currency: account?.currency || "GNF",
                 date: txn.valueDate || new Date().toISOString(),
-                status: displayStatus,
+                status: txn.status, //txn.status === "COMPLETED" ? "Exécuté" : txn.status === "PENDING" ? "En attente" : "Rejeté",
                 counterparty: txn.beneficiaryId || "Système",
                 reference: txn.txnId || "REF-" + Date.now(),
                 balanceAfter: 0, // Calculé dynamiquement si nécessaire
@@ -169,20 +161,10 @@ export default function AccountDetailsPage() {
       const transactionsData = await getTransactions()
       if (transactionsData.data && Array.isArray(transactionsData.data)) {
         const accountTransactions = transactionsData.data
-          .filter((txn: any) => txn.accountId === accountId || txn.creditAccount === accountId)
+          .filter((txn: any) => txn.accountId === accountId)
           .map((txn: any) => {
             const amount = Number.parseFloat(txn.amount || "0")
-
-            const isCredit = txn.creditAccount === accountId || txn.txnType === "CREDIT"
-
-            let displayStatus: "Exécuté" | "En attente" | "Rejeté"
-            if (txn.status === "COMPLETED") {
-              displayStatus = "Exécuté"
-            } else if (txn.status === "PENDING") {
-              displayStatus = "En attente"
-            } else {
-              displayStatus = "Rejeté"
-            }
+            const isCredit = txn.txnType === "CREDIT"
 
             return {
               id: txn.txnId || txn.id,
@@ -192,7 +174,7 @@ export default function AccountDetailsPage() {
               amount: isCredit ? Math.abs(amount) : -Math.abs(amount),
               currency: account?.currency || "GNF",
               date: txn.valueDate || new Date().toISOString(),
-              status: displayStatus,
+              status: txn.status, //txn.status === "COMPLETED" ? "Exécuté" : txn.status === "PENDING" ? "En attente" : "Rejeté",
               counterparty: txn.beneficiaryId || "Système",
               reference: txn.txnId || "REF-" + Date.now(),
               balanceAfter: 0,
@@ -247,8 +229,6 @@ export default function AccountDetailsPage() {
       }
     })
   }
-
-  const hasPendingTransactions = transactions.some((transaction) => transaction.status === "En attente")
 
   if (isLoadingAccount) {
     return (
@@ -417,15 +397,11 @@ export default function AccountDetailsPage() {
                   {showBalance ? (
                     <>
                       {formatAmount(account.availableBalance, account.currency)} {account.currency}
-                      {hasPendingTransactions && <span className="text-orange-500 mr-1">*</span>}
                     </>
                   ) : (
                     "••••••••"
                   )}
                 </div>
-                {hasPendingTransactions && showBalance && (
-                  <p className="text-xs text-orange-600">* Transactions en attente affectant le solde</p>
-                )}
               </div>
             </div>
 
@@ -616,19 +592,17 @@ export default function AccountDetailsPage() {
                       {account?.currency || transaction.currency}
                     </p>
                     <p className="text-sm text-gray-500">{formatDateTime(transaction.date)}</p>
-                    {!(transaction.amount > 0 && transaction.status === "En attente") && (
-                      <Badge
-                        variant={
-                          transaction.status === "Exécuté"
-                            ? "default"
-                            : transaction.status === "En attente"
-                              ? "secondary"
-                              : "destructive"
-                        }
-                      >
-                        {transaction.status}
-                      </Badge>
-                    )}
+                    <Badge
+                      variant={
+                        transaction.status === "Exécuté"
+                          ? "default"
+                          : transaction.status === "En attente"
+                            ? "secondary"
+                            : "destructive"
+                      }
+                    >
+                      {transaction.status}
+                    </Badge>
                   </div>
                 </div>
               ))}

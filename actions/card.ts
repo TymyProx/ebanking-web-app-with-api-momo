@@ -19,7 +19,7 @@ export type Card = {
   createdById?: string
   updatedById?: string
   importHash?: string
-  TENANT_ID?: string
+  tenantId?: string
 }
 
 export type CardsResponse = {

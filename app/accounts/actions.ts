@@ -55,7 +55,7 @@ export async function getAccounts() {
               type: "CURRENT",
               agency: "Agence Centrale",
               createdAt: "2023-01-15T10:00:00Z",
-              TENANT_ID: TENANT_ID,
+              tenantId: TENANT_ID,
             },
             {
               id: "3fa85f64-5717-4562-b3fc-2c963f66afa7",
@@ -70,7 +70,7 @@ export async function getAccounts() {
               type: "SAVINGS",
               agency: "Agence Centrale",
               createdAt: "2023-03-20T10:00:00Z",
-              TENANT_ID: TENANT_ID,
+              tenantId: TENANT_ID,
             },
             {
               id: "3fa85f64-5717-4562-b3fc-2c963f66afa8",
@@ -85,7 +85,7 @@ export async function getAccounts() {
               type: "CURRENT",
               agency: "Agence Internationale",
               createdAt: "2023-06-10T10:00:00Z",
-              TENANT_ID: TENANT_ID,
+              tenantId: TENANT_ID,
             },
           ]
         }
@@ -277,7 +277,7 @@ export async function getAccountById(accountId: string) {
               type: "CURRENT",
               agency: "Agence Centrale",
               createdAt: "2023-01-15T10:00:00Z",
-              TENANT_ID: TENANT_ID,
+              tenantId: TENANT_ID,
             },
           }
         }

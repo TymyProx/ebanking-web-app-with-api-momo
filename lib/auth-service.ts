@@ -58,7 +58,7 @@ export interface User {
     userId: string
     roles: string[]
     status: string
-    TENANT_ID: string
+    tenantId: string
     tenant: {
       id: string
       name: string
@@ -77,12 +77,12 @@ export interface User {
 
 export class AuthService {
   // Méthode pour se connecter
-  static async signIn(email: string, password: string, TENANT_ID: string, invitationToken = "") {
+  static async signIn(email: string, password: string, tenantId: string, invitationToken = "") {
     try {
       const response = await authAxios.post("/auth/sign-in", {
         email,
         password,
-        TENANT_ID,
+        tenantId,
         invitationToken,
       })
 

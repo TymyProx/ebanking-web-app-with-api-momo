@@ -21,8 +21,10 @@ import {
   Clock,
   FileSpreadsheet,
   History,
+  Printer,
   Mail,
   Settings,
+  Eye,
   Wallet,
   PiggyBank,
   DollarSign,
@@ -149,7 +151,7 @@ export default function StatementsPage() {
           setAccounts(activeAccounts)
         }
       } catch (error) {
-        // console.error("Erreur lors du chargement des comptes:", error)
+       // console.error("Erreur lors du chargement des comptes:", error)
         // Fallback vers des données de test en cas d'erreur
         setAccounts([
           {
@@ -180,9 +182,7 @@ export default function StatementsPage() {
         //console.log("[v0] Transactions récupérées pour relevé:", transactionsData)
 
         if (transactionsData.data && Array.isArray(transactionsData.data)) {
-          const accountTransactions = transactionsData.data.filter(
-            (txn: any) => txn.accountId === selectedAccount || txn.creditAccount === selectedAccount,
-          )
+          const accountTransactions = transactionsData.data.filter((txn: any) => txn.accountId === selectedAccount)
           setTransactions(accountTransactions)
         }
       } catch (error) {
@@ -778,7 +778,7 @@ export default function StatementsPage() {
         }
 
         const amount = Number.parseFloat(txn.amount || "0")
-        const isCredit = txn.creditAccount === selectedAccount
+        const isCredit = txn.txnType === "CREDIT"
         const displayAmount = isCredit ? Math.abs(amount) : -Math.abs(amount)
 
         doc.setTextColor(40, 40, 40)
@@ -850,7 +850,7 @@ export default function StatementsPage() {
       // Données des transactions
       filteredTransactions.forEach((txn) => {
         const amount = Number.parseFloat(txn.amount || "0")
-        const isCredit = txn.creditAccount === selectedAccount
+        const isCredit = txn.txnType === "CREDIT"
         const displayAmount = isCredit ? Math.abs(amount) : -Math.abs(amount)
 
         csvContent += `${new Date(txn.valueDate || txn.date).toLocaleDateString("fr-FR")},`
@@ -902,7 +902,7 @@ export default function StatementsPage() {
 
     filteredTransactions.forEach((txn) => {
       const amount = Number.parseFloat(txn.amount || "0")
-      const isCredit = txn.creditAccount === selectedAccount
+      const isCredit = txn.txnType === "CREDIT"
       const displayAmount = isCredit ? Math.abs(amount) : -Math.abs(amount)
 
       content += `Date: ${new Date(txn.valueDate || txn.date).toLocaleDateString("fr-FR")}\n`
