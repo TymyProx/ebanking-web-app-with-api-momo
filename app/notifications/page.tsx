@@ -225,23 +225,18 @@ export default function NotificationsPage() {
   }
 
   return (
-    <div className="space-y-8">
-      <div className="relative">
-        <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-secondary/10 to-primary/10 rounded-2xl blur-3xl -z-10" />
-        <div className="flex items-center justify-between p-6 bg-white/80 backdrop-blur-sm rounded-2xl border-2 border-border/50 shadow-lg">
-          <div>
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-primary via-secondary to-primary bg-clip-text text-transparent">
-              Notifications
-            </h1>
-            <p className="text-muted-foreground mt-1">Gérez vos notifications de débit et crédit automatiques</p>
-          </div>
-          <Badge variant="secondary" className="text-lg px-4 py-2">
-            {unreadCount} non lues
-          </Badge>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Notifications</h1>
+          <p className="text-gray-600">Gérez vos notifications de débit et crédit automatiques</p>
+        </div>
+        <div className="flex items-center space-x-2">
+          <Badge variant="secondary">{unreadCount} non lues</Badge>
         </div>
       </div>
 
-      <Tabs defaultValue="notifications" className="space-y-6">
+      <Tabs defaultValue="notifications" className="space-y-4">
         <TabsList>
           <TabsTrigger value="notifications" className="flex items-center space-x-2">
             <BellIcon />
@@ -253,35 +248,24 @@ export default function NotificationsPage() {
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="notifications" className="space-y-6">
-          <Card className="border-2 shadow-lg relative overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-secondary/5" />
-            <CardContent className="pt-6 relative">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold">Historique des notifications</h3>
-                <div className="flex space-x-2">
-                  <Button onClick={() => handleExport("pdf")} variant="outline" size="sm" className="bg-white/50">
-                    <DownloadIcon />
-                    <span className="ml-1">PDF</span>
-                  </Button>
-                  <Button onClick={() => handleExport("csv")} variant="outline" size="sm" className="bg-white/50">
-                    <DownloadIcon />
-                    <span className="ml-1">CSV</span>
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+        <TabsContent value="notifications" className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-medium">Historique des notifications</h3>
+            <div className="flex space-x-2">
+              <Button onClick={() => handleExport("pdf")} variant="outline" size="sm">
+                <DownloadIcon />
+                <span className="ml-1">PDF</span>
+              </Button>
+              <Button onClick={() => handleExport("csv")} variant="outline" size="sm">
+                <DownloadIcon />
+                <span className="ml-1">CSV</span>
+              </Button>
+            </div>
+          </div>
 
           <div className="space-y-4">
             {notifications.map((notification) => (
-              <Card
-                key={notification.id}
-                className={`border-2 shadow-lg relative overflow-hidden transition-all duration-300 hover:shadow-xl ${
-                  !notification.read ? "border-primary/50 bg-primary/5" : "hover:border-primary/30"
-                }`}
-              >
-                <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-secondary/5" />
+              <Card key={notification.id} className={`${!notification.read ? "border-blue-200 bg-blue-50" : ""}`}>
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between">
                     <div className="flex items-start space-x-3">
@@ -350,17 +334,11 @@ export default function NotificationsPage() {
         </TabsContent>
 
         <TabsContent value="settings" className="space-y-6">
-          <Card className="border-2 shadow-lg relative overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-secondary/5" />
-            <CardHeader className="relative">
-              <CardTitle className="flex items-center">
-                <div className="p-2 rounded-lg bg-gradient-to-br from-primary to-secondary mr-3">
-                  <BellIcon />
-                </div>
-                Canaux de notification
-              </CardTitle>
+          <Card>
+            <CardHeader>
+              <CardTitle>Canaux de notification</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4 relative">
+            <CardContent className="space-y-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
                   <MailIcon />
@@ -399,17 +377,11 @@ export default function NotificationsPage() {
             </CardContent>
           </Card>
 
-          <Card className="border-2 shadow-lg relative overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-secondary/5" />
-            <CardHeader className="relative">
-              <CardTitle className="flex items-center">
-                <div className="p-2 rounded-lg bg-gradient-to-br from-primary to-secondary mr-3">
-                  <BellIcon />
-                </div>
-                Types de notifications
-              </CardTitle>
+          <Card>
+            <CardHeader>
+              <CardTitle>Types de notifications</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4 relative">
+            <CardContent className="space-y-4">
               <div className="flex items-center justify-between">
                 <Label htmlFor="debit-notifications">Notifications de débit</Label>
                 <Switch
@@ -430,17 +402,11 @@ export default function NotificationsPage() {
             </CardContent>
           </Card>
 
-          <Card className="border-2 shadow-lg relative overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-secondary/5" />
-            <CardHeader className="relative">
-              <CardTitle className="flex items-center">
-                <div className="p-2 rounded-lg bg-gradient-to-br from-primary to-secondary mr-3">
-                  <BellIcon />
-                </div>
-                Seuils de notification
-              </CardTitle>
+          <Card>
+            <CardHeader>
+              <CardTitle>Seuils de notification</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4 relative">
+            <CardContent className="space-y-4">
               <div>
                 <Label htmlFor="min-amount">Montant minimum pour déclencher une notification (GNF)</Label>
                 <Input

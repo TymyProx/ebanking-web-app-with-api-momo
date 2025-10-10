@@ -1,7 +1,8 @@
 import Link from "next/link"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Eye, Send, Receipt, ArrowUpRight, ArrowDownRight, Plus } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
+import { Eye, Send, Receipt, ArrowUpRight, ArrowDownRight, Plus, Calendar, AlertCircle } from "lucide-react"
 import { getTransactions } from "@/app/transfers/new/actions"
 import { getAccounts } from "@/app/accounts/actions"
 import { AccountsCarousel } from "@/components/accounts-carousel"
@@ -46,16 +47,11 @@ export default async function Dashboard() {
 
   return (
     <div className="space-y-8 fade-in">
-      <div className="relative">
-        <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-secondary/10 to-primary/10 rounded-2xl blur-3xl -z-10" />
-        <div className="flex items-center justify-between p-6 bg-white/80 backdrop-blur-sm rounded-2xl border border-border/50 shadow-sm">
-          <div className="space-y-1">
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-primary via-secondary to-primary bg-clip-text text-transparent">
-              Tableau de bord
-            </h1>
-            <p className="text-muted-foreground">Bienvenue sur votre espace Astra eBanking</p>
-          </div>
-        </div>
+      <div className="space-y-2">
+        <h1 className="text-3xl font-heading font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+          Tableau de bord
+        </h1>
+        <p className="text-muted-foreground text-lg">Bienvenue sur votre espace Astra eBanking</p>
       </div>
 
       <AccountsCarousel accounts={accounts} />
@@ -154,6 +150,68 @@ export default async function Dashboard() {
                   <p className="text-sm">Aucune transaction récente</p>
                 </div>
               )}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-0 shadow-lg">
+          <CardHeader>
+            <CardTitle className="flex items-center font-heading text-xl">
+              <div className="p-2 rounded-lg bg-accent/10 mr-3">
+                <AlertCircle className="h-5 w-5 text-accent" />
+              </div>
+              Alertes & Notifications
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="flex items-start space-x-4 p-4 bg-gradient-to-r from-accent/10 to-accent/5 rounded-xl border border-accent/20">
+                <div className="p-2 rounded-lg bg-accent/20">
+                  <AlertCircle className="w-4 h-4 text-accent" />
+                </div>
+                <div className="flex-1">
+                  <p className="font-medium text-sm text-accent-foreground">Virement programmé</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Un virement de 150,000 GNF vers Fatoumata Diallo est programmé pour demain
+                  </p>
+                  <Badge variant="outline" className="mt-2 text-xs bg-accent/10 border-accent/30">
+                    <Calendar className="w-3 h-3 mr-1" />
+                    14 Jan 2024
+                  </Badge>
+                </div>
+              </div>
+
+              <div className="flex items-start space-x-4 p-4 bg-gradient-to-r from-primary/10 to-primary/5 rounded-xl border border-primary/20">
+                <div className="p-2 rounded-lg bg-primary/20">
+                  <AlertCircle className="w-4 h-4 text-primary" />
+                </div>
+                <div className="flex-1">
+                  <p className="font-medium text-sm">Nouveau service</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Le service de paiement mobile est maintenant disponible
+                  </p>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="mt-2 text-xs border-primary/30 hover:bg-primary/10 bg-transparent"
+                  >
+                    Découvrir
+                  </Button>
+                </div>
+              </div>
+
+              <div className="flex items-start space-x-4 p-4 bg-gradient-to-r from-secondary/10 to-secondary/5 rounded-xl border border-secondary/20">
+                <div className="p-2 rounded-lg bg-secondary/20">
+                  <AlertCircle className="w-4 h-4 text-secondary" />
+                </div>
+                <div className="flex-1">
+                  <p className="font-medium text-sm text-secondary">✅ Solde : 2,400,000 GNF</p>
+                  <p className="text-xs text-muted-foreground mt-1">Votre compte courant a été crédité avec succès</p>
+                  <Badge variant="outline" className="mt-2 text-xs bg-secondary/10 border-secondary/30">
+                    Mis à jour
+                  </Badge>
+                </div>
+              </div>
             </div>
           </CardContent>
         </Card>

@@ -190,25 +190,17 @@ export default function ProfilePage() {
 
   return (
     <div className="container mx-auto p-6 max-w-6xl">
-      <div className="relative mb-8">
-        <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-secondary/10 to-primary/10 rounded-2xl blur-3xl -z-10" />
-        <div className="flex items-center justify-between p-6 bg-white/80 backdrop-blur-sm rounded-2xl border-2 border-border/50 shadow-lg">
-          <div>
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-primary via-secondary to-primary bg-clip-text text-transparent">
-              Mon Profil
-            </h1>
-            <p className="text-muted-foreground mt-1">Gérez vos informations personnelles</p>
-          </div>
-          {!isEditing && (
-            <Button
-              onClick={() => setIsEditing(true)}
-              className="bg-gradient-to-r from-primary to-secondary hover:opacity-90"
-            >
-              <Edit className="w-4 h-4 mr-2" />
-              Modifier
-            </Button>
-          )}
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-3xl font-bold">Mon Profil</h1>
+          <p className="text-gray-600 mt-1">Gérez vos informations personnelles</p>
         </div>
+        {!isEditing && (
+          <Button onClick={() => setIsEditing(true)} className="flex items-center gap-2">
+            <Edit className="w-4 h-4" />
+            Modifier
+          </Button>
+        )}
       </div>
 
       {message && (
@@ -229,18 +221,16 @@ export default function ProfilePage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main Content */}
         <div className="lg:col-span-2 space-y-6">
-          <Card className="border-2 shadow-lg relative overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-secondary/5" />
-            <CardHeader className="relative">
+          {/* Informations Personnelles */}
+          <Card>
+            <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <div className="p-2 rounded-lg bg-gradient-to-br from-primary to-secondary">
-                  <User className="w-5 h-5 text-white" />
-                </div>
+                <User className="w-5 h-5" />
                 Informations Personnelles
               </CardTitle>
               <CardDescription>Vos informations de base (* champs obligatoires)</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4 relative">
+            <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="firstName">Prénom *</Label>
@@ -302,18 +292,16 @@ export default function ProfilePage() {
             </CardContent>
           </Card>
 
-          <Card className="border-2 shadow-lg relative overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-secondary/5" />
-            <CardHeader className="relative">
+          {/* Adresse */}
+          <Card>
+            <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <div className="p-2 rounded-lg bg-gradient-to-br from-primary to-secondary">
-                  <MapPin className="w-5 h-5 text-white" />
-                </div>
+                <MapPin className="w-5 h-5" />
                 Adresse
               </CardTitle>
               <CardDescription>Votre adresse de résidence (* champs obligatoires)</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4 relative">
+            <CardContent className="space-y-4">
               <div>
                 <Label htmlFor="address">Adresse complète *</Label>
                 <Input
@@ -370,18 +358,16 @@ export default function ProfilePage() {
             </CardContent>
           </Card>
 
-          <Card className="border-2 shadow-lg relative overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-secondary/5" />
-            <CardHeader className="relative">
+          {/* Informations Professionnelles */}
+          <Card>
+            <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <div className="p-2 rounded-lg bg-gradient-to-br from-primary to-secondary">
-                  <Briefcase className="w-5 h-5 text-white" />
-                </div>
+                <Briefcase className="w-5 h-5" />
                 Informations Professionnelles
               </CardTitle>
               <CardDescription>Vos informations professionnelles (optionnel)</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4 relative">
+            <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="profession">Profession</Label>
@@ -449,17 +435,15 @@ export default function ProfilePage() {
 
         {/* Sidebar */}
         <div className="space-y-6">
-          <Card className="border-2 shadow-lg relative overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-secondary/5" />
-            <CardHeader className="relative">
+          {/* Statut du compte */}
+          <Card>
+            <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <div className="p-2 rounded-lg bg-gradient-to-br from-primary to-secondary">
-                  <Shield className="w-5 h-5 text-white" />
-                </div>
+                <Shield className="w-5 h-5" />
                 Statut du compte
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4 relative">
+            <CardContent className="space-y-4">
               <div className="flex items-center justify-between">
                 <span className="text-sm">Compte vérifié</span>
                 <Badge
@@ -490,12 +474,12 @@ export default function ProfilePage() {
             </CardContent>
           </Card>
 
-          <Card className="border-2 shadow-lg relative overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-secondary/5" />
-            <CardHeader className="relative">
+          {/* Actions rapides */}
+          <Card>
+            <CardHeader>
               <CardTitle>Actions rapides</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-2 relative">
+            <CardContent className="space-y-2">
               <Button variant="outline" size="sm" className="w-full justify-start bg-transparent">
                 <Shield className="w-4 h-4 mr-2" />
                 Sécurité du compte

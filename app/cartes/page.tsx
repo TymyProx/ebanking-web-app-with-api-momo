@@ -3,11 +3,21 @@
 import { useEffect, useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
+import { Switch } from "@/components/ui/switch"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
   CreditCard,
   Plus,
@@ -19,6 +29,9 @@ import {
   Eye,
   EyeOff,
   RefreshCw,
+  Lock,
+  Unlock,
+  Edit,
   CheckCircle,
   XCircle,
   Clock,
@@ -286,29 +299,19 @@ export default function CardsPage() {
   }, [])
 
   return (
-    <div className="space-y-6 bg-gradient-to-br from-primary/5 via-transparent to-secondary/5 min-h-screen p-6">
+    <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-primary via-secondary to-primary bg-clip-text text-transparent">
-            Mes Cartes
-          </h1>
-          <p className="text-gray-600 mt-1">Gérez vos cartes bancaires et leurs paramètres</p>
+          <h1 className="text-2xl font-bold text-gray-900">Mes Cartes</h1>
+          <p className="text-gray-600">Gérez vos cartes bancaires et leurs paramètres</p>
         </div>
         <div className="flex gap-2">
-          <Button
-            onClick={() => setShowNewCardForm(true)}
-            className="bg-gradient-to-r from-primary to-secondary hover:opacity-90 transition-opacity"
-          >
+          <Button onClick={() => setShowNewCardForm(true)}>
             <Plus className="w-4 h-4 mr-2" />
             Nouvelle carte
           </Button>
-          <Button
-            variant="outline"
-            onClick={loadCards}
-            disabled={loading}
-            className="border-2 hover:border-primary/50 transition-all bg-transparent"
-          >
+          <Button variant="outline" onClick={loadCards} disabled={loading}>
             <RefreshCw className={`w-4 h-4 mr-2 ${loading ? "animate-spin" : ""}`} />
             Actualiser
           </Button>
@@ -344,10 +347,7 @@ export default function CardsPage() {
       ) : cards.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {cards.map((card) => (
-            <Card
-              key={card.id}
-              className="overflow-hidden border-2 hover:border-primary/50 transition-all duration-300 shadow-lg hover:shadow-xl bg-white/80 backdrop-blur-sm"
-            >
+            <Card key={card.id} className="overflow-hidden">
               {/* Card Visual */}
               <div className={`${getCardTypeColor(card.typCard)} p-6 text-white relative`}>
                 <div className="flex justify-between items-start mb-4">
@@ -522,7 +522,7 @@ export default function CardsPage() {
           ))}
         </div>
       ) : (
-        <Card className="p-12 text-center border-2 hover:border-primary/30 transition-all bg-white/80 backdrop-blur-sm">
+        <Card className="p-12 text-center">
           <CreditCard className="w-12 h-12 mx-auto text-gray-400 mb-4" />
           <h3 className="text-lg font-medium text-gray-900 mb-2">Aucune carte trouvée</h3>
           <p className="text-gray-500 mb-4">Vous n'avez pas encore de carte bancaire.</p>
@@ -700,7 +700,7 @@ export default function CardsPage() {
 
       {/* Statistics */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card className="border-2 hover:border-primary/30 transition-all bg-white/80 backdrop-blur-sm">
+        <Card>
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
@@ -711,7 +711,7 @@ export default function CardsPage() {
             </div>
           </CardContent>
         </Card>
-        <Card className="border-2 hover:border-primary/30 transition-all bg-white/80 backdrop-blur-sm">
+        <Card>
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
@@ -724,7 +724,7 @@ export default function CardsPage() {
             </div>
           </CardContent>
         </Card>
-        <Card className="border-2 hover:border-primary/30 transition-all bg-white/80 backdrop-blur-sm">
+        <Card>
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
@@ -737,7 +737,7 @@ export default function CardsPage() {
             </div>
           </CardContent>
         </Card>
-        <Card className="border-2 hover:border-primary/30 transition-all bg-white/80 backdrop-blur-sm">
+        <Card>
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>

@@ -199,13 +199,11 @@ export default function PendingOperationsPage() {
   const statusCounts = getStatusCounts()
 
   return (
-    <div className="space-y-6 bg-gradient-to-br from-primary/5 via-transparent to-secondary/5 min-h-screen p-6">
+    <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-primary via-secondary to-primary bg-clip-text text-transparent">
-            Opérations en attente
-          </h1>
-          <p className="text-gray-600 mt-1">Suivi de vos transactions en cours de traitement</p>
+          <h1 className="text-2xl font-bold text-gray-900">Opérations en attente</h1>
+          <p className="text-gray-600">Suivi de vos transactions en cours de traitement</p>
         </div>
         <div className="flex items-center space-x-2">
           <Button onClick={handleRefresh} disabled={isPending} variant="outline" size="sm">
@@ -236,7 +234,7 @@ export default function PendingOperationsPage() {
 
       {/* Résumé des opérations */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-        <Card className="border-2 hover:border-primary/30 transition-all bg-white/80 backdrop-blur-sm">
+        <Card>
           <CardContent className="flex items-center p-6">
             <div className="flex items-center space-x-2">
               <Clock className="h-8 w-8 text-blue-600" />
@@ -248,7 +246,7 @@ export default function PendingOperationsPage() {
           </CardContent>
         </Card>
 
-        <Card className="border-2 hover:border-primary/30 transition-all bg-white/80 backdrop-blur-sm">
+        <Card>
           <CardContent className="flex items-center p-6">
             <div className="flex items-center space-x-2">
               <Clock className="h-8 w-8 text-yellow-600" />
@@ -260,7 +258,7 @@ export default function PendingOperationsPage() {
           </CardContent>
         </Card>
 
-        <Card className="border-2 hover:border-primary/30 transition-all bg-white/80 backdrop-blur-sm">
+        <Card>
           <CardContent className="flex items-center p-6">
             <div className="flex items-center space-x-2">
               <RefreshCw className="h-8 w-8 text-blue-600" />
@@ -272,7 +270,7 @@ export default function PendingOperationsPage() {
           </CardContent>
         </Card>
 
-        <Card className="border-2 hover:border-primary/30 transition-all bg-white/80 backdrop-blur-sm">
+        <Card>
           <CardContent className="flex items-center p-6">
             <div className="flex items-center space-x-2">
               <XCircle className="h-8 w-8 text-red-600" />
@@ -284,7 +282,7 @@ export default function PendingOperationsPage() {
           </CardContent>
         </Card>
 
-        <Card className="border-2 hover:border-primary/30 transition-all bg-white/80 backdrop-blur-sm">
+        <Card>
           <CardContent className="flex items-center p-6">
             <div className="flex items-center space-x-2">
               <AlertCircle className="h-8 w-8 text-orange-600" />
@@ -331,10 +329,7 @@ export default function PendingOperationsPage() {
       ) : (
         <div className="space-y-4">
           {operations.map((operation) => (
-            <Card
-              key={operation.id}
-              className="border-2 hover:border-primary/50 transition-all duration-300 shadow-lg hover:shadow-xl bg-white/80 backdrop-blur-sm"
-            >
+            <Card key={operation.id} className="hover:shadow-md transition-shadow">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-4">

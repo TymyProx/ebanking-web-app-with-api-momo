@@ -537,12 +537,10 @@ export default function UnifiedPaymentPage() {
   // Étape 1: Sélection du fournisseur/commerçant
   if (step === "selection") {
     return (
-      <div className="space-y-6 bg-gradient-to-br from-primary/5 via-transparent to-secondary/5 min-h-screen p-6">
+      <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-primary via-secondary to-primary bg-clip-text text-transparent">
-            Paiements & Achats
-          </h1>
-          <p className="text-gray-600 mt-1">Payez vos factures et réglez vos achats en ligne</p>
+          <h1 className="text-2xl font-bold text-gray-900">Paiements & Achats</h1>
+          <p className="text-gray-600">Payez vos factures et réglez vos achats en ligne</p>
         </div>
 
         <Tabs defaultValue="providers" className="space-y-4">
@@ -553,7 +551,7 @@ export default function UnifiedPaymentPage() {
 
           <TabsContent value="providers" className="space-y-4">
             {/* Filtres et recherche */}
-            <Card className="border-2 hover:border-primary/30 transition-all bg-white/80 backdrop-blur-sm">
+            <Card>
               <CardContent className="pt-6">
                 <div className="flex flex-col gap-4">
                   <div className="relative">
@@ -598,7 +596,7 @@ export default function UnifiedPaymentPage() {
 
             {/* Statistiques rapides */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <Card className="border-2 hover:border-primary/30 transition-all bg-white/80 backdrop-blur-sm">
+              <Card>
                 <CardContent className="pt-4">
                   <div className="flex items-center space-x-2">
                     <Zap className="h-5 w-5 text-yellow-600" />
@@ -609,7 +607,7 @@ export default function UnifiedPaymentPage() {
                   </div>
                 </CardContent>
               </Card>
-              <Card className="border-2 hover:border-primary/30 transition-all bg-white/80 backdrop-blur-sm">
+              <Card>
                 <CardContent className="pt-4">
                   <div className="flex items-center space-x-2">
                     <Store className="h-5 w-5 text-purple-600" />
@@ -620,7 +618,7 @@ export default function UnifiedPaymentPage() {
                   </div>
                 </CardContent>
               </Card>
-              <Card className="border-2 hover:border-primary/30 transition-all bg-white/80 backdrop-blur-sm">
+              <Card>
                 <CardContent className="pt-4">
                   <div className="flex items-center space-x-2">
                     <CheckCircle className="h-5 w-5 text-green-600" />
@@ -631,7 +629,7 @@ export default function UnifiedPaymentPage() {
                   </div>
                 </CardContent>
               </Card>
-              <Card className="border-2 hover:border-primary/30 transition-all bg-white/80 backdrop-blur-sm">
+              <Card>
                 <CardContent className="pt-4">
                   <div className="flex items-center space-x-2">
                     <Receipt className="h-5 w-5 text-blue-600" />
@@ -649,7 +647,7 @@ export default function UnifiedPaymentPage() {
               {filteredProviders.map((provider) => (
                 <Card
                   key={provider.id}
-                  className={`cursor-pointer transition-all duration-300 border-2 hover:border-primary/50 hover:shadow-xl bg-white/80 backdrop-blur-sm ${
+                  className={`cursor-pointer transition-all hover:shadow-md ${
                     provider.status !== "available" ? "opacity-60" : ""
                   }`}
                   onClick={() => provider.status === "available" && handleProviderSelect(provider.id)}

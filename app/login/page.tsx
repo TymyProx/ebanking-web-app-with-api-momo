@@ -56,12 +56,12 @@ export default function LoginPage() {
         <div className="relative w-full h-full p-8">
           <div className="relative w-full h-full overflow-hidden rounded-2xl shadow-lg border backdrop-blur-sm">
             <Image src="/images/welcom.png" alt="Welcome" fill className="object-cover rounded-2xl" priority />
-            <div className="absolute top-10 left-6 z-10">
+            <div className="absolute top-12 left-6 z-10">
               <Image
                 src="/images/logo-bng.png"
                 alt="BNG Logo"
-                width={120}
-                height={40}
+                width={180}
+                height={80}
                 className="object-contain drop-shadow-md"
               />
             </div>

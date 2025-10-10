@@ -299,7 +299,7 @@ export default function ServiceRequestsPage() {
 
     const commonFields = [
       { label: "Référence", value: details.reference || "Non attribuée" },
-      { label: "Numéro de compte", value: details.accountNumber || details.numcompteId || "Non spécifié" },
+      { label: "Numéro de compte", value: details.accountNumber || details.numcompteId || "Non spécifié" }
     ]
 
     if (type === "credit") {
@@ -586,9 +586,9 @@ export default function ServiceRequestsPage() {
 
       console.log("[v0] Données envoyées à l'API:", creditData)
       const result = await submitCreditRequest(creditData)
-      setCreditSubmitState({
-        success: true,
-        reference: result.reference || "CRD-" + new Date().getFullYear() + "-" + String(Date.now()).slice(-3),
+      setCreditSubmitState({ 
+        success: true, 
+        reference: result.reference || "CRD-" + new Date().getFullYear() + "-" + String(Date.now()).slice(-3)
       })
       // Réinitialiser le formulaire après succès
       setFormData({})
@@ -634,9 +634,9 @@ export default function ServiceRequestsPage() {
       }
 
       const result = await submitCheckbookRequest(checkbookData)
-      setCheckbookSubmitState({
-        success: true,
-        reference: result.reference || "CHQ-" + new Date().getFullYear() + "-" + String(Date.now()).slice(-3),
+      setCheckbookSubmitState({ 
+        success: true, 
+        reference: result.reference || "CHQ-" + new Date().getFullYear() + "-" + String(Date.now()).slice(-3)
       })
       // Réinitialiser le formulaire après succès
       setFormData({})
@@ -1193,13 +1193,10 @@ export default function ServiceRequestsPage() {
   }
 
   return (
-    <div className="space-y-6 bg-gradient-to-br from-primary/5 via-transparent to-secondary/5 min-h-screen p-6">
+    <div className="space-y-6">
       <div>
-        {/* Using gradient text for title */}
-        <h1 className="text-3xl font-bold bg-gradient-to-r from-primary via-secondary to-primary bg-clip-text text-transparent">
-          E-Services
-        </h1>
-        <p className="text-gray-600 mt-1">Faites vos demandes de services en ligne</p>
+        <h1 className="text-2xl font-bold text-gray-900">E-Services</h1>
+        <p className="text-gray-600">Faites vos demandes de services en ligne</p>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -1210,8 +1207,7 @@ export default function ServiceRequestsPage() {
 
         <TabsContent value="new" className="space-y-6">
           {/* Service Selection */}
-          {/* Adding modern card styling */}
-          <Card className="border-2 hover:border-primary/30 transition-all bg-white/80 backdrop-blur-sm">
+          <Card>
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
                 <Plus className="w-5 h-5" />
@@ -1226,10 +1222,10 @@ export default function ServiceRequestsPage() {
                   return (
                     <div
                       key={service.id}
-                      className={`p-4 border-2 rounded-lg cursor-pointer transition-all duration-300 ${
+                      className={`p-4 border rounded-lg cursor-pointer transition-all ${
                         selectedService === service.id
-                          ? "border-primary bg-gradient-to-br from-primary/10 to-secondary/10 ring-2 ring-primary/20 shadow-lg"
-                          : "border-gray-200 hover:border-primary/50 hover:shadow-md bg-white/80 backdrop-blur-sm"
+                          ? "border-blue-500 bg-blue-50 ring-2 ring-blue-200"
+                          : "border-gray-200 hover:border-gray-300"
                       }`}
                       onClick={() => setSelectedService(service.id)}
                     >
@@ -1257,7 +1253,7 @@ export default function ServiceRequestsPage() {
 
           {/* Service Details & Form */}
           {selectedServiceData && (
-            <Card className="border-2 hover:border-primary/30 transition-all bg-white/80 backdrop-blur-sm">
+            <Card>
               <CardHeader>
                 <CardTitle className="flex items-center space-x-2">
                   <selectedServiceData.icon className="w-5 h-5" />
@@ -1387,7 +1383,7 @@ export default function ServiceRequestsPage() {
             </div>
           </div>
 
-          <Card className="border-2 hover:border-primary/30 transition-all bg-white/80 backdrop-blur-sm">
+          <Card>
             <CardContent className="pt-6">
               <div className="flex flex-col sm:flex-row gap-4">
                 <div className="relative flex-1">
@@ -1414,9 +1410,8 @@ export default function ServiceRequestsPage() {
           </Card>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {/* Adding modern card styling */}
             <Card
-              className="cursor-pointer border-2 hover:border-primary/50 transition-all duration-300 bg-white/80 backdrop-blur-sm"
+              className="cursor-pointer hover:bg-gray-50 transition-colors"
               onClick={() => loadRequestsByType("all")}
             >
               <CardContent className="pt-6">
@@ -1431,7 +1426,7 @@ export default function ServiceRequestsPage() {
             </Card>
 
             <Card
-              className="cursor-pointer border-2 hover:border-primary/50 transition-all duration-300 bg-white/80 backdrop-blur-sm"
+              className="cursor-pointer hover:bg-gray-50 transition-colors"
               onClick={() => loadRequestsByType("checkbook")}
             >
               <CardContent className="pt-6">
@@ -1446,7 +1441,7 @@ export default function ServiceRequestsPage() {
             </Card>
 
             <Card
-              className="cursor-pointer border-2 hover:border-primary/50 transition-all duration-300 bg-white/80 backdrop-blur-sm"
+              className="cursor-pointer hover:bg-gray-50 transition-colors"
               onClick={() => loadRequestsByType("credit")}
             >
               <CardContent className="pt-6">
@@ -1460,7 +1455,7 @@ export default function ServiceRequestsPage() {
               </CardContent>
             </Card>
           </div>
-          <Card className="border-2 hover:border-primary/30 transition-all bg-white/80 backdrop-blur-sm">
+          <Card>
             <CardHeader>
               <CardTitle className="flex items-center">
                 <FileText className="w-5 h-5 mr-2" />
