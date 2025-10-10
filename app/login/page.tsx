@@ -54,8 +54,8 @@ export default function LoginPage() {
       {/* Left side - Hero Image */}
       <div className="hidden lg:flex lg:w-1/2 relative bg-gray-100">
         <div className="relative w-full h-full p-8">
-          <div className="relative w-full h-full rounded-2xl overflow-hidden">
-            <Image src="/images/welcom.png" alt="Welcome" fill className="object-contain" priority />
+          <div className="relative w-full h-full rounded-3xl overflow-hidden shadow-2xl">
+            <Image src="/images/welcom.png" alt="Welcome" fill className="object-contain rounded-3xl" priority />
             <div className="absolute top-12 left-6 z-10">
               <Image src="/images/logo-bng.png" alt="BNG Logo" width={160} height={80} className="object-contain" />
             </div>
