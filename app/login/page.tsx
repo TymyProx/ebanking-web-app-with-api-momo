@@ -50,34 +50,27 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex">
+    <div className="min-h-screen flex bg-gray-100">
       {/* Left side - Hero Image */}
-     <div className="hidden lg:flex lg:w-1/2 relative bg-gray-100">
-  <div className="relative w-full h-full p-8">
-      <div className="relative w-full h-full overflow-hidden rounded-2xl shadow-lg border backdrop-blur-sm">
-        <Image
-          src="/images/welcom.png"
-          alt="Welcome"
-          fill
-          className="object-cover rounded-2xl"
-          priority
-        />
-        <div className="absolute top-12 left-6 z-10">
-            <Image
-            src="/images/logo-bng.png"
-            alt="BNG Logo"
-            width={180}
-            height={80}
-            className="object-contain drop-shadow-md"
-            />
+      <div className="hidden lg:flex lg:w-1/2 relative">
+        <div className="relative w-full h-full p-8">
+          <div className="relative w-full h-full overflow-hidden rounded-2xl shadow-lg border backdrop-blur-sm">
+            <Image src="/images/welcom.png" alt="Welcome" fill className="object-cover rounded-2xl" priority />
+            <div className="absolute top-12 left-6 z-10">
+              <Image
+                src="/images/logo-bng.png"
+                alt="BNG Logo"
+                width={180}
+                height={80}
+                className="object-contain drop-shadow-md"
+              />
+            </div>
+          </div>
         </div>
       </div>
-  </div>
-</div>
-
 
       {/* Right side - Login Form */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-8 bg-white">
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-8">
         <div className="w-full max-w-md space-y-8">
           {/* Mobile Logo */}
           <div className="lg:hidden flex justify-center mb-8">
@@ -114,7 +107,7 @@ export default function LoginPage() {
                     name="email"
                     type="email"
                     placeholder="Nom d'utilisateur"
-                    className="h-12 pr-10 border-gray-300 focus:border-[hsl(123,38%,57%)] focus:ring-[hsl(123,38%,57%)]"
+                    className="h-12 pr-10 bg-white border-gray-300 focus:border-[hsl(123,38%,57%)] focus:ring-[hsl(123,38%,57%)]"
                     required
                     disabled={isLoading}
                   />
@@ -133,7 +126,7 @@ export default function LoginPage() {
                     name="password"
                     type={showPassword ? "text" : "password"}
                     placeholder="Mot de passe"
-                    className="h-12 pr-10 border-gray-300 focus:border-[hsl(123,38%,57%)] focus:ring-[hsl(123,38%,57%)]"
+                    className="h-12 pr-10 bg-white border-gray-300 focus:border-[hsl(123,38%,57%)] focus:ring-[hsl(123,38%,57%)]"
                     required
                     disabled={isLoading}
                   />
