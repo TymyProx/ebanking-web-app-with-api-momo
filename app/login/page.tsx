@@ -53,11 +53,13 @@ export default function LoginPage() {
     <div className="min-h-screen flex">
       {/* Left side - Hero Image */}
       <div className="hidden lg:flex lg:w-1/2 relative bg-gray-100">
-        <div className="absolute top-8 left-8 z-10">
-          <Image src="/images/logo-bng.png" alt="BNG Logo" width={120} height={40} className="object-contain" />
-        </div>
-        <div className="relative w-full h-full">
-          <Image src="/images/welcom.png" alt="Welcome" fill className="object-cover" priority />
+        <div className="relative w-full h-full p-8">
+          <div className="relative w-full h-full rounded-2xl overflow-hidden">
+            <Image src="/images/welcom.png" alt="Welcome" fill className="object-contain" priority />
+            <div className="absolute top-6 left-6 z-10">
+              <Image src="/images/logo-bng.png" alt="BNG Logo" width={120} height={40} className="object-contain" />
+            </div>
+          </div>
         </div>
       </div>
 
