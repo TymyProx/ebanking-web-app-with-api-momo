@@ -1,6 +1,6 @@
 "use client"
 
-import React from "react"
+import type React from "react"
 
 import type { ReactElement } from "react"
 import { usePathname } from "next/navigation"
@@ -23,10 +23,9 @@ import {
   BarChart3,
   Clock,
   Sparkles,
+  Users,
 } from "lucide-react"
 import Image from "next/image"
-import { cn } from "@/lib/utils"
-import { Slot } from "@radix-ui/react-slot"
 
 import {
   Sidebar,
@@ -34,6 +33,7 @@ import {
   SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
+  SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
@@ -69,7 +69,7 @@ const navigationData = {
       badge: "Nouveau",
     },
   ],
-  accounts: [
+  banking: [
     {
       title: "Mes Comptes",
       icon: Wallet,
@@ -86,8 +86,6 @@ const navigationData = {
         },
       ],
     },
-  ],
-  operations: [
     {
       title: "Virements",
       icon: ArrowLeftRight,
@@ -100,26 +98,10 @@ const navigationData = {
         {
           title: "Bénéficiaires",
           url: "/transfers/beneficiaries",
-          icon: User,
+          icon: Users,
         },
       ],
     },
-    // {
-    //   title: "Paiements",
-    //   icon: Receipt,
-    //   items: [
-    //     {
-    //       title: "Payer une facture",
-    //       url: "/payments/bills",
-    //       icon: Receipt,
-    //     },
-    //     {
-    //       title: "Paiements groupés",
-    //       url: "/payments/bulk",
-    //       icon: FileText,
-    //     },
-    //   ],
-    // },
     {
       title: "Cartes",
       url: "/cartes",
@@ -142,63 +124,20 @@ const navigationData = {
           url: "/services/rib",
           icon: FileText,
         },
-        // {
-        //   title: "Signature électronique",
-        //   url: "/services/signature",
-        //   icon: Shield,
-        // },
-        // {
-        //   title: "Provision de fonds",
-        //   url: "/services/funds-provision",
-        //   icon: DollarSign,
-        // },
-        // {
-        //   title: "Dépôt de chèque",
-        //   url: "/services/check-deposit",
-        //   icon: Receipt,
-        // },
-        // {
-        //   title: "Réclamations",
-        //   url: "/complaints",
-        //   icon: AlertTriangle,
-        // },
       ],
     },
+    {
+      title: "Notifications",
+      url: "/notifications",
+      icon: Bell,
+      badge: "3",
+    },
+    {
+      title: "Opérations en attente",
+      url: "/operations/pending",
+      icon: Clock,
+    },
   ],
-  // investments: [
-  //   {
-  //     title: "Investissements",
-  //     icon: TrendingUp,
-  //     items: [
-  //       {
-  //         title: "Mes investissements",
-  //         url: "/investments",
-  //         icon: TrendingUp,
-  //       },
-  //       {
-  //         title: "Nouveau placement",
-  //         url: "/investments/new",
-  //         icon: TrendingUp,
-  //       },
-  //     ],
-  //   },
-  //   {
-  //     title: "Budget",
-  //     icon: PiggyBank,
-  //     items: [
-  //       {
-  //         title: "Vue d'ensemble",
-  //         url: "/budget",
-  //         icon: BarChart3,
-  //       },
-  //       {
-  //         title: "Budget personnel",
-  //         url: "/budget/personal",
-  //         icon: PiggyBank,
-  //       },
-  //     ],
-  //   },
-  // ],
   support: [
     {
       title: "Support",
@@ -228,39 +167,7 @@ const navigationData = {
       icon: Building2,
     },
   ],
-  other: [
-    {
-      title: "Notifications",
-      url: "/notifications",
-      icon: Bell,
-      badge: "3",
-    },
-    {
-      title: "Opérations en attente",
-      url: "/operations/pending",
-      icon: Clock,
-    },
-  ],
 }
-
-const SidebarGroupLabel = React.forwardRef<HTMLDivElement, React.ComponentProps<"div"> & { asChild?: boolean }>(
-  ({ className, asChild = false, ...props }, ref) => {
-    const Comp = asChild ? Slot : "div"
-
-    return (
-      <Comp
-        ref={ref}
-        data-sidebar="group-label"
-        className={cn(
-          "duration-200 flex h-9 shrink-0 items-center rounded-md px-2.5 text-xs font-semibold uppercase tracking-wider text-sidebar-foreground/60 outline-none ring-sidebar-ring transition-[margin,opacity] ease-linear focus-visible:ring-2 [&>svg]:size-4 [&>svg]:shrink-0",
-          "group-data-[collapsible=icon]:-mt-8 group-data-[collapsible=icon]:opacity-0",
-          className,
-        )}
-        {...props}
-      />
-    )
-  },
-)
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>): ReactElement {
   const pathname = usePathname()
@@ -285,30 +192,29 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>): 
 
   return (
     <Sidebar variant="inset" {...props}>
-      <SidebarHeader>
-        <div className="flex items-center gap-2 px-4 py-2">
-          <div className="flex h-120 w-120 items-center justify-center">
-            <Image src="/images/logo-bng.png" alt="BNG Logo" width={120} height={120} className="object-contain" />
+      <SidebarHeader className="border-b border-sidebar-border/50 bg-gradient-to-br from-sidebar to-sidebar/95">
+        <div className="flex items-center justify-center px-4 py-4">
+          <div className="flex h-24 w-24 items-center justify-center rounded-xl bg-white/10 p-2 backdrop-blur-sm">
+            <Image src="/images/logo-bng.png" alt="BNG Logo" width={80} height={80} className="object-contain" />
           </div>
         </div>
       </SidebarHeader>
 
-      <SidebarContent>
-        {/* Navigation principale */}
+      <SidebarContent className="px-2">
         <SidebarGroup>
-          <SidebarGroupLabel asChild>
-            <div>Principal</div>
+          <SidebarGroupLabel className="mb-1 text-xs font-bold uppercase tracking-wider text-sidebar-foreground/50">
+            Principal
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {navigationData.main.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild isActive={pathname === item.url}>
-                    <Link href={item.url}>
-                      <item.icon />
-                      <span>{item.title}</span>
+                    <Link href={item.url} className="group">
+                      <item.icon className="transition-transform group-hover:scale-110" />
+                      <span className="whitespace-nowrap">{item.title}</span>
                       {item.badge && (
-                        <Badge variant="secondary" className="ml-auto">
+                        <Badge variant="secondary" className="ml-auto bg-primary/10 text-primary">
                           {item.badge}
                         </Badge>
                       )}
@@ -320,61 +226,22 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>): 
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {/* Comptes */}
         <SidebarGroup>
-          <SidebarGroupLabel asChild>
-            <div>Comptes</div>
+          <SidebarGroupLabel className="mb-1 text-xs font-bold uppercase tracking-wider text-sidebar-foreground/50">
+            Banque
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {navigationData.accounts.map((item) => (
-                <Collapsible key={item.title} asChild defaultOpen className="group/collapsible">
-                  <SidebarMenuItem>
-                    <CollapsibleTrigger asChild>
-                      <SidebarMenuButton tooltip={item.title}>
-                        <item.icon />
-                        <span>{item.title}</span>
-                        <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
-                      </SidebarMenuButton>
-                    </CollapsibleTrigger>
-                    <CollapsibleContent>
-                      <SidebarMenuSub>
-                        {item.items?.map((subItem) => (
-                          <SidebarMenuSubItem key={subItem.title}>
-                            <SidebarMenuSubButton asChild isActive={pathname === subItem.url}>
-                              <Link href={subItem.url}>
-                                <subItem.icon />
-                                <span>{subItem.title}</span>
-                              </Link>
-                            </SidebarMenuSubButton>
-                          </SidebarMenuSubItem>
-                        ))}
-                      </SidebarMenuSub>
-                    </CollapsibleContent>
-                  </SidebarMenuItem>
-                </Collapsible>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-
-        {/* Opérations */}
-        <SidebarGroup>
-          <SidebarGroupLabel asChild>
-            <div>Opérations</div>
-          </SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {navigationData.operations.map((item) => (
+              {navigationData.banking.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   {item.items ? (
                     <Collapsible asChild defaultOpen className="group/collapsible">
                       <div>
                         <CollapsibleTrigger asChild>
-                          <SidebarMenuButton tooltip={item.title}>
-                            <item.icon />
-                            <span>{item.title}</span>
-                            <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+                          <SidebarMenuButton tooltip={item.title} className="group">
+                            <item.icon className="transition-transform group-hover:scale-110" />
+                            <span className="whitespace-nowrap">{item.title}</span>
+                            <ChevronRight className="ml-auto transition-transform duration-300 group-data-[state=open]/collapsible:rotate-90" />
                           </SidebarMenuButton>
                         </CollapsibleTrigger>
                         <CollapsibleContent>
@@ -382,9 +249,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>): 
                             {item.items.map((subItem) => (
                               <SidebarMenuSubItem key={subItem.title}>
                                 <SidebarMenuSubButton asChild isActive={pathname === subItem.url}>
-                                  <Link href={subItem.url}>
-                                    <subItem.icon />
-                                    <span>{subItem.title}</span>
+                                  <Link href={subItem.url} className="group">
+                                    <subItem.icon className="transition-transform group-hover:scale-110" />
+                                    <span className="whitespace-nowrap">{subItem.title}</span>
                                   </Link>
                                 </SidebarMenuSubButton>
                               </SidebarMenuSubItem>
@@ -395,11 +262,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>): 
                     </Collapsible>
                   ) : (
                     <SidebarMenuButton asChild isActive={pathname === item.url}>
-                      <Link href={item.url!}>
-                        <item.icon />
-                        <span>{item.title}</span>
+                      <Link href={item.url!} className="group">
+                        <item.icon className="transition-transform group-hover:scale-110" />
+                        <span className="whitespace-nowrap">{item.title}</span>
                         {item.badge && (
-                          <Badge variant="secondary" className="ml-auto">
+                          <Badge variant="secondary" className="ml-auto bg-primary/10 text-primary">
                             {item.badge}
                           </Badge>
                         )}
@@ -412,99 +279,22 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>): 
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {/* Services */}
         <SidebarGroup>
-          <SidebarGroupLabel asChild>
-            <div>Services</div>
+          <SidebarGroupLabel className="mb-1 text-xs font-bold uppercase tracking-wider text-sidebar-foreground/50">
+            Services
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {navigationData.services.map((item) => (
-                <Collapsible key={item.title} asChild className="group/collapsible">
-                  <SidebarMenuItem>
-                    <CollapsibleTrigger asChild>
-                      <SidebarMenuButton tooltip={item.title}>
-                        <item.icon />
-                        <span>{item.title}</span>
-                        <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
-                      </SidebarMenuButton>
-                    </CollapsibleTrigger>
-                    <CollapsibleContent>
-                      <SidebarMenuSub>
-                        {item.items?.map((subItem) => (
-                          <SidebarMenuSubItem key={subItem.title}>
-                            <SidebarMenuSubButton asChild isActive={pathname === subItem.url}>
-                              <Link href={subItem.url}>
-                                <subItem.icon />
-                                <span>{subItem.title}</span>
-                              </Link>
-                            </SidebarMenuSubButton>
-                          </SidebarMenuSubItem>
-                        ))}
-                      </SidebarMenuSub>
-                    </CollapsibleContent>
-                  </SidebarMenuItem>
-                </Collapsible>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-
-        {/* Investissements */}
-        {/* <SidebarGroup>
-          <SidebarGroupLabel asChild>
-            <div>Investissements</div>
-          </SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {navigationData.investments.map((item) => (
-                <Collapsible key={item.title} asChild className="group/collapsible">
-                  <SidebarMenuItem>
-                    <CollapsibleTrigger asChild>
-                      <SidebarMenuButton tooltip={item.title}>
-                        <item.icon />
-                        <span>{item.title}</span>
-                        <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
-                      </SidebarMenuButton>
-                    </CollapsibleTrigger>
-                    <CollapsibleContent>
-                      <SidebarMenuSub>
-                        {item.items?.map((subItem) => (
-                          <SidebarMenuSubItem key={subItem.title}>
-                            <SidebarMenuSubButton asChild isActive={pathname === subItem.url}>
-                              <Link href={subItem.url}>
-                                <subItem.icon />
-                                <span>{subItem.title}</span>
-                              </Link>
-                            </SidebarMenuSubButton>
-                          </SidebarMenuSubItem>
-                        ))}
-                      </SidebarMenuSub>
-                    </CollapsibleContent>
-                  </SidebarMenuItem>
-                </Collapsible>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup> */}
-
-        {/* Support */}
-        <SidebarGroup>
-          <SidebarGroupLabel asChild>
-            <div>Support</div>
-          </SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {navigationData.support.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   {item.items ? (
                     <Collapsible asChild className="group/collapsible">
                       <div>
                         <CollapsibleTrigger asChild>
-                          <SidebarMenuButton tooltip={item.title}>
-                            <item.icon />
-                            <span>{item.title}</span>
-                            <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+                          <SidebarMenuButton tooltip={item.title} className="group">
+                            <item.icon className="transition-transform group-hover:scale-110" />
+                            <span className="whitespace-nowrap">{item.title}</span>
+                            <ChevronRight className="ml-auto transition-transform duration-300 group-data-[state=open]/collapsible:rotate-90" />
                           </SidebarMenuButton>
                         </CollapsibleTrigger>
                         <CollapsibleContent>
@@ -512,11 +302,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>): 
                             {item.items.map((subItem) => (
                               <SidebarMenuSubItem key={subItem.title}>
                                 <SidebarMenuSubButton asChild isActive={pathname === subItem.url}>
-                                  <Link href={subItem.url}>
-                                    <subItem.icon />
-                                    <span>{subItem.title}</span>
+                                  <Link href={subItem.url} className="group">
+                                    <subItem.icon className="transition-transform group-hover:scale-110" />
+                                    <span className="whitespace-nowrap">{subItem.title}</span>
                                     {subItem.badge && (
-                                      <Badge variant="outline" className="ml-auto">
+                                      <Badge variant="outline" className="ml-auto text-xs">
                                         {subItem.badge}
                                       </Badge>
                                     )}
@@ -530,9 +320,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>): 
                     </Collapsible>
                   ) : (
                     <SidebarMenuButton asChild isActive={pathname === item.url}>
-                      <Link href={item.url!}>
-                        <item.icon />
-                        <span>{item.title}</span>
+                      <Link href={item.url!} className="group">
+                        <item.icon className="transition-transform group-hover:scale-110" />
+                        <span className="whitespace-nowrap">{item.title}</span>
+                        {item.badge && (
+                          <Badge variant="destructive" className="ml-auto">
+                            {item.badge}
+                          </Badge>
+                        )}
                       </Link>
                     </SidebarMenuButton>
                   )}
@@ -542,26 +337,56 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>): 
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {/* Autres */}
         <SidebarGroup>
-          <SidebarGroupLabel asChild>
-            <div>Autres</div>
+          <SidebarGroupLabel className="mb-1 text-xs font-bold uppercase tracking-wider text-sidebar-foreground/50">
+            Aide & Support
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {navigationData.other.map((item) => (
+              {navigationData.support.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild isActive={pathname === item.url}>
-                    <Link href={item.url}>
-                      <item.icon />
-                      <span>{item.title}</span>
-                      {item.badge && (
-                        <Badge variant="destructive" className="ml-auto">
-                          {item.badge}
-                        </Badge>
-                      )}
-                    </Link>
-                  </SidebarMenuButton>
+                  {item.items ? (
+                    <Collapsible asChild className="group/collapsible">
+                      <div>
+                        <CollapsibleTrigger asChild>
+                          <SidebarMenuButton tooltip={item.title} className="group">
+                            <item.icon className="transition-transform group-hover:scale-110" />
+                            <span className="whitespace-nowrap">{item.title}</span>
+                            <ChevronRight className="ml-auto transition-transform duration-300 group-data-[state=open]/collapsible:rotate-90" />
+                          </SidebarMenuButton>
+                        </CollapsibleTrigger>
+                        <CollapsibleContent>
+                          <SidebarMenuSub>
+                            {item.items.map((subItem) => (
+                              <SidebarMenuSubItem key={subItem.title}>
+                                <SidebarMenuSubButton asChild isActive={pathname === subItem.url}>
+                                  <Link href={subItem.url} className="group">
+                                    <subItem.icon className="transition-transform group-hover:scale-110" />
+                                    <span className="whitespace-nowrap">{subItem.title}</span>
+                                    {subItem.badge && (
+                                      <Badge
+                                        variant="outline"
+                                        className="ml-auto bg-green-500/10 text-green-600 text-xs"
+                                      >
+                                        {subItem.badge}
+                                      </Badge>
+                                    )}
+                                  </Link>
+                                </SidebarMenuSubButton>
+                              </SidebarMenuSubItem>
+                            ))}
+                          </SidebarMenuSub>
+                        </CollapsibleContent>
+                      </div>
+                    </Collapsible>
+                  ) : (
+                    <SidebarMenuButton asChild isActive={pathname === item.url}>
+                      <Link href={item.url!} className="group">
+                        <item.icon className="transition-transform group-hover:scale-110" />
+                        <span className="whitespace-nowrap">{item.title}</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  )}
                 </SidebarMenuItem>
               ))}
             </SidebarMenu>
@@ -569,18 +394,18 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>): 
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter>
+      <SidebarFooter className="border-t border-sidebar-border/50 bg-gradient-to-br from-sidebar/95 to-sidebar p-2">
         <SidebarMenu>
           <SidebarMenuItem>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <SidebarMenuButton
                   size="lg"
-                  className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+                  className="data-[state=open]:bg-sidebar-accent/50 data-[state=open]:text-sidebar-accent-foreground hover:bg-sidebar-accent/30"
                 >
-                  <Avatar className="h-8 w-8 rounded-lg">
+                  <Avatar className="h-9 w-9 rounded-xl border-2 border-primary/20">
                     <AvatarImage src="/placeholder-user.jpg" alt={userData?.fullName || "Utilisateur"} />
-                    <AvatarFallback className="rounded-lg bg-gradient-to-br from-blue-600 to-blue-800 text-white">
+                    <AvatarFallback className="rounded-xl bg-gradient-to-br from-primary to-primary/80 text-white font-semibold">
                       {userData?.fullName ? getInitials(userData.fullName) : "U"}
                     </AvatarFallback>
                   </Avatar>
@@ -590,20 +415,20 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>): 
                       {userData?.email || "Client Particulier"}
                     </span>
                   </div>
-                  <ChevronRight className="ml-auto size-4" />
+                  <ChevronRight className="ml-auto size-4 transition-transform group-hover:translate-x-0.5" />
                 </SidebarMenuButton>
               </DropdownMenuTrigger>
               <DropdownMenuContent
-                className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-lg"
+                className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-xl"
                 side="bottom"
                 align="end"
                 sideOffset={4}
               >
                 <DropdownMenuLabel className="p-0 font-normal">
                   <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
-                    <Avatar className="h-8 w-8 rounded-lg">
+                    <Avatar className="h-9 w-9 rounded-xl border-2 border-primary/20">
                       <AvatarImage src="/placeholder-user.jpg" alt={userData?.fullName || "Utilisateur"} />
-                      <AvatarFallback className="rounded-lg bg-gradient-to-br from-blue-600 to-blue-800 text-white">
+                      <AvatarFallback className="rounded-xl bg-gradient-to-br from-primary to-primary/80 text-white font-semibold">
                         {userData?.fullName ? getInitials(userData.fullName) : "U"}
                       </AvatarFallback>
                     </Avatar>
@@ -617,21 +442,21 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>): 
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
-                  <Link href="/profile" className="flex items-center">
+                  <Link href="/profile" className="flex items-center cursor-pointer">
                     <User className="mr-2 h-4 w-4" />
                     <span>Mon profil</span>
                   </Link>
                 </DropdownMenuItem>
-                <DropdownMenuItem>
+                <DropdownMenuItem className="cursor-pointer">
                   <Settings className="mr-2 h-4 w-4" />
                   <span>Paramètres</span>
                 </DropdownMenuItem>
-                <DropdownMenuItem>
+                <DropdownMenuItem className="cursor-pointer">
                   <HelpCircle className="mr-2 h-4 w-4" />
                   <span>Aide</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem>
+                <DropdownMenuItem className="cursor-pointer text-destructive focus:text-destructive">
                   <LogOut className="mr-2 h-4 w-4" />
                   <span>Se déconnecter</span>
                 </DropdownMenuItem>
