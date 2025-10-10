@@ -52,16 +52,29 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex">
       {/* Left side - Hero Image */}
-      <div className="hidden lg:flex lg:w-1/2 relative bg-gray-100">
-        <div className="relative w-full h-full p-8">
-          <div className="relative w-full h-full rounded-2xl overflow-hidden">
-            <Image src="/images/welcom.png" alt="Welcome" fill className="object-contain" priority />
-            <div className="absolute top-6 left-6 z-10">
-              <Image src="/images/logo-bng.png" alt="BNG Logo" width={120} height={40} className="object-contain" />
-            </div>
-          </div>
+     <div className="hidden lg:flex lg:w-1/2 relative bg-gray-100">
+  <div className="relative w-full h-full p-8">
+      <div className="relative w-full h-full overflow-hidden rounded-2xl shadow-lg border backdrop-blur-sm">
+        <Image
+          src="/images/welcom.png"
+          alt="Welcome"
+          fill
+          className="object-cover rounded-2xl"
+          priority
+        />
+        <div className="absolute top-12 left-6 z-10">
+            <Image
+            src="/images/logo-bng.png"
+            alt="BNG Logo"
+            width={180}
+            height={80}
+            className="object-contain drop-shadow-md"
+            />
         </div>
       </div>
+  </div>
+</div>
+
 
       {/* Right side - Login Form */}
       <div className="w-full lg:w-1/2 flex items-center justify-center p-8 bg-white">
