@@ -96,7 +96,21 @@ export class AuthService {
       throw new Error("Token non reçu")
     } catch (error: any) {
       console.error("Erreur de connexion:", error)
-      throw new Error(error.response?.data?.message || "Erreur de connexion")
+      let errorMessage = "Erreur de connexion"
+
+      if (error.response?.data) {
+        // Try different possible error message formats from API
+        errorMessage =
+          error.response.data.message ||
+          error.response.data.error ||
+          error.response.data.msg ||
+          (typeof error.response.data === "string" ? error.response.data : null) ||
+          errorMessage
+      } else if (error.message) {
+        errorMessage = error.message
+      }
+
+      throw new Error(errorMessage)
     }
   }
 
@@ -112,7 +126,20 @@ export class AuthService {
       return userData
     } catch (error: any) {
       console.error("Erreur lors de la récupération des informations utilisateur:", error)
-      throw new Error(error.response?.data?.message || "Impossible de récupérer les informations utilisateur")
+      let errorMessage = "Impossible de récupérer les informations utilisateur"
+
+      if (error.response?.data) {
+        errorMessage =
+          error.response.data.message ||
+          error.response.data.error ||
+          error.response.data.msg ||
+          (typeof error.response.data === "string" ? error.response.data : null) ||
+          errorMessage
+      } else if (error.message) {
+        errorMessage = error.message
+      }
+
+      throw new Error(errorMessage)
     }
   }
 
