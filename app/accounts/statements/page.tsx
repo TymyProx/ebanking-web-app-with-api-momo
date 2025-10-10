@@ -294,14 +294,16 @@ export default function StatementsPage() {
   const preSelectedAccount = preSelectedAccountId ? accounts.find((acc) => acc.id === preSelectedAccountId) : null
 
   return (
-    <div className="space-y-6">
+    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-transparent to-secondary/5 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Télécharger relevé</h1>
-          <p className="text-gray-600">Générez et téléchargez vos relevés de compte</p>
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-primary via-secondary to-primary bg-clip-text text-transparent">
+            Télécharger relevé
+          </h1>
+          <p className="text-muted-foreground">Générez et téléchargez vos relevés de compte</p>
           {preSelectedAccountId && accounts.find((acc) => acc.id === preSelectedAccountId) && (
             <div className="mt-2">
-              <Alert className="border-blue-200 bg-blue-50">
+              <Alert className="border-blue-200 bg-blue-50/80 backdrop-blur-sm">
                 <CheckCircle className="h-4 w-4 text-blue-600" />
                 <AlertDescription className="text-blue-800">
                   Compte pré-sélectionné : {accounts.find((acc) => acc.id === preSelectedAccountId)?.name} (
@@ -312,11 +314,17 @@ export default function StatementsPage() {
           )}
         </div>
         <div className="flex items-center space-x-2">
-          <Button variant="outline">
+          <Button
+            variant="outline"
+            className="border-2 hover:border-primary/50 transition-all duration-300 bg-transparent"
+          >
             <History className="w-4 h-4 mr-2" />
             Historique
           </Button>
-          <Button variant="outline">
+          <Button
+            variant="outline"
+            className="border-2 hover:border-primary/50 transition-all duration-300 bg-transparent"
+          >
             <Settings className="w-4 h-4 mr-2" />
             Paramètres
           </Button>
@@ -376,15 +384,16 @@ export default function StatementsPage() {
         </TabsList>
 
         <TabsContent value="generate" className="space-y-6">
-          {/* Sélection du compte */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <CreditCard className="w-5 h-5 mr-2" />
-                Sélection du compte
+          <Card className="border-2 hover:border-primary/50 transition-all duration-300 shadow-lg bg-white/80 backdrop-blur-sm">
+            <CardHeader className="bg-gradient-to-r from-primary/5 to-secondary/5">
+              <CardTitle className="flex items-center space-x-3">
+                <div className="p-3 rounded-xl bg-gradient-to-br from-primary/10 to-secondary/10">
+                  <CreditCard className="w-5 h-5 text-primary" />
+                </div>
+                <span>Sélection du compte</span>
               </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="pt-6">
               {isLoadingAccounts ? (
                 <div className="text-center py-4">
                   <Clock className="w-6 h-6 animate-spin mx-auto mb-2" />
@@ -425,15 +434,16 @@ export default function StatementsPage() {
             </CardContent>
           </Card>
 
-          {/* Configuration du relevé */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <Calendar className="w-5 h-5 mr-2" />
-                Configuration du relevé
+          <Card className="border-2 hover:border-primary/50 transition-all duration-300 shadow-lg bg-white/80 backdrop-blur-sm">
+            <CardHeader className="bg-gradient-to-r from-primary/5 to-secondary/5">
+              <CardTitle className="flex items-center space-x-3">
+                <div className="p-3 rounded-xl bg-gradient-to-br from-primary/10 to-secondary/10">
+                  <Calendar className="w-5 h-5 text-primary" />
+                </div>
+                <span>Configuration du relevé</span>
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-6">
+            <CardContent className="space-y-6 pt-6">
               {/* Sélection de période */}
               <div className="space-y-4">
                 <Label>Période du relevé</Label>
@@ -559,15 +569,16 @@ export default function StatementsPage() {
             </CardContent>
           </Card>
 
-          {/* Actions */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <Download className="w-5 h-5 mr-2" />
-                Téléchargement
+          <Card className="border-2 hover:border-primary/50 transition-all duration-300 shadow-lg bg-white/80 backdrop-blur-sm">
+            <CardHeader className="bg-gradient-to-r from-primary/5 to-secondary/5">
+              <CardTitle className="flex items-center space-x-3">
+                <div className="p-3 rounded-xl bg-gradient-to-br from-primary/10 to-secondary/10">
+                  <Download className="w-5 h-5 text-primary" />
+                </div>
+                <span>Téléchargement</span>
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-4 pt-6">
               <div className="flex flex-col sm:flex-row gap-4">
                 <Button
                   onClick={handleGenerateStatement}
@@ -639,14 +650,16 @@ export default function StatementsPage() {
         </TabsContent>
 
         <TabsContent value="history" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <History className="w-5 h-5 mr-2" />
-                Historique des relevés générés
+          <Card className="border-2 hover:border-primary/50 transition-all duration-300 shadow-lg bg-white/80 backdrop-blur-sm">
+            <CardHeader className="bg-gradient-to-r from-primary/5 to-secondary/5">
+              <CardTitle className="flex items-center space-x-3">
+                <div className="p-3 rounded-xl bg-gradient-to-br from-primary/10 to-secondary/10">
+                  <History className="w-5 h-5 text-primary" />
+                </div>
+                <span>Historique des relevés générés</span>
               </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="pt-6">
               {statementHistory.length === 0 ? (
                 <div className="text-center py-8">
                   <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
