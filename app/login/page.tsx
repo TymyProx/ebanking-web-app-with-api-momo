@@ -60,8 +60,8 @@ export default function LoginPage() {
               <Image
                 src="/images/logo-bng.png"
                 alt="BNG Logo"
-                width={180}
-                height={80}
+                width={120}
+                height={60}
                 className="object-contain drop-shadow-md"
               />
             </div>
