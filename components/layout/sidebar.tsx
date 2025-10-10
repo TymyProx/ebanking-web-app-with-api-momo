@@ -1,6 +1,7 @@
 "use client"
 
-import type React from "react"
+import React from "react"
+
 import type { ReactElement } from "react"
 import { usePathname } from "next/navigation"
 import Link from "next/link"
@@ -22,10 +23,10 @@ import {
   BarChart3,
   Clock,
   Sparkles,
-  Users,
-  Zap,
 } from "lucide-react"
 import Image from "next/image"
+import { cn } from "@/lib/utils"
+import { Slot } from "@radix-ui/react-slot"
 
 import {
   Sidebar,
@@ -33,7 +34,6 @@ import {
   SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
-  SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
@@ -69,7 +69,7 @@ const navigationData = {
       badge: "Nouveau",
     },
   ],
-  banking: [
+  accounts: [
     {
       title: "Mes Comptes",
       icon: Wallet,
@@ -86,6 +86,8 @@ const navigationData = {
         },
       ],
     },
+  ],
+  operations: [
     {
       title: "Virements",
       icon: ArrowLeftRight,
@@ -98,10 +100,26 @@ const navigationData = {
         {
           title: "Bénéficiaires",
           url: "/transfers/beneficiaries",
-          icon: Users,
+          icon: User,
         },
       ],
     },
+    // {
+    //   title: "Paiements",
+    //   icon: Receipt,
+    //   items: [
+    //     {
+    //       title: "Payer une facture",
+    //       url: "/payments/bills",
+    //       icon: Receipt,
+    //     },
+    //     {
+    //       title: "Paiements groupés",
+    //       url: "/payments/bulk",
+    //       icon: FileText,
+    //     },
+    //   ],
+    // },
     {
       title: "Cartes",
       url: "/cartes",
@@ -124,20 +142,63 @@ const navigationData = {
           url: "/services/rib",
           icon: FileText,
         },
+        // {
+        //   title: "Signature électronique",
+        //   url: "/services/signature",
+        //   icon: Shield,
+        // },
+        // {
+        //   title: "Provision de fonds",
+        //   url: "/services/funds-provision",
+        //   icon: DollarSign,
+        // },
+        // {
+        //   title: "Dépôt de chèque",
+        //   url: "/services/check-deposit",
+        //   icon: Receipt,
+        // },
+        // {
+        //   title: "Réclamations",
+        //   url: "/complaints",
+        //   icon: AlertTriangle,
+        // },
       ],
     },
-    {
-      title: "Notifications",
-      url: "/notifications",
-      icon: Bell,
-      badge: "3",
-    },
-    {
-      title: "Opérations en attente",
-      url: "/operations/pending",
-      icon: Clock,
-    },
   ],
+  // investments: [
+  //   {
+  //     title: "Investissements",
+  //     icon: TrendingUp,
+  //     items: [
+  //       {
+  //         title: "Mes investissements",
+  //         url: "/investments",
+  //         icon: TrendingUp,
+  //       },
+  //       {
+  //         title: "Nouveau placement",
+  //         url: "/investments/new",
+  //         icon: TrendingUp,
+  //       },
+  //     ],
+  //   },
+  //   {
+  //     title: "Budget",
+  //     icon: PiggyBank,
+  //     items: [
+  //       {
+  //         title: "Vue d'ensemble",
+  //         url: "/budget",
+  //         icon: BarChart3,
+  //       },
+  //       {
+  //         title: "Budget personnel",
+  //         url: "/budget/personal",
+  //         icon: PiggyBank,
+  //       },
+  //     ],
+  //   },
+  // ],
   support: [
     {
       title: "Support",
@@ -167,7 +228,39 @@ const navigationData = {
       icon: Building2,
     },
   ],
+  other: [
+    {
+      title: "Notifications",
+      url: "/notifications",
+      icon: Bell,
+      badge: "3",
+    },
+    {
+      title: "Opérations en attente",
+      url: "/operations/pending",
+      icon: Clock,
+    },
+  ],
 }
+
+const SidebarGroupLabel = React.forwardRef<HTMLDivElement, React.ComponentProps<"div"> & { asChild?: boolean }>(
+  ({ className, asChild = false, ...props }, ref) => {
+    const Comp = asChild ? Slot : "div"
+
+    return (
+      <Comp
+        ref={ref}
+        data-sidebar="group-label"
+        className={cn(
+          "duration-200 flex h-9 shrink-0 items-center rounded-md px-2.5 text-xs font-semibold uppercase tracking-wider text-sidebar-foreground/60 outline-none ring-sidebar-ring transition-[margin,opacity] ease-linear focus-visible:ring-2 [&>svg]:size-4 [&>svg]:shrink-0",
+          "group-data-[collapsible=icon]:-mt-8 group-data-[collapsible=icon]:opacity-0",
+          className,
+        )}
+        {...props}
+      />
+    )
+  },
+)
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>): ReactElement {
   const pathname = usePathname()
@@ -192,44 +285,30 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>): 
 
   return (
     <Sidebar variant="inset" {...props}>
-      <SidebarHeader className="relative overflow-hidden border-b border-sidebar-border/30 bg-gradient-to-br from-primary/10 via-secondary/5 to-primary/5 backdrop-blur-xl">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-secondary/5 animate-pulse" />
-        <div className="relative flex items-center justify-center px-4 py-6">
-          <div className="group flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-white/90 to-white/70 p-3 shadow-2xl shadow-primary/20 backdrop-blur-sm transition-all duration-500 hover:scale-105 hover:shadow-primary/30 hover:rotate-3">
-            <Image
-              src="/images/logo-bng.png"
-              alt="BNG Logo"
-              width={70}
-              height={70}
-              className="object-contain transition-transform duration-500 group-hover:scale-110"
-            />
-            <div className="absolute -inset-1 rounded-2xl bg-gradient-to-r from-primary/20 to-secondary/20 opacity-0 blur-xl transition-opacity duration-500 group-hover:opacity-100" />
+      <SidebarHeader>
+        <div className="flex items-center gap-2 px-4 py-2">
+          <div className="flex h-120 w-120 items-center justify-center">
+            <Image src="/images/logo-bng.png" alt="BNG Logo" width={120} height={120} className="object-contain" />
           </div>
         </div>
-        <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
       </SidebarHeader>
 
-      <SidebarContent className="px-3 py-4">
+      <SidebarContent>
+        {/* Navigation principale */}
         <SidebarGroup>
-          <SidebarGroupLabel className="mb-2 flex items-center gap-2 px-3 text-[10px] font-black uppercase tracking-[0.15em] text-sidebar-foreground/40">
-            <Zap className="h-3 w-3" />
-            <span>Principal</span>
-            <div className="ml-auto h-px flex-1 bg-gradient-to-r from-sidebar-foreground/20 to-transparent" />
+          <SidebarGroupLabel asChild>
+            <div>Principal</div>
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {navigationData.main.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild isActive={pathname === item.url}>
-                    <Link href={item.url} className="group relative overflow-hidden">
-                      <div className="relative z-10 flex items-center gap-3">
-                        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-primary/10 to-secondary/10 transition-all duration-300 group-hover:scale-110 group-hover:from-primary/20 group-hover:to-secondary/20 group-data-[active=true]:from-primary/20 group-data-[active=true]:to-secondary/20 group-data-[active=true]:shadow-lg group-data-[active=true]:shadow-primary/20">
-                          <item.icon className="h-[18px] w-[18px] transition-transform duration-300 group-hover:scale-110 group-data-[active=true]:scale-110" />
-                        </div>
-                        <span className="whitespace-nowrap font-medium">{item.title}</span>
-                      </div>
+                    <Link href={item.url}>
+                      <item.icon />
+                      <span>{item.title}</span>
                       {item.badge && (
-                        <Badge className="ml-auto bg-gradient-to-r from-primary to-secondary text-white shadow-lg shadow-primary/30 animate-pulse">
+                        <Badge variant="secondary" className="ml-auto">
                           {item.badge}
                         </Badge>
                       )}
@@ -241,44 +320,71 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>): 
           </SidebarGroupContent>
         </SidebarGroup>
 
-        <div className="my-4 h-px bg-gradient-to-r from-transparent via-sidebar-border to-transparent" />
-
+        {/* Comptes */}
         <SidebarGroup>
-          <SidebarGroupLabel className="mb-2 flex items-center gap-2 px-3 text-[10px] font-black uppercase tracking-[0.15em] text-sidebar-foreground/40">
-            <Wallet className="h-3 w-3" />
-            <span>Banque</span>
-            <div className="ml-auto h-px flex-1 bg-gradient-to-r from-sidebar-foreground/20 to-transparent" />
+          <SidebarGroupLabel asChild>
+            <div>Comptes</div>
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {navigationData.banking.map((item) => (
+              {navigationData.accounts.map((item) => (
+                <Collapsible key={item.title} asChild defaultOpen className="group/collapsible">
+                  <SidebarMenuItem>
+                    <CollapsibleTrigger asChild>
+                      <SidebarMenuButton tooltip={item.title}>
+                        <item.icon />
+                        <span>{item.title}</span>
+                        <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+                      </SidebarMenuButton>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent>
+                      <SidebarMenuSub>
+                        {item.items?.map((subItem) => (
+                          <SidebarMenuSubItem key={subItem.title}>
+                            <SidebarMenuSubButton asChild isActive={pathname === subItem.url}>
+                              <Link href={subItem.url}>
+                                <subItem.icon />
+                                <span>{subItem.title}</span>
+                              </Link>
+                            </SidebarMenuSubButton>
+                          </SidebarMenuSubItem>
+                        ))}
+                      </SidebarMenuSub>
+                    </CollapsibleContent>
+                  </SidebarMenuItem>
+                </Collapsible>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        {/* Opérations */}
+        <SidebarGroup>
+          <SidebarGroupLabel asChild>
+            <div>Opérations</div>
+          </SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {navigationData.operations.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   {item.items ? (
                     <Collapsible asChild defaultOpen className="group/collapsible">
                       <div>
                         <CollapsibleTrigger asChild>
-                          <SidebarMenuButton tooltip={item.title} className="group relative overflow-hidden">
-                            <div className="relative z-10 flex items-center gap-3">
-                              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500/10 to-cyan-500/10 transition-all duration-300 group-hover:scale-110 group-hover:from-blue-500/20 group-hover:to-cyan-500/20">
-                                <item.icon className="h-[18px] w-[18px] transition-transform duration-300 group-hover:scale-110" />
-                              </div>
-                              <span className="whitespace-nowrap font-medium">{item.title}</span>
-                            </div>
-                            <ChevronRight className="ml-auto h-4 w-4 transition-all duration-500 group-data-[state=open]/collapsible:rotate-90 group-data-[state=open]/collapsible:text-primary" />
+                          <SidebarMenuButton tooltip={item.title}>
+                            <item.icon />
+                            <span>{item.title}</span>
+                            <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
                           </SidebarMenuButton>
                         </CollapsibleTrigger>
-                        <CollapsibleContent className="transition-all duration-300 data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down">
-                          <SidebarMenuSub className="ml-2 border-l-2 border-gradient-to-b from-primary/30 to-transparent">
+                        <CollapsibleContent>
+                          <SidebarMenuSub>
                             {item.items.map((subItem) => (
                               <SidebarMenuSubItem key={subItem.title}>
                                 <SidebarMenuSubButton asChild isActive={pathname === subItem.url}>
-                                  <Link href={subItem.url} className="group relative">
-                                    <div className="flex items-center gap-2.5">
-                                      <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-primary/5 to-secondary/5 transition-all duration-300 group-hover:scale-110 group-hover:from-primary/15 group-hover:to-secondary/15 group-data-[active=true]:from-primary/15 group-data-[active=true]:to-secondary/15">
-                                        <subItem.icon className="h-4 w-4" />
-                                      </div>
-                                      <span className="whitespace-nowrap">{subItem.title}</span>
-                                    </div>
+                                  <Link href={subItem.url}>
+                                    <subItem.icon />
+                                    <span>{subItem.title}</span>
                                   </Link>
                                 </SidebarMenuSubButton>
                               </SidebarMenuSubItem>
@@ -289,15 +395,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>): 
                     </Collapsible>
                   ) : (
                     <SidebarMenuButton asChild isActive={pathname === item.url}>
-                      <Link href={item.url!} className="group relative overflow-hidden">
-                        <div className="relative z-10 flex items-center gap-3">
-                          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500/10 to-cyan-500/10 transition-all duration-300 group-hover:scale-110 group-hover:from-blue-500/20 group-hover:to-cyan-500/20 group-data-[active=true]:from-blue-500/20 group-data-[active=true]:to-cyan-500/20 group-data-[active=true]:shadow-lg group-data-[active=true]:shadow-blue-500/20">
-                            <item.icon className="h-[18px] w-[18px] transition-transform duration-300 group-hover:scale-110 group-data-[active=true]:scale-110" />
-                          </div>
-                          <span className="whitespace-nowrap font-medium">{item.title}</span>
-                        </div>
+                      <Link href={item.url!}>
+                        <item.icon />
+                        <span>{item.title}</span>
                         {item.badge && (
-                          <Badge className="ml-auto bg-gradient-to-r from-primary to-secondary text-white shadow-lg shadow-primary/30 animate-pulse">
+                          <Badge variant="secondary" className="ml-auto">
                             {item.badge}
                           </Badge>
                         )}
@@ -310,93 +412,86 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>): 
           </SidebarGroupContent>
         </SidebarGroup>
 
-        <div className="my-4 h-px bg-gradient-to-r from-transparent via-sidebar-border to-transparent" />
-
+        {/* Services */}
         <SidebarGroup>
-          <SidebarGroupLabel className="mb-2 flex items-center gap-2 px-3 text-[10px] font-black uppercase tracking-[0.15em] text-sidebar-foreground/40">
-            <Settings className="h-3 w-3" />
-            <span>Services</span>
-            <div className="ml-auto h-px flex-1 bg-gradient-to-r from-sidebar-foreground/20 to-transparent" />
+          <SidebarGroupLabel asChild>
+            <div>Services</div>
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {navigationData.services.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  {item.items ? (
-                    <Collapsible asChild className="group/collapsible">
-                      <div>
-                        <CollapsibleTrigger asChild>
-                          <SidebarMenuButton tooltip={item.title} className="group relative overflow-hidden">
-                            <div className="relative z-10 flex items-center gap-3">
-                              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-purple-500/10 to-pink-500/10 transition-all duration-300 group-hover:scale-110 group-hover:from-purple-500/20 group-hover:to-pink-500/20">
-                                <item.icon className="h-[18px] w-[18px] transition-transform duration-300 group-hover:scale-110" />
-                              </div>
-                              <span className="whitespace-nowrap font-medium">{item.title}</span>
-                            </div>
-                            <ChevronRight className="ml-auto h-4 w-4 transition-all duration-500 group-data-[state=open]/collapsible:rotate-90 group-data-[state=open]/collapsible:text-primary" />
-                          </SidebarMenuButton>
-                        </CollapsibleTrigger>
-                        <CollapsibleContent className="transition-all duration-300 data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down">
-                          <SidebarMenuSub className="ml-2 border-l-2 border-gradient-to-b from-primary/30 to-transparent">
-                            {item.items.map((subItem) => (
-                              <SidebarMenuSubItem key={subItem.title}>
-                                <SidebarMenuSubButton asChild isActive={pathname === subItem.url}>
-                                  <Link href={subItem.url} className="group relative">
-                                    <div className="flex items-center gap-2.5">
-                                      <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-primary/5 to-secondary/5 transition-all duration-300 group-hover:scale-110 group-hover:from-primary/15 group-hover:to-secondary/15 group-data-[active=true]:from-primary/15 group-data-[active=true]:to-secondary/15">
-                                        <subItem.icon className="h-4 w-4" />
-                                      </div>
-                                      <span className="whitespace-nowrap">{subItem.title}</span>
-                                    </div>
-                                    {subItem.badge && (
-                                      <Badge
-                                        variant="outline"
-                                        className="ml-auto bg-green-500/10 text-green-600 border-green-500/30 text-[10px] px-1.5 py-0"
-                                      >
-                                        {subItem.badge}
-                                      </Badge>
-                                    )}
-                                  </Link>
-                                </SidebarMenuSubButton>
-                              </SidebarMenuSubItem>
-                            ))}
-                          </SidebarMenuSub>
-                        </CollapsibleContent>
-                      </div>
-                    </Collapsible>
-                  ) : (
-                    <SidebarMenuButton asChild isActive={pathname === item.url}>
-                      <Link href={item.url!} className="group relative overflow-hidden">
-                        <div className="relative z-10 flex items-center gap-3">
-                          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-purple-500/10 to-pink-500/10 transition-all duration-300 group-hover:scale-110 group-hover:from-purple-500/20 group-hover:to-pink-500/20 group-data-[active=true]:from-purple-500/20 group-data-[active=true]:to-pink-500/20 group-data-[active=true]:shadow-lg group-data-[active=true]:shadow-purple-500/20">
-                            <item.icon className="h-[18px] w-[18px] transition-transform duration-300 group-hover:scale-110 group-data-[active=true]:scale-110" />
-                          </div>
-                          <span className="whitespace-nowrap font-medium">{item.title}</span>
-                        </div>
-                        {item.badge && (
-                          <Badge
-                            variant="destructive"
-                            className="ml-auto shadow-lg shadow-destructive/30 animate-pulse"
-                          >
-                            {item.badge}
-                          </Badge>
-                        )}
-                      </Link>
-                    </SidebarMenuButton>
-                  )}
-                </SidebarMenuItem>
+                <Collapsible key={item.title} asChild className="group/collapsible">
+                  <SidebarMenuItem>
+                    <CollapsibleTrigger asChild>
+                      <SidebarMenuButton tooltip={item.title}>
+                        <item.icon />
+                        <span>{item.title}</span>
+                        <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+                      </SidebarMenuButton>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent>
+                      <SidebarMenuSub>
+                        {item.items?.map((subItem) => (
+                          <SidebarMenuSubItem key={subItem.title}>
+                            <SidebarMenuSubButton asChild isActive={pathname === subItem.url}>
+                              <Link href={subItem.url}>
+                                <subItem.icon />
+                                <span>{subItem.title}</span>
+                              </Link>
+                            </SidebarMenuSubButton>
+                          </SidebarMenuSubItem>
+                        ))}
+                      </SidebarMenuSub>
+                    </CollapsibleContent>
+                  </SidebarMenuItem>
+                </Collapsible>
               ))}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
 
-        <div className="my-4 h-px bg-gradient-to-r from-transparent via-sidebar-border to-transparent" />
+        {/* Investissements */}
+        {/* <SidebarGroup>
+          <SidebarGroupLabel asChild>
+            <div>Investissements</div>
+          </SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {navigationData.investments.map((item) => (
+                <Collapsible key={item.title} asChild className="group/collapsible">
+                  <SidebarMenuItem>
+                    <CollapsibleTrigger asChild>
+                      <SidebarMenuButton tooltip={item.title}>
+                        <item.icon />
+                        <span>{item.title}</span>
+                        <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+                      </SidebarMenuButton>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent>
+                      <SidebarMenuSub>
+                        {item.items?.map((subItem) => (
+                          <SidebarMenuSubItem key={subItem.title}>
+                            <SidebarMenuSubButton asChild isActive={pathname === subItem.url}>
+                              <Link href={subItem.url}>
+                                <subItem.icon />
+                                <span>{subItem.title}</span>
+                              </Link>
+                            </SidebarMenuSubButton>
+                          </SidebarMenuSubItem>
+                        ))}
+                      </SidebarMenuSub>
+                    </CollapsibleContent>
+                  </SidebarMenuItem>
+                </Collapsible>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup> */}
 
+        {/* Support */}
         <SidebarGroup>
-          <SidebarGroupLabel className="mb-2 flex items-center gap-2 px-3 text-[10px] font-black uppercase tracking-[0.15em] text-sidebar-foreground/40">
-            <HelpCircle className="h-3 w-3" />
-            <span>Aide & Support</span>
-            <div className="ml-auto h-px flex-1 bg-gradient-to-r from-sidebar-foreground/20 to-transparent" />
+          <SidebarGroupLabel asChild>
+            <div>Support</div>
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
@@ -406,33 +501,22 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>): 
                     <Collapsible asChild className="group/collapsible">
                       <div>
                         <CollapsibleTrigger asChild>
-                          <SidebarMenuButton tooltip={item.title} className="group relative overflow-hidden">
-                            <div className="relative z-10 flex items-center gap-3">
-                              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-orange-500/10 to-red-500/10 transition-all duration-300 group-hover:scale-110 group-hover:from-orange-500/20 group-hover:to-red-500/20">
-                                <item.icon className="h-[18px] w-[18px] transition-transform duration-300 group-hover:scale-110" />
-                              </div>
-                              <span className="whitespace-nowrap font-medium">{item.title}</span>
-                            </div>
-                            <ChevronRight className="ml-auto h-4 w-4 transition-all duration-500 group-data-[state=open]/collapsible:rotate-90 group-data-[state=open]/collapsible:text-primary" />
+                          <SidebarMenuButton tooltip={item.title}>
+                            <item.icon />
+                            <span>{item.title}</span>
+                            <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
                           </SidebarMenuButton>
                         </CollapsibleTrigger>
-                        <CollapsibleContent className="transition-all duration-300 data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down">
-                          <SidebarMenuSub className="ml-2 border-l-2 border-gradient-to-b from-primary/30 to-transparent">
+                        <CollapsibleContent>
+                          <SidebarMenuSub>
                             {item.items.map((subItem) => (
                               <SidebarMenuSubItem key={subItem.title}>
                                 <SidebarMenuSubButton asChild isActive={pathname === subItem.url}>
-                                  <Link href={subItem.url} className="group relative">
-                                    <div className="flex items-center gap-2.5">
-                                      <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-primary/5 to-secondary/5 transition-all duration-300 group-hover:scale-110 group-hover:from-primary/15 group-hover:to-secondary/15 group-data-[active=true]:from-primary/15 group-data-[active=true]:to-secondary/15">
-                                        <subItem.icon className="h-4 w-4" />
-                                      </div>
-                                      <span className="whitespace-nowrap">{subItem.title}</span>
-                                    </div>
+                                  <Link href={subItem.url}>
+                                    <subItem.icon />
+                                    <span>{subItem.title}</span>
                                     {subItem.badge && (
-                                      <Badge
-                                        variant="outline"
-                                        className="ml-auto bg-green-500/10 text-green-600 border-green-500/30 text-[10px] px-1.5 py-0"
-                                      >
+                                      <Badge variant="outline" className="ml-auto">
                                         {subItem.badge}
                                       </Badge>
                                     )}
@@ -446,13 +530,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>): 
                     </Collapsible>
                   ) : (
                     <SidebarMenuButton asChild isActive={pathname === item.url}>
-                      <Link href={item.url!} className="group relative overflow-hidden">
-                        <div className="relative z-10 flex items-center gap-3">
-                          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-orange-500/10 to-red-500/10 transition-all duration-300 group-hover:scale-110 group-hover:from-orange-500/20 group-hover:to-red-500/20 group-data-[active=true]:from-orange-500/20 group-data-[active=true]:to-red-500/20 group-data-[active=true]:shadow-lg group-data-[active=true]:shadow-orange-500/20">
-                            <item.icon className="h-[18px] w-[18px] transition-transform duration-300 group-hover:scale-110 group-data-[active=true]:scale-110" />
-                          </div>
-                          <span className="whitespace-nowrap font-medium">{item.title}</span>
-                        </div>
+                      <Link href={item.url!}>
+                        <item.icon />
+                        <span>{item.title}</span>
                       </Link>
                     </SidebarMenuButton>
                   )}
@@ -461,79 +541,98 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>): 
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+
+        {/* Autres */}
+        <SidebarGroup>
+          <SidebarGroupLabel asChild>
+            <div>Autres</div>
+          </SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {navigationData.other.map((item) => (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton asChild isActive={pathname === item.url}>
+                    <Link href={item.url}>
+                      <item.icon />
+                      <span>{item.title}</span>
+                      {item.badge && (
+                        <Badge variant="destructive" className="ml-auto">
+                          {item.badge}
+                        </Badge>
+                      )}
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="relative overflow-hidden border-t border-sidebar-border/30 bg-gradient-to-br from-primary/5 via-transparent to-secondary/5 p-3 backdrop-blur-xl">
-        <div className="absolute inset-0 bg-gradient-to-t from-primary/5 to-transparent" />
-        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
+      <SidebarFooter>
         <SidebarMenu>
           <SidebarMenuItem>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <SidebarMenuButton
                   size="lg"
-                  className="group relative overflow-hidden data-[state=open]:bg-gradient-to-r data-[state=open]:from-sidebar-accent/60 data-[state=open]:to-sidebar-accent/30 hover:bg-gradient-to-r hover:from-sidebar-accent/40 hover:to-sidebar-accent/20 hover:shadow-lg transition-all duration-300"
+                  className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
                 >
-                  <div className="relative z-10 flex items-center gap-3">
-                    <Avatar className="h-10 w-10 rounded-2xl border-2 border-primary/30 shadow-lg shadow-primary/20 transition-all duration-300 group-hover:scale-105 group-hover:border-primary/50 group-hover:shadow-primary/30">
-                      <AvatarImage src="/placeholder-user.jpg" alt={userData?.fullName || "Utilisateur"} />
-                      <AvatarFallback className="rounded-2xl bg-gradient-to-br from-primary via-primary/90 to-secondary text-white font-bold text-sm">
-                        {userData?.fullName ? getInitials(userData.fullName) : "U"}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="grid flex-1 text-left text-sm leading-tight">
-                      <span className="truncate font-bold">{userData?.fullName || "Utilisateur"}</span>
-                      <span className="truncate text-xs text-muted-foreground/80">
-                        {userData?.email || "Client Particulier"}
-                      </span>
-                    </div>
+                  <Avatar className="h-8 w-8 rounded-lg">
+                    <AvatarImage src="/placeholder-user.jpg" alt={userData?.fullName || "Utilisateur"} />
+                    <AvatarFallback className="rounded-lg bg-gradient-to-br from-blue-600 to-blue-800 text-white">
+                      {userData?.fullName ? getInitials(userData.fullName) : "U"}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="grid flex-1 text-left text-sm leading-tight">
+                    <span className="truncate font-semibold">{userData?.fullName || "Utilisateur"}</span>
+                    <span className="truncate text-xs text-muted-foreground">
+                      {userData?.email || "Client Particulier"}
+                    </span>
                   </div>
-                  <ChevronRight className="ml-auto h-4 w-4 transition-all duration-300 group-hover:translate-x-1 group-hover:text-primary" />
+                  <ChevronRight className="ml-auto size-4" />
                 </SidebarMenuButton>
               </DropdownMenuTrigger>
               <DropdownMenuContent
-                className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-2xl border-sidebar-border/50 bg-sidebar/95 backdrop-blur-xl shadow-2xl"
+                className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-lg"
                 side="bottom"
                 align="end"
-                sideOffset={8}
+                sideOffset={4}
               >
                 <DropdownMenuLabel className="p-0 font-normal">
-                  <div className="flex items-center gap-3 px-2 py-2 text-left text-sm">
-                    <Avatar className="h-10 w-10 rounded-2xl border-2 border-primary/30 shadow-lg">
+                  <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
+                    <Avatar className="h-8 w-8 rounded-lg">
                       <AvatarImage src="/placeholder-user.jpg" alt={userData?.fullName || "Utilisateur"} />
-                      <AvatarFallback className="rounded-2xl bg-gradient-to-br from-primary to-secondary text-white font-bold">
+                      <AvatarFallback className="rounded-lg bg-gradient-to-br from-blue-600 to-blue-800 text-white">
                         {userData?.fullName ? getInitials(userData.fullName) : "U"}
                       </AvatarFallback>
                     </Avatar>
                     <div className="grid flex-1 text-left text-sm leading-tight">
-                      <span className="truncate font-bold">{userData?.fullName || "Utilisateur"}</span>
+                      <span className="truncate font-semibold">{userData?.fullName || "Utilisateur"}</span>
                       <span className="truncate text-xs text-muted-foreground">
                         {userData?.email || "email@example.com"}
                       </span>
                     </div>
                   </div>
                 </DropdownMenuLabel>
-                <DropdownMenuSeparator className="bg-sidebar-border/50" />
-                <DropdownMenuItem
-                  asChild
-                  className="cursor-pointer rounded-lg transition-all duration-200 hover:bg-gradient-to-r hover:from-sidebar-accent/60 hover:to-sidebar-accent/30"
-                >
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
                   <Link href="/profile" className="flex items-center">
-                    <User className="mr-3 h-4 w-4" />
+                    <User className="mr-2 h-4 w-4" />
                     <span>Mon profil</span>
                   </Link>
                 </DropdownMenuItem>
-                <DropdownMenuItem className="cursor-pointer rounded-lg transition-all duration-200 hover:bg-gradient-to-r hover:from-sidebar-accent/60 hover:to-sidebar-accent/30">
-                  <Settings className="mr-3 h-4 w-4" />
+                <DropdownMenuItem>
+                  <Settings className="mr-2 h-4 w-4" />
                   <span>Paramètres</span>
                 </DropdownMenuItem>
-                <DropdownMenuItem className="cursor-pointer rounded-lg transition-all duration-200 hover:bg-gradient-to-r hover:from-sidebar-accent/60 hover:to-sidebar-accent/30">
-                  <HelpCircle className="mr-3 h-4 w-4" />
+                <DropdownMenuItem>
+                  <HelpCircle className="mr-2 h-4 w-4" />
                   <span>Aide</span>
                 </DropdownMenuItem>
-                <DropdownMenuSeparator className="bg-sidebar-border/50" />
-                <DropdownMenuItem className="cursor-pointer rounded-lg text-destructive transition-all duration-200 hover:bg-destructive/10 focus:text-destructive">
-                  <LogOut className="mr-3 h-4 w-4" />
+                <DropdownMenuSeparator />
+                <DropdownMenuItem>
+                  <LogOut className="mr-2 h-4 w-4" />
                   <span>Se déconnecter</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
