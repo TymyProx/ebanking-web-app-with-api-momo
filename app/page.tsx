@@ -1,8 +1,7 @@
 import Link from "next/link"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Eye, Send, Receipt, ArrowUpRight, ArrowDownRight, Plus, Calendar, AlertCircle } from "lucide-react"
+import { Eye, Send, Receipt, ArrowUpRight, ArrowDownRight, Plus } from "lucide-react"
 import { getTransactions } from "@/app/transfers/new/actions"
 import { getAccounts } from "@/app/accounts/actions"
 import { AccountsCarousel } from "@/components/accounts-carousel"
@@ -47,11 +46,16 @@ export default async function Dashboard() {
 
   return (
     <div className="space-y-8 fade-in">
-      <div className="space-y-2">
-        <h1 className="text-3xl font-heading font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-          Tableau de bord
-        </h1>
-        <p className="text-muted-foreground text-lg">Bienvenue sur votre espace Astra eBanking</p>
+      <div className="relative">
+        <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-secondary/10 to-primary/10 rounded-2xl blur-3xl -z-10" />
+        <div className="flex items-center justify-between p-6 bg-white/80 backdrop-blur-sm rounded-2xl border border-border/50 shadow-sm">
+          <div className="space-y-1">
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-primary via-secondary to-primary bg-clip-text text-transparent">
+              Tableau de bord
+            </h1>
+            <p className="text-muted-foreground">Bienvenue sur votre espace Astra eBanking</p>
+          </div>
+        </div>
       </div>
 
       <AccountsCarousel accounts={accounts} />
