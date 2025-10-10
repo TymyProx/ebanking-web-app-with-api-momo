@@ -393,7 +393,7 @@ export default function NewTransferPage() {
     <div className="space-y-6">
       <div className="space-y-2">
         <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-          Nouveau virement
+          Effectuer un virement
         </h1>
         <p className="text-muted-foreground">Effectuer un virement vers un bénéficiaire ou un autre compte</p>
       </div>
