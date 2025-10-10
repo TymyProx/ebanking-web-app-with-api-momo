@@ -57,7 +57,7 @@ export default function LoginPage() {
           <Image src="/images/logo-bng.png" alt="BNG Logo" width={120} height={40} className="object-contain" />
         </div>
         <div className="relative w-full h-full">
-          <Image src="/images/login-hero.jpg" alt="Happy family" fill className="object-cover" priority />
+          <Image src="/images/welcom.png" alt="Welcome" fill className="object-cover" priority />
         </div>
       </div>
 
