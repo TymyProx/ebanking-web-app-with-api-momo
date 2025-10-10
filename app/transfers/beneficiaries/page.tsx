@@ -296,38 +296,45 @@ export default function BeneficiariesPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Gestion des bénéficiaires</h1>
-          <p className="text-gray-600">Gérez vos destinataires de virements</p>
+    <div className="space-y-8">
+      <div className="relative">
+        <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-secondary/10 to-primary/10 rounded-2xl blur-3xl -z-10" />
+        <div className="p-6 bg-white/80 backdrop-blur-sm rounded-2xl border-2 border-border/50 shadow-lg">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-primary via-secondary to-primary bg-clip-text text-transparent">
+                Gestion des bénéficiaires
+              </h1>
+              <p className="text-muted-foreground mt-1">Gérez vos destinataires de virements</p>
+            </div>
+
+            <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+              <DialogTrigger asChild>
+                <Button onClick={resetForm} className="bg-gradient-to-r from-primary to-secondary hover:opacity-90">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Ajouter un bénéficiaire
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[500px]">
+                <DialogHeader>
+                  <DialogTitle>Ajouter un bénéficiaire</DialogTitle>
+                </DialogHeader>
+
+                <BeneficiaryForm
+                  successMessage={addState?.success ? "✅ Bénéficiaire ajouté avec succès." : undefined}
+                  errorMessage={addState?.error}
+                  onMessageClear={() => {
+                    // Clear any local message states - the form component handles its own cleanup
+                  }}
+                  onSubmit={handleAddBeneficiary}
+                  onCancel={() => setIsAddDialogOpen(false)}
+                  isPending={isAddPending}
+                  onSuccess={handleFormSuccess}
+                />
+              </DialogContent>
+            </Dialog>
+          </div>
         </div>
-
-        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={resetForm}>
-              <Plus className="w-4 h-4 mr-2" />
-              Ajouter un bénéficiaire
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[500px]">
-            <DialogHeader>
-              <DialogTitle>Ajouter un bénéficiaire</DialogTitle>
-            </DialogHeader>
-
-            <BeneficiaryForm
-              successMessage={addState?.success ? "✅ Bénéficiaire ajouté avec succès." : undefined}
-              errorMessage={addState?.error}
-              onMessageClear={() => {
-                // Clear any local message states - the form component handles its own cleanup
-              }}
-              onSubmit={handleAddBeneficiary}
-              onCancel={() => setIsAddDialogOpen(false)}
-              isPending={isAddPending}
-              onSuccess={handleFormSuccess}
-            />
-          </DialogContent>
-        </Dialog>
       </div>
 
       {showAddSuccess && (
@@ -372,8 +379,9 @@ export default function BeneficiariesPage() {
         </Alert>
       )}
 
-      <Card>
-        <CardContent className="pt-6">
+      <Card className="border-2 shadow-lg relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-secondary/5" />
+        <CardContent className="pt-6 relative">
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
@@ -401,50 +409,68 @@ export default function BeneficiariesPage() {
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="pt-6">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <Card className="border-2 hover:border-primary/50 transition-all duration-300 shadow-lg relative overflow-hidden group">
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-blue-500/10 group-hover:from-blue-500/10 group-hover:to-blue-500/20 transition-all duration-300" />
+          <CardContent className="pt-6 relative">
             <div className="flex items-center">
-              <Users className="h-8 w-8 text-blue-600" />
+              <div className="p-3 rounded-xl bg-gradient-to-br from-blue-500/20 to-blue-600/20">
+                <Users className="h-8 w-8 text-blue-600" />
+              </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Total</p>
-                <p className="text-2xl font-bold">{beneficiaries.length}</p>
+                <p className="text-sm font-medium text-muted-foreground">Total</p>
+                <p className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent">
+                  {beneficiaries.length}
+                </p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardContent className="pt-6">
+        <Card className="border-2 hover:border-yellow-500/50 transition-all duration-300 shadow-lg relative overflow-hidden group">
+          <div className="absolute inset-0 bg-gradient-to-br from-yellow-500/5 to-yellow-500/10 group-hover:from-yellow-500/10 group-hover:to-yellow-500/20 transition-all duration-300" />
+          <CardContent className="pt-6 relative">
             <div className="flex items-center">
-              <Star className="h-8 w-8 text-yellow-600" />
+              <div className="p-3 rounded-xl bg-gradient-to-br from-yellow-500/20 to-yellow-600/20">
+                <Star className="h-8 w-8 text-yellow-600" />
+              </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Favoris</p>
-                <p className="text-2xl font-bold">{beneficiaries.filter((b) => b.favorite).length}</p>
+                <p className="text-sm font-medium text-muted-foreground">Favoris</p>
+                <p className="text-3xl font-bold bg-gradient-to-r from-yellow-600 to-yellow-800 bg-clip-text text-transparent">
+                  {beneficiaries.filter((b) => b.favorite).length}
+                </p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardContent className="pt-6">
+        <Card className="border-2 hover:border-green-500/50 transition-all duration-300 shadow-lg relative overflow-hidden group">
+          <div className="absolute inset-0 bg-gradient-to-br from-green-500/5 to-green-500/10 group-hover:from-green-500/10 group-hover:to-green-500/20 transition-all duration-300" />
+          <CardContent className="pt-6 relative">
             <div className="flex items-center">
-              <Building className="h-8 w-8 text-green-600" />
+              <div className="p-3 rounded-xl bg-gradient-to-br from-green-500/20 to-green-600/20">
+                <Building className="h-8 w-8 text-green-600" />
+              </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">BNG</p>
-                <p className="text-2xl font-bold">{beneficiaries.filter((b) => b.type === "BNG-BNG").length}</p>
+                <p className="text-sm font-medium text-muted-foreground">BNG</p>
+                <p className="text-3xl font-bold bg-gradient-to-r from-green-600 to-green-800 bg-clip-text text-transparent">
+                  {beneficiaries.filter((b) => b.type === "BNG-BNG").length}
+                </p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardContent className="pt-6">
+        <Card className="border-2 hover:border-purple-500/50 transition-all duration-300 shadow-lg relative overflow-hidden group">
+          <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 to-purple-500/10 group-hover:from-purple-500/10 group-hover:to-purple-500/20 transition-all duration-300" />
+          <CardContent className="pt-6 relative">
             <div className="flex items-center">
-              <Globe className="h-8 w-8 text-purple-600" />
+              <div className="p-3 rounded-xl bg-gradient-to-br from-purple-500/20 to-purple-600/20">
+                <Globe className="h-8 w-8 text-purple-600" />
+              </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">International</p>
-                <p className="text-2xl font-bold">
+                <p className="text-sm font-medium text-muted-foreground">International</p>
+                <p className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-purple-800 bg-clip-text text-transparent">
                   {beneficiaries.filter((b) => b.type === "BNG-INTERNATIONAL").length}
                 </p>
               </div>
@@ -453,31 +479,38 @@ export default function BeneficiariesPage() {
         </Card>
       </div>
 
-      <Card>
-        <CardHeader>
+      <Card className="border-2 shadow-lg relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-secondary/5" />
+        <CardHeader className="relative">
           <CardTitle className="flex items-center">
-            <Users className="w-5 h-5 mr-2" />
+            <div className="p-2 rounded-lg bg-gradient-to-br from-primary to-secondary mr-3">
+              <Users className="w-5 h-5 text-white" />
+            </div>
             Mes bénéficiaires ({filteredBeneficiaries.length})
           </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="relative">
           {isLoading ? (
-            <div className="text-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-              <p className="text-gray-500">Chargement des bénéficiaires...</p>
+            <div className="text-center py-12">
+              <div className="p-4 rounded-full bg-gradient-to-br from-primary/10 to-secondary/10 inline-block mb-4">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+              <p className="text-muted-foreground">Chargement des bénéficiaires...</p>
             </div>
           ) : filteredBeneficiaries.length === 0 ? (
-            <div className="text-center py-8">
-              <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-500">Aucun bénéficiaire trouvé</p>
-              <p className="text-sm text-gray-400">Ajoutez votre premier bénéficiaire pour commencer</p>
+            <div className="text-center py-12">
+              <div className="p-4 rounded-full bg-gradient-to-br from-primary/10 to-secondary/10 inline-block mb-4">
+                <Users className="w-12 h-12 text-primary" />
+              </div>
+              <p className="text-muted-foreground font-medium">Aucun bénéficiaire trouvé</p>
+              <p className="text-sm text-muted-foreground/70 mt-1">Ajoutez votre premier bénéficiaire pour commencer</p>
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-3">
               {filteredBeneficiaries.map((beneficiary) => (
                 <div
                   key={beneficiary.id}
-                  className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors"
+                  className="flex items-center justify-between p-4 border-2 rounded-xl hover:border-primary/50 hover:shadow-md transition-all duration-300 bg-white/50 backdrop-blur-sm group"
                 >
                   <div className="flex items-center space-x-4">
                     <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center">
