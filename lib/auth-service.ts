@@ -7,12 +7,22 @@ if (!API_BASE_URL) {
   throw new Error("API_BASE_URL environment variable is required")
 }
 
-// Configuration de l'instance axios pour l'authentification
 const authAxios = axios.create({
   baseURL: API_BASE_URL,
+  timeout: 30000, // 30 secondes
   headers: {
     "Content-Type": "application/json",
+    Accept: "application/json",
   },
+  // Accepter les certificats auto-signés en développement
+  ...(process.env.NODE_TLS_REJECT_UNAUTHORIZED === "0" && {
+    httpsAgent:
+      typeof window === "undefined"
+        ? new (require("https").Agent)({
+            rejectUnauthorized: false,
+          })
+        : undefined,
+  }),
 })
 
 // Intercepteur pour ajouter le token aux requêtes
@@ -76,14 +86,25 @@ export interface User {
 }
 
 export class AuthService {
-  // Méthode pour se connecter
   static async signIn(email: string, password: string, TENANT_ID: string, invitationToken = "") {
     try {
+      console.log("[v0] Tentative de connexion:", {
+        email,
+        TENANT_ID,
+        baseURL: authAxios.defaults.baseURL,
+        endpoint: "/auth/sign-in",
+      })
+
       const response = await authAxios.post("/auth/sign-in", {
         email,
         password,
         TENANT_ID,
         invitationToken,
+      })
+
+      console.log("[v0] Réponse reçue:", {
+        status: response.status,
+        hasData: !!response.data,
       })
 
       const token = response.data
@@ -95,8 +116,43 @@ export class AuthService {
 
       throw new Error("Token non reçu")
     } catch (error: any) {
-      console.error("Erreur de connexion:", error)
-      throw new Error(error.response?.data?.message || "Erreur de connexion")
+      console.error("[v0] Erreur de connexion détaillée:", {
+        message: error.message,
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        headers: error.response?.headers,
+        config: {
+          url: error.config?.url,
+          baseURL: error.config?.baseURL,
+          method: error.config?.method,
+        },
+      })
+
+      if (error.code === "ECONNREFUSED") {
+        throw new Error("Impossible de se connecter au serveur. Vérifiez que le backend est démarré.")
+      }
+
+      if (error.code === "ETIMEDOUT" || error.code === "ECONNABORTED") {
+        throw new Error("Le serveur met trop de temps à répondre. Réessayez plus tard.")
+      }
+
+      if (error.response?.status === 500) {
+        throw new Error(
+          error.response?.data?.message ||
+            "Erreur serveur (500). Vérifiez les logs du backend ou contactez l'administrateur.",
+        )
+      }
+
+      if (error.response?.status === 401) {
+        throw new Error("Email ou mot de passe incorrect.")
+      }
+
+      if (error.response?.status === 400) {
+        throw new Error(error.response?.data?.message || "Données invalides. Vérifiez vos informations.")
+      }
+
+      throw new Error(error.response?.data?.message || error.message || "Erreur de connexion inconnue")
     }
   }
 

@@ -29,6 +29,18 @@ export default function LoginPage() {
       const password = formData.get("password") as string
 
       const tenantId = process.env.NEXT_PUBLIC_TENANT_ID ?? ""
+
+      console.log("[v0] Variables d'environnement:", {
+        hasTenantId: !!tenantId,
+        tenantId: tenantId || "MANQUANT",
+      })
+
+      if (!tenantId) {
+        setError("Configuration manquante: TENANT_ID non défini")
+        setIsLoading(false)
+        return
+      }
+
       const invitationToken = ""
 
       const loginResult = await AuthService.signIn(email, password, tenantId, invitationToken)
@@ -43,6 +55,7 @@ export default function LoginPage() {
         router.push("/")
       }
     } catch (err: any) {
+      console.error("[v0] Erreur dans handleSubmit:", err)
       setError(err.message)
     } finally {
       setIsLoading(false)
