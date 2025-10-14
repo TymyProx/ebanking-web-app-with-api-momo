@@ -28,20 +28,30 @@ export default function LoginPage() {
       const email = formData.get("email") as string
       const password = formData.get("password") as string
 
-      const tenantId = process.env.NEXT_PUBLIC_TENANT_ID ?? ""
+      const tenantId = process.env.NEXT_PUBLIC_TENANT_ID || ""
 
-      console.log("[v0] Variables d'environnement:", {
-        hasTenantId: !!tenantId,
-        tenantId: tenantId || "MANQUANT",
+      console.log("[v0] Configuration de connexion:", {
+        hasNextPublicTenantId: !!process.env.NEXT_PUBLIC_TENANT_ID,
+        tenantIdValue: tenantId || "VIDE",
+        allEnvKeys: Object.keys(process.env).filter((k) => k.includes("TENANT")),
       })
 
       if (!tenantId) {
-        setError("Configuration manquante: TENANT_ID non défini")
+        setError(
+          "Configuration manquante: La variable d'environnement NEXT_PUBLIC_TENANT_ID n'est pas définie. Veuillez l'ajouter dans la section 'Vars' de la barre latérale.",
+        )
+        console.error("[v0] NEXT_PUBLIC_TENANT_ID est manquant dans les variables d'environnement")
         setIsLoading(false)
         return
       }
 
       const invitationToken = ""
+
+      console.log("[v0] Tentative de connexion avec:", {
+        email,
+        tenantId,
+        hasPassword: !!password,
+      })
 
       const loginResult = await AuthService.signIn(email, password, tenantId, invitationToken)
 
