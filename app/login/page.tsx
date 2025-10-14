@@ -28,30 +28,8 @@ export default function LoginPage() {
       const email = formData.get("email") as string
       const password = formData.get("password") as string
 
-      const tenantId = process.env.NEXT_PUBLIC_TENANT_ID || ""
-
-      console.log("[v0] Configuration de connexion:", {
-        hasNextPublicTenantId: !!process.env.NEXT_PUBLIC_TENANT_ID,
-        tenantIdValue: tenantId || "VIDE",
-        allEnvKeys: Object.keys(process.env).filter((k) => k.includes("TENANT")),
-      })
-
-      if (!tenantId) {
-        setError(
-          "Configuration manquante: La variable d'environnement NEXT_PUBLIC_TENANT_ID n'est pas définie. Veuillez l'ajouter dans la section 'Vars' de la barre latérale.",
-        )
-        console.error("[v0] NEXT_PUBLIC_TENANT_ID est manquant dans les variables d'environnement")
-        setIsLoading(false)
-        return
-      }
-
+      const tenantId = process.env.TENANT_ID ?? ""
       const invitationToken = ""
-
-      console.log("[v0] Tentative de connexion avec:", {
-        email,
-        tenantId,
-        hasPassword: !!password,
-      })
 
       const loginResult = await AuthService.signIn(email, password, tenantId, invitationToken)
 
@@ -65,7 +43,6 @@ export default function LoginPage() {
         router.push("/")
       }
     } catch (err: any) {
-      console.error("[v0] Erreur dans handleSubmit:", err)
       setError(err.message)
     } finally {
       setIsLoading(false)
@@ -73,19 +50,27 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex">
+    <div className="min-h-screen flex bg-gray-100">
       {/* Left side - Hero Image */}
-      <div className="hidden lg:flex lg:w-1/2 relative bg-gray-100">
-        <div className="absolute top-8 left-8 z-10">
-          <Image src="/images/logo-bng.png" alt="BNG Logo" width={120} height={40} className="object-contain" />
-        </div>
-        <div className="relative w-full h-full">
-          <Image src="/images/login-hero.jpg" alt="Happy family" fill className="object-cover" priority />
+      <div className="hidden lg:flex lg:w-1/2 relative">
+        <div className="relative w-full h-full p-8">
+          <div className="relative w-full h-full overflow-hidden rounded-2xl shadow-lg border backdrop-blur-sm">
+            <Image src="/images/welcom.png" alt="Welcome" fill className="object-cover rounded-2xl" priority />
+            <div className="absolute top-12 left-6 z-10">
+              <Image
+                src="/images/logo-bng.png"
+                alt="BNG Logo"
+                width={180}
+                height={80}
+                className="object-contain drop-shadow-md"
+              />
+            </div>
+          </div>
         </div>
       </div>
 
       {/* Right side - Login Form */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-8 bg-white">
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-8">
         <div className="w-full max-w-md space-y-8">
           {/* Mobile Logo */}
           <div className="lg:hidden flex justify-center mb-8">
@@ -122,7 +107,7 @@ export default function LoginPage() {
                     name="email"
                     type="email"
                     placeholder="Nom d'utilisateur"
-                    className="h-12 pr-10 border-gray-300 focus:border-[hsl(123,38%,57%)] focus:ring-[hsl(123,38%,57%)]"
+                    className="h-12 pr-10 bg-white border-gray-300 focus:border-[hsl(123,38%,57%)] focus:ring-[hsl(123,38%,57%)]"
                     required
                     disabled={isLoading}
                   />
@@ -141,7 +126,7 @@ export default function LoginPage() {
                     name="password"
                     type={showPassword ? "text" : "password"}
                     placeholder="Mot de passe"
-                    className="h-12 pr-10 border-gray-300 focus:border-[hsl(123,38%,57%)] focus:ring-[hsl(123,38%,57%)]"
+                    className="h-12 pr-10 bg-white border-gray-300 focus:border-[hsl(123,38%,57%)] focus:ring-[hsl(123,38%,57%)]"
                     required
                     disabled={isLoading}
                   />
