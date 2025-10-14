@@ -7,22 +7,12 @@ if (!API_BASE_URL) {
   throw new Error("API_BASE_URL environment variable is required")
 }
 
+// Configuration de l'instance axios pour l'authentification
 const authAxios = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 10000, // Réduit à 10 secondes pour une réponse plus rapide
   headers: {
     "Content-Type": "application/json",
-    Accept: "application/json",
   },
-  // Accepter les certificats auto-signés en développement
-  ...(process.env.NODE_TLS_REJECT_UNAUTHORIZED === "0" && {
-    httpsAgent:
-      typeof window === "undefined"
-        ? new (require("https").Agent)({
-            rejectUnauthorized: false,
-          })
-        : undefined,
-  }),
 })
 
 // Intercepteur pour ajouter le token aux requêtes
@@ -86,28 +76,14 @@ export interface User {
 }
 
 export class AuthService {
+  // Méthode pour se connecter
   static async signIn(email: string, password: string, TENANT_ID: string, invitationToken = "") {
     try {
-      console.log("[v0] Tentative de connexion:", {
-        email,
-        TENANT_ID,
-        baseURL: authAxios.defaults.baseURL,
-        endpoint: "/auth/sign-in",
-        fullURL: `${authAxios.defaults.baseURL}/auth/sign-in`,
-        isClient: typeof window !== "undefined",
-        timeout: authAxios.defaults.timeout,
-      })
-
       const response = await authAxios.post("/auth/sign-in", {
         email,
         password,
         TENANT_ID,
         invitationToken,
-      })
-
-      console.log("[v0] Réponse reçue:", {
-        status: response.status,
-        hasData: !!response.data,
       })
 
       const token = response.data
@@ -119,81 +95,22 @@ export class AuthService {
 
       throw new Error("Token non reçu")
     } catch (error: any) {
-      console.error("[v0] Erreur de connexion détaillée:", {
-        // Informations de base sur l'erreur
-        errorName: error.name,
-        errorCode: error.code,
-        errorMessage: error.message,
+      console.error("Erreur de connexion:", error)
+      let errorMessage = "Erreur de connexion"
 
-        // Informations sur la réponse HTTP (si disponible)
-        status: error.response?.status,
-        statusText: error.response?.statusText,
-        responseData: error.response?.data,
-        responseHeaders: error.response?.headers,
-
-        // Informations sur la requête
-        requestURL: error.config?.url,
-        requestBaseURL: error.config?.baseURL,
-        requestMethod: error.config?.method,
-        requestHeaders: error.config?.headers,
-
-        // Informations réseau
-        isNetworkError: !error.response && !error.request,
-        hasRequest: !!error.request,
-        hasResponse: !!error.response,
-
-        // Erreur complète pour debug
-        fullError: JSON.stringify(error, Object.getOwnPropertyNames(error)),
-      })
-
-      // Erreur réseau (pas de réponse du serveur)
-      if (!error.response && error.request) {
-        console.error("[v0] Erreur réseau - Le serveur n'a pas répondu:", {
-          possibleCauses: [
-            "Le serveur backend n'est pas démarré",
-            "Problème CORS - Le navigateur bloque la requête",
-            "Certificat SSL invalide",
-            "Firewall ou réseau bloque la connexion",
-            "L'adresse IP/port est incorrecte",
-          ],
-        })
-        throw new Error(
-          "Impossible de contacter le serveur. Vérifiez que le backend est accessible et que CORS est configuré correctement.",
-        )
+      if (error.response?.data) {
+        // Try different possible error message formats from API
+        errorMessage =
+          error.response.data.message ||
+          error.response.data.error ||
+          error.response.data.msg ||
+          (typeof error.response.data === "string" ? error.response.data : null) ||
+          errorMessage
+      } else if (error.message) {
+        errorMessage = error.message
       }
 
-      // Timeout
-      if (error.code === "ECONNABORTED" || error.message?.includes("timeout")) {
-        throw new Error("Le serveur met trop de temps à répondre (timeout après 10s). Réessayez plus tard.")
-      }
-
-      // Connexion refusée
-      if (error.code === "ECONNREFUSED") {
-        throw new Error("Connexion refusée. Vérifiez que le serveur backend est démarré sur le bon port.")
-      }
-
-      // Erreurs HTTP spécifiques
-      if (error.response?.status === 500) {
-        throw new Error(
-          error.response?.data?.message ||
-            "Erreur serveur (500). Vérifiez les logs du backend ou contactez l'administrateur.",
-        )
-      }
-
-      if (error.response?.status === 401) {
-        throw new Error("Email ou mot de passe incorrect.")
-      }
-
-      if (error.response?.status === 400) {
-        throw new Error(error.response?.data?.message || "Données invalides. Vérifiez vos informations.")
-      }
-
-      // Erreur générique
-      throw new Error(
-        error.response?.data?.message ||
-          error.message ||
-          "Erreur de connexion inconnue. Consultez la console pour plus de détails.",
-      )
+      throw new Error(errorMessage)
     }
   }
 
@@ -209,7 +126,20 @@ export class AuthService {
       return userData
     } catch (error: any) {
       console.error("Erreur lors de la récupération des informations utilisateur:", error)
-      throw new Error(error.response?.data?.message || "Impossible de récupérer les informations utilisateur")
+      let errorMessage = "Impossible de récupérer les informations utilisateur"
+
+      if (error.response?.data) {
+        errorMessage =
+          error.response.data.message ||
+          error.response.data.error ||
+          error.response.data.msg ||
+          (typeof error.response.data === "string" ? error.response.data : null) ||
+          errorMessage
+      } else if (error.message) {
+        errorMessage = error.message
+      }
+
+      throw new Error(errorMessage)
     }
   }
 
