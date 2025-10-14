@@ -9,7 +9,7 @@ if (!API_BASE_URL) {
 
 const authAxios = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 30000, // 30 secondes
+  timeout: 10000, // Réduit à 10 secondes pour une réponse plus rapide
   headers: {
     "Content-Type": "application/json",
     Accept: "application/json",
@@ -93,6 +93,9 @@ export class AuthService {
         TENANT_ID,
         baseURL: authAxios.defaults.baseURL,
         endpoint: "/auth/sign-in",
+        fullURL: `${authAxios.defaults.baseURL}/auth/sign-in`,
+        isClient: typeof window !== "undefined",
+        timeout: authAxios.defaults.timeout,
       })
 
       const response = await authAxios.post("/auth/sign-in", {
@@ -117,26 +120,59 @@ export class AuthService {
       throw new Error("Token non reçu")
     } catch (error: any) {
       console.error("[v0] Erreur de connexion détaillée:", {
-        message: error.message,
+        // Informations de base sur l'erreur
+        errorName: error.name,
+        errorCode: error.code,
+        errorMessage: error.message,
+
+        // Informations sur la réponse HTTP (si disponible)
         status: error.response?.status,
         statusText: error.response?.statusText,
-        data: error.response?.data,
-        headers: error.response?.headers,
-        config: {
-          url: error.config?.url,
-          baseURL: error.config?.baseURL,
-          method: error.config?.method,
-        },
+        responseData: error.response?.data,
+        responseHeaders: error.response?.headers,
+
+        // Informations sur la requête
+        requestURL: error.config?.url,
+        requestBaseURL: error.config?.baseURL,
+        requestMethod: error.config?.method,
+        requestHeaders: error.config?.headers,
+
+        // Informations réseau
+        isNetworkError: !error.response && !error.request,
+        hasRequest: !!error.request,
+        hasResponse: !!error.response,
+
+        // Erreur complète pour debug
+        fullError: JSON.stringify(error, Object.getOwnPropertyNames(error)),
       })
 
+      // Erreur réseau (pas de réponse du serveur)
+      if (!error.response && error.request) {
+        console.error("[v0] Erreur réseau - Le serveur n'a pas répondu:", {
+          possibleCauses: [
+            "Le serveur backend n'est pas démarré",
+            "Problème CORS - Le navigateur bloque la requête",
+            "Certificat SSL invalide",
+            "Firewall ou réseau bloque la connexion",
+            "L'adresse IP/port est incorrecte",
+          ],
+        })
+        throw new Error(
+          "Impossible de contacter le serveur. Vérifiez que le backend est accessible et que CORS est configuré correctement.",
+        )
+      }
+
+      // Timeout
+      if (error.code === "ECONNABORTED" || error.message?.includes("timeout")) {
+        throw new Error("Le serveur met trop de temps à répondre (timeout après 10s). Réessayez plus tard.")
+      }
+
+      // Connexion refusée
       if (error.code === "ECONNREFUSED") {
-        throw new Error("Impossible de se connecter au serveur. Vérifiez que le backend est démarré.")
+        throw new Error("Connexion refusée. Vérifiez que le serveur backend est démarré sur le bon port.")
       }
 
-      if (error.code === "ETIMEDOUT" || error.code === "ECONNABORTED") {
-        throw new Error("Le serveur met trop de temps à répondre. Réessayez plus tard.")
-      }
-
+      // Erreurs HTTP spécifiques
       if (error.response?.status === 500) {
         throw new Error(
           error.response?.data?.message ||
@@ -152,7 +188,12 @@ export class AuthService {
         throw new Error(error.response?.data?.message || "Données invalides. Vérifiez vos informations.")
       }
 
-      throw new Error(error.response?.data?.message || error.message || "Erreur de connexion inconnue")
+      // Erreur générique
+      throw new Error(
+        error.response?.data?.message ||
+          error.message ||
+          "Erreur de connexion inconnue. Consultez la console pour plus de détails.",
+      )
     }
   }
 
