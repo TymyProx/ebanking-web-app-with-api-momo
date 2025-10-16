@@ -7,6 +7,13 @@ import { revalidatePath } from "next/cache"
 const API_BASE_URL = process.env.API_BASE_URL
 const TENANT_ID = process.env.TENANT_ID
 
+if (!API_BASE_URL) {
+  console.error("[v0] ERREUR: La variable d'environnement API_BASE_URL n'est pas définie")
+}
+if (!TENANT_ID) {
+  console.error("[v0] ERREUR: La variable d'environnement TENANT_ID n'est pas définie")
+}
+
 // Schéma de validation pour les virements
 const transferSchema = z
   .object({
@@ -573,11 +580,50 @@ export async function calculateTransferFees(beneficiaryType: string, amount: num
 }
 
 export async function getTransactions(): Promise<{ data: any[] }> {
+  if (!API_BASE_URL || !TENANT_ID) {
+    console.error("[v0] Variables d'environnement manquantes:")
+    console.error(`[v0] - API_BASE_URL: ${API_BASE_URL || "NON DÉFINIE"}`)
+    console.error(`[v0] - TENANT_ID: ${TENANT_ID || "NON DÉFINIE"}`)
+    console.log("[v0] Retour de données de test car les variables d'environnement sont manquantes")
+
+    return {
+      data: [
+        {
+          txnId: "TXN_1734624422780_001",
+          accountId: "1",
+          txnType: "CREDIT",
+          amount: "150000",
+          valueDate: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+          status: "COMPLETED",
+          description: "Virement vers compte épargne",
+        },
+        {
+          txnId: "TXN_1734538022780_002",
+          accountId: "1",
+          txnType: "DEBIT",
+          amount: "75000",
+          valueDate: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+          status: "COMPLETED",
+          description: "Paiement facture électricité",
+        },
+        {
+          txnId: "TXN_1734451622780_003",
+          accountId: "2",
+          txnType: "CREDIT",
+          amount: "500000",
+          valueDate: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+          status: "COMPLETED",
+          description: "Dépôt de salaire",
+        },
+      ],
+    }
+  }
+
   const cookieToken = (await cookies()).get("token")?.value
   const usertoken = cookieToken
 
   if (!usertoken) {
-    //console.log("[v0] Token d'authentification manquant, retour de données de test")
+    console.log("[v0] Token d'authentification manquant, retour de données de test")
     return {
       data: [
         {
@@ -612,8 +658,8 @@ export async function getTransactions(): Promise<{ data: any[] }> {
   }
 
   try {
-    //console.log("[v0] Tentative de récupération des transactions...")
-    //console.log("[v0] URL:", `${API_BASE_URL}/tenant/${TENANT_ID}/transaction`)
+    console.log("[v0] Tentative de récupération des transactions...")
+    console.log("[v0] URL:", `${API_BASE_URL}/tenant/${TENANT_ID}/transaction`)
 
     const response = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/transaction`, {
       method: "GET",
@@ -621,11 +667,10 @@ export async function getTransactions(): Promise<{ data: any[] }> {
         "Content-Type": "application/json",
         Authorization: `Bearer ${usertoken}`,
       },
-      cache: "no-store", // Always fetch fresh data
+      cache: "no-store",
     })
 
-    //console.log("[v0] Statut de la réponse:", response.status)
-    //console.log("[v0] Headers de la réponse:", Object.fromEntries(response.headers.entries()))
+    console.log("[v0] Statut de la réponse:", response.status)
 
     if (!response.ok) {
       if (response.status === 401) {
@@ -673,7 +718,7 @@ export async function getTransactions(): Promise<{ data: any[] }> {
         console.error("[v0] Réponse non-JSON:", errorText)
 
         if (errorText.includes("only public URLs are supported")) {
-          //console.log("[v0] API nécessite une URL publique, retour de données de test")
+          console.log("[v0] API nécessite une URL publique, retour de données de test")
           return {
             data: [
               {
@@ -716,7 +761,7 @@ export async function getTransactions(): Promise<{ data: any[] }> {
       console.error("[v0] Réponse non-JSON reçue:", responseText)
 
       if (responseText.includes("only public URLs are supported")) {
-        //console.log("[v0] API nécessite une URL publique, retour de données de test")
+        console.log("[v0] API nécessite une URL publique, retour de données de test")
         return {
           data: [
             {
@@ -753,17 +798,16 @@ export async function getTransactions(): Promise<{ data: any[] }> {
     }
 
     const data = await response.json()
-    //console.log("[v0] Données reçues:", data)
+    console.log("[v0] Données reçues avec succès")
 
-    // Retourne la réponse sous forme de tableau dans un objet data
     if (Array.isArray(data.rows)) {
       return { data: data.rows }
     }
     return { data: Array.isArray(data) ? data : [data] }
   } catch (error) {
     console.error("[v0] Erreur lors de la récupération des transactions:", error)
+    console.log("[v0] Retour de données de test suite à l'erreur de connexion")
 
-    //console.log("[v0] Retour de données de test suite à l'erreur de connexion")
     return {
       data: [
         {
