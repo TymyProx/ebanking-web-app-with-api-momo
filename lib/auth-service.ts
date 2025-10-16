@@ -9,7 +9,7 @@ if (!API_BASE_URL) {
 
 // Configuration de l'instance axios pour l'authentification
 const authAxios = axios.create({
-  baseURL: API_BASE_URL,
+  baseURL: "/api", // Use Next.js API routes as proxy instead of direct backend calls
   headers: {
     "Content-Type": "application/json",
   },
@@ -79,12 +79,16 @@ export class AuthService {
   // Méthode pour se connecter
   static async signIn(email: string, password: string, TENANT_ID: string, invitationToken = "") {
     try {
+      console.log("[v0] AuthService: Calling API route /api/auth/sign-in")
+
       const response = await authAxios.post("/auth/sign-in", {
         email,
         password,
         TENANT_ID,
         invitationToken,
       })
+
+      console.log("[v0] AuthService: API route response:", response.data)
 
       const token = response.data
       if (token) {
@@ -95,15 +99,19 @@ export class AuthService {
 
       throw new Error("Token non reçu")
     } catch (error: any) {
-      console.error("Erreur de connexion:", error)
+      console.error("[v0] AuthService: Error:", {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+      })
+
       let errorMessage = "Erreur de connexion"
 
-      if (error.response?.data) {
-        // Try different possible error message formats from API
+      if (error.response?.data?.error) {
+        errorMessage = error.response.data.error
+      } else if (error.response?.data) {
         errorMessage =
           error.response.data.message ||
-          error.response.data.error ||
-          error.response.data.msg ||
           (typeof error.response.data === "string" ? error.response.data : null) ||
           errorMessage
       } else if (error.message) {
@@ -117,22 +125,28 @@ export class AuthService {
   // Méthode pour récupérer les informations utilisateur
   static async fetchMe(): Promise<User> {
     try {
+      console.log("[v0] AuthService: Calling API route /api/auth/me")
+
       const response = await authAxios.get("/auth/me")
       const userData = response.data
 
-      // Stocker les informations utilisateur
       localStorage.setItem("user", JSON.stringify(userData))
-      //console.log("Informations utilisateur récupérées et stockées:", userData)
+      console.log("[v0] AuthService: User data received and stored")
       return userData
     } catch (error: any) {
-      console.error("Erreur lors de la récupération des informations utilisateur:", error)
+      console.error("[v0] AuthService: Error fetching user:", {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+      })
+
       let errorMessage = "Impossible de récupérer les informations utilisateur"
 
-      if (error.response?.data) {
+      if (error.response?.data?.error) {
+        errorMessage = error.response.data.error
+      } else if (error.response?.data) {
         errorMessage =
           error.response.data.message ||
-          error.response.data.error ||
-          error.response.data.msg ||
           (typeof error.response.data === "string" ? error.response.data : null) ||
           errorMessage
       } else if (error.message) {
