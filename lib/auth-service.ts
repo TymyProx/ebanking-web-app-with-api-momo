@@ -1,18 +1,13 @@
 import axios from "axios"
 import Cookies from "js-cookie"
 
-const API_BASE_URL = process.env.API_BASE_URL || "https://35.184.98.9:4000/api"
-
-if (!API_BASE_URL) {
-  throw new Error("API_BASE_URL environment variable is required")
-}
-
-// Configuration de l'instance axios pour l'authentification
+// This avoids CORS and SSL certificate issues in the browser
 const authAxios = axios.create({
-  baseURL: API_BASE_URL,
+  baseURL: "/api", // Use Next.js API routes
   headers: {
     "Content-Type": "application/json",
   },
+  timeout: 30000, // 30 second timeout
 })
 
 // Intercepteur pour ajouter le token aux requêtes
@@ -79,11 +74,18 @@ export class AuthService {
   // Méthode pour se connecter
   static async signIn(email: string, password: string, TENANT_ID: string, invitationToken = "") {
     try {
+      console.log("[v0] AuthService: Calling sign-in API route", { email, TENANT_ID })
+
       const response = await authAxios.post("/auth/sign-in", {
         email,
         password,
         TENANT_ID,
         invitationToken,
+      })
+
+      console.log("[v0] AuthService: Sign-in response received", {
+        status: response.status,
+        hasData: !!response.data,
       })
 
       const token = response.data
@@ -95,14 +97,19 @@ export class AuthService {
 
       throw new Error("Token non reçu")
     } catch (error: any) {
-      console.error("Erreur de connexion:", error)
+      console.error("[v0] AuthService: Sign-in error:", {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+      })
+
       let errorMessage = "Erreur de connexion"
 
       if (error.response?.data) {
         // Try different possible error message formats from API
         errorMessage =
-          error.response.data.message ||
           error.response.data.error ||
+          error.response.data.message ||
           error.response.data.msg ||
           (typeof error.response.data === "string" ? error.response.data : null) ||
           errorMessage
@@ -117,21 +124,32 @@ export class AuthService {
   // Méthode pour récupérer les informations utilisateur
   static async fetchMe(): Promise<User> {
     try {
+      console.log("[v0] AuthService: Calling me API route")
+
       const response = await authAxios.get("/auth/me")
       const userData = response.data
 
+      console.log("[v0] AuthService: User data received", {
+        userId: userData.id,
+        email: userData.email,
+      })
+
       // Stocker les informations utilisateur
       localStorage.setItem("user", JSON.stringify(userData))
-      //console.log("Informations utilisateur récupérées et stockées:", userData)
       return userData
     } catch (error: any) {
-      console.error("Erreur lors de la récupération des informations utilisateur:", error)
+      console.error("[v0] AuthService: Fetch me error:", {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+      })
+
       let errorMessage = "Impossible de récupérer les informations utilisateur"
 
       if (error.response?.data) {
         errorMessage =
-          error.response.data.message ||
           error.response.data.error ||
+          error.response.data.message ||
           error.response.data.msg ||
           (typeof error.response.data === "string" ? error.response.data : null) ||
           errorMessage
