@@ -9,13 +9,6 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
-  webpack: (config, { dev }) => {
-    // Désactive le cache Webpack uniquement en développement
-    if (dev) {
-      config.cache = false;
-    }
-    return config;
-  },
-};
+}
 
-export default nextConfig;
+export default nextConfig
