@@ -154,7 +154,7 @@ export default async function Dashboard() {
           </CardContent>
         </Card>
 
-        <Card className="border-0 shadow-lg">
+        {/* <Card className="border-0 shadow-lg">
           <CardHeader>
             <CardTitle className="flex items-center font-heading text-xl">
               <div className="p-2 rounded-lg bg-accent/10 mr-3">
@@ -214,7 +214,7 @@ export default async function Dashboard() {
               </div>
             </div>
           </CardContent>
-        </Card>
+        </Card> */}
       </div>
     </div>
   )
