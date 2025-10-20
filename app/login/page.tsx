@@ -35,7 +35,7 @@ export default function LoginPage() {
 
       if (loginResult.success) {
         await AuthService.fetchMe()
-
+        
         if (rememberMe) {
           localStorage.setItem("rememberMe", "true")
         }
@@ -60,8 +60,8 @@ export default function LoginPage() {
               <Image
                 src="/images/logo-bng.png"
                 alt="BNG Logo"
-                width={180}
-                height={80}
+                width={150}
+                height={50}
                 className="object-contain drop-shadow-md"
               />
             </div>
