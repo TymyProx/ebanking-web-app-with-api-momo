@@ -138,7 +138,7 @@ export class AuthService {
       } else if (error.message) {
         errorMessage = error.message
       }
-
+      
       throw new Error(errorMessage)
     }
   }
