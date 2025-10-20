@@ -19,7 +19,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
   useEffect(() => {
     const checkAuth = async () => {
       // Pages publiques qui ne nécessitent pas d'authentification
-      const publicPaths = ["/login"]
+      const publicPaths = ["/login", "/auth/accept-invite"]
       const isPublicPage = publicPaths.some((path) => pathname.startsWith(path))
 
       if (isPublicPage) {

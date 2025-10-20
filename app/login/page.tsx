@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Eye, EyeOff, User } from "lucide-react"
 import AuthService from "@/lib/auth-service"
+import { config } from "@/lib/config"
 
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false)
@@ -28,7 +29,7 @@ export default function LoginPage() {
       const email = formData.get("email") as string
       const password = formData.get("password") as string
 
-      const tenantId = process.env.TENANT_ID ?? ""
+      const tenantId = config.TENANT_ID
       const invitationToken = ""
 
       const loginResult = await AuthService.signIn(email, password, tenantId, invitationToken)

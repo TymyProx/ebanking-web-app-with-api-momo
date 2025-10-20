@@ -1,7 +1,8 @@
 import axios from "axios"
 import Cookies from "js-cookie"
+import { config } from "./config"
 
-const API_BASE_URL = process.env.API_BASE_URL || "https://35.184.98.9:4000/api"
+const API_BASE_URL = `${config.API_BASE_URL}/api`
 
 if (!API_BASE_URL) {
   throw new Error("API_BASE_URL environment variable is required")
