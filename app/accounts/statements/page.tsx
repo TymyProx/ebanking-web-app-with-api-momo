@@ -295,22 +295,26 @@ export default function StatementsPage() {
 
   return (
     <div className="space-y-6">
+      <div className="space-y-2">
+        <h1 className="text-3xl font-heading font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+          Télécharger relevé
+        </h1>
+        <p className="text-muted-foreground text-lg">Générez et téléchargez vos relevés de compte</p>
+        {preSelectedAccountId && accounts.find((acc) => acc.id === preSelectedAccountId) && (
+          <div className="mt-2">
+            <Alert className="border-blue-200 bg-blue-50">
+              <CheckCircle className="h-4 w-4 text-blue-600" />
+              <AlertDescription className="text-blue-800">
+                Compte pré-sélectionné : {accounts.find((acc) => acc.id === preSelectedAccountId)?.name} (
+                {accounts.find((acc) => acc.id === preSelectedAccountId)?.number})
+              </AlertDescription>
+            </Alert>
+          </div>
+        )}
+      </div>
+
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Télécharger relevé</h1>
-          <p className="text-gray-600">Générez et téléchargez vos relevés de compte</p>
-          {preSelectedAccountId && accounts.find((acc) => acc.id === preSelectedAccountId) && (
-            <div className="mt-2">
-              <Alert className="border-blue-200 bg-blue-50">
-                <CheckCircle className="h-4 w-4 text-blue-600" />
-                <AlertDescription className="text-blue-800">
-                  Compte pré-sélectionné : {accounts.find((acc) => acc.id === preSelectedAccountId)?.name} (
-                  {accounts.find((acc) => acc.id === preSelectedAccountId)?.number})
-                </AlertDescription>
-              </Alert>
-            </div>
-          )}
-        </div>
+        <div></div>
         <div className="flex items-center space-x-2">
           <Button variant="outline">
             <History className="w-4 h-4 mr-2" />

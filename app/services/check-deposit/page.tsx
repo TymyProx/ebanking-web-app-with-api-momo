@@ -82,9 +82,11 @@ export default function CheckDepositPage() {
 
   return (
     <div className="container mx-auto p-6 max-w-4xl">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Remise de chèque</h1>
-        <p className="text-gray-600">Déposez vos chèques en toute sécurité avec une photo de qualité</p>
+      <div className="mb-6 space-y-2">
+        <h1 className="text-3xl font-heading font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+          Remise de chèque
+        </h1>
+        <p className="text-muted-foreground text-lg">Déposez vos chèques en toute sécurité avec une photo de qualité</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

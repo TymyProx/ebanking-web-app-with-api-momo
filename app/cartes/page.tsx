@@ -3,21 +3,11 @@
 import { useEffect, useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog"
-import { Switch } from "@/components/ui/switch"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import {
   CreditCard,
   Plus,
@@ -29,9 +19,6 @@ import {
   Eye,
   EyeOff,
   RefreshCw,
-  Lock,
-  Unlock,
-  Edit,
   CheckCircle,
   XCircle,
   Clock,
@@ -300,12 +287,16 @@ export default function CardsPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
+      <div className="space-y-2">
+        <h1 className="text-3xl font-heading font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+          Mes Cartes
+        </h1>
+        <p className="text-muted-foreground text-lg">Gérez vos cartes bancaires et leurs paramètres</p>
+      </div>
+
+      {/* Buttons */}
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Mes Cartes</h1>
-          <p className="text-gray-600">Gérez vos cartes bancaires et leurs paramètres</p>
-        </div>
+        <div></div>
         <div className="flex gap-2">
           <Button onClick={() => setShowNewCardForm(true)}>
             <Plus className="w-4 h-4 mr-2" />

@@ -299,7 +299,7 @@ export default function ServiceRequestsPage() {
 
     const commonFields = [
       { label: "Référence", value: details.reference || "Non attribuée" },
-      { label: "Numéro de compte", value: details.accountNumber || details.numcompteId || "Non spécifié" }
+      { label: "Numéro de compte", value: details.accountNumber || details.numcompteId || "Non spécifié" },
     ]
 
     if (type === "credit") {
@@ -586,9 +586,9 @@ export default function ServiceRequestsPage() {
 
       console.log("[v0] Données envoyées à l'API:", creditData)
       const result = await submitCreditRequest(creditData)
-      setCreditSubmitState({ 
-        success: true, 
-        reference: result.reference || "CRD-" + new Date().getFullYear() + "-" + String(Date.now()).slice(-3)
+      setCreditSubmitState({
+        success: true,
+        reference: result.reference || "CRD-" + new Date().getFullYear() + "-" + String(Date.now()).slice(-3),
       })
       // Réinitialiser le formulaire après succès
       setFormData({})
@@ -634,9 +634,9 @@ export default function ServiceRequestsPage() {
       }
 
       const result = await submitCheckbookRequest(checkbookData)
-      setCheckbookSubmitState({ 
-        success: true, 
-        reference: result.reference || "CHQ-" + new Date().getFullYear() + "-" + String(Date.now()).slice(-3)
+      setCheckbookSubmitState({
+        success: true,
+        reference: result.reference || "CHQ-" + new Date().getFullYear() + "-" + String(Date.now()).slice(-3),
       })
       // Réinitialiser le formulaire après succès
       setFormData({})
@@ -1194,9 +1194,11 @@ export default function ServiceRequestsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">E-Services</h1>
-        <p className="text-gray-600">Faites vos demandes de services en ligne</p>
+      <div className="space-y-2">
+        <h1 className="text-3xl font-heading font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+          E-Services
+        </h1>
+        <p className="text-muted-foreground text-lg">Faites vos demandes de services en ligne</p>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
