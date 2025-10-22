@@ -90,7 +90,7 @@ export class AuthService {
       const token = response.data
       if (token) {
         localStorage.setItem("token", token)
-        Cookies.set("token", token)
+        Cookies.set("token", token, { expires: 7, sameSite: "strict" })
         return { success: true, token }
       }
 
@@ -139,7 +139,7 @@ export class AuthService {
       } else if (error.message) {
         errorMessage = error.message
       }
-      
+
       throw new Error(errorMessage)
     }
   }
@@ -152,6 +152,7 @@ export class AuthService {
 
       localStorage.removeItem("token")
       localStorage.removeItem("user")
+      Cookies.remove("token")
 
       return { success: true }
     } catch (error) {
@@ -159,6 +160,7 @@ export class AuthService {
       // Même en cas d'erreur, on nettoie le localStorage
       localStorage.removeItem("token")
       localStorage.removeItem("user")
+      Cookies.remove("token")
       return { success: true }
     }
   }
