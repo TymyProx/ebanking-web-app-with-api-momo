@@ -36,12 +36,12 @@ export default function LoginPage() {
 
       if (loginResult.success) {
         await AuthService.fetchMe()
-        
+
         if (rememberMe) {
           localStorage.setItem("rememberMe", "true")
         }
 
-        router.push("/")
+        router.push("/dashboard")
       }
     } catch (err: any) {
       setError(err.message)

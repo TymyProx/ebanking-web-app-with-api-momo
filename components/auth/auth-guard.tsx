@@ -23,9 +23,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
       const isPublicPage = publicPaths.some((path) => pathname === path || pathname.startsWith(path))
 
       if (isPublicPage) {
-        // Si on est sur une page publique, vérifier si on est déjà connecté
-        if (AuthService.isAuthenticated() && pathname === "/login") {
-          // Si connecté et sur login, rediriger vers dashboard
+        if (AuthService.isAuthenticated() && (pathname === "/login" || pathname === "/")) {
           router.push("/dashboard")
           return
         }
