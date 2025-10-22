@@ -284,7 +284,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>): 
   }
 
   return (
-    <Sidebar variant="inset" {...props}>
+    <Sidebar collapsible="icon" variant="inset" {...props}>
       <SidebarHeader>
         <div className="flex items-center gap-2 px-4 py-2">
           <div className="flex h-120 w-120 items-center justify-center">
