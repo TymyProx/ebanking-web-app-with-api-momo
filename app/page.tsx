@@ -1,11 +1,11 @@
 import Link from "next/link"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Eye, Send, Receipt, ArrowUpRight, ArrowDownRight, Plus, Calendar, AlertCircle } from "lucide-react"
+import { Eye, Send, Receipt, ArrowUpRight, ArrowDownRight, Plus } from "lucide-react"
 import { getTransactions } from "@/app/transfers/new/actions"
 import { getAccounts } from "@/app/accounts/actions"
 import { AccountsCarousel } from "@/components/accounts-carousel"
+import { BankProductsCarousel } from "@/components/bank-products-carousel"
 
 export default async function Dashboard() {
   const transactionsResult = await getTransactions()
@@ -154,67 +154,13 @@ export default async function Dashboard() {
           </CardContent>
         </Card>
 
-        {/* <Card className="border-0 shadow-lg">
-          <CardHeader>
-            <CardTitle className="flex items-center font-heading text-xl">
-              <div className="p-2 rounded-lg bg-accent/10 mr-3">
-                <AlertCircle className="h-5 w-5 text-accent" />
-              </div>
-              Alertes & Notifications
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="flex items-start space-x-4 p-4 bg-gradient-to-r from-accent/10 to-accent/5 rounded-xl border border-accent/20">
-                <div className="p-2 rounded-lg bg-accent/20">
-                  <AlertCircle className="w-4 h-4 text-accent" />
-                </div>
-                <div className="flex-1">
-                  <p className="font-medium text-sm text-accent-foreground">Virement programmé</p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Un virement de 150,000 GNF vers Fatoumata Diallo est programmé pour demain
-                  </p>
-                  <Badge variant="outline" className="mt-2 text-xs bg-accent/10 border-accent/30">
-                    <Calendar className="w-3 h-3 mr-1" />
-                    14 Jan 2024
-                  </Badge>
-                </div>
-              </div>
-
-              <div className="flex items-start space-x-4 p-4 bg-gradient-to-r from-primary/10 to-primary/5 rounded-xl border border-primary/20">
-                <div className="p-2 rounded-lg bg-primary/20">
-                  <AlertCircle className="w-4 h-4 text-primary" />
-                </div>
-                <div className="flex-1">
-                  <p className="font-medium text-sm">Nouveau service</p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Le service de paiement mobile est maintenant disponible
-                  </p>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="mt-2 text-xs border-primary/30 hover:bg-primary/10 bg-transparent"
-                  >
-                    Découvrir
-                  </Button>
-                </div>
-              </div>
-
-              <div className="flex items-start space-x-4 p-4 bg-gradient-to-r from-secondary/10 to-secondary/5 rounded-xl border border-secondary/20">
-                <div className="p-2 rounded-lg bg-secondary/20">
-                  <AlertCircle className="w-4 h-4 text-secondary" />
-                </div>
-                <div className="flex-1">
-                  <p className="font-medium text-sm text-secondary">✅ Solde : 2,400,000 GNF</p>
-                  <p className="text-xs text-muted-foreground mt-1">Votre compte courant a été crédité avec succès</p>
-                  <Badge variant="outline" className="mt-2 text-xs bg-secondary/10 border-secondary/30">
-                    Mis à jour
-                  </Badge>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card> */}
+        <div>
+          <div className="mb-4">
+            <h2 className="text-xl font-heading font-semibold">Nos Produits</h2>
+            <p className="text-sm text-muted-foreground">Découvrez nos offres exclusives</p>
+          </div>
+          <BankProductsCarousel />
+        </div>
       </div>
     </div>
   )
