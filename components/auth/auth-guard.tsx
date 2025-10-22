@@ -19,14 +19,14 @@ export function AuthGuard({ children }: AuthGuardProps) {
   useEffect(() => {
     const checkAuth = async () => {
       // Pages publiques qui ne nécessitent pas d'authentification
-      const publicPaths = ["/login", "/auth/accept-invite"]
-      const isPublicPage = publicPaths.some((path) => pathname.startsWith(path))
+      const publicPaths = ["/", "/login", "/auth/accept-invite"]
+      const isPublicPage = publicPaths.some((path) => pathname === path || pathname.startsWith(path))
 
       if (isPublicPage) {
         // Si on est sur une page publique, vérifier si on est déjà connecté
         if (AuthService.isAuthenticated() && pathname === "/login") {
           // Si connecté et sur login, rediriger vers dashboard
-          router.push("/")
+          router.push("/dashboard")
           return
         }
         setIsAuthenticated(true)
