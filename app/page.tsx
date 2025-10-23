@@ -284,7 +284,7 @@ export default function LandingPage() {
               <div className="absolute inset-0 flex items-center justify-center gap-4 md:gap-6 lg:gap-8">
                 <div className="relative w-80 sm:w-[28rem] md:w-[32rem] h-[650px] sm:h-[750px] md:h-[800px] hover:scale-105 transition-transform duration-500">
                   <Image
-                    src="/images/mobile-banking-app-screen-dashboard-interface.jpg"
+                    src="/images/mobile-banking-card-list-screen.png"
                     alt="Mobile App"
                     fill
                     className="object-contain drop-shadow-2xl rounded-2xl"
@@ -293,7 +293,7 @@ export default function LandingPage() {
 
                 <div className="relative w-80 sm:w-[28rem] md:w-[32rem] h-[650px] sm:h-[750px] md:h-[800px] hover:scale-105 transition-transform duration-500">
                   <Image
-                    src="/images/mobile-banking-transactions-list-screen.jpg"
+                    src="/images/mobile-banking-app-screen-dashboard-interface.png"
                     alt="Mobile App"
                     fill
                     className="object-contain drop-shadow-2xl rounded-2xl"
