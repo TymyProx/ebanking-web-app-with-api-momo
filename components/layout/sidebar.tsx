@@ -60,7 +60,7 @@ const navigationData = {
   main: [
     {
       title: "Tableau de bord",
-      url: "/",
+      url: "/dashboard",
       icon: Home,
     },
     {
