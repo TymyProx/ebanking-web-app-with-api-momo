@@ -280,18 +280,17 @@ export default function LandingPage() {
       <section id="ebanking" className="py-20 md:py-32 bg-muted/30">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
-            <div className="relative h-[400px] sm:h-[500px]">
-              <div className="absolute inset-0 flex items-center justify-center gap-4 md:gap-8">
-                <div className="relative w-48 sm:w-64 h-[400px] sm:h-[500px] hover:scale-105 transition-transform duration-500">
+            <div className="relative h-[500px] sm:h-[600px] md:h-[700px]">
+              <div className="absolute inset-0 flex items-center justify-center gap-4 md:gap-6 lg:gap-8">
+                <div className="relative w-64 sm:w-80 md:w-96 h-[500px] sm:h-[600px] md:h-[700px] hover:scale-105 transition-transform duration-500">
                   <Image
                     src="/images/mobile-banking-app-screen-dashboard-interface.jpg"
                     alt="Mobile App"
                     fill
                     className="object-contain drop-shadow-2xl"
                   />
-
                 </div>
-                <div className="relative w-48 sm:w-64 h-[400px] sm:h-[500px] hover:scale-105 transition-transform duration-500">
+                <div className="relative w-64 sm:w-80 md:w-96 h-[500px] sm:h-[600px] md:h-[700px] hover:scale-105 transition-transform duration-500">
                   <Image
                     src="/images/mobile-banking-transactions-list-screen.jpg"
                     alt="Mobile App"
