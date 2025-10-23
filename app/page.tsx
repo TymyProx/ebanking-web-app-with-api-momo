@@ -4,40 +4,75 @@ import Link from "next/link"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { CreditCard, Smartphone, Globe, Shield, TrendingUp, FileText, Menu, X, ChevronRight, Check } from "lucide-react"
-import { useState } from "react"
+import { Badge } from "@/components/ui/badge"
+import {
+  CreditCard,
+  Smartphone,
+  Globe,
+  Shield,
+  TrendingUp,
+  FileText,
+  Menu,
+  X,
+  ChevronRight,
+  Check,
+  ArrowRight,
+  Zap,
+  Lock,
+  Clock,
+} from "lucide-react"
+import { useState, useEffect } from "react"
 
 export default function LandingPage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [scrolled, setScrolled] = useState(false)
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 20)
+    }
+    window.addEventListener("scroll", handleScroll)
+    return () => window.removeEventListener("scroll", handleScroll)
+  }, [])
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container flex h-16 items-center justify-between">
+      <header
+        className={`fixed top-0 z-50 w-full transition-all duration-300 ${
+          scrolled ? "bg-background/80 backdrop-blur-xl border-b shadow-sm" : "bg-transparent"
+        }`}
+      >
+        <div className="container flex h-20 items-center justify-between">
           <div className="flex items-center gap-2">
-            <Image src="/images/logo-bng.png" alt="Astra Bank" width={120} height={40} className="object-contain" />
+            <Image src="/images/logo-bng.png" alt="Astra Bank" width={140} height={48} className="object-contain" />
           </div>
 
           {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center gap-6">
-            <Link href="#accueil" className="text-sm font-medium hover:text-primary transition-colors">
+          <nav className="hidden md:flex items-center gap-8">
+            <Link href="#accueil" className="text-sm font-medium hover:text-primary transition-colors relative group">
               Accueil
+              <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-primary transition-all group-hover:w-full" />
             </Link>
-            <Link href="#services" className="text-sm font-medium hover:text-primary transition-colors">
+            <Link href="#services" className="text-sm font-medium hover:text-primary transition-colors relative group">
               Services
+              <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-primary transition-all group-hover:w-full" />
             </Link>
-            <Link href="#ebanking" className="text-sm font-medium hover:text-primary transition-colors">
+            <Link href="#ebanking" className="text-sm font-medium hover:text-primary transition-colors relative group">
               E-Banking
+              <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-primary transition-all group-hover:w-full" />
             </Link>
-            <Link href="#contact" className="text-sm font-medium hover:text-primary transition-colors">
+            <Link href="#contact" className="text-sm font-medium hover:text-primary transition-colors relative group">
               Contact
+              <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-primary transition-all group-hover:w-full" />
             </Link>
           </nav>
 
           <div className="flex items-center gap-4">
             <Link href="/login">
-              <Button className="hidden md:inline-flex">Se connecter</Button>
+              <Button className="hidden md:inline-flex group">
+                Se connecter
+                <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+              </Button>
             </Link>
             <button className="md:hidden" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
               {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
@@ -47,8 +82,8 @@ export default function LandingPage() {
 
         {/* Mobile Menu */}
         {mobileMenuOpen && (
-          <div className="md:hidden border-t">
-            <nav className="container flex flex-col gap-4 py-4">
+          <div className="md:hidden border-t bg-background/95 backdrop-blur-xl">
+            <nav className="container flex flex-col gap-4 py-6">
               <Link
                 href="#accueil"
                 className="text-sm font-medium hover:text-primary transition-colors"
@@ -85,76 +120,134 @@ export default function LandingPage() {
         )}
       </header>
 
-      {/* Hero Section */}
-      <section
-        id="accueil"
-        className="relative overflow-hidden bg-gradient-to-br from-primary/10 via-background to-secondary/10"
-      >
-        <div className="container py-24 md:py-32">
+      <section id="accueil" className="relative overflow-hidden pt-32 pb-24 md:pt-40 md:pb-32">
+        {/* Animated background gradient */}
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-background to-secondary/5">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(120,119,198,0.1),transparent_50%)]" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,rgba(74,222,128,0.1),transparent_50%)]" />
+        </div>
+
+        <div className="container relative">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
-            <div className="space-y-8">
-              <div className="inline-block rounded-full bg-primary/10 px-4 py-2 text-sm font-medium text-primary">
-                Banque digitale moderne
-              </div>
-              <h1 className="text-4xl md:text-6xl font-bold tracking-tight">
+            <div className="space-y-8 animate-in fade-in slide-in-from-left duration-700">
+              <Badge variant="secondary" className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium">
+                <Zap className="h-4 w-4" />
+                Banque digitale nouvelle génération
+              </Badge>
+
+              <h1 className="text-5xl md:text-7xl font-bold tracking-tight leading-tight">
                 Votre banque,{" "}
-                <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+                <span className="bg-gradient-to-r from-primary via-purple-500 to-secondary bg-clip-text text-transparent animate-gradient">
                   accessible partout
                 </span>
               </h1>
-              <p className="text-xl text-muted-foreground">
+
+              <p className="text-xl md:text-2xl text-muted-foreground leading-relaxed">
                 Gérez vos finances en toute simplicité avec Astra eBanking. Des services bancaires modernes, sécurisés
                 et disponibles 24h/24 et 7j/7.
               </p>
-              <div className="flex flex-col sm:flex-row gap-4">
+
+              <div className="flex flex-col sm:flex-row gap-4 pt-4">
                 <Link href="/login">
-                  <Button size="lg" className="w-full sm:w-auto">
+                  <Button
+                    size="lg"
+                    className="w-full sm:w-auto text-base px-8 py-6 group shadow-lg hover:shadow-xl transition-all"
+                  >
                     Accéder à mon espace
-                    <ChevronRight className="ml-2 h-4 w-4" />
+                    <ChevronRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
                   </Button>
                 </Link>
-                <Button size="lg" variant="outline" className="w-full sm:w-auto bg-transparent">
+                <Button
+                  size="lg"
+                  variant="outline"
+                  className="w-full sm:w-auto text-base px-8 py-6 border-2 bg-transparent"
+                >
                   En savoir plus
                 </Button>
               </div>
+
+              <div className="flex flex-wrap items-center gap-8 pt-8 border-t">
+                <div className="flex items-center gap-2">
+                  <Shield className="h-5 w-5 text-primary" />
+                  <span className="text-sm font-medium">Sécurisé</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Lock className="h-5 w-5 text-primary" />
+                  <span className="text-sm font-medium">Crypté</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Clock className="h-5 w-5 text-primary" />
+                  <span className="text-sm font-medium">24/7</span>
+                </div>
+              </div>
             </div>
-            <div className="relative h-[400px] lg:h-[500px]">
-              <div className="absolute inset-0 bg-gradient-to-tr from-primary/20 to-secondary/20 rounded-3xl" />
-              <Image src="/modern-banking-app.png" alt="Banking Interface" fill className="object-contain p-8" />
+
+            <div className="relative h-[500px] lg:h-[600px] animate-in fade-in slide-in-from-right duration-700">
+              <div className="absolute inset-0 bg-gradient-to-tr from-primary/20 via-purple-500/10 to-secondary/20 rounded-3xl blur-3xl animate-pulse" />
+              <div className="relative h-full rounded-3xl overflow-hidden shadow-2xl">
+                <Image
+                  src="/modern-banking-app.png"
+                  alt="Banking Interface"
+                  fill
+                  className="object-contain p-8 hover:scale-105 transition-transform duration-500"
+                />
+              </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Service Categories */}
-      <section id="services" className="py-24 bg-muted/50">
+      <section className="py-16 bg-muted/30 border-y">
         <div className="container">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">Nos services</h2>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+            {[
+              { value: "50K+", label: "Clients actifs" },
+              { value: "99.9%", label: "Disponibilité" },
+              { value: "24/7", label: "Support client" },
+              { value: "100%", label: "Sécurisé" },
+            ].map((stat, index) => (
+              <div key={index} className="text-center space-y-2">
+                <div className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+                  {stat.value}
+                </div>
+                <div className="text-sm text-muted-foreground font-medium">{stat.label}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section id="services" className="py-24">
+        <div className="container">
+          <div className="text-center mb-16 space-y-4">
+            <Badge variant="outline" className="mb-4">
+              Nos services
+            </Badge>
+            <h2 className="text-4xl md:text-5xl font-bold">Solutions bancaires sur mesure</h2>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              Des solutions bancaires adaptées à vos besoins, que vous soyez particulier ou professionnel
+              Des solutions adaptées à vos besoins, que vous soyez particulier ou professionnel
             </p>
           </div>
 
           <div className="grid md:grid-cols-2 gap-8">
-            {/* Particuliers Card */}
-            <Card className="group overflow-hidden hover:shadow-xl transition-all duration-300">
+            <Card className="group overflow-hidden hover:shadow-2xl transition-all duration-500 border-2">
               <CardContent className="p-0">
-                <div className="relative h-64 overflow-hidden">
+                <div className="relative h-80 overflow-hidden">
                   <Image
                     src="/happy-family-banking.jpg"
                     alt="Particuliers"
                     fill
-                    className="object-cover group-hover:scale-105 transition-transform duration-300"
+                    className="object-cover group-hover:scale-110 transition-transform duration-700"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-                  <div className="absolute bottom-6 left-6">
-                    <h3 className="text-3xl font-bold text-white mb-2">Particuliers</h3>
-                    <p className="text-white/90 mb-4">Comptes, épargne, crédits et plus</p>
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
+                  <div className="absolute inset-0 bg-primary/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                  <div className="absolute bottom-8 left-8 right-8 space-y-4">
+                    <h3 className="text-4xl font-bold text-white">Particuliers</h3>
+                    <p className="text-white/90 text-lg">Comptes, épargne, crédits et plus</p>
                     <Link href="/login">
-                      <Button variant="secondary">
+                      <Button size="lg" variant="secondary" className="group/btn">
                         Découvrir
-                        <ChevronRight className="ml-2 h-4 w-4" />
+                        <ChevronRight className="ml-2 h-4 w-4 transition-transform group-hover/btn:translate-x-1" />
                       </Button>
                     </Link>
                   </div>
@@ -162,24 +255,24 @@ export default function LandingPage() {
               </CardContent>
             </Card>
 
-            {/* Professionnels Card */}
-            <Card className="group overflow-hidden hover:shadow-xl transition-all duration-300">
+            <Card className="group overflow-hidden hover:shadow-2xl transition-all duration-500 border-2">
               <CardContent className="p-0">
-                <div className="relative h-64 overflow-hidden">
+                <div className="relative h-80 overflow-hidden">
                   <Image
                     src="/business-professionals-meeting.png"
                     alt="Professionnels"
                     fill
-                    className="object-cover group-hover:scale-105 transition-transform duration-300"
+                    className="object-cover group-hover:scale-110 transition-transform duration-700"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-                  <div className="absolute bottom-6 left-6">
-                    <h3 className="text-3xl font-bold text-white mb-2">Professionnels, Entreprises</h3>
-                    <p className="text-white/90 mb-4">Solutions adaptées à votre activité</p>
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
+                  <div className="absolute inset-0 bg-secondary/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                  <div className="absolute bottom-8 left-8 right-8 space-y-4">
+                    <h3 className="text-4xl font-bold text-white">Professionnels</h3>
+                    <p className="text-white/90 text-lg">Solutions adaptées à votre activité</p>
                     <Link href="/login">
-                      <Button variant="secondary">
+                      <Button size="lg" variant="secondary" className="group/btn">
                         Découvrir
-                        <ChevronRight className="ml-2 h-4 w-4" />
+                        <ChevronRight className="ml-2 h-4 w-4 transition-transform group-hover/btn:translate-x-1" />
                       </Button>
                     </Link>
                   </div>
@@ -191,69 +284,79 @@ export default function LandingPage() {
       </section>
 
       {/* E-Banking Section */}
-      <section id="ebanking" className="py-24">
+      <section id="ebanking" className="py-24 bg-muted/30">
         <div className="container">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
+          <div className="grid lg:grid-cols-2 gap-16 items-center">
             <div className="relative h-[500px]">
               <div className="absolute inset-0 flex items-center justify-center gap-8">
-                <div className="relative w-64 h-[500px]">
-                  <Image src="/mobile-banking-app-screen.jpg" alt="Mobile App" fill className="object-contain" />
+                <div className="relative w-64 h-[500px] hover:scale-105 transition-transform duration-500">
+                  <Image
+                    src="/mobile-banking-app-screen.jpg"
+                    alt="Mobile App"
+                    fill
+                    className="object-contain drop-shadow-2xl"
+                  />
                 </div>
-                <div className="relative w-64 h-[500px]">
-                  <Image src="/mobile-banking-transactions-screen.jpg" alt="Mobile App" fill className="object-contain" />
+                <div className="relative w-64 h-[500px] hover:scale-105 transition-transform duration-500">
+                  <Image
+                    src="/mobile-banking-transactions-screen.jpg"
+                    alt="Mobile App"
+                    fill
+                    className="object-contain drop-shadow-2xl"
+                  />
                 </div>
               </div>
             </div>
 
             <div className="space-y-8">
-              <div>
-                <h2 className="text-3xl md:text-4xl font-bold mb-4">Découvrez Astra e-Bank</h2>
-                <p className="text-xl text-muted-foreground mb-2">VOS OPÉRATIONS BANCAIRES</p>
-                <p className="text-xl font-semibold mb-6">DISPONIBLES 24H/24 ET 7J/7</p>
-                <p className="text-muted-foreground">
+              <div className="space-y-4">
+                <Badge variant="outline">E-Banking</Badge>
+                <h2 className="text-4xl md:text-5xl font-bold">Découvrez Astra e-Bank</h2>
+                <p className="text-xl font-semibold text-primary">
+                  VOS OPÉRATIONS BANCAIRES DISPONIBLES 24H/24 ET 7J/7
+                </p>
+                <p className="text-lg text-muted-foreground leading-relaxed">
                   Astra e-Bank est une plateforme en ligne qui vous permet de consulter l'activité de vos comptes,
                   d'effectuer des virements et d'émettre diverses requêtes 24h/24 et 7j/7.
                 </p>
               </div>
 
-              <div>
-                <h3 className="text-2xl font-bold mb-6 text-primary">Avantages</h3>
-                <div className="space-y-4">
-                  {[
-                    "Consultation du solde et de l'historique des opérations",
-                    "Détail des mouvements avec dates de valeur",
-                    "Consultation de vos dépôts et emprunts",
-                    "Possibilité d'effectuer des virements et de régler vos factures",
-                    "Édition de relevé de compte",
-                    "Commande de chéquier",
-                    "Impression de RIB",
-                    "Et bien plus encore",
-                  ].map((advantage, index) => (
-                    <div key={index} className="flex items-start gap-3">
-                      <Check className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
-                      <span className="text-muted-foreground">{advantage}</span>
+              <div className="space-y-4">
+                {[
+                  "Consultation du solde et de l'historique des opérations",
+                  "Détail des mouvements avec dates de valeur",
+                  "Consultation de vos dépôts et emprunts",
+                  "Possibilité d'effectuer des virements et de régler vos factures",
+                  "Édition de relevé de compte",
+                  "Commande de chéquier",
+                  "Impression de RIB",
+                  "Et bien plus encore",
+                ].map((advantage, index) => (
+                  <div key={index} className="flex items-start gap-3 group">
+                    <div className="mt-1 rounded-full bg-primary/10 p-1 group-hover:bg-primary/20 transition-colors">
+                      <Check className="h-4 w-4 text-primary" />
                     </div>
-                  ))}
-                </div>
+                    <span className="text-muted-foreground">{advantage}</span>
+                  </div>
+                ))}
               </div>
 
-              <div className="flex flex-col sm:flex-row gap-4">
-                <Link href="/login">
-                  <Button size="lg" className="w-full sm:w-auto">
-                    Commencer maintenant
-                  </Button>
-                </Link>
-              </div>
+              <Link href="/login">
+                <Button size="lg" className="group">
+                  Commencer maintenant
+                  <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
+                </Button>
+              </Link>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Features Grid */}
-      <section className="py-24 bg-muted/50">
+      <section className="py-24">
         <div className="container">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">Pourquoi choisir Astra eBanking ?</h2>
+          <div className="text-center mb-16 space-y-4">
+            <Badge variant="outline">Fonctionnalités</Badge>
+            <h2 className="text-4xl md:text-5xl font-bold">Pourquoi choisir Astra eBanking ?</h2>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
               Une expérience bancaire moderne et sécurisée
             </p>
@@ -265,40 +368,51 @@ export default function LandingPage() {
                 icon: CreditCard,
                 title: "Cartes bancaires",
                 description: "Gérez vos cartes et effectuez vos paiements en toute sécurité",
+                color: "from-blue-500 to-cyan-500",
               },
               {
                 icon: Smartphone,
                 title: "Paiement mobile",
                 description: "Payez avec votre téléphone, partout et à tout moment",
+                color: "from-purple-500 to-pink-500",
               },
               {
                 icon: Globe,
                 title: "Virements internationaux",
                 description: "Transférez de l'argent dans le monde entier rapidement",
+                color: "from-green-500 to-emerald-500",
               },
               {
                 icon: Shield,
                 title: "Sécurité maximale",
                 description: "Vos données sont protégées par les dernières technologies",
+                color: "from-orange-500 to-red-500",
               },
               {
                 icon: TrendingUp,
                 title: "Épargne et investissement",
                 description: "Faites fructifier votre argent avec nos solutions d'épargne",
+                color: "from-indigo-500 to-purple-500",
               },
               {
                 icon: FileText,
                 title: "Relevés en ligne",
                 description: "Accédez à vos relevés bancaires à tout moment",
+                color: "from-teal-500 to-cyan-500",
               },
             ].map((feature, index) => (
-              <Card key={index} className="group hover:shadow-lg transition-all duration-300">
-                <CardContent className="p-6 space-y-4">
-                  <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
-                    <feature.icon className="h-6 w-6 text-primary" />
+              <Card
+                key={index}
+                className="group hover:shadow-xl transition-all duration-500 border-2 hover:border-primary/50"
+              >
+                <CardContent className="p-8 space-y-4">
+                  <div
+                    className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${feature.color} flex items-center justify-center group-hover:scale-110 transition-transform duration-500 shadow-lg`}
+                  >
+                    <feature.icon className="h-7 w-7 text-white" />
                   </div>
-                  <h3 className="text-xl font-semibold">{feature.title}</h3>
-                  <p className="text-muted-foreground">{feature.description}</p>
+                  <h3 className="text-2xl font-semibold">{feature.title}</h3>
+                  <p className="text-muted-foreground leading-relaxed">{feature.description}</p>
                 </CardContent>
               </Card>
             ))}
@@ -306,35 +420,42 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="py-24 bg-gradient-to-br from-primary to-secondary text-white">
-        <div className="container text-center">
-          <h2 className="text-3xl md:text-4xl font-bold mb-6">Prêt à commencer ?</h2>
-          <p className="text-xl mb-8 opacity-90 max-w-2xl mx-auto">
-            Rejoignez des milliers de clients qui font confiance à Astra eBanking pour gérer leurs finances
-          </p>
-          <Link href="/login">
-            <Button size="lg" variant="secondary" className="text-lg px-8">
-              Accéder à mon espace
-              <ChevronRight className="ml-2 h-5 w-5" />
-            </Button>
-          </Link>
+      <section className="py-32 relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary via-purple-600 to-secondary" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,rgba(255,255,255,0.1),transparent_50%)]" />
+        <div className="container relative text-center text-white">
+          <div className="max-w-3xl mx-auto space-y-8">
+            <h2 className="text-4xl md:text-6xl font-bold">Prêt à commencer ?</h2>
+            <p className="text-xl md:text-2xl opacity-90 leading-relaxed">
+              Rejoignez des milliers de clients qui font confiance à Astra eBanking pour gérer leurs finances
+            </p>
+            <Link href="/login">
+              <Button
+                size="lg"
+                variant="secondary"
+                className="text-lg px-10 py-7 shadow-2xl hover:shadow-3xl transition-all group"
+              >
+                Accéder à mon espace
+                <ChevronRight className="ml-2 h-6 w-6 transition-transform group-hover:translate-x-1" />
+              </Button>
+            </Link>
+          </div>
         </div>
       </section>
 
       {/* Footer */}
-      <footer id="contact" className="py-12 border-t">
+      <footer id="contact" className="py-16 border-t bg-muted/30">
         <div className="container">
-          <div className="grid md:grid-cols-4 gap-8">
+          <div className="grid md:grid-cols-4 gap-12">
             <div className="space-y-4">
-              <Image src="/images/logo-bng.png" alt="Astra Bank" width={120} height={40} className="object-contain" />
-              <p className="text-sm text-muted-foreground">
+              <Image src="/images/logo-bng.png" alt="Astra Bank" width={140} height={48} className="object-contain" />
+              <p className="text-sm text-muted-foreground leading-relaxed">
                 Votre partenaire bancaire de confiance pour tous vos besoins financiers.
               </p>
             </div>
             <div>
-              <h3 className="font-semibold mb-4">Services</h3>
-              <ul className="space-y-2 text-sm text-muted-foreground">
+              <h3 className="font-semibold mb-4 text-lg">Services</h3>
+              <ul className="space-y-3 text-sm text-muted-foreground">
                 <li>
                   <Link href="#" className="hover:text-primary transition-colors">
                     Comptes bancaires
@@ -358,8 +479,8 @@ export default function LandingPage() {
               </ul>
             </div>
             <div>
-              <h3 className="font-semibold mb-4">À propos</h3>
-              <ul className="space-y-2 text-sm text-muted-foreground">
+              <h3 className="font-semibold mb-4 text-lg">À propos</h3>
+              <ul className="space-y-3 text-sm text-muted-foreground">
                 <li>
                   <Link href="#" className="hover:text-primary transition-colors">
                     Qui sommes-nous
@@ -383,8 +504,8 @@ export default function LandingPage() {
               </ul>
             </div>
             <div>
-              <h3 className="font-semibold mb-4">Légal</h3>
-              <ul className="space-y-2 text-sm text-muted-foreground">
+              <h3 className="font-semibold mb-4 text-lg">Légal</h3>
+              <ul className="space-y-3 text-sm text-muted-foreground">
                 <li>
                   <Link href="#" className="hover:text-primary transition-colors">
                     Mentions légales
