@@ -139,7 +139,7 @@ export class AuthService {
       } else if (error.message) {
         errorMessage = error.message
       }
-      
+
       throw new Error(errorMessage)
     }
   }
@@ -152,13 +152,15 @@ export class AuthService {
 
       localStorage.removeItem("token")
       localStorage.removeItem("user")
+      Cookies.remove("token")
 
       return { success: true }
     } catch (error) {
       console.error("Erreur lors de la déconnexion:", error)
-      // Même en cas d'erreur, on nettoie le localStorage
+      // Même en cas d'erreur, on nettoie le localStorage et les cookies
       localStorage.removeItem("token")
       localStorage.removeItem("user")
+      Cookies.remove("token")
       return { success: true }
     }
   }

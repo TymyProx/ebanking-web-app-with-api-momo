@@ -17,7 +17,6 @@ import {
   User,
   Building2,
   ChevronRight,
-  LogOut,
   HelpCircle,
   Wallet,
   BarChart3,
@@ -55,6 +54,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
+import { LogoutButton } from "@/components/auth/logout-button"
 
 const navigationData = {
   main: [
@@ -565,9 +565,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>): 
                   <span>Aide</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem>
-                  <LogOut className="mr-2 h-4 w-4" />
-                  <span>Se déconnecter</span>
+                <DropdownMenuItem asChild>
+                  <LogoutButton variant="ghost" size="sm" showIcon={true}>
+                    Se déconnecter
+                  </LogoutButton>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
