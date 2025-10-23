@@ -180,7 +180,7 @@ export default function LandingPage() {
               <div className="absolute inset-0 bg-gradient-to-tr from-primary/20 via-purple-500/10 to-secondary/20 rounded-3xl blur-3xl animate-pulse" />
               <div className="relative h-full rounded-3xl overflow-hidden shadow-2xl">
                 <Image
-                  src="/modern-banking-mobile-app-interface-dashboard.jpg"
+                  src="/images/modern-banking-mobile-app-interface-dashboard.jpg"
                   alt="Banking Interface"
                   fill
                   className="object-contain p-8 hover:scale-105 transition-transform duration-500"
@@ -228,7 +228,7 @@ export default function LandingPage() {
               <CardContent className="p-0">
                 <div className="relative h-80 overflow-hidden">
                   <Image
-                    src="/happy-family-using-banking-services-smiling.jpg"
+                    src="/images/happy-family-using-banking-services-smiling.jpg"
                     alt="Particuliers"
                     fill
                     className="object-cover group-hover:scale-110 transition-transform duration-700"
@@ -253,7 +253,7 @@ export default function LandingPage() {
               <CardContent className="p-0">
                 <div className="relative h-80 overflow-hidden">
                   <Image
-                    src="/business-professionals-meeting-office-modern.jpg"
+                    src="/images/business-professionals-meeting-office-modern.jpg"
                     alt="Professionnels"
                     fill
                     className="object-cover group-hover:scale-110 transition-transform duration-700"
@@ -284,15 +284,16 @@ export default function LandingPage() {
               <div className="absolute inset-0 flex items-center justify-center gap-4 md:gap-8">
                 <div className="relative w-48 sm:w-64 h-[400px] sm:h-[500px] hover:scale-105 transition-transform duration-500">
                   <Image
-                    src="/mobile-banking-app-screen-dashboard-interface.jpg"
+                    src="/images/mobile-banking-app-screen-dashboard-interface.jpg"
                     alt="Mobile App"
                     fill
                     className="object-contain drop-shadow-2xl"
                   />
+
                 </div>
                 <div className="relative w-48 sm:w-64 h-[400px] sm:h-[500px] hover:scale-105 transition-transform duration-500">
                   <Image
-                    src="/mobile-banking-transactions-list-screen.jpg"
+                    src="/images/mobile-banking-transactions-list-screen.jpg"
                     alt="Mobile App"
                     fill
                     className="object-contain drop-shadow-2xl"
