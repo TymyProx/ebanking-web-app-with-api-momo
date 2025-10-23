@@ -26,12 +26,10 @@ export function LogoutButton({
     try {
       await AuthService.signOut()
 
-      // Rediriger vers la page de login
-      router.push("/login")
+      router.push("/")
     } catch (error) {
       console.error("Erreur lors de la déconnexion:", error)
-      // Même en cas d'erreur, rediriger vers login
-      router.push("/login")
+      router.push("/")
     }
   }
 
