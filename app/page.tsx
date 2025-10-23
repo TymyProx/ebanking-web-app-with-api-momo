@@ -130,11 +130,6 @@ export default function LandingPage() {
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative">
           <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
             <div className="space-y-6 md:space-y-8 animate-in fade-in slide-in-from-left duration-700">
-              <Badge variant="secondary" className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium">
-                <Zap className="h-4 w-4" />
-                Banque digitale nouvelle génération
-              </Badge>
-
               <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight leading-tight">
                 Votre banque,{" "}
                 <span className="bg-gradient-to-r from-primary via-purple-500 to-secondary bg-clip-text text-transparent animate-gradient">
