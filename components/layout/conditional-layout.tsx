@@ -15,7 +15,7 @@ interface ConditionalLayoutProps {
 export function ConditionalLayout({ children }: ConditionalLayoutProps) {
   const pathname = usePathname()
 
-  const isPublicPage = pathname === "/" || pathname.startsWith("/auth/accept-invite")
+  const isPublicPage = pathname === "/" || pathname === "/login" || pathname.startsWith("/auth/accept-invite")
 
   if (isPublicPage) {
     return (

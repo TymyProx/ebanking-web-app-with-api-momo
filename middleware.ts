@@ -5,8 +5,7 @@ export function middleware(request: NextRequest) {
   const token = request.cookies.get("token")?.value
   const pathname = request.nextUrl.pathname
 
-  // Pages d'authentification qui ne nécessitent pas de token
-  const isAuthPage = pathname === "/" || pathname.startsWith("/auth/")
+  const isAuthPage = pathname === "/" || pathname === "/login" || pathname.startsWith("/auth/")
 
   // Page d'activation spéciale
   const isAcceptInvitePage = pathname.startsWith("/auth/accept-invite")
@@ -24,12 +23,11 @@ export function middleware(request: NextRequest) {
 
   // Si l'utilisateur n'est pas authentifié et essaie d'accéder à des routes protégées
   if (!token && !isAuthPage) {
-    console.log("[E-banking Middleware] Redirecting to home")
-    return NextResponse.redirect(new URL("/", request.url))
+    console.log("[E-banking Middleware] Redirecting to login")
+    return NextResponse.redirect(new URL("/login", request.url))
   }
 
-  // Si l'utilisateur est authentifié et essaie d'accéder à la page d'accueil
-  if (token && pathname === "/") {
+  if (token && (pathname === "/" || pathname === "/login")) {
     console.log("[E-banking Middleware] Redirecting authenticated user to dashboard")
     return NextResponse.redirect(new URL("/dashboard", request.url))
   }
