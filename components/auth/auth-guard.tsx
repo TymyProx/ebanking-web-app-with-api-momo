@@ -18,15 +18,12 @@ export function AuthGuard({ children }: AuthGuardProps) {
 
   useEffect(() => {
     const checkAuth = async () => {
-      // Pages publiques qui ne nécessitent pas d'authentification
-      const publicPaths = ["/login", "/auth/accept-invite"]
+      const publicPaths = ["/", "/auth/accept-invite"]
       const isPublicPage = publicPaths.some((path) => pathname.startsWith(path))
 
       if (isPublicPage) {
-        // Si on est sur une page publique, vérifier si on est déjà connecté
-        if (AuthService.isAuthenticated() && pathname === "/login") {
-          // Si connecté et sur login, rediriger vers dashboard
-          router.push("/")
+        if (AuthService.isAuthenticated() && pathname === "/") {
+          router.push("/dashboard")
           return
         }
         setIsAuthenticated(true)
@@ -34,11 +31,11 @@ export function AuthGuard({ children }: AuthGuardProps) {
         return
       }
 
-      // Pour les pages protégées, vérifier le token et les infos utilisateur
+      // For protected pages, verify token and user info
       if (!AuthService.isAuthenticated()) {
         setIsAuthenticated(false)
         setIsLoading(false)
-        router.push("/login")
+        router.push("/")
         return
       }
 
@@ -48,24 +45,23 @@ export function AuthGuard({ children }: AuthGuardProps) {
           user = await AuthService.fetchMe()
         } catch (error) {
           console.error("Erreur lors de la récupération des informations utilisateur:", error)
-          // Token invalide, rediriger vers login
-          router.push("/login")
+          router.push("/")
           return
         }
       }
 
-      // Utilisateur authentifié avec informations complètes
+      // User authenticated with complete information
       setIsAuthenticated(true)
       setIsLoading(false)
     }
 
-    // Délai pour éviter les problèmes d'hydratation
+    // Delay to avoid hydration issues
     const timer = setTimeout(checkAuth, 100)
 
     return () => clearTimeout(timer)
   }, [pathname, router])
 
-  // Afficher un loader pendant la vérification
+  // Show loader during verification
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
