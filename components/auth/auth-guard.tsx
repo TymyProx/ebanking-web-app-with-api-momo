@@ -31,7 +31,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
         return
       }
 
-      // For protected pages, verify token and user info
+      // Pour les pages protégées, vérifier le token et les infos utilisateur
       if (!AuthService.isAuthenticated()) {
         setIsAuthenticated(false)
         setIsLoading(false)
@@ -50,18 +50,18 @@ export function AuthGuard({ children }: AuthGuardProps) {
         }
       }
 
-      // User authenticated with complete information
+      // Utilisateur authentifié avec informations complètes
       setIsAuthenticated(true)
       setIsLoading(false)
     }
 
-    // Delay to avoid hydration issues
+    // Délai pour éviter les problèmes d'hydratation
     const timer = setTimeout(checkAuth, 100)
 
     return () => clearTimeout(timer)
   }, [pathname, router])
 
-  // Show loader during verification
+  // Afficher un loader pendant la vérification
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
