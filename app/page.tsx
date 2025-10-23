@@ -1,192 +1,165 @@
-"use client"
-
-import type React from "react"
-import Image from "next/image"
-import { useState } from "react"
-import { useRouter } from "next/navigation"
+import Link from "next/link"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Eye, EyeOff, User } from "lucide-react"
-import AuthService from "@/lib/auth-service"
-import { config } from "@/lib/config"
+import { Eye, Send, Receipt, ArrowUpRight, ArrowDownRight, Plus } from "lucide-react"
+import { getTransactions } from "@/app/transfers/new/actions"
+import { getAccounts } from "@/app/accounts/actions"
+import { AccountsCarousel } from "@/components/accounts-carousel"
+import { BankProductsCarousel } from "@/components/bank-products-carousel"
 
-export default function LoginPage() {
-  const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState("")
-  const [showPassword, setShowPassword] = useState(false)
-  const [rememberMe, setRememberMe] = useState(false)
-  const router = useRouter()
+export default async function Dashboard() {
+  const transactionsResult = await getTransactions()
+  const transactions = transactionsResult?.data || []
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsLoading(true)
-    setError("")
+  const accounts = await getAccounts()
 
-    try {
-      const formData = new FormData(e.target as HTMLFormElement)
-      const email = formData.get("email") as string
-      const password = formData.get("password") as string
+  const formatAmount = (amount: number | string, currency = "GNF") => {
+    const numAmount = typeof amount === "string" ? Number.parseFloat(amount) : amount
+    if (currency === "GNF") {
+      return new Intl.NumberFormat("fr-FR").format(numAmount)
+    }
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: currency,
+    }).format(numAmount)
+  }
 
-      const tenantId = config.TENANT_ID
-      const invitationToken = ""
+  const formatTransaction = (transaction: any, accounts: any[]) => {
+    const amount = Number.parseFloat(transaction.amount)
+    const isCredit = transaction.txnType === "CREDIT"
 
-      const loginResult = await AuthService.signIn(email, password, tenantId, invitationToken)
+    // Find the account to get its currency
+    const account = accounts.find((acc) => acc.id === transaction.accountId || acc.accountId === transaction.accountId)
+    const currency = account?.currency || "GNF"
 
-      if (loginResult.success) {
-        await AuthService.fetchMe()
-
-        if (rememberMe) {
-          localStorage.setItem("rememberMe", "true")
-        }
-
-        router.push("/dashboard")
-      }
-    } catch (err: any) {
-      setError(err.message)
-    } finally {
-      setIsLoading(false)
+    return {
+      type: isCredit ? "Virement reçu" : "Virement émis",
+      from: transaction.description || "Transaction",
+      amount: `${isCredit ? "+" : "-"}${formatAmount(Math.abs(amount), currency)} ${currency}`,
+      date: new Date(transaction.valueDate).toLocaleDateString("fr-FR", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      }),
+      status: transaction.status || "Exécuté",
     }
   }
 
   return (
-    <div className="min-h-screen flex bg-gray-100">
-      {/* Left side - Hero Image */}
-      <div className="hidden lg:flex lg:w-1/2 relative">
-        <div className="relative w-full h-full p-8">
-          <div className="relative w-full h-full overflow-hidden rounded-2xl shadow-lg border backdrop-blur-sm">
-            <Image src="/images/welcom.png" alt="Welcome" fill className="object-cover rounded-2xl" priority />
-            <div className="absolute top-12 left-6 z-10">
-              <Image
-                src="/images/logo-bng.png"
-                alt="BNG Logo"
-                width={150}
-                height={50}
-                className="object-contain drop-shadow-md"
-              />
-            </div>
-          </div>
-        </div>
+    <div className="space-y-8 fade-in">
+      <div className="space-y-2">
+        <h1 className="text-3xl font-heading font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+          Tableau de bord
+        </h1>
+        <p className="text-muted-foreground text-lg">Bienvenue sur votre espace Astra eBanking</p>
       </div>
 
-      {/* Right side - Login Form */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-8">
-        <div className="w-full max-w-md space-y-8">
-          {/* Mobile Logo */}
-          <div className="lg:hidden flex justify-center mb-8">
-            <Image src="/images/logo-bng.png" alt="BNG Logo" width={150} height={50} className="object-contain" />
+      <AccountsCarousel accounts={accounts} />
+
+      <Card className="border-0 shadow-lg bg-gradient-to-r from-primary/5 to-secondary/5">
+        <CardHeader>
+          <CardTitle className="flex items-center font-heading text-xl">
+            <div className="p-2 rounded-lg bg-primary/10 mr-3">
+              <Plus className="h-5 w-5 text-primary" />
+            </div>
+            Actions rapides
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <Link href="/transfers/new">
+              <Button className="h-20 flex flex-col space-y-3 w-full btn-primary group">
+                <Send className="h-6 w-6 group-hover:scale-110 transition-transform" />
+                <span className="font-medium">Nouveau virement</span>
+              </Button>
+            </Link>
+            <Link href="/payments/bills">
+              <Button
+                variant="outline"
+                className="h-20 flex flex-col space-y-3 w-full border-2 hover:bg-secondary/10 hover:border-secondary group bg-transparent"
+              >
+                <Receipt className="h-6 w-6 group-hover:scale-110 transition-transform" />
+                <span className="font-medium">Payer une facture</span>
+              </Button>
+            </Link>
+            <Link href="/accounts/balance">
+              <Button
+                variant="outline"
+                className="h-20 flex flex-col space-y-3 w-full border-2 hover:bg-accent/10 hover:border-accent group bg-transparent"
+              >
+                <Eye className="h-6 w-6 group-hover:scale-110 transition-transform" />
+                <span className="font-medium">Consulter soldes</span>
+              </Button>
+            </Link>
           </div>
+        </CardContent>
+      </Card>
 
-          {/* Welcome Text */}
-          <div className="space-y-2">
-            <h1 className="text-5xl font-bold text-[hsl(45,93%,47%)]">Bienvenue</h1>
-            <p className="text-3xl font-semibold text-[hsl(123,38%,57%)]">
-              sur <span className="font-bold">MyBNG Bank</span>
-            </p>
-          </div>
-
-          {/* Login Form */}
-          <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-[hsl(220,13%,13%)]">Se connecter</h2>
-
-            <form onSubmit={handleSubmit} className="space-y-5">
-              {error && (
-                <div className="p-3 rounded-lg bg-red-50 border border-red-200">
-                  <p className="text-sm text-red-600">{error}</p>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <Card className="border-0 shadow-lg">
+          <CardHeader>
+            <CardTitle className="font-heading text-xl">Dernières transactions</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {transactions.length > 0 ? (
+                transactions.slice(0, 3).map((transaction: any, index: number) => {
+                  const formattedTransaction = formatTransaction(transaction, accounts)
+                  return (
+                    <div
+                      key={transaction.txnId || index}
+                      className="flex items-center justify-between p-4 bg-gradient-to-r from-muted/50 to-muted/30 rounded-xl border border-border/50 hover:shadow-md transition-all duration-200"
+                    >
+                      <div className="flex items-center space-x-4">
+                        <div
+                          className={`w-12 h-12 rounded-full flex items-center justify-center ${
+                            formattedTransaction.amount.startsWith("+")
+                              ? "bg-secondary/20 text-secondary"
+                              : "bg-destructive/20 text-destructive"
+                          }`}
+                        >
+                          {formattedTransaction.amount.startsWith("+") ? (
+                            <ArrowDownRight className="w-5 h-5" />
+                          ) : (
+                            <ArrowUpRight className="w-5 h-5" />
+                          )}
+                        </div>
+                        <div>
+                          <p className="font-medium text-sm">{formattedTransaction.type}</p>
+                          <p className="text-xs text-muted-foreground">{formattedTransaction.from}</p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p
+                          className={`font-semibold text-sm ${
+                            formattedTransaction.amount.startsWith("+") ? "text-secondary" : "text-destructive"
+                          }`}
+                        >
+                          {formattedTransaction.amount}
+                        </p>
+                        <p className="text-xs text-muted-foreground">{formattedTransaction.date}</p>
+                      </div>
+                    </div>
+                  )
+                })
+              ) : (
+                <div className="text-center py-12 text-muted-foreground">
+                  <div className="p-4 rounded-full bg-muted/50 mx-auto mb-4 w-fit">
+                    <Receipt className="h-6 w-6" />
+                  </div>
+                  <p className="text-sm">Aucune transaction récente</p>
                 </div>
               )}
+            </div>
+          </CardContent>
+        </Card>
 
-              {/* Username/Email Field */}
-              <div className="space-y-2">
-                <Label htmlFor="email" className="text-sm font-medium text-[hsl(220,13%,13%)]">
-                  Nom d'utilisateur
-                </Label>
-                <div className="relative">
-                  <Input
-                    id="email"
-                    name="email"
-                    type="email"
-                    placeholder="Nom d'utilisateur"
-                    className="h-12 pr-10 bg-white border-gray-300 focus:border-[hsl(123,38%,57%)] focus:ring-[hsl(123,38%,57%)]"
-                    required
-                    disabled={isLoading}
-                  />
-                  <User className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-                </div>
-              </div>
-
-              {/* Password Field */}
-              <div className="space-y-2">
-                <Label htmlFor="password" className="text-sm font-medium text-[hsl(220,13%,13%)]">
-                  Mot de passe
-                </Label>
-                <div className="relative">
-                  <Input
-                    id="password"
-                    name="password"
-                    type={showPassword ? "text" : "password"}
-                    placeholder="Mot de passe"
-                    className="h-12 pr-10 bg-white border-gray-300 focus:border-[hsl(123,38%,57%)] focus:ring-[hsl(123,38%,57%)]"
-                    required
-                    disabled={isLoading}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                    disabled={isLoading}
-                  >
-                    {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                  </button>
-                </div>
-              </div>
-
-              {/* Remember Me & Forgot Password */}
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="remember"
-                    checked={rememberMe}
-                    onCheckedChange={(checked) => setRememberMe(checked as boolean)}
-                    disabled={isLoading}
-                    className="border-gray-300"
-                  />
-                  <Label htmlFor="remember" className="text-sm text-[hsl(220,13%,13%)] cursor-pointer font-normal">
-                    Se souvenir de moi
-                  </Label>
-                </div>
-                <Button
-                  type="button"
-                  variant="link"
-                  className="px-0 text-sm text-[hsl(220,13%,13%)] hover:text-[hsl(123,38%,57%)] underline font-normal h-auto"
-                >
-                  Mot de passe oublié ?
-                </Button>
-              </div>
-
-              {/* Submit Button */}
-              <Button
-                type="submit"
-                className="w-full h-12 bg-gradient-to-r from-[hsl(45,93%,47%)] to-[hsl(123,38%,57%)] hover:opacity-90 text-white font-semibold text-base shadow-lg"
-                disabled={isLoading}
-              >
-                {isLoading ? (
-                  <div className="flex items-center space-x-2">
-                    <div className="animate-spin rounded-full h-5 w-5 border-2 border-white/30 border-t-white"></div>
-                    <span>Connexion...</span>
-                  </div>
-                ) : (
-                  "Se connecter"
-                )}
-              </Button>
-            </form>
+        <div>
+          <div className="mb-4">
+            <h2 className="text-xl font-heading font-semibold">Nos Produits</h2>
+            <p className="text-sm text-muted-foreground">Découvrez nos offres exclusives</p>
           </div>
-
-          {/* Footer */}
-          <div className="pt-8 text-center">
-            <p className="text-sm font-semibold text-[hsl(220,13%,46%)]">BNG BANK INTERNATIONAL 2025 ©</p>
-          </div>
+          <BankProductsCarousel />
         </div>
       </div>
     </div>

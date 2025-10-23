@@ -15,7 +15,8 @@ interface ConditionalLayoutProps {
 export function ConditionalLayout({ children }: ConditionalLayoutProps) {
   const pathname = usePathname()
 
-  const publicPaths = ["/", "/auth/accept-invite"]
+  // Pages qui n'ont pas besoin du layout principal (sidebar + header)
+  const publicPaths = ["/login", "/auth/accept-invite"]
   const isPublicPage = publicPaths.some((path) => pathname.startsWith(path))
 
   if (isPublicPage) {

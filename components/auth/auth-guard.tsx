@@ -18,12 +18,15 @@ export function AuthGuard({ children }: AuthGuardProps) {
 
   useEffect(() => {
     const checkAuth = async () => {
-      const publicPaths = ["/", "/auth/accept-invite"]
+      // Pages publiques qui ne nécessitent pas d'authentification
+      const publicPaths = ["/login", "/auth/accept-invite"]
       const isPublicPage = publicPaths.some((path) => pathname.startsWith(path))
 
       if (isPublicPage) {
-        if (AuthService.isAuthenticated() && pathname === "/") {
-          router.push("/dashboard")
+        // Si on est sur une page publique, vérifier si on est déjà connecté
+        if (AuthService.isAuthenticated() && pathname === "/login") {
+          // Si connecté et sur login, rediriger vers dashboard
+          router.push("/")
           return
         }
         setIsAuthenticated(true)
@@ -35,7 +38,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
       if (!AuthService.isAuthenticated()) {
         setIsAuthenticated(false)
         setIsLoading(false)
-        router.push("/")
+        router.push("/login")
         return
       }
 
@@ -46,7 +49,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
         } catch (error) {
           console.error("Erreur lors de la récupération des informations utilisateur:", error)
           // Token invalide, rediriger vers login
-          router.push("/")
+          router.push("/login")
           return
         }
       }
