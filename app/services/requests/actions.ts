@@ -9,6 +9,33 @@ import { cookies } from "next/headers"
 const API_BASE_URL = process.env.API_BASE_URL
 const TENANT_ID = process.env.TENANT_ID
 
+interface Commande {
+  id: string
+  createdAt: string
+  updatedAt: string
+  deletedAt: string | null
+  createdById: string
+  updatedById: string
+  importHash: string
+  tenantId: string
+  dateorder: string
+  nbrefeuille: number
+  nbrechequier: number
+  stepflow: number
+  intitulecompte: string
+  numcompteId: string
+  commentaire: string
+  talonCheque: boolean
+  typeCheque: string
+  referenceCommande: string
+  clientId: string
+}
+
+interface GetCommandesResponse {
+  rows: Commande[]
+  count: number
+}
+
 // Fonction pour générer une référence unique
 async function generateReference(prefix: string): Promise<string> {
   try {
@@ -180,7 +207,7 @@ export async function submitCheckbookRequest(formData: {
 }
 
 // Fonction asynchrone pour récupérer les demandes de chéquier
-export async function getCheckbookRequest(id?: string) {
+export async function getCheckbookRequest(id?: string): Promise<GetCommandesResponse | Commande> {
   try {
     // 🔑 Récupération du token JWT stocké dans les cookies
     const cookieToken = (await cookies()).get("token")?.value
@@ -189,27 +216,49 @@ export async function getCheckbookRequest(id?: string) {
     if (!cookieToken) {
       console.log("[v0] Token d'authentification manquant, retour de données de test")
 
-      const mockCheckbookRequests = {
+      const mockCheckbookRequests: GetCommandesResponse = {
         rows: [
           {
             id: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+            createdAt: "2024-01-15T10:00:00Z",
+            updatedAt: "2024-01-15T10:00:00Z",
+            deletedAt: null,
+            createdById: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+            updatedById: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+            importHash: "hash123",
+            tenantId: "aa1287f6-06af-45b7-a905-8c57363565c2",
             dateorder: "2024-01-15",
             nbrefeuille: 25,
             nbrechequier: 1,
+            stepflow: 0,
             intitulecompte: "Compte Courant Principal",
             numcompteId: "ACC001",
             commentaire: "Demande de chéquier standard",
-            reference: "CHQ-2024-001", // Ajout de la référence
+            talonCheque: true,
+            typeCheque: "Standard",
+            referenceCommande: "CHQ-2024-001",
+            clientId: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
           },
           {
             id: "4fa85f64-5717-4562-b3fc-2c963f66afa7",
+            createdAt: "2024-01-20T14:30:00Z",
+            updatedAt: "2024-01-20T14:30:00Z",
+            deletedAt: null,
+            createdById: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+            updatedById: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+            importHash: "hash456",
+            tenantId: "aa1287f6-06af-45b7-a905-8c57363565c2",
             dateorder: "2024-01-20",
             nbrefeuille: 50,
             nbrechequier: 2,
+            stepflow: 0,
             intitulecompte: "Compte Épargne",
             numcompteId: "ACC002",
             commentaire: "Demande urgente",
-            reference: "CHQ-2024-002", // Ajout de la référence
+            talonCheque: false,
+            typeCheque: "Certifié",
+            referenceCommande: "CHQ-2024-002",
+            clientId: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
           },
         ],
         count: 2,
@@ -217,7 +266,7 @@ export async function getCheckbookRequest(id?: string) {
 
       if (id) {
         const foundRow = mockCheckbookRequests.rows.find((req) => req.id === id)
-        return foundRow ? { rows: [foundRow], count: 1 } : { rows: [], count: 0 }
+        return foundRow || mockCheckbookRequests.rows[0]
       }
       return mockCheckbookRequests
     }
@@ -243,47 +292,38 @@ export async function getCheckbookRequest(id?: string) {
 
     const data = await response.json()
 
-    if (data.rows && Array.isArray(data.rows)) {
-      const filteredRows = data.rows.map((item: any) => ({
-        id: item.id,
-        dateorder: item.dateorder,
-        nbrefeuille: item.nbrefeuille,
-        nbrechequier: item.nbrechequier,
-        intitulecompte: item.intitulecompte,
-        numcompteId: item.numcompteId,
-        commentaire: item.commentaire,
-        reference: item.reference, // Inclure la référence
-      }))
-      return { ...data, rows: filteredRows }
-    } else if (data.id) {
-      // Pour une seule demande
-      return {
-        id: data.id,
-        dateorder: data.dateorder,
-        nbrefeuille: data.nbrefeuille,
-        nbrechequier: data.nbrechequier,
-        intitulecompte: data.intitulecompte,
-        numcompteId: data.numcompteId,
-        commentaire: data.commentaire,
-        reference: data.reference, // Inclure la référence
-      }
+    if (id) {
+      // Single commande
+      return data as Commande
     }
 
-    return data
+    // List of commandes with rows and count
+    return data as GetCommandesResponse
   } catch (error: any) {
     console.log("[v0] Erreur lors de la récupération, retour de données de test:", error.message)
 
-    const mockCheckbookRequests = {
+    const mockCheckbookRequests: GetCommandesResponse = {
       rows: [
         {
           id: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+          createdAt: "2024-01-15T10:00:00Z",
+          updatedAt: "2024-01-15T10:00:00Z",
+          deletedAt: null,
+          createdById: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+          updatedById: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+          importHash: "hash123",
+          tenantId: "aa1287f6-06af-45b7-a905-8c57363565c2",
           dateorder: "2024-01-15",
           nbrefeuille: 25,
           nbrechequier: 1,
+          stepflow: 0,
           intitulecompte: "Compte Courant Principal",
           numcompteId: "ACC001",
           commentaire: "Demande de chéquier standard",
-          reference: "CHQ-2024-001",
+          talonCheque: true,
+          typeCheque: "Standard",
+          referenceCommande: "CHQ-2024-001",
+          clientId: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
         },
       ],
       count: 1,
@@ -291,7 +331,7 @@ export async function getCheckbookRequest(id?: string) {
 
     if (id) {
       const foundRow = mockCheckbookRequests.rows.find((req) => req.id === id)
-      return foundRow ? { rows: [foundRow], count: 1 } : { rows: [], count: 0 }
+      return foundRow || mockCheckbookRequests.rows[0]
     }
     return mockCheckbookRequests
   }
@@ -475,7 +515,7 @@ export async function getDemandeCreditById(TENANT_ID: string, id: string) {
 }
 
 // Fonction asynchrone pour récupérer une demande de chéquier (commande) par ID
-export async function getCommandeById(TENANT_ID: string, id: string) {
+export async function getCommandeById(TENANT_ID: string, id: string): Promise<Commande> {
   try {
     // 🔑 Récupération du token JWT stocké dans les cookies
     const cookieToken = (await cookies()).get("token")?.value
@@ -484,15 +524,26 @@ export async function getCommandeById(TENANT_ID: string, id: string) {
     if (!cookieToken) {
       console.log("[v0] Token d'authentification manquant, retour de données de test")
 
-      const mockCheckbookDetail = {
+      const mockCheckbookDetail: Commande = {
         id: id,
+        createdAt: "2024-01-15T10:00:00Z",
+        updatedAt: "2024-01-15T10:00:00Z",
+        deletedAt: null,
+        createdById: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+        updatedById: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+        importHash: "hash123",
+        tenantId: "aa1287f6-06af-45b7-a905-8c57363565c2",
         dateorder: "2024-01-15",
         nbrefeuille: 25,
         nbrechequier: 1,
+        stepflow: 0,
         intitulecompte: "Compte Courant Principal",
         numcompteId: "ACC001",
         commentaire: "Demande de chéquier standard",
-        reference: "CHQ-2024-001", // Ajout de la référence
+        talonCheque: true,
+        typeCheque: "Standard",
+        referenceCommande: "CHQ-2024-001",
+        clientId: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
       }
 
       return mockCheckbookDetail
@@ -514,28 +565,30 @@ export async function getCommandeById(TENANT_ID: string, id: string) {
 
     const data = await response.json()
 
-    return {
-      id: data.id,
-      dateorder: data.dateorder,
-      nbrefeuille: data.nbrefeuille,
-      nbrechequier: data.nbrechequier,
-      intitulecompte: data.intitulecompte,
-      numcompteId: data.numcompteId,
-      commentaire: data.commentaire,
-      reference: data.reference, // Inclure la référence
-    }
+    return data as Commande
   } catch (error: any) {
     console.log("[v0] Erreur lors de la récupération, retour de données de test:", error.message)
 
-    const mockCheckbookDetail = {
+    const mockCheckbookDetail: Commande = {
       id: id,
+      createdAt: "2024-01-15T10:00:00Z",
+      updatedAt: "2024-01-15T10:00:00Z",
+      deletedAt: null,
+      createdById: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+      updatedById: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+      importHash: "hash123",
+      tenantId: "aa1287f6-06af-45b7-a905-8c57363565c2",
       dateorder: "2024-01-15",
       nbrefeuille: 25,
       nbrechequier: 1,
+      stepflow: 0,
       intitulecompte: "Compte Courant Principal",
       numcompteId: "ACC001",
       commentaire: "Demande de chéquier standard",
-      reference: "CHQ-2024-001",
+      talonCheque: true,
+      typeCheque: "Standard",
+      referenceCommande: "CHQ-2024-001",
+      clientId: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
     }
 
     return mockCheckbookDetail
