@@ -70,6 +70,24 @@ export async function getBeneficiaries(): Promise<ApiBeneficiary[]> {
   const cookieToken = (await cookies()).get("token")?.value
   const usertoken = cookieToken
   try {
+    let currentUserId: string | null = null
+    try {
+      const userResponse = await fetch(`${API_BASE_URL}/auth/me`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${usertoken}`,
+        },
+      })
+
+      if (userResponse.ok) {
+        const userData = await userResponse.json()
+        currentUserId = userData.id
+      }
+    } catch (error) {
+      console.error("Erreur lors de la récupération du user ID:", error)
+    }
+
     const response = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/beneficiaire`, {
       method: "GET",
       headers: {
@@ -88,6 +106,9 @@ export async function getBeneficiaries(): Promise<ApiBeneficiary[]> {
 
     // Handle new response structure with rows array
     if (data.rows && Array.isArray(data.rows)) {
+      if (currentUserId) {
+        return data.rows.filter((beneficiary) => beneficiary.clientId === currentUserId)
+      }
       return data.rows
     }
 

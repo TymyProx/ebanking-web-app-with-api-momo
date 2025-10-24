@@ -45,6 +45,24 @@ export async function getAccounts(): Promise<Account[]> {
       return []
     }
 
+    let currentUserId: string | null = null
+    try {
+      const userResponse = await fetch(`${API_BASE_URL}/auth/me`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${usertoken}`,
+        },
+      })
+
+      if (userResponse.ok) {
+        const userData = await userResponse.json()
+        currentUserId = userData.id
+      }
+    } catch (error) {
+      console.error("[v0] Erreur lors de la récupération du user ID:", error)
+    }
+
     const response = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/compte`, {
       method: "GET",
       headers: {
@@ -125,29 +143,28 @@ export async function getAccounts(): Promise<Account[]> {
     const responseData = await response.json()
     //console.log("[v0] Données reçues:", responseData)
 
-    if (responseData.rows && Array.isArray(responseData.rows)) {
-      return responseData.rows
-    }
+    let accounts: Account[] = []
 
-    // Gérer les différents formats de réponse possibles
-    if (responseData.data) {
+    if (responseData.rows && Array.isArray(responseData.rows)) {
+      accounts = responseData.rows
+    } else if (responseData.data) {
       // Si responseData.data est un tableau
       if (Array.isArray(responseData.data)) {
-        return responseData.data
+        accounts = responseData.data
       }
       // Si responseData.data est un objet unique (un seul compte)
       else if (typeof responseData.data === "object") {
-        return [responseData.data]
+        accounts = [responseData.data]
       }
+    } else if (Array.isArray(responseData)) {
+      accounts = responseData
     }
 
-    // Si responseData est directement un tableau
-    if (Array.isArray(responseData)) {
-      return responseData
+    if (currentUserId) {
+      accounts = accounts.filter((account) => account.clientId === currentUserId)
     }
 
-    // Si aucune structure reconnue, retourner un tableau vide
-    return []
+    return accounts
   } catch (error) {
     console.error("[v0] Erreur lors de la récupération des comptes:", error)
     return []

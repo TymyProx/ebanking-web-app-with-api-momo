@@ -66,6 +66,24 @@ export async function fetchAllCards(): Promise<CardsResponse> {
     }
   }
 
+  let currentUserId: string | null = null
+  try {
+    const userResponse = await fetch(`${BASE_URL}/auth/me`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${usertoken}`,
+      },
+    })
+
+    if (userResponse.ok) {
+      const userData = await userResponse.json()
+      currentUserId = userData.id
+    }
+  } catch (error) {
+    console.error("[v0] Error fetching user ID:", error)
+  }
+
   const res = await fetch(`${BASE_URL}/tenant/${TENANT_ID}/card`, {
     method: "GET",
     headers: {
@@ -88,9 +106,14 @@ export async function fetchAllCards(): Promise<CardsResponse> {
     parsed = JSON.parse(bodyText) as CardsResponse
   }
 
+  let filteredRows = parsed?.rows ?? []
+  if (currentUserId && filteredRows.length > 0) {
+    filteredRows = filteredRows.filter((card) => card.clientId === currentUserId)
+  }
+
   return {
-    rows: parsed?.rows ?? [],
-    count: parsed?.count ?? 0,
+    rows: filteredRows,
+    count: filteredRows.length,
   }
 }
 

@@ -310,6 +310,24 @@ export async function getCheckbookRequest(id?: string): Promise<GetCommandesResp
       return mockCheckbookRequests
     }
 
+    let currentUserId: string | null = null
+    try {
+      const userResponse = await fetch(`${API_BASE_URL}/auth/me`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${usertoken}`,
+        },
+      })
+
+      if (userResponse.ok) {
+        const userData = await userResponse.json()
+        currentUserId = userData.id
+      }
+    } catch (error) {
+      console.error("[v0] Erreur lors de la récupération du user ID:", error)
+    }
+
     // Construction de l'URL avec ou sans ID spécifique
     const url = id
       ? `${API_BASE_URL}/tenant/${TENANT_ID}/commande/${id}`
@@ -336,8 +354,13 @@ export async function getCheckbookRequest(id?: string): Promise<GetCommandesResp
       return data as Commande
     }
 
-    // List of commandes with rows and count
-    return data as GetCommandesResponse
+    const responseData = data as GetCommandesResponse
+    if (currentUserId && responseData.rows) {
+      responseData.rows = responseData.rows.filter((commande) => commande.clientId === currentUserId)
+      responseData.count = responseData.rows.length
+    }
+
+    return responseData
   } catch (error: any) {
     console.log("[v0] Erreur lors de la récupération, retour de données de test:", error.message)
 
@@ -431,6 +454,24 @@ export async function getCreditRequest(id?: string): Promise<GetDemandesCreditRe
       return mockCreditRequests
     }
 
+    let currentUserId: string | null = null
+    try {
+      const userResponse = await fetch(`${API_BASE_URL}/auth/me`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${usertoken}`,
+        },
+      })
+
+      if (userResponse.ok) {
+        const userData = await userResponse.json()
+        currentUserId = userData.id
+      }
+    } catch (error) {
+      console.error("[v0] Erreur lors de la récupération du user ID:", error)
+    }
+
     // Construction de l'URL avec ou sans ID spécifique
     const url = id
       ? `${API_BASE_URL}/tenant/${TENANT_ID}/demande-credit/${id}`
@@ -456,7 +497,13 @@ export async function getCreditRequest(id?: string): Promise<GetDemandesCreditRe
       return data as DemandeCredit
     }
 
-    return data as GetDemandesCreditResponse
+    const responseData = data as GetDemandesCreditResponse
+    if (currentUserId && responseData.rows) {
+      responseData.rows = responseData.rows.filter((demande) => demande.clientId === currentUserId)
+      responseData.count = responseData.rows.length
+    }
+
+    return responseData
   } catch (error: any) {
     console.log("[v0] Erreur lors de la récupération, retour de données de test:", error.message)
 
