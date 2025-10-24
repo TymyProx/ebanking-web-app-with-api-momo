@@ -166,10 +166,6 @@ export default function LandingPage() {
                   <span className="text-sm font-medium">Sécurisé</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Lock className="h-5 w-5 text-primary" />
-                  <span className="text-sm font-medium">Crypté</span>
-                </div>
-                <div className="flex items-center gap-2">
                   <Clock className="h-5 w-5 text-primary" />
                   <span className="text-sm font-medium">24/7</span>
                 </div>
@@ -228,7 +224,7 @@ export default function LandingPage() {
               <CardContent className="p-0">
                 <div className="relative h-80 overflow-hidden">
                   <Image
-                    src="/images/happy-family-using-banking-services-smiling.jpg"
+                    src="/images/particulier.png"
                     alt="Particuliers"
                     fill
                     className="object-cover group-hover:scale-110 transition-transform duration-700"
@@ -253,7 +249,7 @@ export default function LandingPage() {
               <CardContent className="p-0">
                 <div className="relative h-80 overflow-hidden">
                   <Image
-                    src="/images/business-professionals-meeting-office-modern.jpg"
+                    src="/images/entreprise.png"
                     alt="Professionnels"
                     fill
                     className="object-cover group-hover:scale-110 transition-transform duration-700"
