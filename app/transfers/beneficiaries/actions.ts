@@ -17,9 +17,9 @@ interface ApiBeneficiary {
   createdById: string
   updatedById: string
   importHash?: string
-  TENANT_ID: string
+  tenantId: string // Changed from TENANT_ID to tenantId
   beneficiaryId: string
-  clientId: string // Changed from customerId to clientId
+  clientId: string
   name: string
   accountNumber: string
   bankCode: string
@@ -27,8 +27,13 @@ interface ApiBeneficiary {
   status: number
   typeBeneficiary: string
   favoris: boolean
-  codagence: string // NEW field
-  clerib: string // NEW field
+  codagence: string
+  clerib: string
+}
+
+interface GetBeneficiariesResponse {
+  rows: ApiBeneficiary[]
+  count: number
 }
 
 const API_BASE_URL = process.env.API_BASE_URL
@@ -79,11 +84,15 @@ export async function getBeneficiaries(): Promise<ApiBeneficiary[]> {
       return []
     }
 
-    const data = await response.json()
-    if (Array.isArray(data.rows)) {
+    const data: GetBeneficiariesResponse = await response.json()
+
+    // Handle new response structure with rows array
+    if (data.rows && Array.isArray(data.rows)) {
       return data.rows
     }
-    return [data.rows]
+
+    // Fallback for unexpected response format
+    return []
   } catch (error) {
     console.error("Erreur lors de la récupération des bénéficiaires:", error)
     return []
