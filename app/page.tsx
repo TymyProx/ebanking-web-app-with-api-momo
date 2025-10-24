@@ -19,11 +19,115 @@ import {
   ArrowRight,
   Clock,
 } from "lucide-react"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
+
+// Custom hook for scroll animations
+function useScrollAnimation() {
+  const ref = useRef<HTMLDivElement>(null)
+  const [isVisible, setIsVisible] = useState(false)
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsVisible(true)
+        }
+      },
+      { threshold: 0.1 },
+    )
+
+    if (ref.current) {
+      observer.observe(ref.current)
+    }
+
+    return () => {
+      if (ref.current) {
+        observer.unobserve(ref.current)
+      }
+    }
+  }, [])
+
+  return { ref, isVisible }
+}
+
+// Separate component for animated stat to properly use hooks
+function AnimatedStat({
+  value,
+  suffix,
+  label,
+  delay,
+}: { value: number; suffix: string; label: string; delay: number }) {
+  const ref = useRef<HTMLDivElement>(null)
+  const [count, setCount] = useState(0)
+  const [hasAnimated, setHasAnimated] = useState(false)
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && !hasAnimated) {
+          setHasAnimated(true)
+          let startTime: number | null = null
+          const animate = (currentTime: number) => {
+            if (!startTime) startTime = currentTime
+            const progress = Math.min((currentTime - startTime) / 2000, 1)
+            setCount(Math.floor(progress * value))
+            if (progress < 1) {
+              requestAnimationFrame(animate)
+            }
+          }
+          requestAnimationFrame(animate)
+        }
+      },
+      { threshold: 0.5 },
+    )
+
+    if (ref.current) {
+      observer.observe(ref.current)
+    }
+
+    return () => {
+      if (ref.current) {
+        observer.unobserve(ref.current)
+      }
+    }
+  }, [value, hasAnimated])
+
+  return (
+    <div
+      ref={ref}
+      className="text-center space-y-2 transition-all duration-700 opacity-0 translate-y-10 animate-in"
+      style={{
+        animationDelay: `${delay}ms`,
+        animationFillMode: "forwards",
+      }}
+    >
+      <div className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+        {count}
+        {suffix}
+      </div>
+      <div className="text-sm text-muted-foreground font-medium">{label}</div>
+    </div>
+  )
+}
 
 export default function LandingPage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 })
+
+  const heroAnimation = useScrollAnimation()
+  const servicesAnimation = useScrollAnimation()
+  const ebankingAnimation = useScrollAnimation()
+  const featuresAnimation = useScrollAnimation()
+  const ctaAnimation = useScrollAnimation()
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      setMousePosition({ x: e.clientX, y: e.clientY })
+    }
+    window.addEventListener("mousemove", handleMouseMove)
+    return () => window.removeEventListener("mousemove", handleMouseMove)
+  }, [])
 
   useEffect(() => {
     const handleScroll = () => {
@@ -34,7 +138,7 @@ export default function LandingPage() {
   }, [])
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background overflow-hidden">
       <header
         className={`fixed top-0 z-50 w-full transition-all duration-300 ${
           scrolled ? "bg-background/80 backdrop-blur-xl border-b shadow-sm" : "bg-transparent"
@@ -129,15 +233,28 @@ export default function LandingPage() {
       </header>
 
       <section id="accueil" className="relative overflow-hidden pt-32 pb-20 md:pt-40 md:pb-32">
-        {/* Animated background gradient */}
         <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-background to-secondary/5">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(120,119,198,0.1),transparent_50%)]" />
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,rgba(74,222,128,0.1),transparent_50%)]" />
+          <div
+            className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(120,119,198,0.1),transparent_50%)] transition-transform duration-1000"
+            style={{
+              transform: `translate(${mousePosition.x * 0.02}px, ${mousePosition.y * 0.02}px)`,
+            }}
+          />
+          <div
+            className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,rgba(74,222,128,0.1),transparent_50%)] transition-transform duration-1000"
+            style={{
+              transform: `translate(${-mousePosition.x * 0.02}px, ${-mousePosition.y * 0.02}px)`,
+            }}
+          />
         </div>
 
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative" ref={heroAnimation.ref}>
           <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
-            <div className="space-y-6 md:space-y-8 animate-in fade-in slide-in-from-left duration-700">
+            <div
+              className={`space-y-6 md:space-y-8 transition-all duration-1000 ${
+                heroAnimation.isVisible ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-20"
+              }`}
+            >
               <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight leading-tight">
                 Votre banque,{" "}
                 <span className="bg-gradient-to-r from-primary via-purple-500 to-secondary bg-clip-text text-transparent animate-gradient">
@@ -181,15 +298,14 @@ export default function LandingPage() {
               </div>
             </div>
 
-            <div className="relative h-[400px] sm:h-[500px] lg:h-[600px] animate-in fade-in slide-in-from-right duration-700">
+            <div
+              className={`relative h-[400px] sm:h-[500px] lg:h-[600px] transition-all duration-1000 delay-300 ${
+                heroAnimation.isVisible ? "opacity-100 translate-x-0" : "opacity-0 translate-x-20"
+              }`}
+            >
               <div className="absolute inset-0 bg-gradient-to-tr from-primary/20 via-purple-500/10 to-secondary/20 rounded-3xl blur-3xl animate-pulse" />
-              <div className="relative h-full rounded-3xl overflow-hidden shadow-2xl">
-                <Image
-                  src="/images/accessibilite.png"
-                  alt="Banking Interface"
-                  fill
-                  className="object-contain p-8 hover:scale-105 transition-transform duration-500"
-                />
+              <div className="relative h-full rounded-3xl overflow-hidden shadow-2xl transform hover:scale-105 transition-transform duration-700">
+                <Image src="/images/accessibilite.png" alt="Banking Interface" fill className="object-contain p-8" />
               </div>
             </div>
           </div>
@@ -199,26 +315,21 @@ export default function LandingPage() {
       <section className="py-16 md:py-20 bg-muted/30 border-y">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-12">
-            {[
-              { value: "50K+", label: "Clients actifs" },
-              { value: "99.9%", label: "Disponibilité" },
-              { value: "24/7", label: "Support client" },
-              { value: "100%", label: "Sécurisé" },
-            ].map((stat, index) => (
-              <div key={index} className="text-center space-y-2">
-                <div className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent animate-gradient">
-                  {stat.value}
-                </div>
-                <div className="text-sm text-muted-foreground font-medium">{stat.label}</div>
-              </div>
-            ))}
+            <AnimatedStat value={50000} suffix="+" label="Clients actifs" delay={0} />
+            <AnimatedStat value={99.9} suffix="%" label="Disponibilité" delay={100} />
+            <AnimatedStat value={24} suffix="/7" label="Support client" delay={200} />
+            <AnimatedStat value={100} suffix="%" label="Sécurisé" delay={300} />
           </div>
         </div>
       </section>
 
-      <section id="services" className="py-20 md:py-32">
+      <section id="services" className="py-20 md:py-32" ref={servicesAnimation.ref}>
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12 md:mb-16 space-y-4">
+          <div
+            className={`text-center mb-12 md:mb-16 space-y-4 transition-all duration-1000 ${
+              servicesAnimation.isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"
+            }`}
+          >
             <Badge variant="outline" className="mb-4">
               Nos services
             </Badge>
@@ -229,63 +340,65 @@ export default function LandingPage() {
           </div>
 
           <div className="grid md:grid-cols-2 gap-6 md:gap-8">
-            <Card className="group overflow-hidden hover:shadow-2xl transition-all duration-500 border-2">
-              <CardContent className="p-0">
-                <div className="relative h-80 overflow-hidden">
-                  <Image
-                    src="/images/particulier.png"
-                    alt="Particuliers"
-                    fill
-                    className="object-cover group-hover:scale-110 transition-transform duration-700"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
-                  <div className="absolute inset-0 bg-primary/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                  <div className="absolute bottom-6 left-6 right-6 md:bottom-8 md:left-8 md:right-8 space-y-4">
-                    <h3 className="text-3xl md:text-4xl font-bold text-white">Particuliers</h3>
-                    <p className="text-white/90 text-base md:text-lg">Comptes, épargne, crédits et plus</p>
-                    <Link href="/login">
-                      <Button size="lg" variant="secondary" className="group/btn">
-                        Découvrir
-                        <ChevronRight className="ml-2 h-4 w-4 transition-transform group-hover/btn:translate-x-1" />
-                      </Button>
-                    </Link>
+            {[
+              {
+                image: "/images/particulier.png",
+                title: "Particuliers",
+                description: "Comptes, épargne, crédits et plus",
+                gradient: "from-primary/20",
+              },
+              {
+                image: "/images/entreprise.png",
+                title: "Professionnels",
+                description: "Solutions adaptées à votre activité",
+                gradient: "from-secondary/20",
+              },
+            ].map((service, index) => (
+              <Card
+                key={index}
+                className={`group overflow-hidden hover:shadow-2xl transition-all duration-700 border-2 ${
+                  servicesAnimation.isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-20"
+                }`}
+                style={{ transitionDelay: `${index * 200}ms` }}
+              >
+                <CardContent className="p-0">
+                  <div className="relative h-80 overflow-hidden">
+                    <Image
+                      src={service.image || "/placeholder.svg"}
+                      alt={service.title}
+                      fill
+                      className="object-cover group-hover:scale-110 transition-transform duration-700"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
+                    <div
+                      className={`absolute inset-0 bg-gradient-to-br ${service.gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-500`}
+                    />
+                    <div className="absolute bottom-6 left-6 right-6 md:bottom-8 md:left-8 md:right-8 space-y-4">
+                      <h3 className="text-3xl md:text-4xl font-bold text-white">{service.title}</h3>
+                      <p className="text-white/90 text-base md:text-lg">{service.description}</p>
+                      <Link href="/login">
+                        <Button size="lg" variant="secondary" className="group/btn">
+                          Découvrir
+                          <ChevronRight className="ml-2 h-4 w-4 transition-transform group-hover/btn:translate-x-1" />
+                        </Button>
+                      </Link>
+                    </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="group overflow-hidden hover:shadow-2xl transition-all duration-500 border-2">
-              <CardContent className="p-0">
-                <div className="relative h-80 overflow-hidden">
-                  <Image
-                    src="/images/entreprise.png"
-                    alt="Professionnels"
-                    fill
-                    className="object-cover group-hover:scale-110 transition-transform duration-700"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
-                  <div className="absolute inset-0 bg-secondary/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                  <div className="absolute bottom-6 left-6 right-6 md:bottom-8 md:left-8 md:right-8 space-y-4">
-                    <h3 className="text-3xl md:text-4xl font-bold text-white">Professionnels</h3>
-                    <p className="text-white/90 text-base md:text-lg">Solutions adaptées à votre activité</p>
-                    <Link href="/login">
-                      <Button size="lg" variant="secondary" className="group/btn">
-                        Découvrir
-                        <ChevronRight className="ml-2 h-4 w-4 transition-transform group-hover/btn:translate-x-1" />
-                      </Button>
-                    </Link>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            ))}
           </div>
         </div>
       </section>
 
-      <section id="ebanking" className="py-20 md:py-32 bg-muted/30">
+      <section id="ebanking" className="py-20 md:py-32 bg-muted/30" ref={ebankingAnimation.ref}>
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
-            <div className="relative h-[500px] sm:h-[600px] md:h-[700px]">
+            <div
+              className={`relative h-[500px] sm:h-[600px] md:h-[700px] transition-all duration-1000 ${
+                ebankingAnimation.isVisible ? "opacity-100 -translate-x-0" : "opacity-0 -translate-x-20"
+              }`}
+            >
               <div className="absolute inset-0 flex items-center justify-center gap-4 md:gap-6 lg:gap-8">
                 <div className="relative w-80 sm:w-[28rem] md:w-[32rem] h-[650px] sm:h-[750px] md:h-[800px] hover:scale-105 transition-transform duration-500">
                   <Image
@@ -307,7 +420,11 @@ export default function LandingPage() {
               </div>
             </div>
 
-            <div className="space-y-6 md:space-y-8">
+            <div
+              className={`space-y-6 md:space-y-8 transition-all duration-1000 delay-300 ${
+                ebankingAnimation.isVisible ? "opacity-100 translate-x-0" : "opacity-0 translate-x-20"
+              }`}
+            >
               <div className="space-y-4">
                 <Badge variant="outline">E-Banking</Badge>
                 <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold">Découvrez Astra e-Bank</h2>
@@ -351,9 +468,13 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <section className="py-20 md:py-32">
+      <section className="py-20 md:py-32" ref={featuresAnimation.ref}>
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12 md:mb-16 space-y-4">
+          <div
+            className={`text-center mb-12 md:mb-16 space-y-4 transition-all duration-1000 ${
+              featuresAnimation.isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"
+            }`}
+          >
             <Badge variant="outline">Fonctionnalités</Badge>
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold">Pourquoi choisir Astra eBanking ?</h2>
             <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto">
@@ -402,11 +523,14 @@ export default function LandingPage() {
             ].map((feature, index) => (
               <Card
                 key={index}
-                className="group hover:shadow-xl transition-all duration-500 border-2 hover:border-primary/50"
+                className={`group hover:shadow-xl transition-all duration-700 border-2 hover:border-primary/50 hover:-translate-y-2 ${
+                  featuresAnimation.isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-20"
+                }`}
+                style={{ transitionDelay: `${index * 100}ms` }}
               >
                 <CardContent className="p-6 md:p-8 space-y-4">
                   <div
-                    className={`w-12 h-12 md:w-14 md:h-14 rounded-2xl bg-gradient-to-br ${feature.color} flex items-center justify-center group-hover:scale-110 transition-transform duration-500 shadow-lg`}
+                    className={`w-12 h-12 md:w-14 md:h-14 rounded-2xl bg-gradient-to-br ${feature.color} flex items-center justify-center group-hover:scale-110 group-hover:rotate-6 transition-all duration-500 shadow-lg`}
                   >
                     <feature.icon className="h-6 w-6 md:h-7 md:w-7 text-white" />
                   </div>
@@ -419,10 +543,14 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <section className="py-24 md:py-32 relative overflow-hidden">
+      <section className="py-24 md:py-32 relative overflow-hidden" ref={ctaAnimation.ref}>
         <div className="absolute inset-0 bg-gradient-to-br from-primary via-purple-600 to-secondary" />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,rgba(255,255,255,0.1),transparent_50%)]" />
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative text-center text-white">
+        <div
+          className={`container mx-auto px-4 sm:px-6 lg:px-8 relative text-center text-white transition-all duration-1000 ${
+            ctaAnimation.isVisible ? "opacity-100 scale-100" : "opacity-0 scale-95"
+          }`}
+        >
           <div className="max-w-3xl mx-auto space-y-6 md:space-y-8">
             <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold">Prêt à commencer ?</h2>
             <p className="text-lg sm:text-xl md:text-2xl opacity-90 leading-relaxed">
