@@ -176,7 +176,7 @@ export default function LandingPage() {
               <div className="absolute inset-0 bg-gradient-to-tr from-primary/20 via-purple-500/10 to-secondary/20 rounded-3xl blur-3xl animate-pulse" />
               <div className="relative h-full rounded-3xl overflow-hidden shadow-2xl">
                 <Image
-                  src="/images/modern-banking-mobile-app-interface-dashboard.jpg"
+                  src="/images/accessibilite.png"
                   alt="Banking Interface"
                   fill
                   className="object-contain p-8 hover:scale-105 transition-transform duration-500"
