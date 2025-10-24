@@ -61,23 +61,6 @@ async function getCurrentClientId(): Promise<string> {
   }
 }
 
-function extractAccountParts(accountNumber: string, type: string): { codagence: string; clerib: string } {
-  if (type === "BNG-BNG" || type === "BNG-CONFRERE") {
-    const parts = accountNumber.split("-")
-    if (parts.length === 3) {
-      return {
-        codagence: parts[0],
-        clerib: parts[2],
-      }
-    }
-  }
-
-  return {
-    codagence: "N/A",
-    clerib: "N/A",
-  }
-}
-
 export async function getBeneficiaries(): Promise<ApiBeneficiary[]> {
   const cookieToken = (await cookies()).get("token")?.value
   const usertoken = cookieToken
@@ -145,6 +128,9 @@ export async function addBeneficiary(prevState: ActionResult | null, formData: F
     const bank = formData.get("bank") as string
     const type = formData.get("type") as string
     const bankname = formData.get("bankname") as string
+    const codeAgence = formData.get("codeAgence") as string
+    const codeBanque = formData.get("codeBanque") as string
+    const cleRib = formData.get("cleRib") as string
 
     if (!name || !account || !type) {
       return {
@@ -167,16 +153,17 @@ export async function addBeneficiary(prevState: ActionResult | null, formData: F
       }
     }
 
-    const ribValidation = await validateRIB(account, type)
-    if (!ribValidation.isValid) {
-      return {
-        success: false,
-        error: ribValidation.message,
+    if (type !== "BNG-INTERNATIONAL") {
+      const digitsOnly = account.replace(/\D/g, "")
+      if (digitsOnly.length !== 10 || account !== digitsOnly) {
+        return {
+          success: false,
+          error: "Le numéro de compte doit contenir exactement 10 chiffres sans caractères spéciaux",
+        }
       }
     }
 
     const clientId = await getCurrentClientId()
-    const { codagence, clerib } = extractAccountParts(account, type)
 
     const apiData = {
       data: {
@@ -189,8 +176,8 @@ export async function addBeneficiary(prevState: ActionResult | null, formData: F
         status: 0,
         typeBeneficiary: type,
         favoris: false,
-        codagence: codagence,
-        clerib: clerib,
+        codagence: type === "BNG-INTERNATIONAL" ? "N/A" : codeAgence || "N/A",
+        clerib: type === "BNG-INTERNATIONAL" ? "N/A" : cleRib || "N/A",
       },
     }
 
@@ -241,6 +228,9 @@ export async function updateBeneficiary(prevState: ActionResult | null, formData
     const account = formData.get("account") as string
     const bank = formData.get("bank") as string
     const type = formData.get("type") as string
+    const codeAgence = formData.get("codeAgence") as string
+    const codeBanque = formData.get("codeBanque") as string
+    const cleRib = formData.get("cleRib") as string
 
     if (!id || !name || !account || !type) {
       return {
@@ -263,11 +253,13 @@ export async function updateBeneficiary(prevState: ActionResult | null, formData
       }
     }
 
-    const ribValidation = await validateRIB(account, type)
-    if (!ribValidation.isValid) {
-      return {
-        success: false,
-        error: ribValidation.message,
+    if (type !== "BNG-INTERNATIONAL") {
+      const digitsOnly = account.replace(/\D/g, "")
+      if (digitsOnly.length !== 10 || account !== digitsOnly) {
+        return {
+          success: false,
+          error: "Le numéro de compte doit contenir exactement 10 chiffres sans caractères spéciaux",
+        }
       }
     }
 
@@ -275,7 +267,6 @@ export async function updateBeneficiary(prevState: ActionResult | null, formData
     const currentBeneficiary = currentBeneficiaries.find((b) => b.id === id)
 
     const clientId = await getCurrentClientId()
-    const { codagence, clerib } = extractAccountParts(account, type)
 
     const apiData = {
       data: {
@@ -288,8 +279,8 @@ export async function updateBeneficiary(prevState: ActionResult | null, formData
         status: 0,
         typeBeneficiary: type,
         favoris: currentBeneficiary?.favoris || false,
-        codagence: codagence,
-        clerib: clerib,
+        codagence: type === "BNG-INTERNATIONAL" ? "N/A" : codeAgence || "N/A",
+        clerib: type === "BNG-INTERNATIONAL" ? "N/A" : cleRib || "N/A",
       },
     }
 
@@ -508,6 +499,8 @@ export async function deactivateBeneficiary(prevState: ActionResult | null, form
       }
     }
 
+    const result = await response.json()
+
     revalidatePath("/transfers/beneficiaries")
     revalidatePath("/transfers/new")
 
@@ -583,6 +576,8 @@ export async function reactivateBeneficiary(prevState: ActionResult | null, form
       }
     }
 
+    const result = await response.json()
+
     revalidatePath("/transfers/beneficiaries")
     revalidatePath("/transfers/new")
 
@@ -615,42 +610,4 @@ function getBankCode(bankName: string, type: string): string {
   }
 
   return bankCodes[bankName] || bankName.substring(0, 4).toLowerCase()
-}
-
-export async function validateRIB(account: string, type: string): Promise<{ isValid: boolean; message: string }> {
-  try {
-    await new Promise((resolve) => setTimeout(resolve, 500))
-
-    switch (type) {
-      case "BNG-BNG":
-        const bngPattern = /^\d{4}-\d{6}-\d{2}$/
-        if (bngPattern.test(account)) {
-          return { isValid: true, message: "Numéro de compte BNG valide" }
-        } else {
-          return { isValid: false, message: "Format invalide. Utilisez: 0001-234567-89" }
-        }
-
-      case "BNG-CONFRERE":
-        const confrerePattern = /^\d{4}-\d{6}-\d{2}$/
-        if (confrerePattern.test(account)) {
-          return { isValid: true, message: "Numéro de compte confrère valide" }
-        } else {
-          return { isValid: false, message: "Format invalide. Utilisez: 0002-234567-89" }
-        }
-
-      case "BNG-INTERNATIONAL":
-        const cleanedAccount = account.replace(/\s/g, "")
-        const ibanPattern = /^[A-Z]{2}\d{2}[A-Z0-9]{4,30}$/
-        if (cleanedAccount.length >= 15 && cleanedAccount.length <= 34 && ibanPattern.test(cleanedAccount)) {
-          return { isValid: true, message: "IBAN valide" }
-        } else {
-          return { isValid: false, message: "Format IBAN invalide. Ex: FR7612345678901234567890 (15-34 caractères)" }
-        }
-
-      default:
-        return { isValid: false, message: "Type de compte non reconnu" }
-    }
-  } catch (error) {
-    return { isValid: false, message: "Erreur lors de la validation" }
-  }
 }
