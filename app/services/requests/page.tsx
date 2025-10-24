@@ -631,6 +631,8 @@ export default function ServiceRequestsPage() {
         intitulecompte: formData.intitulecompte,
         numcompteId: formData.numcompte,
         commentaire: formData.commentaire || "",
+        typeCheque: formData.typeCheque || "Standard",
+        talonCheque: formData.talonCheque === true,
       }
 
       const result = await submitCheckbookRequest(checkbookData)
