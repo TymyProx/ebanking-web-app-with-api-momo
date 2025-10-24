@@ -60,25 +60,29 @@ function AnimatedStat({
   const ref = useRef<HTMLDivElement>(null)
   const [count, setCount] = useState(0)
   const [hasAnimated, setHasAnimated] = useState(false)
+  const [isVisible, setIsVisible] = useState(false)
 
   useEffect(() => {
     const observer = new IntersectionObserver(
       ([entry]) => {
-        if (entry.isIntersecting && !hasAnimated) {
-          setHasAnimated(true)
-          let startTime: number | null = null
-          const animate = (currentTime: number) => {
-            if (!startTime) startTime = currentTime
-            const progress = Math.min((currentTime - startTime) / 2000, 1)
-            setCount(Math.floor(progress * value))
-            if (progress < 1) {
-              requestAnimationFrame(animate)
+        if (entry.isIntersecting) {
+          setIsVisible(true)
+          if (!hasAnimated) {
+            setHasAnimated(true)
+            let startTime: number | null = null
+            const animate = (currentTime: number) => {
+              if (!startTime) startTime = currentTime
+              const progress = Math.min((currentTime - startTime) / 2000, 1)
+              setCount(Math.floor(progress * value))
+              if (progress < 1) {
+                requestAnimationFrame(animate)
+              }
             }
+            requestAnimationFrame(animate)
           }
-          requestAnimationFrame(animate)
         }
       },
-      { threshold: 0.5 },
+      { threshold: 0.3 },
     )
 
     if (ref.current) {
@@ -95,17 +99,18 @@ function AnimatedStat({
   return (
     <div
       ref={ref}
-      className="text-center space-y-2 transition-all duration-700 opacity-0 translate-y-10 animate-in"
+      className={`text-center space-y-2 transition-all duration-700 ${
+        isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"
+      }`}
       style={{
-        animationDelay: `${delay}ms`,
-        animationFillMode: "forwards",
+        transitionDelay: `${delay}ms`,
       }}
     >
-      <div className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+      <div className="text-4xl md:text-5xl lg:text-6xl font-bold bg-gradient-to-r from-primary via-purple-500 to-secondary bg-clip-text text-transparent">
         {count}
         {suffix}
       </div>
-      <div className="text-sm text-muted-foreground font-medium">{label}</div>
+      <div className="text-sm md:text-base text-muted-foreground font-medium uppercase tracking-wide">{label}</div>
     </div>
   )
 }
@@ -312,13 +317,14 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <section className="py-16 md:py-20 bg-muted/30 border-y">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-12">
+      <section className="py-20 md:py-24 bg-gradient-to-br from-muted/50 via-background to-muted/30 border-y relative overflow-hidden">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(120,119,198,0.05),transparent_70%)]" />
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-12 lg:gap-16">
             <AnimatedStat value={50000} suffix="+" label="Clients actifs" delay={0} />
-            <AnimatedStat value={99.9} suffix="%" label="Disponibilité" delay={100} />
-            <AnimatedStat value={24} suffix="/7" label="Support client" delay={200} />
-            <AnimatedStat value={100} suffix="%" label="Sécurisé" delay={300} />
+            <AnimatedStat value={99.9} suffix="%" label="Disponibilité" delay={150} />
+            <AnimatedStat value={24} suffix="/7" label="Support client" delay={300} />
+            <AnimatedStat value={100} suffix="%" label="Sécurisé" delay={450} />
           </div>
         </div>
       </section>
@@ -345,41 +351,41 @@ export default function LandingPage() {
                 image: "/images/particulier.png",
                 title: "Particuliers",
                 description: "Comptes, épargne, crédits et plus",
-                gradient: "from-primary/20",
+                gradient: "from-primary/20 to-purple-500/20",
               },
               {
                 image: "/images/entreprise.png",
                 title: "Professionnels",
                 description: "Solutions adaptées à votre activité",
-                gradient: "from-secondary/20",
+                gradient: "from-secondary/20 to-emerald-500/20",
               },
             ].map((service, index) => (
               <Card
                 key={index}
-                className={`group overflow-hidden hover:shadow-2xl transition-all duration-700 border-2 ${
+                className={`group overflow-hidden hover:shadow-2xl transition-all duration-700 border-2 hover:border-primary/30 ${
                   servicesAnimation.isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-20"
                 }`}
                 style={{ transitionDelay: `${index * 200}ms` }}
               >
                 <CardContent className="p-0">
-                  <div className="relative h-80 overflow-hidden">
+                  <div className="relative h-96 overflow-hidden">
                     <Image
                       src={service.image || "/placeholder.svg"}
                       alt={service.title}
                       fill
                       className="object-cover group-hover:scale-110 transition-transform duration-700"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent" />
                     <div
-                      className={`absolute inset-0 bg-gradient-to-br ${service.gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-500`}
+                      className={`absolute inset-0 bg-gradient-to-br ${service.gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-500 mix-blend-overlay`}
                     />
-                    <div className="absolute bottom-6 left-6 right-6 md:bottom-8 md:left-8 md:right-8 space-y-4">
-                      <h3 className="text-3xl md:text-4xl font-bold text-white">{service.title}</h3>
-                      <p className="text-white/90 text-base md:text-lg">{service.description}</p>
+                    <div className="absolute bottom-8 left-8 right-8 space-y-4 transform group-hover:translate-y-0 translate-y-2 transition-transform duration-500">
+                      <h3 className="text-4xl md:text-5xl font-bold text-white drop-shadow-lg">{service.title}</h3>
+                      <p className="text-white/90 text-lg md:text-xl">{service.description}</p>
                       <Link href="/login">
-                        <Button size="lg" variant="secondary" className="group/btn">
+                        <Button size="lg" variant="secondary" className="group/btn shadow-xl hover:shadow-2xl">
                           Découvrir
-                          <ChevronRight className="ml-2 h-4 w-4 transition-transform group-hover/btn:translate-x-1" />
+                          <ChevronRight className="ml-2 h-5 w-5 transition-transform group-hover/btn:translate-x-1" />
                         </Button>
                       </Link>
                     </div>
@@ -523,19 +529,20 @@ export default function LandingPage() {
             ].map((feature, index) => (
               <Card
                 key={index}
-                className={`group hover:shadow-xl transition-all duration-700 border-2 hover:border-primary/50 hover:-translate-y-2 ${
+                className={`group hover:shadow-2xl transition-all duration-700 border-2 hover:border-primary/50 hover:-translate-y-3 bg-gradient-to-br from-background to-muted/30 ${
                   featuresAnimation.isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-20"
                 }`}
                 style={{ transitionDelay: `${index * 100}ms` }}
               >
-                <CardContent className="p-6 md:p-8 space-y-4">
+                <CardContent className="p-8 space-y-4 relative overflow-hidden">
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-primary/5 to-transparent rounded-full blur-2xl group-hover:scale-150 transition-transform duration-700" />
                   <div
-                    className={`w-12 h-12 md:w-14 md:h-14 rounded-2xl bg-gradient-to-br ${feature.color} flex items-center justify-center group-hover:scale-110 group-hover:rotate-6 transition-all duration-500 shadow-lg`}
+                    className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${feature.color} flex items-center justify-center group-hover:scale-110 group-hover:rotate-12 transition-all duration-500 shadow-lg relative z-10`}
                   >
-                    <feature.icon className="h-6 w-6 md:h-7 md:w-7 text-white" />
+                    <feature.icon className="h-8 w-8 text-white" />
                   </div>
-                  <h3 className="text-xl md:text-2xl font-semibold">{feature.title}</h3>
-                  <p className="text-sm md:text-base text-muted-foreground leading-relaxed">{feature.description}</p>
+                  <h3 className="text-2xl font-semibold relative z-10">{feature.title}</h3>
+                  <p className="text-base text-muted-foreground leading-relaxed relative z-10">{feature.description}</p>
                 </CardContent>
               </Card>
             ))}
