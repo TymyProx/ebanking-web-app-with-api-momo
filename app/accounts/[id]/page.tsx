@@ -80,6 +80,8 @@ export default function AccountDetailsPage() {
         const accountDetails = await getAccountDetails(accountId)
 
         if (accountDetails) {
+          const iban = `${accountDetails.codeBanque || ""}${accountDetails.codeAgence || ""}${accountDetails.accountNumber || ""}${accountDetails.cleRib || ""}`
+
           const adaptedAccount: Account = {
             id: accountDetails.id || accountDetails.accountId,
             name: accountDetails.accountName || `Compte ${accountDetails.accountNumber}`,
@@ -89,7 +91,7 @@ export default function AccountDetailsPage() {
             currency: accountDetails.currency || "GNF",
             type: accountDetails.type,
             status: accountDetails.status,
-            iban: `GN82BNG001${accountDetails.accountNumber}`,
+            iban: iban,
             openingDate: accountDetails.createdAt || "2020-01-01",
             branch: accountDetails.codeAgence || "Agence Kaloum",
             overdraftLimit: accountDetails.currency === "GNF" ? 500000 : undefined,
@@ -102,6 +104,8 @@ export default function AccountDetailsPage() {
             const foundAccount = accountsData.find((acc: any) => acc.id === accountId || acc.accountId === accountId)
 
             if (foundAccount) {
+              const iban = `${foundAccount.codeBanque || ""}${foundAccount.codeAgence || ""}${foundAccount.accountNumber || ""}${foundAccount.cleRib || ""}`
+
               const adaptedAccount: Account = {
                 id: foundAccount.id || foundAccount.accountId,
                 name: foundAccount.accountName || foundAccount.name || `Compte ${foundAccount.accountNumber}`,
@@ -111,9 +115,9 @@ export default function AccountDetailsPage() {
                 currency: foundAccount.currency || "GNF",
                 type: foundAccount.type,
                 status: foundAccount.status,
-                iban: `GN82BNG001${foundAccount.accountNumber}`,
+                iban: iban,
                 openingDate: foundAccount.createdAt || "2020-01-01",
-                branch: "Agence Kaloum",
+                branch: foundAccount.codeAgence || "Agence Kaloum",
                 overdraftLimit: foundAccount.currency === "GNF" ? 500000 : undefined,
               }
               setAccount(adaptedAccount)
