@@ -36,6 +36,31 @@ interface GetCommandesResponse {
   count: number
 }
 
+interface DemandeCredit {
+  id: string
+  createdAt: string
+  updatedAt: string
+  deletedAt: string | null
+  createdById: string
+  updatedById: string
+  importHash: string
+  tenantId: string
+  applicantName: string
+  creditAmount: string
+  durationMonths: string
+  purpose: string
+  numcompte?: string
+  typedemande?: string
+  accountNumber?: string
+  reference: string
+  clientId: string
+}
+
+interface GetDemandesCreditResponse {
+  rows: DemandeCredit[]
+  count: number
+}
+
 // Fonction pour générer une référence unique
 async function generateReference(prefix: string): Promise<string> {
   try {
@@ -88,6 +113,19 @@ export async function submitCreditRequest(formData: {
     // Si aucun token n'est trouvé → erreur
     if (!cookieToken) throw new Error("Token introuvable.")
 
+    const userResponse = await fetch(`${API_BASE_URL}/auth/me`, {
+      headers: {
+        Authorization: `Bearer ${usertoken}`,
+      },
+    })
+
+    if (!userResponse.ok) {
+      throw new Error("Impossible de récupérer les informations utilisateur")
+    }
+
+    const userData = await userResponse.json()
+    const clientId = userData.id
+
     // Générer la référence avant la soumission
     const reference = await generateReference("CRD")
 
@@ -108,6 +146,7 @@ export async function submitCreditRequest(formData: {
           typedemande: formData.typedemande,
           accountNumber: formData.accountNumber,
           reference: reference, // Ajout de la référence
+          clientId: clientId, // Added clientId from logged-in user
         },
       }),
     })
@@ -338,7 +377,7 @@ export async function getCheckbookRequest(id?: string): Promise<GetCommandesResp
 }
 
 // Fonction asynchrone pour récupérer les demandes de crédit
-export async function getCreditRequest(id?: string) {
+export async function getCreditRequest(id?: string): Promise<GetDemandesCreditResponse | DemandeCredit> {
   try {
     // 🔑 Récupération du token JWT stocké dans les cookies
     const cookieToken = (await cookies()).get("token")?.value
@@ -347,8 +386,7 @@ export async function getCreditRequest(id?: string) {
     if (!cookieToken) {
       console.log("[v0] Token d'authentification manquant, retour de données de test")
 
-      // Données de test pour les demandes de crédit avec structure API
-      const mockCreditRequests = {
+      const mockCreditRequests: GetDemandesCreditResponse = {
         rows: [
           {
             id: "5fa85f64-5717-4562-b3fc-2c963f66afa8",
@@ -358,12 +396,13 @@ export async function getCreditRequest(id?: string) {
             createdById: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
             updatedById: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
             importHash: "hash789",
-            TENANT_ID: "aa1287f6-06af-45b7-a905-8c57363565c2",
+            tenantId: "aa1287f6-06af-45b7-a905-8c57363565c2",
             applicantName: "Jean Dupont",
             creditAmount: "50000",
             durationMonths: "24",
             purpose: "Achat véhicule",
-            reference: "CRD-2024-001", // Ajout de la référence
+            reference: "CRD-2024-001",
+            clientId: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
           },
           {
             id: "6fa85f64-5717-4562-b3fc-2c963f66afa9",
@@ -373,12 +412,13 @@ export async function getCreditRequest(id?: string) {
             createdById: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
             updatedById: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
             importHash: "hash101",
-            TENANT_ID: "aa1287f6-06af-45b7-a905-8c57363565c2",
+            tenantId: "aa1287f6-06af-45b7-a905-8c57363565c2",
             applicantName: "Marie Martin",
             creditAmount: "25000",
             durationMonths: "12",
             purpose: "Travaux maison",
-            reference: "CRD-2024-002", // Ajout de la référence
+            reference: "CRD-2024-002",
+            clientId: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
           },
         ],
         count: 2,
@@ -386,7 +426,7 @@ export async function getCreditRequest(id?: string) {
 
       if (id) {
         const foundRow = mockCreditRequests.rows.find((req) => req.id === id)
-        return foundRow ? { rows: [foundRow], count: 1 } : { rows: [], count: 0 }
+        return foundRow || mockCreditRequests.rows[0]
       }
       return mockCreditRequests
     }
@@ -411,11 +451,16 @@ export async function getCreditRequest(id?: string) {
     }
 
     const data = await response.json()
-    return data
+
+    if (id) {
+      return data as DemandeCredit
+    }
+
+    return data as GetDemandesCreditResponse
   } catch (error: any) {
     console.log("[v0] Erreur lors de la récupération, retour de données de test:", error.message)
 
-    const mockCreditRequests = {
+    const mockCreditRequests: GetDemandesCreditResponse = {
       rows: [
         {
           id: "5fa85f64-5717-4562-b3fc-2c963f66afa8",
@@ -425,12 +470,13 @@ export async function getCreditRequest(id?: string) {
           createdById: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
           updatedById: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
           importHash: "hash789",
-          TENANT_ID: "aa1287f6-06af-45b7-a905-8c57363565c2",
+          tenantId: "aa1287f6-06af-45b7-a905-8c57363565c2",
           applicantName: "Jean Dupont",
           creditAmount: "50000",
           durationMonths: "24",
           purpose: "Achat véhicule",
-          reference: "CRD-2024-001", // Ajout de la référence
+          reference: "CRD-2024-001",
+          clientId: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
         },
       ],
       count: 1,
@@ -438,14 +484,14 @@ export async function getCreditRequest(id?: string) {
 
     if (id) {
       const foundRow = mockCreditRequests.rows.find((req) => req.id === id)
-      return foundRow ? { rows: [foundRow], count: 1 } : { rows: [], count: 0 }
+      return foundRow || mockCreditRequests.rows[0]
     }
     return mockCreditRequests
   }
 }
 
 // Fonction asynchrone pour récupérer une demande de crédit par ID
-export async function getDemandeCreditById(TENANT_ID: string, id: string) {
+export async function getDemandeCreditById(TENANT_ID: string, id: string): Promise<DemandeCredit> {
   try {
     // 🔑 Récupération du token JWT stocké dans les cookies
     const cookieToken = (await cookies()).get("token")?.value
@@ -454,8 +500,7 @@ export async function getDemandeCreditById(TENANT_ID: string, id: string) {
     if (!cookieToken) {
       console.log("[v0] Token d'authentification manquant, retour de données de test")
 
-      // Données de test pour une demande de crédit spécifique
-      const mockCreditDetail = {
+      const mockCreditDetail: DemandeCredit = {
         id: id,
         createdAt: "2024-01-10T09:00:00Z",
         updatedAt: "2024-01-10T09:00:00Z",
@@ -463,12 +508,13 @@ export async function getDemandeCreditById(TENANT_ID: string, id: string) {
         createdById: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
         updatedById: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
         importHash: "hash789",
-        TENANT_ID: TENANT_ID,
+        tenantId: TENANT_ID,
         applicantName: "Jean Dupont",
         creditAmount: "50000",
         durationMonths: "24",
         purpose: "Achat véhicule",
-        reference: "CRD-2024-001", // Ajout de la référence
+        reference: "CRD-2024-001",
+        clientId: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
       }
 
       return mockCreditDetail
@@ -489,12 +535,11 @@ export async function getDemandeCreditById(TENANT_ID: string, id: string) {
     }
 
     const data = await response.json()
-    return data
+    return data as DemandeCredit
   } catch (error: any) {
     console.log("[v0] Erreur lors de la récupération, retour de données de test:", error.message)
 
-    // Données de test en cas d'erreur
-    const mockCreditDetail = {
+    const mockCreditDetail: DemandeCredit = {
       id: id,
       createdAt: "2024-01-10T09:00:00Z",
       updatedAt: "2024-01-10T09:00:00Z",
@@ -502,12 +547,13 @@ export async function getDemandeCreditById(TENANT_ID: string, id: string) {
       createdById: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
       updatedById: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
       importHash: "hash789",
-      TENANT_ID: TENANT_ID,
+      tenantId: TENANT_ID,
       applicantName: "Jean Dupont",
       creditAmount: "50000",
       durationMonths: "24",
       purpose: "Achat véhicule",
       reference: "CRD-2024-001",
+      clientId: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
     }
 
     return mockCreditDetail
