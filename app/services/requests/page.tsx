@@ -209,6 +209,8 @@ export default function ServiceRequestsPage() {
             nbrefeuille: item.nbrefeuille || 0,
             commentaire: item.commentaire || "",
             numcompteId: item.numcompteId || "",
+            typeCheque: item.typeCheque, // Added from update
+            talonCheque: item.talonCheque, // Added from update
           },
         }))
         allTransformedRequests = [...allTransformedRequests, ...checkbookRequests]
@@ -316,6 +318,8 @@ export default function ServiceRequestsPage() {
         { label: "Date de commande", value: new Date(details.dateorder).toLocaleDateString("fr-FR") },
         { label: "Nombre de feuilles", value: details.nbrefeuille },
         { label: "Nombre de chéquiers", value: details.nbrechequier },
+        { label: "Type de chèque", value: details.typeCheque || "Non spécifié" },
+        { label: "Avec talon de chèque", value: details.talonCheque ? "Oui" : "Non" },
         { label: "Intitulé du compte", value: details.intitulecompte },
         { label: "Commentaire", value: details.commentaire || "Aucun commentaire" },
       ]
