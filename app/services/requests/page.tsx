@@ -813,6 +813,34 @@ export default function ServiceRequestsPage() {
             </div>
 
             <div>
+              <Label htmlFor="typeCheque">Type de chèque *</Label>
+              <Select
+                value={formData.typeCheque || ""}
+                onValueChange={(value) => handleInputChange("typeCheque", value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Choisir le type de chèque" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Standard">Standard</SelectItem>
+                  <SelectItem value="Certifié">Certifié</SelectItem>
+                  <SelectItem value="Barré">Barré</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="talonCheque"
+                checked={formData.talonCheque || false}
+                onCheckedChange={(checked) => handleInputChange("talonCheque", checked)}
+              />
+              <Label htmlFor="talonCheque" className="text-sm font-normal">
+                Avec talon de chèque
+              </Label>
+            </div>
+
+            <div>
               <Label htmlFor="commentaire">Commentaire</Label>
               <Textarea
                 id="commentaire"

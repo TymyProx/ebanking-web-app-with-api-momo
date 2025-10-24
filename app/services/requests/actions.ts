@@ -22,7 +22,7 @@ async function generateReference(prefix: string): Promise<string> {
 
     // Récupérer toutes les demandes existantes pour compter
     let existingCount = 0
-    
+
     if (prefix === "CHQ") {
       const checkbookRequests = await getCheckbookRequest()
       existingCount = checkbookRequests?.rows?.length || 0
@@ -33,7 +33,7 @@ async function generateReference(prefix: string): Promise<string> {
 
     const currentYear = new Date().getFullYear()
     const sequence = String(existingCount + 1).padStart(3, "0")
-    
+
     return `${prefix}-${currentYear}-${sequence}`
   } catch (error) {
     // En cas d'erreur, générer une référence basée sur le timestamp
@@ -94,11 +94,11 @@ export async function submitCreditRequest(formData: {
 
     // Récupération des données de la réponse (JSON)
     const data = await response.json()
-    
+
     // Retourner la référence avec la réponse
     return {
       ...data,
-      reference: reference
+      reference: reference,
     }
   } catch (error: any) {
     // Gestion d'erreur (propagation du message d'erreur)
@@ -108,21 +108,34 @@ export async function submitCreditRequest(formData: {
 
 // Fonction asynchrone pour soumettre une demande de chéquier
 export async function submitCheckbookRequest(formData: {
-  dateorder: string // Date de commande
-  nbrefeuille: number // Nombre de feuilles par chéquier
-  nbrechequier: number // Nombre de chéquiers
-  stepflow: number // Étape du workflow
-  intitulecompte: string // Intitulé du compte
-  numcompteId: string // ID du compte
-  commentaire: string // Commentaire
+  dateorder: string
+  nbrefeuille: number
+  nbrechequier: number
+  stepflow: number
+  intitulecompte: string
+  numcompteId: string
+  commentaire: string
+  talonCheque?: boolean // NEW: Talon de chèque option
+  typeCheque?: string // NEW: Type de chèque
 }) {
   try {
-    // 🔑 Récupération du token JWT stocké dans les cookies
     const cookieToken = (await cookies()).get("token")?.value
     const usertoken = cookieToken
 
-    // Si aucun token n'est trouvé → erreur
     if (!cookieToken) throw new Error("Token introuvable.")
+
+    const userResponse = await fetch(`${API_BASE_URL}/auth/me`, {
+      headers: {
+        Authorization: `Bearer ${usertoken}`,
+      },
+    })
+
+    if (!userResponse.ok) {
+      throw new Error("Impossible de récupérer les informations utilisateur")
+    }
+
+    const userData = await userResponse.json()
+    const clientId = userData.id
 
     // Générer la référence avant la soumission
     const reference = await generateReference("CHQ")
@@ -130,12 +143,11 @@ export async function submitCheckbookRequest(formData: {
     const response = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/commande`, {
       method: "POST",
       headers: {
-        "Content-Type": "application/json", // Type de contenu JSON
-        Authorization: `Bearer ${usertoken}`, // Authentification via Bearer token
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${usertoken}`,
       },
       body: JSON.stringify({
         data: {
-          //  Mapping des données du formulaire vers les champs attendus par l'API
           dateorder: formData.dateorder,
           nbrefeuille: formData.nbrefeuille,
           nbrechequier: formData.nbrechequier,
@@ -143,28 +155,26 @@ export async function submitCheckbookRequest(formData: {
           intitulecompte: formData.intitulecompte,
           numcompteId: formData.numcompteId,
           commentaire: formData.commentaire,
-          reference: reference, // Ajout de la référence
+          talonCheque: formData.talonCheque ?? false, // Use form value, default to false if not provided
+          typeCheque: formData.typeCheque || "Standard", // Use form value, default to "Standard"
+          referenceCommande: reference, // Use reference as referenceCommande
+          clientId: clientId, // Add clientId from logged-in user
         },
       }),
     })
 
-    // Vérifie si la réponse est valide
     if (!response.ok) {
       const errorData = await response.json()
-      // Si le backend renvoie un message d'erreur, on le propage
       throw new Error(errorData.message || "Erreur lors de la soumission")
     }
 
-    // Récupération des données de la réponse (JSON)
     const data = await response.json()
-    
-    // Retourner la référence avec la réponse
+
     return {
       ...data,
-      reference: reference
+      reference: reference,
     }
   } catch (error: any) {
-    // Gestion d'erreur (propagation du message d'erreur)
     throw new Error(error.message)
   }
 }
@@ -380,7 +390,7 @@ export async function getCreditRequest(id?: string) {
           creditAmount: "50000",
           durationMonths: "24",
           purpose: "Achat véhicule",
-          reference: "CRD-2024-001",
+          reference: "CRD-2024-001", // Ajout de la référence
         },
       ],
       count: 1,
