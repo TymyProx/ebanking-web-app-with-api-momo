@@ -1,5 +1,5 @@
 "use server"
-process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0"
 import { cookies } from "next/headers"
 import { revalidatePath } from "next/cache"
 
@@ -140,18 +140,38 @@ export async function createAccount(prevState: any, formData: FormData) {
       }
     }
 
-    // Extraction des données du formulaire
+    let clientId = "CUSTOMER_ID_PLACEHOLDER"
+    try {
+      const userResponse = await fetch(`${API_BASE_URL}/auth/me`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${usertoken}`,
+        },
+      })
+
+      if (userResponse.ok) {
+        const userData = await userResponse.json()
+        clientId = userData.id || "CUSTOMER_ID_PLACEHOLDER"
+        //console.log("[v0] Client ID récupéré:", clientId)
+      }
+    } catch (error) {
+      console.error("[v0] Erreur lors de la récupération du client ID:", error)
+    }
+
     const accountData = {
       accountId: formData.get("accountId") as string,
-      customerId: (formData.get("customerId") as string) || "CUSTOMER_ID_PLACEHOLDER",
       accountNumber: formData.get("accountNumber") as string,
       accountName: formData.get("accountName") as string,
       currency: formData.get("currency") as string,
       bookBalance: (formData.get("bookBalance") as string) || "0",
       availableBalance: (formData.get("availableBalance") as string) || "0",
-      type: (formData.get("accountType") as string) || "CURRENT", // Récupération du type de compte
       status: "EN ATTENTE",
-      agency: "Agence Principale",
+      type: (formData.get("accountType") as string) || "CURRENT",
+      codeAgence: "N/A", // Valeur par défaut
+      clientId: clientId, // ID du client connecté
+      codeBanque: "N/A", // Valeur par défaut
+      cleRib: "N/A", // Valeur par défaut
     }
 
     //console.log("[v0] Données du compte:", accountData)
