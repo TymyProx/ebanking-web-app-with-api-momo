@@ -99,6 +99,38 @@ export async function getBeneficiaries(): Promise<ApiBeneficiary[]> {
   }
 }
 
+export async function getBeneficiaryDetails(beneficiaryId: string): Promise<ApiBeneficiary | null> {
+  const cookieToken = (await cookies()).get("token")?.value
+  const usertoken = cookieToken
+
+  if (!beneficiaryId) {
+    console.error("Beneficiary ID is required")
+    return null
+  }
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/beneficiaire/${beneficiaryId}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${usertoken}`,
+      },
+      cache: "no-store",
+    })
+
+    if (!response.ok) {
+      console.error(`Erreur API: ${response.status} ${response.statusText}`)
+      return null
+    }
+
+    const beneficiary: ApiBeneficiary = await response.json()
+    return beneficiary
+  } catch (error) {
+    console.error("Erreur lors de la récupération des détails du bénéficiaire:", error)
+    return null
+  }
+}
+
 function getBankNameFromCode(bankCode: string): string {
   const bankNames: Record<string, string> = {
     bng: "Banque Nationale de Guinée",
