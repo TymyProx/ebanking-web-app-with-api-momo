@@ -6,7 +6,35 @@ import { revalidatePath } from "next/cache"
 const API_BASE_URL = process.env.API_BASE_URL
 const TENANT_ID = process.env.TENANT_ID
 
-export async function getAccounts() {
+export interface Account {
+  id: string
+  createdAt?: string
+  updatedAt?: string
+  deletedAt?: string | null
+  createdById?: string
+  updatedById?: string
+  importHash?: string
+  tenantId?: string
+  accountId: string
+  accountNumber: string
+  accountName: string
+  currency: string
+  bookBalance: string
+  availableBalance: string
+  status: string
+  type: string
+  codeAgence?: string
+  clientId?: string
+  codeBanque?: string
+  cleRib?: string
+}
+
+interface AccountsResponse {
+  rows: Account[]
+  count: number
+}
+
+export async function getAccounts(): Promise<Account[]> {
   const cookieToken = (await cookies()).get("token")?.value
   const usertoken = cookieToken
   try {
@@ -97,6 +125,10 @@ export async function getAccounts() {
     const responseData = await response.json()
     //console.log("[v0] Données reçues:", responseData)
 
+    if (responseData.rows && Array.isArray(responseData.rows)) {
+      return responseData.rows
+    }
+
     // Gérer les différents formats de réponse possibles
     if (responseData.data) {
       // Si responseData.data est un tableau
@@ -107,11 +139,6 @@ export async function getAccounts() {
       else if (typeof responseData.data === "object") {
         return [responseData.data]
       }
-    }
-
-    // Compatibilité avec l'ancienne structure (rows)
-    if (Array.isArray(responseData.rows)) {
-      return responseData.rows
     }
 
     // Si responseData est directement un tableau
