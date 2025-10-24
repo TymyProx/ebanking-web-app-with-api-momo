@@ -17,7 +17,6 @@ import {
   ChevronRight,
   Check,
   ArrowRight,
-  Lock,
   Clock,
 } from "lucide-react"
 import { useState, useEffect } from "react"
@@ -66,7 +65,12 @@ export default function LandingPage() {
             </Link>
           </nav>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
+            <Link href="/signup" className="hidden md:inline-flex">
+              <Button variant="outline" className="group bg-transparent">
+                S'inscrire
+              </Button>
+            </Link>
             <Link href="/login">
               <Button className="hidden md:inline-flex group">
                 Se connecter
@@ -110,6 +114,11 @@ export default function LandingPage() {
                 onClick={() => setMobileMenuOpen(false)}
               >
                 Contact
+              </Link>
+              <Link href="/signup">
+                <Button variant="outline" className="w-full bg-transparent">
+                  S'inscrire
+                </Button>
               </Link>
               <Link href="/login">
                 <Button className="w-full">Se connecter</Button>
@@ -197,7 +206,7 @@ export default function LandingPage() {
               { value: "100%", label: "Sécurisé" },
             ].map((stat, index) => (
               <div key={index} className="text-center space-y-2">
-                <div className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+                <div className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent animate-gradient">
                   {stat.value}
                 </div>
                 <div className="text-sm text-muted-foreground font-medium">{stat.label}</div>
