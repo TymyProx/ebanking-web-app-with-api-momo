@@ -551,7 +551,7 @@ export default function CardsPage() {
                 </SelectTrigger>
                 <SelectContent>
                   {loadingAccounts ? (
-                    <SelectItem value="" disabled>
+                    <SelectItem value="loading" disabled>
                       Chargement des comptes...
                     </SelectItem>
                   ) : accounts.length > 0 ? (
@@ -569,7 +569,7 @@ export default function CardsPage() {
                         </SelectItem>
                       ))
                   ) : (
-                    <SelectItem value="" disabled>
+                    <SelectItem value="no-accounts" disabled>
                       Aucun compte disponible
                     </SelectItem>
                   )}
