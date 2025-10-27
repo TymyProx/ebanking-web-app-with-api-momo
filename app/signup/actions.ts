@@ -22,26 +22,48 @@ export async function signupUser(data: SignupData) {
 
     // Step 1: Create user with admin role
     console.log("[v0] Step 1: Creating user...")
+    const userRequestBody = {
+      data: {
+        emails: [data.email],
+        roles: ["admin"],
+      },
+    }
+    console.log("[v0] User request body:", JSON.stringify(userRequestBody))
+    console.log("[v0] API URL:", `${API_BASE_URL}/tenant/${TENANT_ID}/user`)
+
     const userResponse = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/user`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        data: {
-          emails: [data.email],
-          roles: ["admin"],
-        },
-      }),
+      body: JSON.stringify(userRequestBody),
     })
 
+    console.log("[v0] User response status:", userResponse.status)
+    console.log("[v0] User response status text:", userResponse.statusText)
+
+    const userResponseText = await userResponse.text()
+    console.log("[v0] User response body:", userResponseText)
+
     if (!userResponse.ok) {
-      const errorData = await userResponse.json().catch(() => ({}))
+      let errorData: any = {}
+      try {
+        errorData = JSON.parse(userResponseText)
+      } catch (e) {
+        console.error("[v0] Failed to parse error response as JSON")
+        errorData = { message: userResponseText || `HTTP ${userResponse.status}: ${userResponse.statusText}` }
+      }
       console.error("[v0] User creation failed:", errorData)
       throw new Error(errorData.message || "Erreur lors de la création de l'utilisateur")
     }
 
-    const userData = await userResponse.json()
+    let userData: any
+    try {
+      userData = JSON.parse(userResponseText)
+    } catch (e) {
+      console.error("[v0] Failed to parse success response as JSON")
+      throw new Error("Réponse invalide du serveur")
+    }
     console.log("[v0] User created successfully:", userData)
 
     // Extract user ID from response
