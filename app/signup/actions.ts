@@ -72,48 +72,41 @@ export async function signupUser(data: SignupData) {
 
     console.log("[v0] Authentication account created, token received")
 
-    console.log("[v0] Step 2: Creating user...")
-    const userResponse = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/user`, {
-      method: "POST",
+    console.log("[v0] Step 2: Fetching user information...")
+    const meResponse = await fetch(`${API_BASE_URL}/auth/me`, {
+      method: "GET",
       headers: {
-        "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify({
-        data: {
-          emails: [data.email],
-          roles: ["client"],
-        },
-      }),
     })
 
-    console.log("[v0] User creation response status:", userResponse.status)
-    const userResponseText = await userResponse.text()
-    console.log("[v0] User creation response body:", userResponseText)
+    console.log("[v0] /auth/me response status:", meResponse.status)
+    const meResponseText = await meResponse.text()
+    console.log("[v0] /auth/me response body:", meResponseText)
 
-    if (!userResponse.ok) {
+    if (!meResponse.ok) {
       let errorData: any = {}
       try {
-        errorData = JSON.parse(userResponseText)
+        errorData = JSON.parse(meResponseText)
       } catch (e) {
-        console.error("[v0] Failed to parse user error response as JSON")
+        console.error("[v0] Failed to parse /auth/me error response as JSON")
       }
       throw new Error(
         errorData.message ||
           errorData.error ||
-          `Erreur lors de la création de l'utilisateur (Status: ${userResponse.status})`,
+          `Erreur lors de la récupération des informations utilisateur (Status: ${meResponse.status})`,
       )
     }
 
-    const userData = JSON.parse(userResponseText)
-    const userId = userData.id || userData.data?.id
+    const userData = JSON.parse(meResponseText)
+    const userId = userData.id
 
     if (!userId) {
       console.error("[v0] User data received:", userData)
       throw new Error("ID utilisateur non reçu de l'API")
     }
 
-    console.log("[v0] User created with ID:", userId)
+    console.log("[v0] User ID retrieved:", userId)
 
     // Step 3: Create client record
     console.log("[v0] Step 3: Creating client record...")
