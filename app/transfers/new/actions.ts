@@ -374,9 +374,13 @@ export async function executeTransfer(prevState: any, formData: FormData) {
       }
     }
 
-    const transactionId = `TXN_${Date.now()}_${Math.floor(Math.random() * 1000)
+    // Format: TXN + last 9 digits of timestamp + 3 random digits = 15 chars total
+    const timestamp = Date.now().toString().slice(-9)
+    const random = Math.floor(Math.random() * 1000)
       .toString()
-      .padStart(3, "0")}`
+      .padStart(3, "0")
+    const transactionId = `TXN${timestamp}${random}`
+    console.log("[v0] Generated transaction ID:", transactionId, "Length:", transactionId.length)
 
     let txnType = "TRANSFER"
     let finalBeneficiaryId = validatedData.beneficiaryId
@@ -452,7 +456,7 @@ export async function executeTransfer(prevState: any, formData: FormData) {
         dateEcriture: new Date().toISOString().split("T")[0], // Current date
         txnId: transactionId,
         accountId: validatedData.sourceAccount,
-        referenceOperation: transactionId, // Use transaction ID as reference
+        referenceOperation: transactionId, // Use shortened transaction ID as reference
         txnType: txnType,
         amount: validatedData.amount,
         balanceOuverture: debitResult.previousBalance || 0,
