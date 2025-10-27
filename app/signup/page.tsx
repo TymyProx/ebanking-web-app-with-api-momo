@@ -8,8 +8,7 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Eye, EyeOff, User, Mail, Phone, MapPin } from "lucide-react"
-import { signupUser } from "./actions"
+import { Eye, EyeOff, User, Mail, Phone } from "lucide-react"
 
 export default function SignupPage() {
   const [isLoading, setIsLoading] = useState(false)
@@ -28,7 +27,6 @@ export default function SignupPage() {
       const fullName = formData.get("fullName") as string
       const email = formData.get("email") as string
       const phone = formData.get("phone") as string
-      const address = formData.get("address") as string
       const password = formData.get("password") as string
       const confirmPassword = formData.get("confirmPassword") as string
 
@@ -39,24 +37,16 @@ export default function SignupPage() {
         return
       }
 
-      const result = await signupUser({
-        nomComplet: fullName,
-        email,
-        telephone: phone,
-        adresse: address,
-        password,
-      })
+      // TODO: Implement signup API call
+      console.log("[v0] Signup data:", { fullName, email, phone, password })
 
-      if (!result.success) {
-        setError(result.message)
-        setIsLoading(false)
-        return
-      }
-
-      // Redirect to dashboard after successful signup
-      router.push("/dashboard")
+      // Temporary: redirect to login after successful signup
+      setTimeout(() => {
+        router.push("/login")
+      }, 1000)
     } catch (err: any) {
       setError(err.message || "Une erreur est survenue lors de l'inscription")
+    } finally {
       setIsLoading(false)
     }
   }
@@ -162,25 +152,6 @@ export default function SignupPage() {
                     disabled={isLoading}
                   />
                   <Phone className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-                </div>
-              </div>
-
-              {/* Address Field */}
-              <div className="space-y-2">
-                <Label htmlFor="address" className="text-sm font-medium text-[hsl(220,13%,13%)]">
-                  Adresse
-                </Label>
-                <div className="relative">
-                  <Input
-                    id="address"
-                    name="address"
-                    type="text"
-                    placeholder="Votre adresse complète"
-                    className="h-12 pr-10 bg-white border-gray-300 focus:border-[hsl(123,38%,57%)] focus:ring-[hsl(123,38%,57%)]"
-                    required
-                    disabled={isLoading}
-                  />
-                  <MapPin className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
                 </div>
               </div>
 
