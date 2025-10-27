@@ -658,7 +658,6 @@ export async function getTransactions(): Promise<{ data: any[] }> {
   const usertoken = cookieToken
 
   if (!usertoken) {
-    //console.log("[v0] Token d'authentification manquant, retour de données de test")
     return {
       data: [
         {
@@ -693,20 +692,29 @@ export async function getTransactions(): Promise<{ data: any[] }> {
   }
 
   try {
-    //console.log("[v0] Tentative de récupération des transactions...")
-    //console.log("[v0] URL:", `${API_BASE_URL}/tenant/${TENANT_ID}/transaction`)
+    let clientId = ""
+    try {
+      const meResponse = await fetch(`${API_BASE_URL}/auth/me`, {
+        headers: {
+          Authorization: `Bearer ${usertoken}`,
+        },
+      })
+      if (meResponse.ok) {
+        const userData = await meResponse.json()
+        clientId = userData.id || ""
+      }
+    } catch (error) {
+      console.error("[v0] Error fetching user info:", error)
+    }
 
-    const response = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/transaction`, {
+    const response = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/transactions`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${usertoken}`,
       },
-      cache: "no-store", // Always fetch fresh data
+      cache: "no-store",
     })
-
-    //console.log("[v0] Statut de la réponse:", response.status)
-    //console.log("[v0] Headers de la réponse:", Object.fromEntries(response.headers.entries()))
 
     if (!response.ok) {
       if (response.status === 401) {
@@ -722,24 +730,6 @@ export async function getTransactions(): Promise<{ data: any[] }> {
               status: "COMPLETED",
               description: "Virement vers compte épargne",
             },
-            {
-              txnId: "TXN_1734538022780_002",
-              accountId: "1",
-              txnType: "DEBIT",
-              amount: "75000",
-              valueDate: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-              status: "COMPLETED",
-              description: "Paiement facture électricité",
-            },
-            {
-              txnId: "TXN_1734451622780_003",
-              accountId: "2",
-              txnType: "CREDIT",
-              amount: "500000",
-              valueDate: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-              status: "COMPLETED",
-              description: "Dépôt de salaire",
-            },
           ],
         }
       }
@@ -752,41 +742,6 @@ export async function getTransactions(): Promise<{ data: any[] }> {
       } else {
         const errorText = await response.text()
         console.error("[v0] Réponse non-JSON:", errorText)
-
-        if (errorText.includes("only public URLs are supported")) {
-          //console.log("[v0] API nécessite une URL publique, retour de données de test")
-          return {
-            data: [
-              {
-                txnId: "TXN_1734624422780_001",
-                accountId: "1",
-                txnType: "CREDIT",
-                amount: "150000",
-                valueDate: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-                status: "COMPLETED",
-                description: "Virement vers compte épargne",
-              },
-              {
-                txnId: "TXN_1734538022780_002",
-                accountId: "1",
-                txnType: "DEBIT",
-                amount: "75000",
-                valueDate: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-                status: "COMPLETED",
-                description: "Paiement facture électricité",
-              },
-              {
-                txnId: "TXN_1734451622780_003",
-                accountId: "2",
-                txnType: "CREDIT",
-                amount: "500000",
-                valueDate: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-                status: "COMPLETED",
-                description: "Dépôt de salaire",
-              },
-            ],
-          }
-        }
       }
       return { data: [] }
     }
@@ -795,56 +750,27 @@ export async function getTransactions(): Promise<{ data: any[] }> {
     if (!contentType || !contentType.includes("application/json")) {
       const responseText = await response.text()
       console.error("[v0] Réponse non-JSON reçue:", responseText)
-
-      if (responseText.includes("only public URLs are supported")) {
-        //console.log("[v0] API nécessite une URL publique, retour de données de test")
-        return {
-          data: [
-            {
-              txnId: "TXN_1734624422780_001",
-              accountId: "1",
-              txnType: "CREDIT",
-              amount: "150000",
-              valueDate: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-              status: "COMPLETED",
-              description: "Virement vers compte épargne",
-            },
-            {
-              txnId: "TXN_1734538022780_002",
-              accountId: "1",
-              txnType: "DEBIT",
-              amount: "75000",
-              valueDate: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-              status: "COMPLETED",
-              description: "Paiement facture électricité",
-            },
-            {
-              txnId: "TXN_1734451622780_003",
-              accountId: "2",
-              txnType: "CREDIT",
-              amount: "500000",
-              valueDate: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-              status: "COMPLETED",
-              description: "Dépôt de salaire",
-            },
-          ],
-        }
-      }
       return { data: [] }
     }
 
     const data = await response.json()
-    //console.log("[v0] Données reçues:", data)
 
-    // Retourne la réponse sous forme de tableau dans un objet data
+    let transactions = []
     if (Array.isArray(data.rows)) {
-      return { data: data.rows }
+      transactions = data.rows
+    } else if (Array.isArray(data)) {
+      transactions = data
+    } else if (data.data) {
+      transactions = Array.isArray(data.data) ? data.data : [data.data]
     }
-    return { data: Array.isArray(data) ? data : [data] }
+
+    if (clientId) {
+      transactions = transactions.filter((txn: any) => txn.clientId === clientId)
+    }
+
+    return { data: transactions }
   } catch (error) {
     console.error("[v0] Erreur lors de la récupération des transactions:", error)
-
-    //console.log("[v0] Retour de données de test suite à l'erreur de connexion")
     return {
       data: [
         {
@@ -855,24 +781,6 @@ export async function getTransactions(): Promise<{ data: any[] }> {
           valueDate: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
           status: "COMPLETED",
           description: "Virement vers compte épargne",
-        },
-        {
-          txnId: "TXN_1734538022780_002",
-          accountId: "1",
-          txnType: "DEBIT",
-          amount: "75000",
-          valueDate: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-          status: "COMPLETED",
-          description: "Paiement facture électricité",
-        },
-        {
-          txnId: "TXN_1734451622780_003",
-          accountId: "2",
-          txnType: "CREDIT",
-          amount: "500000",
-          valueDate: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-          status: "COMPLETED",
-          description: "Dépôt de salaire",
         },
       ],
     }
