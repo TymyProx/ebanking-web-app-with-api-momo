@@ -2,7 +2,7 @@ import axios from "axios"
 import Cookies from "js-cookie"
 import { config } from "./config"
 
-const API_BASE_URL = `${config.API_BASE_URL}/api`
+const API_BASE_URL = `${config.API_BASE_URL}/`
 
 if (!API_BASE_URL) {
   throw new Error("API_BASE_URL environment variable is required")
