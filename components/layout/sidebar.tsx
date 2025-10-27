@@ -103,6 +103,11 @@ const navigationData = {
           url: "/transfers/beneficiaries",
           icon: User,
         },
+        {
+          title: "Mes virements",
+          url: "/transfers/mes-virements",
+          icon: Clock,
+        },
       ],
     },
     // {

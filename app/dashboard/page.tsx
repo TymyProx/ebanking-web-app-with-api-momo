@@ -97,8 +97,15 @@ export default async function Dashboard() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <Card className="border-0 shadow-lg">
-          <CardHeader>
+          <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="font-heading text-xl">Dernières transactions</CardTitle>
+            <Link
+              href="/transfers/mes-virements"
+              className="text-sm text-primary hover:text-primary/80 font-medium flex items-center gap-1 transition-colors"
+            >
+              Voir tout
+              <ArrowUpRight className="h-4 w-4" />
+            </Link>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
