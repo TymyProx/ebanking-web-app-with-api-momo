@@ -31,7 +31,6 @@ export async function signupUser(data: SignupData) {
         password: data.password,
         invitationToken: "string",
         tenantId: TENANT_ID,
-        roles: ["admin"], // Add admin role to give permissions for client creation
       }),
     })
 
