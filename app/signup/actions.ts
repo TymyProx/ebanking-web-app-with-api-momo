@@ -87,31 +87,52 @@ export async function signupUser(data: SignupData) {
     }
 
     console.log("[v0] Step 3: Creating client record...")
+    const clientRequestBody = {
+      data: {
+        nomComplet: data.fullName,
+        email: data.email,
+        telephone: data.phone,
+        adresse: data.address,
+        codeClient: codeClient,
+        userid: userId,
+      },
+    }
+    console.log("[v0] Client request body:", JSON.stringify(clientRequestBody))
+    console.log("[v0] API URL:", `${API_BASE_URL}/tenant/${TENANT_ID}/client`)
+
     const clientResponse = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/client`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify({
-        data: {
-          nomComplet: data.fullName,
-          email: data.email,
-          telephone: data.phone,
-          adresse: data.address,
-          codeClient: codeClient,
-          userid: userId,
-        },
-      }),
+      body: JSON.stringify(clientRequestBody),
     })
 
+    console.log("[v0] Client response status:", clientResponse.status)
+    console.log("[v0] Client response status text:", clientResponse.statusText)
+    const clientResponseText = await clientResponse.text()
+    console.log("[v0] Client response body:", clientResponseText)
+
     if (!clientResponse.ok) {
-      const errorData = await clientResponse.json().catch(() => ({}))
+      let errorData: any = {}
+      try {
+        errorData = JSON.parse(clientResponseText)
+      } catch (e) {
+        console.error("[v0] Failed to parse error response as JSON")
+        errorData = { message: clientResponseText || `HTTP ${clientResponse.status}: ${clientResponse.statusText}` }
+      }
       console.error("[v0] Client creation failed:", errorData)
       throw new Error(errorData.message || "Erreur lors de la création du profil client")
     }
 
-    const clientData = await clientResponse.json()
+    let clientData: any
+    try {
+      clientData = JSON.parse(clientResponseText)
+    } catch (e) {
+      console.error("[v0] Failed to parse client response as JSON")
+      throw new Error("Réponse invalide du serveur")
+    }
     console.log("[v0] Client created successfully:", clientData)
 
     // Store token in cookies
