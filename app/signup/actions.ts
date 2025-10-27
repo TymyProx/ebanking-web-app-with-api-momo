@@ -17,6 +17,17 @@ export async function signupUser(data: SignupData) {
   try {
     // Step 1: Create user with role "client"
     console.log("[v0] Step 1: Creating user...")
+    console.log("[v0] API URL:", `${API_BASE_URL}/tenant/${TENANT_ID}/user`)
+    console.log(
+      "[v0] Request body:",
+      JSON.stringify({
+        data: {
+          emails: [data.email],
+          roles: ["client"],
+        },
+      }),
+    )
+
     const userResponse = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/user`, {
       method: "POST",
       headers: {
@@ -30,15 +41,29 @@ export async function signupUser(data: SignupData) {
       }),
     })
 
+    console.log("[v0] User creation response status:", userResponse.status)
+    const userResponseText = await userResponse.text()
+    console.log("[v0] User creation response body:", userResponseText)
+
     if (!userResponse.ok) {
-      const errorData = await userResponse.json().catch(() => ({}))
-      throw new Error(errorData.message || "Erreur lors de la création de l'utilisateur")
+      let errorData: any = {}
+      try {
+        errorData = JSON.parse(userResponseText)
+      } catch (e) {
+        console.error("[v0] Failed to parse error response as JSON")
+      }
+      throw new Error(
+        errorData.message ||
+          errorData.error ||
+          `Erreur lors de la création de l'utilisateur (Status: ${userResponse.status})`,
+      )
     }
 
-    const userData = await userResponse.json()
+    const userData = JSON.parse(userResponseText)
     const userId = userData.id || userData.data?.id
 
     if (!userId) {
+      console.error("[v0] User data received:", userData)
       throw new Error("ID utilisateur non reçu de l'API")
     }
 
@@ -119,6 +144,7 @@ export async function signupUser(data: SignupData) {
     }
   } catch (error: any) {
     console.error("[v0] Signup error:", error)
+    console.error("[v0] Error stack:", error.stack)
     return {
       success: false,
       message: error.message || "Une erreur est survenue lors de l'inscription",
