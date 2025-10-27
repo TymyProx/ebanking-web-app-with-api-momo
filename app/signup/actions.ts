@@ -47,11 +47,26 @@ export async function signupUser(data: SignupData) {
       )
     }
 
-    const signupData = JSON.parse(signupResponseText)
-    const token = signupData.token || signupData.data?.token
+    let token: string
+
+    // Check if response is a JWT token (starts with "eyJ")
+    if (signupResponseText.startsWith("eyJ")) {
+      // Response is a JWT token string
+      token = signupResponseText
+      console.log("[v0] Received JWT token directly")
+    } else {
+      // Response is JSON, parse it
+      try {
+        const signupData = JSON.parse(signupResponseText)
+        token = signupData.token || signupData.data?.token || ""
+      } catch (e) {
+        console.error("[v0] Failed to parse signup response as JSON:", e)
+        throw new Error("Format de réponse invalide de l'API")
+      }
+    }
 
     if (!token) {
-      console.error("[v0] Signup data received:", signupData)
+      console.error("[v0] No token received from signup")
       throw new Error("Token non reçu de l'API")
     }
 
