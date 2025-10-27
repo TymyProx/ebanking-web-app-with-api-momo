@@ -17,26 +17,49 @@ export async function signupUser(data: SignupData) {
   try {
     console.log("[v0] Starting signup process...")
 
+    if (!data.email) {
+      return { success: false, message: "Email requis" }
+    }
+    if (!data.password) {
+      return { success: false, message: "Mot de passe requis" }
+    }
+    if (!data.fullName) {
+      return { success: false, message: "Nom complet requis" }
+    }
+    if (!data.phone) {
+      return { success: false, message: "Téléphone requis" }
+    }
+    if (!data.address) {
+      return { success: false, message: "Adresse requise" }
+    }
+
     // Generate a unique client code
     const codeClient = `CLI-${Date.now()}-${Math.random().toString(36).substring(2, 9).toUpperCase()}`
 
     console.log("[v0] Step 1: Creating authentication account...")
+
+    const signupPayload = {
+      email: String(data.email),
+      password: String(data.password),
+      invitationToken: "string",
+      tenantId: String(TENANT_ID),
+      roles: ["admin"], // Set role to admin
+      status: "active", // Set status to active
+    }
+
+    console.log("[v0] Signup payload:", JSON.stringify({ ...signupPayload, password: "***" }))
+
     const signupResponse = await fetch(`${API_BASE_URL}/auth/sign-up`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        email: data.email,
-        password: data.password,
-        invitationToken: "string",
-        tenantId: TENANT_ID,
-      }),
+      body: JSON.stringify(signupPayload),
     })
 
     console.log("[v0] Signup response status:", signupResponse.status)
     const signupResponseText = await signupResponse.text()
-    console.log("[v0] Signup response body:", signupResponseText)
+    console.log("[v0] Signup response body:", signupResponseText.substring(0, 100) + "...")
 
     if (!signupResponse.ok) {
       let errorData: any = {}
@@ -46,6 +69,14 @@ export async function signupUser(data: SignupData) {
         errorData = { message: signupResponseText || `HTTP ${signupResponse.status}` }
       }
       console.error("[v0] Signup failed:", errorData)
+
+      if (errorData.message?.includes("Email is already in use") || errorData.message?.includes("already exists")) {
+        return {
+          success: false,
+          message: "Ce compte existe déjà. Veuillez vous connecter avec vos identifiants.",
+        }
+      }
+
       throw new Error(errorData.message || "Erreur lors de la création du compte")
     }
 
@@ -59,6 +90,11 @@ export async function signupUser(data: SignupData) {
       const signupData = JSON.parse(signupResponseText)
       token = signupData.token || signupData.data?.token || signupData
       console.log("[v0] Extracted token from JSON response")
+    }
+
+    if (!token) {
+      console.error("[v0] No token received from server")
+      return { success: false, message: "Aucun token reçu du serveur" }
     }
 
     console.log("[v0] Authentication account created successfully")
@@ -79,6 +115,8 @@ export async function signupUser(data: SignupData) {
 
     const userData = await meResponse.json()
     console.log("[v0] User info retrieved successfully")
+    console.log("[v0] User roles:", userData.roles)
+    console.log("[v0] User status:", userData.status)
 
     const userId = userData.id
 
@@ -87,14 +125,15 @@ export async function signupUser(data: SignupData) {
     }
 
     console.log("[v0] Step 3: Creating client record...")
+
     const clientRequestBody = {
       data: {
-        nomComplet: data.fullName,
-        email: data.email,
-        telephone: data.phone,
-        adresse: data.address,
-        codeClient: codeClient,
-        userid: userId,
+        nomComplet: String(data.fullName),
+        email: String(data.email),
+        telephone: String(data.phone),
+        adresse: String(data.address),
+        codeClient: String(codeClient),
+        userid: String(userId),
       },
     }
     console.log("[v0] Client request body:", JSON.stringify(clientRequestBody))
@@ -112,7 +151,7 @@ export async function signupUser(data: SignupData) {
     console.log("[v0] Client response status:", clientResponse.status)
     console.log("[v0] Client response status text:", clientResponse.statusText)
     const clientResponseText = await clientResponse.text()
-    console.log("[v0] Client response body:", clientResponseText)
+    console.log("[v0] Client response body:", clientResponseText.substring(0, 200) + "...")
 
     if (!clientResponse.ok) {
       let errorData: any = {}
@@ -133,7 +172,7 @@ export async function signupUser(data: SignupData) {
       console.error("[v0] Failed to parse client response as JSON")
       throw new Error("Réponse invalide du serveur")
     }
-    console.log("[v0] Client created successfully:", clientData)
+    console.log("[v0] Client created successfully")
 
     // Store token in cookies
     const cookieStore = await cookies()
@@ -144,6 +183,11 @@ export async function signupUser(data: SignupData) {
       maxAge: 60 * 60 * 24 * 7, // 7 days
     })
 
+    if (typeof window !== "undefined") {
+      localStorage.setItem("auth_token", token)
+      localStorage.setItem("user_data", JSON.stringify(userData))
+    }
+
     console.log("[v0] Signup process completed successfully!")
 
     return {
@@ -152,6 +196,12 @@ export async function signupUser(data: SignupData) {
       token,
       userId,
       clientId: clientData.id || clientData.data?.id,
+      user: {
+        id: userData.id,
+        email: userData.email,
+        roles: userData.roles || ["admin"],
+        status: userData.status || "active",
+      },
     }
   } catch (error: any) {
     console.error("[v0] Signup error:", error)
