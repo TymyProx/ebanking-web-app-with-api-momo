@@ -20,61 +20,7 @@ export async function signupUser(data: SignupData) {
     // Generate a unique client code
     const codeClient = `CLI-${Date.now()}-${Math.random().toString(36).substring(2, 9).toUpperCase()}`
 
-    // Step 1: Create user with admin role
-    console.log("[v0] Step 1: Creating user...")
-    const userRequestBody = {
-      data: {
-        emails: [data.email],
-        roles: ["admin"],
-      },
-    }
-    console.log("[v0] User request body:", JSON.stringify(userRequestBody))
-    console.log("[v0] API URL:", `${API_BASE_URL}/tenant/${TENANT_ID}/user`)
-
-    const userResponse = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/user`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(userRequestBody),
-    })
-
-    console.log("[v0] User response status:", userResponse.status)
-    console.log("[v0] User response status text:", userResponse.statusText)
-
-    const userResponseText = await userResponse.text()
-    console.log("[v0] User response body:", userResponseText)
-
-    if (!userResponse.ok) {
-      let errorData: any = {}
-      try {
-        errorData = JSON.parse(userResponseText)
-      } catch (e) {
-        console.error("[v0] Failed to parse error response as JSON")
-        errorData = { message: userResponseText || `HTTP ${userResponse.status}: ${userResponse.statusText}` }
-      }
-      console.error("[v0] User creation failed:", errorData)
-      throw new Error(errorData.message || "Erreur lors de la création de l'utilisateur")
-    }
-
-    let userData: any
-    try {
-      userData = JSON.parse(userResponseText)
-    } catch (e) {
-      console.error("[v0] Failed to parse success response as JSON")
-      throw new Error("Réponse invalide du serveur")
-    }
-    console.log("[v0] User created successfully:", userData)
-
-    // Extract user ID from response
-    const userId = userData.id || userData.data?.id
-
-    if (!userId) {
-      throw new Error("ID utilisateur non trouvé dans la réponse")
-    }
-
-    // Step 2: Create authentication account
-    console.log("[v0] Step 2: Creating authentication account...")
+    console.log("[v0] Step 1: Creating authentication account...")
     const signupResponse = await fetch(`${API_BASE_URL}/auth/sign-up`, {
       method: "POST",
       headers: {
@@ -88,19 +34,58 @@ export async function signupUser(data: SignupData) {
       }),
     })
 
+    console.log("[v0] Signup response status:", signupResponse.status)
+    const signupResponseText = await signupResponse.text()
+    console.log("[v0] Signup response body:", signupResponseText)
+
     if (!signupResponse.ok) {
-      const errorData = await signupResponse.json().catch(() => ({}))
+      let errorData: any = {}
+      try {
+        errorData = JSON.parse(signupResponseText)
+      } catch (e) {
+        errorData = { message: signupResponseText || `HTTP ${signupResponse.status}` }
+      }
       console.error("[v0] Signup failed:", errorData)
       throw new Error(errorData.message || "Erreur lors de la création du compte")
     }
 
-    const signupData = await signupResponse.json()
+    let token: string
+    if (signupResponseText.startsWith("eyJ")) {
+      // Response is a JWT token string
+      token = signupResponseText
+      console.log("[v0] Received JWT token directly")
+    } else {
+      // Response is JSON
+      const signupData = JSON.parse(signupResponseText)
+      token = signupData.token || signupData.data?.token || signupData
+      console.log("[v0] Extracted token from JSON response")
+    }
+
     console.log("[v0] Authentication account created successfully")
 
-    // Extract token from response
-    const token = signupData.token || signupData.data?.token || signupData
+    console.log("[v0] Step 2: Getting user info...")
+    const meResponse = await fetch(`${API_BASE_URL}/auth/me`, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
 
-    // Step 3: Create client record
+    if (!meResponse.ok) {
+      const errorData = await meResponse.json().catch(() => ({}))
+      console.error("[v0] Failed to get user info:", errorData)
+      throw new Error("Erreur lors de la récupération des informations utilisateur")
+    }
+
+    const userData = await meResponse.json()
+    console.log("[v0] User info retrieved successfully")
+
+    const userId = userData.id
+
+    if (!userId) {
+      throw new Error("ID utilisateur non trouvé")
+    }
+
     console.log("[v0] Step 3: Creating client record...")
     const clientResponse = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/client`, {
       method: "POST",
