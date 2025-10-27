@@ -474,7 +474,7 @@ export async function executeTransfer(prevState: any, formData: FormData) {
       },
     }
 
-    const transactionUrl = `${API_BASE_URL}/tenant/${TENANT_ID}/transaction`
+    const transactionUrl = `${API_BASE_URL}/tenant/${TENANT_ID}/transactions`
     console.log("[v0] ===== TRANSACTION CREATION DEBUG =====")
     console.log("[v0] Transaction URL:", transactionUrl)
     console.log("[v0] API_BASE_URL:", API_BASE_URL)
