@@ -43,8 +43,6 @@ export async function signupUser(data: SignupData) {
       password: String(data.password),
       invitationToken: "string",
       tenantId: String(TENANT_ID),
-      roles: ["admin"], // Set role to admin
-      status: "active", // Set status to active
     }
 
     console.log("[v0] Signup payload:", JSON.stringify({ ...signupPayload, password: "***" }))
@@ -124,7 +122,38 @@ export async function signupUser(data: SignupData) {
       throw new Error("ID utilisateur non trouvé")
     }
 
-    console.log("[v0] Step 3: Creating client record...")
+    console.log("[v0] Step 3: Updating tenant user roles and status...")
+
+    const updateUserPayload = {
+      data: {
+        roles: ["admin"],
+        status: "active",
+      },
+    }
+
+    console.log("[v0] Update user payload:", JSON.stringify(updateUserPayload))
+
+    const updateUserResponse = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/user/${userId}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(updateUserPayload),
+    })
+
+    console.log("[v0] Update user response status:", updateUserResponse.status)
+
+    if (!updateUserResponse.ok) {
+      const updateErrorText = await updateUserResponse.text()
+      console.error("[v0] Failed to update user roles:", updateErrorText)
+      // Don't throw error here, continue with signup even if role update fails
+      console.warn("[v0] Continuing signup despite role update failure")
+    } else {
+      console.log("[v0] User roles and status updated successfully")
+    }
+
+    console.log("[v0] Step 4: Creating client record...")
 
     const clientRequestBody = {
       data: {
@@ -199,8 +228,8 @@ export async function signupUser(data: SignupData) {
       user: {
         id: userData.id,
         email: userData.email,
-        roles: userData.roles || ["admin"],
-        status: userData.status || "active",
+        roles: ["admin"],
+        status: "active",
       },
     }
   } catch (error: any) {
