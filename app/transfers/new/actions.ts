@@ -188,11 +188,11 @@ export async function validateOTP(prevState: any, formData: FormData) {
 function getTransactionType(beneficiaryType: string): string {
   switch (beneficiaryType) {
     case "BNG-BNG":
-      return "INTERNAL_TRANSFER"
+      return "INTERNAL" // Was "INTERNAL_TRANSFER" (17 chars)
     case "BNG-CONFRERE":
-      return "DOMESTIC_TRANSFER"
+      return "DOMESTIC" // Was "DOMESTIC_TRANSFER" (17 chars)
     case "BNG-INTERNATIONAL":
-      return "INTERNATIONAL_TRANSFER"
+      return "INTERNATIONAL" // Was "INTERNATIONAL_TRANSFER" (22 chars)
     default:
       return "TRANSFER"
   }
@@ -388,7 +388,7 @@ export async function executeTransfer(prevState: any, formData: FormData) {
 
     if (validatedData.transferType === "account-to-account") {
       // Pour les virements compte à compte : beneficiaryId = ID du compte à créditer
-      txnType = "INTERNAL_TRANSFER"
+      txnType = "INTERNAL" // Was "INTERNAL_TRANSFER"
       finalBeneficiaryId = validatedData.targetAccount
       creditAccount = validatedData.targetAccount || ""
 
