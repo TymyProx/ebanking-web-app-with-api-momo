@@ -474,7 +474,15 @@ export async function executeTransfer(prevState: any, formData: FormData) {
       },
     }
 
-    const response = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/transaction`, {
+    const transactionUrl = `${API_BASE_URL}/tenant/${TENANT_ID}/transaction`
+    console.log("[v0] ===== TRANSACTION CREATION DEBUG =====")
+    console.log("[v0] Transaction URL:", transactionUrl)
+    console.log("[v0] API_BASE_URL:", API_BASE_URL)
+    console.log("[v0] TENANT_ID:", TENANT_ID)
+    console.log("[v0] Request body:", JSON.stringify(apiData, null, 2))
+    console.log("[v0] ========================================")
+
+    const response = await fetch(transactionUrl, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -483,8 +491,15 @@ export async function executeTransfer(prevState: any, formData: FormData) {
       body: JSON.stringify(apiData),
     })
 
+    console.log("[v0] Transaction response status:", response.status)
+    console.log("[v0] Transaction response status text:", response.statusText)
+
     if (!response.ok) {
       console.log("[v0] Erreur API, restauration du solde disponible")
+
+      const responseText = await response.text()
+      console.log("[v0] Error response body:", responseText)
+
       await debitAccountBalance(validatedData.sourceAccount, -transferAmount) // Montant négatif pour créditer
 
       // Si c'était un virement interne et que le destinataire avait été crédité, le débiter aussi
@@ -492,14 +507,26 @@ export async function executeTransfer(prevState: any, formData: FormData) {
         await debitAccountBalance(validatedData.targetAccount, transferAmount) // Débiter le montant crédité
       }
 
-      const errorData = await response.json().catch(() => ({}))
+      let errorMessage = `❌ Erreur API: ${response.status} ${response.statusText}`
+
+      try {
+        const errorData = JSON.parse(responseText)
+        errorMessage = errorData.message || errorMessage
+      } catch (e) {
+        // Response is not JSON, use the text as is
+        if (responseText) {
+          errorMessage = `❌ ${responseText}`
+        }
+      }
+
       return {
         success: false,
-        error: errorData.message || `❌ Erreur API: ${response.status} ${response.statusText}`,
+        error: errorMessage,
       }
     }
 
     const result = await response.json()
+    console.log("[v0] Transaction created successfully:", result)
 
     let successMessage = `✅ Virement de ${new Intl.NumberFormat("fr-FR").format(transferAmount)} GNF effectué avec succès.`
 
