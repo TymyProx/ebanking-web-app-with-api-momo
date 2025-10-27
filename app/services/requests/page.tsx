@@ -21,7 +21,6 @@ import {
   AlertCircle,
   Send,
   Eye,
-  Banknote,
   Shield,
   Plus,
   Search,
@@ -45,18 +44,16 @@ const serviceTypes = [
     icon: BookOpen,
     description: "Commander un nouveau carnet de chèques",
     category: "banking",
-    processingTime: "3-5 jours ouvrables",
-    cost: "Gratuit",
+
     requirements: ["Compte actif", "Pas de chèques impayés"],
   },
   {
     id: "credit",
     name: "Demande de crédit",
     icon: CreditCard,
-    description: "Demande de crédit (personnel, immobilier, automobile, étudiant)",
+    description: "Demande de crédit (personnel, immobilier, etc...)",
     category: "credit",
-    processingTime: "3-30 jours ouvrables",
-    cost: "Gratuit",
+
     requirements: ["Revenus réguliers", "Garanties", "Dossier complet"],
   },
 ]
@@ -209,8 +206,6 @@ export default function ServiceRequestsPage() {
             nbrefeuille: item.nbrefeuille || 0,
             commentaire: item.commentaire || "",
             numcompteId: item.numcompteId || "",
-            typeCheque: item.typeCheque, // Added from update
-            talonCheque: item.talonCheque, // Added from update
           },
         }))
         allTransformedRequests = [...allTransformedRequests, ...checkbookRequests]
@@ -254,7 +249,7 @@ export default function ServiceRequestsPage() {
         total: allTransformedRequests.length,
         checkbook: allTransformedRequests.filter((req) => req.type === "checkbook").length,
         credit: allTransformedRequests.filter((req) => req.type === "credit").length,
-        card: allTransformedRequests.filter((req) => req.type === "card").length,
+        card: allTransformedRequests.filter((req) => req.type === "account").length,
         account: allTransformedRequests.filter((req) => req.type === "account").length,
       }
       console.log("[v0] Statistiques calculées:", stats)
@@ -308,7 +303,7 @@ export default function ServiceRequestsPage() {
       return [
         ...commonFields,
         { label: "Nom du demandeur", value: details.applicantName },
-        { label: "Montant du crédit", value: `${details.creditAmount} €` },
+        { label: "Montant du crédit", value: `${details.creditAmount} GNF` },
         { label: "Durée (mois)", value: details.durationMonths },
         { label: "Objet du crédit", value: details.purpose },
       ]
@@ -318,8 +313,6 @@ export default function ServiceRequestsPage() {
         { label: "Date de commande", value: new Date(details.dateorder).toLocaleDateString("fr-FR") },
         { label: "Nombre de feuilles", value: details.nbrefeuille },
         { label: "Nombre de chéquiers", value: details.nbrechequier },
-        { label: "Type de chèque", value: details.typeCheque || "Non spécifié" },
-        { label: "Avec talon de chèque", value: details.talonCheque ? "Oui" : "Non" },
         { label: "Intitulé du compte", value: details.intitulecompte },
         { label: "Commentaire", value: details.commentaire || "Aucun commentaire" },
       ]
@@ -345,6 +338,12 @@ export default function ServiceRequestsPage() {
   useEffect(() => {
     loadAccounts()
   }, [])
+
+  useEffect(() => {
+    if (selectedService === "checkbook" && !formData.cheque_talon) {
+      handleInputChange("cheque_talon", "non")
+    }
+  }, [selectedService])
 
   const loadAccounts = async () => {
     try {
@@ -635,8 +634,8 @@ export default function ServiceRequestsPage() {
         intitulecompte: formData.intitulecompte,
         numcompteId: formData.numcompte,
         commentaire: formData.commentaire || "",
-        typeCheque: formData.typeCheque || "Standard",
-        talonCheque: formData.talonCheque === true,
+        type_chequier: formData.type_chequier,
+        cheque_talon: formData.cheque_talon === "oui",
       }
 
       const result = await submitCheckbookRequest(checkbookData)
@@ -714,136 +713,165 @@ export default function ServiceRequestsPage() {
       case "checkbook":
         return (
           <form onSubmit={handleCheckbookSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="intitulecompte">Sélectionner un compte *</Label>
-              <Select
-                value={formData.numcompteId || ""}
-                onValueChange={(value) => {
-                  const selectedAccount = accounts.find((acc) => acc.id === value)
-                  if (selectedAccount) {
-                    handleInputChange("accountId", selectedAccount.id)
-                    handleInputChange("intitulecompte", selectedAccount.name)
-                    handleInputChange("numcompte", selectedAccount.number)
-                  }
-                }}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder={isLoadingAccounts ? "Chargement..." : "Choisir un compte"} />
-                </SelectTrigger>
-                <SelectContent>
-                  {isLoadingAccounts ? (
-                    <SelectItem value="loading" disabled>
-                      Chargement des comptes...
-                    </SelectItem>
-                  ) : accounts.length === 0 ? (
-                    <SelectItem value="empty" disabled>
-                      Aucun compte courant trouvé
-                    </SelectItem>
-                  ) : (
-                    accounts.map((account) => (
-                      <SelectItem key={account.id} value={account.id}>
-                        <div className="flex flex-col">
-                          <span className="font-medium">{account.name}</span>
-                          <span className="text-sm text-gray-500">
-                            {account.number} •{" "}
-                            {new Intl.NumberFormat("fr-FR", {
-                              style: "currency",
-                              currency: account.currency === "GNF" ? "GNF" : account.currency,
-                              minimumFractionDigits: account.currency === "GNF" ? 0 : 2,
-                            }).format(account.balance)}
-                          </span>
-                        </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="intitulecompte">Sélectionner un compte *</Label>
+                <Select
+                  value={formData.numcompteId || ""}
+                  onValueChange={(value) => {
+                    const selectedAccount = accounts.find((acc) => acc.id === value)
+                    if (selectedAccount) {
+                      handleInputChange("accountId", selectedAccount.id)
+                      handleInputChange("intitulecompte", selectedAccount.name)
+                      handleInputChange("numcompte", selectedAccount.number)
+                    }
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder={isLoadingAccounts ? "Chargement..." : "Choisir un compte"} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {isLoadingAccounts ? (
+                      <SelectItem value="loading" disabled>
+                        Chargement des comptes...
                       </SelectItem>
-                    ))
-                  )}
-                </SelectContent>
-              </Select>
+                    ) : accounts.length === 0 ? (
+                      <SelectItem value="empty" disabled>
+                        Aucun compte courant trouvé
+                      </SelectItem>
+                    ) : (
+                      accounts.map((account) => (
+                        <SelectItem key={account.id} value={account.id}>
+                          <div className="flex flex-col">
+                            <span className="font-medium">{account.name}</span>
+                            <span className="text-sm text-gray-500">
+                              {account.number} •{" "}
+                              {new Intl.NumberFormat("fr-FR", {
+                                style: "currency",
+                                currency: account.currency === "GNF" ? "GNF" : account.currency,
+                                minimumFractionDigits: account.currency === "GNF" ? 0 : 2,
+                              }).format(account.balance)}
+                            </span>
+                          </div>
+                        </SelectItem>
+                      ))
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="numcompte">Numéro de compte *</Label>
+                <Input
+                  id="numcompte"
+                  name="numcompte"
+                  type="text"
+                  value={formData.numcompte || ""}
+                  onChange={(e) => handleInputChange("numcompte", e.target.value)}
+                  placeholder="Ex: 000123456789"
+                  required
+                  readOnly
+                  className="bg-gray-50"
+                />
+              </div>
             </div>
 
-            <div>
-              <Label htmlFor="numcompte">Numéro de compte *</Label>
-              <Input
-                id="numcompte"
-                name="numcompte"
-                type="text"
-                value={formData.numcompte || ""}
-                onChange={(e) => handleInputChange("numcompte", e.target.value)}
-                placeholder="Ex: 000123456789"
-                required
-                readOnly
-                className="bg-gray-50"
-              />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="dateorder">Date de commande *</Label>
+                <Input
+                  id="dateorder"
+                  name="dateorder"
+                  type="date"
+                  value={formData.dateorder || new Date().toISOString().split("T")[0]}
+                  onChange={(e) => handleInputChange("dateorder", e.target.value)}
+                  required
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="type_chequier">Type de chéquier *</Label>
+                <Select
+                  value={formData.type_chequier || ""}
+                  onValueChange={(value) => handleInputChange("type_chequier", value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choisir le type de chéquier" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="barré">Barré</SelectItem>
+                    <SelectItem value="non_barré">Non barré</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
 
-            <div>
-              <Label htmlFor="dateorder">Date de commande *</Label>
-              <Input
-                id="dateorder"
-                name="dateorder"
-                type="date"
-                value={formData.dateorder || new Date().toISOString().split("T")[0]}
-                onChange={(e) => handleInputChange("dateorder", e.target.value)}
-                required
-              />
+            <div className="space-y-2">
+              <Label>Chèque avec talon *</Label>
+              <div className="flex items-center space-x-6">
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="radio"
+                    id="talon_oui"
+                    name="talonCheque"
+                    value="oui"
+                    checked={formData.cheque_talon === "oui"}
+                    onChange={(e) => handleInputChange("cheque_talon", e.target.value)}
+                    className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+                  />
+                  <Label htmlFor="talon_oui" className="font-normal cursor-pointer">
+                    Oui
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="radio"
+                    id="talon_non"
+                    name="talonCheque"
+                    value="non"
+                    checked={formData.cheque_talon === "non"}
+                    onChange={(e) => handleInputChange("cheque_talon", e.target.value)}
+                    className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+                  />
+                  <Label htmlFor="talon_non" className="font-normal cursor-pointer">
+                    Non
+                  </Label>
+                </div>
+              </div>
             </div>
 
-            <div>
-              <Label htmlFor="nbrechequier">Nombre de chéquiers *</Label>
-              <Input
-                id="nbrechequier"
-                name="nbrechequier"
-                type="number"
-                min="1"
-                max="10"
-                value={formData.nbrechequier || ""}
-                onChange={(e) => handleInputChange("nbrechequier", e.target.value)}
-                placeholder="Ex: 2"
-                required
-              />
-            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="nbrechequier">Nombre de chéquiers *</Label>
+                <Input
+                  id="nbrechequier"
+                  name="nbrechequier"
+                  type="number"
+                  min="1"
+                  max="2"
+                  value={formData.nbrechequier || ""}
+                  onChange={(e) => handleInputChange("nbrechequier", e.target.value)}
+                  placeholder="Ex: 2"
+                  required
+                />
+              </div>
 
-            <div>
-              <Label htmlFor="nbrefeuille">Nombre de feuillets par chéquier *</Label>
-              <Select
-                value={formData.nbrefeuille || ""}
-                onValueChange={(value) => handleInputChange("nbrefeuille", value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Choisir le nombre de feuillets" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="25">25 feuillets</SelectItem>
-                  <SelectItem value="50">50 feuillets</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <Label htmlFor="typeCheque">Type de chèque *</Label>
-              <Select
-                value={formData.typeCheque || ""}
-                onValueChange={(value) => handleInputChange("typeCheque", value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Choisir le type de chèque" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Standard">Standard</SelectItem>
-                  <SelectItem value="Certifié">Certifié</SelectItem>
-                  <SelectItem value="Barré">Barré</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="talonCheque"
-                checked={formData.talonCheque || false}
-                onCheckedChange={(checked) => handleInputChange("talonCheque", checked)}
-              />
-              <Label htmlFor="talonCheque" className="text-sm font-normal">
-                Avec talon de chèque
-              </Label>
+              <div>
+                <Label htmlFor="nbrefeuille">Nombre de feuillets par chéquier *</Label>
+                <Select
+                  value={formData.nbrefeuille || ""}
+                  onValueChange={(value) => handleInputChange("nbrefeuille", value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choisir le nombre de feuillets" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="25">25 feuillets</SelectItem>
+                    <SelectItem value="50">50 feuillets</SelectItem>
+                    <SelectItem value="100">100 feuillets</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
 
             <div>
@@ -894,80 +922,116 @@ export default function ServiceRequestsPage() {
       case "credit":
         return (
           <form onSubmit={handleCreditSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="intitulecompte">Sélectionner un compte *</Label>
-              <Select
-                value={formData.accountId || ""}
-                onValueChange={(value) => {
-                  const selectedAccount = accounts.find((acc) => acc.id === value)
-                  if (selectedAccount) {
-                    handleInputChange("accountId", selectedAccount.id)
-                    handleInputChange("intitulecompte", selectedAccount.name)
-                    handleInputChange("numcompte", selectedAccount.number)
-                  }
-                }}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder={isLoadingAccounts ? "Chargement..." : "Choisir un compte"} />
-                </SelectTrigger>
-                <SelectContent>
-                  {isLoadingAccounts ? (
-                    <SelectItem value="loading" disabled>
-                      Chargement des comptes...
-                    </SelectItem>
-                  ) : accounts.length === 0 ? (
-                    <SelectItem value="empty" disabled>
-                      Aucun compte courant trouvé
-                    </SelectItem>
-                  ) : (
-                    accounts.map((account) => (
-                      <SelectItem key={account.id} value={account.id}>
-                        <div className="flex flex-col">
-                          <span className="font-medium">{account.name}</span>
-                          <span className="text-sm text-gray-500">
-                            {account.number} •{" "}
-                            {new Intl.NumberFormat("fr-FR", {
-                              style: "currency",
-                              currency: account.currency === "GNF" ? "GNF" : account.currency,
-                              minimumFractionDigits: account.currency === "GNF" ? 0 : 2,
-                            }).format(account.balance)}
-                          </span>
-                        </div>
+             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="intitulecompte">Sélectionner un compte *</Label>
+                <Select
+                  value={formData.numcompteId || ""}
+                  onValueChange={(value) => {
+                    const selectedAccount = accounts.find((acc) => acc.id === value)
+                    if (selectedAccount) {
+                      handleInputChange("accountId", selectedAccount.id)
+                      handleInputChange("intitulecompte", selectedAccount.name)
+                      handleInputChange("numcompte", selectedAccount.number)
+                    }
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder={isLoadingAccounts ? "Chargement..." : "Choisir un compte"} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {isLoadingAccounts ? (
+                      <SelectItem value="loading" disabled>
+                        Chargement des comptes...
                       </SelectItem>
-                    ))
-                  )}
-                </SelectContent>
-              </Select>
+                    ) : accounts.length === 0 ? (
+                      <SelectItem value="empty" disabled>
+                        Aucun compte courant trouvé
+                      </SelectItem>
+                    ) : (
+                      accounts.map((account) => (
+                        <SelectItem key={account.id} value={account.id}>
+                          <div className="flex flex-col">
+                            <span className="font-medium">{account.name}</span>
+                            <span className="text-sm text-gray-500">
+                              {account.number} •{" "}
+                              {new Intl.NumberFormat("fr-FR", {
+                                style: "currency",
+                                currency: account.currency === "GNF" ? "GNF" : account.currency,
+                                minimumFractionDigits: account.currency === "GNF" ? 0 : 2,
+                              }).format(account.balance)}
+                            </span>
+                          </div>
+                        </SelectItem>
+                      ))
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="numcompte_credit">Numéro de compte *</Label>
+                <Input
+                  id="numcompte_credit"
+                  name="numcompte_credit"
+                  type="text"
+                  value={formData.numcompte || ""}
+                  onChange={(e) => handleInputChange("numcompte", e.target.value)}
+                  placeholder="Ex: 000123456789"
+                  required
+                  readOnly
+                  className="bg-gray-50"
+                />
+              </div>
             </div>
 
-            <div>
-              <Label htmlFor="numcompte_credit">Numéro de compte *</Label>
-              <Input
-                id="numcompte_credit"
-                name="numcompte_credit"
-                type="text"
-                value={formData.numcompte || ""}
-                onChange={(e) => handleInputChange("numcompte", e.target.value)}
-                placeholder="Ex: 000123456789"
-                required
-                readOnly
-                className="bg-gray-50"
-              />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="credit_type">Type de crédit *</Label>
+                <Select onValueChange={(value) => handleInputChange("credit_type", value)} required>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Sélectionnez le type de crédit" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="personnel">Crédit personnel</SelectItem>
+                    <SelectItem value="immobilier">Crédit immobilier</SelectItem>
+                    <SelectItem value="étudiant">Crédit étudiant</SelectItem>
+                    <SelectItem value="automobile">Crédit automobile</SelectItem>
+                    <SelectItem value="other">Autre</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="loan_purpose">Objet du crédit *</Label>
+                <Select onValueChange={(value) => handleInputChange("loan_purpose", value)} required>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Sélectionnez l'objet" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Consommation">Consommation</SelectItem>
+                    <SelectItem value="Équipement">Équipement</SelectItem>
+                    <SelectItem value="Rénovation">Rénovation</SelectItem>
+                    <SelectItem value="Éducation">Éducation</SelectItem>
+                    <SelectItem value="Santé">Santé</SelectItem>
+                    <SelectItem value="Autre">Autre</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
 
-            <div>
-              <Label htmlFor="credit_type">Type de crédit *</Label>
-              <Select onValueChange={(value) => handleInputChange("credit_type", value)} required>
-                <SelectTrigger>
-                  <SelectValue placeholder="Sélectionnez le type de crédit" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="personnel">Crédit personnel</SelectItem>
-                  <SelectItem value="immobilier">Crédit immobilier</SelectItem>
-                  <SelectItem value="étudiant">Crédit étudiant</SelectItem>
-                  <SelectItem value="automobile">Crédit automobile</SelectItem>
-                </SelectContent>
-              </Select>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="monthly_income">Revenus mensuels (GNF) *</Label>
+                <Input
+                  id="monthly_income"
+                  type="number"
+                  placeholder="Ex: 2000000"
+                  value={formData.monthly_income || ""}
+                  onChange={(e) => handleInputChange("monthly_income", e.target.value)}
+                  required
+                />
+              </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -999,35 +1063,18 @@ export default function ServiceRequestsPage() {
               </div>
             </div>
 
-            <div>
-              <Label htmlFor="loan_purpose">Objet du crédit *</Label>
-              <Select onValueChange={(value) => handleInputChange("loan_purpose", value)} required>
-                <SelectTrigger>
-                  <SelectValue placeholder="Sélectionnez l'objet" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Consommation">Consommation</SelectItem>
-                  <SelectItem value="Équipement">Équipement</SelectItem>
-                  <SelectItem value="Rénovation">Rénovation</SelectItem>
-                  <SelectItem value="Éducation">Éducation</SelectItem>
-                  <SelectItem value="Santé">Santé</SelectItem>
-                  <SelectItem value="Autre">Autre</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="monthly_income">Revenus mensuels (GNF) *</Label>
+                <Label htmlFor="applicant_name">Nom du demandeur *</Label>
                 <Input
-                  id="monthly_income"
-                  type="number"
-                  placeholder="Ex: 2000000"
-                  value={formData.monthly_income || ""}
-                  onChange={(e) => handleInputChange("monthly_income", e.target.value)}
+                  id="applicant_name"
+                  placeholder="Nom du demandeur"
+                  value={formData.applicant_name || ""}
+                  onChange={(e) => handleInputChange("applicant_name", e.target.value)}
                   required
                 />
               </div>
+
               <div>
                 <Label htmlFor="employment_type">Type d'emploi *</Label>
                 <Select onValueChange={(value) => handleInputChange("employment_type", value)} required>
@@ -1042,17 +1089,6 @@ export default function ServiceRequestsPage() {
                   </SelectContent>
                 </Select>
               </div>
-            </div>
-
-            <div>
-              <Label htmlFor="applicant_name">Nom du demandeur *</Label>
-              <Input
-                id="applicant_name"
-                placeholder="Nom du demandeur"
-                value={formData.applicant_name || ""}
-                onChange={(e) => handleInputChange("applicant_name", e.target.value)}
-                required
-              />
             </div>
 
             {/* Contact Information */}
@@ -1086,8 +1122,7 @@ export default function ServiceRequestsPage() {
               <Alert className="border-green-200 bg-green-50">
                 <CheckCircle className="h-4 w-4 text-green-600" />
                 <AlertDescription className="text-green-800">
-                  ✅ Votre demande de crédit a été envoyée avec succès. Référence: {creditSubmitState.reference}.
-                  Réponse sous {selectedServiceData?.processingTime}.
+                  ✅ Votre demande de crédit a été envoyée avec succès. Référence: {creditSubmitState.reference}
                 </AlertDescription>
               </Alert>
             )}
@@ -1204,8 +1239,7 @@ export default function ServiceRequestsPage() {
               <Alert className="border-green-200 bg-green-50">
                 <CheckCircle className="h-4 w-4 text-green-600" />
                 <AlertDescription className="text-green-800">
-                  ✅ Votre e-demande a été envoyée avec succès. Référence: {eDemandeSubmitState.reference}. Réponse sous{" "}
-                  {selectedServiceData?.processingTime}.
+                  ✅ Votre e-demande a été envoyée avec succès. Référence: {eDemandeSubmitState.reference}
                 </AlertDescription>
               </Alert>
             )}
@@ -1228,11 +1262,9 @@ export default function ServiceRequestsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="space-y-2">
-        <h1 className="text-3xl font-heading font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-          E-Services
-        </h1>
-        <p className="text-muted-foreground text-lg">Faites vos demandes de services en ligne</p>
+      <div>
+        <h1 className="text-2xl font-bold text-gray-900">E-Services</h1>
+        <p className="text-gray-600">Faites vos demandes de services en ligne</p>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -1272,12 +1304,6 @@ export default function ServiceRequestsPage() {
                         <div className="flex-1">
                           <h3 className="font-medium text-sm">{service.name}</h3>
                           <p className="text-xs text-gray-500 mt-1">{service.description}</p>
-                          <div className="flex items-center justify-between mt-2">
-                            <Badge variant="outline" className="text-xs">
-                              {service.processingTime}
-                            </Badge>
-                            <span className="text-xs font-medium text-green-600">{service.cost}</span>
-                          </div>
                         </div>
                       </div>
                     </div>
@@ -1300,20 +1326,6 @@ export default function ServiceRequestsPage() {
               <CardContent className="space-y-6">
                 {/* Service Info */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-gray-50 rounded-lg">
-                  <div className="flex items-center space-x-2">
-                    <Clock className="w-4 h-4 text-gray-500" />
-                    <div>
-                      <p className="text-sm font-medium">Délai de traitement</p>
-                      <p className="text-xs text-gray-600">{selectedServiceData.processingTime}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Banknote className="w-4 h-4 text-gray-500" />
-                    <div>
-                      <p className="text-sm font-medium">Coût</p>
-                      <p className="text-xs text-gray-600">{selectedServiceData.cost}</p>
-                    </div>
-                  </div>
                   <div className="flex items-center space-x-2">
                     <Shield className="w-4 h-4 text-gray-500" />
                     <div>
@@ -1392,8 +1404,7 @@ export default function ServiceRequestsPage() {
                   <Alert className="border-green-200 bg-green-50">
                     <CheckCircle className="h-4 w-4 text-green-600" />
                     <AlertDescription className="text-green-800">
-                      ✅ Votre demande a été envoyée avec succès. Référence: {submitState.reference}. Réponse sous{" "}
-                      {selectedServiceData?.processingTime}.
+                      ✅ Votre demande a été envoyée avec succès. Référence: {submitState.reference}
                     </AlertDescription>
                   </Alert>
                 )}
@@ -1537,11 +1548,7 @@ export default function ServiceRequestsPage() {
                         <div className="text-right text-sm text-gray-500">
                           <p>Soumise le</p>
                           <p className="font-medium">{new Date(request.submittedAt).toLocaleDateString("fr-FR")}</p>
-                          {request.expectedResponse && (
-                            <p className="text-xs">
-                              Réponse attendue: {new Date(request.expectedResponse).toLocaleDateString("fr-FR")}
-                            </p>
-                          )}
+
                           {request.completedAt && (
                             <p className="text-xs text-green-600">
                               Complétée le: {new Date(request.completedAt).toLocaleDateString("fr-FR")}
