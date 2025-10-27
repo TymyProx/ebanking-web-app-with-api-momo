@@ -365,6 +365,29 @@ export async function executeTransfer(prevState: any, formData: FormData) {
     const validatedData = transferSchema.parse(cleanedData)
     const transferAmount = Number.parseFloat(validatedData.amount)
 
+    const cookieToken = (await cookies()).get("token")?.value
+    const usertoken = cookieToken
+
+    let sourceAccountNumber = ""
+    try {
+      const accountResponse = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/compte/${validatedData.sourceAccount}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${usertoken}`,
+        },
+      })
+
+      if (accountResponse.ok) {
+        const accountData = await accountResponse.json()
+        const account = accountData.data || accountData
+        sourceAccountNumber = account.accountNumber || account.numCompte || ""
+        console.log("[v0] Source account number retrieved:", sourceAccountNumber)
+      }
+    } catch (error) {
+      console.error("[v0] Error fetching source account details:", error)
+    }
+
     const debitResult = await debitAccountBalance(validatedData.sourceAccount, transferAmount)
 
     if (!debitResult.success) {
@@ -429,9 +452,6 @@ export async function executeTransfer(prevState: any, formData: FormData) {
       console.log(`[v0] Bénéficiaire trouvé - accountNumber: ${creditAccount}`)
     }
 
-    const cookieToken = (await cookies()).get("token")?.value
-    const usertoken = cookieToken
-
     let clientId = ""
     try {
       const meResponse = await fetch(`${API_BASE_URL}/auth/me`, {
@@ -450,12 +470,12 @@ export async function executeTransfer(prevState: any, formData: FormData) {
     const apiData = {
       data: {
         codeGuichet: "", // Empty - not collected in form
-        numCompte: validatedData.sourceAccount, // Map sourceAccount to numCompte
+        numCompte: sourceAccountNumber, // Use actual account number instead of account ID
         codeDevise: "GNF", // Default currency
         codeOperation: "", // Empty - not collected in form
         dateEcriture: new Date().toISOString().split("T")[0], // Current date
         txnId: transactionId,
-        accountId: validatedData.sourceAccount,
+        accountId: validatedData.sourceAccount, // Keep using account ID here
         referenceOperation: transactionId, // Use shortened transaction ID as reference
         txnType: txnType,
         amount: validatedData.amount,
