@@ -298,9 +298,11 @@ export default function BeneficiariesPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Gestion des bénéficiaires</h1>
-          <p className="text-gray-600">Gérez vos destinataires de virements</p>
+        <div className="space-y-2">
+          <h1 className="text-3xl font-heading font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+            Gestion des bénéficiaires
+          </h1>
+          <p className="text-muted-foreground text-lg">Gérez vos destinataires de virements</p>
         </div>
 
         <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>

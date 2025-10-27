@@ -307,10 +307,10 @@ export default function BalancesPage() {
         <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-secondary/10 to-primary/10 rounded-2xl blur-3xl -z-10" />
         <div className="flex items-center justify-between p-6 bg-white/80 backdrop-blur-sm rounded-2xl border border-border/50 shadow-sm">
           <div className="space-y-1">
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-primary via-secondary to-primary bg-clip-text text-transparent">
+            <h1 className="text-3xl font-heading font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
               Mes Comptes
             </h1>
-            <p className="text-muted-foreground">Gérez tous vos comptes en un seul endroit</p>
+            <p className="text-muted-foreground text-lg">Gérez tous vos comptes en un seul endroit</p>
           </div>
           <div className="flex items-center gap-3">
             <Dialog open={isNewAccountDialogOpen} onOpenChange={setIsNewAccountDialogOpen}>

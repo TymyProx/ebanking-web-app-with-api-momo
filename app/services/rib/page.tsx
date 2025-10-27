@@ -348,9 +348,11 @@ export default function RIBPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Relevé d'Identité Bancaire (RIB)</h1>
-        <p className="text-gray-600">Consultez et téléchargez votre RIB</p>
+      <div className="space-y-2">
+        <h1 className="text-3xl font-heading font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+          Relevé d'Identité Bancaire (RIB)
+        </h1>
+        <p className="text-muted-foreground text-lg">Consultez et téléchargez votre RIB</p>
         {preSelectedAccount && (
           <div className="mt-2">
             <Alert className="border-blue-200 bg-blue-50">

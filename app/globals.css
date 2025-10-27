@@ -86,10 +86,11 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground font-sans;
+    @apply bg-background text-foreground antialiased;
+    font-family: var(--font-body);
   }
 
-  /* Added modern typography and micro-interactions */
+  /* Added font configuration for headings using custom variables */
   h1,
   h2,
   h3,
@@ -97,6 +98,7 @@
   h5,
   h6 {
     @apply font-semibold tracking-tight;
+    font-family: var(--font-heading);
   }
 
   /* Smooth transitions for interactive elements */
@@ -182,5 +184,14 @@
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
+  }
+
+  /* Added utility classes for custom font families */
+  .font-heading {
+    font-family: var(--font-heading);
+  }
+
+  .font-body {
+    font-family: var(--font-body);
   }
 }

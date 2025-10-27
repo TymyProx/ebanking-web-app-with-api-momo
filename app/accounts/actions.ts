@@ -1,12 +1,40 @@
 "use server"
-process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0"
 import { cookies } from "next/headers"
 import { revalidatePath } from "next/cache"
 
 const API_BASE_URL = process.env.API_BASE_URL
 const TENANT_ID = process.env.TENANT_ID
 
-export async function getAccounts() {
+export interface Account {
+  id: string
+  createdAt?: string
+  updatedAt?: string
+  deletedAt?: string | null
+  createdById?: string
+  updatedById?: string
+  importHash?: string
+  tenantId?: string
+  accountId: string
+  accountNumber: string
+  accountName: string
+  currency: string
+  bookBalance: string
+  availableBalance: string
+  status: string
+  type: string
+  codeAgence?: string
+  clientId?: string
+  codeBanque?: string
+  cleRib?: string
+}
+
+interface AccountsResponse {
+  rows: Account[]
+  count: number
+}
+
+export async function getAccounts(): Promise<Account[]> {
   const cookieToken = (await cookies()).get("token")?.value
   const usertoken = cookieToken
   try {
@@ -15,6 +43,24 @@ export async function getAccounts() {
     if (!usertoken) {
       //console.log("[v0] Token manquant")
       return []
+    }
+
+    let currentUserId: string | null = null
+    try {
+      const userResponse = await fetch(`${API_BASE_URL}/auth/me`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${usertoken}`,
+        },
+      })
+
+      if (userResponse.ok) {
+        const userData = await userResponse.json()
+        currentUserId = userData.id
+      }
+    } catch (error) {
+      console.error("[v0] Erreur lors de la récupération du user ID:", error)
     }
 
     const response = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/compte`, {
@@ -97,30 +143,28 @@ export async function getAccounts() {
     const responseData = await response.json()
     //console.log("[v0] Données reçues:", responseData)
 
-    // Gérer les différents formats de réponse possibles
-    if (responseData.data) {
+    let accounts: Account[] = []
+
+    if (responseData.rows && Array.isArray(responseData.rows)) {
+      accounts = responseData.rows
+    } else if (responseData.data) {
       // Si responseData.data est un tableau
       if (Array.isArray(responseData.data)) {
-        return responseData.data
+        accounts = responseData.data
       }
       // Si responseData.data est un objet unique (un seul compte)
       else if (typeof responseData.data === "object") {
-        return [responseData.data]
+        accounts = [responseData.data]
       }
+    } else if (Array.isArray(responseData)) {
+      accounts = responseData
     }
 
-    // Compatibilité avec l'ancienne structure (rows)
-    if (Array.isArray(responseData.rows)) {
-      return responseData.rows
+    if (currentUserId) {
+      accounts = accounts.filter((account) => account.clientId === currentUserId)
     }
 
-    // Si responseData est directement un tableau
-    if (Array.isArray(responseData)) {
-      return responseData
-    }
-
-    // Si aucune structure reconnue, retourner un tableau vide
-    return []
+    return accounts
   } catch (error) {
     console.error("[v0] Erreur lors de la récupération des comptes:", error)
     return []
@@ -140,18 +184,38 @@ export async function createAccount(prevState: any, formData: FormData) {
       }
     }
 
-    // Extraction des données du formulaire
+    let clientId = "CUSTOMER_ID_PLACEHOLDER"
+    try {
+      const userResponse = await fetch(`${API_BASE_URL}/auth/me`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${usertoken}`,
+        },
+      })
+
+      if (userResponse.ok) {
+        const userData = await userResponse.json()
+        clientId = userData.id || "CUSTOMER_ID_PLACEHOLDER"
+        //console.log("[v0] Client ID récupéré:", clientId)
+      }
+    } catch (error) {
+      console.error("[v0] Erreur lors de la récupération du client ID:", error)
+    }
+
     const accountData = {
       accountId: formData.get("accountId") as string,
-      customerId: (formData.get("customerId") as string) || "CUSTOMER_ID_PLACEHOLDER",
       accountNumber: formData.get("accountNumber") as string,
       accountName: formData.get("accountName") as string,
       currency: formData.get("currency") as string,
       bookBalance: (formData.get("bookBalance") as string) || "0",
       availableBalance: (formData.get("availableBalance") as string) || "0",
-      type: (formData.get("accountType") as string) || "CURRENT", // Récupération du type de compte
       status: "EN ATTENTE",
-      agency: "Agence Principale",
+      type: (formData.get("accountType") as string) || "CURRENT",
+      codeAgence: "N/A", // Valeur par défaut
+      clientId: clientId, // ID du client connecté
+      codeBanque: "N/A", // Valeur par défaut
+      cleRib: "N/A", // Valeur par défaut
     }
 
     //console.log("[v0] Données du compte:", accountData)

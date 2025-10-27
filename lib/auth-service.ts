@@ -1,7 +1,8 @@
 import axios from "axios"
 import Cookies from "js-cookie"
+import { config } from "./config"
 
-const API_BASE_URL = process.env.API_BASE_URL || "https://35.184.98.9:4000/api"
+const API_BASE_URL = `${config.API_BASE_URL}/api`
 
 if (!API_BASE_URL) {
   throw new Error("API_BASE_URL environment variable is required")
@@ -47,29 +48,98 @@ authAxios.interceptors.response.use(
 
 export interface User {
   id: string
+  createdAt: string
+  updatedAt: string
+  deletedAt: string | null
+  createdById: string
+  updatedById: string
   fullName: string
   firstName: string
   lastName: string
   email: string
   phoneNumber: string
   emailVerified: boolean
+  emailVerificationTokenExpiresAt: string
+  provider: string
+  providerId: string
+  passwordResetTokenExpiresAt: string
+  jwtTokenInvalidBefore: string
+  importHash: string
   tenants: Array<{
     id: string
+    createdAt: string
+    updatedAt: string
+    deletedAt: string | null
+    createdById: string
+    updatedById: string
     userId: string
     roles: string[]
+    invitationToken: string
     status: string
-    TENANT_ID: string
+    tenantId: string
     tenant: {
       id: string
+      createdAt: string
+      updatedAt: string
+      deletedAt: string | null
+      createdById: string
+      updatedById: string
       name: string
       url: string
       plan: string
       planStatus: string
+      planStripeCustomerId: string
+      planUserId: string
+      settings: Array<{
+        id: string
+        createdAt: string
+        updatedAt: string
+        deletedAt: string | null
+        createdById: string
+        updatedById: string
+        theme: string
+        backgroundImageUrl: string
+        logoUrl: string
+        backgroundImages: Array<{
+          id: string
+          createdAt: string
+          updatedAt: string
+          deletedAt: string | null
+          createdById: string
+          updatedById: string
+          name: string
+          sizeInBytes: number
+          privateUrl: string
+          publicUrl: string
+          downloadUrl: string
+        }>
+        logos: Array<{
+          id: string
+          createdAt: string
+          updatedAt: string
+          deletedAt: string | null
+          createdById: string
+          updatedById: string
+          name: string
+          sizeInBytes: number
+          privateUrl: string
+          publicUrl: string
+          downloadUrl: string
+        }>
+        tenantId: string
+      }>
     }
   }>
   avatars: Array<{
     id: string
+    createdAt: string
+    updatedAt: string
+    deletedAt: string | null
+    createdById: string
+    updatedById: string
     name: string
+    sizeInBytes: number
+    privateUrl: string
     publicUrl: string
     downloadUrl: string
   }>
@@ -151,13 +221,15 @@ export class AuthService {
 
       localStorage.removeItem("token")
       localStorage.removeItem("user")
+      Cookies.remove("token")
 
       return { success: true }
     } catch (error) {
       console.error("Erreur lors de la déconnexion:", error)
-      // Même en cas d'erreur, on nettoie le localStorage
+      // Même en cas d'erreur, on nettoie le localStorage et les cookies
       localStorage.removeItem("token")
       localStorage.removeItem("user")
+      Cookies.remove("token")
       return { success: true }
     }
   }

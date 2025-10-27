@@ -29,7 +29,7 @@ import {
 } from "lucide-react"
 import { getAccounts } from "../actions"
 import { getTransactions } from "../../transfers/new/actions"
-import { toggleAccountStatus } from "./actions"
+import { toggleAccountStatus, getAccountDetails } from "./actions"
 import { useNotifications } from "@/contexts/notification-context"
 
 interface Account {
@@ -77,28 +77,51 @@ export default function AccountDetailsPage() {
   useEffect(() => {
     const loadAccount = async () => {
       try {
-        const accountsData = await getAccounts()
-        //console.log("[v0] Comptes récupérés:", accountsData)
+        const accountDetails = await getAccountDetails(accountId)
 
-        if (Array.isArray(accountsData)) {
-          const foundAccount = accountsData.find((acc: any) => acc.id === accountId || acc.accountId === accountId)
+        if (accountDetails) {
+          const iban = `${accountDetails.codeBanque || ""}${accountDetails.codeAgence || ""}${accountDetails.accountNumber || ""}${accountDetails.cleRib || ""}`
 
-          if (foundAccount) {
-            const adaptedAccount: Account = {
-              id: foundAccount.id || foundAccount.accountId,
-              name: foundAccount.accountName || foundAccount.name || `Compte ${foundAccount.accountNumber}`,
-              number: foundAccount.accountNumber,
-              balance: Number.parseFloat(foundAccount.bookBalance || foundAccount.balance || "0"),
-              availableBalance: Number.parseFloat(foundAccount.availableBalance || foundAccount.balance || "0"),
-              currency: foundAccount.currency || "GNF",
-              type: foundAccount.type, //"Courant" as const,
-              status: foundAccount.status, //|| "Actif" as const,
-              iban: `GN82BNG001${foundAccount.accountNumber}`,
-              openingDate: foundAccount.createdAt || "2020-01-01",
-              branch: "Agence Kaloum",
-              overdraftLimit: foundAccount.currency === "GNF" ? 500000 : undefined,
+          const adaptedAccount: Account = {
+            id: accountDetails.id || accountDetails.accountId,
+            name: accountDetails.accountName || `Compte ${accountDetails.accountNumber}`,
+            number: accountDetails.accountNumber,
+            balance: Number.parseFloat(accountDetails.bookBalance || "0"),
+            availableBalance: Number.parseFloat(accountDetails.availableBalance || "0"),
+            currency: accountDetails.currency || "GNF",
+            type: accountDetails.type,
+            status: accountDetails.status,
+            iban: iban,
+            openingDate: accountDetails.createdAt || "2020-01-01",
+            branch: accountDetails.codeAgence || "Agence Kaloum",
+            overdraftLimit: accountDetails.currency === "GNF" ? 500000 : undefined,
+          }
+          setAccount(adaptedAccount)
+        } else {
+          const accountsData = await getAccounts()
+
+          if (Array.isArray(accountsData)) {
+            const foundAccount = accountsData.find((acc: any) => acc.id === accountId || acc.accountId === accountId)
+
+            if (foundAccount) {
+              const iban = `${foundAccount.codeBanque || ""}${foundAccount.codeAgence || ""}${foundAccount.accountNumber || ""}${foundAccount.cleRib || ""}`
+
+              const adaptedAccount: Account = {
+                id: foundAccount.id || foundAccount.accountId,
+                name: foundAccount.accountName || foundAccount.name || `Compte ${foundAccount.accountNumber}`,
+                number: foundAccount.accountNumber,
+                balance: Number.parseFloat(foundAccount.bookBalance || foundAccount.balance || "0"),
+                availableBalance: Number.parseFloat(foundAccount.availableBalance || foundAccount.balance || "0"),
+                currency: foundAccount.currency || "GNF",
+                type: foundAccount.type,
+                status: foundAccount.status,
+                iban: iban,
+                openingDate: foundAccount.createdAt || "2020-01-01",
+                branch: foundAccount.codeAgence || "Agence Kaloum",
+                overdraftLimit: foundAccount.currency === "GNF" ? 500000 : undefined,
+              }
+              setAccount(adaptedAccount)
             }
-            setAccount(adaptedAccount)
           }
         }
       } catch (error) {

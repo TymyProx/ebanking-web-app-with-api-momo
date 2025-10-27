@@ -26,11 +26,19 @@ export function LogoutButton({
     try {
       await AuthService.signOut()
 
-      // Rediriger vers la page de login
+      // Clear all session storage
+      if (typeof window !== "undefined") {
+        sessionStorage.clear()
+      }
+
+      // Redirect to login page
       router.push("/login")
     } catch (error) {
       console.error("Erreur lors de la déconnexion:", error)
-      // Même en cas d'erreur, rediriger vers login
+      // Even on error, clear session and redirect to login
+      if (typeof window !== "undefined") {
+        sessionStorage.clear()
+      }
       router.push("/login")
     }
   }

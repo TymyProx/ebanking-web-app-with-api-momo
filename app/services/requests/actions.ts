@@ -9,6 +9,58 @@ import { cookies } from "next/headers"
 const API_BASE_URL = process.env.API_BASE_URL
 const TENANT_ID = process.env.TENANT_ID
 
+interface Commande {
+  id: string
+  createdAt: string
+  updatedAt: string
+  deletedAt: string | null
+  createdById: string
+  updatedById: string
+  importHash: string
+  tenantId: string
+  dateorder: string
+  nbrefeuille: number
+  nbrechequier: number
+  stepflow: number
+  intitulecompte: string
+  numcompteId: string
+  commentaire: string
+  talonCheque: boolean
+  typeCheque: string
+  referenceCommande: string
+  clientId: string
+}
+
+interface GetCommandesResponse {
+  rows: Commande[]
+  count: number
+}
+
+interface DemandeCredit {
+  id: string
+  createdAt: string
+  updatedAt: string
+  deletedAt: string | null
+  createdById: string
+  updatedById: string
+  importHash: string
+  tenantId: string
+  applicantName: string
+  creditAmount: string
+  durationMonths: string
+  purpose: string
+  numcompte?: string
+  typedemande?: string
+  accountNumber?: string
+  reference: string
+  clientId: string
+}
+
+interface GetDemandesCreditResponse {
+  rows: DemandeCredit[]
+  count: number
+}
+
 // Fonction pour générer une référence unique
 async function generateReference(prefix: string): Promise<string> {
   try {
@@ -22,7 +74,7 @@ async function generateReference(prefix: string): Promise<string> {
 
     // Récupérer toutes les demandes existantes pour compter
     let existingCount = 0
-    
+
     if (prefix === "CHQ") {
       const checkbookRequests = await getCheckbookRequest()
       existingCount = checkbookRequests?.rows?.length || 0
@@ -33,7 +85,7 @@ async function generateReference(prefix: string): Promise<string> {
 
     const currentYear = new Date().getFullYear()
     const sequence = String(existingCount + 1).padStart(3, "0")
-    
+
     return `${prefix}-${currentYear}-${sequence}`
   } catch (error) {
     // En cas d'erreur, générer une référence basée sur le timestamp
@@ -61,6 +113,19 @@ export async function submitCreditRequest(formData: {
     // Si aucun token n'est trouvé → erreur
     if (!cookieToken) throw new Error("Token introuvable.")
 
+    const userResponse = await fetch(`${API_BASE_URL}/auth/me`, {
+      headers: {
+        Authorization: `Bearer ${usertoken}`,
+      },
+    })
+
+    if (!userResponse.ok) {
+      throw new Error("Impossible de récupérer les informations utilisateur")
+    }
+
+    const userData = await userResponse.json()
+    const clientId = userData.id
+
     // Générer la référence avant la soumission
     const reference = await generateReference("CRD")
 
@@ -81,6 +146,7 @@ export async function submitCreditRequest(formData: {
           typedemande: formData.typedemande,
           accountNumber: formData.accountNumber,
           reference: reference, // Ajout de la référence
+          clientId: clientId, // Added clientId from logged-in user
         },
       }),
     })
@@ -94,11 +160,11 @@ export async function submitCreditRequest(formData: {
 
     // Récupération des données de la réponse (JSON)
     const data = await response.json()
-    
+
     // Retourner la référence avec la réponse
     return {
       ...data,
-      reference: reference
+      reference: reference,
     }
   } catch (error: any) {
     // Gestion d'erreur (propagation du message d'erreur)
@@ -108,21 +174,34 @@ export async function submitCreditRequest(formData: {
 
 // Fonction asynchrone pour soumettre une demande de chéquier
 export async function submitCheckbookRequest(formData: {
-  dateorder: string // Date de commande
-  nbrefeuille: number // Nombre de feuilles par chéquier
-  nbrechequier: number // Nombre de chéquiers
-  stepflow: number // Étape du workflow
-  intitulecompte: string // Intitulé du compte
-  numcompteId: string // ID du compte
-  commentaire: string // Commentaire
+  dateorder: string
+  nbrefeuille: number
+  nbrechequier: number
+  stepflow: number
+  intitulecompte: string
+  numcompteId: string
+  commentaire: string
+  talonCheque?: boolean // NEW: Talon de chèque option
+  typeCheque?: string // NEW: Type de chèque
 }) {
   try {
-    // 🔑 Récupération du token JWT stocké dans les cookies
     const cookieToken = (await cookies()).get("token")?.value
     const usertoken = cookieToken
 
-    // Si aucun token n'est trouvé → erreur
     if (!cookieToken) throw new Error("Token introuvable.")
+
+    const userResponse = await fetch(`${API_BASE_URL}/auth/me`, {
+      headers: {
+        Authorization: `Bearer ${usertoken}`,
+      },
+    })
+
+    if (!userResponse.ok) {
+      throw new Error("Impossible de récupérer les informations utilisateur")
+    }
+
+    const userData = await userResponse.json()
+    const clientId = userData.id
 
     // Générer la référence avant la soumission
     const reference = await generateReference("CHQ")
@@ -130,12 +209,11 @@ export async function submitCheckbookRequest(formData: {
     const response = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/commande`, {
       method: "POST",
       headers: {
-        "Content-Type": "application/json", // Type de contenu JSON
-        Authorization: `Bearer ${usertoken}`, // Authentification via Bearer token
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${usertoken}`,
       },
       body: JSON.stringify({
         data: {
-          //  Mapping des données du formulaire vers les champs attendus par l'API
           dateorder: formData.dateorder,
           nbrefeuille: formData.nbrefeuille,
           nbrechequier: formData.nbrechequier,
@@ -143,34 +221,32 @@ export async function submitCheckbookRequest(formData: {
           intitulecompte: formData.intitulecompte,
           numcompteId: formData.numcompteId,
           commentaire: formData.commentaire,
-          reference: reference, // Ajout de la référence
+          talonCheque: formData.talonCheque ?? false, // Use form value, default to false if not provided
+          typeCheque: formData.typeCheque || "Standard", // Use form value, default to "Standard"
+          referenceCommande: reference, // Use reference as referenceCommande
+          clientId: clientId, // Add clientId from logged-in user
         },
       }),
     })
 
-    // Vérifie si la réponse est valide
     if (!response.ok) {
       const errorData = await response.json()
-      // Si le backend renvoie un message d'erreur, on le propage
       throw new Error(errorData.message || "Erreur lors de la soumission")
     }
 
-    // Récupération des données de la réponse (JSON)
     const data = await response.json()
-    
-    // Retourner la référence avec la réponse
+
     return {
       ...data,
-      reference: reference
+      reference: reference,
     }
   } catch (error: any) {
-    // Gestion d'erreur (propagation du message d'erreur)
     throw new Error(error.message)
   }
 }
 
 // Fonction asynchrone pour récupérer les demandes de chéquier
-export async function getCheckbookRequest(id?: string) {
+export async function getCheckbookRequest(id?: string): Promise<GetCommandesResponse | Commande> {
   try {
     // 🔑 Récupération du token JWT stocké dans les cookies
     const cookieToken = (await cookies()).get("token")?.value
@@ -179,27 +255,49 @@ export async function getCheckbookRequest(id?: string) {
     if (!cookieToken) {
       console.log("[v0] Token d'authentification manquant, retour de données de test")
 
-      const mockCheckbookRequests = {
+      const mockCheckbookRequests: GetCommandesResponse = {
         rows: [
           {
             id: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+            createdAt: "2024-01-15T10:00:00Z",
+            updatedAt: "2024-01-15T10:00:00Z",
+            deletedAt: null,
+            createdById: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+            updatedById: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+            importHash: "hash123",
+            tenantId: "aa1287f6-06af-45b7-a905-8c57363565c2",
             dateorder: "2024-01-15",
             nbrefeuille: 25,
             nbrechequier: 1,
+            stepflow: 0,
             intitulecompte: "Compte Courant Principal",
             numcompteId: "ACC001",
             commentaire: "Demande de chéquier standard",
-            reference: "CHQ-2024-001", // Ajout de la référence
+            talonCheque: true,
+            typeCheque: "Standard",
+            referenceCommande: "CHQ-2024-001",
+            clientId: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
           },
           {
             id: "4fa85f64-5717-4562-b3fc-2c963f66afa7",
+            createdAt: "2024-01-20T14:30:00Z",
+            updatedAt: "2024-01-20T14:30:00Z",
+            deletedAt: null,
+            createdById: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+            updatedById: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+            importHash: "hash456",
+            tenantId: "aa1287f6-06af-45b7-a905-8c57363565c2",
             dateorder: "2024-01-20",
             nbrefeuille: 50,
             nbrechequier: 2,
+            stepflow: 0,
             intitulecompte: "Compte Épargne",
             numcompteId: "ACC002",
             commentaire: "Demande urgente",
-            reference: "CHQ-2024-002", // Ajout de la référence
+            talonCheque: false,
+            typeCheque: "Certifié",
+            referenceCommande: "CHQ-2024-002",
+            clientId: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
           },
         ],
         count: 2,
@@ -207,9 +305,27 @@ export async function getCheckbookRequest(id?: string) {
 
       if (id) {
         const foundRow = mockCheckbookRequests.rows.find((req) => req.id === id)
-        return foundRow ? { rows: [foundRow], count: 1 } : { rows: [], count: 0 }
+        return foundRow || mockCheckbookRequests.rows[0]
       }
       return mockCheckbookRequests
+    }
+
+    let currentUserId: string | null = null
+    try {
+      const userResponse = await fetch(`${API_BASE_URL}/auth/me`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${usertoken}`,
+        },
+      })
+
+      if (userResponse.ok) {
+        const userData = await userResponse.json()
+        currentUserId = userData.id
+      }
+    } catch (error) {
+      console.error("[v0] Erreur lors de la récupération du user ID:", error)
     }
 
     // Construction de l'URL avec ou sans ID spécifique
@@ -233,47 +349,43 @@ export async function getCheckbookRequest(id?: string) {
 
     const data = await response.json()
 
-    if (data.rows && Array.isArray(data.rows)) {
-      const filteredRows = data.rows.map((item: any) => ({
-        id: item.id,
-        dateorder: item.dateorder,
-        nbrefeuille: item.nbrefeuille,
-        nbrechequier: item.nbrechequier,
-        intitulecompte: item.intitulecompte,
-        numcompteId: item.numcompteId,
-        commentaire: item.commentaire,
-        reference: item.reference, // Inclure la référence
-      }))
-      return { ...data, rows: filteredRows }
-    } else if (data.id) {
-      // Pour une seule demande
-      return {
-        id: data.id,
-        dateorder: data.dateorder,
-        nbrefeuille: data.nbrefeuille,
-        nbrechequier: data.nbrechequier,
-        intitulecompte: data.intitulecompte,
-        numcompteId: data.numcompteId,
-        commentaire: data.commentaire,
-        reference: data.reference, // Inclure la référence
-      }
+    if (id) {
+      // Single commande
+      return data as Commande
     }
 
-    return data
+    const responseData = data as GetCommandesResponse
+    if (currentUserId && responseData.rows) {
+      responseData.rows = responseData.rows.filter((commande) => commande.clientId === currentUserId)
+      responseData.count = responseData.rows.length
+    }
+
+    return responseData
   } catch (error: any) {
     console.log("[v0] Erreur lors de la récupération, retour de données de test:", error.message)
 
-    const mockCheckbookRequests = {
+    const mockCheckbookRequests: GetCommandesResponse = {
       rows: [
         {
           id: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+          createdAt: "2024-01-15T10:00:00Z",
+          updatedAt: "2024-01-15T10:00:00Z",
+          deletedAt: null,
+          createdById: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+          updatedById: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+          importHash: "hash123",
+          tenantId: "aa1287f6-06af-45b7-a905-8c57363565c2",
           dateorder: "2024-01-15",
           nbrefeuille: 25,
           nbrechequier: 1,
+          stepflow: 0,
           intitulecompte: "Compte Courant Principal",
           numcompteId: "ACC001",
           commentaire: "Demande de chéquier standard",
-          reference: "CHQ-2024-001",
+          talonCheque: true,
+          typeCheque: "Standard",
+          referenceCommande: "CHQ-2024-001",
+          clientId: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
         },
       ],
       count: 1,
@@ -281,14 +393,14 @@ export async function getCheckbookRequest(id?: string) {
 
     if (id) {
       const foundRow = mockCheckbookRequests.rows.find((req) => req.id === id)
-      return foundRow ? { rows: [foundRow], count: 1 } : { rows: [], count: 0 }
+      return foundRow || mockCheckbookRequests.rows[0]
     }
     return mockCheckbookRequests
   }
 }
 
 // Fonction asynchrone pour récupérer les demandes de crédit
-export async function getCreditRequest(id?: string) {
+export async function getCreditRequest(id?: string): Promise<GetDemandesCreditResponse | DemandeCredit> {
   try {
     // 🔑 Récupération du token JWT stocké dans les cookies
     const cookieToken = (await cookies()).get("token")?.value
@@ -297,8 +409,7 @@ export async function getCreditRequest(id?: string) {
     if (!cookieToken) {
       console.log("[v0] Token d'authentification manquant, retour de données de test")
 
-      // Données de test pour les demandes de crédit avec structure API
-      const mockCreditRequests = {
+      const mockCreditRequests: GetDemandesCreditResponse = {
         rows: [
           {
             id: "5fa85f64-5717-4562-b3fc-2c963f66afa8",
@@ -308,12 +419,13 @@ export async function getCreditRequest(id?: string) {
             createdById: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
             updatedById: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
             importHash: "hash789",
-            TENANT_ID: "aa1287f6-06af-45b7-a905-8c57363565c2",
+            tenantId: "aa1287f6-06af-45b7-a905-8c57363565c2",
             applicantName: "Jean Dupont",
             creditAmount: "50000",
             durationMonths: "24",
             purpose: "Achat véhicule",
-            reference: "CRD-2024-001", // Ajout de la référence
+            reference: "CRD-2024-001",
+            clientId: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
           },
           {
             id: "6fa85f64-5717-4562-b3fc-2c963f66afa9",
@@ -323,12 +435,13 @@ export async function getCreditRequest(id?: string) {
             createdById: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
             updatedById: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
             importHash: "hash101",
-            TENANT_ID: "aa1287f6-06af-45b7-a905-8c57363565c2",
+            tenantId: "aa1287f6-06af-45b7-a905-8c57363565c2",
             applicantName: "Marie Martin",
             creditAmount: "25000",
             durationMonths: "12",
             purpose: "Travaux maison",
-            reference: "CRD-2024-002", // Ajout de la référence
+            reference: "CRD-2024-002",
+            clientId: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
           },
         ],
         count: 2,
@@ -336,9 +449,27 @@ export async function getCreditRequest(id?: string) {
 
       if (id) {
         const foundRow = mockCreditRequests.rows.find((req) => req.id === id)
-        return foundRow ? { rows: [foundRow], count: 1 } : { rows: [], count: 0 }
+        return foundRow || mockCreditRequests.rows[0]
       }
       return mockCreditRequests
+    }
+
+    let currentUserId: string | null = null
+    try {
+      const userResponse = await fetch(`${API_BASE_URL}/auth/me`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${usertoken}`,
+        },
+      })
+
+      if (userResponse.ok) {
+        const userData = await userResponse.json()
+        currentUserId = userData.id
+      }
+    } catch (error) {
+      console.error("[v0] Erreur lors de la récupération du user ID:", error)
     }
 
     // Construction de l'URL avec ou sans ID spécifique
@@ -361,11 +492,22 @@ export async function getCreditRequest(id?: string) {
     }
 
     const data = await response.json()
-    return data
+
+    if (id) {
+      return data as DemandeCredit
+    }
+
+    const responseData = data as GetDemandesCreditResponse
+    if (currentUserId && responseData.rows) {
+      responseData.rows = responseData.rows.filter((demande) => demande.clientId === currentUserId)
+      responseData.count = responseData.rows.length
+    }
+
+    return responseData
   } catch (error: any) {
     console.log("[v0] Erreur lors de la récupération, retour de données de test:", error.message)
 
-    const mockCreditRequests = {
+    const mockCreditRequests: GetDemandesCreditResponse = {
       rows: [
         {
           id: "5fa85f64-5717-4562-b3fc-2c963f66afa8",
@@ -375,12 +517,13 @@ export async function getCreditRequest(id?: string) {
           createdById: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
           updatedById: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
           importHash: "hash789",
-          TENANT_ID: "aa1287f6-06af-45b7-a905-8c57363565c2",
+          tenantId: "aa1287f6-06af-45b7-a905-8c57363565c2",
           applicantName: "Jean Dupont",
           creditAmount: "50000",
           durationMonths: "24",
           purpose: "Achat véhicule",
           reference: "CRD-2024-001",
+          clientId: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
         },
       ],
       count: 1,
@@ -388,14 +531,14 @@ export async function getCreditRequest(id?: string) {
 
     if (id) {
       const foundRow = mockCreditRequests.rows.find((req) => req.id === id)
-      return foundRow ? { rows: [foundRow], count: 1 } : { rows: [], count: 0 }
+      return foundRow || mockCreditRequests.rows[0]
     }
     return mockCreditRequests
   }
 }
 
 // Fonction asynchrone pour récupérer une demande de crédit par ID
-export async function getDemandeCreditById(TENANT_ID: string, id: string) {
+export async function getDemandeCreditById(TENANT_ID: string, id: string): Promise<DemandeCredit> {
   try {
     // 🔑 Récupération du token JWT stocké dans les cookies
     const cookieToken = (await cookies()).get("token")?.value
@@ -404,8 +547,7 @@ export async function getDemandeCreditById(TENANT_ID: string, id: string) {
     if (!cookieToken) {
       console.log("[v0] Token d'authentification manquant, retour de données de test")
 
-      // Données de test pour une demande de crédit spécifique
-      const mockCreditDetail = {
+      const mockCreditDetail: DemandeCredit = {
         id: id,
         createdAt: "2024-01-10T09:00:00Z",
         updatedAt: "2024-01-10T09:00:00Z",
@@ -413,12 +555,13 @@ export async function getDemandeCreditById(TENANT_ID: string, id: string) {
         createdById: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
         updatedById: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
         importHash: "hash789",
-        TENANT_ID: TENANT_ID,
+        tenantId: TENANT_ID,
         applicantName: "Jean Dupont",
         creditAmount: "50000",
         durationMonths: "24",
         purpose: "Achat véhicule",
-        reference: "CRD-2024-001", // Ajout de la référence
+        reference: "CRD-2024-001",
+        clientId: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
       }
 
       return mockCreditDetail
@@ -439,12 +582,11 @@ export async function getDemandeCreditById(TENANT_ID: string, id: string) {
     }
 
     const data = await response.json()
-    return data
+    return data as DemandeCredit
   } catch (error: any) {
     console.log("[v0] Erreur lors de la récupération, retour de données de test:", error.message)
 
-    // Données de test en cas d'erreur
-    const mockCreditDetail = {
+    const mockCreditDetail: DemandeCredit = {
       id: id,
       createdAt: "2024-01-10T09:00:00Z",
       updatedAt: "2024-01-10T09:00:00Z",
@@ -452,12 +594,13 @@ export async function getDemandeCreditById(TENANT_ID: string, id: string) {
       createdById: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
       updatedById: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
       importHash: "hash789",
-      TENANT_ID: TENANT_ID,
+      tenantId: TENANT_ID,
       applicantName: "Jean Dupont",
       creditAmount: "50000",
       durationMonths: "24",
       purpose: "Achat véhicule",
       reference: "CRD-2024-001",
+      clientId: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
     }
 
     return mockCreditDetail
@@ -465,7 +608,7 @@ export async function getDemandeCreditById(TENANT_ID: string, id: string) {
 }
 
 // Fonction asynchrone pour récupérer une demande de chéquier (commande) par ID
-export async function getCommandeById(TENANT_ID: string, id: string) {
+export async function getCommandeById(TENANT_ID: string, id: string): Promise<Commande> {
   try {
     // 🔑 Récupération du token JWT stocké dans les cookies
     const cookieToken = (await cookies()).get("token")?.value
@@ -474,15 +617,26 @@ export async function getCommandeById(TENANT_ID: string, id: string) {
     if (!cookieToken) {
       console.log("[v0] Token d'authentification manquant, retour de données de test")
 
-      const mockCheckbookDetail = {
+      const mockCheckbookDetail: Commande = {
         id: id,
+        createdAt: "2024-01-15T10:00:00Z",
+        updatedAt: "2024-01-15T10:00:00Z",
+        deletedAt: null,
+        createdById: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+        updatedById: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+        importHash: "hash123",
+        tenantId: "aa1287f6-06af-45b7-a905-8c57363565c2",
         dateorder: "2024-01-15",
         nbrefeuille: 25,
         nbrechequier: 1,
+        stepflow: 0,
         intitulecompte: "Compte Courant Principal",
         numcompteId: "ACC001",
         commentaire: "Demande de chéquier standard",
-        reference: "CHQ-2024-001", // Ajout de la référence
+        talonCheque: true,
+        typeCheque: "Standard",
+        referenceCommande: "CHQ-2024-001",
+        clientId: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
       }
 
       return mockCheckbookDetail
@@ -504,28 +658,30 @@ export async function getCommandeById(TENANT_ID: string, id: string) {
 
     const data = await response.json()
 
-    return {
-      id: data.id,
-      dateorder: data.dateorder,
-      nbrefeuille: data.nbrefeuille,
-      nbrechequier: data.nbrechequier,
-      intitulecompte: data.intitulecompte,
-      numcompteId: data.numcompteId,
-      commentaire: data.commentaire,
-      reference: data.reference, // Inclure la référence
-    }
+    return data as Commande
   } catch (error: any) {
     console.log("[v0] Erreur lors de la récupération, retour de données de test:", error.message)
 
-    const mockCheckbookDetail = {
+    const mockCheckbookDetail: Commande = {
       id: id,
+      createdAt: "2024-01-15T10:00:00Z",
+      updatedAt: "2024-01-15T10:00:00Z",
+      deletedAt: null,
+      createdById: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+      updatedById: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+      importHash: "hash123",
+      tenantId: "aa1287f6-06af-45b7-a905-8c57363565c2",
       dateorder: "2024-01-15",
       nbrefeuille: 25,
       nbrechequier: 1,
+      stepflow: 0,
       intitulecompte: "Compte Courant Principal",
       numcompteId: "ACC001",
       commentaire: "Demande de chéquier standard",
-      reference: "CHQ-2024-001",
+      talonCheque: true,
+      typeCheque: "Standard",
+      referenceCommande: "CHQ-2024-001",
+      clientId: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
     }
 
     return mockCheckbookDetail

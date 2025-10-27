@@ -4,22 +4,23 @@ import { cookies } from "next/headers"
 
 const BASE_URL = process.env.API_BASE_URL
 const TENANT_ID = process.env.TENANT_ID
+
 export type Card = {
   id: string
-  numCard: string
-  typCard: string
-  status: string
-  dateEmission: string
-  dateExpiration: string
-  idClient: string
-  accountNumber?: string
   createdAt?: string
   updatedAt?: string
   deletedAt?: string | null
   createdById?: string
   updatedById?: string
   importHash?: string
-  TENANT_ID?: string
+  tenantId?: string
+  numCard: string
+  typCard: string
+  status: string
+  dateEmission: string
+  dateExpiration: string
+  clientId: string
+  accountNumber?: string
 }
 
 export type CardsResponse = {
@@ -29,22 +30,58 @@ export type CardsResponse = {
 
 export type NewCardRequest = {
   typCard: string
-  idClient: string
   accountNumber?: string
+}
+
+async function getCurrentUserInfo(token: string) {
+  try {
+    const response = await fetch(`${BASE_URL}/auth/me`, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    })
+
+    if (!response.ok) {
+      throw new Error("Failed to fetch user info")
+    }
+
+    const userData = await response.json()
+    return userData.id
+  } catch (error) {
+    console.error("[v0] Error fetching user info:", error)
+    throw new Error("Unable to get user information")
+  }
 }
 
 export async function fetchAllCards(): Promise<CardsResponse> {
   const cookieToken = (await cookies()).get("token")?.value
   const usertoken = cookieToken
 
-  //console.log("[v0] Token d'authentification:", usertoken ? "présent" : "manquant")
-
   if (!usertoken) {
-    //console.log("[v0] Token d'authentification manquant, retour de données de test")
     return {
       rows: [],
       count: 0,
     }
+  }
+
+  let currentUserId: string | null = null
+  try {
+    const userResponse = await fetch(`${BASE_URL}/auth/me`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${usertoken}`,
+      },
+    })
+
+    if (userResponse.ok) {
+      const userData = await userResponse.json()
+      currentUserId = userData.id
+    }
+  } catch (error) {
+    console.error("[v0] Error fetching user ID:", error)
   }
 
   const res = await fetch(`${BASE_URL}/tenant/${TENANT_ID}/card`, {
@@ -60,8 +97,6 @@ export async function fetchAllCards(): Promise<CardsResponse> {
   const contentType = res.headers.get("content-type") || ""
   const bodyText = await res.text()
 
-  //console.log("[v0] Réponse API cartes:", res.status, bodyText)
-
   if (!res.ok) {
     throw new Error(`API ${res.status}: ${bodyText || "Erreur inconnue"}`)
   }
@@ -71,25 +106,61 @@ export async function fetchAllCards(): Promise<CardsResponse> {
     parsed = JSON.parse(bodyText) as CardsResponse
   }
 
-  return {
-    rows: parsed?.rows ?? [],
-    count: parsed?.count ?? 0,
+  let filteredRows = parsed?.rows ?? []
+  if (currentUserId && filteredRows.length > 0) {
+    filteredRows = filteredRows.filter((card) => card.clientId === currentUserId)
   }
+
+  return {
+    rows: filteredRows,
+    count: filteredRows.length,
+  }
+}
+
+export async function getCardDetails(cardId: string): Promise<Card> {
+  const cookieToken = (await cookies()).get("token")?.value
+  const usertoken = cookieToken
+
+  if (!usertoken) {
+    throw new Error("Token d'authentification manquant")
+  }
+
+  const res = await fetch(`${BASE_URL}/tenant/${TENANT_ID}/card/${cardId}`, {
+    method: "GET",
+    headers: {
+      Accept: "application/json",
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${usertoken}`,
+    },
+    cache: "no-store",
+  })
+
+  const contentType = res.headers.get("content-type") || ""
+  const bodyText = await res.text()
+
+  if (!res.ok) {
+    throw new Error(`API ${res.status}: ${bodyText || "Erreur inconnue"}`)
+  }
+
+  if (contentType.includes("application/json") && bodyText) {
+    return JSON.parse(bodyText) as Card
+  }
+
+  throw new Error("Réponse invalide du serveur")
 }
 
 export async function createCardRequest(cardData: NewCardRequest): Promise<Card> {
   const cookieToken = (await cookies()).get("token")?.value
   const usertoken = cookieToken
 
-   //console.log("[v0] Envoi de la demande avec type:", cardData.typCard)
-   //console.log("[v0] Compte sélectionné:", cardData.accountNumber)
-   //console.log("[v0] Token d'authentification:", usertoken ? "présent" : "manquant")
-
   if (!usertoken) {
     throw new Error("Token d'authentification manquant")
   }
 
-  const today = new Date().toISOString().split("T")[0] // Format YYYY-MM-DD
+  // Get clientId from logged-in user
+  const clientId = await getCurrentUserInfo(usertoken)
+
+  const today = new Date().toISOString().split("T")[0]
 
   const expirationDate = new Date()
   expirationDate.setFullYear(expirationDate.getFullYear() + 4)
@@ -102,12 +173,10 @@ export async function createCardRequest(cardData: NewCardRequest): Promise<Card>
       status: "EN_ATTENTE",
       dateEmission: today,
       dateExpiration: dateExpiration,
-      idClient: cardData.idClient,
+      clientId: clientId,
       accountNumber: cardData.accountNumber || "",
     },
   }
-
-  //console.log("[v0] Corps de la requête:", JSON.stringify(requestBody))
 
   const res = await fetch(`${BASE_URL}/tenant/${TENANT_ID}/card`, {
     method: "POST",
@@ -121,8 +190,6 @@ export async function createCardRequest(cardData: NewCardRequest): Promise<Card>
 
   const contentType = res.headers.get("content-type") || ""
   const bodyText = await res.text()
-
-  //console.log("[v0] Réponse API:", res.status, bodyText)
 
   if (!res.ok) {
     throw new Error(`API ${res.status}: ${bodyText || "Erreur lors de la création"}`)

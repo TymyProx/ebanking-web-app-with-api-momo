@@ -1,26 +1,60 @@
 "use server"
-process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0"
 import { revalidatePath } from "next/cache"
+import { cookies } from "next/headers"
+import type { Account } from "../actions"
 
-export async function getAccountDetails(accountId: string) {
-  // Simulation d'un appel API
-  await new Promise((resolve) => setTimeout(resolve, 1000))
+export async function getAccountDetails(accountId: string): Promise<Account | null> {
+  try {
+    const cookieStore = await cookies()
+    const token = cookieStore.get("token")?.value
 
-  // Ici, vous feriez un appel à votre API backend
-  // const response = await fetch(`/api/accounts/${accountId}`)
-  // return response.json()
+    if (!token) {
+      throw new Error("Non authentifié")
+    }
 
-  return {
-    success: true,
-    message: "Détails du compte récupérés avec succès",
+    // Get user info to retrieve tenantId
+    const userResponse = await fetch(`${process.env.API_BASE_URL}/auth/me`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    })
+
+    if (!userResponse.ok) {
+      throw new Error("Impossible de récupérer les informations utilisateur")
+    }
+
+    const userData = await userResponse.json()
+    const tenantId = userData.tenants?.[0]?.tenantId || process.env.NEXT_PUBLIC_TENANT_ID
+
+    if (!tenantId) {
+      throw new Error("Tenant ID non trouvé")
+    }
+
+    // Call the account details endpoint
+    const response = await fetch(`${process.env.API_BASE_URL}/tenant/${tenantId}/compte/${accountId}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    })
+
+    if (!response.ok) {
+      throw new Error("Impossible de récupérer les détails du compte")
+    }
+
+    const accountData = await response.json()
+    return accountData as Account
+  } catch (error) {
+    console.error("Erreur lors de la récupération des détails du compte:", error)
+    return null
   }
 }
 
 export async function toggleAccountStatus(accountId: string, newStatus: string) {
   // Simulation d'un appel API
   await new Promise((resolve) => setTimeout(resolve, 500))
-
-  //console.log("[v0] Server action - Changement de statut:", { accountId, newStatus })
 
   try {
     const statusMessages = {
@@ -32,14 +66,6 @@ export async function toggleAccountStatus(accountId: string, newStatus: string) 
     }
 
     const message = `Le statut de votre compte ${accountId} a été modifié vers "${statusMessages[newStatus as keyof typeof statusMessages] || newStatus.toLowerCase()}".`
-
-    //console.log("[v0] Notification de changement de statut créée:", {
-    //   type: "account_status",
-    //   title: "Changement de statut de compte",
-    //   message,
-    //   account: accountId,
-    //   newStatus,
-    // })
 
     revalidatePath(`/accounts/${accountId}`)
 
@@ -53,7 +79,7 @@ export async function toggleAccountStatus(accountId: string, newStatus: string) 
       },
     }
   } catch (error) {
-    console.error("[v0] Erreur lors de la création de la notification:", error)
+    console.error("Erreur lors de la création de la notification:", error)
     return {
       success: false,
       message: "Erreur lors de la mise à jour du statut",

@@ -111,7 +111,7 @@ export function AccountsCarousel({ accounts }: AccountsCarouselProps) {
   }
 
   return (
-    <Card className="border-0 shadow-lg bg-gradient-to-br from-primary/5 via-card to-secondary/5 backdrop-blur-sm">
+    <Card className="border-0 shadow-none bg-transparent">
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle className="font-heading text-xl">Mes Comptes</CardTitle>
@@ -165,8 +165,8 @@ export function AccountsCarousel({ accounts }: AccountsCarouselProps) {
 
                           <div>
                             <p className="text-xs text-muted-foreground mb-1">Numéro de compte</p>
-                           <p className="text-base font-mono font-semibold bg-muted/50 px-4 py-2 rounded-md inline-block">
-                            {account.accountNumber}
+                            <p className="text-base font-mono font-semibold bg-muted/50 px-4 py-2 rounded-md inline-block">
+                              {account.accountNumber}
                             </p>
                           </div>
 

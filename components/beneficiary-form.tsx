@@ -56,13 +56,13 @@ export default function BeneficiaryForm({
   const [loadingBanks, setLoadingBanks] = useState(false)
   const [localSuccessMessage, setLocalSuccessMessage] = useState<string | null>(null)
   const [localErrorMessage, setLocalErrorMessage] = useState<string | null>(null)
+  const [accountNumberError, setAccountNumberError] = useState<string | null>(null)
   const formRef = useRef<HTMLFormElement>(null)
 
   const loadBanks = async () => {
     try {
       setLoadingBanks(true)
-      const API_BASE_URL =
-        process.env.API_BASE_URL
+      const API_BASE_URL = process.env.API_BASE_URL
       const TENANT_ID = process.env.TENANT_ID
       const token = localStorage.getItem("token")
 
@@ -163,18 +163,39 @@ export default function BeneficiaryForm({
     }
   }, [successMessage, isEdit])
 
-  const validateRIBField = async (account: string, type: string) => {
-    if (!account || account.length <= 5) {
+  const validateAccountNumber = (value: string) => {
+    // Remove any non-digit characters for validation
+    const digitsOnly = value.replace(/\D/g, "")
+
+    if (digitsOnly.length === 0) {
+      setAccountNumberError(null)
       return
     }
 
-    const isValid = account.length >= 10
-    //console.log(isValid ? "RIB valide" : "RIB invalide")
+    if (digitsOnly.length !== 10) {
+      setAccountNumberError("Le numéro de compte doit contenir exactement 10 chiffres")
+      return false
+    }
+
+    if (value !== digitsOnly) {
+      setAccountNumberError("Le numéro de compte ne doit contenir que des chiffres")
+      return false
+    }
+
+    setAccountNumberError(null)
+    return true
   }
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     const formData = new FormData(e.currentTarget)
+
+    if (selectedType !== "BNG-INTERNATIONAL") {
+      const accountNumber = formData.get("account") as string
+      if (!validateAccountNumber(accountNumber)) {
+        return
+      }
+    }
 
     formData.set("type", selectedType)
 
@@ -252,16 +273,35 @@ export default function BeneficiaryForm({
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="account">{selectedType === "BNG-INTERNATIONAL" ? "IBAN *" : "Numéro de compte / RIB *"}</Label>
+        <Label htmlFor="account">{selectedType === "BNG-INTERNATIONAL" ? "IBAN *" : "Numéro de compte *"}</Label>
         <Input
           id="account"
           name="account"
           defaultValue={initialData.account || ""}
-          onChange={(e) => validateRIBField(e.target.value, selectedType)}
-          placeholder={selectedType === "BNG-INTERNATIONAL" ? "FR76 1234 5678 9012 3456 78" : "0001-234567-89"}
+          onChange={(e) => {
+            if (selectedType !== "BNG-INTERNATIONAL") {
+              validateAccountNumber(e.target.value)
+            }
+          }}
+          placeholder={selectedType === "BNG-INTERNATIONAL" ? "FR76 1234 5678 9012 3456 78" : "1234567890"}
+          maxLength={selectedType === "BNG-INTERNATIONAL" ? undefined : 10}
+          pattern={selectedType === "BNG-INTERNATIONAL" ? undefined : "[0-9]{10}"}
           required
         />
+        {accountNumberError && selectedType !== "BNG-INTERNATIONAL" && (
+          <p className="text-sm text-red-600">{accountNumberError}</p>
+        )}
+        {selectedType !== "BNG-INTERNATIONAL" && (
+          <p className="text-xs text-muted-foreground">10 chiffres uniquement, sans caractères spéciaux</p>
+        )}
       </div>
+
+      {selectedType !== "BNG-INTERNATIONAL" && selectedType !== "" && (
+        <div className="space-y-2">
+          <Label htmlFor="codeAgence">Code agence *</Label>
+          <Input id="codeAgence" name="codeAgence" placeholder="Ex: 0001" required />
+        </div>
+      )}
 
       <div className="space-y-2">
         <Label htmlFor="bank">Banque *</Label>
@@ -296,19 +336,23 @@ export default function BeneficiaryForm({
       </div>
 
       {selectedType === "BNG-CONFRERE" && selectedBankCode && (
-        <input type="hidden" name="codeBank" value={selectedBankCode} />
+        <div className="space-y-2">
+          <Label htmlFor="codeBanque">Code Banque *</Label>
+          <Input id="codeBanque" name="codeBanque" defaultValue={selectedBankCode} placeholder="Code banque" required />
+        </div>
       )}
 
-      {selectedType === "BNG-CONFRERE" && selectedBankCode && (
+      {selectedType === "BNG-BNG" && (
         <div className="space-y-2">
-          <Label htmlFor="displayBankCode">Code Banque</Label>
-          <Input
-            id="displayBankCode"
-            value={selectedBankCode}
-            readOnly
-            className="bg-gray-50 text-gray-700"
-            placeholder="Code banque automatique"
-          />
+          <Label htmlFor="codeBanque">Code Banque *</Label>
+          <Input id="codeBanque" name="codeBanque" placeholder="Ex: GNXXX" required />
+        </div>
+      )}
+
+      {selectedType !== "BNG-INTERNATIONAL" && selectedType !== "" && (
+        <div className="space-y-2">
+          <Label htmlFor="cleRib">Clé RIB *</Label>
+          <Input id="cleRib" name="cleRib" placeholder="Ex: 89" maxLength={2} required />
         </div>
       )}
 
@@ -316,7 +360,10 @@ export default function BeneficiaryForm({
         <Button type="button" variant="outline" onClick={onCancel} disabled={isPending}>
           Annuler
         </Button>
-        <Button type="submit" disabled={isPending}>
+        <Button
+          type="submit"
+          disabled={isPending || (accountNumberError !== null && selectedType !== "BNG-INTERNATIONAL")}
+        >
           {isPending ? "Traitement..." : isEdit ? "Modifier" : "Ajouter"}
         </Button>
       </div>
