@@ -425,22 +425,54 @@ export async function executeTransfer(prevState: any, formData: FormData) {
       console.log(`[v0] Bénéficiaire trouvé - accountNumber: ${creditAccount}`)
     }
 
-    const apiData = {
-      data: {
-        txnId: transactionId,
-        accountId: validatedData.sourceAccount,
-        txnType: txnType,
-        amount: validatedData.amount,
-        valueDate: new Date(validatedData.transferDate).toISOString(),
-        status: "PENDING",
-        description: validatedData.purpose,
-        beneficiaryId: finalBeneficiaryId,
-        creditAccount: creditAccount,
-      },
-    }
-
     const cookieToken = (await cookies()).get("token")?.value
     const usertoken = cookieToken
+
+    let clientId = ""
+    try {
+      const meResponse = await fetch(`${API_BASE_URL}/auth/me`, {
+        headers: {
+          Authorization: `Bearer ${usertoken}`,
+        },
+      })
+      if (meResponse.ok) {
+        const userData = await meResponse.json()
+        clientId = userData.id || ""
+      }
+    } catch (error) {
+      console.error("[v0] Erreur lors de la récupération du clientId:", error)
+    }
+
+    const apiData = {
+      data: {
+        codeGuichet: "", // Empty - not collected in form
+        numCompte: validatedData.sourceAccount, // Map sourceAccount to numCompte
+        codeDevise: "GNF", // Default currency
+        codeOperation: "", // Empty - not collected in form
+        dateEcriture: new Date().toISOString().split("T")[0], // Current date
+        txnId: transactionId,
+        accountId: validatedData.sourceAccount,
+        referenceOperation: transactionId, // Use transaction ID as reference
+        txnType: txnType,
+        amount: validatedData.amount,
+        balanceOuverture: debitResult.previousBalance || 0,
+        valueDate: new Date(validatedData.transferDate).toISOString(),
+        montantOperation: transferAmount,
+        balanceFermeture: debitResult.newBalance || 0,
+        status: "PENDING",
+        description: validatedData.purpose,
+        entrySerialNo: 0, // Default value
+        fileType: "", // Empty - not collected in form
+        fileName: "", // Empty - not collected in form
+        referenceExterne: "", // Empty - not collected in form
+        sttmsId: "", // Empty - not collected in form
+        stepflow: 0, // Default value
+        creditAccount: creditAccount,
+        commentNotes: validatedData.purpose, // Use purpose as comment
+        clientId: clientId,
+        indisponible: false, // Default value
+      },
+    }
 
     const response = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/transaction`, {
       method: "POST",
@@ -513,7 +545,6 @@ export async function executeTransfer(prevState: any, formData: FormData) {
   }
 }
 
-// Action pour vérifier la disponibilité d'un bénéficiaire
 export async function validateBeneficiary(accountNumber: string, bankCode: string) {
   try {
     // Simulation d'une vérification auprès de la banque destinataire
@@ -542,7 +573,6 @@ export async function validateBeneficiary(accountNumber: string, bankCode: strin
   }
 }
 
-// Action pour calculer les frais de virement
 export async function calculateTransferFees(beneficiaryType: string, amount: number) {
   try {
     let fee = 0
