@@ -449,8 +449,8 @@ export async function executeTransfer(prevState: any, formData: FormData) {
 
       txnType = getTransactionType(beneficiary.typeBeneficiary || "BNG-BNG")
       finalBeneficiaryId = validatedData.beneficiaryId
-      creditAccount = beneficiary.accountNumber // Utiliser le accountNumber du bénéficiaire
-      console.log(`[v0] Bénéficiaire trouvé - accountNumber: ${creditAccount}`)
+      creditAccount = `${beneficiary.bankCode}${beneficiary.codagence}${beneficiary.accountNumber}${beneficiary.clerib}`
+      console.log(`[v0] Bénéficiaire trouvé - creditAccount concaténé: ${creditAccount}`)
     }
 
     let clientId = ""
