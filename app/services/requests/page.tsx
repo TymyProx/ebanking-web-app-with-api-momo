@@ -191,13 +191,12 @@ export default function ServiceRequestsPage() {
           type: "checkbook",
           typeName: "Demande de chéquier",
           status:
-            item.stepflow === 0
-              ? "En attente"
-              : item.stepflow === 1
-                ? "En cours"
-                : item.stepflow === 2
-                  ? "Approuvé"
-                  : item.status || "En attente",
+            item.stepflow === 0 ? "En attente" :
+            item.stepflow === 1 ? "En cours de traitement" :
+            item.stepflow === 2 ? "En cours de traitement" :
+            item.stepflow === 3 ? "Disponible à l’agence" :
+            item.stepflow === 4 ? "Disponible" :
+            item.stepflow === 5 ? "Retiré" : "En attente",
           submittedAt: item.dateorder || item.createdAt?.split("T")[0] || new Date().toISOString().split("T")[0],
           expectedResponse: item.dateorder
             ? new Date(new Date(item.dateorder).getTime() + 3 * 24 * 60 * 60 * 1000).toISOString().split("T")[0]
@@ -434,7 +433,13 @@ export default function ServiceRequestsPage() {
                   id: item.id || `CHQ${String(index + 1).padStart(3, "0")}`,
                   type: "checkbook",
                   typeName: "Demande de chéquier",
-                  status: item.stepflow === 0 ? "En cours" : item.stepflow === 1 ? "Approuvée" : "En attente",
+                  status:
+                    item.stepflow === 0 ? "En attente" :
+                    item.stepflow === 1 ? "En cours de traitement" :
+                    item.stepflow === 2 ? "En cours de traitement" :
+                    item.stepflow === 3 ? "Disponible à l’agence" :
+                    item.stepflow === 4 ? "Disponible" :
+                    item.stepflow === 5 ? "Retiré" : "En attente",
                   submittedAt: item.dateorder || new Date().toISOString().split("T")[0],
                   expectedResponse: item.dateorder
                     ? new Date(new Date(item.dateorder).getTime() + 3 * 24 * 60 * 60 * 1000).toISOString().split("T")[0]
@@ -518,12 +523,15 @@ export default function ServiceRequestsPage() {
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case "En cours":
-        return <Badge className="bg-yellow-100 text-yellow-800">En cours</Badge>
-      case "Approuvée":
-        return <Badge className="bg-green-100 text-green-800">Approuvée</Badge>
-      case "En attente de documents":
-        return <Badge className="bg-orange-100 text-orange-800">En attente</Badge>
+      case "En attente":
+        return <Badge className="bg-gray-100 text-gray-800">En attente</Badge>
+      case "En cours de traitement":
+        return <Badge className="bg-blue-100 text-blue-800">En cours de traitement</Badge>
+      case "Disponible à l’agence":
+      case "Disponible":
+        return <Badge className="bg-yellow-100 text-yellow-800">Disponible</Badge>
+      case "Retiré":
+        return <Badge className="bg-green-100 text-green-800">Retiré</Badge>
       case "Rejetée":
         return <Badge className="bg-red-100 text-red-800">Rejetée</Badge>
       default:

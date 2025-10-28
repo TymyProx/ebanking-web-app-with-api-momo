@@ -14,7 +14,9 @@ export async function getAccountDetails(accountId: string): Promise<Account | nu
     }
 
     // Get user info to retrieve tenantId
-    const userResponse = await fetch(`${process.env.API_BASE_URL}/auth/me`, {
+    const normalize = (u?: string) => (u ? u.replace(/\/$/, "") : "")
+    const API_BASE_URL = `${normalize(process.env.NEXT_PUBLIC_API_URL || "https://35.184.98.9:4000")}/api`
+    const userResponse = await fetch(`${API_BASE_URL}/auth/me`, {
       headers: {
         Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
@@ -33,7 +35,7 @@ export async function getAccountDetails(accountId: string): Promise<Account | nu
     }
 
     // Call the account details endpoint
-    const response = await fetch(`${process.env.API_BASE_URL}/tenant/${tenantId}/compte/${accountId}`, {
+    const response = await fetch(`${API_BASE_URL}/tenant/${tenantId}/compte/${accountId}`, {
       headers: {
         Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
