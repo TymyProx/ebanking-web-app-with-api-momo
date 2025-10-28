@@ -3,8 +3,10 @@ import Cookies from "js-cookie"
 import { config } from "./config"
 
 // Ensure no trailing slash and include /api once
-const normalizeBase = (url: string) => url.replace(/\/$/, '')
-const API_BASE_URL = `${normalizeBase(config.API_BASE_URL)}/api`
+const normalizeBase = (url: string) =>
+  url.replace(/\/api\/?$/, '').replace(/\/$/, '');
+
+const API_BASE_URL = `${normalizeBase(config.API_BASE_URL)}/api`;
 
 if (!API_BASE_URL) {
   throw new Error("API_BASE_URL environment variable is required")
