@@ -106,7 +106,7 @@ function AnimatedStat({
         transitionDelay: `${delay}ms`,
       }}
     >
-      <div className="text-4xl md:text-5xl lg:text-6xl font-bold bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent">
+      <div className="text-4xl md:text-5xl lg:text-6xl font-bold bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-600 bg-clip-text text-transparent">
         {count}
         {suffix}
       </div>
@@ -238,15 +238,15 @@ export default function LandingPage() {
       </header>
 
       <section id="accueil" className="relative overflow-hidden pt-32 pb-20 md:pt-40 md:pb-32">
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-950/5 via-background to-blue-900/5">
+        <div className="absolute inset-0 bg-gradient-to-br from-amber-950/10 via-background to-yellow-950/10">
           <div
-            className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(30,58,138,0.08),transparent_50%)] transition-transform duration-1000"
+            className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(245,158,11,0.15),transparent_50%)] transition-transform duration-1000"
             style={{
               transform: `translate(${mousePosition.x * 0.02}px, ${mousePosition.y * 0.02}px)`,
             }}
           />
           <div
-            className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,rgba(37,99,235,0.08),transparent_50%)] transition-transform duration-1000"
+            className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,rgba(217,119,6,0.15),transparent_50%)] transition-transform duration-1000"
             style={{
               transform: `translate(${-mousePosition.x * 0.02}px, ${-mousePosition.y * 0.02}px)`,
             }}
@@ -262,7 +262,7 @@ export default function LandingPage() {
             >
               <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight leading-tight">
                 Votre banque,{" "}
-                <span className="bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent">
+                <span className="bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-600 bg-clip-text text-transparent animate-gradient">
                   accessible partout
                 </span>
               </h1>
@@ -308,7 +308,7 @@ export default function LandingPage() {
                 heroAnimation.isVisible ? "opacity-100 translate-x-0" : "opacity-0 translate-x-20"
               }`}
             >
-              <div className="absolute inset-0 bg-gradient-to-tr from-blue-600/15 to-blue-800/10 rounded-3xl blur-3xl animate-pulse" />
+              <div className="absolute inset-0 bg-gradient-to-tr from-amber-500/20 via-yellow-500/10 to-amber-600/20 rounded-3xl blur-3xl animate-pulse" />
               <div className="relative h-full rounded-3xl overflow-hidden shadow-2xl transform hover:scale-105 transition-transform duration-700">
                 <Image src="/images/accessibilite.png" alt="Banking Interface" fill className="object-contain p-8" />
               </div>
@@ -318,7 +318,7 @@ export default function LandingPage() {
       </section>
 
       <section className="py-20 md:py-24 bg-gradient-to-br from-muted/50 via-background to-muted/30 border-y relative overflow-hidden">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(37,99,235,0.04),transparent_70%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(245,158,11,0.08),transparent_70%)]" />
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-12 lg:gap-16">
             <AnimatedStat value={50000} suffix="+" label="Clients actifs" delay={0} />
@@ -551,7 +551,7 @@ export default function LandingPage() {
       </section>
 
       <section className="py-24 md:py-32 relative overflow-hidden" ref={ctaAnimation.ref}>
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-700 via-blue-800 to-blue-900" />
+        <div className="absolute inset-0 bg-gradient-to-br from-amber-800 via-yellow-700 to-amber-900" />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,rgba(255,255,255,0.1),transparent_50%)]" />
         <div
           className={`container mx-auto px-4 sm:px-6 lg:px-8 relative text-center text-white transition-all duration-1000 ${
