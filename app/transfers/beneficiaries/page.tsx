@@ -312,7 +312,7 @@ export default function BeneficiariesPage() {
               Ajouter un bénéficiaire
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[500px]">
+          <DialogContent className="sm:max-w-[700px]">
             <DialogHeader>
               <DialogTitle>Ajouter un bénéficiaire</DialogTitle>
             </DialogHeader>
@@ -565,7 +565,7 @@ export default function BeneficiariesPage() {
       </Card>
 
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="sm:max-w-[500px]">
+        <DialogContent className="sm:max-w-[700px]">
           <DialogHeader>
             <DialogTitle>Modifier le bénéficiaire</DialogTitle>
           </DialogHeader>

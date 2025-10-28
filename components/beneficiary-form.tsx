@@ -247,114 +247,126 @@ export default function BeneficiaryForm({
         </Alert>
       )}
 
-      <div className="space-y-2">
-        <Label htmlFor="name">Nom complet *</Label>
-        <Input
-          id="name"
-          name="name"
-          defaultValue={initialData.name || ""}
-          placeholder="Nom et prénom du bénéficiaire"
-          required
-        />
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="type">Type de bénéficiaire *</Label>
-        <Select value={selectedType} onValueChange={setSelectedType} required>
-          <SelectTrigger>
-            <SelectValue placeholder="Sélectionnez le type" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="BNG-BNG">Interne</SelectItem>
-            <SelectItem value="BNG-CONFRERE">Confrère(Guinée)</SelectItem>
-            <SelectItem value="BNG-INTERNATIONAL">International</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="account">{selectedType === "BNG-INTERNATIONAL" ? "IBAN *" : "Numéro de compte *"}</Label>
-        <Input
-          id="account"
-          name="account"
-          defaultValue={initialData.account || ""}
-          onChange={(e) => {
-            if (selectedType !== "BNG-INTERNATIONAL") {
-              validateAccountNumber(e.target.value)
-            }
-          }}
-          placeholder={selectedType === "BNG-INTERNATIONAL" ? "FR76 1234 5678 9012 3456 78" : "1234567890"}
-          maxLength={selectedType === "BNG-INTERNATIONAL" ? undefined : 10}
-          pattern={selectedType === "BNG-INTERNATIONAL" ? undefined : "[0-9]{10}"}
-          required
-        />
-        {accountNumberError && selectedType !== "BNG-INTERNATIONAL" && (
-          <p className="text-sm text-red-600">{accountNumberError}</p>
-        )}
-        {selectedType !== "BNG-INTERNATIONAL" && (
-          <p className="text-xs text-muted-foreground">10 chiffres uniquement, sans caractères spéciaux</p>
-        )}
-      </div>
-
-      {selectedType !== "BNG-INTERNATIONAL" && selectedType !== "" && (
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="codeAgence">Code agence *</Label>
-          <Input id="codeAgence" name="codeAgence" placeholder="Ex: 0001" required />
-        </div>
-      )}
-
-      <div className="space-y-2">
-        <Label htmlFor="bank">Banque *</Label>
-        {selectedType === "BNG-BNG" ? (
-          <>
-            <Input id="bank" name="bankname" value="Banque Nationale de Guinée" readOnly className="bg-gray-50" />
-          </>
-        ) : selectedType === "BNG-CONFRERE" ? (
-          <Select name="bankname" value={selectedBank} onValueChange={handleBankSelection} required>
-            <SelectTrigger>
-              <SelectValue placeholder={loadingBanks ? "Chargement..." : "Sélectionnez une banque"} />
-            </SelectTrigger>
-            <SelectContent>
-              {banks.map((bank) => (
-                <SelectItem key={bank.id} value={bank.bankName}>
-                  {bank.bankName}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        ) : selectedType === "BNG-INTERNATIONAL" ? (
+          <Label htmlFor="name">Nom complet *</Label>
           <Input
-            id="bank"
-            name="bank"
-            value={selectedBank}
-            onChange={(e) => setSelectedBank(e.target.value)}
-            placeholder="Saisissez le nom de la banque"
-            className="bg-white"
+            id="name"
+            name="name"
+            defaultValue={initialData.name || ""}
+            placeholder="Nom et prénom du bénéficiaire"
             required
           />
-        ) : null}
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="type">Type de bénéficiaire *</Label>
+          <Select value={selectedType} onValueChange={setSelectedType} required>
+            <SelectTrigger>
+              <SelectValue placeholder="Sélectionnez le type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="BNG-BNG">Interne</SelectItem>
+              <SelectItem value="BNG-CONFRERE">Confrère(Guinée)</SelectItem>
+              <SelectItem value="BNG-INTERNATIONAL">International</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
-      {selectedType === "BNG-CONFRERE" && selectedBankCode && (
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="codeBanque">Code Banque *</Label>
-          <Input id="codeBanque" name="codeBanque" defaultValue={selectedBankCode} placeholder="Code banque" required />
+          <Label htmlFor="account">{selectedType === "BNG-INTERNATIONAL" ? "IBAN *" : "Numéro de compte *"}</Label>
+          <Input
+            id="account"
+            name="account"
+            defaultValue={initialData.account || ""}
+            onChange={(e) => {
+              if (selectedType !== "BNG-INTERNATIONAL") {
+                validateAccountNumber(e.target.value)
+              }
+            }}
+            placeholder={selectedType === "BNG-INTERNATIONAL" ? "FR76 1234 5678 9012 3456 78" : "1234567890"}
+            maxLength={selectedType === "BNG-INTERNATIONAL" ? undefined : 10}
+            pattern={selectedType === "BNG-INTERNATIONAL" ? undefined : "[0-9]{10}"}
+            required
+          />
+          {accountNumberError && selectedType !== "BNG-INTERNATIONAL" && (
+            <p className="text-sm text-red-600">{accountNumberError}</p>
+          )}
+          {selectedType !== "BNG-INTERNATIONAL" && (
+            <p className="text-xs text-muted-foreground">10 chiffres uniquement, sans caractères spéciaux</p>
+          )}
         </div>
-      )}
 
-      {selectedType === "BNG-BNG" && (
-        <div className="space-y-2">
-          <Label htmlFor="codeBanque">Code Banque *</Label>
-          <Input id="codeBanque" name="codeBanque" placeholder="Ex: GNXXX" required />
-        </div>
-      )}
+        {selectedType !== "BNG-INTERNATIONAL" && selectedType !== "" && (
+          <div className="space-y-2">
+            <Label htmlFor="codeAgence">Code agence *</Label>
+            <Input id="codeAgence" name="codeAgence" placeholder="Ex: 0001" required />
+          </div>
+        )}
+      </div>
 
-      {selectedType !== "BNG-INTERNATIONAL" && selectedType !== "" && (
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="cleRib">Clé RIB *</Label>
-          <Input id="cleRib" name="cleRib" placeholder="Ex: 89" maxLength={2} required />
+          <Label htmlFor="bank">Banque *</Label>
+          {selectedType === "BNG-BNG" ? (
+            <>
+              <Input id="bank" name="bankname" value="Banque Nationale de Guinée" readOnly className="bg-gray-50" />
+            </>
+          ) : selectedType === "BNG-CONFRERE" ? (
+            <Select name="bankname" value={selectedBank} onValueChange={handleBankSelection} required>
+              <SelectTrigger>
+                <SelectValue placeholder={loadingBanks ? "Chargement..." : "Sélectionnez une banque"} />
+              </SelectTrigger>
+              <SelectContent>
+                {banks.map((bank) => (
+                  <SelectItem key={bank.id} value={bank.bankName}>
+                    {bank.bankName}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          ) : selectedType === "BNG-INTERNATIONAL" ? (
+            <Input
+              id="bank"
+              name="bank"
+              value={selectedBank}
+              onChange={(e) => setSelectedBank(e.target.value)}
+              placeholder="Saisissez le nom de la banque"
+              className="bg-white"
+              required
+            />
+          ) : null}
         </div>
-      )}
+
+        {selectedType === "BNG-CONFRERE" && selectedBankCode && (
+          <div className="space-y-2">
+            <Label htmlFor="codeBanque">Code Banque *</Label>
+            <Input
+              id="codeBanque"
+              name="codeBanque"
+              defaultValue={selectedBankCode}
+              placeholder="Code banque"
+              required
+            />
+          </div>
+        )}
+
+        {selectedType === "BNG-BNG" && (
+          <div className="space-y-2">
+            <Label htmlFor="codeBanque">Code Banque *</Label>
+            <Input id="codeBanque" name="codeBanque" placeholder="Ex: GNXXX" required />
+          </div>
+        )}
+
+        {selectedType !== "BNG-INTERNATIONAL" && selectedType !== "" && (
+          <div className="space-y-2">
+            <Label htmlFor="cleRib">Clé RIB *</Label>
+            <Input id="cleRib" name="cleRib" placeholder="Ex: 89" maxLength={2} required />
+          </div>
+        )}
+      </div>
 
       <div className="flex justify-end space-x-2 pt-4">
         <Button type="button" variant="outline" onClick={onCancel} disabled={isPending}>
