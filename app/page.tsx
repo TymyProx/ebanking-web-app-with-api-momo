@@ -203,7 +203,7 @@ export default function LandingPage() {
               </Button>
             </Link>
             <Link href="/login">
-              <Button className="hidden md:inline-flex group bg-gray-900 hover:bg-gray-800">
+              <Button className="hidden md:inline-flex group bg-green-600 hover:bg-green-700">
                 Se connecter
                 <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
               </Button>
@@ -252,7 +252,7 @@ export default function LandingPage() {
                 </Button>
               </Link>
               <Link href="/login">
-                <Button className="w-full bg-gray-900 hover:bg-gray-800">Se connecter</Button>
+                <Button className="w-full bg-green-600 hover:bg-green-700">Se connecter</Button>
               </Link>
             </nav>
           </div>
@@ -286,7 +286,7 @@ export default function LandingPage() {
                 <Link href="/login">
                   <Button
                     size="lg"
-                    className="w-full sm:w-auto text-base px-8 py-6 group shadow-lg hover:shadow-xl transition-all bg-green-700 hover:bg-green-800"
+                    className="w-full sm:w-auto text-base px-8 py-6 group shadow-lg hover:shadow-xl transition-all bg-green-600 hover:bg-green-700"
                   >
                     Accéder à mon espace
                     <ChevronRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
@@ -388,7 +388,7 @@ export default function LandingPage() {
                       <Link href="/login">
                         <Button
                           size="lg"
-                          className="group/btn shadow-xl hover:shadow-2xl bg-white text-gray-900 hover:bg-gray-100"
+                          className="group/btn shadow-xl hover:shadow-2xl bg-green-600 text-white hover:bg-green-700"
                         >
                           Découvrir
                           <ChevronRight className="ml-2 h-5 w-5 sm:h-6 sm:w-6 transition-transform group-hover/btn:translate-x-1" />
@@ -470,7 +470,7 @@ export default function LandingPage() {
               </div>
 
               <Link href="/login">
-                <Button size="lg" className="group mt-2 bg-gray-900 hover:bg-gray-800 text-white">
+                <Button size="lg" className="group mt-2 bg-green-600 hover:bg-green-700 text-white">
                   Commencer maintenant
                   <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
                 </Button>
@@ -537,7 +537,7 @@ export default function LandingPage() {
             ].map((feature, index) => (
               <Card
                 key={index}
-                className={`group hover:shadow-2xl transition-all duration-700 border-2 hover:border-gray-400 hover:-translate-y-3 bg-gradient-to-br from-background to-muted/30 ${
+                className={`group overflow-hidden hover:shadow-2xl transition-all duration-700 border-2 hover:border-gray-400 hover:-translate-y-3 bg-gradient-to-br from-background to-muted/30 ${
                   featuresAnimation.isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-20"
                 }`}
                 style={{ transitionDelay: `${index * 100}ms` }}
@@ -575,7 +575,7 @@ export default function LandingPage() {
             <Link href="/login">
               <Button
                 size="lg"
-                className="text-base sm:text-lg px-8 sm:px-10 py-6 sm:py-7 shadow-2xl hover:shadow-3xl transition-all group bg-white text-gray-900 hover:bg-gray-100"
+                className="text-base sm:text-lg px-8 sm:px-10 py-6 sm:py-7 shadow-2xl hover:shadow-3xl transition-all group bg-green-600 text-white hover:bg-green-700"
               >
                 Accéder à mon espace
                 <ChevronRight className="ml-2 h-5 w-5 sm:h-6 sm:w-6 transition-transform group-hover:translate-x-1" />
