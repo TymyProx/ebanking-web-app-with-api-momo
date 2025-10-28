@@ -388,7 +388,7 @@ export default function LandingPage() {
                       <Link href="/login">
                         <Button
                           size="lg"
-                          className="group/btn shadow-xl hover:shadow-2xl bg-yellow-300 text-white hover:bg-yellow-450"
+                          className="group/btn shadow-xl hover:shadow-2xl bg-yellow-400 text-white hover:bg-yellow-450"
                         >
                           Découvrir
                           <ChevronRight className="ml-2 h-5 w-5 sm:h-6 sm:w-6 transition-transform group-hover/btn:translate-x-1" />
@@ -559,11 +559,11 @@ export default function LandingPage() {
       </section>
 
       <section
-        className="py-24 md:py-32 relative overflow-hidden bg-gradient-to-br from-gray-800 via-gray-700 to-gray-900"
+        className="py-24 md:py-32 relative overflow-hidden bg-gray-200"
         ref={ctaAnimation.ref}
       >
         <div
-          className={`container mx-auto px-4 sm:px-6 lg:px-8 relative text-center text-white transition-all duration-1000 ${
+          className={`container mx-auto px-4 sm:px-6 lg:px-8 relative text-center text-green-700 transition-all duration-1000 ${
             ctaAnimation.isVisible ? "opacity-100 scale-100" : "opacity-0 scale-95"
           }`}
         >
@@ -575,7 +575,7 @@ export default function LandingPage() {
             <Link href="/login">
               <Button
                 size="lg"
-                className="text-base sm:text-lg px-8 sm:px-10 py-6 sm:py-7 shadow-2xl hover:shadow-3xl transition-all group bg-green-700 text-white hover:bg-green-800"
+                className="text-base sm:text-lg px-8 sm:px-10 py-6 sm:py-7 shadow-2xl hover:shadow-3xl transition-all group bg-yellow-400 text-white hover:bg-yellow-800"
               >
                 Accéder à mon espace
                 <ChevronRight className="ml-2 h-5 w-5 sm:h-6 sm:w-6 transition-transform group-hover:translate-x-1" />
