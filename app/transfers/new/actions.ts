@@ -370,7 +370,7 @@ export async function executeTransfer(prevState: any, formData: FormData) {
     const usertoken = cookieToken
 
     let sourceAccountData: any = null
-    let rBClient = ""
+    let ribClient = ""
     try {
       const accountResponse = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/compte/${validatedData.sourceAccount}`, {
         method: "GET",
@@ -384,8 +384,8 @@ export async function executeTransfer(prevState: any, formData: FormData) {
         const accountDataResponse = await accountResponse.json()
         sourceAccountData = accountDataResponse.data || accountDataResponse
         // Construire le RIB client (concaténation de codeBanque, codeAgence, accountNumber, cleRib)
-        rBClient = `${sourceAccountData.codeBanque || ""}${sourceAccountData.codeAgence || ""}${sourceAccountData.accountNumber || ""}${sourceAccountData.cleRib || ""}`
-        console.log("[v0] Source account RIB constructed:", rBClient)
+        ribClient = `${sourceAccountData.codeBanque || ""}${sourceAccountData.codeAgence || ""}${sourceAccountData.accountNumber || ""}${sourceAccountData.cleRib || ""}`
+        console.log("[v0] Source account RIB constructed:", ribClient)
       }
     } catch (error) {
       console.error("[v0] Error fetching source account details:", error)
@@ -409,7 +409,7 @@ export async function executeTransfer(prevState: any, formData: FormData) {
     console.log("[v0] Generated requestID:", requestID, "referenceOperation:", referenceOperation)
 
     let nomBeneficiaire = ""
-    let rIBBeneficiaire = ""
+    let ribBeneficiaire = ""
 
     if (validatedData.transferType === "account-to-account") {
       // Pour les virements compte à compte
@@ -433,7 +433,7 @@ export async function executeTransfer(prevState: any, formData: FormData) {
             const targetAccountData = await targetAccountResponse.json()
             const targetAccount = targetAccountData.data || targetAccountData
             nomBeneficiaire = targetAccount.accountName || ""
-            rIBBeneficiaire = `${targetAccount.codeBanque || ""}${targetAccount.codeAgence || ""}${targetAccount.accountNumber || ""}${targetAccount.cleRib || ""}`
+            ribBeneficiaire = `${targetAccount.codeBanque || ""}${targetAccount.codeAgence || ""}${targetAccount.accountNumber || ""}${targetAccount.cleRib || ""}`
           }
         } catch (error) {
           console.error("[v0] Error fetching target account details:", error)
@@ -467,8 +467,8 @@ export async function executeTransfer(prevState: any, formData: FormData) {
       }
 
       nomBeneficiaire = beneficiary.name || ""
-      rIBBeneficiaire = `${beneficiary.bankCode}${beneficiary.codagence}${beneficiary.accountNumber}${beneficiary.clerib}`
-      console.log(`[v0] Bénéficiaire trouvé - nomBeneficiaire: ${nomBeneficiaire}, rIBBeneficiaire: ${rIBBeneficiaire}`)
+      ribBeneficiaire = `${beneficiary.bankCode}${beneficiary.codagence}${beneficiary.accountNumber}${beneficiary.clerib}`
+      console.log(`[v0] Bénéficiaire trouvé - nomBeneficiaire: ${nomBeneficiaire}, ribBeneficiaire: ${ribBeneficiaire}`)
     }
 
     let clientId = ""
@@ -495,7 +495,7 @@ export async function executeTransfer(prevState: any, formData: FormData) {
         stepflow: 0,
         montantOperation: validatedData.amount,
         requestID: requestID,
-        rBClient: rBClient,
+        ribClient: ribClient,
         dateOrdre: currentDate,
         nomClient: nomClient,
         status: "PENDING",
@@ -505,7 +505,7 @@ export async function executeTransfer(prevState: any, formData: FormData) {
         dateNotification: currentDate,
         referencePaiement: referenceOperation,
         nomBeneficiaire: nomBeneficiaire,
-        rIBBeneficiaire: rIBBeneficiaire,
+        ribBeneficiaire: ribBeneficiaire,
         commentnotes: validatedData.purpose,
         productCode: "", // Valeur par défaut vide
         description: validatedData.purpose,
@@ -574,7 +574,7 @@ export async function executeTransfer(prevState: any, formData: FormData) {
     }
 
     console.log(
-      `[AUDIT] Virement exécuté avec débit immédiat - RequestID: ${requestID}, Type: ${validatedData.transferType}, Montant: ${validatedData.amount} GNF, Compte source: ${validatedData.sourceAccount}, Bénéficiaire: ${nomBeneficiaire}, RIB Bénéficiaire: ${rIBBeneficiaire}, Nouveau solde disponible: ${debitResult.newBalance} à ${new Date().toISOString()}`,
+      `[AUDIT] Virement exécuté avec débit immédiat - RequestID: ${requestID}, Type: ${validatedData.transferType}, Montant: ${validatedData.amount} GNF, Compte source: ${validatedData.sourceAccount}, Bénéficiaire: ${nomBeneficiaire}, RIB Bénéficiaire: ${ribBeneficiaire}, Nouveau solde disponible: ${debitResult.newBalance} à ${new Date().toISOString()}`,
     )
 
     revalidatePath("/transfers/new")
