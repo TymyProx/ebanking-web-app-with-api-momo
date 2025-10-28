@@ -24,8 +24,12 @@ export const metadata: Metadata = {
   description: "La banque digitale nouvelle génération de la BNG",
   keywords: ["banque", "digital", "BNG", "Astra", "eBanking", "finance"],
   authors: [{ name: "BNG Digital Team" }],
-  viewport: "width=device-width, initial-scale=1",
   generator: "v0.dev",
+}
+
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
 }
 
 export default function RootLayout({
