@@ -404,9 +404,12 @@ export async function executeTransfer(prevState: any, formData: FormData) {
     const random = Math.floor(Math.random() * 1000000)
       .toString()
       .padStart(6, "0")
-    const requestID = `REQ${timestamp}${random}`
-    const referenceOperation = `TXN${timestamp.slice(-9)}${random.toString().slice(0, 3)}`
-    console.log("[v0] Generated requestID:", requestID, "referenceOperation:", referenceOperation)
+    // requestID: max 14 caractères - format: REQ + 11 chiffres
+    const requestID = `REQ${timestamp.slice(-8)}${random.slice(0, 3)}`.substring(0, 14)
+    // referenceOperation: max 16 caractères - format: TXN + 13 chiffres
+    const referenceOperation = `TXN${timestamp.slice(-10)}${random.slice(0, 3)}`.substring(0, 16)
+    console.log("[v0] Generated requestID:", requestID, "(length:", requestID.length, ")")
+    console.log("[v0] Generated referenceOperation:", referenceOperation, "(length:", referenceOperation.length, ")")
 
     let nomBeneficiaire = ""
     let ribBeneficiaire = ""
@@ -491,7 +494,7 @@ export async function executeTransfer(prevState: any, formData: FormData) {
     const currentDate = new Date().toISOString()
     const apiData = {
       data: {
-        affiliateid: "",
+        affiliateid: "BNG",
         stepflow: 0,
         montantOperation: validatedData.amount,
         requestID: requestID,
