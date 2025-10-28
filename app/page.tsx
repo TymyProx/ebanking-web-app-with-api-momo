@@ -108,7 +108,7 @@ function AnimatedStat({
         transitionDelay: `${delay}ms`,
       }}
     >
-      <div className="text-4xl md:text-5xl lg:text-6xl font-bold bg-gradient-to-r from-gray-700 via-gray-600 to-gray-800 bg-clip-text text-transparent">
+      <div className="text-4xl md:text-5xl lg:text-6xl font-bold bg-gradient-to-r from-yellow-500 via-yellow-400 to-yellow-600 bg-clip-text text-transparent">
         {count}
         {suffix}
       </div>
