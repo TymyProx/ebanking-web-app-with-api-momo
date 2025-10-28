@@ -270,9 +270,9 @@ export default function LandingPage() {
                 heroAnimation.isVisible ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-20"
               }`}
             >
-              <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight leading-tight text-gray-900">
+              <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight leading-tight text-green-700">
                 Votre banque,{" "}
-                <span className="bg-gradient-to-r from-gray-700 via-gray-600 to-gray-800 bg-clip-text text-transparent">
+                <span className="bg-gradient-to-r from-gray-700 via-gray-600 to-gray-800 bg-clip-text text-yellow-400">
                   accessible partout
                 </span>
               </h1>
@@ -286,7 +286,7 @@ export default function LandingPage() {
                 <Link href="/login">
                   <Button
                     size="lg"
-                    className="w-full sm:w-auto text-base px-8 py-6 group shadow-lg hover:shadow-xl transition-all bg-gray-900 hover:bg-gray-800"
+                    className="w-full sm:w-auto text-base px-8 py-6 group shadow-lg hover:shadow-xl transition-all bg-green-700 hover:bg-green-800"
                   >
                     Accéder à mon espace
                     <ChevronRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
