@@ -491,7 +491,7 @@ export async function executeTransfer(prevState: any, formData: FormData) {
     const currentDate = new Date().toISOString()
     const apiData = {
       data: {
-        affiliateid: "", // Valeur par défaut vide
+        affiliateid: "",
         stepflow: 0,
         montantOperation: validatedData.amount,
         requestID: requestID,
@@ -507,7 +507,7 @@ export async function executeTransfer(prevState: any, formData: FormData) {
         nomBeneficiaire: nomBeneficiaire,
         ribBeneficiaire: ribBeneficiaire,
         commentnotes: validatedData.purpose,
-        productCode: "", // Valeur par défaut vide
+        productCode: "",
         description: validatedData.purpose,
         clientId: clientId,
       },
