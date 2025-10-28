@@ -34,7 +34,6 @@ export async function getAccountDetails(accountId: string): Promise<Account | nu
       throw new Error("Tenant ID non trouvé")
     }
 
-    // Call the account details endpoint
     const response = await fetch(`${API_BASE_URL}/tenant/${tenantId}/compte/${accountId}`, {
       headers: {
         Authorization: `Bearer ${token}`,
@@ -47,6 +46,7 @@ export async function getAccountDetails(accountId: string): Promise<Account | nu
     }
 
     const accountData = await response.json()
+
     return accountData as Account
   } catch (error) {
     console.error("Erreur lors de la récupération des détails du compte:", error)
