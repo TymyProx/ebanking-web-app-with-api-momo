@@ -198,12 +198,12 @@ export default function LandingPage() {
 
           <div className="flex items-center gap-3">
             <Link href="/signup" className="hidden md:inline-flex">
-              <Button variant="outline" className="group bg-transparent border-gray-300 hover:border-gray-700">
+              <Button variant="outline" className="group bg-transparent hover:bg-yellow-200">
                 S'inscrire
               </Button>
             </Link>
             <Link href="/login">
-              <Button className="hidden md:inline-flex group bg-green-600 hover:bg-green-700">
+              <Button className="hidden md:inline-flex group bg-green-700 hover:bg-green-800">
                 Se connecter
                 <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
               </Button>
@@ -252,7 +252,7 @@ export default function LandingPage() {
                 </Button>
               </Link>
               <Link href="/login">
-                <Button className="w-full bg-green-600 hover:bg-green-700">Se connecter</Button>
+                <Button className="w-full bg-green-700 hover:bg-green-800">Se connecter</Button>
               </Link>
             </nav>
           </div>
@@ -272,7 +272,7 @@ export default function LandingPage() {
             >
               <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight leading-tight text-green-700">
                 Votre banque,{" "}
-                <span className="bg-gradient-to-r from-gray-700 via-gray-600 to-gray-800 bg-clip-text text-yellow-400">
+                <span className="bg-gradient-to-r from-gray-700 via-gray-600 to-gray-800 bg-clip-text text-yellow-300">
                   accessible partout
                 </span>
               </h1>
@@ -286,7 +286,7 @@ export default function LandingPage() {
                 <Link href="/login">
                   <Button
                     size="lg"
-                    className="w-full sm:w-auto text-base px-8 py-6 group shadow-lg hover:shadow-xl transition-all bg-green-600 hover:bg-green-700"
+                    className="w-full sm:w-auto text-base px-8 py-6 group shadow-lg hover:shadow-xl transition-all bg-green-700 hover:bg-green-800"
                   >
                     Accéder à mon espace
                     <ChevronRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
@@ -295,7 +295,7 @@ export default function LandingPage() {
                 <Button
                   size="lg"
                   variant="outline"
-                  className="w-full sm:w-auto text-base px-8 py-6 border-2 bg-transparent border-gray-300 hover:border-gray-700"
+                  className="w-full sm:w-auto text-base px-8 py-6 border-2 bg-transparent group bg-transparent hover:bg-yellow-200"
                 >
                   En savoir plus
                 </Button>
@@ -326,7 +326,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <section className="py-20 md:py-24 bg-gray-100 border-y border-gray-200">
+      <section className="py-20 md:py-24 bg-gray-100 border-y border-gray-200 text-black">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-12 lg:gap-16">
             <AnimatedStat value={50000} suffix="+" label="Clients actifs" delay={0} />
@@ -388,7 +388,7 @@ export default function LandingPage() {
                       <Link href="/login">
                         <Button
                           size="lg"
-                          className="group/btn shadow-xl hover:shadow-2xl bg-green-600 text-white hover:bg-green-700"
+                          className="group/btn shadow-xl hover:shadow-2xl bg-yellow-300 text-white hover:bg-yellow-450"
                         >
                           Découvrir
                           <ChevronRight className="ml-2 h-5 w-5 sm:h-6 sm:w-6 transition-transform group-hover/btn:translate-x-1" />
@@ -470,7 +470,7 @@ export default function LandingPage() {
               </div>
 
               <Link href="/login">
-                <Button size="lg" className="group mt-2 bg-green-600 hover:bg-green-700 text-white">
+                <Button size="lg" className="group mt-2 bg-green-700 hover:bg-green-800 text-white">
                   Commencer maintenant
                   <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
                 </Button>
@@ -575,7 +575,7 @@ export default function LandingPage() {
             <Link href="/login">
               <Button
                 size="lg"
-                className="text-base sm:text-lg px-8 sm:px-10 py-6 sm:py-7 shadow-2xl hover:shadow-3xl transition-all group bg-green-600 text-white hover:bg-green-700"
+                className="text-base sm:text-lg px-8 sm:px-10 py-6 sm:py-7 shadow-2xl hover:shadow-3xl transition-all group bg-green-700 text-white hover:bg-green-800"
               >
                 Accéder à mon espace
                 <ChevronRight className="ml-2 h-5 w-5 sm:h-6 sm:w-6 transition-transform group-hover:translate-x-1" />
