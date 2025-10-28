@@ -558,29 +558,58 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <section
-        className="py-24 md:py-32 relative overflow-hidden bg-gray-200"
-        ref={ctaAnimation.ref}
-      >
+      <section className="py-24 md:py-32 relative overflow-hidden bg-green-50" ref={ctaAnimation.ref}>
         <div
-          className={`container mx-auto px-4 sm:px-6 lg:px-8 relative text-center text-green-700 transition-all duration-1000 ${
+          className={`container mx-auto px-4 sm:px-6 lg:px-8 relative text-center transition-all duration-1000 ${
             ctaAnimation.isVisible ? "opacity-100 scale-100" : "opacity-0 scale-95"
           }`}
         >
-          <div className="max-w-3xl mx-auto space-y-6 md:space-y-8">
-            <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold">Prêt à commencer ?</h2>
-            <p className="text-lg sm:text-xl md:text-2xl opacity-90 leading-relaxed">
+          <div className="max-w-4xl mx-auto space-y-8 md:space-y-10">
+            <h2 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-green-700 leading-tight">
+              Prêt à commencer ?
+            </h2>
+
+            <p className="text-lg sm:text-xl md:text-2xl text-gray-700 leading-relaxed max-w-2xl mx-auto font-medium">
               Rejoignez des milliers de clients qui font confiance à Astra eBanking pour gérer leurs finances
             </p>
-            <Link href="/login">
-              <Button
-                size="lg"
-                className="text-base sm:text-lg px-8 sm:px-10 py-6 sm:py-7 shadow-2xl hover:shadow-3xl transition-all group bg-yellow-400 text-white hover:bg-yellow-800"
-              >
-                Accéder à mon espace
-                <ChevronRight className="ml-2 h-5 w-5 sm:h-6 sm:w-6 transition-transform group-hover:translate-x-1" />
-              </Button>
-            </Link>
+
+            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center pt-4">
+              <Link href="/login">
+                <Button
+                  size="lg"
+                  className="text-base sm:text-lg px-10 sm:px-12 py-7 sm:py-8 shadow-2xl hover:shadow-3xl transition-all duration-500 group bg-green-600 hover:bg-green-700 text-white border-2 border-green-600 hover:border-green-700 hover:scale-105"
+                >
+                  Accéder à mon espace
+                  <ChevronRight className="ml-2 h-5 w-5 sm:h-6 sm:w-6 transition-transform group-hover:translate-x-2" />
+                </Button>
+              </Link>
+
+              <Link href="/signup">
+                <Button
+                  size="lg"
+                  variant="outline"
+                  className="text-base sm:text-lg px-10 sm:px-12 py-7 sm:py-8 shadow-lg hover:shadow-xl transition-all duration-500 group bg-white/80 backdrop-blur-sm border-2 border-yellow-400 hover:bg-yellow-50 hover:border-yellow-500 text-gray-900 hover:scale-105"
+                >
+                  Créer un compte
+                  <ArrowRight className="ml-2 h-5 w-5 sm:h-6 sm:w-6 transition-transform group-hover:translate-x-2" />
+                </Button>
+              </Link>
+            </div>
+
+            <div className="flex flex-wrap justify-center items-center gap-8 pt-8">
+              <div className="flex items-center gap-2 text-gray-700">
+                <Shield className="h-5 w-5 text-green-600" />
+                <span className="text-sm font-medium">100% Sécurisé</span>
+              </div>
+              <div className="flex items-center gap-2 text-gray-700">
+                <Check className="h-5 w-5 text-green-600" />
+                <span className="text-sm font-medium">Sans engagement</span>
+              </div>
+              <div className="flex items-center gap-2 text-gray-700">
+                <Clock className="h-5 w-5 text-green-600" />
+                <span className="text-sm font-medium">Activation immédiate</span>
+              </div>
+            </div>
           </div>
         </div>
       </section>
