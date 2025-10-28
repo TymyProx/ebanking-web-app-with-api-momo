@@ -108,7 +108,7 @@ function AnimatedStat({
         transitionDelay: `${delay}ms`,
       }}
     >
-      <div className="text-4xl md:text-5xl lg:text-6xl font-bold bg-gradient-to-r from-yellow-500 via-yellow-400 to-yellow-600 bg-clip-text text-transparent">
+      <div className="text-4xl md:text-5xl lg:text-6xl font-bold bg-gradient-to-r from-green-800 via-green-700 to-green-600 bg-clip-text text-transparent">
         {count}
         {suffix}
       </div>
@@ -272,7 +272,7 @@ export default function LandingPage() {
             >
               <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight leading-tight text-green-700">
                 Votre banque,{" "}
-                <span className="bg-gradient-to-r from-gray-700 via-gray-600 to-gray-800 bg-clip-text text-yellow-300">
+                <span className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold  text-yellow-400">
                   accessible partout
                 </span>
               </h1>
