@@ -187,7 +187,7 @@ export default function MesVirementsPage() {
       </Card>
 
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-2xl font-heading">Détails de la transaction</DialogTitle>
             <DialogDescription>Informations complètes sur cette transaction</DialogDescription>
@@ -197,74 +197,126 @@ export default function MesVirementsPage() {
             (() => {
               const formatted = formatTransaction(selectedTransaction, accounts)
               return (
-                <div className="space-y-6 mt-4">
-                  {/* Amount and Type */}
-                  <div className="text-center p-6 bg-gradient-to-br from-muted/50 to-muted/30 rounded-xl border border-border/50">
-                    <div
-                      className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 ${
-                        formatted.isCredit ? "bg-secondary/20 text-secondary" : "bg-destructive/20 text-destructive"
-                      }`}
-                    >
-                      {formatted.isCredit ? (
-                        <ArrowDownRight className="w-8 h-8" />
-                      ) : (
-                        <ArrowUpRight className="w-8 h-8" />
+                <div className="space-y-4 mt-4">
+                  <div className="text-center p-4 bg-gradient-to-br from-muted/50 to-muted/30 rounded-xl border border-border/50">
+                    <div className="flex items-center justify-center gap-4">
+                      <div
+                        className={`w-12 h-12 rounded-full flex items-center justify-center shrink-0 ${
+                          formatted.isCredit ? "bg-secondary/20 text-secondary" : "bg-destructive/20 text-destructive"
+                        }`}
+                      >
+                        {formatted.isCredit ? (
+                          <ArrowDownRight className="w-6 h-6" />
+                        ) : (
+                          <ArrowUpRight className="w-6 h-6" />
+                        )}
+                      </div>
+                      <div className="text-left">
+                        <p className="text-xs text-muted-foreground">{formatted.type}</p>
+                        <p
+                          className={`text-2xl font-bold ${formatted.isCredit ? "text-secondary" : "text-destructive"}`}
+                        >
+                          {formatted.amount}
+                        </p>
+                      </div>
+                      <div className="ml-auto">{getStatusBadge(formatted.status)}</div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    {/* Left Column */}
+                    <div className="space-y-3">
+                      <div className="flex items-start gap-2 p-3 bg-muted/30 rounded-lg">
+                        <Hash className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-medium text-muted-foreground">Référence</p>
+                          <p className="text-sm font-mono truncate">{selectedTransaction.txnId || "N/A"}</p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-start gap-2 p-3 bg-muted/30 rounded-lg">
+                        <Calendar className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" />
+                        <div className="flex-1">
+                          <p className="text-xs font-medium text-muted-foreground">Date</p>
+                          <p className="text-sm">{formatted.date}</p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-start gap-2 p-3 bg-muted/30 rounded-lg">
+                        <Clock className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" />
+                        <div className="flex-1">
+                          <p className="text-xs font-medium text-muted-foreground">Heure</p>
+                          <p className="text-sm">{formatted.time}</p>
+                        </div>
+                      </div>
+
+                      {selectedTransaction.codeOperation && (
+                        <div className="flex items-start gap-2 p-3 bg-muted/30 rounded-lg">
+                          <FileText className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" />
+                          <div className="flex-1">
+                            <p className="text-xs font-medium text-muted-foreground">Code opération</p>
+                            <p className="text-sm">{selectedTransaction.codeOperation}</p>
+                          </div>
+                        </div>
                       )}
                     </div>
-                    <p className="text-sm text-muted-foreground mb-2">{formatted.type}</p>
-                    <p className={`text-3xl font-bold ${formatted.isCredit ? "text-secondary" : "text-destructive"}`}>
-                      {formatted.amount}
-                    </p>
-                    <div className="mt-4">{getStatusBadge(formatted.status)}</div>
+
+                    {/* Right Column */}
+                    <div className="space-y-3">
+                      {formatted.account && (
+                        <div className="flex items-start gap-2 p-3 bg-muted/30 rounded-lg">
+                          <CreditCard className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-medium text-muted-foreground">Compte</p>
+                            <p className="text-sm font-medium truncate">{formatted.account.accountName}</p>
+                            <p className="text-xs text-muted-foreground font-mono truncate">
+                              {formatted.account.accountNumber}
+                            </p>
+                          </div>
+                        </div>
+                      )}
+
+                      {selectedTransaction.creditAccount && (
+                        <div className="flex items-start gap-2 p-3 bg-muted/30 rounded-lg">
+                          <CreditCard className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-medium text-muted-foreground">Compte créditeur</p>
+                            <p className="text-sm font-mono truncate">{selectedTransaction.creditAccount}</p>
+                          </div>
+                        </div>
+                      )}
+
+                      {selectedTransaction.codeDevise && (
+                        <div className="flex items-start gap-2 p-3 bg-muted/30 rounded-lg">
+                          <FileText className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" />
+                          <div className="flex-1">
+                            <p className="text-xs font-medium text-muted-foreground">Devise</p>
+                            <p className="text-sm">{selectedTransaction.codeDevise}</p>
+                          </div>
+                        </div>
+                      )}
+
+                      {selectedTransaction.referenceOperation && (
+                        <div className="flex items-start gap-2 p-3 bg-muted/30 rounded-lg">
+                          <Hash className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-medium text-muted-foreground">Réf. opération</p>
+                            <p className="text-sm font-mono truncate">{selectedTransaction.referenceOperation}</p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
 
-                  {/* Transaction Details */}
-                  <div className="space-y-4">
-                    <div className="flex items-start gap-3 p-4 bg-muted/30 rounded-lg">
-                      <Hash className="w-5 h-5 text-muted-foreground mt-0.5" />
+                  {selectedTransaction.description && (
+                    <div className="flex items-start gap-2 p-3 bg-muted/30 rounded-lg">
+                      <FileText className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" />
                       <div className="flex-1">
-                        <p className="text-sm font-medium text-muted-foreground">Référence</p>
-                        <p className="text-sm font-mono">{selectedTransaction.txnId || "N/A"}</p>
+                        <p className="text-xs font-medium text-muted-foreground">Description</p>
+                        <p className="text-sm">{selectedTransaction.description}</p>
                       </div>
                     </div>
-
-                    <div className="flex items-start gap-3 p-4 bg-muted/30 rounded-lg">
-                      <Calendar className="w-5 h-5 text-muted-foreground mt-0.5" />
-                      <div className="flex-1">
-                        <p className="text-sm font-medium text-muted-foreground">Date</p>
-                        <p className="text-sm">{formatted.date}</p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-start gap-3 p-4 bg-muted/30 rounded-lg">
-                      <Clock className="w-5 h-5 text-muted-foreground mt-0.5" />
-                      <div className="flex-1">
-                        <p className="text-sm font-medium text-muted-foreground">Heure</p>
-                        <p className="text-sm">{formatted.time}</p>
-                      </div>
-                    </div>
-
-                    {formatted.account && (
-                      <div className="flex items-start gap-3 p-4 bg-muted/30 rounded-lg">
-                        <CreditCard className="w-5 h-5 text-muted-foreground mt-0.5" />
-                        <div className="flex-1">
-                          <p className="text-sm font-medium text-muted-foreground">Compte</p>
-                          <p className="text-sm font-medium">{formatted.account.accountName}</p>
-                          <p className="text-xs text-muted-foreground font-mono">{formatted.account.accountNumber}</p>
-                        </div>
-                      </div>
-                    )}
-
-                    {selectedTransaction.description && (
-                      <div className="flex items-start gap-3 p-4 bg-muted/30 rounded-lg">
-                        <FileText className="w-5 h-5 text-muted-foreground mt-0.5" />
-                        <div className="flex-1">
-                          <p className="text-sm font-medium text-muted-foreground">Description</p>
-                          <p className="text-sm">{selectedTransaction.description}</p>
-                        </div>
-                      </div>
-                    )}
-                  </div>
+                  )}
                 </div>
               )
             })()}
