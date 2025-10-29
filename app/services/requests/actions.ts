@@ -62,6 +62,14 @@ interface GetDemandesCreditResponse {
   count: number
 }
 
+function isGetCommandesResponse(data: any): data is GetCommandesResponse {
+  return data && typeof data === "object" && "rows" in data && Array.isArray(data.rows)
+}
+
+function isGetDemandesCreditResponse(data: any): data is GetDemandesCreditResponse {
+  return data && typeof data === "object" && "rows" in data && Array.isArray(data.rows)
+}
+
 // Fonction pour générer une référence unique
 async function generateReference(prefix: string): Promise<string> {
   try {
@@ -78,10 +86,10 @@ async function generateReference(prefix: string): Promise<string> {
 
     if (prefix === "CHQ") {
       const checkbookRequests = await getCheckbookRequest()
-      existingCount = checkbookRequests?.rows?.length || 0
+      existingCount = isGetCommandesResponse(checkbookRequests) ? checkbookRequests.rows.length : 0
     } else if (prefix === "CRD") {
       const creditRequests = await getCreditRequest()
-      existingCount = creditRequests?.rows?.length || 0
+      existingCount = isGetDemandesCreditResponse(creditRequests) ? creditRequests.rows.length : 0
     }
 
     const currentYear = new Date().getFullYear()

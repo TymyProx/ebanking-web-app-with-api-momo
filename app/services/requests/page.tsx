@@ -182,7 +182,12 @@ export default function ServiceRequestsPage() {
 
       let allTransformedRequests: any[] = []
 
-      if (checkbookResult && checkbookResult.rows && Array.isArray(checkbookResult.rows)) {
+      if (
+        checkbookResult &&
+        typeof checkbookResult === "object" &&
+        "rows" in checkbookResult &&
+        Array.isArray(checkbookResult.rows)
+      ) {
         const checkbookData = checkbookResult.rows
         console.log("[v0] Données chéquier à traiter:", checkbookData)
 
@@ -191,12 +196,19 @@ export default function ServiceRequestsPage() {
           type: "checkbook",
           typeName: "Demande de chéquier",
           status:
-            item.stepflow === 0 ? "En attente" :
-            item.stepflow === 1 ? "En cours de traitement" :
-            item.stepflow === 2 ? "En cours de traitement" :
-            item.stepflow === 3 ? "Disponible à l’agence" :
-            item.stepflow === 4 ? "Disponible" :
-            item.stepflow === 5 ? "Retiré" : "En attente",
+            item.stepflow === 0
+              ? "En attente"
+              : item.stepflow === 1
+                ? "En cours de traitement"
+                : item.stepflow === 2
+                  ? "En cours de traitement"
+                  : item.stepflow === 3
+                    ? "Disponible à l'agence"
+                    : item.stepflow === 4
+                      ? "Disponible"
+                      : item.stepflow === 5
+                        ? "Retiré"
+                        : "En attente",
           submittedAt: item.dateorder || item.createdAt?.split("T")[0] || new Date().toISOString().split("T")[0],
           expectedResponse: item.dateorder
             ? new Date(new Date(item.dateorder).getTime() + 3 * 24 * 60 * 60 * 1000).toISOString().split("T")[0]
@@ -208,8 +220,8 @@ export default function ServiceRequestsPage() {
             nbrefeuille: item.nbrefeuille || 0,
             commentaire: item.commentaire || "",
             numcompteId: item.numcompteId || "",
-            typeCheque: item.typeCheque, // Added from update
-            talonCheque: item.talonCheque, // Added from update
+            typeCheque: item.typeCheque,
+            talonCheque: item.talonCheque,
           },
         }))
         allTransformedRequests = [...allTransformedRequests, ...checkbookRequests]
@@ -218,7 +230,12 @@ export default function ServiceRequestsPage() {
         console.log("[v0] Aucune donnée de chéquier trouvée ou structure incorrecte")
       }
 
-      if (creditResult && creditResult.rows && Array.isArray(creditResult.rows)) {
+      if (
+        creditResult &&
+        typeof creditResult === "object" &&
+        "rows" in creditResult &&
+        Array.isArray(creditResult.rows)
+      ) {
         const creditData = creditResult.rows
         console.log("[v0] Données crédit à traiter:", creditData)
 
@@ -425,53 +442,58 @@ export default function ServiceRequestsPage() {
         return
       }
 
-      if (result && result.success && result.data) {
-        const transformedRequests = Array.isArray(result.data)
-          ? result.data.map((item: any, index: number) => {
-              if (type === "checkbook") {
-                return {
-                  id: item.id || `CHQ${String(index + 1).padStart(3, "0")}`,
-                  type: "checkbook",
-                  typeName: "Demande de chéquier",
-                  status:
-                    item.stepflow === 0 ? "En attente" :
-                    item.stepflow === 1 ? "En cours de traitement" :
-                    item.stepflow === 2 ? "En cours de traitement" :
-                    item.stepflow === 3 ? "Disponible à l’agence" :
-                    item.stepflow === 4 ? "Disponible" :
-                    item.stepflow === 5 ? "Retiré" : "En attente",
-                  submittedAt: item.dateorder || new Date().toISOString().split("T")[0],
-                  expectedResponse: item.dateorder
-                    ? new Date(new Date(item.dateorder).getTime() + 3 * 24 * 60 * 60 * 1000).toISOString().split("T")[0]
-                    : new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
-                  account: item.intitulecompte || "Compte non spécifié",
-                  reference: item.reference || `CHQ-${new Date().getFullYear()}-${String(index + 1).padStart(3, "0")}`,
-                  details: {
-                    nbrechequier: item.nbrechequier || 0,
-                    nbrefeuille: item.nbrefeuille || 0,
-                    commentaire: item.commentaire || "",
-                  },
-                }
-              } else {
-                return {
-                  id: item.id || `CRD${String(index + 1).padStart(3, "0")}`,
-                  type: "credit",
-                  typeName: "Crédit",
-                  status: "En cours",
-                  submittedAt: item.createdAt ? item.createdAt.split("T")[0] : new Date().toISOString().split("T")[0],
-                  expectedResponse: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
-                  account: "Compte courant",
-                  reference: item.reference || `CRD-${new Date().getFullYear()}-${String(index + 1).padStart(3, "0")}`,
-                  details: {
-                    applicantName: item.applicantName || "",
-                    creditAmount: item.creditAmount || "",
-                    durationMonths: item.durationMonths || "",
-                    purpose: item.purpose || "",
-                  },
-                }
-              }
-            })
-          : []
+      if (result && typeof result === "object" && "rows" in result && Array.isArray(result.rows)) {
+        const transformedRequests = result.rows.map((item: any, index: number) => {
+          if (type === "checkbook") {
+            return {
+              id: item.id || `CHQ${String(index + 1).padStart(3, "0")}`,
+              type: "checkbook",
+              typeName: "Demande de chéquier",
+              status:
+                item.stepflow === 0
+                  ? "En attente"
+                  : item.stepflow === 1
+                    ? "En cours de traitement"
+                    : item.stepflow === 2
+                      ? "En cours de traitement"
+                      : item.stepflow === 3
+                        ? "Disponible à l'agence"
+                        : item.stepflow === 4
+                          ? "Disponible"
+                          : item.stepflow === 5
+                            ? "Retiré"
+                            : "En attente",
+              submittedAt: item.dateorder || new Date().toISOString().split("T")[0],
+              expectedResponse: item.dateorder
+                ? new Date(new Date(item.dateorder).getTime() + 3 * 24 * 60 * 60 * 1000).toISOString().split("T")[0]
+                : new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+              account: item.intitulecompte || "Compte non spécifié",
+              reference: item.reference || `CHQ-${new Date().getFullYear()}-${String(index + 1).padStart(3, "0")}`,
+              details: {
+                nbrechequier: item.nbrechequier || 0,
+                nbrefeuille: item.nbrefeuille || 0,
+                commentaire: item.commentaire || "",
+              },
+            }
+          } else {
+            return {
+              id: item.id || `CRD${String(index + 1).padStart(3, "0")}`,
+              type: "credit",
+              typeName: "Crédit",
+              status: "En cours",
+              submittedAt: item.createdAt ? item.createdAt.split("T")[0] : new Date().toISOString().split("T")[0],
+              expectedResponse: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+              account: "Compte courant",
+              reference: item.reference || `CRD-${new Date().getFullYear()}-${String(index + 1).padStart(3, "0")}`,
+              details: {
+                applicantName: item.applicantName || "",
+                creditAmount: item.creditAmount || "",
+                durationMonths: item.durationMonths || "",
+                purpose: item.purpose || "",
+              },
+            }
+          }
+        })
         setAllRequests(transformedRequests)
       } else {
         setAllRequests([])
