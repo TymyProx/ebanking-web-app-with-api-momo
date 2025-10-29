@@ -34,40 +34,48 @@ export async function signupUser(data: SignupData) {
       return { success: false, message: "Adresse requise" }
     }
 
+    // Split full name into first and last name
+    const nameParts = data.fullName.trim().split(" ")
+    const firstName = nameParts[0] || ""
+    const lastName = nameParts.slice(1).join(" ") || nameParts[0] || ""
+
     // Generate a unique client code
     const codeClient = `CLI-${Date.now()}-${Math.random().toString(36).substring(2, 9).toUpperCase()}`
 
-    console.log("[v0] Step 1: Creating authentication account...")
+    console.log("[v0] Step 1: Creating user account via /tenant/{tenantId}/user...")
 
-    const signupPayload = {
-      email: String(data.email),
-      password: String(data.password),
-      invitationToken: "string",
-      tenantId: String(TENANT_ID),
+    const createUserPayload = {
+      data: {
+        emails: [String(data.email)],
+        roles: ["custom"], // Client role
+        firstName: String(firstName),
+        lastName: String(lastName),
+        sendInvitationEmail: false, // No email for self-signup
+      },
     }
 
-    console.log("[v0] Signup payload:", JSON.stringify({ ...signupPayload, password: "***" }))
+    console.log("[v0] Create user payload:", JSON.stringify(createUserPayload))
 
-    const signupResponse = await fetch(`${API_BASE_URL}/auth/sign-up`, {
+    const createUserResponse = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/user`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(signupPayload),
+      body: JSON.stringify(createUserPayload),
     })
 
-    console.log("[v0] Signup response status:", signupResponse.status)
-    const signupResponseText = await signupResponse.text()
-    console.log("[v0] Signup response body:", signupResponseText.substring(0, 100) + "...")
+    console.log("[v0] Create user response status:", createUserResponse.status)
+    const createUserResponseText = await createUserResponse.text()
+    console.log("[v0] Create user response body:", createUserResponseText.substring(0, 200) + "...")
 
-    if (!signupResponse.ok) {
+    if (!createUserResponse.ok) {
       let errorData: any = {}
       try {
-        errorData = JSON.parse(signupResponseText)
+        errorData = JSON.parse(createUserResponseText)
       } catch (e) {
-        errorData = { message: signupResponseText || `HTTP ${signupResponse.status}` }
+        errorData = { message: createUserResponseText || `HTTP ${createUserResponse.status}` }
       }
-      console.error("[v0] Signup failed:", errorData)
+      console.error("[v0] User creation failed:", errorData)
 
       if (errorData.message?.includes("Email is already in use") || errorData.message?.includes("already exists")) {
         return {
@@ -76,18 +84,69 @@ export async function signupUser(data: SignupData) {
         }
       }
 
-      throw new Error(errorData.message || "Erreur lors de la création du compte")
+      throw new Error(errorData.message || "Erreur lors de la création du compte utilisateur")
     }
 
+    let userData: any
+    try {
+      userData = JSON.parse(createUserResponseText)
+    } catch (e) {
+      console.error("[v0] Failed to parse user creation response as JSON")
+      throw new Error("Réponse invalide du serveur")
+    }
+
+    const userId = userData.id || userData.data?.id
+    if (!userId) {
+      throw new Error("ID utilisateur non trouvé dans la réponse")
+    }
+
+    console.log("[v0] User account created successfully, userId:", userId)
+
+    console.log("[v0] Step 2: Activating user account with password...")
+
+    const activateUserPayload = {
+      email: String(data.email),
+      password: String(data.password),
+      invitationToken: userId, // Use userId as token for self-signup
+      token: userId,
+      tenantId: String(TENANT_ID),
+      firstName: String(firstName),
+      lastName: String(lastName),
+    }
+
+    console.log("[v0] Activate user payload:", JSON.stringify({ ...activateUserPayload, password: "***" }))
+
+    const activateResponse = await fetch(`${API_BASE_URL}/auth/sign-up`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(activateUserPayload),
+    })
+
+    console.log("[v0] Activate response status:", activateResponse.status)
+    const activateResponseText = await activateResponse.text()
+    console.log("[v0] Activate response body:", activateResponseText.substring(0, 100) + "...")
+
+    if (!activateResponse.ok) {
+      let errorData: any = {}
+      try {
+        errorData = JSON.parse(activateResponseText)
+      } catch (e) {
+        errorData = { message: activateResponseText || `HTTP ${activateResponse.status}` }
+      }
+      console.error("[v0] User activation failed:", errorData)
+      throw new Error(errorData.message || "Erreur lors de l'activation du compte")
+    }
+
+    // Extract JWT token from response
     let token: string
-    if (signupResponseText.startsWith("eyJ")) {
-      // Response is a JWT token string
-      token = signupResponseText
+    if (activateResponseText.startsWith("eyJ")) {
+      token = activateResponseText
       console.log("[v0] Received JWT token directly")
     } else {
-      // Response is JSON
-      const signupData = JSON.parse(signupResponseText)
-      token = signupData.token || signupData.data?.token || signupData
+      const activateData = JSON.parse(activateResponseText)
+      token = activateData.token || activateData.data?.token || activateData
       console.log("[v0] Extracted token from JSON response")
     }
 
@@ -96,9 +155,10 @@ export async function signupUser(data: SignupData) {
       return { success: false, message: "Aucun token reçu du serveur" }
     }
 
-    console.log("[v0] Authentication account created successfully")
+    console.log("[v0] User account activated successfully")
 
-    console.log("[v0] Step 2: Getting user info...")
+    console.log("[v0] Step 3: Getting authenticated user info...")
+
     const meResponse = await fetch(`${API_BASE_URL}/auth/me`, {
       method: "GET",
       headers: {
@@ -112,49 +172,10 @@ export async function signupUser(data: SignupData) {
       throw new Error("Erreur lors de la récupération des informations utilisateur")
     }
 
-    const userData = await meResponse.json()
+    const authenticatedUserData = await meResponse.json()
     console.log("[v0] User info retrieved successfully")
-    console.log("[v0] User roles:", userData.roles)
-    console.log("[v0] User status:", userData.status)
 
-    const userId = userData.id
-
-    if (!userId) {
-      throw new Error("ID utilisateur non trouvé")
-    }
-
-    console.log("[v0] Step 3: Updating tenant user roles and status...")
-
-    const updateUserPayload = {
-      data: {
-        roles: ["admin"],
-        status: "active",
-      },
-    }
-
-    console.log("[v0] Update user payload:", JSON.stringify(updateUserPayload))
-
-    const updateUserResponse = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/user/${userId}`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify(updateUserPayload),
-    })
-
-    console.log("[v0] Update user response status:", updateUserResponse.status)
-
-    if (!updateUserResponse.ok) {
-      const updateErrorText = await updateUserResponse.text()
-      console.error("[v0] Failed to update user roles:", updateErrorText)
-      // Don't throw error here, continue with signup even if role update fails
-      console.warn("[v0] Continuing signup despite role update failure")
-    } else {
-      console.log("[v0] User roles and status updated successfully")
-    }
-
-    console.log("[v0] Step 4: Creating client record...")
+    console.log("[v0] Step 4: Creating client profile...")
 
     const clientRequestBody = {
       data: {
@@ -167,7 +188,6 @@ export async function signupUser(data: SignupData) {
       },
     }
     console.log("[v0] Client request body:", JSON.stringify(clientRequestBody))
-    console.log("[v0] API URL:", `${API_BASE_URL}/tenant/${TENANT_ID}/client`)
 
     const clientResponse = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/client`, {
       method: "POST",
@@ -179,7 +199,6 @@ export async function signupUser(data: SignupData) {
     })
 
     console.log("[v0] Client response status:", clientResponse.status)
-    console.log("[v0] Client response status text:", clientResponse.statusText)
     const clientResponseText = await clientResponse.text()
     console.log("[v0] Client response body:", clientResponseText.substring(0, 200) + "...")
 
@@ -189,7 +208,7 @@ export async function signupUser(data: SignupData) {
         errorData = JSON.parse(clientResponseText)
       } catch (e) {
         console.error("[v0] Failed to parse error response as JSON")
-        errorData = { message: clientResponseText || `HTTP ${clientResponse.status}: ${clientResponse.statusText}` }
+        errorData = { message: clientResponseText || `HTTP ${clientResponse.status}` }
       }
       console.error("[v0] Client creation failed:", errorData)
       throw new Error(errorData.message || "Erreur lors de la création du profil client")
@@ -202,9 +221,8 @@ export async function signupUser(data: SignupData) {
       console.error("[v0] Failed to parse client response as JSON")
       throw new Error("Réponse invalide du serveur")
     }
-    console.log("[v0] Client created successfully")
+    console.log("[v0] Client profile created successfully")
 
-    // Store token in cookies
     const cookieStore = await cookies()
     cookieStore.set("token", token, {
       httpOnly: true,
@@ -212,11 +230,6 @@ export async function signupUser(data: SignupData) {
       sameSite: "lax",
       maxAge: 60 * 60 * 24 * 7, // 7 days
     })
-
-    if (typeof window !== "undefined") {
-      localStorage.setItem("auth_token", token)
-      localStorage.setItem("user_data", JSON.stringify(userData))
-    }
 
     console.log("[v0] Signup process completed successfully!")
 
@@ -227,10 +240,12 @@ export async function signupUser(data: SignupData) {
       userId,
       clientId: clientData.id || clientData.data?.id,
       user: {
-        id: userData.id,
-        email: userData.email,
-        roles: ["admin"],
-        status: "active",
+        id: authenticatedUserData.id,
+        email: authenticatedUserData.email,
+        firstName: authenticatedUserData.firstName,
+        lastName: authenticatedUserData.lastName,
+        roles: authenticatedUserData.roles || ["custom"],
+        status: authenticatedUserData.status || "active",
       },
     }
   } catch (error: any) {
