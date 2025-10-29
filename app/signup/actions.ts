@@ -1,10 +1,12 @@
 "use server"
 
 import { cookies } from "next/headers"
+import { randomBytes } from "crypto"
 
 const normalize = (u?: string) => (u ? u.replace(/\/$/, "") : "")
 const API_BASE_URL = `${normalize(process.env.NEXT_PUBLIC_API_URL || "https://35.184.98.9:4000")}/api`
 const TENANT_ID = process.env.NEXT_PUBLIC_TENANT_ID || "aa1287f6-06af-45b7-a905-8c57363565c2"
+const APP_URL = process.env.NEXT_PUBLIC_EBANKING_URL || "http://localhost:3000"
 
 interface SignupData {
   fullName: string
@@ -100,41 +102,11 @@ export async function signupUser(data: SignupData) {
 
     console.log("[v0] Auth account created successfully")
 
-    console.log("[v0] Step 2: Sending email verification...")
+    console.log("[v0] Step 2: Sending email verification via Resend...")
 
-    const verificationPayload = {
-      email: String(data.email),
-      tenantId: String(TENANT_ID),
-    }
+    const verificationToken = randomBytes(32).toString("hex")
 
-    console.log("[v0] Verification payload:", JSON.stringify(verificationPayload))
-
-    const verificationResponse = await fetch(`${API_BASE_URL}/auth/send-email-address-verification-email`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify(verificationPayload),
-    })
-
-    console.log("[v0] Email verification response status:", verificationResponse.status)
-    const verificationResponseText = await verificationResponse.text()
-    console.log("[v0] Email verification response body:", verificationResponseText)
-
-    if (!verificationResponse.ok) {
-      let errorData: any = {}
-      try {
-        errorData = JSON.parse(verificationResponseText)
-      } catch (e) {
-        errorData = { message: verificationResponseText || `HTTP ${verificationResponse.status}` }
-      }
-      console.error("[v0] Failed to send verification email:", errorData)
-      throw new Error(errorData.message || "Erreur lors de l'envoi de l'email de vérification")
-    }
-
-    console.log("[v0] Verification email sent successfully")
-
+    // Store signup data with verification token
     const cookieStore = await cookies()
     cookieStore.set(
       "pending_signup_data",
@@ -144,6 +116,8 @@ export async function signupUser(data: SignupData) {
         phone: data.phone,
         address: data.address,
         codeClient: codeClient,
+        token: token,
+        verificationToken: verificationToken,
       }),
       {
         httpOnly: true,
@@ -152,6 +126,29 @@ export async function signupUser(data: SignupData) {
         maxAge: 60 * 60 * 24, // 24 hours
       },
     )
+
+    // Send verification email via our Next.js API route
+    const emailResponse = await fetch(`${APP_URL}/api/send-verification-email`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        email: data.email,
+        token: verificationToken,
+      }),
+    })
+
+    console.log("[v0] Email API response status:", emailResponse.status)
+    const emailResponseData = await emailResponse.json()
+    console.log("[v0] Email API response:", emailResponseData)
+
+    if (!emailResponse.ok) {
+      console.error("[v0] Failed to send verification email:", emailResponseData)
+      throw new Error(emailResponseData.message || "Erreur lors de l'envoi de l'email de vérification")
+    }
+
+    console.log("[v0] Verification email sent successfully via Resend")
 
     console.log("[v0] Signup process completed - awaiting email verification")
 
