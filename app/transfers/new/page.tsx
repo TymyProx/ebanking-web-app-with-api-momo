@@ -671,40 +671,57 @@ export default function NewTransferPage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-5">
-              <div className="space-y-3">
-                <Label htmlFor="amount" className="text-base font-semibold">
-                  Montant *
-                </Label>
-                <Input
-                  id="amount"
-                  type="number"
-                  value={amount}
-                  onChange={handleAmountChange}
-                  placeholder="0"
-                  min="1"
-                  required
-                  className={`h-12 text-lg border-2 transition-all duration-200 ${
-                    amountError
-                      ? "border-destructive focus:border-destructive hover:border-destructive"
-                      : "hover:border-orange-500/50 focus:border-orange-500"
-                  }`}
-                />
-                {amountError && (
-                  <Alert variant="destructive" className="border-l-4">
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertDescription className="text-sm">{amountError}</AlertDescription>
-                  </Alert>
-                )}
-                {selectedAccountData && (
-                  <div className="p-3 rounded-lg bg-muted/50 border">
-                    <p className="text-sm font-medium">
-                      💰 Solde disponible:{" "}
-                      <span className="text-primary">
-                        {formatCurrency(selectedAccountData.balance, selectedAccountData.currency)}
-                      </span>
-                    </p>
-                  </div>
-                )}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div className="space-y-3">
+                  <Label htmlFor="amount" className="text-base font-semibold">
+                    Montant *
+                  </Label>
+                  <Input
+                    id="amount"
+                    type="number"
+                    value={amount}
+                    onChange={handleAmountChange}
+                    placeholder="0"
+                    min="1"
+                    required
+                    className={`h-12 text-lg border-2 transition-all duration-200 ${
+                      amountError
+                        ? "border-destructive focus:border-destructive hover:border-destructive"
+                        : "hover:border-orange-500/50 focus:border-orange-500"
+                    }`}
+                  />
+                  {amountError && (
+                    <Alert variant="destructive" className="border-l-4">
+                      <AlertCircle className="h-4 w-4" />
+                      <AlertDescription className="text-sm">{amountError}</AlertDescription>
+                    </Alert>
+                  )}
+                  {selectedAccountData && (
+                    <div className="p-3 rounded-lg bg-muted/50 border">
+                      <p className="text-sm font-medium">
+                        💰 Solde disponible:{" "}
+                        <span className="text-primary">
+                          {formatCurrency(selectedAccountData.balance, selectedAccountData.currency)}
+                        </span>
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                <div className="space-y-3">
+                  <Label htmlFor="transferDate" className="text-base font-semibold">
+                    Date d'exécution *
+                  </Label>
+                  <Input
+                    id="transferDate"
+                    type="date"
+                    value={transferDate}
+                    onChange={(e) => setTransferDate(e.target.value)}
+                    min={new Date().toISOString().split("T")[0]}
+                    required
+                    className="h-12 border-2 hover:border-orange-500/50 focus:border-orange-500 transition-all duration-200"
+                  />
+                </div>
               </div>
 
               <div className="space-y-3">
@@ -719,21 +736,6 @@ export default function NewTransferPage() {
                   rows={3}
                   required
                   className="border-2 hover:border-orange-500/50 focus:border-orange-500 transition-all duration-200 resize-none"
-                />
-              </div>
-
-              <div className="space-y-3">
-                <Label htmlFor="transferDate" className="text-base font-semibold">
-                  Date d'exécution *
-                </Label>
-                <Input
-                  id="transferDate"
-                  type="date"
-                  value={transferDate}
-                  onChange={(e) => setTransferDate(e.target.value)}
-                  min={new Date().toISOString().split("T")[0]}
-                  required
-                  className="h-12 border-2 hover:border-orange-500/50 focus:border-orange-500 transition-all duration-200"
                 />
               </div>
             </CardContent>
