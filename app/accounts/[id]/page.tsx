@@ -39,8 +39,8 @@ interface Account {
   balance: number
   availableBalance: number
   currency: string
-  type: string //"Courant" | "Épargne" | "Devise"
-  status: string //"Actif" | "Bloqué" | "Fermé"
+  type: string
+  status: string
   iban: string
   openingDate: string
   branch: string

@@ -4,8 +4,9 @@ import { z } from "zod"
 import { cookies } from "next/headers"
 import { revalidatePath } from "next/cache"
 
-const API_BASE_URL = process.env.API_BASE_URL
-const TENANT_ID = process.env.TENANT_ID
+const normalize = (u?: string) => (u ? u.replace(/\/$/, "") : "")
+const API_BASE_URL = `${normalize(process.env.NEXT_PUBLIC_API_URL || "https://35.184.98.9:4000")}/api`
+const TENANT_ID = process.env.NEXT_PUBLIC_TENANT_ID || "aa1287f6-06af-45b7-a905-8c57363565c2"
 
 // Schéma de validation pour les virements
 const transferSchema = z
@@ -188,11 +189,11 @@ export async function validateOTP(prevState: any, formData: FormData) {
 function getTransactionType(beneficiaryType: string): string {
   switch (beneficiaryType) {
     case "BNG-BNG":
-      return "INTERNAL_TRANSFER"
+      return "INTERNAL" // Was "INTERNAL_TRANSFER" (17 chars)
     case "BNG-CONFRERE":
-      return "DOMESTIC_TRANSFER"
+      return "DOMESTIC" // Was "DOMESTIC_TRANSFER" (17 chars)
     case "BNG-INTERNATIONAL":
-      return "INTERNATIONAL_TRANSFER"
+      return "INTERNATIONAL" // Was "INTERNATIONAL_TRANSFER" (22 chars)
     default:
       return "TRANSFER"
   }
@@ -365,6 +366,31 @@ export async function executeTransfer(prevState: any, formData: FormData) {
     const validatedData = transferSchema.parse(cleanedData)
     const transferAmount = Number.parseFloat(validatedData.amount)
 
+    const cookieToken = (await cookies()).get("token")?.value
+    const usertoken = cookieToken
+
+    let sourceAccountData: any = null
+    let ribClient = ""
+    try {
+      const accountResponse = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/compte/${validatedData.sourceAccount}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${usertoken}`,
+        },
+      })
+
+      if (accountResponse.ok) {
+        const accountDataResponse = await accountResponse.json()
+        sourceAccountData = accountDataResponse.data || accountDataResponse
+        // Construire le RIB client (concaténation de codeBanque, codeAgence, accountNumber, cleRib)
+        ribClient = `${sourceAccountData.codeBanque || ""}${sourceAccountData.codeAgence || ""}${sourceAccountData.accountNumber || ""}${sourceAccountData.cleRib || ""}`
+        console.log("[v0] Source account RIB constructed:", ribClient)
+      }
+    } catch (error) {
+      console.error("[v0] Error fetching source account details:", error)
+    }
+
     const debitResult = await debitAccountBalance(validatedData.sourceAccount, transferAmount)
 
     if (!debitResult.success) {
@@ -374,28 +400,52 @@ export async function executeTransfer(prevState: any, formData: FormData) {
       }
     }
 
-    const transactionId = `TXN_${Date.now()}_${Math.floor(Math.random() * 1000)
+    const timestamp = Date.now().toString()
+    const random = Math.floor(Math.random() * 1000000)
       .toString()
-      .padStart(3, "0")}`
+      .padStart(6, "0")
+    // requestID: max 14 caractères - format: REQ + 11 chiffres
+    const requestID = `REQ${timestamp.slice(-8)}${random.slice(0, 3)}`.substring(0, 14)
+    // referenceOperation: max 16 caractères - format: TXN + 13 chiffres
+    const referenceOperation = `TXN${timestamp.slice(-10)}${random.slice(0, 3)}`.substring(0, 16)
+    console.log("[v0] Generated requestID:", requestID, "(length:", requestID.length, ")")
+    console.log("[v0] Generated referenceOperation:", referenceOperation, "(length:", referenceOperation.length, ")")
 
-    let txnType = "TRANSFER"
-    let finalBeneficiaryId = validatedData.beneficiaryId
-    let creditAccount = ""
+    let nomBeneficiaire = ""
+    let ribBeneficiaire = ""
 
     if (validatedData.transferType === "account-to-account") {
-      // Pour les virements compte à compte : beneficiaryId = ID du compte à créditer
-      txnType = "INTERNAL_TRANSFER"
-      finalBeneficiaryId = validatedData.targetAccount
-      creditAccount = validatedData.targetAccount || ""
-
-      // Crédit automatique du compte destinataire pour les virements internes
+      // Pour les virements compte à compte
       if (validatedData.targetAccount) {
         console.log(`[v0] Crédit automatique du compte destinataire: ${validatedData.targetAccount}`)
+
+        // Récupérer les informations du compte destinataire
+        try {
+          const targetAccountResponse = await fetch(
+            `${API_BASE_URL}/tenant/${TENANT_ID}/compte/${validatedData.targetAccount}`,
+            {
+              method: "GET",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${usertoken}`,
+              },
+            },
+          )
+
+          if (targetAccountResponse.ok) {
+            const targetAccountData = await targetAccountResponse.json()
+            const targetAccount = targetAccountData.data || targetAccountData
+            nomBeneficiaire = targetAccount.accountName || ""
+            ribBeneficiaire = `${targetAccount.codeBanque || ""}${targetAccount.codeAgence || ""}${targetAccount.accountNumber || ""}${targetAccount.cleRib || ""}`
+          }
+        } catch (error) {
+          console.error("[v0] Error fetching target account details:", error)
+        }
+
         const creditResult = await creditAccountBalance(validatedData.targetAccount, transferAmount)
 
         if (!creditResult.success) {
           console.log("[v0] Erreur lors du crédit, restauration du solde source")
-          // Restaurer le solde du compte source en cas d'erreur
           await debitAccountBalance(validatedData.sourceAccount, -transferAmount)
           return {
             success: false,
@@ -406,7 +456,7 @@ export async function executeTransfer(prevState: any, formData: FormData) {
         console.log(`[v0] Compte destinataire crédité avec succès - Nouveau solde: ${creditResult.newBalance}`)
       }
     } else if (validatedData.beneficiaryId) {
-      // Pour les virements compte à bénéficiaire : beneficiaryId = numéro de compte du bénéficiaire
+      // Pour les virements compte à bénéficiaire
       console.log(`[v0] Récupération des informations du bénéficiaire: ${validatedData.beneficiaryId}`)
       const beneficiary = await getBeneficiaryById(validatedData.beneficiaryId)
 
@@ -419,30 +469,62 @@ export async function executeTransfer(prevState: any, formData: FormData) {
         }
       }
 
-      txnType = getTransactionType(beneficiary.typeBeneficiary || "BNG-BNG")
-      finalBeneficiaryId = validatedData.beneficiaryId
-      creditAccount = beneficiary.accountNumber // Utiliser le accountNumber du bénéficiaire
-      console.log(`[v0] Bénéficiaire trouvé - accountNumber: ${creditAccount}`)
+      nomBeneficiaire = beneficiary.name || ""
+      ribBeneficiaire = `${beneficiary.bankCode}${beneficiary.codagence}${beneficiary.accountNumber}${beneficiary.clerib}`
+      console.log(`[v0] Bénéficiaire trouvé - nomBeneficiaire: ${nomBeneficiaire}, ribBeneficiaire: ${ribBeneficiaire}`)
     }
 
+    let clientId = ""
+    let nomClient = ""
+    try {
+      const meResponse = await fetch(`${API_BASE_URL}/auth/me`, {
+        headers: {
+          Authorization: `Bearer ${usertoken}`,
+        },
+      })
+      if (meResponse.ok) {
+        const userData = await meResponse.json()
+        clientId = userData.id || ""
+        nomClient = userData.fullName || userData.name || ""
+      }
+    } catch (error) {
+      console.error("[v0] Erreur lors de la récupération du clientId:", error)
+    }
+
+    const currentDate = new Date().toISOString()
     const apiData = {
       data: {
-        txnId: transactionId,
-        accountId: validatedData.sourceAccount,
-        txnType: txnType,
-        amount: validatedData.amount,
-        valueDate: new Date(validatedData.transferDate).toISOString(),
+        affiliateid: "BNG",
+        stepflow: 0,
+        montantOperation: validatedData.amount,
+        requestID: requestID,
+        ribClient: ribClient,
+        dateOrdre: currentDate,
+        nomClient: nomClient,
         status: "PENDING",
+        referenceOperation: referenceOperation,
+        dateReception: currentDate,
+        dateExecution: new Date(validatedData.transferDate).toISOString(),
+        dateNotification: currentDate,
+        referencePaiement: referenceOperation,
+        nomBeneficiaire: nomBeneficiaire,
+        ribBeneficiaire: ribBeneficiaire,
+        commentnotes: validatedData.purpose,
+        productCode: "",
         description: validatedData.purpose,
-        beneficiaryId: finalBeneficiaryId,
-        creditAccount: creditAccount,
+        clientId: clientId,
       },
     }
 
-    const cookieToken = (await cookies()).get("token")?.value
-    const usertoken = cookieToken
+    const transactionUrl = `${API_BASE_URL}/tenant/${TENANT_ID}/epayments`
+    console.log("[v0] ===== EPAYMENT CREATION DEBUG =====")
+    console.log("[v0] Transaction URL:", transactionUrl)
+    console.log("[v0] API_BASE_URL:", API_BASE_URL)
+    console.log("[v0] TENANT_ID:", TENANT_ID)
+    console.log("[v0] Request body:", JSON.stringify(apiData, null, 2))
+    console.log("[v0] ========================================")
 
-    const response = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/transaction`, {
+    const response = await fetch(transactionUrl, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -451,23 +533,40 @@ export async function executeTransfer(prevState: any, formData: FormData) {
       body: JSON.stringify(apiData),
     })
 
+    console.log("[v0] Epayment response status:", response.status)
+    console.log("[v0] Epayment response status text:", response.statusText)
+
     if (!response.ok) {
       console.log("[v0] Erreur API, restauration du solde disponible")
-      await debitAccountBalance(validatedData.sourceAccount, -transferAmount) // Montant négatif pour créditer
 
-      // Si c'était un virement interne et que le destinataire avait été crédité, le débiter aussi
+      const responseText = await response.text()
+      console.log("[v0] Error response body:", responseText)
+
+      await debitAccountBalance(validatedData.sourceAccount, -transferAmount)
+
       if (validatedData.transferType === "account-to-account" && validatedData.targetAccount) {
-        await debitAccountBalance(validatedData.targetAccount, transferAmount) // Débiter le montant crédité
+        await debitAccountBalance(validatedData.targetAccount, transferAmount)
       }
 
-      const errorData = await response.json().catch(() => ({}))
+      let errorMessage = `❌ Erreur API: ${response.status} ${response.statusText}`
+
+      try {
+        const errorData = JSON.parse(responseText)
+        errorMessage = errorData.message || errorMessage
+      } catch (e) {
+        if (responseText) {
+          errorMessage = `❌ ${responseText}`
+        }
+      }
+
       return {
         success: false,
-        error: errorData.message || `❌ Erreur API: ${response.status} ${response.statusText}`,
+        error: errorMessage,
       }
     }
 
     const result = await response.json()
+    console.log("[v0] Epayment created successfully:", result)
 
     let successMessage = `✅ Virement de ${new Intl.NumberFormat("fr-FR").format(transferAmount)} GNF effectué avec succès.`
 
@@ -478,7 +577,7 @@ export async function executeTransfer(prevState: any, formData: FormData) {
     }
 
     console.log(
-      `[AUDIT] Virement exécuté avec débit immédiat - ID: ${transactionId}, Type: ${validatedData.transferType}, Montant: ${validatedData.amount} GNF, Compte source: ${validatedData.sourceAccount}, BeneficiaryId: ${finalBeneficiaryId}, CreditAccount: ${creditAccount}, Nouveau solde disponible: ${debitResult.newBalance} à ${new Date().toISOString()}`,
+      `[AUDIT] Virement exécuté avec débit immédiat - RequestID: ${requestID}, Type: ${validatedData.transferType}, Montant: ${validatedData.amount} GNF, Compte source: ${validatedData.sourceAccount}, Bénéficiaire: ${nomBeneficiaire}, RIB Bénéficiaire: ${ribBeneficiaire}, Nouveau solde disponible: ${debitResult.newBalance} à ${new Date().toISOString()}`,
     )
 
     revalidatePath("/transfers/new")
@@ -487,7 +586,7 @@ export async function executeTransfer(prevState: any, formData: FormData) {
     return {
       success: true,
       message: successMessage,
-      transactionId,
+      transactionId: referenceOperation,
       amount: transferAmount,
       executedAt: new Date().toISOString(),
       apiResponse: result,
@@ -513,7 +612,6 @@ export async function executeTransfer(prevState: any, formData: FormData) {
   }
 }
 
-// Action pour vérifier la disponibilité d'un bénéficiaire
 export async function validateBeneficiary(accountNumber: string, bankCode: string) {
   try {
     // Simulation d'une vérification auprès de la banque destinataire
@@ -542,7 +640,6 @@ export async function validateBeneficiary(accountNumber: string, bankCode: strin
   }
 }
 
-// Action pour calculer les frais de virement
 export async function calculateTransferFees(beneficiaryType: string, amount: number) {
   try {
     let fee = 0
@@ -577,7 +674,6 @@ export async function getTransactions(): Promise<{ data: any[] }> {
   const usertoken = cookieToken
 
   if (!usertoken) {
-    //console.log("[v0] Token d'authentification manquant, retour de données de test")
     return {
       data: [
         {
@@ -612,20 +708,29 @@ export async function getTransactions(): Promise<{ data: any[] }> {
   }
 
   try {
-    //console.log("[v0] Tentative de récupération des transactions...")
-    //console.log("[v0] URL:", `${API_BASE_URL}/tenant/${TENANT_ID}/transaction`)
+    let clientId = ""
+    try {
+      const meResponse = await fetch(`${API_BASE_URL}/auth/me`, {
+        headers: {
+          Authorization: `Bearer ${usertoken}`,
+        },
+      })
+      if (meResponse.ok) {
+        const userData = await meResponse.json()
+        clientId = userData.id || ""
+      }
+    } catch (error) {
+      console.error("[v0] Error fetching user info:", error)
+    }
 
-    const response = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/transaction`, {
+    const response = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/transactions`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${usertoken}`,
       },
-      cache: "no-store", // Always fetch fresh data
+      cache: "no-store",
     })
-
-    //console.log("[v0] Statut de la réponse:", response.status)
-    //console.log("[v0] Headers de la réponse:", Object.fromEntries(response.headers.entries()))
 
     if (!response.ok) {
       if (response.status === 401) {
@@ -641,24 +746,6 @@ export async function getTransactions(): Promise<{ data: any[] }> {
               status: "COMPLETED",
               description: "Virement vers compte épargne",
             },
-            {
-              txnId: "TXN_1734538022780_002",
-              accountId: "1",
-              txnType: "DEBIT",
-              amount: "75000",
-              valueDate: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-              status: "COMPLETED",
-              description: "Paiement facture électricité",
-            },
-            {
-              txnId: "TXN_1734451622780_003",
-              accountId: "2",
-              txnType: "CREDIT",
-              amount: "500000",
-              valueDate: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-              status: "COMPLETED",
-              description: "Dépôt de salaire",
-            },
           ],
         }
       }
@@ -671,41 +758,6 @@ export async function getTransactions(): Promise<{ data: any[] }> {
       } else {
         const errorText = await response.text()
         console.error("[v0] Réponse non-JSON:", errorText)
-
-        if (errorText.includes("only public URLs are supported")) {
-          //console.log("[v0] API nécessite une URL publique, retour de données de test")
-          return {
-            data: [
-              {
-                txnId: "TXN_1734624422780_001",
-                accountId: "1",
-                txnType: "CREDIT",
-                amount: "150000",
-                valueDate: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-                status: "COMPLETED",
-                description: "Virement vers compte épargne",
-              },
-              {
-                txnId: "TXN_1734538022780_002",
-                accountId: "1",
-                txnType: "DEBIT",
-                amount: "75000",
-                valueDate: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-                status: "COMPLETED",
-                description: "Paiement facture électricité",
-              },
-              {
-                txnId: "TXN_1734451622780_003",
-                accountId: "2",
-                txnType: "CREDIT",
-                amount: "500000",
-                valueDate: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-                status: "COMPLETED",
-                description: "Dépôt de salaire",
-              },
-            ],
-          }
-        }
       }
       return { data: [] }
     }
@@ -714,56 +766,27 @@ export async function getTransactions(): Promise<{ data: any[] }> {
     if (!contentType || !contentType.includes("application/json")) {
       const responseText = await response.text()
       console.error("[v0] Réponse non-JSON reçue:", responseText)
-
-      if (responseText.includes("only public URLs are supported")) {
-        //console.log("[v0] API nécessite une URL publique, retour de données de test")
-        return {
-          data: [
-            {
-              txnId: "TXN_1734624422780_001",
-              accountId: "1",
-              txnType: "CREDIT",
-              amount: "150000",
-              valueDate: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-              status: "COMPLETED",
-              description: "Virement vers compte épargne",
-            },
-            {
-              txnId: "TXN_1734538022780_002",
-              accountId: "1",
-              txnType: "DEBIT",
-              amount: "75000",
-              valueDate: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-              status: "COMPLETED",
-              description: "Paiement facture électricité",
-            },
-            {
-              txnId: "TXN_1734451622780_003",
-              accountId: "2",
-              txnType: "CREDIT",
-              amount: "500000",
-              valueDate: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-              status: "COMPLETED",
-              description: "Dépôt de salaire",
-            },
-          ],
-        }
-      }
       return { data: [] }
     }
 
     const data = await response.json()
-    //console.log("[v0] Données reçues:", data)
 
-    // Retourne la réponse sous forme de tableau dans un objet data
+    let transactions = []
     if (Array.isArray(data.rows)) {
-      return { data: data.rows }
+      transactions = data.rows
+    } else if (Array.isArray(data)) {
+      transactions = data
+    } else if (data.data) {
+      transactions = Array.isArray(data.data) ? data.data : [data.data]
     }
-    return { data: Array.isArray(data) ? data : [data] }
+
+    if (clientId) {
+      transactions = transactions.filter((txn: any) => txn.clientId === clientId)
+    }
+
+    return { data: transactions }
   } catch (error) {
     console.error("[v0] Erreur lors de la récupération des transactions:", error)
-
-    //console.log("[v0] Retour de données de test suite à l'erreur de connexion")
     return {
       data: [
         {
@@ -774,24 +797,6 @@ export async function getTransactions(): Promise<{ data: any[] }> {
           valueDate: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
           status: "COMPLETED",
           description: "Virement vers compte épargne",
-        },
-        {
-          txnId: "TXN_1734538022780_002",
-          accountId: "1",
-          txnType: "DEBIT",
-          amount: "75000",
-          valueDate: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-          status: "COMPLETED",
-          description: "Paiement facture électricité",
-        },
-        {
-          txnId: "TXN_1734451622780_003",
-          accountId: "2",
-          txnType: "CREDIT",
-          amount: "500000",
-          valueDate: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-          status: "COMPLETED",
-          description: "Dépôt de salaire",
         },
       ],
     }

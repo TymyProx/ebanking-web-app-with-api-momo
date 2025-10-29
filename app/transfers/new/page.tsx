@@ -13,11 +13,10 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { ArrowRight, Plus, User, Building, Check, AlertCircle } from "lucide-react"
-import BeneficiaryForm from "@/components/beneficiary-form"
 import { useActionState } from "react"
+import Link from "next/link"
 
 // Types
 interface Beneficiary {
@@ -604,34 +603,17 @@ export default function NewTransferPage() {
                     </div>
                     <span>Bénéficiaire</span>
                   </div>
-                  <Dialog open={isDialogOpen} onOpenChange={handleDialogClose}>
-                    <DialogTrigger asChild>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="flex items-center space-x-2 border-2 hover:border-primary hover:bg-primary/5 transition-all duration-200 bg-transparent"
-                      >
-                        <Plus className="h-4 w-4" />
-                        <span>Nouveau</span>
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent className="sm:max-w-[500px]">
-                      <DialogHeader>
-                        <DialogTitle>Ajouter un bénéficiaire</DialogTitle>
-                      </DialogHeader>
-
-                      <BeneficiaryForm
-                        successMessage={beneficiaryMessage?.type === "success" ? beneficiaryMessage.text : undefined}
-                        errorMessage={beneficiaryMessage?.type === "error" ? beneficiaryMessage.text : undefined}
-                        onMessageClear={() => {
-                          setBeneficiaryMessage(null)
-                        }}
-                        onSubmit={handleAddBeneficiary}
-                        onCancel={() => setIsDialogOpen(false)}
-                        isPending={isAddBeneficiaryPending}
-                      />
-                    </DialogContent>
-                  </Dialog>
+                  <Link href="/transfers/beneficiaries">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="flex items-center space-x-2 border-2 hover:border-primary hover:bg-primary/5 transition-all duration-200 bg-transparent"
+                    >
+                      <Plus className="h-4 w-4" />
+                      <span>Nouveau</span>
+                    </Button>
+                  </Link>
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">

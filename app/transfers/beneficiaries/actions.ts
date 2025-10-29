@@ -36,8 +36,9 @@ interface GetBeneficiariesResponse {
   count: number
 }
 
-const API_BASE_URL = process.env.API_BASE_URL
-const TENANT_ID = process.env.TENANT_ID
+const normalize = (u?: string) => (u ? u.replace(/\/$/, "") : "")
+const API_BASE_URL = `${normalize(process.env.NEXT_PUBLIC_API_URL || "https://35.184.98.9:4000")}/api`
+const TENANT_ID = process.env.NEXT_PUBLIC_TENANT_ID || "aa1287f6-06af-45b7-a905-8c57363565c2"
 
 async function getCurrentClientId(): Promise<string> {
   const cookieToken = (await cookies()).get("token")?.value
@@ -672,4 +673,31 @@ function getBankCode(bankName: string, type: string): string {
   }
 
   return bankCodes[bankName] || bankName.substring(0, 4).toLowerCase()
+}
+
+export async function getBanks() {
+  const cookieToken = (await cookies()).get("token")?.value
+  const usertoken = cookieToken
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/banque`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${usertoken}`,
+      },
+      cache: "no-store",
+    })
+
+    if (!response.ok) {
+      console.error(`Erreur API: ${response.status} ${response.statusText}`)
+      return []
+    }
+
+    const data = await response.json()
+    return data.rows || []
+  } catch (error) {
+    console.error("Erreur lors de la récupération des banques:", error)
+    return []
+  }
 }

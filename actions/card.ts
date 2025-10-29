@@ -2,8 +2,9 @@
 
 import { cookies } from "next/headers"
 
-const BASE_URL = process.env.API_BASE_URL
-const TENANT_ID = process.env.TENANT_ID
+const normalize = (u?: string) => (u ? u.replace(/\/$/, "") : "")
+const BASE_URL = `${normalize(process.env.NEXT_PUBLIC_API_URL || "https://35.184.98.9:4000")}/api`
+const TENANT_ID = process.env.NEXT_PUBLIC_TENANT_ID || "aa1287f6-06af-45b7-a905-8c57363565c2"
 
 export type Card = {
   id: string
