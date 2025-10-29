@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { CheckCircle, AlertCircle } from "lucide-react"
+import { config } from "@/lib/config"
 
 interface BeneficiaryFormProps {
   isEdit?: boolean
@@ -62,8 +63,8 @@ export default function BeneficiaryForm({
   const loadBanks = async () => {
     try {
       setLoadingBanks(true)
-      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL
-      const TENANT_ID = process.env.NEXT_PUBLIC_TENANT_ID
+      const API_BASE_URL = config.API_BASE_URL
+      const TENANT_ID = config.TENANT_ID
       const token = localStorage.getItem("token")
 
       console.log("[v0] Loading banks for tenant:", TENANT_ID)
