@@ -4,6 +4,7 @@ import { useState, useEffect, useTransition } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
@@ -31,23 +32,32 @@ import {
   reactivateBeneficiary,
   getBeneficiaries,
   toggleBeneficiaryFavorite,
+  getBanks,
 } from "./actions"
 import { useActionState } from "react"
-import BeneficiaryForm from "@/components/beneficiary-form"
+import type React from "react"
+import { useRef } from "react"
 
 interface Beneficiary {
   id: string
   name: string
   account: string
   bank: string
-  type: string //\"BNG-BNG\" | \"BNG-CONFRERE\" | \"BNG-INTERNATIONAL\"
+  type: string
   favorite: boolean
   lastUsed: string
   addedDate: string
   iban?: string
   swiftCode?: string
   country?: string
-  status: number // Added status field to track active/inactive beneficiaries
+  status: number
+}
+
+interface Bank {
+  id: string
+  bankName: string
+  swiftCode: string
+  codeBank: string
 }
 
 export default function BeneficiariesPage() {
@@ -56,18 +66,24 @@ export default function BeneficiariesPage() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [editingBeneficiary, setEditingBeneficiary] = useState<Beneficiary | null>(null)
-  const [ribValidation, setRibValidation] = useState<{ isValid: boolean; message: string } | null>(null)
   const [beneficiaries, setBeneficiaries] = useState<Beneficiary[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isPending, startTransition] = useTransition()
+
+  const [selectedType, setSelectedType] = useState("")
+  const [selectedBank, setSelectedBank] = useState("")
+  const [banks, setBanks] = useState<Bank[]>([])
+  const [selectedBankCode, setSelectedBankCode] = useState("")
+  const [loadingBanks, setLoadingBanks] = useState(false)
+  const [accountNumberError, setAccountNumberError] = useState<string | null>(null)
+  const formRef = useRef<HTMLFormElement>(null)
+  const editFormRef = useRef<HTMLFormElement>(null)
 
   const [addState, addAction, isAddPending] = useActionState(addBeneficiary, null)
   const [updateState, updateAction, isUpdatePending] = useActionState(updateBeneficiary, null)
   const [deactivateState, deactivateAction, isDeactivatePending] = useActionState(deactivateBeneficiary, null)
   const [reactivateState, reactivateAction, isReactivatePending] = useActionState(reactivateBeneficiary, null)
 
-  const [addMessage, setAddMessage] = useState<string | null>(null)
-  const [updateMessage, setUpdateMessage] = useState<string | null>(null)
   const [showDeactivateSuccess, setShowDeactivateSuccess] = useState(false)
   const [showReactivateSuccess, setShowReactivateSuccess] = useState(false)
   const [showAddSuccess, setShowAddSuccess] = useState(false)
@@ -77,7 +93,6 @@ export default function BeneficiariesPage() {
     setIsLoading(true)
     try {
       const apiBeneficiaries = await getBeneficiaries()
-      //console.log("ApiBeneficiaire", apiBeneficiaries)
       const transformedBeneficiaries: Beneficiary[] = apiBeneficiaries.map((apiB) => ({
         id: apiB.id,
         name: apiB.name,
@@ -89,7 +104,6 @@ export default function BeneficiariesPage() {
         addedDate: new Date(apiB.createdAt).toLocaleDateString("fr-FR"),
         status: apiB.status, // Include status from API response
       }))
-      //console.log("Transformed Beneficiaries", transformedBeneficiaries)
       setBeneficiaries(transformedBeneficiaries)
     } catch (error) {
       console.error("Erreur lors du chargement des bénéficiaires:", error)
@@ -97,6 +111,34 @@ export default function BeneficiariesPage() {
       setIsLoading(false)
     }
   }
+
+  const loadBanks = async () => {
+    try {
+      setLoadingBanks(true)
+      const banksData = await getBanks()
+      setBanks(banksData)
+    } catch (error) {
+      console.error("Erreur lors du chargement des banques:", error)
+      setBanks([])
+    } finally {
+      setLoadingBanks(false)
+    }
+  }
+
+  useEffect(() => {
+    if (selectedType === "BNG-CONFRERE") {
+      loadBanks()
+    }
+  }, [selectedType])
+
+  useEffect(() => {
+    if (selectedType === "BNG-BNG") {
+      setSelectedBank("Banque Nationale de Guinée")
+    } else if (selectedType !== "") {
+      setSelectedBank("")
+      setSelectedBankCode("")
+    }
+  }, [selectedType])
 
   useEffect(() => {
     loadBeneficiaries()
@@ -185,27 +227,113 @@ export default function BeneficiariesPage() {
     return matchesSearch && matchesFilter
   })
 
-  const resetForm = () => {
-    setRibValidation(null)
-    setAddMessage(null)
-    setUpdateMessage(null)
+  const validateAccountNumber = (value: string) => {
+    const digitsOnly = value.replace(/\D/g, "")
+
+    if (digitsOnly.length === 0) {
+      setAccountNumberError(null)
+      return
+    }
+
+    if (digitsOnly.length !== 10) {
+      setAccountNumberError("Le numéro de compte doit contenir exactement 10 chiffres")
+      return false
+    }
+
+    if (value !== digitsOnly) {
+      setAccountNumberError("Le numéro de compte ne doit contenir que des chiffres")
+      return false
+    }
+
+    setAccountNumberError(null)
+    return true
   }
 
-  const handleAddBeneficiary = async (formData: FormData) => {
+  const handleBankSelection = (bankName: string) => {
+    setSelectedBank(bankName)
+    const selectedBankData = banks.find((bank) => bank.bankName === bankName)
+    if (selectedBankData) {
+      setSelectedBankCode(selectedBankData.codeBank)
+    }
+  }
+
+  const resetForm = () => {
+    setSelectedType("")
+    setSelectedBank("")
+    setSelectedBankCode("")
+    setAccountNumberError(null)
+  }
+
+  const handleAddBeneficiary = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    const formData = new FormData(e.currentTarget)
+
+    if (selectedType !== "BNG-INTERNATIONAL") {
+      const accountNumber = formData.get("account") as string
+      if (!validateAccountNumber(accountNumber)) {
+        return
+      }
+    }
+
+    formData.set("type", selectedType)
+
+    if (selectedType === "BNG-BNG") {
+      formData.set("bank", "GNXXX")
+      formData.set("bankname", "Banque Nationale de Guinée")
+    } else if (selectedType === "BNG-CONFRERE") {
+      formData.set("bank", selectedBankCode)
+      formData.set("bankname", selectedBank)
+    } else {
+      const bankValue = selectedBank
+      formData.set("bank", bankValue)
+    }
+
+    if (selectedType === "BNG-CONFRERE" && selectedBankCode) {
+      formData.set("bankCode", selectedBankCode)
+    }
+
     startTransition(async () => {
       const result = await addAction(formData)
       if (result?.success) {
         setIsAddDialogOpen(false)
-        await loadBeneficiaries() // Force refresh the list immediately
+        await loadBeneficiaries()
         resetForm()
-      } else {
-        setAddMessage(result?.error || "Erreur lors de l'ajout du bénéficiaire.")
+        if (formRef.current) {
+          formRef.current.reset()
+        }
       }
     })
   }
 
-  const handleEditBeneficiary = async (formData: FormData) => {
+  const handleEditBeneficiary = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
     if (!editingBeneficiary) return
+
+    const formData = new FormData(e.currentTarget)
+
+    if (selectedType !== "BNG-INTERNATIONAL") {
+      const accountNumber = formData.get("account") as string
+      if (!validateAccountNumber(accountNumber)) {
+        return
+      }
+    }
+
+    formData.set("type", selectedType)
+
+    if (selectedType === "BNG-BNG") {
+      formData.set("bank", "GNXXX")
+      formData.set("bankname", "Banque Nationale de Guinée")
+    } else if (selectedType === "BNG-CONFRERE") {
+      formData.set("bank", selectedBankCode)
+      formData.set("bankname", selectedBank)
+    } else {
+      const bankValue = selectedBank
+      formData.set("bank", bankValue)
+    }
+
+    if (selectedType === "BNG-CONFRERE" && selectedBankCode) {
+      formData.set("bankCode", selectedBankCode)
+    }
 
     formData.append("id", editingBeneficiary.id)
     const apiBeneficiaries = await getBeneficiaries()
@@ -219,27 +347,9 @@ export default function BeneficiariesPage() {
       if (result?.success) {
         setIsEditDialogOpen(false)
         setEditingBeneficiary(null)
-        await loadBeneficiaries() // Force refresh the list immediately
+        await loadBeneficiaries()
         resetForm()
-      } else {
-        setUpdateMessage(result?.error || "Erreur lors de la modification du bénéficiaire.")
       }
-    })
-  }
-
-  const handleDeactivateBeneficiary = async (beneficiaryId: string) => {
-    startTransition(async () => {
-      const formData = new FormData()
-      formData.append("id", beneficiaryId)
-      await deactivateAction(formData)
-    })
-  }
-
-  const handleReactivateBeneficiary = async (beneficiaryId: string) => {
-    startTransition(async () => {
-      const formData = new FormData()
-      formData.append("id", beneficiaryId)
-      await reactivateAction(formData)
     })
   }
 
@@ -261,6 +371,8 @@ export default function BeneficiariesPage() {
 
   const openEditDialog = (beneficiary: Beneficiary) => {
     setEditingBeneficiary(beneficiary)
+    setSelectedType(beneficiary.type)
+    setSelectedBank(beneficiary.bank)
     setIsEditDialogOpen(true)
   }
 
@@ -291,8 +403,43 @@ export default function BeneficiariesPage() {
   }
 
   const handleFormSuccess = async () => {
-    //console.log("[v0] Form submitted successfully, refreshing list...")
     await loadBeneficiaries()
+  }
+
+  const handleDeactivateBeneficiary = async (id: string) => {
+    try {
+      const result = await deactivateAction(id)
+      if (result.success) {
+        setBeneficiaries((prev) => prev.map((b) => (b.id === id ? { ...b, status: 1 } : b)))
+        setShowDeactivateSuccess(true)
+        const timer = setTimeout(() => {
+          setShowDeactivateSuccess(false)
+        }, 5000)
+        return () => clearTimeout(timer)
+      } else {
+        console.error("Erreur lors de la désactivation du bénéficiaire:", result.error)
+      }
+    } catch (error) {
+      console.error("Erreur lors de la désactivation du bénéficiaire:", error)
+    }
+  }
+
+  const handleReactivateBeneficiary = async (id: string) => {
+    try {
+      const result = await reactivateAction(id)
+      if (result.success) {
+        setBeneficiaries((prev) => prev.map((b) => (b.id === id ? { ...b, status: 0 } : b)))
+        setShowReactivateSuccess(true)
+        const timer = setTimeout(() => {
+          setShowReactivateSuccess(false)
+        }, 5000)
+        return () => clearTimeout(timer)
+      } else {
+        console.error("Erreur lors de la réactivation du bénéficiaire:", result.error)
+      }
+    } catch (error) {
+      console.error("Erreur lors de la réactivation du bénéficiaire:", error)
+    }
   }
 
   return (
@@ -317,17 +464,158 @@ export default function BeneficiariesPage() {
               <DialogTitle>Ajouter un bénéficiaire</DialogTitle>
             </DialogHeader>
 
-            <BeneficiaryForm
-              successMessage={addState?.success ? "✅ Bénéficiaire ajouté avec succès." : undefined}
-              errorMessage={addState?.error}
-              onMessageClear={() => {
-                // Clear any local message states - the form component handles its own cleanup
-              }}
-              onSubmit={handleAddBeneficiary}
-              onCancel={() => setIsAddDialogOpen(false)}
-              isPending={isAddPending}
-              onSuccess={handleFormSuccess}
-            />
+            <form ref={formRef} onSubmit={handleAddBeneficiary} className="space-y-4">
+              {addState?.success && (
+                <Alert variant="default" className="border-green-200 bg-green-50">
+                  <CheckCircle className="h-4 w-4 text-green-600" />
+                  <AlertDescription className="text-green-800">Bénéficiaire ajouté avec succès</AlertDescription>
+                </Alert>
+              )}
+
+              {addState?.error && (
+                <Alert variant="destructive">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>{addState.error}</AlertDescription>
+                </Alert>
+              )}
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="name">Nom complet *</Label>
+                  <Input id="name" name="name" placeholder="Nom et prénom du bénéficiaire" required />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="type">Type de bénéficiaire *</Label>
+                  <Select value={selectedType} onValueChange={setSelectedType} required>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Sélectionnez le type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="BNG-BNG">Interne</SelectItem>
+                      <SelectItem value="BNG-CONFRERE">Confrère(Guinée)</SelectItem>
+                      <SelectItem value="BNG-INTERNATIONAL">International</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="account">
+                    {selectedType === "BNG-INTERNATIONAL" ? "IBAN *" : "Numéro de compte *"}
+                  </Label>
+                  <Input
+                    id="account"
+                    name="account"
+                    onChange={(e) => {
+                      if (selectedType !== "BNG-INTERNATIONAL") {
+                        validateAccountNumber(e.target.value)
+                      }
+                    }}
+                    placeholder={selectedType === "BNG-INTERNATIONAL" ? "FR76 1234 5678 9012 3456 78" : "1234567890"}
+                    maxLength={selectedType === "BNG-INTERNATIONAL" ? undefined : 10}
+                    pattern={selectedType === "BNG-INTERNATIONAL" ? undefined : "[0-9]{10}"}
+                    required
+                  />
+                  {accountNumberError && selectedType !== "BNG-INTERNATIONAL" && (
+                    <p className="text-sm text-red-600">{accountNumberError}</p>
+                  )}
+                  {selectedType !== "BNG-INTERNATIONAL" && (
+                    <p className="text-xs text-muted-foreground">10 chiffres uniquement, sans caractères spéciaux</p>
+                  )}
+                </div>
+
+                {selectedType !== "BNG-INTERNATIONAL" && selectedType !== "" && (
+                  <div className="space-y-2">
+                    <Label htmlFor="codeAgence">Code agence *</Label>
+                    <Input id="codeAgence" name="codeAgence" placeholder="Ex: 0001" required />
+                  </div>
+                )}
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="bank">Banque *</Label>
+                  {selectedType === "BNG-BNG" ? (
+                    <Input
+                      id="bank"
+                      name="bankname"
+                      value="Banque Nationale de Guinée"
+                      readOnly
+                      className="bg-gray-50"
+                    />
+                  ) : selectedType === "BNG-CONFRERE" ? (
+                    <Select name="bankname" value={selectedBank} onValueChange={handleBankSelection} required>
+                      <SelectTrigger>
+                        <SelectValue placeholder={loadingBanks ? "Chargement..." : "Sélectionnez une banque"} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {banks.map((bank) => (
+                          <SelectItem key={bank.id} value={bank.bankName}>
+                            {bank.bankName}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  ) : selectedType === "BNG-INTERNATIONAL" ? (
+                    <Input
+                      id="bank"
+                      name="bank"
+                      value={selectedBank}
+                      onChange={(e) => setSelectedBank(e.target.value)}
+                      placeholder="Saisissez le nom de la banque"
+                      className="bg-white"
+                      required
+                    />
+                  ) : null}
+                </div>
+
+                {selectedType === "BNG-CONFRERE" && selectedBankCode && (
+                  <div className="space-y-2">
+                    <Label htmlFor="codeBanque">Code Banque *</Label>
+                    <Input
+                      id="codeBanque"
+                      name="codeBanque"
+                      defaultValue={selectedBankCode}
+                      placeholder="Code banque"
+                      required
+                    />
+                  </div>
+                )}
+
+                {selectedType === "BNG-BNG" && (
+                  <div className="space-y-2">
+                    <Label htmlFor="codeBanque">Code Banque *</Label>
+                    <Input id="codeBanque" name="codeBanque" placeholder="Ex: GNXXX" required />
+                  </div>
+                )}
+
+                {selectedType !== "BNG-INTERNATIONAL" && selectedType !== "" && (
+                  <div className="space-y-2">
+                    <Label htmlFor="cleRib">Clé RIB *</Label>
+                    <Input id="cleRib" name="cleRib" placeholder="Ex: 89" maxLength={2} required />
+                  </div>
+                )}
+              </div>
+
+              <div className="flex justify-end space-x-2 pt-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsAddDialogOpen(false)}
+                  disabled={isAddPending}
+                >
+                  Annuler
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={isAddPending || (accountNumberError !== null && selectedType !== "BNG-INTERNATIONAL")}
+                >
+                  {isAddPending ? "Traitement..." : "Ajouter"}
+                </Button>
+              </div>
+            </form>
           </DialogContent>
         </Dialog>
       </div>
@@ -570,30 +858,165 @@ export default function BeneficiariesPage() {
             <DialogTitle>Modifier le bénéficiaire</DialogTitle>
           </DialogHeader>
 
-          <BeneficiaryForm
-            isEdit={true}
-            initialData={{
-              name: editingBeneficiary?.name,
-              account: editingBeneficiary?.account,
-              bank: editingBeneficiary?.bank,
-              type: editingBeneficiary?.type,
-              iban: editingBeneficiary?.iban,
-              swiftCode: editingBeneficiary?.swiftCode,
-              country: editingBeneficiary?.country,
-            }}
-            successMessage={updateState?.success ? "✅ Bénéficiaire modifié avec succès." : undefined}
-            errorMessage={updateState?.error}
-            onMessageClear={() => {
-              // Clear any local message states - the form component handles its own cleanup
-            }}
-            onSubmit={handleEditBeneficiary}
-            onCancel={() => {
-              setIsEditDialogOpen(false)
-              setEditingBeneficiary(null)
-            }}
-            isPending={isUpdatePending}
-            onSuccess={handleFormSuccess}
-          />
+          <form ref={editFormRef} onSubmit={handleEditBeneficiary} className="space-y-4">
+            {updateState?.success && (
+              <Alert variant="default" className="border-green-200 bg-green-50">
+                <CheckCircle className="h-4 w-4 text-green-600" />
+                <AlertDescription className="text-green-800">Bénéficiaire modifié avec succès</AlertDescription>
+              </Alert>
+            )}
+
+            {updateState?.error && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{updateState.error}</AlertDescription>
+              </Alert>
+            )}
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-name">Nom complet *</Label>
+                <Input
+                  id="edit-name"
+                  name="name"
+                  defaultValue={editingBeneficiary?.name}
+                  placeholder="Nom et prénom du bénéficiaire"
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="edit-type">Type de bénéficiaire *</Label>
+                <Select value={selectedType} onValueChange={setSelectedType} required>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Sélectionnez le type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="BNG-BNG">Interne</SelectItem>
+                    <SelectItem value="BNG-CONFRERE">Confrère(Guinée)</SelectItem>
+                    <SelectItem value="BNG-INTERNATIONAL">International</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-account">
+                  {selectedType === "BNG-INTERNATIONAL" ? "IBAN *" : "Numéro de compte *"}
+                </Label>
+                <Input
+                  id="edit-account"
+                  name="account"
+                  defaultValue={editingBeneficiary?.account}
+                  onChange={(e) => {
+                    if (selectedType !== "BNG-INTERNATIONAL") {
+                      validateAccountNumber(e.target.value)
+                    }
+                  }}
+                  placeholder={selectedType === "BNG-INTERNATIONAL" ? "FR76 1234 5678 9012 3456 78" : "1234567890"}
+                  maxLength={selectedType === "BNG-INTERNATIONAL" ? undefined : 10}
+                  pattern={selectedType === "BNG-INTERNATIONAL" ? undefined : "[0-9]{10}"}
+                  required
+                />
+                {accountNumberError && selectedType !== "BNG-INTERNATIONAL" && (
+                  <p className="text-sm text-red-600">{accountNumberError}</p>
+                )}
+              </div>
+
+              {selectedType !== "BNG-INTERNATIONAL" && selectedType !== "" && (
+                <div className="space-y-2">
+                  <Label htmlFor="edit-codeAgence">Code agence *</Label>
+                  <Input id="edit-codeAgence" name="codeAgence" placeholder="Ex: 0001" required />
+                </div>
+              )}
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-bank">Banque *</Label>
+                {selectedType === "BNG-BNG" ? (
+                  <Input
+                    id="edit-bank"
+                    name="bankname"
+                    value="Banque Nationale de Guinée"
+                    readOnly
+                    className="bg-gray-50"
+                  />
+                ) : selectedType === "BNG-CONFRERE" ? (
+                  <Select name="bankname" value={selectedBank} onValueChange={handleBankSelection} required>
+                    <SelectTrigger>
+                      <SelectValue placeholder={loadingBanks ? "Chargement..." : "Sélectionnez une banque"} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {banks.map((bank) => (
+                        <SelectItem key={bank.id} value={bank.bankName}>
+                          {bank.bankName}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                ) : selectedType === "BNG-INTERNATIONAL" ? (
+                  <Input
+                    id="edit-bank"
+                    name="bank"
+                    value={selectedBank}
+                    onChange={(e) => setSelectedBank(e.target.value)}
+                    placeholder="Saisissez le nom de la banque"
+                    className="bg-white"
+                    required
+                  />
+                ) : null}
+              </div>
+
+              {selectedType === "BNG-CONFRERE" && selectedBankCode && (
+                <div className="space-y-2">
+                  <Label htmlFor="edit-codeBanque">Code Banque *</Label>
+                  <Input
+                    id="edit-codeBanque"
+                    name="codeBanque"
+                    defaultValue={selectedBankCode}
+                    placeholder="Code banque"
+                    required
+                  />
+                </div>
+              )}
+
+              {selectedType === "BNG-BNG" && (
+                <div className="space-y-2">
+                  <Label htmlFor="edit-codeBanque">Code Banque *</Label>
+                  <Input id="edit-codeBanque" name="codeBanque" placeholder="Ex: GNXXX" required />
+                </div>
+              )}
+
+              {selectedType !== "BNG-INTERNATIONAL" && selectedType !== "" && (
+                <div className="space-y-2">
+                  <Label htmlFor="edit-cleRib">Clé RIB *</Label>
+                  <Input id="edit-cleRib" name="cleRib" placeholder="Ex: 89" maxLength={2} required />
+                </div>
+              )}
+            </div>
+
+            <div className="flex justify-end space-x-2 pt-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setIsEditDialogOpen(false)
+                  setEditingBeneficiary(null)
+                }}
+                disabled={isUpdatePending}
+              >
+                Annuler
+              </Button>
+              <Button
+                type="submit"
+                disabled={isUpdatePending || (accountNumberError !== null && selectedType !== "BNG-INTERNATIONAL")}
+              >
+                {isUpdatePending ? "Traitement..." : "Modifier"}
+              </Button>
+            </div>
+          </form>
         </DialogContent>
       </Dialog>
     </div>

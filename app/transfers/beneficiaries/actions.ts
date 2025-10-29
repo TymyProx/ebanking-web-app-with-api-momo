@@ -674,3 +674,30 @@ function getBankCode(bankName: string, type: string): string {
 
   return bankCodes[bankName] || bankName.substring(0, 4).toLowerCase()
 }
+
+export async function getBanks() {
+  const cookieToken = (await cookies()).get("token")?.value
+  const usertoken = cookieToken
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/banque`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${usertoken}`,
+      },
+      cache: "no-store",
+    })
+
+    if (!response.ok) {
+      console.error(`Erreur API: ${response.status} ${response.statusText}`)
+      return []
+    }
+
+    const data = await response.json()
+    return data.rows || []
+  } catch (error) {
+    console.error("Erreur lors de la récupération des banques:", error)
+    return []
+  }
+}
