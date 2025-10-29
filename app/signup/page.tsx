@@ -48,8 +48,11 @@ export default function SignupPage() {
       })
 
       if (result.success) {
-        // Redirect to dashboard after successful signup
-        router.push("/dashboard")
+        if (result.requiresVerification) {
+          router.push(`/auth/verify-email?email=${encodeURIComponent(result.email || email)}`)
+        } else {
+          router.push("/dashboard")
+        }
       } else {
         setError(result.message)
       }
