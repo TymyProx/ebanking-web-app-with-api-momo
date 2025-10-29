@@ -74,6 +74,7 @@ export default function BeneficiariesPage() {
   const [selectedBank, setSelectedBank] = useState("")
   const [banks, setBanks] = useState<Bank[]>([])
   const [selectedBankCode, setSelectedBankCode] = useState("")
+  const [selectedSwiftCode, setSelectedSwiftCode] = useState("")
   const [loadingBanks, setLoadingBanks] = useState(false)
   const [accountNumberError, setAccountNumberError] = useState<string | null>(null)
   const formRef = useRef<HTMLFormElement>(null)
@@ -254,6 +255,7 @@ export default function BeneficiariesPage() {
     const selectedBankData = banks.find((bank) => bank.bankName === bankName)
     if (selectedBankData) {
       setSelectedBankCode(selectedBankData.codeBank)
+      setSelectedSwiftCode(selectedBankData.swiftCode || "")
     }
   }
 
@@ -261,6 +263,7 @@ export default function BeneficiariesPage() {
     setSelectedType("")
     setSelectedBank("")
     setSelectedBankCode("")
+    setSelectedSwiftCode("")
     setAccountNumberError(null)
   }
 
@@ -577,8 +580,10 @@ export default function BeneficiariesPage() {
                     <Input
                       id="codeBanque"
                       name="codeBanque"
-                      defaultValue={selectedBankCode}
+                      value={selectedBankCode}
                       placeholder="Code banque"
+                      disabled
+                      className="bg-gray-50"
                       required
                     />
                   </div>
@@ -588,6 +593,20 @@ export default function BeneficiariesPage() {
                   <div className="space-y-2">
                     <Label htmlFor="codeBanque">Code Banque *</Label>
                     <Input id="codeBanque" name="codeBanque" placeholder="Ex: GNXXX" required />
+                  </div>
+                )}
+
+                {selectedType === "BNG-CONFRERE" && selectedBank && (
+                  <div className="space-y-2">
+                    <Label htmlFor="swiftCode">Code SWIFT</Label>
+                    <Input
+                      id="swiftCode"
+                      name="swiftCode"
+                      value={selectedSwiftCode}
+                      placeholder="Code SWIFT"
+                      disabled
+                      className="bg-gray-50"
+                    />
                   </div>
                 )}
 
@@ -975,8 +994,10 @@ export default function BeneficiariesPage() {
                   <Input
                     id="edit-codeBanque"
                     name="codeBanque"
-                    defaultValue={selectedBankCode}
+                    value={selectedBankCode}
                     placeholder="Code banque"
+                    disabled
+                    className="bg-gray-50"
                     required
                   />
                 </div>
@@ -986,6 +1007,20 @@ export default function BeneficiariesPage() {
                 <div className="space-y-2">
                   <Label htmlFor="edit-codeBanque">Code Banque *</Label>
                   <Input id="edit-codeBanque" name="codeBanque" placeholder="Ex: GNXXX" required />
+                </div>
+              )}
+
+              {selectedType === "BNG-CONFRERE" && selectedBank && (
+                <div className="space-y-2">
+                  <Label htmlFor="edit-swiftCode">Code SWIFT</Label>
+                  <Input
+                    id="edit-swiftCode"
+                    name="swiftCode"
+                    value={selectedSwiftCode}
+                    placeholder="Code SWIFT"
+                    disabled
+                    className="bg-gray-50"
+                  />
                 </div>
               )}
 
