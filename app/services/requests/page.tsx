@@ -12,7 +12,6 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import {
   BookOpen,
   CreditCard,
@@ -22,18 +21,21 @@ import {
   AlertCircle,
   Send,
   Eye,
-  Download,
-  Banknote,
   Shield,
-  Briefcase,
   Plus,
   Search,
-  MoreVertical,
-  Trash2,
 } from "lucide-react"
-import { submitCreditRequest, submitCheckbookRequest, getCheckbookRequest, getCreditRequest } from "./actions"
+import {
+  submitCreditRequest,
+  submitCheckbookRequest,
+  getCheckbookRequest,
+  getCreditRequest,
+  getDemandeCreditById,
+  getCommandeById,
+} from "./actions"
 import { useActionState } from "react"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { getAccounts } from "../../accounts/actions"
 
 const serviceTypes = [
   {
@@ -42,53 +44,21 @@ const serviceTypes = [
     icon: BookOpen,
     description: "Commander un nouveau carnet de chèques",
     category: "banking",
-    processingTime: "3-5 jours ouvrables",
-    cost: "Gratuit",
+
     requirements: ["Compte actif", "Pas de chèques impayés"],
   },
   {
-    id: "certificate",
-    name: "E-attestation bancaire",
-    icon: FileText,
-    description: "Attestation de compte ou de revenus",
-    category: "documents",
-    processingTime: "24-48 heures",
-    cost: "5,000 GNF",
-    requirements: ["Compte ouvert depuis 3 mois", "Justificatifs à jour"],
-  },
-  {
     id: "credit",
-    name: "Crédit",
+    name: "Demande de crédit",
     icon: CreditCard,
-    description: "Demande de crédit (personnel, immobilier, automobile, étudiant)",
+    description: "Demande de crédit (personnel, immobilier, etc...)",
     category: "credit",
-    processingTime: "3-30 jours ouvrables",
-    cost: "Gratuit",
+
     requirements: ["Revenus réguliers", "Garanties", "Dossier complet"],
-  },
-  {
-    id: "business_account",
-    name: "Compte professionnel",
-    icon: Briefcase,
-    description: "Ouverture de compte entreprise",
-    category: "business",
-    processingTime: "7-14 jours ouvrables",
-    cost: "25,000 GNF",
-    requirements: ["RCCM", "Statuts", "Pièces dirigeants"],
-  },
-  {
-    id: "card_request",
-    name: "Demande de carte",
-    icon: CreditCard,
-    description: "Nouvelle carte bancaire ou remplacement",
-    category: "banking",
-    processingTime: "7-10 jours ouvrables",
-    cost: "15,000 GNF",
-    requirements: ["Compte actif", "Pièce d'identité"],
   },
 ]
 
-const accounts = [
+const accountsData = [
   {
     id: "acc_001",
     name: "Compte Courant Principal",
@@ -163,6 +133,12 @@ export default function ServiceRequestsPage() {
   const [allRequests, setAllRequests] = useState<any[]>([])
   const [isLoadingAllRequests, setIsLoadingAllRequests] = useState(false)
 
+  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false)
+  const [selectedRequestDetails, setSelectedRequestDetails] = useState<any>(null)
+  const [isLoadingDetails, setIsLoadingDetails] = useState(false)
+  const [accounts, setAccounts] = useState<any[]>([])
+  const [isLoadingAccounts, setIsLoadingAccounts] = useState(true)
+
   const selectedServiceData = serviceTypes.find((s) => s.id === selectedService)
 
   const loadCheckbookRequests = async () => {
@@ -218,13 +194,13 @@ export default function ServiceRequestsPage() {
                 ? "En cours"
                 : item.stepflow === 2
                   ? "Approuvé"
-                  : item.status || "En cours",
+                  : item.status || "En attente",
           submittedAt: item.dateorder || item.createdAt?.split("T")[0] || new Date().toISOString().split("T")[0],
           expectedResponse: item.dateorder
             ? new Date(new Date(item.dateorder).getTime() + 3 * 24 * 60 * 60 * 1000).toISOString().split("T")[0]
             : new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
           account: item.intitulecompte || "Compte non spécifié",
-          reference: `CHQ-${new Date().getFullYear()}-${String(index + 1).padStart(3, "0")}`,
+          reference: item.reference || `CHQ-${new Date().getFullYear()}-${String(index + 1).padStart(3, "0")}`,
           details: {
             nbrechequier: item.nbrechequier || 0,
             nbrefeuille: item.nbrefeuille || 0,
@@ -245,12 +221,12 @@ export default function ServiceRequestsPage() {
         const creditRequests = creditData.map((item: any, index: number) => ({
           id: item.id || `CRD${String(index + 1).padStart(3, "0")}`,
           type: "credit",
-          typeName: "Crédit",
-          status: item.status || "En cours",
+          typeName: "Demande de crédit",
+          status: item.status || "En attente",
           submittedAt: item.createdAt ? item.createdAt.split("T")[0] : new Date().toISOString().split("T")[0],
           expectedResponse: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
           account: "Compte courant",
-          reference: `CRD-${new Date().getFullYear()}-${String(index + 1).padStart(3, "0")}`,
+          reference: item.reference || `CRD-${new Date().getFullYear()}-${String(index + 1).padStart(3, "0")}`,
           details: {
             applicantName: item.applicantName || "",
             creditAmount: item.creditAmount || "",
@@ -273,7 +249,7 @@ export default function ServiceRequestsPage() {
         total: allTransformedRequests.length,
         checkbook: allTransformedRequests.filter((req) => req.type === "checkbook").length,
         credit: allTransformedRequests.filter((req) => req.type === "credit").length,
-        card: allTransformedRequests.filter((req) => req.type === "card").length,
+        card: allTransformedRequests.filter((req) => req.type === "account").length,
         account: allTransformedRequests.filter((req) => req.type === "account").length,
       }
       console.log("[v0] Statistiques calculées:", stats)
@@ -283,6 +259,66 @@ export default function ServiceRequestsPage() {
     } finally {
       setIsLoadingAllRequests(false)
     }
+  }
+
+  const handleViewDetails = async (request: any) => {
+    setIsLoadingDetails(true)
+    setIsDetailsModalOpen(true)
+
+    try {
+      console.log("[v0] Chargement des détails pour la demande:", request.id, "type:", request.type)
+
+      let details = null
+      const TENANT_ID = "aa1287f6-06af-45b7-a905-8c57363565c2"
+
+      if (request.type === "credit") {
+        details = await getDemandeCreditById(TENANT_ID, request.id)
+      } else if (request.type === "checkbook") {
+        details = await getCommandeById(TENANT_ID, request.id)
+      }
+
+      console.log("[v0] Détails récupérés:", details)
+      setSelectedRequestDetails(details)
+    } catch (error) {
+      console.error("[v0] Erreur lors du chargement des détails:", error)
+    } finally {
+      setIsLoadingDetails(false)
+    }
+  }
+
+  const closeDetailsModal = () => {
+    setIsDetailsModalOpen(false)
+    setSelectedRequestDetails(null)
+  }
+
+  const formatRequestDetails = (details: any, type: string) => {
+    if (!details) return []
+
+    const commonFields = [
+      { label: "Référence", value: details.reference || "Non attribuée" },
+      { label: "Numéro de compte", value: details.accountNumber || details.numcompteId || "Non spécifié" },
+    ]
+
+    if (type === "credit") {
+      return [
+        ...commonFields,
+        { label: "Nom du demandeur", value: details.applicantName },
+        { label: "Montant du crédit", value: `${details.creditAmount} GNF` },
+        { label: "Durée (mois)", value: details.durationMonths },
+        { label: "Objet du crédit", value: details.purpose },
+      ]
+    } else if (type === "checkbook") {
+      return [
+        ...commonFields,
+        { label: "Date de commande", value: new Date(details.dateorder).toLocaleDateString("fr-FR") },
+        { label: "Nombre de feuilles", value: details.nbrefeuille },
+        { label: "Nombre de chéquiers", value: details.nbrechequier },
+        { label: "Intitulé du compte", value: details.intitulecompte },
+        { label: "Commentaire", value: details.commentaire || "Aucun commentaire" },
+      ]
+    }
+
+    return commonFields
   }
 
   useEffect(() => {
@@ -299,6 +335,57 @@ export default function ServiceRequestsPage() {
     }
   }, [activeTab])
 
+  useEffect(() => {
+    loadAccounts()
+  }, [])
+
+  useEffect(() => {
+    if (selectedService === "checkbook" && !formData.cheque_talon) {
+      handleInputChange("cheque_talon", "non")
+    }
+  }, [selectedService])
+
+  const loadAccounts = async () => {
+    try {
+      console.log("[v0] Chargement des comptes...")
+      setIsLoadingAccounts(true)
+      const result = await getAccounts()
+      console.log("[v0] Résultat getAccounts:", result)
+
+      if (Array.isArray(result) && result.length > 0) {
+        // Adapter les données API au format Account
+        const adaptedAccounts = result.map((apiAccount: any) => ({
+          id: apiAccount.id || apiAccount.accountId,
+          name: apiAccount.accountName || apiAccount.name || `Compte ${apiAccount.accountNumber || apiAccount.number}`,
+          number: apiAccount.accountNumber || apiAccount.number,
+          balance: apiAccount.bookBalance || apiAccount.balance || 0,
+          currency: apiAccount.currency || "GNF",
+          status: apiAccount.status,
+          type: apiAccount.accountType || apiAccount.type,
+        }))
+
+        // Filtrer pour ne garder que les comptes courants actifs
+        const currentAccounts = adaptedAccounts.filter(
+          (account: any) =>
+            (account.status === "ACTIF" || account.status === "Actif") &&
+            (account.type === "Courant" || account.type === "Courant") &&
+            account.number &&
+            String(account.number).trim() !== "",
+        )
+        console.log("[v0] Comptes courants actifs:", currentAccounts)
+        setAccounts(currentAccounts)
+      } else {
+        console.log("[v0] Aucun compte trouvé")
+        setAccounts([])
+      }
+    } catch (error) {
+      console.error("[v0] Erreur lors du chargement des comptes:", error)
+      setAccounts([])
+    } finally {
+      setIsLoadingAccounts(false)
+    }
+  }
+
   const filteredRequests = allRequests.filter((request) => {
     const matchesSearch =
       request.typeName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -314,14 +401,10 @@ export default function ServiceRequestsPage() {
     switch (type) {
       case "checkbook":
         return <BookOpen className="w-4 h-4 text-blue-600" />
-      case "certificate":
-        return <FileText className="w-4 h-4 text-green-600" />
+
       case "credit":
         return <CreditCard className="w-4 h-4 text-purple-600" />
-      case "card_request":
-        return <CreditCard className="w-4 h-4 text-orange-600" />
-      case "business_account":
-        return <Briefcase className="w-4 h-4 text-gray-600" />
+
       default:
         return <FileText className="w-4 h-4" />
     }
@@ -356,7 +439,7 @@ export default function ServiceRequestsPage() {
                     ? new Date(new Date(item.dateorder).getTime() + 3 * 24 * 60 * 60 * 1000).toISOString().split("T")[0]
                     : new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
                   account: item.intitulecompte || "Compte non spécifié",
-                  reference: `CHQ-${new Date().getFullYear()}-${String(index + 1).padStart(3, "0")}`,
+                  reference: item.reference || `CHQ-${new Date().getFullYear()}-${String(index + 1).padStart(3, "0")}`,
                   details: {
                     nbrechequier: item.nbrechequier || 0,
                     nbrefeuille: item.nbrefeuille || 0,
@@ -372,7 +455,7 @@ export default function ServiceRequestsPage() {
                   submittedAt: item.createdAt ? item.createdAt.split("T")[0] : new Date().toISOString().split("T")[0],
                   expectedResponse: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
                   account: "Compte courant",
-                  reference: `CRD-${new Date().getFullYear()}-${String(index + 1).padStart(3, "0")}`,
+                  reference: item.reference || `CRD-${new Date().getFullYear()}-${String(index + 1).padStart(3, "0")}`,
                   details: {
                     applicantName: item.applicantName || "",
                     creditAmount: item.creditAmount || "",
@@ -404,16 +487,13 @@ export default function ServiceRequestsPage() {
   const getServiceIdFromRequestType = (requestType: string): string => {
     const typeMapping: Record<string, string> = {
       "Demande de chéquier": "checkbook",
-      "E-attestation bancaire": "certificate",
       Crédit: "credit",
-      "Compte professionnel": "business_account",
-      "Demande de carte": "card_request",
     }
     return typeMapping[requestType] || ""
   }
 
   const getAccountIdFromName = (accountName: string): string => {
-    const account = accounts.find((acc) => acc.name === accountName)
+    const account = accountsData.find((acc) => acc.name === accountName)
     return account?.id || ""
   }
 
@@ -458,15 +538,37 @@ export default function ServiceRequestsPage() {
   const handleCreditSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
+    console.log("[v0] FormData au moment de la soumission:", formData)
+    console.log("[v0] Vérification des champs:")
+    console.log("[v0] applicant_name:", formData.applicant_name)
+    console.log("[v0] loan_amount:", formData.loan_amount)
+    console.log("[v0] loan_duration:", formData.loan_duration)
+    console.log("[v0] loan_purpose:", formData.loan_purpose)
+    console.log("[v0] credit_type:", formData.credit_type)
+    console.log("[v0] monthly_income:", formData.monthly_income)
+    console.log("[v0] employment_type:", formData.employment_type)
+    console.log("[v0] contact_phone:", formData.contact_phone)
+    console.log("[v0] contact_email:", formData.contact_email)
+    console.log("[v0] terms:", formData.terms)
+    console.log("[v0] numcompte:", formData.numcompte)
+    console.log("[v0] accountId:", formData.accountId)
+
     // Vérifier que tous les champs requis sont remplis
     if (
       !formData.applicant_name ||
       !formData.loan_amount ||
       !formData.loan_duration ||
       !formData.loan_purpose ||
+      !formData.credit_type ||
+      !formData.monthly_income ||
+      !formData.employment_type ||
+      !formData.contact_phone ||
+      !formData.contact_email ||
       !formData.terms ||
-      !formData.numcompte
+      !formData.numcompte ||
+      !formData.accountId
     ) {
+      console.log("[v0] Validation échouée - champs manquants")
       setCreditSubmitState({ error: "Veuillez remplir tous les champs obligatoires" })
       return
     }
@@ -480,14 +582,25 @@ export default function ServiceRequestsPage() {
         loan_amount: formData.loan_amount,
         loan_duration: formData.loan_duration,
         loan_purpose: formData.loan_purpose,
-        numcompte: formData.numcompte, // Ajout du numéro de compte manquant
+        numcompte: formData.numcompte,
+        typedemande: formData.credit_type || "credit",
+        accountNumber: formData.numcompte,
       }
 
+      console.log("[v0] Données envoyées à l'API:", creditData)
       const result = await submitCreditRequest(creditData)
-      setCreditSubmitState({ success: true, reference: result.referenceId || "REF-" + Date.now() })
+      setCreditSubmitState({
+        success: true,
+        reference: result.reference || "CRD-" + new Date().getFullYear() + "-" + String(Date.now()).slice(-3),
+      })
       // Réinitialiser le formulaire après succès
       setFormData({})
+      // Recharger les demandes
+      if (activeTab === "history") {
+        loadAllRequests()
+      }
     } catch (error: any) {
+      console.log("[v0] Erreur lors de la soumission:", error.message)
       setCreditSubmitState({ error: error.message || "Une erreur s'est produite lors de la soumission" })
     } finally {
       setIsCreditSubmitting(false)
@@ -519,15 +632,23 @@ export default function ServiceRequestsPage() {
         nbrechequier: Number.parseInt(formData.nbrechequier) || 0,
         stepflow: 0,
         intitulecompte: formData.intitulecompte,
-        numcompteId: selectedAccount,
+        numcompteId: formData.numcompte,
         commentaire: formData.commentaire || "",
-        numcompte: formData.numcompte, // Ajout du numéro de compte manquant
+        type_chequier: formData.type_chequier,
+        cheque_talon: formData.cheque_talon === "oui",
       }
 
       const result = await submitCheckbookRequest(checkbookData)
-      setCheckbookSubmitState({ success: true, reference: result.referenceId || "REF-" + Date.now() })
+      setCheckbookSubmitState({
+        success: true,
+        reference: result.reference || "CHQ-" + new Date().getFullYear() + "-" + String(Date.now()).slice(-3),
+      })
       // Réinitialiser le formulaire après succès
       setFormData({})
+      // Recharger les demandes
+      if (activeTab === "history") {
+        loadAllRequests()
+      }
     } catch (error: any) {
       setCheckbookSubmitState({ error: error.message || "Une erreur s'est produite lors de la soumission" })
     } finally {
@@ -535,81 +656,222 @@ export default function ServiceRequestsPage() {
     }
   }
 
+  const [eDemandeSubmitState, setEDemandeSubmitState] = useState<{
+    success?: boolean
+    error?: string
+    reference?: string
+  } | null>(null)
+  const [isEDemandeSubmitting, setIsEDemandeSubmitting] = useState(false)
+
+  const handleEDemandeSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+
+    // Vérifier que tous les champs requis sont remplis
+    if (
+      !formData.demande_type ||
+      !formData.objet_demande ||
+      !formData.numcompte_edemande ||
+      !formData.motif_demande ||
+      !formData.contact_edemande ||
+      !formData.edemande_terms
+    ) {
+      setEDemandeSubmitState({ error: "Veuillez remplir tous les champs obligatoires" })
+      return
+    }
+
+    setIsEDemandeSubmitting(true)
+    setEDemandeSubmitState(null)
+
+    try {
+      const eDemandeData = {
+        demande_type: formData.demande_type,
+        objet_demande: formData.objet_demande,
+        numcompte_edemande: formData.numcompte_edemande,
+        motif_demande: formData.motif_demande,
+        date_besoin: formData.date_besoin || new Date().toISOString().split("T")[0],
+        contact_edemande: formData.contact_edemande,
+      }
+
+      // Simuler la soumission de la demande (à remplacer par l'appel API réel)
+      await new Promise((resolve) => setTimeout(resolve, 1000))
+
+      setEDemandeSubmitState({ success: true, reference: "EDM-" + Date.now() })
+      // Réinitialiser le formulaire après succès
+      setFormData({})
+    } catch (error: any) {
+      setEDemandeSubmitState({ error: error.message || "Une erreur s'est produite lors de la soumission" })
+    } finally {
+      setIsEDemandeSubmitting(false)
+    }
+  }
+
   const renderServiceForm = () => {
     if (!selectedServiceData) return null
 
     switch (selectedService) {
-      // COMMANDES CHEQUIER PAGE
+      // COMMANDE CHEQUIER PAGE
       case "checkbook":
         return (
           <form onSubmit={handleCheckbookSubmit} className="space-y-4">
-            <div>
-              <Label htmlFor="dateorder">Date de commande *</Label>
-              <Input
-                id="dateorder"
-                name="dateorder"
-                type="date"
-                value={formData.dateorder || new Date().toISOString().split("T")[0]}
-                onChange={(e) => handleInputChange("dateorder", e.target.value)}
-                required
-              />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="intitulecompte">Sélectionner un compte *</Label>
+                <Select
+                  value={formData.numcompteId || ""}
+                  onValueChange={(value) => {
+                    const selectedAccount = accounts.find((acc) => acc.id === value)
+                    if (selectedAccount) {
+                      handleInputChange("accountId", selectedAccount.id)
+                      handleInputChange("intitulecompte", selectedAccount.name)
+                      handleInputChange("numcompte", selectedAccount.number)
+                    }
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder={isLoadingAccounts ? "Chargement..." : "Choisir un compte"} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {isLoadingAccounts ? (
+                      <SelectItem value="loading" disabled>
+                        Chargement des comptes...
+                      </SelectItem>
+                    ) : accounts.length === 0 ? (
+                      <SelectItem value="empty" disabled>
+                        Aucun compte courant trouvé
+                      </SelectItem>
+                    ) : (
+                      accounts.map((account) => (
+                        <SelectItem key={account.id} value={account.id}>
+                          <div className="flex flex-col">
+                            <span className="font-medium">{account.name}</span>
+                            <span className="text-sm text-gray-500">
+                              {account.number} •{" "}
+                              {new Intl.NumberFormat("fr-FR", {
+                                style: "currency",
+                                currency: account.currency === "GNF" ? "GNF" : account.currency,
+                                minimumFractionDigits: account.currency === "GNF" ? 0 : 2,
+                              }).format(account.balance)}
+                            </span>
+                          </div>
+                        </SelectItem>
+                      ))
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="numcompte">Numéro de compte *</Label>
+                <Input
+                  id="numcompte"
+                  name="numcompte"
+                  type="text"
+                  value={formData.numcompte || ""}
+                  onChange={(e) => handleInputChange("numcompte", e.target.value)}
+                  placeholder="Ex: 000123456789"
+                  required
+                  readOnly
+                  className="bg-gray-50"
+                />
+              </div>
             </div>
 
-            <div>
-              <Label htmlFor="intitulecompte">Intitulé du compte *</Label>
-              <Input
-                id="intitulecompte"
-                name="intitulecompte"
-                type="text"
-                value={formData.intitulecompte || ""}
-                onChange={(e) => handleInputChange("intitulecompte", e.target.value)}
-                placeholder="Ex: Compte Courant Principal"
-                required
-              />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="dateorder">Date de commande *</Label>
+                <Input
+                  id="dateorder"
+                  name="dateorder"
+                  type="date"
+                  value={formData.dateorder || new Date().toISOString().split("T")[0]}
+                  onChange={(e) => handleInputChange("dateorder", e.target.value)}
+                  required
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="type_chequier">Type de chéquier *</Label>
+                <Select
+                  value={formData.type_chequier || ""}
+                  onValueChange={(value) => handleInputChange("type_chequier", value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choisir le type de chéquier" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="barré">Barré</SelectItem>
+                    <SelectItem value="non_barré">Non barré</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
 
-            <div>
-              <Label htmlFor="numcompte">Numéro de compte *</Label>
-              <Input
-                id="numcompte"
-                name="numcompte"
-                type="text"
-                value={formData.numcompte || ""}
-                onChange={(e) => handleInputChange("numcompte", e.target.value)}
-                placeholder="Ex: 123456789"
-                required
-              />
+            <div className="space-y-2">
+              <Label>Chèque avec talon *</Label>
+              <div className="flex items-center space-x-6">
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="radio"
+                    id="talon_oui"
+                    name="talonCheque"
+                    value="oui"
+                    checked={formData.cheque_talon === "oui"}
+                    onChange={(e) => handleInputChange("cheque_talon", e.target.value)}
+                    className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+                  />
+                  <Label htmlFor="talon_oui" className="font-normal cursor-pointer">
+                    Oui
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="radio"
+                    id="talon_non"
+                    name="talonCheque"
+                    value="non"
+                    checked={formData.cheque_talon === "non"}
+                    onChange={(e) => handleInputChange("cheque_talon", e.target.value)}
+                    className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+                  />
+                  <Label htmlFor="talon_non" className="font-normal cursor-pointer">
+                    Non
+                  </Label>
+                </div>
+              </div>
             </div>
 
-            <div>
-              <Label htmlFor="nbrechequier">Nombre de chéquiers *</Label>
-              <Input
-                id="nbrechequier"
-                name="nbrechequier"
-                type="number"
-                min="1"
-                max="10"
-                value={formData.nbrechequier || ""}
-                onChange={(e) => handleInputChange("nbrechequier", e.target.value)}
-                placeholder="Ex: 2"
-                required
-              />
-            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="nbrechequier">Nombre de chéquiers *</Label>
+                <Input
+                  id="nbrechequier"
+                  name="nbrechequier"
+                  type="number"
+                  min="1"
+                  max="2"
+                  value={formData.nbrechequier || ""}
+                  onChange={(e) => handleInputChange("nbrechequier", e.target.value)}
+                  placeholder="Ex: 2"
+                  required
+                />
+              </div>
 
-            <div>
-              <Label htmlFor="nbrefeuille">Nombre de feuilles par chéquier *</Label>
-              <Input
-                id="nbrefeuille"
-                name="nbrefeuille"
-                type="number"
-                min="25"
-                max="100"
-                step="25"
-                value={formData.nbrefeuille || ""}
-                onChange={(e) => handleInputChange("nbrefeuille", e.target.value)}
-                placeholder="Ex: 50"
-                required
-              />
+              <div>
+                <Label htmlFor="nbrefeuille">Nombre de feuillets par chéquier *</Label>
+                <Select
+                  value={formData.nbrefeuille || ""}
+                  onValueChange={(value) => handleInputChange("nbrefeuille", value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choisir le nombre de feuillets" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="25">25 feuillets</SelectItem>
+                    <SelectItem value="50">50 feuillets</SelectItem>
+                    <SelectItem value="100">100 feuillets</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
 
             <div>
@@ -656,108 +918,120 @@ export default function ServiceRequestsPage() {
             </div>
           </form>
         )
-
-      case "certificate":
-        return (
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="certificate_type">Type d'attestation *</Label>
-              <Select onValueChange={(value) => handleInputChange("certificate_type", value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Sélectionnez le type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="account">Attestation de compte</SelectItem>
-                  <SelectItem value="balance">Attestation de solde</SelectItem>
-                  <SelectItem value="income">Attestation de revenus</SelectItem>
-                  <SelectItem value="domiciliation">Attestation de domiciliation</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <Label htmlFor="purpose">Motif de la demande *</Label>
-              <Select onValueChange={(value) => handleInputChange("purpose", value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Sélectionnez le motif" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="visa">Demande de visa</SelectItem>
-                  <SelectItem value="loan">Demande de prêt</SelectItem>
-                  <SelectItem value="employment">Dossier d'emploi</SelectItem>
-                  <SelectItem value="rental">Location immobilière</SelectItem>
-                  <SelectItem value="business">Création d'entreprise</SelectItem>
-                  <SelectItem value="other">Autre</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {formData.purpose === "other" && (
-              <div>
-                <Label htmlFor="purpose_details">Précisez le motif *</Label>
-                <Input
-                  id="purpose_details"
-                  placeholder="Décrivez le motif de votre demande"
-                  value={formData.purpose_details || ""}
-                  onChange={(e) => handleInputChange("purpose_details", e.target.value)}
-                />
-              </div>
-            )}
-
-            <div>
-              <Label htmlFor="language">Langue du document *</Label>
-              <Select onValueChange={(value) => handleInputChange("language", value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Sélectionnez la langue" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="fr">Français</SelectItem>
-                  <SelectItem value="en">Anglais</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <Label htmlFor="recipient">Destinataire *</Label>
-              <Input
-                id="recipient"
-                placeholder="Nom de l'organisme ou personne destinataire"
-                value={formData.recipient || ""}
-                onChange={(e) => handleInputChange("recipient", e.target.value)}
-              />
-            </div>
-          </div>
-        )
-
+      // DEMANDE CREDIT PAGE
       case "credit":
         return (
           <form onSubmit={handleCreditSubmit} className="space-y-4">
-            <div>
-              <Label htmlFor="credit_type">Type de crédit *</Label>
-              <Select onValueChange={(value) => handleInputChange("credit_type", value)} required>
-                <SelectTrigger>
-                  <SelectValue placeholder="Sélectionnez le type de crédit" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="personal">Crédit personnel</SelectItem>
-                  <SelectItem value="mortgage">Crédit immobilier</SelectItem>
-                  <SelectItem value="student">Crédit étudiant</SelectItem>
-                  <SelectItem value="auto">Crédit automobile</SelectItem>
-                </SelectContent>
-              </Select>
+             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="intitulecompte">Sélectionner un compte *</Label>
+                <Select
+                  value={formData.numcompteId || ""}
+                  onValueChange={(value) => {
+                    const selectedAccount = accounts.find((acc) => acc.id === value)
+                    if (selectedAccount) {
+                      handleInputChange("accountId", selectedAccount.id)
+                      handleInputChange("intitulecompte", selectedAccount.name)
+                      handleInputChange("numcompte", selectedAccount.number)
+                    }
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder={isLoadingAccounts ? "Chargement..." : "Choisir un compte"} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {isLoadingAccounts ? (
+                      <SelectItem value="loading" disabled>
+                        Chargement des comptes...
+                      </SelectItem>
+                    ) : accounts.length === 0 ? (
+                      <SelectItem value="empty" disabled>
+                        Aucun compte courant trouvé
+                      </SelectItem>
+                    ) : (
+                      accounts.map((account) => (
+                        <SelectItem key={account.id} value={account.id}>
+                          <div className="flex flex-col">
+                            <span className="font-medium">{account.name}</span>
+                            <span className="text-sm text-gray-500">
+                              {account.number} •{" "}
+                              {new Intl.NumberFormat("fr-FR", {
+                                style: "currency",
+                                currency: account.currency === "GNF" ? "GNF" : account.currency,
+                                minimumFractionDigits: account.currency === "GNF" ? 0 : 2,
+                              }).format(account.balance)}
+                            </span>
+                          </div>
+                        </SelectItem>
+                      ))
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="numcompte_credit">Numéro de compte *</Label>
+                <Input
+                  id="numcompte_credit"
+                  name="numcompte_credit"
+                  type="text"
+                  value={formData.numcompte || ""}
+                  onChange={(e) => handleInputChange("numcompte", e.target.value)}
+                  placeholder="Ex: 000123456789"
+                  required
+                  readOnly
+                  className="bg-gray-50"
+                />
+              </div>
             </div>
 
-            <div>
-              <Label htmlFor="numcompte_credit">Numéro de compte *</Label>
-              <Input
-                id="numcompte_credit"
-                name="numcompte_credit"
-                type="text"
-                value={formData.numcompte || ""}
-                onChange={(e) => handleInputChange("numcompte", e.target.value)}
-                placeholder="Ex: 123456789"
-                required
-              />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="credit_type">Type de crédit *</Label>
+                <Select onValueChange={(value) => handleInputChange("credit_type", value)} required>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Sélectionnez le type de crédit" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="personnel">Crédit personnel</SelectItem>
+                    <SelectItem value="immobilier">Crédit immobilier</SelectItem>
+                    <SelectItem value="étudiant">Crédit étudiant</SelectItem>
+                    <SelectItem value="automobile">Crédit automobile</SelectItem>
+                    <SelectItem value="other">Autre</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="loan_purpose">Objet du crédit *</Label>
+                <Select onValueChange={(value) => handleInputChange("loan_purpose", value)} required>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Sélectionnez l'objet" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Consommation">Consommation</SelectItem>
+                    <SelectItem value="Équipement">Équipement</SelectItem>
+                    <SelectItem value="Rénovation">Rénovation</SelectItem>
+                    <SelectItem value="Éducation">Éducation</SelectItem>
+                    <SelectItem value="Santé">Santé</SelectItem>
+                    <SelectItem value="Autre">Autre</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="monthly_income">Revenus mensuels (GNF) *</Label>
+                <Input
+                  id="monthly_income"
+                  type="number"
+                  placeholder="Ex: 2000000"
+                  value={formData.monthly_income || ""}
+                  onChange={(e) => handleInputChange("monthly_income", e.target.value)}
+                  required
+                />
+              </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -789,35 +1063,18 @@ export default function ServiceRequestsPage() {
               </div>
             </div>
 
-            <div>
-              <Label htmlFor="loan_purpose">Objet du crédit *</Label>
-              <Select onValueChange={(value) => handleInputChange("loan_purpose", value)} required>
-                <SelectTrigger>
-                  <SelectValue placeholder="Sélectionnez l'objet" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="consumption">Consommation</SelectItem>
-                  <SelectItem value="equipment">Équipement</SelectItem>
-                  <SelectItem value="renovation">Rénovation</SelectItem>
-                  <SelectItem value="education">Éducation</SelectItem>
-                  <SelectItem value="health">Santé</SelectItem>
-                  <SelectItem value="other">Autre</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="monthly_income">Revenus mensuels (GNF) *</Label>
+                <Label htmlFor="applicant_name">Nom du demandeur *</Label>
                 <Input
-                  id="monthly_income"
-                  type="number"
-                  placeholder="Ex: 2000000"
-                  value={formData.monthly_income || ""}
-                  onChange={(e) => handleInputChange("monthly_income", e.target.value)}
+                  id="applicant_name"
+                  placeholder="Nom du demandeur"
+                  value={formData.applicant_name || ""}
+                  onChange={(e) => handleInputChange("applicant_name", e.target.value)}
                   required
                 />
               </div>
+
               <div>
                 <Label htmlFor="employment_type">Type d'emploi *</Label>
                 <Select onValueChange={(value) => handleInputChange("employment_type", value)} required>
@@ -832,39 +1089,6 @@ export default function ServiceRequestsPage() {
                   </SelectContent>
                 </Select>
               </div>
-            </div>
-
-            <div>
-              <Label htmlFor="applicant_name">Nom du demandeur *</Label>
-              <Input
-                id="applicant_name"
-                placeholder="Nom du demandeur"
-                value={formData.applicant_name || ""}
-                onChange={(e) => handleInputChange("applicant_name", e.target.value)}
-                required
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="guarantor_name">Nom du garant *</Label>
-              <Input
-                id="guarantor_name"
-                placeholder="Nom complet du garant"
-                value={formData.guarantor_name || ""}
-                onChange={(e) => handleInputChange("guarantor_name", e.target.value)}
-                required
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="guarantor_phone">Téléphone du garant *</Label>
-              <Input
-                id="guarantor_phone"
-                placeholder="Ex: +224 6XX XXX XXX"
-                value={formData.guarantor_phone || ""}
-                onChange={(e) => handleInputChange("guarantor_phone", e.target.value)}
-                required
-              />
             </div>
 
             {/* Contact Information */}
@@ -898,8 +1122,7 @@ export default function ServiceRequestsPage() {
               <Alert className="border-green-200 bg-green-50">
                 <CheckCircle className="h-4 w-4 text-green-600" />
                 <AlertDescription className="text-green-800">
-                  ✅ Votre demande de crédit a été envoyée avec succès. Référence: {creditSubmitState.reference}.
-                  Réponse sous {selectedServiceData?.processingTime}.
+                  ✅ Votre demande de crédit a été envoyée avec succès. Référence: {creditSubmitState.reference}
                 </AlertDescription>
               </Alert>
             )}
@@ -927,114 +1150,113 @@ export default function ServiceRequestsPage() {
                 et autorise le traitement de ma demande
               </Label>
             </div>
+          </form>
+        )
+      // E-DEMANDE PAGE
+      case "e-demande":
+        return (
+          <form onSubmit={handleEDemandeSubmit} className="space-y-4">
+            <div>
+              <Label htmlFor="demande_type">Type de demande *</Label>
+              <Select onValueChange={(value) => handleInputChange("demande_type", value)} required>
+                <SelectTrigger>
+                  <SelectValue placeholder="Sélectionnez le type de demande" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="attestation">Attestation bancaire</SelectItem>
+                  <SelectItem value="releve">Relevé de compte</SelectItem>
+                  <SelectItem value="certificat">Certificat de non-endettement</SelectItem>
+                  <SelectItem value="autre">Autre demande</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
-            <Button type="submit" disabled={isCreditSubmitting || !formData.terms} className="w-full">
-              {isCreditSubmitting ? (
-                <>
-                  <Clock className="w-4 h-4 mr-2 animate-spin" />
-                  Envoi en cours...
-                </>
-              ) : (
-                <>
-                  <Send className="w-4 h-4 mr-2" />
-                  Envoyer la demande
-                </>
-              )}
-            </Button>
+            <div>
+              <Label htmlFor="objet_demande">Objet de la demande *</Label>
+              <Input
+                id="objet_demande"
+                name="objet_demande"
+                type="text"
+                value={formData.objet_demande || ""}
+                onChange={(e) => handleInputChange("objet_demande", e.target.value)}
+                placeholder="Ex: Attestation pour visa"
+                required
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="numcompte_edemande">Numéro de compte *</Label>
+              <Input
+                id="numcompte_edemande"
+                name="numcompte_edemande"
+                type="text"
+                value={formData.numcompte_edemande || ""}
+                onChange={(e) => handleInputChange("numcompte_edemande", e.target.value)}
+                placeholder="Ex: 123456789"
+                required
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="motif_demande">Motif de la demande *</Label>
+              <textarea
+                id="motif_demande"
+                name="motif_demande"
+                className="w-full p-2 border border-gray-300 rounded-md"
+                rows={4}
+                value={formData.motif_demande || ""}
+                onChange={(e) => handleInputChange("motif_demande", e.target.value)}
+                placeholder="Expliquez le motif de votre demande..."
+                required
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="date_besoin">Date de besoin</Label>
+              <Input
+                id="date_besoin"
+                name="date_besoin"
+                type="date"
+                value={formData.date_besoin || ""}
+                onChange={(e) => handleInputChange("date_besoin", e.target.value)}
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="contact_edemande">Téléphone de contact *</Label>
+              <Input
+                id="contact_edemande"
+                name="contact_edemande"
+                type="tel"
+                value={formData.contact_edemande || ""}
+                onChange={(e) => handleInputChange("contact_edemande", e.target.value)}
+                placeholder="+224 6XX XXX XXX"
+                required
+              />
+            </div>
+
+            {eDemandeSubmitState?.success && (
+              <Alert className="border-green-200 bg-green-50">
+                <CheckCircle className="h-4 w-4 text-green-600" />
+                <AlertDescription className="text-green-800">
+                  ✅ Votre e-demande a été envoyée avec succès. Référence: {eDemandeSubmitState.reference}
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {eDemandeSubmitState?.error && (
+              <Alert className="border-red-200 bg-red-50">
+                <AlertCircle className="h-4 w-4 text-red-600" />
+                <AlertDescription className="text-red-800">
+                  ❌ Une erreur est survenue: {eDemandeSubmitState.error}. Veuillez réessayer.
+                </AlertDescription>
+              </Alert>
+            )}
           </form>
         )
 
-      case "card_request":
-        return (
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="card_type">Type de carte *</Label>
-              <Select onValueChange={(value) => handleInputChange("card_type", value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Sélectionnez le type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="debit">Carte de débit</SelectItem>
-                  <SelectItem value="credit">Carte de crédit</SelectItem>
-                  <SelectItem value="prepaid">Carte prépayée</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <Label htmlFor="card_category">Catégorie *</Label>
-              <Select onValueChange={(value) => handleInputChange("card_category", value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Sélectionnez la catégorie" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="classic">Classic</SelectItem>
-                  <SelectItem value="gold">Gold</SelectItem>
-                  <SelectItem value="platinum">Platinum</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <Label htmlFor="request_reason">Motif de la demande *</Label>
-              <Select onValueChange={(value) => handleInputChange("request_reason", value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Sélectionnez le motif" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="new">Nouvelle carte</SelectItem>
-                  <SelectItem value="replacement">Remplacement (perte/vol)</SelectItem>
-                  <SelectItem value="damaged">Carte endommagée</SelectItem>
-                  <SelectItem value="expired">Carte expirée</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {formData.request_reason === "replacement" && (
-              <div>
-                <Label htmlFor="incident_details">Détails de l'incident *</Label>
-                <Textarea
-                  id="incident_details"
-                  placeholder="Décrivez les circonstances (perte, vol, etc.)"
-                  value={formData.incident_details || ""}
-                  onChange={(e) => handleInputChange("incident_details", e.target.value)}
-                />
-              </div>
-            )}
-
-            <div>
-              <Label htmlFor="delivery_method">Mode de livraison *</Label>
-              <RadioGroup
-                value={formData.delivery_method}
-                onValueChange={(value) => handleInputChange("delivery_method", value)}
-              >
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="branch" id="branch" />
-                  <Label htmlFor="branch">Retrait en agence</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="courier" id="courier" />
-                  <Label htmlFor="courier">Livraison par coursier (+15,000 GNF)</Label>
-                </div>
-              </RadioGroup>
-            </div>
-          </div>
-        )
-
       default:
-        return (
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="details">Détails de la demande *</Label>
-              <Textarea
-                id="details"
-                placeholder="Décrivez votre demande en détail"
-                value={formData.details || ""}
-                onChange={(e) => handleInputChange("details", e.target.value)}
-              />
-            </div>
-          </div>
-        )
+        return null
     }
   }
 
@@ -1082,12 +1304,6 @@ export default function ServiceRequestsPage() {
                         <div className="flex-1">
                           <h3 className="font-medium text-sm">{service.name}</h3>
                           <p className="text-xs text-gray-500 mt-1">{service.description}</p>
-                          <div className="flex items-center justify-between mt-2">
-                            <Badge variant="outline" className="text-xs">
-                              {service.processingTime}
-                            </Badge>
-                            <span className="text-xs font-medium text-green-600">{service.cost}</span>
-                          </div>
                         </div>
                       </div>
                     </div>
@@ -1111,20 +1327,6 @@ export default function ServiceRequestsPage() {
                 {/* Service Info */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-gray-50 rounded-lg">
                   <div className="flex items-center space-x-2">
-                    <Clock className="w-4 h-4 text-gray-500" />
-                    <div>
-                      <p className="text-sm font-medium">Délai de traitement</p>
-                      <p className="text-xs text-gray-600">{selectedServiceData.processingTime}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Banknote className="w-4 h-4 text-gray-500" />
-                    <div>
-                      <p className="text-sm font-medium">Coût</p>
-                      <p className="text-xs text-gray-600">{selectedServiceData.cost}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-2">
                     <Shield className="w-4 h-4 text-gray-500" />
                     <div>
                       <p className="text-sm font-medium">Sécurisé</p>
@@ -1133,72 +1335,8 @@ export default function ServiceRequestsPage() {
                   </div>
                 </div>
 
-                {/* Requirements */}
-                <div>
-                  <h4 className="font-medium mb-2">Prérequis</h4>
-                  <ul className="space-y-1">
-                    {selectedServiceData.requirements.map((req, index) => (
-                      <li key={index} className="flex items-center space-x-2 text-sm">
-                        <CheckCircle className="w-4 h-4 text-green-500" />
-                        <span>{req}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-
-                {/* Account Selection */}
-                <div>
-                  <Label htmlFor="account">Selectionner un compte *</Label>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-2">
-                    {accounts
-                      .filter((account) => selectedService !== "credit" || account.type === "Courant")
-                      .map((account) => (
-                        <div
-                          key={account.id}
-                          className={`p-3 border rounded-lg cursor-pointer transition-all ${
-                            selectedAccount === account.id
-                              ? "border-blue-500 bg-blue-50 ring-2 ring-blue-200"
-                              : "border-gray-200 hover:border-gray-300"
-                          }`}
-                          onClick={() => {
-                            setSelectedAccount(account.id)
-                            handleInputChange("intitulecompte", account.name)
-                            handleInputChange("numcompte", account.number)
-                          }}
-                        >
-                          <div className="flex items-center space-x-2">
-                            <CreditCard className="w-4 h-4 text-gray-500" />
-                            <span className="font-medium text-sm">{account.name}</span>
-                          </div>
-                          <p className="text-xs text-gray-500 mt-1">***{account.number.slice(-4)}</p>
-                          <p className="text-sm font-bold mt-1">
-                            {formatAmount(account.balance, account.currency)} {account.currency}
-                          </p>
-                        </div>
-                      ))}
-                  </div>
-                </div>
-
                 {/* Dynamic Form */}
                 {renderServiceForm()}
-
-                {/* Terms and Conditions */}
-                {selectedService && selectedService !== "checkbook" && selectedService !== "credit" && (
-                  <div className="flex items-start space-x-2">
-                    <Checkbox
-                      id="terms"
-                      checked={formData.terms || false}
-                      onCheckedChange={(checked) => handleInputChange("terms", checked)}
-                    />
-                    <Label htmlFor="terms" className="text-sm">
-                      J'accepte les{" "}
-                      <a href="#" className="text-blue-600 hover:underline">
-                        conditions générales
-                      </a>{" "}
-                      et autorise le traitement de ma demande
-                    </Label>
-                  </div>
-                )}
 
                 {/* Submit Button */}
                 {selectedService === "checkbook" ? (
@@ -1221,7 +1359,24 @@ export default function ServiceRequestsPage() {
                     )}
                   </Button>
                 ) : selectedService === "credit" ? (
-                  <div></div>
+                  <Button
+                    type="button"
+                    onClick={handleCreditSubmit}
+                    disabled={isCreditSubmitting || !formData.terms}
+                    className="w-full"
+                  >
+                    {isCreditSubmitting ? (
+                      <>
+                        <Clock className="w-4 h-4 mr-2 animate-spin" />
+                        Envoi en cours...
+                      </>
+                    ) : (
+                      <>
+                        <Send className="w-4 h-4 mr-2" />
+                        Envoyer la demande
+                      </>
+                    )}
+                  </Button>
                 ) : (
                   <form action={submitAction}>
                     <input type="hidden" name="serviceType" value={selectedService} />
@@ -1249,8 +1404,7 @@ export default function ServiceRequestsPage() {
                   <Alert className="border-green-200 bg-green-50">
                     <CheckCircle className="h-4 w-4 text-green-600" />
                     <AlertDescription className="text-green-800">
-                      ✅ Votre demande a été envoyée avec succès. Référence: {submitState.reference}. Réponse sous{" "}
-                      {selectedServiceData?.processingTime}.
+                      ✅ Votre demande a été envoyée avec succès. Référence: {submitState.reference}
                     </AlertDescription>
                   </Alert>
                 )}
@@ -1296,16 +1450,13 @@ export default function ServiceRequestsPage() {
                     <SelectItem value="all">Toutes les demandes</SelectItem>
                     <SelectItem value="checkbook">Demande de chéquier</SelectItem>
                     <SelectItem value="credit">Demande de crédit</SelectItem>
-                    <SelectItem value="certificate">E-attestation bancaire</SelectItem>
-                    <SelectItem value="business_account">Compte professionnel</SelectItem>
-                    <SelectItem value="card_request">Demande de carte</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             </CardContent>
           </Card>
 
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <Card
               className="cursor-pointer hover:bg-gray-50 transition-colors"
               onClick={() => loadRequestsByType("all")}
@@ -1350,38 +1501,7 @@ export default function ServiceRequestsPage() {
                 </div>
               </CardContent>
             </Card>
-
-            <Card
-              className="cursor-pointer hover:bg-gray-50 transition-colors"
-              onClick={() => loadRequestsByType("certificate")}
-            >
-              <CardContent className="pt-6">
-                <div className="flex items-center">
-                  <Shield className="h-8 w-8 text-orange-600" />
-                  <div className="ml-4">
-                    <p className="text-sm font-medium text-gray-600">Attestation</p>
-                    <p className="text-2xl font-bold">{allRequests.filter((r) => r.type === "certificate").length}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card
-              className="cursor-pointer hover:bg-gray-50 transition-colors"
-              onClick={() => loadRequestsByType("card_request")}
-            >
-              <CardContent className="pt-6">
-                <div className="flex items-center">
-                  <CreditCard className="h-8 w-8 text-red-600" />
-                  <div className="ml-4">
-                    <p className="text-sm font-medium text-gray-600">Carte</p>
-                    <p className="text-2xl font-bold">{allRequests.filter((r) => r.type === "card_request").length}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
           </div>
-
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center">
@@ -1428,11 +1548,7 @@ export default function ServiceRequestsPage() {
                         <div className="text-right text-sm text-gray-500">
                           <p>Soumise le</p>
                           <p className="font-medium">{new Date(request.submittedAt).toLocaleDateString("fr-FR")}</p>
-                          {request.expectedResponse && (
-                            <p className="text-xs">
-                              Réponse attendue: {new Date(request.expectedResponse).toLocaleDateString("fr-FR")}
-                            </p>
-                          )}
+
                           {request.completedAt && (
                             <p className="text-xs text-green-600">
                               Complétée le: {new Date(request.completedAt).toLocaleDateString("fr-FR")}
@@ -1442,33 +1558,9 @@ export default function ServiceRequestsPage() {
                       </div>
 
                       <div className="flex items-center space-x-2">
-                        <Button variant="ghost" size="sm">
+                        <Button variant="ghost" size="sm" onClick={() => handleViewDetails(request)}>
                           <Eye className="w-4 h-4" />
                         </Button>
-
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="sm">
-                              <MoreVertical className="w-4 h-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem>
-                              <Eye className="w-4 h-4 mr-2" />
-                              Voir détails
-                            </DropdownMenuItem>
-                            <DropdownMenuItem>
-                              <Download className="w-4 h-4 mr-2" />
-                              Télécharger
-                            </DropdownMenuItem>
-                            {request.status === "En cours" && (
-                              <DropdownMenuItem className="text-red-600">
-                                <Trash2 className="w-4 h-4 mr-2" />
-                                Annuler
-                              </DropdownMenuItem>
-                            )}
-                          </DropdownMenuContent>
-                        </DropdownMenu>
                       </div>
                     </div>
                   ))}
@@ -1478,6 +1570,48 @@ export default function ServiceRequestsPage() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      <Dialog open={isDetailsModalOpen} onOpenChange={setIsDetailsModalOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center">
+              <FileText className="w-5 h-5 mr-2" />
+              Détails de la demande
+            </DialogTitle>
+          </DialogHeader>
+
+          {isLoadingDetails ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mr-4"></div>
+              <p className="text-gray-600">Chargement des détails...</p>
+            </div>
+          ) : selectedRequestDetails ? (
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {formatRequestDetails(
+                  selectedRequestDetails,
+                  allRequests.find((r) => r.id === selectedRequestDetails.id)?.type || "unknown",
+                ).map((field, index) => (
+                  <div key={index} className="space-y-1">
+                    <label className="text-sm font-medium text-gray-600">{field.label}</label>
+                    <p className="text-sm text-gray-900 bg-gray-50 p-2 rounded border">{field.value}</p>
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex justify-end space-x-2 pt-4 border-t">
+                <Button variant="outline" onClick={closeDetailsModal}>
+                  Fermer
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <p className="text-gray-500">Aucun détail disponible</p>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
