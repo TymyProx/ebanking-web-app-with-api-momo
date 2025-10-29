@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -191,12 +192,19 @@ export default function ServiceRequestsPage() {
           type: "checkbook",
           typeName: "Demande de chéquier",
           status:
-            item.stepflow === 0 ? "En attente" :
-            item.stepflow === 1 ? "En cours de traitement" :
-            item.stepflow === 2 ? "En cours de traitement" :
-            item.stepflow === 3 ? "Disponible à l’agence" :
-            item.stepflow === 4 ? "Disponible" :
-            item.stepflow === 5 ? "Retiré" : "En attente",
+            item.stepflow === 0
+              ? "En attente"
+              : item.stepflow === 1
+                ? "En cours de traitement"
+                : item.stepflow === 2
+                  ? "En cours de traitement"
+                  : item.stepflow === 3
+                    ? "Disponible à l’agence"
+                    : item.stepflow === 4
+                      ? "Disponible"
+                      : item.stepflow === 5
+                        ? "Retiré"
+                        : "En attente",
           submittedAt: item.dateorder || item.createdAt?.split("T")[0] || new Date().toISOString().split("T")[0],
           expectedResponse: item.dateorder
             ? new Date(new Date(item.dateorder).getTime() + 3 * 24 * 60 * 60 * 1000).toISOString().split("T")[0]
@@ -253,7 +261,7 @@ export default function ServiceRequestsPage() {
         total: allTransformedRequests.length,
         checkbook: allTransformedRequests.filter((req) => req.type === "checkbook").length,
         credit: allTransformedRequests.filter((req) => req.type === "credit").length,
-        card: allTransformedRequests.filter((req) => req.type === "card").length,
+        card: allTransformedRequests.filter((req) => req.type === "account").length,
         account: allTransformedRequests.filter((req) => req.type === "account").length,
       }
       console.log("[v0] Statistiques calculées:", stats)
@@ -434,12 +442,19 @@ export default function ServiceRequestsPage() {
                   type: "checkbook",
                   typeName: "Demande de chéquier",
                   status:
-                    item.stepflow === 0 ? "En attente" :
-                    item.stepflow === 1 ? "En cours de traitement" :
-                    item.stepflow === 2 ? "En cours de traitement" :
-                    item.stepflow === 3 ? "Disponible à l’agence" :
-                    item.stepflow === 4 ? "Disponible" :
-                    item.stepflow === 5 ? "Retiré" : "En attente",
+                    item.stepflow === 0
+                      ? "En attente"
+                      : item.stepflow === 1
+                        ? "En cours de traitement"
+                        : item.stepflow === 2
+                          ? "En cours de traitement"
+                          : item.stepflow === 3
+                            ? "Disponible à l’agence"
+                            : item.stepflow === 4
+                              ? "Disponible"
+                              : item.stepflow === 5
+                                ? "Retiré"
+                                : "En attente",
                   submittedAt: item.dateorder || new Date().toISOString().split("T")[0],
                   expectedResponse: item.dateorder
                     ? new Date(new Date(item.dateorder).getTime() + 3 * 24 * 60 * 60 * 1000).toISOString().split("T")[0]
@@ -826,32 +841,52 @@ export default function ServiceRequestsPage() {
               </Select>
             </div>
 
-            <div>
-              <Label htmlFor="typeCheque">Type de chèque *</Label>
-              <Select
+            <div className="space-y-3">
+              <Label>Type de chèque *</Label>
+              <RadioGroup
                 value={formData.typeCheque || ""}
                 onValueChange={(value) => handleInputChange("typeCheque", value)}
               >
-                <SelectTrigger>
-                  <SelectValue placeholder="Choisir le type de chèque" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Standard">Standard</SelectItem>
-                  <SelectItem value="Certifié">Certifié</SelectItem>
-                  <SelectItem value="Barré">Barré</SelectItem>
-                </SelectContent>
-              </Select>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="Standard" id="type-standard" />
+                  <Label htmlFor="type-standard" className="font-normal cursor-pointer">
+                    Standard
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="Certifié" id="type-certifie" />
+                  <Label htmlFor="type-certifie" className="font-normal cursor-pointer">
+                    Certifié
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="Barré" id="type-barre" />
+                  <Label htmlFor="type-barre" className="font-normal cursor-pointer">
+                    Barré
+                  </Label>
+                </div>
+              </RadioGroup>
             </div>
 
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="talonCheque"
-                checked={formData.talonCheque || false}
-                onCheckedChange={(checked) => handleInputChange("talonCheque", checked)}
-              />
-              <Label htmlFor="talonCheque" className="text-sm font-normal">
-                Avec talon de chèque
-              </Label>
+            <div className="space-y-3">
+              <Label>Chèque à talon *</Label>
+              <RadioGroup
+                value={formData.talonCheque === true ? "oui" : formData.talonCheque === false ? "non" : ""}
+                onValueChange={(value) => handleInputChange("talonCheque", value === "oui")}
+              >
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="oui" id="talon-oui" />
+                  <Label htmlFor="talon-oui" className="font-normal cursor-pointer">
+                    Avec talon de chèque
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="non" id="talon-non" />
+                  <Label htmlFor="talon-non" className="font-normal cursor-pointer">
+                    Sans talon de chèque
+                  </Label>
+                </div>
+              </RadioGroup>
             </div>
 
             <div>
