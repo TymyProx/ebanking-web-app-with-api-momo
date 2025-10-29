@@ -423,74 +423,125 @@ export default function NewTransferPage() {
       <form onSubmit={handleTransferSubmit} className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Formulaire principal */}
         <div className="lg:col-span-2 space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Type de virement - Full width */}
-            <Card className="md:col-span-2 border-2 hover:border-primary/50 transition-all duration-300 bg-gradient-to-br from-background via-background to-primary/5">
-              <CardHeader className="space-y-1">
-                <CardTitle className="flex items-center space-x-3 text-xl">
-                  <div className="p-2 rounded-lg bg-primary/10">
-                    <ArrowRight className="h-5 w-5 text-primary" />
-                  </div>
-                  <span>Type de virement</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-3">
-                  <Label htmlFor="transferType" className="text-base font-semibold">
-                    Sélectionner le type de virement *
-                  </Label>
-                  <Select value={transferType} onValueChange={handleTransferTypeChange}>
-                    <SelectTrigger className="h-auto py-3 border-2 hover:border-primary/50 focus:border-primary transition-all duration-200 bg-gradient-to-r from-background to-muted/20">
-                      <SelectValue placeholder="Choisir le type de virement" />
-                    </SelectTrigger>
-                    <SelectContent className="border-2">
-                      <SelectItem value="account-to-beneficiary" className="py-4 cursor-pointer hover:bg-primary/5">
-                        <div className="flex items-start space-x-3">
-                          <div className="p-2 rounded-md bg-blue-100 dark:bg-blue-950">
-                            <User className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                          </div>
-                          <div className="flex flex-col">
-                            <span className="font-semibold text-base">Compte vers bénéficiaire</span>
-                            <span className="text-sm text-muted-foreground">
-                              Virement vers un bénéficiaire enregistré
+          <Card className="border-2 hover:border-primary/50 transition-all duration-300 bg-gradient-to-br from-background via-background to-primary/5">
+            <CardHeader className="space-y-1">
+              <CardTitle className="flex items-center space-x-3 text-xl">
+                <div className="p-2 rounded-lg bg-primary/10">
+                  <ArrowRight className="h-5 w-5 text-primary" />
+                </div>
+                <span>Type de virement</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-3">
+                <Label htmlFor="transferType" className="text-base font-semibold">
+                  Sélectionner le type de virement *
+                </Label>
+                <Select value={transferType} onValueChange={handleTransferTypeChange}>
+                  <SelectTrigger className="h-auto py-3 border-2 hover:border-primary/50 focus:border-primary transition-all duration-200 bg-gradient-to-r from-background to-muted/20">
+                    <SelectValue placeholder="Choisir le type de virement" />
+                  </SelectTrigger>
+                  <SelectContent className="border-2">
+                    <SelectItem value="account-to-beneficiary" className="py-4 cursor-pointer hover:bg-primary/5">
+                      <div className="flex items-start space-x-3">
+                        <div className="p-2 rounded-md bg-blue-100 dark:bg-blue-950">
+                          <User className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="font-semibold text-base">Compte vers bénéficiaire</span>
+                          <span className="text-sm text-muted-foreground">
+                            Virement vers un bénéficiaire enregistré
+                          </span>
+                        </div>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="account-to-account" className="py-4 cursor-pointer hover:bg-primary/5">
+                      <div className="flex items-start space-x-3">
+                        <div className="p-2 rounded-md bg-green-100 dark:bg-green-950">
+                          <ArrowRight className="h-4 w-4 text-green-600 dark:text-green-400" />
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="font-semibold text-base">Compte à compte</span>
+                          <span className="text-sm text-muted-foreground">Virement entre vos comptes</span>
+                        </div>
+                      </div>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-2 hover:border-primary/50 transition-all duration-300 bg-gradient-to-br from-background via-background to-blue-500/5">
+            <CardHeader className="space-y-1">
+              <CardTitle className="flex items-center space-x-3 text-xl">
+                <div className="p-2 rounded-lg bg-blue-100 dark:bg-blue-950">
+                  <User className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                </div>
+                <span>Compte débiteur</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-3">
+                <Label htmlFor="account" className="text-base font-semibold">
+                  Sélectionner le compte à débiter *
+                </Label>
+                <Select value={selectedAccount} onValueChange={handleDebitAccountChange}>
+                  <SelectTrigger className="h-auto py-3 border-2 hover:border-blue-500/50 focus:border-blue-500 transition-all duration-200 bg-gradient-to-r from-background to-blue-500/10">
+                    <SelectValue placeholder={isLoadingAccounts ? "Chargement..." : "Choisir un compte"} />
+                  </SelectTrigger>
+                  <SelectContent className="border-2">
+                    {isLoadingAccounts ? (
+                      <SelectItem value="loading" disabled>
+                        Chargement des comptes...
+                      </SelectItem>
+                    ) : accounts.length === 0 ? (
+                      <SelectItem value="empty" disabled>
+                        Aucun compte trouvé
+                      </SelectItem>
+                    ) : (
+                      accounts.map((account) => (
+                        <SelectItem
+                          key={account.id}
+                          value={account.id}
+                          className="py-4 cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-950/20"
+                        >
+                          <div className="flex items-center justify-between w-full">
+                            <div className="flex flex-col">
+                              <span className="font-semibold text-base">{account.name}</span>
+                              <span className="text-sm text-muted-foreground">{account.number}</span>
+                            </div>
+                            <span className="font-bold text-blue-600 dark:text-blue-400 ml-4">
+                              {formatCurrency(account.balance, account.currency)}
                             </span>
                           </div>
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="account-to-account" className="py-4 cursor-pointer hover:bg-primary/5">
-                        <div className="flex items-start space-x-3">
-                          <div className="p-2 rounded-md bg-green-100 dark:bg-green-950">
-                            <ArrowRight className="h-4 w-4 text-green-600 dark:text-green-400" />
-                          </div>
-                          <div className="flex flex-col">
-                            <span className="font-semibold text-base">Compte à compte</span>
-                            <span className="text-sm text-muted-foreground">Virement entre vos comptes</span>
-                          </div>
-                        </div>
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </CardContent>
-            </Card>
+                        </SelectItem>
+                      ))
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
+            </CardContent>
+          </Card>
 
-            {/* Compte débiteur - Left column */}
-            <Card className="border-2 hover:border-primary/50 transition-all duration-300 bg-gradient-to-br from-background via-background to-blue-500/5">
+          {transferType === "account-to-account" ? (
+            /* Modernized credit account card */
+            <Card className="border-2 hover:border-primary/50 transition-all duration-300 bg-gradient-to-br from-background via-background to-green-500/5">
               <CardHeader className="space-y-1">
                 <CardTitle className="flex items-center space-x-3 text-xl">
-                  <div className="p-2 rounded-lg bg-blue-100 dark:bg-blue-950">
-                    <User className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                  <div className="p-2 rounded-lg bg-green-100 dark:bg-green-950">
+                    <Building className="h-5 w-5 text-green-600 dark:text-green-400" />
                   </div>
-                  <span>Compte débiteur</span>
+                  <span>Compte créditeur</span>
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-3">
-                  <Label htmlFor="account" className="text-base font-semibold">
-                    Sélectionner le compte à débiter *
+                  <Label htmlFor="creditAccount" className="text-base font-semibold">
+                    Sélectionner le compte à créditer *
                   </Label>
-                  <Select value={selectedAccount} onValueChange={handleDebitAccountChange}>
-                    <SelectTrigger className="h-auto py-3 border-2 hover:border-blue-500/50 focus:border-blue-500 transition-all duration-200 bg-gradient-to-r from-background to-blue-500/10">
+                  <Select value={selectedCreditAccount} onValueChange={setSelectedCreditAccount}>
+                    <SelectTrigger className="h-auto py-3 border-2 hover:border-green-500/50 focus:border-green-500 transition-all duration-200 bg-gradient-to-r from-background to-green-500/10">
                       <SelectValue placeholder={isLoadingAccounts ? "Chargement..." : "Choisir un compte"} />
                     </SelectTrigger>
                     <SelectContent className="border-2">
@@ -503,20 +554,102 @@ export default function NewTransferPage() {
                           Aucun compte trouvé
                         </SelectItem>
                       ) : (
-                        accounts.map((account) => (
-                          <SelectItem
-                            key={account.id}
-                            value={account.id}
-                            className="py-4 cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-950/20"
-                          >
-                            <div className="flex items-center justify-between w-full">
-                              <div className="flex flex-col">
-                                <span className="font-semibold text-base">{account.name}</span>
-                                <span className="text-sm text-muted-foreground">{account.number}</span>
+                        accounts
+                          .filter((account) => {
+                            const debitAccount = accounts.find((acc) => acc.id === selectedAccount)
+                            return (
+                              account.id !== selectedAccount &&
+                              (!debitAccount || account.currency === debitAccount.currency)
+                            )
+                          })
+                          .map((account) => (
+                            <SelectItem
+                              key={account.id}
+                              value={account.id}
+                              className="py-4 cursor-pointer hover:bg-green-50 dark:hover:bg-green-950/20"
+                            >
+                              <div className="flex items-center justify-between w-full">
+                                <div className="flex flex-col">
+                                  <span className="font-semibold text-base">{account.name}</span>
+                                  <span className="text-sm text-muted-foreground">{account.number}</span>
+                                </div>
+                                <span className="font-bold text-green-600 dark:text-green-400 ml-4">
+                                  {formatCurrency(account.balance, account.currency)}
+                                </span>
                               </div>
-                              <span className="font-bold text-blue-600 dark:text-blue-400 ml-4">
-                                {formatCurrency(account.balance, account.currency)}
-                              </span>
+                            </SelectItem>
+                          ))
+                      )}
+                    </SelectContent>
+                  </Select>
+                  {selectedAccountData && transferType === "account-to-account" && (
+                    <div className="p-3 rounded-lg bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800">
+                      <p className="text-sm text-blue-700 dark:text-blue-300 font-medium">
+                        💡 Seuls les comptes en {selectedAccountData.currency} sont disponibles pour ce virement
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            /* Modernized beneficiary card */
+            <Card className="border-2 hover:border-primary/50 transition-all duration-300 bg-gradient-to-br from-background via-background to-purple-500/5">
+              <CardHeader className="space-y-1">
+                <CardTitle className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3 text-xl">
+                    <div className="p-2 rounded-lg bg-purple-100 dark:bg-purple-950">
+                      <Building className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+                    </div>
+                    <span>Bénéficiaire</span>
+                  </div>
+                  <Link href="/transfers/beneficiaries">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="flex items-center space-x-2 border-2 hover:border-primary hover:bg-primary/5 transition-all duration-200 bg-transparent"
+                    >
+                      <Plus className="h-4 w-4" />
+                      <span>Nouveau</span>
+                    </Button>
+                  </Link>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-3">
+                  <Label htmlFor="beneficiary" className="text-base font-semibold">
+                    Sélectionner le bénéficiaire *
+                  </Label>
+                  <Select value={selectedBeneficiary} onValueChange={setSelectedBeneficiary}>
+                    <SelectTrigger className="h-auto py-3 border-2 hover:border-purple-500/50 focus:border-purple-500 transition-all duration-200 bg-gradient-to-r from-background to-purple-500/10">
+                      <SelectValue placeholder={isLoadingBeneficiaries ? "Chargement..." : "Choisir un bénéficiaire"} />
+                    </SelectTrigger>
+                    <SelectContent className="border-2">
+                      {isLoadingBeneficiaries ? (
+                        <SelectItem value="loading" disabled>
+                          Chargement des bénéficiaires...
+                        </SelectItem>
+                      ) : beneficiaries.length === 0 ? (
+                        <SelectItem value="empty" disabled>
+                          Aucun bénéficiaire trouvé
+                        </SelectItem>
+                      ) : (
+                        beneficiaries.map((beneficiary) => (
+                          <SelectItem
+                            key={beneficiary.id}
+                            value={beneficiary.id}
+                            className="py-4 cursor-pointer hover:bg-purple-50 dark:hover:bg-purple-950/20"
+                          >
+                            <div className="flex items-start space-x-3">
+                              <div className="p-2 rounded-md bg-purple-100 dark:bg-purple-950">
+                                <User className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                              </div>
+                              <div className="flex flex-col">
+                                <span className="font-semibold text-base">{beneficiary.name}</span>
+                                <span className="text-sm text-muted-foreground">{beneficiary.account}</span>
+                                <span className="text-sm text-muted-foreground">{beneficiary.bank}</span>
+                              </div>
                             </div>
                           </SelectItem>
                         ))
@@ -526,147 +659,8 @@ export default function NewTransferPage() {
                 </div>
               </CardContent>
             </Card>
+          )}
 
-            {/* Compte créditeur ou Bénéficiaire - Right column */}
-            {transferType === "account-to-account" ? (
-              <Card className="border-2 hover:border-primary/50 transition-all duration-300 bg-gradient-to-br from-background via-background to-green-500/5">
-                <CardHeader className="space-y-1">
-                  <CardTitle className="flex items-center space-x-3 text-xl">
-                    <div className="p-2 rounded-lg bg-green-100 dark:bg-green-950">
-                      <Building className="h-5 w-5 text-green-600 dark:text-green-400" />
-                    </div>
-                    <span>Compte créditeur</span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-3">
-                    <Label htmlFor="creditAccount" className="text-base font-semibold">
-                      Sélectionner le compte à créditer *
-                    </Label>
-                    <Select value={selectedCreditAccount} onValueChange={setSelectedCreditAccount}>
-                      <SelectTrigger className="h-auto py-3 border-2 hover:border-green-500/50 focus:border-green-500 transition-all duration-200 bg-gradient-to-r from-background to-green-500/10">
-                        <SelectValue placeholder={isLoadingAccounts ? "Chargement..." : "Choisir un compte"} />
-                      </SelectTrigger>
-                      <SelectContent className="border-2">
-                        {isLoadingAccounts ? (
-                          <SelectItem value="loading" disabled>
-                            Chargement des comptes...
-                          </SelectItem>
-                        ) : accounts.length === 0 ? (
-                          <SelectItem value="empty" disabled>
-                            Aucun compte trouvé
-                          </SelectItem>
-                        ) : (
-                          accounts
-                            .filter((account) => {
-                              const debitAccount = accounts.find((acc) => acc.id === selectedAccount)
-                              return (
-                                account.id !== selectedAccount &&
-                                (!debitAccount || account.currency === debitAccount.currency)
-                              )
-                            })
-                            .map((account) => (
-                              <SelectItem
-                                key={account.id}
-                                value={account.id}
-                                className="py-4 cursor-pointer hover:bg-green-50 dark:hover:bg-green-950/20"
-                              >
-                                <div className="flex items-center justify-between w-full">
-                                  <div className="flex flex-col">
-                                    <span className="font-semibold text-base">{account.name}</span>
-                                    <span className="text-sm text-muted-foreground">{account.number}</span>
-                                  </div>
-                                  <span className="font-bold text-green-600 dark:text-green-400 ml-4">
-                                    {formatCurrency(account.balance, account.currency)}
-                                  </span>
-                                </div>
-                              </SelectItem>
-                            ))
-                        )}
-                      </SelectContent>
-                    </Select>
-                    {selectedAccountData && transferType === "account-to-account" && (
-                      <div className="p-3 rounded-lg bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800">
-                        <p className="text-sm text-blue-700 dark:text-blue-300 font-medium">
-                          💡 Seuls les comptes en {selectedAccountData.currency} sont disponibles pour ce virement
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            ) : (
-              <Card className="border-2 hover:border-primary/50 transition-all duration-300 bg-gradient-to-br from-background via-background to-purple-500/5">
-                <CardHeader className="space-y-1">
-                  <CardTitle className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3 text-xl">
-                      <div className="p-2 rounded-lg bg-purple-100 dark:bg-purple-950">
-                        <Building className="h-5 w-5 text-purple-600 dark:text-purple-400" />
-                      </div>
-                      <span>Bénéficiaire</span>
-                    </div>
-                    <Link href="/transfers/beneficiaries">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        className="flex items-center space-x-2 border-2 hover:border-primary hover:bg-primary/5 transition-all duration-200 bg-transparent"
-                      >
-                        <Plus className="h-4 w-4" />
-                        <span>Nouveau</span>
-                      </Button>
-                    </Link>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-3">
-                    <Label htmlFor="beneficiary" className="text-base font-semibold">
-                      Sélectionner le bénéficiaire *
-                    </Label>
-                    <Select value={selectedBeneficiary} onValueChange={setSelectedBeneficiary}>
-                      <SelectTrigger className="h-auto py-3 border-2 hover:border-purple-500/50 focus:border-purple-500 transition-all duration-200 bg-gradient-to-r from-background to-purple-500/10">
-                        <SelectValue
-                          placeholder={isLoadingBeneficiaries ? "Chargement..." : "Choisir un bénéficiaire"}
-                        />
-                      </SelectTrigger>
-                      <SelectContent className="border-2">
-                        {isLoadingBeneficiaries ? (
-                          <SelectItem value="loading" disabled>
-                            Chargement des bénéficiaires...
-                          </SelectItem>
-                        ) : beneficiaries.length === 0 ? (
-                          <SelectItem value="empty" disabled>
-                            Aucun bénéficiaire trouvé
-                          </SelectItem>
-                        ) : (
-                          beneficiaries.map((beneficiary) => (
-                            <SelectItem
-                              key={beneficiary.id}
-                              value={beneficiary.id}
-                              className="py-4 cursor-pointer hover:bg-purple-50 dark:hover:bg-purple-950/20"
-                            >
-                              <div className="flex items-start space-x-3">
-                                <div className="p-2 rounded-md bg-purple-100 dark:bg-purple-950">
-                                  <User className="h-4 w-4 text-purple-600 dark:text-purple-400" />
-                                </div>
-                                <div className="flex flex-col">
-                                  <span className="font-semibold text-base">{beneficiary.name}</span>
-                                  <span className="text-sm text-muted-foreground">{beneficiary.account}</span>
-                                  <span className="text-sm text-muted-foreground">{beneficiary.bank}</span>
-                                </div>
-                              </div>
-                            </SelectItem>
-                          ))
-                        )}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-          </div>
-
-          {/* Détails du virement - Full width with internal 2-column grid */}
           <Card className="border-2 hover:border-primary/50 transition-all duration-300 bg-gradient-to-br from-background via-background to-orange-500/5">
             <CardHeader className="space-y-1">
               <CardTitle className="flex items-center space-x-3 text-xl">
@@ -677,57 +671,40 @@ export default function NewTransferPage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-5">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                <div className="space-y-3">
-                  <Label htmlFor="amount" className="text-base font-semibold">
-                    Montant *
-                  </Label>
-                  <Input
-                    id="amount"
-                    type="number"
-                    value={amount}
-                    onChange={handleAmountChange}
-                    placeholder="0"
-                    min="1"
-                    required
-                    className={`h-12 text-lg border-2 transition-all duration-200 ${
-                      amountError
-                        ? "border-destructive focus:border-destructive hover:border-destructive"
-                        : "hover:border-orange-500/50 focus:border-orange-500"
-                    }`}
-                  />
-                  {amountError && (
-                    <Alert variant="destructive" className="border-l-4">
-                      <AlertCircle className="h-4 w-4" />
-                      <AlertDescription className="text-sm">{amountError}</AlertDescription>
-                    </Alert>
-                  )}
-                  {selectedAccountData && (
-                    <div className="p-3 rounded-lg bg-muted/50 border">
-                      <p className="text-sm font-medium">
-                        💰 Solde disponible:{" "}
-                        <span className="text-primary">
-                          {formatCurrency(selectedAccountData.balance, selectedAccountData.currency)}
-                        </span>
-                      </p>
-                    </div>
-                  )}
-                </div>
-
-                <div className="space-y-3">
-                  <Label htmlFor="transferDate" className="text-base font-semibold">
-                    Date d'exécution *
-                  </Label>
-                  <Input
-                    id="transferDate"
-                    type="date"
-                    value={transferDate}
-                    onChange={(e) => setTransferDate(e.target.value)}
-                    min={new Date().toISOString().split("T")[0]}
-                    required
-                    className="h-12 border-2 hover:border-orange-500/50 focus:border-orange-500 transition-all duration-200"
-                  />
-                </div>
+              <div className="space-y-3">
+                <Label htmlFor="amount" className="text-base font-semibold">
+                  Montant *
+                </Label>
+                <Input
+                  id="amount"
+                  type="number"
+                  value={amount}
+                  onChange={handleAmountChange}
+                  placeholder="0"
+                  min="1"
+                  required
+                  className={`h-12 text-lg border-2 transition-all duration-200 ${
+                    amountError
+                      ? "border-destructive focus:border-destructive hover:border-destructive"
+                      : "hover:border-orange-500/50 focus:border-orange-500"
+                  }`}
+                />
+                {amountError && (
+                  <Alert variant="destructive" className="border-l-4">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription className="text-sm">{amountError}</AlertDescription>
+                  </Alert>
+                )}
+                {selectedAccountData && (
+                  <div className="p-3 rounded-lg bg-muted/50 border">
+                    <p className="text-sm font-medium">
+                      💰 Solde disponible:{" "}
+                      <span className="text-primary">
+                        {formatCurrency(selectedAccountData.balance, selectedAccountData.currency)}
+                      </span>
+                    </p>
+                  </div>
+                )}
               </div>
 
               <div className="space-y-3">
@@ -742,6 +719,21 @@ export default function NewTransferPage() {
                   rows={3}
                   required
                   className="border-2 hover:border-orange-500/50 focus:border-orange-500 transition-all duration-200 resize-none"
+                />
+              </div>
+
+              <div className="space-y-3">
+                <Label htmlFor="transferDate" className="text-base font-semibold">
+                  Date d'exécution *
+                </Label>
+                <Input
+                  id="transferDate"
+                  type="date"
+                  value={transferDate}
+                  onChange={(e) => setTransferDate(e.target.value)}
+                  min={new Date().toISOString().split("T")[0]}
+                  required
+                  className="h-12 border-2 hover:border-orange-500/50 focus:border-orange-500 transition-all duration-200"
                 />
               </div>
             </CardContent>
