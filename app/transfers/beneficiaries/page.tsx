@@ -904,7 +904,7 @@ export default function BeneficiariesPage() {
                 <Input
                   id="edit-name"
                   name="name"
-                  defaultValue={editingBeneficiary?.name}
+                  defaultValue={editingBeneficiary?.name || ""}
                   placeholder="Nom et prénom du bénéficiaire"
                   required
                 />
@@ -1004,7 +1004,7 @@ export default function BeneficiariesPage() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="edit-codeAgence">Code agence *</Label>
-                  <Input id="edit-codeAgence" name="codeAgence" placeholder="Ex: 0001" required />
+                  <Input id="edit-codeAgence" name="codeAgence" defaultValue="" placeholder="Ex: 0001" required />
                 </div>
 
                 <div className="space-y-2">
@@ -1012,7 +1012,7 @@ export default function BeneficiariesPage() {
                   <Input
                     id="edit-account"
                     name="account"
-                    defaultValue={editingBeneficiary?.account}
+                    defaultValue={editingBeneficiary?.account || ""}
                     onChange={(e) => validateAccountNumber(e.target.value)}
                     placeholder="1234567890"
                     maxLength={10}
@@ -1024,7 +1024,7 @@ export default function BeneficiariesPage() {
 
                 <div className="space-y-2">
                   <Label htmlFor="edit-cleRib">Clé RIB *</Label>
-                  <Input id="edit-cleRib" name="cleRib" placeholder="Ex: 89" maxLength={2} required />
+                  <Input id="edit-cleRib" name="cleRib" defaultValue="" placeholder="Ex: 89" maxLength={2} required />
                 </div>
               </div>
             )}
@@ -1035,7 +1035,7 @@ export default function BeneficiariesPage() {
                 <Input
                   id="edit-account"
                   name="account"
-                  defaultValue={editingBeneficiary?.account}
+                  defaultValue={editingBeneficiary?.account || ""}
                   placeholder="FR76 1234 5678 9012 3456 78"
                   required
                 />
