@@ -135,9 +135,16 @@ export default function BeneficiariesPage() {
   useEffect(() => {
     if (selectedType === "BNG-BNG") {
       setSelectedBank("Banque Nationale de Guinée")
+      setSelectedBankCode("")
+      setSelectedSwiftCode("")
+    } else if (selectedType === "BNG-CONFRERE") {
+      setSelectedBank("")
+      setSelectedBankCode("")
+      setSelectedSwiftCode("")
     } else if (selectedType !== "") {
       setSelectedBank("")
       setSelectedBankCode("")
+      setSelectedSwiftCode("")
     }
   }, [selectedType])
 
@@ -254,8 +261,11 @@ export default function BeneficiariesPage() {
     setSelectedBank(bankName)
     const selectedBankData = banks.find((bank) => bank.bankName === bankName)
     if (selectedBankData) {
-      setSelectedBankCode(selectedBankData.codeBank)
+      setSelectedBankCode(selectedBankData.codeBank || "")
       setSelectedSwiftCode(selectedBankData.swiftCode || "")
+    } else {
+      setSelectedBankCode("")
+      setSelectedSwiftCode("")
     }
   }
 
@@ -532,7 +542,7 @@ export default function BeneficiariesPage() {
                       <Input
                         id="bank"
                         name="bank"
-                        value={selectedBank}
+                        value={selectedBank || ""}
                         onChange={(e) => setSelectedBank(e.target.value)}
                         placeholder="Saisissez le nom de la banque"
                         className="bg-white"
@@ -549,7 +559,7 @@ export default function BeneficiariesPage() {
                           <Input
                             id="codeBanque"
                             name="codeBanque"
-                            value={selectedBankCode}
+                            value={selectedBankCode || ""}
                             placeholder="Code banque"
                             disabled
                             className="bg-gray-50"
@@ -566,7 +576,7 @@ export default function BeneficiariesPage() {
                           <Input
                             id="swiftCode"
                             name="swiftCode"
-                            value={selectedSwiftCode}
+                            value={selectedSwiftCode || ""}
                             placeholder="Code SWIFT"
                             disabled
                             className="bg-gray-50"
@@ -944,7 +954,7 @@ export default function BeneficiariesPage() {
                     <Input
                       id="edit-bank"
                       name="bank"
-                      value={selectedBank}
+                      value={selectedBank || ""}
                       onChange={(e) => setSelectedBank(e.target.value)}
                       placeholder="Saisissez le nom de la banque"
                       className="bg-white"
@@ -961,7 +971,7 @@ export default function BeneficiariesPage() {
                         <Input
                           id="edit-codeBanque"
                           name="codeBanque"
-                          value={selectedBankCode}
+                          value={selectedBankCode || ""}
                           placeholder="Code banque"
                           disabled
                           className="bg-gray-50"
@@ -978,7 +988,7 @@ export default function BeneficiariesPage() {
                         <Input
                           id="edit-swiftCode"
                           name="swiftCode"
-                          value={selectedSwiftCode}
+                          value={selectedSwiftCode || ""}
                           placeholder="Code SWIFT"
                           disabled
                           className="bg-gray-50"
