@@ -42,40 +42,38 @@ export async function signupUser(data: SignupData) {
     // Generate a unique client code
     const codeClient = `CLI-${Date.now()}-${Math.random().toString(36).substring(2, 9).toUpperCase()}`
 
-    console.log("[v0] Step 1: Creating user account via /tenant/{tenantId}/user...")
+    console.log("[v0] Step 1: Creating auth account via /auth/sign-up...")
 
-    const createUserPayload = {
-      data: {
-        emails: [String(data.email)],
-        roles: ["custom"], // Client role
-        firstName: String(firstName),
-        lastName: String(lastName),
-        sendInvitationEmail: false, // No email for self-signup
-      },
+    const signupPayload = {
+      email: String(data.email),
+      password: String(data.password),
+      tenantId: String(TENANT_ID),
+      firstName: String(firstName),
+      lastName: String(lastName),
     }
 
-    console.log("[v0] Create user payload:", JSON.stringify(createUserPayload))
+    console.log("[v0] Signup payload:", JSON.stringify({ ...signupPayload, password: "***" }))
 
-    const createUserResponse = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/user`, {
+    const signupResponse = await fetch(`${API_BASE_URL}/auth/sign-up`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(createUserPayload),
+      body: JSON.stringify(signupPayload),
     })
 
-    console.log("[v0] Create user response status:", createUserResponse.status)
-    const createUserResponseText = await createUserResponse.text()
-    console.log("[v0] Create user response body:", createUserResponseText.substring(0, 200) + "...")
+    console.log("[v0] Signup response status:", signupResponse.status)
+    const signupResponseText = await signupResponse.text()
+    console.log("[v0] Signup response body:", signupResponseText.substring(0, 200) + "...")
 
-    if (!createUserResponse.ok) {
+    if (!signupResponse.ok) {
       let errorData: any = {}
       try {
-        errorData = JSON.parse(createUserResponseText)
+        errorData = JSON.parse(signupResponseText)
       } catch (e) {
-        errorData = { message: createUserResponseText || `HTTP ${createUserResponse.status}` }
+        errorData = { message: signupResponseText || `HTTP ${signupResponse.status}` }
       }
-      console.error("[v0] User creation failed:", errorData)
+      console.error("[v0] Signup failed:", errorData)
 
       if (errorData.message?.includes("Email is already in use") || errorData.message?.includes("already exists")) {
         return {
@@ -84,69 +82,16 @@ export async function signupUser(data: SignupData) {
         }
       }
 
-      throw new Error(errorData.message || "Erreur lors de la création du compte utilisateur")
+      throw new Error(errorData.message || "Erreur lors de la création du compte")
     }
 
-    let userData: any
-    try {
-      userData = JSON.parse(createUserResponseText)
-    } catch (e) {
-      console.error("[v0] Failed to parse user creation response as JSON")
-      throw new Error("Réponse invalide du serveur")
-    }
-
-    const userId = userData.id || userData.data?.id
-    if (!userId) {
-      throw new Error("ID utilisateur non trouvé dans la réponse")
-    }
-
-    console.log("[v0] User account created successfully, userId:", userId)
-
-    console.log("[v0] Step 2: Activating user account with password...")
-
-    const activateUserPayload = {
-      email: String(data.email),
-      password: String(data.password),
-      invitationToken: userId, // Use userId as token for self-signup
-      token: userId,
-      tenantId: String(TENANT_ID),
-      firstName: String(firstName),
-      lastName: String(lastName),
-    }
-
-    console.log("[v0] Activate user payload:", JSON.stringify({ ...activateUserPayload, password: "***" }))
-
-    const activateResponse = await fetch(`${API_BASE_URL}/auth/sign-up`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(activateUserPayload),
-    })
-
-    console.log("[v0] Activate response status:", activateResponse.status)
-    const activateResponseText = await activateResponse.text()
-    console.log("[v0] Activate response body:", activateResponseText.substring(0, 100) + "...")
-
-    if (!activateResponse.ok) {
-      let errorData: any = {}
-      try {
-        errorData = JSON.parse(activateResponseText)
-      } catch (e) {
-        errorData = { message: activateResponseText || `HTTP ${activateResponse.status}` }
-      }
-      console.error("[v0] User activation failed:", errorData)
-      throw new Error(errorData.message || "Erreur lors de l'activation du compte")
-    }
-
-    // Extract JWT token from response
     let token: string
-    if (activateResponseText.startsWith("eyJ")) {
-      token = activateResponseText
+    if (signupResponseText.startsWith("eyJ")) {
+      token = signupResponseText
       console.log("[v0] Received JWT token directly")
     } else {
-      const activateData = JSON.parse(activateResponseText)
-      token = activateData.token || activateData.data?.token || activateData
+      const signupData = JSON.parse(signupResponseText)
+      token = signupData.token || signupData.data?.token || signupData
       console.log("[v0] Extracted token from JSON response")
     }
 
@@ -155,9 +100,9 @@ export async function signupUser(data: SignupData) {
       return { success: false, message: "Aucun token reçu du serveur" }
     }
 
-    console.log("[v0] User account activated successfully")
+    console.log("[v0] Auth account created successfully")
 
-    console.log("[v0] Step 3: Getting authenticated user info...")
+    console.log("[v0] Step 2: Getting authenticated user info...")
 
     const meResponse = await fetch(`${API_BASE_URL}/auth/me`, {
       method: "GET",
@@ -173,9 +118,10 @@ export async function signupUser(data: SignupData) {
     }
 
     const authenticatedUserData = await meResponse.json()
-    console.log("[v0] User info retrieved successfully")
+    const userId = authenticatedUserData.id
+    console.log("[v0] User info retrieved successfully, userId:", userId)
 
-    console.log("[v0] Step 4: Creating client profile...")
+    console.log("[v0] Step 3: Creating client profile...")
 
     const clientRequestBody = {
       data: {
