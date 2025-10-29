@@ -135,7 +135,7 @@ export default function BeneficiariesPage() {
   useEffect(() => {
     if (selectedType === "BNG-BNG") {
       setSelectedBank("Banque Nationale de Guinée")
-      setSelectedBankCode("")
+      setSelectedBankCode("022") // Auto-fill code banque with "022" for internal type
       setSelectedSwiftCode("")
     } else if (selectedType === "BNG-CONFRERE") {
       setSelectedBank("")
@@ -555,7 +555,7 @@ export default function BeneficiariesPage() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="codeBanque">Code Banque *</Label>
-                        {selectedType === "BNG-CONFRERE" ? (
+                        {selectedType === "BNG-CONFRERE" || selectedType === "BNG-BNG" ? (
                           <Input
                             id="codeBanque"
                             name="codeBanque"
@@ -967,7 +967,7 @@ export default function BeneficiariesPage() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="edit-codeBanque">Code Banque *</Label>
-                      {selectedType === "BNG-CONFRERE" ? (
+                      {selectedType === "BNG-CONFRERE" || selectedType === "BNG-BNG" ? (
                         <Input
                           id="edit-codeBanque"
                           name="codeBanque"
