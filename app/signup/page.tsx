@@ -48,11 +48,7 @@ export default function SignupPage() {
       })
 
       if (result.success) {
-        if (result.requiresVerification) {
-          router.push(`/auth/verify-email?email=${encodeURIComponent(result.email || email)}`)
-        } else {
-          router.push("/dashboard")
-        }
+        router.push("/dashboard")
       } else {
         setError(result.message)
       }
