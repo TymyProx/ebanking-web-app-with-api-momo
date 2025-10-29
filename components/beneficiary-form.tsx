@@ -62,12 +62,12 @@ export default function BeneficiaryForm({
   const loadBanks = async () => {
     try {
       setLoadingBanks(true)
-      const API_BASE_URL = process.env.API_BASE_URL
-      const TENANT_ID = process.env.TENANT_ID
+      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL
+      const TENANT_ID = process.env.NEXT_PUBLIC_TENANT_ID
       const token = localStorage.getItem("token")
 
-      //console.log("[v0] Loading banks for tenant:", TENANT_ID)
-      //console.log("[v0] API URL:", `${API_BASE_URL}/tenant/${TENANT_ID}/banque`)
+      console.log("[v0] Loading banks for tenant:", TENANT_ID)
+      console.log("[v0] API URL:", `${API_BASE_URL}/tenant/${TENANT_ID}/banque`)
 
       const response = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/banque`, {
         headers: {
@@ -76,11 +76,11 @@ export default function BeneficiaryForm({
         },
       })
 
-      //console.log("[v0] Banks API response status:", response.status)
+      console.log("[v0] Banks API response status:", response.status)
 
       if (response.ok) {
         const data = await response.json()
-        //console.log("[v0] Banks data received:", data)
+        console.log("[v0] Banks data received:", data)
         setBanks(data.rows || [])
       } else {
         console.error("[v0] Banks API error:", response.status, response.statusText)
