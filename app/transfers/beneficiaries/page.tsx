@@ -33,6 +33,7 @@ import {
   getBeneficiaries,
   toggleBeneficiaryFavorite,
   getBanks,
+  getBeneficiaryDetails,
 } from "./actions"
 import { useActionState } from "react"
 import type React from "react"
@@ -51,6 +52,8 @@ interface Beneficiary {
   swiftCode?: string
   country?: string
   status: number
+  codagence?: string
+  clerib?: string
 }
 
 interface Bank {
@@ -382,8 +385,19 @@ export default function BeneficiariesPage() {
     }
   }
 
-  const openEditDialog = (beneficiary: Beneficiary) => {
-    setEditingBeneficiary(beneficiary)
+  const openEditDialog = async (beneficiary: Beneficiary) => {
+    const fullBeneficiary = await getBeneficiaryDetails(beneficiary.id)
+
+    if (fullBeneficiary) {
+      setEditingBeneficiary({
+        ...beneficiary,
+        codagence: fullBeneficiary.codagence,
+        clerib: fullBeneficiary.clerib,
+      })
+    } else {
+      setEditingBeneficiary(beneficiary)
+    }
+
     setSelectedType(beneficiary.type)
     setSelectedBank(beneficiary.bank)
     setIsEditDialogOpen(true)
@@ -1004,7 +1018,13 @@ export default function BeneficiariesPage() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="edit-codeAgence">Code agence *</Label>
-                  <Input id="edit-codeAgence" name="codeAgence" defaultValue="" placeholder="Ex: 0001" required />
+                  <Input
+                    id="edit-codeAgence"
+                    name="codeAgence"
+                    defaultValue={editingBeneficiary?.codagence || ""}
+                    placeholder="Ex: 0001"
+                    required
+                  />
                 </div>
 
                 <div className="space-y-2">
@@ -1024,7 +1044,14 @@ export default function BeneficiariesPage() {
 
                 <div className="space-y-2">
                   <Label htmlFor="edit-cleRib">Clé RIB *</Label>
-                  <Input id="edit-cleRib" name="cleRib" defaultValue="" placeholder="Ex: 89" maxLength={2} required />
+                  <Input
+                    id="edit-cleRib"
+                    name="cleRib"
+                    defaultValue={editingBeneficiary?.clerib || ""}
+                    placeholder="Ex: 89"
+                    maxLength={2}
+                    required
+                  />
                 </div>
               </div>
             )}
