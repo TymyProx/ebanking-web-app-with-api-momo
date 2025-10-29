@@ -103,8 +103,11 @@ export async function signupUser(data: SignupData) {
     console.log("[v0] Step 2: Sending email verification...")
 
     const verificationPayload = {
+      email: String(data.email),
       tenantId: String(TENANT_ID),
     }
+
+    console.log("[v0] Verification payload:", JSON.stringify(verificationPayload))
 
     const verificationResponse = await fetch(`${API_BASE_URL}/auth/send-email-address-verification-email`, {
       method: "POST",
@@ -116,15 +119,21 @@ export async function signupUser(data: SignupData) {
     })
 
     console.log("[v0] Email verification response status:", verificationResponse.status)
+    const verificationResponseText = await verificationResponse.text()
+    console.log("[v0] Email verification response body:", verificationResponseText)
 
     if (!verificationResponse.ok) {
-      const errorData = await verificationResponse.json().catch(() => ({}))
+      let errorData: any = {}
+      try {
+        errorData = JSON.parse(verificationResponseText)
+      } catch (e) {
+        errorData = { message: verificationResponseText || `HTTP ${verificationResponse.status}` }
+      }
       console.error("[v0] Failed to send verification email:", errorData)
-      // Don't fail the signup if email sending fails, just log it
-      console.warn("[v0] Continuing signup despite email verification failure")
-    } else {
-      console.log("[v0] Verification email sent successfully")
+      throw new Error(errorData.message || "Erreur lors de l'envoi de l'email de vérification")
     }
+
+    console.log("[v0] Verification email sent successfully")
 
     const cookieStore = await cookies()
     cookieStore.set(
