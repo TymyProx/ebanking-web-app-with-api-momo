@@ -100,108 +100,66 @@ export async function signupUser(data: SignupData) {
 
     console.log("[v0] Auth account created successfully")
 
-    console.log("[v0] Step 2: Attempting to send email verification...")
-    try {
-      const verificationPayload = {
-        email: String(data.email),
-        tenantId: String(TENANT_ID),
-      }
+    console.log("[v0] Step 2: Sending email verification...")
 
-      const verificationResponse = await fetch(`${API_BASE_URL}/auth/send-email-address-verification-email`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(verificationPayload),
-      })
-
-      if (verificationResponse.ok) {
-        console.log("[v0] Verification email sent successfully")
-      } else {
-        console.log("[v0] Email verification not available (provider not configured), continuing without it...")
-      }
-    } catch (emailError) {
-      console.log("[v0] Email verification not available, continuing without it...")
+    const verificationPayload = {
+      email: String(data.email),
+      tenantId: String(TENANT_ID),
     }
 
-    console.log("[v0] Step 3: Getting user info...")
-    const meResponse = await fetch(`${API_BASE_URL}/auth/me`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    })
+    console.log("[v0] Verification payload:", JSON.stringify(verificationPayload))
 
-    if (!meResponse.ok) {
-      console.error("[v0] Failed to get user info")
-      throw new Error("Erreur lors de la récupération des informations utilisateur")
-    }
-
-    const userData = await meResponse.json()
-    const userId = userData.id || userData.data?.id
-    console.log("[v0] User ID:", userId)
-
-    if (!userId) {
-      console.error("[v0] No user ID found")
-      throw new Error("ID utilisateur non trouvé")
-    }
-
-    console.log("[v0] Step 4: Creating client profile...")
-    const clientPayload = {
-      data: {
-        userid: userId,
-        codeclient: codeClient,
-        nom: lastName,
-        prenom: firstName,
-        email: data.email,
-        telephone: data.phone,
-        adresse: data.address,
-        statut: "active",
-      },
-    }
-
-    console.log("[v0] Client payload:", JSON.stringify(clientPayload))
-
-    const clientResponse = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/client`, {
+    const verificationResponse = await fetch(`${API_BASE_URL}/auth/send-email-address-verification-email`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify(clientPayload),
+      body: JSON.stringify(verificationPayload),
     })
 
-    console.log("[v0] Client creation response status:", clientResponse.status)
-    const clientResponseText = await clientResponse.text()
-    console.log("[v0] Client creation response body:", clientResponseText)
+    console.log("[v0] Email verification response status:", verificationResponse.status)
+    const verificationResponseText = await verificationResponse.text()
+    console.log("[v0] Email verification response body:", verificationResponseText)
 
-    if (!clientResponse.ok) {
+    if (!verificationResponse.ok) {
       let errorData: any = {}
       try {
-        errorData = JSON.parse(clientResponseText)
+        errorData = JSON.parse(verificationResponseText)
       } catch (e) {
-        errorData = { message: clientResponseText || `HTTP ${clientResponse.status}` }
+        errorData = { message: verificationResponseText || `HTTP ${verificationResponse.status}` }
       }
-      console.error("[v0] Failed to create client profile:", errorData)
-      throw new Error(errorData.message || "Erreur lors de la création du profil client")
+      console.error("[v0] Failed to send verification email:", errorData)
+      throw new Error(errorData.message || "Erreur lors de l'envoi de l'email de vérification")
     }
 
-    console.log("[v0] Client profile created successfully")
+    console.log("[v0] Verification email sent successfully")
 
     const cookieStore = await cookies()
-    cookieStore.set("auth_token", token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      maxAge: 60 * 60 * 24 * 7, // 7 days
-    })
+    cookieStore.set(
+      "pending_signup_data",
+      JSON.stringify({
+        fullName: data.fullName,
+        email: data.email,
+        phone: data.phone,
+        address: data.address,
+        codeClient: codeClient,
+      }),
+      {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        maxAge: 60 * 60 * 24, // 24 hours
+      },
+    )
 
-    console.log("[v0] Signup process completed successfully")
+    console.log("[v0] Signup process completed - awaiting email verification")
 
     return {
       success: true,
-      message: "Inscription réussie ! Vous allez être redirigé vers votre tableau de bord.",
-      token: token,
+      message: "Inscription réussie ! Veuillez vérifier votre email pour activer votre compte.",
+      requiresVerification: true,
+      email: data.email,
     }
   } catch (error: any) {
     console.error("[v0] Signup error:", error)
