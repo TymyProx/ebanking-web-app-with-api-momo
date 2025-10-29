@@ -127,7 +127,6 @@ export async function signupUser(data: SignupData) {
       },
     )
 
-    // Send verification email via our Next.js API route
     const emailResponse = await fetch(`${APP_URL}/api/send-verification-email`, {
       method: "POST",
       headers: {
@@ -136,11 +135,21 @@ export async function signupUser(data: SignupData) {
       body: JSON.stringify({
         email: data.email,
         token: verificationToken,
+        userName: data.fullName,
       }),
     })
 
     console.log("[v0] Email API response status:", emailResponse.status)
-    const emailResponseData = await emailResponse.json()
+
+    let emailResponseData: any
+    try {
+      emailResponseData = await emailResponse.json()
+    } catch (e) {
+      const errorText = await emailResponse.text()
+      console.error("[v0] Failed to parse email response as JSON:", errorText)
+      throw new Error("Erreur lors de l'envoi de l'email de vérification")
+    }
+
     console.log("[v0] Email API response:", emailResponseData)
 
     if (!emailResponse.ok) {
