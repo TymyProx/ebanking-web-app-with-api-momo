@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
       subject: "Vérifiez votre adresse email - BNG E-Banking",
       react: VerificationEmail({
         userName: userName || email.split("@")[0],
-        verificationUrl,
+        verificationLink: verificationUrl,
       }),
     })
 

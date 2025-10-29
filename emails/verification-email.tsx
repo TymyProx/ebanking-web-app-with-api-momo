@@ -1,109 +1,176 @@
-[E-banking Middleware]
-Is
-auth
-page: true
-\
-[E-banking Middleware] Is accept-invite page: false
-[E-banking Middleware] Allowing request to proceed
-[v0] Starting signup process...
-[v0] Step 1: Creating auth account via /auth/sign-up...
-[v0] Signup payload:
-{
-  "email\":\"mohamedyacinetou@gmail.com","password\":"***",\"tenantId\":\"aa1287f6-06af-45b7-a905-8c57363565c2"
+// emails/verification-email.tsx
+import * as React from "react";
+
+interface VerificationEmailProps {
+  verificationLink: string;
+  userName?: string;
 }
-\
-[v0] Signup response status: 200
-[v0] Signup response body: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjFhMTUxZjRlLTk4MTUtNGI3OS1hZTljLWJmYzhhNjRiYWI4YyIsImlhdCI6MTc2MTc1Mzk2OSwiZXhwIjoxNzYyMzU4NzY5fQ.nmvg38nxZOs2ZQVZBJ8JQoUkLFkDHZDknBjgSPL9E5c...
-[v0] Received JWT token directly
-[v0] Auth account created successfully
-[v0] Step 2: Sending email verification via Resend...
- ○ Compiling /api/send-verification-email ...
- ⨯ ./app/api/send-verification-email/route.ts:2:1
-Module not found: Can't resolve 'resend'
-\
-  1 |
-\
-> 2 |
-\
-    | ^
-  3 |
-  4 |
-const resend = new Resend(process.env.RESEND_API_KEY)
-5 |
-const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || "bng@astratechnologie.com"
 
-https: //nextjs.org/docs/messages/module-not-found
-⨯ ./app/api/send-verification-email/route.ts:2:1
-Module not found: Can't resolve 'resend'
-\
-  1 |
-\
-> 2 |
-| ^
-\
-  3 |
-  4 |
-const resend = new Resend(process.env.RESEND_API_KEY)
-5 |
-const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || "bng@astratechnologie.com"
+export function VerificationEmail({
+  verificationLink,
+  userName,
+}: VerificationEmailProps) {
+  return (
+    <html>
+      <body
+        style={{
+          fontFamily:
+            "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif",
+          backgroundColor: "#f9fafb",
+          padding: "24px",
+          color: "#111827",
+        }}
+      >
+        <table
+          width="100%"
+          cellPadding={0}
+          cellSpacing={0}
+          style={{
+            maxWidth: "480px",
+            margin: "0 auto",
+            backgroundColor: "#ffffff",
+            border: "1px solid #e5e7eb",
+            borderRadius: "8px",
+            padding: "24px",
+          }}
+        >
+          <tbody>
+            <tr>
+              <td style={{ textAlign: "center", paddingBottom: "16px" }}>
+                <div
+                  style={{
+                    fontSize: "20px",
+                    fontWeight: 600,
+                    color: "#111827",
+                  }}
+                >
+                  Vérification de votre adresse e-mail
+                </div>
+                <div
+                  style={{
+                    fontSize: "13px",
+                    color: "#6b7280",
+                    marginTop: "4px",
+                  }}
+                >
+                  Astra eBanking
+                </div>
+              </td>
+            </tr>
 
-https: //nextjs.org/docs/messages/module-not-found
-⨯ ./app/api/send-verification-email/route.ts:2:1
-Module not found: Can't resolve 'resend'
-\
-  1 |
-\
-> 2 |
-import { Resend } from "resend"
-| ^
-\
-  3 |
-  4 |
-const resend = new Resend(process.env.RESEND_API_KEY)
-5 |
-const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || "bng@astratechnologie.com"
+            {userName && (
+              <tr>
+                <td
+                  style={{
+                    fontSize: "14px",
+                    color: "#111827",
+                    paddingBottom: "12px",
+                  }}
+                >
+                  Bonjour {userName},
+                </td>
+              </tr>
+            )}
 
-https: //nextjs.org/docs/messages/module-not-found
-\
- POST /api/send-verification-email 500 in 17087ms
-[v0] Email API response status: 500
-[v0] Signup error: SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON
-    at JSON.parse (<anonymous>)
-    at async signupUser (app\signup\actions.ts:143:30)
-  141 |
-  142 |     console.log("[v0] Email API response status:", emailResponse.status)
-> 143 |
-const emailResponseData =
-  (await emailResponse.json()) |
-  ^
-\
-144 | console.log("[v0] Email API response:", emailResponseData)
-145 |
-  146 |
-if (!emailResponse.ok) {
-\
- POST /signup 200 in 19235ms
-[E-banking Middleware] Pathname: /signup
-[E-banking Middleware] Has token: false
-[E-banking Middleware] Is auth page: true
-[E-banking Middleware] Is accept-invite page: false
-[E-banking Middleware] Allowing request to proceed
- GET /signup 500 in 194ms
-[E-banking Middleware] Pathname: /signup
-[E-banking Middleware] Has token: false
-[E-banking Middleware] Is auth page: true
-[E-banking Middleware] Is accept-invite page: false
-[E-banking Middleware] Allowing request to proceed
- GET /signup 500 in 105ms
-[E-banking Middleware] Pathname: /signup
-[E-banking Middleware] Has token: false
-[E-banking Middleware] Is auth page: true
-[E-banking Middleware] Is accept-invite page: false
-[E-banking Middleware] Allowing request to proceed
- GET /signup 500 in 37ms
-[E-banking Middleware] Pathname: /signup
-[E-banking Middleware] Has token: false
-[E-banking Middleware] Is auth page: true
-[E-banking Middleware] Is accept-invite page: false
-[E-banking Middleware] Allowing request to proceed
- GET /signup 500 in 32ms
+            {!userName && (
+              <tr>
+                <td
+                  style={{
+                    fontSize: "14px",
+                    color: "#111827",
+                    paddingBottom: "12px",
+                  }}
+                >
+                  Bonjour,
+                </td>
+              </tr>
+            )}
+
+            <tr>
+              <td
+                style={{
+                  fontSize: "14px",
+                  color: "#111827",
+                  lineHeight: "20px",
+                  paddingBottom: "16px",
+                }}
+              >
+                Merci de vous être inscrit. Pour finaliser l’activation de votre
+                compte, veuillez confirmer votre adresse e-mail en cliquant sur
+                le bouton ci-dessous :
+              </td>
+            </tr>
+
+            <tr>
+              <td style={{ textAlign: "center", paddingBottom: "20px" }}>
+                <a
+                  href={verificationLink}
+                  style={{
+                    display: "inline-block",
+                    backgroundColor: "#111827",
+                    color: "#ffffff",
+                    fontSize: "14px",
+                    fontWeight: 600,
+                    lineHeight: "20px",
+                    padding: "12px 20px",
+                    borderRadius: "6px",
+                    textDecoration: "none",
+                  }}
+                >
+                  Vérifier mon adresse e-mail
+                </a>
+              </td>
+            </tr>
+
+            <tr>
+              <td
+                style={{
+                  fontSize: "12px",
+                  color: "#6b7280",
+                  lineHeight: "18px",
+                  paddingBottom: "12px",
+                }}
+              >
+                Si le bouton ne fonctionne pas, copiez-collez ce lien dans votre
+                navigateur :
+                <br />
+                <span style={{ wordBreak: "break-all", color: "#111827" }}>
+                  {verificationLink}
+                </span>
+              </td>
+            </tr>
+
+            <tr>
+              <td
+                style={{
+                  fontSize: "12px",
+                  color: "#6b7280",
+                  lineHeight: "18px",
+                }}
+              >
+                Si vous n’êtes pas à l’origine de cette demande, vous pouvez
+                ignorer cet e-mail.
+              </td>
+            </tr>
+
+            <tr>
+              <td
+                style={{
+                  fontSize: "12px",
+                  color: "#9ca3af",
+                  lineHeight: "18px",
+                  paddingTop: "24px",
+                  borderTop: "1px solid #e5e7eb",
+                  textAlign: "center",
+                }}
+              >
+                © {new Date().getFullYear()} Astra eBanking. Tous droits
+                réservés.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </body>
+    </html>
+  );
+}
