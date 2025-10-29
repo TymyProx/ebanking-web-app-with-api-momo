@@ -48,8 +48,6 @@ export async function signupUser(data: SignupData) {
       email: String(data.email),
       password: String(data.password),
       tenantId: String(TENANT_ID),
-      firstName: String(firstName),
-      lastName: String(lastName),
     }
 
     console.log("[v0] Signup payload:", JSON.stringify({ ...signupPayload, password: "***" }))
@@ -102,97 +100,57 @@ export async function signupUser(data: SignupData) {
 
     console.log("[v0] Auth account created successfully")
 
-    console.log("[v0] Step 2: Getting authenticated user info...")
+    console.log("[v0] Step 2: Sending email verification...")
 
-    const meResponse = await fetch(`${API_BASE_URL}/auth/me`, {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    })
-
-    if (!meResponse.ok) {
-      const errorData = await meResponse.json().catch(() => ({}))
-      console.error("[v0] Failed to get user info:", errorData)
-      throw new Error("Erreur lors de la récupération des informations utilisateur")
+    const verificationPayload = {
+      tenantId: String(TENANT_ID),
     }
 
-    const authenticatedUserData = await meResponse.json()
-    const userId = authenticatedUserData.id
-    console.log("[v0] User info retrieved successfully, userId:", userId)
-
-    console.log("[v0] Step 3: Creating client profile...")
-
-    const clientRequestBody = {
-      data: {
-        nomComplet: String(data.fullName),
-        email: String(data.email),
-        telephone: String(data.phone),
-        adresse: String(data.address),
-        codeClient: String(codeClient),
-        userid: String(userId),
-      },
-    }
-    console.log("[v0] Client request body:", JSON.stringify(clientRequestBody))
-
-    const clientResponse = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/client`, {
+    const verificationResponse = await fetch(`${API_BASE_URL}/auth/send-email-address-verification-email`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify(clientRequestBody),
+      body: JSON.stringify(verificationPayload),
     })
 
-    console.log("[v0] Client response status:", clientResponse.status)
-    const clientResponseText = await clientResponse.text()
-    console.log("[v0] Client response body:", clientResponseText.substring(0, 200) + "...")
+    console.log("[v0] Email verification response status:", verificationResponse.status)
 
-    if (!clientResponse.ok) {
-      let errorData: any = {}
-      try {
-        errorData = JSON.parse(clientResponseText)
-      } catch (e) {
-        console.error("[v0] Failed to parse error response as JSON")
-        errorData = { message: clientResponseText || `HTTP ${clientResponse.status}` }
-      }
-      console.error("[v0] Client creation failed:", errorData)
-      throw new Error(errorData.message || "Erreur lors de la création du profil client")
+    if (!verificationResponse.ok) {
+      const errorData = await verificationResponse.json().catch(() => ({}))
+      console.error("[v0] Failed to send verification email:", errorData)
+      // Don't fail the signup if email sending fails, just log it
+      console.warn("[v0] Continuing signup despite email verification failure")
+    } else {
+      console.log("[v0] Verification email sent successfully")
     }
-
-    let clientData: any
-    try {
-      clientData = JSON.parse(clientResponseText)
-    } catch (e) {
-      console.error("[v0] Failed to parse client response as JSON")
-      throw new Error("Réponse invalide du serveur")
-    }
-    console.log("[v0] Client profile created successfully")
 
     const cookieStore = await cookies()
-    cookieStore.set("token", token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      maxAge: 60 * 60 * 24 * 7, // 7 days
-    })
+    cookieStore.set(
+      "pending_signup_data",
+      JSON.stringify({
+        fullName: data.fullName,
+        email: data.email,
+        phone: data.phone,
+        address: data.address,
+        codeClient: codeClient,
+      }),
+      {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        maxAge: 60 * 60 * 24, // 24 hours
+      },
+    )
 
-    console.log("[v0] Signup process completed successfully!")
+    console.log("[v0] Signup process completed - awaiting email verification")
 
     return {
       success: true,
-      message: "Inscription réussie !",
-      token,
-      userId,
-      clientId: clientData.id || clientData.data?.id,
-      user: {
-        id: authenticatedUserData.id,
-        email: authenticatedUserData.email,
-        firstName: authenticatedUserData.firstName,
-        lastName: authenticatedUserData.lastName,
-        roles: authenticatedUserData.roles || ["custom"],
-        status: authenticatedUserData.status || "active",
-      },
+      message: "Inscription réussie ! Veuillez vérifier votre email pour activer votre compte.",
+      requiresVerification: true,
+      email: data.email,
     }
   } catch (error: any) {
     console.error("[v0] Signup error:", error)
