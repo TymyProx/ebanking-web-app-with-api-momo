@@ -154,14 +154,6 @@ export async function completeSignup(token: string, password: string) {
 
     console.log("[v0] Client profile created successfully")
 
-    // Set auth token in cookie
-    cookieStore.set("token", authToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      maxAge: 60 * 60 * 24 * 7, // 7 days
-    })
-
     // Clear pending signup data
     cookieStore.delete("pending_signup_data")
 
