@@ -304,7 +304,7 @@ export default function ServiceRequestsPage() {
 
   if (type === "credit") {
     return [
-      ...commonFields,
+     ...commonFields,
       { label: "Nom du demandeur", value: details.applicant_name || "Non spécifié" },
       { label: "Type de crédit", value: details.credit_type || "Non spécifié" },
       { label: "Montant du crédit", value: details.loan_amount ? `${details.loan_amount} GNF` : "Non spécifié" },
