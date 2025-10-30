@@ -104,6 +104,14 @@ export async function completeSignup(token: string, password: string) {
     const userId = userData.id
     console.log("[v0] User info retrieved successfully, userId:", userId)
 
+    cookieStore.set("user", JSON.stringify(userData), {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 60 * 60 * 24 * 7, // 7 days
+    })
+    console.log("[v0] User info stored in cookie")
+
     // Step 3: Create client profile
     console.log("[v0] Step 3: Creating client profile...")
 
