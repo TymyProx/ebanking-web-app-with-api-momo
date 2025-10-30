@@ -38,16 +38,20 @@ interface AccountsResponse {
 export async function getAccounts(): Promise<Account[]> {
   const cookieToken = (await cookies()).get("token")?.value
   const usertoken = cookieToken
-  try {
-    //console.log("[v0] Récupération des comptes...")
 
+  console.log("[v0] getAccounts - Token from cookie:", usertoken ? `${usertoken.substring(0, 20)}...` : "NO TOKEN")
+  console.log("[v0] getAccounts - API_BASE_URL:", API_BASE_URL)
+  console.log("[v0] getAccounts - TENANT_ID:", TENANT_ID)
+
+  try {
     if (!usertoken) {
-      //console.log("[v0] Token manquant")
+      console.log("[v0] getAccounts - Token manquant, returning empty array")
       return []
     }
 
     let currentUserId: string | null = null
     try {
+      console.log("[v0] getAccounts - Fetching user info from /auth/me")
       const userResponse = await fetch(`${API_BASE_URL}/auth/me`, {
         method: "GET",
         headers: {
@@ -56,14 +60,21 @@ export async function getAccounts(): Promise<Account[]> {
         },
       })
 
+      console.log("[v0] getAccounts - /auth/me response status:", userResponse.status)
+
       if (userResponse.ok) {
         const userData = await userResponse.json()
         currentUserId = userData.id
+        console.log("[v0] getAccounts - Current user ID:", currentUserId)
+      } else {
+        const errorText = await userResponse.text()
+        console.error("[v0] getAccounts - /auth/me error:", errorText)
       }
     } catch (error) {
-      console.error("[v0] Erreur lors de la récupération du user ID:", error)
+      console.error("[v0] getAccounts - Error fetching user ID:", error)
     }
 
+    console.log("[v0] getAccounts - Fetching accounts from API")
     const response = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/compte`, {
       method: "GET",
       headers: {
@@ -73,21 +84,23 @@ export async function getAccounts(): Promise<Account[]> {
       cache: "no-store",
     })
 
-    //console.log("[v0] Statut réponse:", response.status)
+    console.log("[v0] getAccounts - API response status:", response.status)
 
     if (!response.ok) {
       const contentType = response.headers.get("content-type")
+      console.log("[v0] getAccounts - Response content-type:", contentType)
+
       if (contentType && contentType.includes("application/json")) {
         const errorData = await response.json()
-        //console.log("[v0] Erreur API:", errorData)
+        console.error("[v0] getAccounts - API error:", errorData)
         throw new Error(errorData.message || "Erreur lors de la récupération des comptes")
       } else {
         const errorText = await response.text()
-        //console.log("[v0] Réponse non-JSON reçue:", errorText)
+        console.error("[v0] getAccounts - Non-JSON response:", errorText)
 
         // Si l'API n'est pas accessible, retourner des données de test
         if (errorText.includes("only public URLs are supported") || errorText.includes("only https is supported")) {
-          //console.log("[v0] API non accessible, utilisation de données de test")
+          console.log("[v0] getAccounts - API not accessible, using test data")
           return [
             {
               id: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
@@ -142,7 +155,7 @@ export async function getAccounts(): Promise<Account[]> {
     }
 
     const responseData = await response.json()
-    //console.log("[v0] Données reçues:", responseData)
+    console.log("[v0] getAccounts - Response data received, rows count:", responseData.rows?.length || 0)
 
     let accounts: Account[] = []
 
@@ -167,7 +180,7 @@ export async function getAccounts(): Promise<Account[]> {
 
     return accounts
   } catch (error) {
-    console.error("[v0] Erreur lors de la récupération des comptes:", error)
+    console.error("[v0] getAccounts - Fatal error:", error)
     return []
   }
 }
