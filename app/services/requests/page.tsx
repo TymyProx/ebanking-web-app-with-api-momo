@@ -206,7 +206,7 @@ export default function ServiceRequestsPage() {
             ? new Date(new Date(item.dateorder).getTime() + 3 * 24 * 60 * 60 * 1000).toISOString().split("T")[0]
             : new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
           account: item.intitulecompte || "Compte non spécifié",
-          reference: item.referenceCommande || "Référence non disponible",
+          reference: item.reference || `CHQ-${new Date().getFullYear()}-${String(index + 1).padStart(3, "0")}`,
           details: {
             nbrechequier: item.nbrechequier || 0,
             nbrefeuille: item.nbrefeuille || 0,
@@ -234,7 +234,7 @@ export default function ServiceRequestsPage() {
           submittedAt: item.createdAt ? item.createdAt.split("T")[0] : new Date().toISOString().split("T")[0],
           expectedResponse: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
           account: "Compte courant",
-          reference: item.reference || "Référence non disponible",
+          reference: item.reference || `CRD-${new Date().getFullYear()}-${String(index + 1).padStart(3, "0")}`,
           details: {
             applicantName: item.applicantName || "",
             creditAmount: item.creditAmount || "",
