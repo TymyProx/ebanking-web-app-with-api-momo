@@ -602,10 +602,6 @@ export default function LandingPage() {
                 <span className="text-sm font-medium">100% Sécurisé</span>
               </div>
               <div className="flex items-center gap-2 text-gray-700">
-                <Check className="h-5 w-5 text-green-600" />
-                <span className="text-sm font-medium">Sans engagement</span>
-              </div>
-              <div className="flex items-center gap-2 text-gray-700">
                 <Clock className="h-5 w-5 text-green-600" />
                 <span className="text-sm font-medium">Activation immédiate</span>
               </div>
