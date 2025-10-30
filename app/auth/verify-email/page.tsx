@@ -99,22 +99,25 @@ function VerifyEmailContent() {
                 <div className="flex justify-center">
                   <Mail className="h-16 w-16 text-[hsl(123,38%,57%)]" />
                 </div>
-                <div className="space-y-2">
-                  <h1 className="text-3xl font-bold text-[hsl(220,13%,13%)]">Vérifiez votre email</h1>
-                  <p className="text-[hsl(220,13%,46%)]">
-                    Un email de vérification a été envoyé à <strong>{email}</strong>
-                  </p>
-                  <p className="text-sm text-[hsl(220,13%,46%)]">
-                    Veuillez cliquer sur le lien dans l'email pour continuer votre inscription.
-                  </p>
-                </div>
+              <div className="text-center space-y-2">
+              <h1 className="text-3xl font-bold text-[hsl(220,13%,13%)]">
+              Vérifiez votre email
+              </h1>
+              <p className="text-[hsl(220,13%,46%)]">
+              Un email de vérification a été envoyé à <strong>{email}</strong>
+              </p>
+              <p className="text-sm text-[hsl(220,13%,46%)]">
+              Veuillez cliquer sur le lien dans l'email pour continuer votre inscription.
+              </p>
+              </div>
+
               </>
             )}
 
             {status === "setting-password" && (
               <>
                 <div className="space-y-2">
-                  <h1 className="text-3xl font-bold text-[hsl(45,93%,47%)]">Définissez votre mot de passe</h1>
+                  <h1 className="text-3xl font-bold text-[hsl(45,93%,47%)]">Nous-y sommes presque ! Définissez votre mot de passe</h1>
                   <p className="text-[hsl(220,13%,46%)]">Créez un mot de passe sécurisé pour votre compte</p>
                 </div>
 
