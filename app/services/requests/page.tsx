@@ -1548,11 +1548,13 @@ export default function ServiceRequestsPage() {
                         <div className="text-right text-sm text-gray-500">
                           <p>Soumise le</p>
                           <p className="font-medium">{new Date(request.submittedAt).toLocaleDateString("fr-FR")}</p>
+                            {/* 
                           {request.expectedResponse && (
                             <p className="text-xs">
                               Réponse attendue: {new Date(request.expectedResponse).toLocaleDateString("fr-FR")}
                             </p>
                           )}
+                          */}
                           {request.completedAt && (
                             <p className="text-xs text-green-600">
                               Complétée le: {new Date(request.completedAt).toLocaleDateString("fr-FR")}
