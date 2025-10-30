@@ -13,6 +13,9 @@ export function middleware(request: NextRequest) {
 
   console.log("[E-banking Middleware] Pathname:", pathname)
   console.log("[E-banking Middleware] Has token:", !!token)
+  if (token) {
+    console.log("[E-banking Middleware] Token preview:", token.substring(0, 20) + "...")
+  }
   console.log("[E-banking Middleware] Is auth page:", isAuthPage)
   console.log("[E-banking Middleware] Is accept-invite page:", isAcceptInvitePage)
 
