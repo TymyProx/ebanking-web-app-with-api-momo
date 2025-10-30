@@ -5,6 +5,7 @@ import type React from "react"
 import { useEffect, useState, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import Image from "next/image"
+import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -57,10 +58,6 @@ function VerifyEmailContent() {
     if (result.success) {
       setStatus("success")
       setMessage(result.message)
-      // Redirect to dashboard after 2 seconds
-      setTimeout(() => {
-        router.push("/dashboard")
-      }, 2000)
     } else {
       setStatus("error")
       setMessage(result.message)
@@ -212,10 +209,19 @@ function VerifyEmailContent() {
                 <div className="flex justify-center">
                   <CheckCircle className="h-16 w-16 text-green-500" />
                 </div>
-                <div className="space-y-2 text-center">
+                <div className="space-y-4 text-center">
                   <h1 className="text-3xl font-bold text-[hsl(220,13%,13%)]">Compte créé avec succès !</h1>
                   <p className="text-[hsl(220,13%,46%)]">{message}</p>
-                  <p className="text-sm text-[hsl(220,13%,46%)]">Redirection vers votre tableau de bord...</p>
+                  <div className="pt-4">
+                    <p className="text-sm text-[hsl(220,13%,46%)] mb-3">
+                      Vous pouvez maintenant vous connecter avec vos identifiants
+                    </p>
+                    <Link href="/login">
+                      <Button className="w-full h-12 bg-gradient-to-r from-[hsl(45,93%,47%)] to-[hsl(123,38%,57%)] hover:opacity-90 text-white font-semibold text-base shadow-lg">
+                        Se connecter
+                      </Button>
+                    </Link>
+                  </div>
                 </div>
               </>
             )}
