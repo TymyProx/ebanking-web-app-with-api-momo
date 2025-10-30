@@ -21,7 +21,6 @@ import {
   AlertCircle,
   Send,
   Eye,
-  Banknote,
   Shield,
   Plus,
   Search,
@@ -189,25 +188,32 @@ export default function ServiceRequestsPage() {
           type: "checkbook",
           typeName: "Demande de chéquier",
           status:
-            item.stepflow === 0 ? "En attente" :
-            item.stepflow === 1 ? "En cours de traitement" :
-            item.stepflow === 2 ? "En cours de traitement" :
-            item.stepflow === 3 ? "Disponible à l’agence" :
-            item.stepflow === 4 ? "Disponible" :
-            item.stepflow === 5 ? "Retiré" : "En attente",
+            item.stepflow === 0
+              ? "En attente"
+              : item.stepflow === 1
+                ? "En cours de traitement"
+                : item.stepflow === 2
+                  ? "En cours de traitement"
+                  : item.stepflow === 3
+                    ? "Disponible à l’agence"
+                    : item.stepflow === 4
+                      ? "Disponible"
+                      : item.stepflow === 5
+                        ? "Retiré"
+                        : "En attente",
           submittedAt: item.dateorder || item.createdAt?.split("T")[0] || new Date().toISOString().split("T")[0],
           expectedResponse: item.dateorder
             ? new Date(new Date(item.dateorder).getTime() + 3 * 24 * 60 * 60 * 1000).toISOString().split("T")[0]
             : new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
           account: item.intitulecompte || "Compte non spécifié",
-          reference: item.reference || `CHQ-${new Date().getFullYear()}-${String(index + 1).padStart(3, "0")}`,
+          reference: item.referenceCommande || "Référence non disponible",
           details: {
             nbrechequier: item.nbrechequier || 0,
             nbrefeuille: item.nbrefeuille || 0,
             commentaire: item.commentaire || "",
             numcompteId: item.numcompteId || "",
-            typeCheque: item.typeCheque, // Added from update
-            talonCheque: item.talonCheque, // Added from update
+            typeCheque: item.typeCheque,
+            talonCheque: item.talonCheque,
           },
         }))
         allTransformedRequests = [...allTransformedRequests, ...checkbookRequests]
@@ -228,7 +234,7 @@ export default function ServiceRequestsPage() {
           submittedAt: item.createdAt ? item.createdAt.split("T")[0] : new Date().toISOString().split("T")[0],
           expectedResponse: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
           account: "Compte courant",
-          reference: item.reference || `CRD-${new Date().getFullYear()}-${String(index + 1).padStart(3, "0")}`,
+          reference: item.reference || "Référence non disponible",
           details: {
             applicantName: item.applicantName || "",
             creditAmount: item.creditAmount || "",
@@ -294,43 +300,49 @@ export default function ServiceRequestsPage() {
   }
 
   const formatRequestDetails = (details: any, type: string) => {
-  if (!details) return [];
+    if (!details) return []
 
-  const commonFields = [
-    { label: "Référence", value: details.reference || "Non attribuée" },
-    { label: "Numéro de compte", value: details.numcompte || details.numcompteId || "Non spécifié" },
-    { label: "Intitulé du compte", value: details.intitulecompte || "Non spécifié" },
-  ];
-
-  if (type === "credit") {
-    return [
-     ...commonFields,
-      { label: "Nom du demandeur", value: details.applicant_name || "Non spécifié" },
-      { label: "Type de crédit", value: details.credit_type || "Non spécifié" },
-      { label: "Montant du crédit", value: details.loan_amount ? `${details.loan_amount} GNF` : "Non spécifié" },
-      { label: "Durée (mois)", value: details.loan_duration || "Non spécifié" },
-      { label: "Objet du crédit", value: details.loan_purpose || "Non spécifié" },
-      { label: "Téléphone", value: details.contact_phone || "Non spécifié" },
-      { label: "Commentaire", value: details.commentaire || "Aucun commentaire" },
-    ];
-  }
-
-  if (type === "checkbook") {
-    return [
-      ...commonFields,
-      { label: "Date de commande", value: details.dateorder ? new Date(details.dateorder).toLocaleDateString("fr-FR") : "Non spécifiée" },
-      { label: "Nombre de feuilles", value: details.nbrefeuille || "Non spécifié" },
-      { label: "Nombre de chéquiers", value: details.nbrechequier || "Non spécifié" },
-      { label: "Type de chèque", value: details.typeCheque || "Non spécifié" },
-      { label: "Avec talon de chèque", value: details.talonCheque ? "Oui" : "Non" },
+    const commonFields = [
+      {
+        label: "Référence",
+        value:
+          type === "checkbook" ? details.referenceCommande || "Non attribuée" : details.reference || "Non attribuée",
+      },
+      { label: "Numéro de compte", value: details.numcompte || details.numcompteId || "Non spécifié" },
       { label: "Intitulé du compte", value: details.intitulecompte || "Non spécifié" },
-      { label: "Commentaire", value: details.commentaire || "Aucun commentaire" },
-    ];
+    ]
+
+    if (type === "credit") {
+      return [
+        ...commonFields,
+        { label: "Nom du demandeur", value: details.applicant_name || "Non spécifié" },
+        { label: "Type de crédit", value: details.credit_type || "Non spécifié" },
+        { label: "Montant du crédit", value: details.loan_amount ? `${details.loan_amount} GNF` : "Non spécifié" },
+        { label: "Durée (mois)", value: details.loan_duration || "Non spécifié" },
+        { label: "Objet du crédit", value: details.loan_purpose || "Non spécifié" },
+        { label: "Téléphone", value: details.contact_phone || "Non spécifié" },
+        { label: "Commentaire", value: details.commentaire || "Aucun commentaire" },
+      ]
+    }
+
+    if (type === "checkbook") {
+      return [
+        ...commonFields,
+        {
+          label: "Date de commande",
+          value: details.dateorder ? new Date(details.dateorder).toLocaleDateString("fr-FR") : "Non spécifiée",
+        },
+        { label: "Nombre de feuilles", value: details.nbrefeuille || "Non spécifié" },
+        { label: "Nombre de chéquiers", value: details.nbrechequier || "Non spécifié" },
+        { label: "Type de chèque", value: details.typeCheque || "Non spécifié" },
+        { label: "Avec talon de chèque", value: details.talonCheque ? "Oui" : "Non" },
+        { label: "Intitulé du compte", value: details.intitulecompte || "Non spécifié" },
+        { label: "Commentaire", value: details.commentaire || "Aucun commentaire" },
+      ]
+    }
+
+    return commonFields
   }
-
-  return commonFields;
-};
-
 
   useEffect(() => {
     console.log("[v0] useEffect déclenché, activeTab:", activeTab)
@@ -439,18 +451,25 @@ export default function ServiceRequestsPage() {
                   type: "checkbook",
                   typeName: "Demande de chéquier",
                   status:
-                    item.stepflow === 0 ? "En attente" :
-                    item.stepflow === 1 ? "En cours de traitement" :
-                    item.stepflow === 2 ? "En cours de traitement" :
-                    item.stepflow === 3 ? "Disponible à l’agence" :
-                    item.stepflow === 4 ? "Disponible" :
-                    item.stepflow === 5 ? "Retiré" : "En attente",
+                    item.stepflow === 0
+                      ? "En attente"
+                      : item.stepflow === 1
+                        ? "En cours de traitement"
+                        : item.stepflow === 2
+                          ? "En cours de traitement"
+                          : item.stepflow === 3
+                            ? "Disponible à l’agence"
+                            : item.stepflow === 4
+                              ? "Disponible"
+                              : item.stepflow === 5
+                                ? "Retiré"
+                                : "En attente",
                   submittedAt: item.dateorder || new Date().toISOString().split("T")[0],
                   expectedResponse: item.dateorder
                     ? new Date(new Date(item.dateorder).getTime() + 3 * 24 * 60 * 60 * 1000).toISOString().split("T")[0]
                     : new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
                   account: item.intitulecompte || "Compte non spécifié",
-                  reference: item.reference || `CHQ-${new Date().getFullYear()}-${String(index + 1).padStart(3, "0")}`,
+                  reference: item.referenceCommande || "Référence non disponible",
                   details: {
                     nbrechequier: item.nbrechequier || 0,
                     nbrefeuille: item.nbrefeuille || 0,
@@ -466,7 +485,7 @@ export default function ServiceRequestsPage() {
                   submittedAt: item.createdAt ? item.createdAt.split("T")[0] : new Date().toISOString().split("T")[0],
                   expectedResponse: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
                   account: "Compte courant",
-                  reference: item.reference || `CRD-${new Date().getFullYear()}-${String(index + 1).padStart(3, "0")}`,
+                  reference: item.reference || "Référence non disponible",
                   details: {
                     applicantName: item.applicantName || "",
                     creditAmount: item.creditAmount || "",
@@ -723,204 +742,204 @@ export default function ServiceRequestsPage() {
     if (!selectedServiceData) return null
 
     switch (selectedService) {
-      // COMMANDE CHEQUIER PAGE 
-     case "checkbook":
-  return (
-    <form onSubmit={handleCheckbookSubmit} className="space-y-4">
-      {/* Ligne 1: Compte et Numéro de compte */}
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="intitulecompte">Sélectionner un compte *</Label>
-          <Select
-            value={formData.numcompteId || ""}
-            onValueChange={(value) => {
-              const selectedAccount = accounts.find((acc) => acc.id === value)
-              if (selectedAccount) {
-                handleInputChange("accountId", selectedAccount.id)
-                handleInputChange("intitulecompte", selectedAccount.name)
-                handleInputChange("numcompte", selectedAccount.number)
-              }
-            }}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder={isLoadingAccounts ? "Chargement..." : "Choisir un compte"} />
-            </SelectTrigger>
-            <SelectContent>
-              {isLoadingAccounts ? (
-                <SelectItem value="loading" disabled>
-                  Chargement des comptes...
-                </SelectItem>
-              ) : accounts.length === 0 ? (
-                <SelectItem value="empty" disabled>
-                  Aucun compte courant trouvé
-                </SelectItem>
-              ) : (
-                accounts.map((account) => (
-                  <SelectItem key={account.id} value={account.id}>
-                    <div className="flex flex-col">
-                      <span className="font-medium">{account.name}</span>
-                      <span className="text-sm text-gray-500">
-                        {account.number} •{" "}
-                        {new Intl.NumberFormat("fr-FR", {
-                          style: "currency",
-                          currency: account.currency === "GNF" ? "GNF" : account.currency,
-                          minimumFractionDigits: account.currency === "GNF" ? 0 : 2,
-                        }).format(account.balance)}
-                      </span>
-                    </div>
-                  </SelectItem>
-                ))
-              )}
-            </SelectContent>
-          </Select>
-        </div>
+      // COMMANDE CHEQUIER PAGE
+      case "checkbook":
+        return (
+          <form onSubmit={handleCheckbookSubmit} className="space-y-4">
+            {/* Ligne 1: Compte et Numéro de compte */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="intitulecompte">Sélectionner un compte *</Label>
+                <Select
+                  value={formData.numcompteId || ""}
+                  onValueChange={(value) => {
+                    const selectedAccount = accounts.find((acc) => acc.id === value)
+                    if (selectedAccount) {
+                      handleInputChange("accountId", selectedAccount.id)
+                      handleInputChange("intitulecompte", selectedAccount.name)
+                      handleInputChange("numcompte", selectedAccount.number)
+                    }
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder={isLoadingAccounts ? "Chargement..." : "Choisir un compte"} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {isLoadingAccounts ? (
+                      <SelectItem value="loading" disabled>
+                        Chargement des comptes...
+                      </SelectItem>
+                    ) : accounts.length === 0 ? (
+                      <SelectItem value="empty" disabled>
+                        Aucun compte courant trouvé
+                      </SelectItem>
+                    ) : (
+                      accounts.map((account) => (
+                        <SelectItem key={account.id} value={account.id}>
+                          <div className="flex flex-col">
+                            <span className="font-medium">{account.name}</span>
+                            <span className="text-sm text-gray-500">
+                              {account.number} •{" "}
+                              {new Intl.NumberFormat("fr-FR", {
+                                style: "currency",
+                                currency: account.currency === "GNF" ? "GNF" : account.currency,
+                                minimumFractionDigits: account.currency === "GNF" ? 0 : 2,
+                              }).format(account.balance)}
+                            </span>
+                          </div>
+                        </SelectItem>
+                      ))
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="numcompte">Numéro de compte *</Label>
-          <Input
-            id="numcompte"
-            name="numcompte"
-            type="text"
-            value={formData.numcompte || ""}
-            onChange={(e) => handleInputChange("numcompte", e.target.value)}
-            placeholder="Ex: 000123456789"
-            required
-            readOnly
-            className="bg-gray-50"
-          />
-        </div>
-      </div>
+              <div className="space-y-2">
+                <Label htmlFor="numcompte">Numéro de compte *</Label>
+                <Input
+                  id="numcompte"
+                  name="numcompte"
+                  type="text"
+                  value={formData.numcompte || ""}
+                  onChange={(e) => handleInputChange("numcompte", e.target.value)}
+                  placeholder="Ex: 000123456789"
+                  required
+                  readOnly
+                  className="bg-gray-50"
+                />
+              </div>
+            </div>
 
-      {/* Ligne 2: Date commande et Nombre de chéquiers */}
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="dateorder">Date de commande *</Label>
-          <Input
-            id="dateorder"
-            name="dateorder"
-            type="date"
-            value={formData.dateorder || new Date().toISOString().split("T")[0]}
-            onChange={(e) => handleInputChange("dateorder", e.target.value)}
-            required
-          />
-        </div>
+            {/* Ligne 2: Date commande et Nombre de chéquiers */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="dateorder">Date de commande *</Label>
+                <Input
+                  id="dateorder"
+                  name="dateorder"
+                  type="date"
+                  value={formData.dateorder || new Date().toISOString().split("T")[0]}
+                  onChange={(e) => handleInputChange("dateorder", e.target.value)}
+                  required
+                />
+              </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="nbrechequier">Nombre de chéquiers *</Label>
-          <Input
-            id="nbrechequier"
-            name="nbrechequier"
-            type="number"
-            min="1"
-            max="2"
-            value={formData.nbrechequier || ""}
-            onChange={(e) => {
-              const value = parseInt(e.target.value);
-              if (value >= 1 && value <= 2) {
-                handleInputChange("nbrechequier", value.toString());
-              }
-            }}
-            placeholder="Ex: 2"
-            required
-          />
-        </div>
-      </div>
+              <div className="space-y-2">
+                <Label htmlFor="nbrechequier">Nombre de chéquiers *</Label>
+                <Input
+                  id="nbrechequier"
+                  name="nbrechequier"
+                  type="number"
+                  min="1"
+                  max="2"
+                  value={formData.nbrechequier || ""}
+                  onChange={(e) => {
+                    const value = Number.parseInt(e.target.value)
+                    if (value >= 1 && value <= 2) {
+                      handleInputChange("nbrechequier", value.toString())
+                    }
+                  }}
+                  placeholder="Ex: 2"
+                  required
+                />
+              </div>
+            </div>
 
-      {/* Ligne 3: Nombre de feuillets et Type de chèque */}
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="nbrefeuille">Nombre de feuillets par chéquier *</Label>
-          <Select
-            value={formData.nbrefeuille || ""}
-            onValueChange={(value) => handleInputChange("nbrefeuille", value)}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Choisir le nombre de feuillets" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="25">25 feuillets</SelectItem>
-              <SelectItem value="50">50 feuillets</SelectItem>
-              <SelectItem value="100">100 feuillets</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+            {/* Ligne 3: Nombre de feuillets et Type de chèque */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="nbrefeuille">Nombre de feuillets par chéquier *</Label>
+                <Select
+                  value={formData.nbrefeuille || ""}
+                  onValueChange={(value) => handleInputChange("nbrefeuille", value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choisir le nombre de feuillets" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="25">25 feuillets</SelectItem>
+                    <SelectItem value="50">50 feuillets</SelectItem>
+                    <SelectItem value="100">100 feuillets</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="typeCheque">Type de chèque *</Label>
-          <Select
-            value={formData.typeCheque || ""}
-            onValueChange={(value) => handleInputChange("typeCheque", value)}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Choisir le type de chèque" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="Standard">Standard barré</SelectItem>
-              <SelectItem value="Standard non barré">Standard non barré</SelectItem>
-              <SelectItem value="Certifié barré">Certifié barré</SelectItem>
-              <SelectItem value="Certifié non barré">Certifié non barré</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
+              <div className="space-y-2">
+                <Label htmlFor="typeCheque">Type de chèque *</Label>
+                <Select
+                  value={formData.typeCheque || ""}
+                  onValueChange={(value) => handleInputChange("typeCheque", value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choisir le type de chèque" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Standard">Standard barré</SelectItem>
+                    <SelectItem value="Standard non barré">Standard non barré</SelectItem>
+                    <SelectItem value="Certifié barré">Certifié barré</SelectItem>
+                    <SelectItem value="Certifié non barré">Certifié non barré</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
 
-      {/* Le reste du code reste inchangé */}
-      <div className="flex items-center space-x-2">
-        <Checkbox
-          id="talonCheque"
-          checked={formData.talonCheque || false}
-          onCheckedChange={(checked) => handleInputChange("talonCheque", checked)}
-        />
-        <Label htmlFor="talonCheque" className="text-sm font-normal">
-          Chèque à Talon
-        </Label>
-      </div>
+            {/* Le reste du code reste inchangé */}
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="talonCheque"
+                checked={formData.talonCheque || false}
+                onCheckedChange={(checked) => handleInputChange("talonCheque", checked)}
+              />
+              <Label htmlFor="talonCheque" className="text-sm font-normal">
+                Chèque à Talon
+              </Label>
+            </div>
 
-      <div>
-        <Label htmlFor="commentaire">Commentaire</Label>
-        <Textarea
-          id="commentaire"
-          name="commentaire"
-          value={formData.commentaire || ""}
-          onChange={(e) => handleInputChange("commentaire", e.target.value)}
-          placeholder="Commentaire optionnel..."
-          rows={3}
-        />
-      </div>
+            <div>
+              <Label htmlFor="commentaire">Commentaire</Label>
+              <Textarea
+                id="commentaire"
+                name="commentaire"
+                value={formData.commentaire || ""}
+                onChange={(e) => handleInputChange("commentaire", e.target.value)}
+                placeholder="Commentaire optionnel..."
+                rows={3}
+              />
+            </div>
 
-      {checkbookSubmitState?.success && (
-        <Alert className="border-green-200 bg-green-50">
-          <CheckCircle className="h-4 w-4 text-green-600" />
-          <AlertDescription className="text-green-800">
-            ✅ Votre demande de chéquier a été soumise avec succès ! Référence: {checkbookSubmitState.reference}
-          </AlertDescription>
-        </Alert>
-      )}
+            {checkbookSubmitState?.success && (
+              <Alert className="border-green-200 bg-green-50">
+                <CheckCircle className="h-4 w-4 text-green-600" />
+                <AlertDescription className="text-green-800">
+                  ✅ Votre demande de chéquier a été soumise avec succès ! Référence: {checkbookSubmitState.reference}
+                </AlertDescription>
+              </Alert>
+            )}
 
-      {checkbookSubmitState?.error && (
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>❌ {checkbookSubmitState.error}</AlertDescription>
-        </Alert>
-      )}
+            {checkbookSubmitState?.error && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>❌ {checkbookSubmitState.error}</AlertDescription>
+              </Alert>
+            )}
 
-      <div className="flex items-center space-x-2">
-        <Checkbox
-          id="checkbook_terms"
-          checked={formData.terms || false}
-          onCheckedChange={(checked) => handleInputChange("terms", checked)}
-        />
-        <Label htmlFor="checkbook_terms" className="text-sm">
-          J'accepte les{" "}
-          <a href="#" className="text-blue-600 hover:underline">
-            conditions générales
-          </a>{" "}
-          et autorise le traitement de ma demande
-        </Label>
-      </div>
-    </form>
-  )
-        
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="checkbook_terms"
+                checked={formData.terms || false}
+                onCheckedChange={(checked) => handleInputChange("terms", checked)}
+              />
+              <Label htmlFor="checkbook_terms" className="text-sm">
+                J'accepte les{" "}
+                <a href="#" className="text-blue-600 hover:underline">
+                  conditions générales
+                </a>{" "}
+                et autorise le traitement de ma demande
+              </Label>
+            </div>
+          </form>
+        )
+
       // DEMANDE CREDIT PAGE
       case "credit":
         return (
@@ -1117,7 +1136,8 @@ export default function ServiceRequestsPage() {
               <Alert className="border-green-200 bg-green-50">
                 <CheckCircle className="h-4 w-4 text-green-600" />
                 <AlertDescription className="text-green-800">
-                  ✅ Votre demande de crédit a été envoyée avec succès. Référence: {creditSubmitState.reference}. {/* Réponse sous {selectedServiceData?.processingTime}. */}
+                  ✅ Votre demande de crédit a été envoyée avec succès. Référence: {creditSubmitState.reference}.{" "}
+                  {/* Réponse sous {selectedServiceData?.processingTime}. */}
                 </AlertDescription>
               </Alert>
             )}
@@ -1234,7 +1254,8 @@ export default function ServiceRequestsPage() {
               <Alert className="border-green-200 bg-green-50">
                 <CheckCircle className="h-4 w-4 text-green-600" />
                 <AlertDescription className="text-green-800">
-                  ✅ Votre e-demande a été envoyée avec succès. Référence: {eDemandeSubmitState.reference}. {/* Réponse sous {selectedServiceData?.processingTime}. */}
+                  ✅ Votre e-demande a été envoyée avec succès. Référence: {eDemandeSubmitState.reference}.{" "}
+                  {/* Réponse sous {selectedServiceData?.processingTime}. */}
                 </AlertDescription>
               </Alert>
             )}
@@ -1410,7 +1431,8 @@ export default function ServiceRequestsPage() {
                   <Alert className="border-green-200 bg-green-50">
                     <CheckCircle className="h-4 w-4 text-green-600" />
                     <AlertDescription className="text-green-800">
-                      ✅ Votre demande a été envoyée avec succès. Référence: {submitState.reference}. {/*Réponse sous{" "}
+                      ✅ Votre demande a été envoyée avec succès. Référence: {submitState.reference}.{" "}
+                      {/*Réponse sous{" "}
                       {selectedServiceData?.processingTime}.*/}
                     </AlertDescription>
                   </Alert>
@@ -1555,7 +1577,7 @@ export default function ServiceRequestsPage() {
                         <div className="text-right text-sm text-gray-500">
                           <p>Soumise le</p>
                           <p className="font-medium">{new Date(request.submittedAt).toLocaleDateString("fr-FR")}</p>
-                            {/* 
+                          {/*
                           {request.expectedResponse && (
                             <p className="text-xs">
                               Réponse attendue: {new Date(request.expectedResponse).toLocaleDateString("fr-FR")}
