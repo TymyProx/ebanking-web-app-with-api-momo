@@ -220,9 +220,9 @@ export default function BeneficiariesPage() {
 
   const filteredBeneficiaries = beneficiaries.filter((beneficiary) => {
     const matchesSearch =
-      beneficiary.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      beneficiary.account.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      beneficiary.bank.toLowerCase().includes(searchTerm.toLowerCase())
+      (beneficiary.name?.toLowerCase() || "").includes(searchTerm.toLowerCase()) ||
+      (beneficiary.account?.toLowerCase() || "").includes(searchTerm.toLowerCase()) ||
+      (beneficiary.bank?.toLowerCase() || "").includes(searchTerm.toLowerCase())
 
     let matchesFilter = false
     if (filterType === "all") {
