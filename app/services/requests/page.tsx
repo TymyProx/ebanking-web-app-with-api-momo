@@ -717,187 +717,203 @@ export default function ServiceRequestsPage() {
 
     switch (selectedService) {
       // COMMANDE CHEQUIER PAGE
-      case "checkbook":
-        return (
-          <form onSubmit={handleCheckbookSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="intitulecompte">Sélectionner un compte *</Label>
-              <Select
-                value={formData.numcompteId || ""}
-                onValueChange={(value) => {
-                  const selectedAccount = accounts.find((acc) => acc.id === value)
-                  if (selectedAccount) {
-                    handleInputChange("accountId", selectedAccount.id)
-                    handleInputChange("intitulecompte", selectedAccount.name)
-                    handleInputChange("numcompte", selectedAccount.number)
-                  }
-                }}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder={isLoadingAccounts ? "Chargement..." : "Choisir un compte"} />
-                </SelectTrigger>
-                <SelectContent>
-                  {isLoadingAccounts ? (
-                    <SelectItem value="loading" disabled>
-                      Chargement des comptes...
-                    </SelectItem>
-                  ) : accounts.length === 0 ? (
-                    <SelectItem value="empty" disabled>
-                      Aucun compte courant trouvé
-                    </SelectItem>
-                  ) : (
-                    accounts.map((account) => (
-                      <SelectItem key={account.id} value={account.id}>
-                        <div className="flex flex-col">
-                          <span className="font-medium">{account.name}</span>
-                          <span className="text-sm text-gray-500">
-                            {account.number} •{" "}
-                            {new Intl.NumberFormat("fr-FR", {
-                              style: "currency",
-                              currency: account.currency === "GNF" ? "GNF" : account.currency,
-                              minimumFractionDigits: account.currency === "GNF" ? 0 : 2,
-                            }).format(account.balance)}
-                          </span>
-                        </div>
-                      </SelectItem>
-                    ))
-                  )}
-                </SelectContent>
-              </Select>
-            </div>
+     case "checkbook":
+  return (
+    <form onSubmit={handleCheckbookSubmit} className="space-y-4">
+      {/* Ligne 1: Compte et Numéro de compte */}
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="intitulecompte">Sélectionner un compte *</Label>
+          <Select
+            value={formData.numcompteId || ""}
+            onValueChange={(value) => {
+              const selectedAccount = accounts.find((acc) => acc.id === value)
+              if (selectedAccount) {
+                handleInputChange("accountId", selectedAccount.id)
+                handleInputChange("intitulecompte", selectedAccount.name)
+                handleInputChange("numcompte", selectedAccount.number)
+              }
+            }}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder={isLoadingAccounts ? "Chargement..." : "Choisir un compte"} />
+            </SelectTrigger>
+            <SelectContent>
+              {isLoadingAccounts ? (
+                <SelectItem value="loading" disabled>
+                  Chargement des comptes...
+                </SelectItem>
+              ) : accounts.length === 0 ? (
+                <SelectItem value="empty" disabled>
+                  Aucun compte courant trouvé
+                </SelectItem>
+              ) : (
+                accounts.map((account) => (
+                  <SelectItem key={account.id} value={account.id}>
+                    <div className="flex flex-col">
+                      <span className="font-medium">{account.name}</span>
+                      <span className="text-sm text-gray-500">
+                        {account.number} •{" "}
+                        {new Intl.NumberFormat("fr-FR", {
+                          style: "currency",
+                          currency: account.currency === "GNF" ? "GNF" : account.currency,
+                          minimumFractionDigits: account.currency === "GNF" ? 0 : 2,
+                        }).format(account.balance)}
+                      </span>
+                    </div>
+                  </SelectItem>
+                ))
+              )}
+            </SelectContent>
+          </Select>
+        </div>
 
-            <div>
-              <Label htmlFor="numcompte">Numéro de compte *</Label>
-              <Input
-                id="numcompte"
-                name="numcompte"
-                type="text"
-                value={formData.numcompte || ""}
-                onChange={(e) => handleInputChange("numcompte", e.target.value)}
-                placeholder="Ex: 000123456789"
-                required
-                readOnly
-                className="bg-gray-50"
-              />
-            </div>
+        <div className="space-y-2">
+          <Label htmlFor="numcompte">Numéro de compte *</Label>
+          <Input
+            id="numcompte"
+            name="numcompte"
+            type="text"
+            value={formData.numcompte || ""}
+            onChange={(e) => handleInputChange("numcompte", e.target.value)}
+            placeholder="Ex: 000123456789"
+            required
+            readOnly
+            className="bg-gray-50"
+          />
+        </div>
+      </div>
 
-            <div>
-              <Label htmlFor="dateorder">Date de commande *</Label>
-              <Input
-                id="dateorder"
-                name="dateorder"
-                type="date"
-                value={formData.dateorder || new Date().toISOString().split("T")[0]}
-                onChange={(e) => handleInputChange("dateorder", e.target.value)}
-                required
-              />
-            </div>
+      {/* Ligne 2: Date commande et Nombre de chéquiers */}
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="dateorder">Date de commande *</Label>
+          <Input
+            id="dateorder"
+            name="dateorder"
+            type="date"
+            value={formData.dateorder || new Date().toISOString().split("T")[0]}
+            onChange={(e) => handleInputChange("dateorder", e.target.value)}
+            required
+          />
+        </div>
 
-            <div>
-              <Label htmlFor="nbrechequier">Nombre de chéquiers *</Label>
-              <Input
-                id="nbrechequier"
-                name="nbrechequier"
-                type="number"
-                min="1"
-                max="2"
-                value={formData.nbrechequier || ""}
-                onChange={(e) => handleInputChange("nbrechequier", e.target.value)}
-                placeholder="Ex: 2"
-                required
-              />
-            </div>
+        <div className="space-y-2">
+          <Label htmlFor="nbrechequier">Nombre de chéquiers *</Label>
+          <Input
+            id="nbrechequier"
+            name="nbrechequier"
+            type="number"
+            min="1"
+            max="2"
+            value={formData.nbrechequier || ""}
+            onChange={(e) => {
+              const value = parseInt(e.target.value);
+              if (value >= 1 && value <= 2) {
+                handleInputChange("nbrechequier", value.toString());
+              }
+            }}
+            placeholder="Ex: 2"
+            required
+          />
+        </div>
+      </div>
 
-            <div>
-              <Label htmlFor="nbrefeuille">Nombre de feuillets par chéquier *</Label>
-              <Select
-                value={formData.nbrefeuille || ""}
-                onValueChange={(value) => handleInputChange("nbrefeuille", value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Choisir le nombre de feuillets" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="25">25 feuillets</SelectItem>
-                  <SelectItem value="50">50 feuillets</SelectItem>
-                   <SelectItem value="100">100 feuillets</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+      {/* Ligne 3: Nombre de feuillets et Type de chèque */}
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="nbrefeuille">Nombre de feuillets par chéquier *</Label>
+          <Select
+            value={formData.nbrefeuille || ""}
+            onValueChange={(value) => handleInputChange("nbrefeuille", value)}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Choisir le nombre de feuillets" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="25">25 feuillets</SelectItem>
+              <SelectItem value="50">50 feuillets</SelectItem>
+              <SelectItem value="100">100 feuillets</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
 
-            <div>
-              <Label htmlFor="typeCheque">Type de chèque *</Label>
-              <Select
-                value={formData.typeCheque || ""}
-                onValueChange={(value) => handleInputChange("typeCheque", value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Choisir le type de chèque" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Standard">Standard barré</SelectItem>
-                   <SelectItem value="Standard non barré">Standard non barré</SelectItem>
-                  <SelectItem value="Certifié barré">Certifié barré</SelectItem>
-                   <SelectItem value="Certifié non barré">Certifié non barré</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+        <div className="space-y-2">
+          <Label htmlFor="typeCheque">Type de chèque *</Label>
+          <Select
+            value={formData.typeCheque || ""}
+            onValueChange={(value) => handleInputChange("typeCheque", value)}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Choisir le type de chèque" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="Standard">Standard barré</SelectItem>
+              <SelectItem value="Standard non barré">Standard non barré</SelectItem>
+              <SelectItem value="Certifié barré">Certifié barré</SelectItem>
+              <SelectItem value="Certifié non barré">Certifié non barré</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
 
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="talonCheque"
-                checked={formData.talonCheque || false}
-                onCheckedChange={(checked) => handleInputChange("talonCheque", checked)}
-              />
-              <Label htmlFor="talonCheque" className="text-sm font-normal">
-                Chèque à Talon
-              </Label>
-            </div>
+      {/* Le reste du code reste inchangé */}
+      <div className="flex items-center space-x-2">
+        <Checkbox
+          id="talonCheque"
+          checked={formData.talonCheque || false}
+          onCheckedChange={(checked) => handleInputChange("talonCheque", checked)}
+        />
+        <Label htmlFor="talonCheque" className="text-sm font-normal">
+          Chèque à Talon
+        </Label>
+      </div>
 
-            <div>
-              <Label htmlFor="commentaire">Commentaire</Label>
-              <Textarea
-                id="commentaire"
-                name="commentaire"
-                value={formData.commentaire || ""}
-                onChange={(e) => handleInputChange("commentaire", e.target.value)}
-                placeholder="Commentaire optionnel..."
-                rows={3}
-              />
-            </div>
+      <div>
+        <Label htmlFor="commentaire">Commentaire</Label>
+        <Textarea
+          id="commentaire"
+          name="commentaire"
+          value={formData.commentaire || ""}
+          onChange={(e) => handleInputChange("commentaire", e.target.value)}
+          placeholder="Commentaire optionnel..."
+          rows={3}
+        />
+      </div>
 
-            {checkbookSubmitState?.success && (
-              <Alert className="border-green-200 bg-green-50">
-                <CheckCircle className="h-4 w-4 text-green-600" />
-                <AlertDescription className="text-green-800">
-                  ✅ Votre demande de chéquier a été soumise avec succès ! Référence: {checkbookSubmitState.reference}
-                </AlertDescription>
-              </Alert>
-            )}
+      {checkbookSubmitState?.success && (
+        <Alert className="border-green-200 bg-green-50">
+          <CheckCircle className="h-4 w-4 text-green-600" />
+          <AlertDescription className="text-green-800">
+            ✅ Votre demande de chéquier a été soumise avec succès ! Référence: {checkbookSubmitState.reference}
+          </AlertDescription>
+        </Alert>
+      )}
 
-            {checkbookSubmitState?.error && (
-              <Alert variant="destructive">
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>❌ {checkbookSubmitState.error}</AlertDescription>
-              </Alert>
-            )}
+      {checkbookSubmitState?.error && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>❌ {checkbookSubmitState.error}</AlertDescription>
+        </Alert>
+      )}
 
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="checkbook_terms"
-                checked={formData.terms || false}
-                onCheckedChange={(checked) => handleInputChange("terms", checked)}
-              />
-              <Label htmlFor="checkbook_terms" className="text-sm">
-                J'accepte les{" "}
-                <a href="#" className="text-blue-600 hover:underline">
-                  conditions générales
-                </a>{" "}
-                et autorise le traitement de ma demande
-              </Label>
-            </div>
-          </form>
-        )
+      <div className="flex items-center space-x-2">
+        <Checkbox
+          id="checkbook_terms"
+          checked={formData.terms || false}
+          onCheckedChange={(checked) => handleInputChange("terms", checked)}
+        />
+        <Label htmlFor="checkbook_terms" className="text-sm">
+          J'accepte les{" "}
+          <a href="#" className="text-blue-600 hover:underline">
+            conditions générales
+          </a>{" "}
+          et autorise le traitement de ma demande
+        </Label>
+      </div>
+    </form>
+  )
+        
       // DEMANDE CREDIT PAGE
       case "credit":
         return (
