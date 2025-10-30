@@ -11,6 +11,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Eye, EyeOff, User } from "lucide-react"
 import AuthService from "@/lib/auth-service"
 import { config } from "@/lib/config"
+import { storeAuthToken } from "./actions"
 
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false)
@@ -35,7 +36,9 @@ export default function LoginPage() {
       const loginResult = await AuthService.signIn(email, password, tenantId, invitationToken)
 
       if (loginResult.success) {
-        await AuthService.fetchMe()
+        const userData = await AuthService.fetchMe()
+
+        await storeAuthToken(loginResult.token, userData)
 
         if (rememberMe) {
           localStorage.setItem("rememberMe", "true")
