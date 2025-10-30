@@ -219,10 +219,14 @@ export default function BeneficiariesPage() {
   }
 
   const filteredBeneficiaries = beneficiaries.filter((beneficiary) => {
+    const name = String(beneficiary.name || "")
+    const account = String(beneficiary.account || "")
+    const bank = String(beneficiary.bank || "")
+
     const matchesSearch =
-      (beneficiary.name?.toLowerCase() || "").includes(searchTerm.toLowerCase()) ||
-      (beneficiary.account?.toLowerCase() || "").includes(searchTerm.toLowerCase()) ||
-      (beneficiary.bank?.toLowerCase() || "").includes(searchTerm.toLowerCase())
+      name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      account.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      bank.toLowerCase().includes(searchTerm.toLowerCase())
 
     let matchesFilter = false
     if (filterType === "all") {
