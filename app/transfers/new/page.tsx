@@ -16,6 +16,7 @@ import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { ArrowRight, Plus, User, Building, Check, AlertCircle } from "lucide-react"
 import { useActionState } from "react"
+import { importAesGcmKeyFromBase64, isEncryptedJson, decryptAesGcmFromJson } from "@/lib/crypto"
 import Link from "next/link"
 
 // Types
@@ -274,13 +275,35 @@ export default function NewTransferPage() {
       const result = await getBeneficiaries()
 
       if (Array.isArray(result) && result.length > 0) {
-        // Adapter les données API au format Beneficiary
-        const adaptedBeneficiaries = result.map((apiBeneficiary: any) => ({
-          id: apiBeneficiary.id,
-          name: apiBeneficiary.name,
-          account: apiBeneficiary.accountNumber,
-          bank: apiBeneficiary.bankName,
-          type: apiBeneficiary.beneficiaryType || "BNG-BNG",
+        const secureMode = (process.env.NEXT_PUBLIC_PORTAL_SECURE_MODE || "false").toLowerCase() === "true"
+        const keyB64 = process.env.NEXT_PUBLIC_PORTAL_KEY_B64 || ""
+        let key: CryptoKey | null = null
+        try {
+          if (secureMode && keyB64) key = await importAesGcmKeyFromBase64(keyB64)
+        } catch (_) { key = null }
+        const asEnc = (v: any) => {
+          if (!v) return null
+          if (isEncryptedJson(v)) return v
+          if (typeof v === 'string') { try { const p = JSON.parse(v); return isEncryptedJson(p) ? p : null } catch { return null } }
+          return null
+        }
+        // Adapter les données API au format Beneficiary avec décryptage
+        const adaptedBeneficiaries = await Promise.all(result.map(async (apiBeneficiary: any) => {
+          let name: any = apiBeneficiary.name
+          let account: any = apiBeneficiary.accountNumber
+          let bank: any = apiBeneficiary.bankName
+          if (key) {
+            try { const e = asEnc(name); if (e) name = await decryptAesGcmFromJson(e, key) } catch (_) {}
+            try { const e = asEnc(account); if (e) account = await decryptAesGcmFromJson(e, key) } catch (_) {}
+            try { const e = asEnc(bank); if (e) bank = await decryptAesGcmFromJson(e, key) } catch (_) {}
+          }
+          return {
+            id: apiBeneficiary.id,
+            name: typeof name === 'string' ? name : '',
+            account: typeof account === 'string' ? account : '',
+            bank: typeof bank === 'string' ? bank : '',
+            type: apiBeneficiary.beneficiaryType || "BNG-BNG",
+          } as Beneficiary
         }))
         const activeBeneficiaries = adaptedBeneficiaries.filter((beneficiary: any) => {
           // Check if the original API data has status field and filter by status 0

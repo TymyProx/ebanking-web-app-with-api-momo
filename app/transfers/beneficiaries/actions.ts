@@ -2,6 +2,7 @@
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0"
 import { revalidatePath } from "next/cache"
 import { cookies } from "next/headers"
+import { encryptAesGcmNode } from "../../transfers/new/secure"
 
 interface ActionResult {
   success?: boolean
@@ -186,14 +187,14 @@ export async function addBeneficiary(prevState: ActionResult | null, formData: F
   try {
     await new Promise((resolve) => setTimeout(resolve, 1000))
 
-    const name = formData.get("name") as string
-    const account = formData.get("account") as string
-    const bank = formData.get("bank") as string
-    const type = formData.get("type") as string
-    const bankname = formData.get("bankname") as string
-    const codeAgence = formData.get("codeAgence") as string
-    const codeBanque = formData.get("codeBanque") as string
-    const cleRib = formData.get("cleRib") as string
+    const getStr = (k: string) => (formData.get(k) as string) || ""
+    const name = getStr("name") || getStr("1_name")
+    const account = getStr("account") || getStr("1_account")
+    const type = getStr("type") || getStr("1_type")
+    const bankname = getStr("bankname") || getStr("1_bankname")
+    const codeAgence = getStr("codeAgence") || getStr("1_codeAgence")
+    const codeBanque = getStr("codeBanque") || getStr("bankCode") || getStr("1_bankCode") || getStr("bank") || getStr("1_bank")
+    const cleRib = getStr("cleRib") || getStr("1_cleRib")
 
     if (!name || !account || !type) {
       return {
@@ -202,14 +203,14 @@ export async function addBeneficiary(prevState: ActionResult | null, formData: F
       }
     }
 
-    if (type === "BNG-INTERNATIONAL" && !bank) {
+    if (type === "BNG-INTERNATIONAL" && !bankname && !codeBanque) {
       return {
         success: false,
         error: "Le nom de la banque est obligatoire pour les bénéficiaires internationaux",
       }
     }
 
-    if (type === "BNG-CONFRERE" && !bank) {
+    if (type === "BNG-CONFRERE" && !(bankname || codeBanque)) {
       return {
         success: false,
         error: "Le nom de la banque est obligatoire",
@@ -228,20 +229,44 @@ export async function addBeneficiary(prevState: ActionResult | null, formData: F
 
     const clientId = await getCurrentClientId()
 
-    const apiData = {
-      data: {
-        beneficiaryId: `BEN_${Date.now()}`,
-        clientId: clientId,
-        name: name,
-        accountNumber: account,
-        bankCode: bank,
-        bankName: bankname,
-        status: 0,
-        typeBeneficiary: type,
-        favoris: false,
-        codagence: type === "BNG-INTERNATIONAL" ? "N/A" : codeAgence || "N/A",
-        clerib: type === "BNG-INTERNATIONAL" ? "N/A" : cleRib || "N/A",
-      },
+    const secureMode = (process.env.NEXT_PUBLIC_PORTAL_SECURE_MODE || "false").toLowerCase() === "true"
+    const keyB64 = process.env.NEXT_PUBLIC_PORTAL_KEY_B64 || ""
+
+    const base = {
+      beneficiaryId: `BEN_${Date.now()}`,
+      clientId: clientId,
+      status: 0,
+      typeBeneficiary: type,
+      favoris: false,
+    }
+
+    let apiData: any
+    if (secureMode && keyB64) {
+      const enc = (v: any) => ({ ...encryptAesGcmNode(v, keyB64), key_id: "k1-mobile-v1" })
+      apiData = {
+        data: {
+          ...base,
+          name_json: enc(name),
+          accountNumber_json: enc(account),
+          bankCode_json: enc(codeBanque),
+          bankName_json: enc(bankname),
+          codagence_json: enc(type === "BNG-INTERNATIONAL" ? "N/A" : codeAgence || "N/A"),
+          clerib_json: enc(type === "BNG-INTERNATIONAL" ? "N/A" : cleRib || "N/A"),
+          key_id: "k1-mobile-v1",
+        },
+      }
+    } else {
+      apiData = {
+        data: {
+          ...base,
+          name: name,
+          accountNumber: account,
+          bankCode: codeBanque,
+          bankName: bankname,
+          codagence: type === "BNG-INTERNATIONAL" ? "N/A" : codeAgence || "N/A",
+          clerib: type === "BNG-INTERNATIONAL" ? "N/A" : cleRib || "N/A",
+        },
+      }
     }
 
     const cookieToken = (await cookies()).get("token")?.value

@@ -3,6 +3,7 @@ process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0"
 import { z } from "zod"
 import { cookies } from "next/headers"
 import { revalidatePath } from "next/cache"
+import { encryptAesGcmNode, stringifyEncrypted } from "./secure"
 
 const normalize = (u?: string) => (u ? u.replace(/\/$/, "") : "")
 const API_BASE_URL = `${normalize(process.env.NEXT_PUBLIC_API_URL || "https://35.184.98.9:4000")}/api`
@@ -517,12 +518,75 @@ export async function executeTransfer(prevState: any, formData: FormData) {
     }
 
     const transactionUrl = `${API_BASE_URL}/tenant/${TENANT_ID}/epayments`
-    console.log("[v0] ===== EPAYMENT CREATION DEBUG =====")
-    console.log("[v0] Transaction URL:", transactionUrl)
-    console.log("[v0] API_BASE_URL:", API_BASE_URL)
-    console.log("[v0] TENANT_ID:", TENANT_ID)
-    console.log("[v0] Request body:", JSON.stringify(apiData, null, 2))
-    console.log("[v0] ========================================")
+    const secureMode = (process.env.NEXT_PUBLIC_PORTAL_SECURE_MODE || "false").toLowerCase() === "true"
+    const keyB64 = process.env.NEXT_PUBLIC_PORTAL_KEY_B64 || ""
+    const keyId = process.env.NEXT_PUBLIC_PORTAL_KEY_ID || "k1-mobile-v1"
+
+    let bodyToSend: any = apiData
+    if (secureMode && keyB64) {
+      try {
+        const enc = (val: any) => stringifyEncrypted({ ...encryptAesGcmNode(val, keyB64), key_id: keyId })
+        const d = apiData.data
+        bodyToSend = {
+          data: {
+            affiliateid: d.affiliateid,
+            stepflow: d.stepflow,
+            // Do not send montantOperation; only encrypted mirror
+            montantOperation_json: enc(d.montantOperation),
+            requestID: d.requestID,
+            // Encrypted JSONB targets (camelCase column names)
+            ribClient_json: enc(d.ribClient),
+            dateOrdre: d.dateOrdre,
+            nomClient_json: enc(d.nomClient),
+            status: d.status,
+            referenceOperation: d.referenceOperation,
+            dateReception: d.dateReception,
+            dateExecution: d.dateExecution,
+            dateNotification: d.dateNotification,
+            referencePaiement: d.referencePaiement,
+            nomBeneficiaire_json: enc(d.nomBeneficiaire),
+            ribBeneficiaire_json: enc(d.ribBeneficiaire),
+            commentnotes_json: enc(d.commentnotes),
+            productCode: d.productCode,
+            description_json: enc(d.description),
+            clientId: d.clientId,
+            key_id: keyId,
+          },
+        }
+      } catch (e) {
+        console.error("[v0] Secure mode encryption failed, falling back to plaintext payload:", (e as Error).message)
+        bodyToSend = apiData
+      }
+    }
+    // For non-secure mode or fallback, strip montantOperation entirely
+    if (!secureMode) {
+      bodyToSend = { data: { ...apiData.data } }
+      delete bodyToSend.data.montantOperation
+    }
+
+    if ((process.env.NEXT_PUBLIC_LOG_LEVEL || "error").toLowerCase() === "debug") {
+      console.log("[v0] ===== EPAYMENT CREATION DEBUG =====")
+      console.log("[v0] Transaction URL:", transactionUrl)
+      console.log("[v0] API_BASE_URL:", API_BASE_URL)
+      console.log("[v0] TENANT_ID:", TENANT_ID)
+      // Mask sensitive fields in logs
+      const masked = JSON.parse(JSON.stringify(bodyToSend))
+      if (masked?.data) {
+        for (const f of [
+          "montantOperation",
+          "ribClient",
+          "nomClient",
+          "nomBeneficiaire",
+          "ribBeneficiaire",
+          "commentnotes",
+          "description",
+        ]) {
+          if (masked.data[f]) masked.data[f] = "***"
+        }
+      }
+      console.log("[v0] Request body (masked):", JSON.stringify(masked, null, 2))
+      console.log("[v0] ========================================")
+    }
 
     const response = await fetch(transactionUrl, {
       method: "POST",
@@ -530,17 +594,23 @@ export async function executeTransfer(prevState: any, formData: FormData) {
         "Content-Type": "application/json",
         Authorization: `Bearer ${usertoken}`,
       },
-      body: JSON.stringify(apiData),
+      body: JSON.stringify(bodyToSend),
     })
 
-    console.log("[v0] Epayment response status:", response.status)
-    console.log("[v0] Epayment response status text:", response.statusText)
+    if ((process.env.NEXT_PUBLIC_LOG_LEVEL || "error").toLowerCase() === "debug") {
+      console.log("[v0] Epayment response status:", response.status)
+      console.log("[v0] Epayment response status text:", response.statusText)
+    }
 
     if (!response.ok) {
-      console.log("[v0] Erreur API, restauration du solde disponible")
+      if ((process.env.NEXT_PUBLIC_LOG_LEVEL || "error").toLowerCase() === "debug") {
+        console.log("[v0] Erreur API, restauration du solde disponible")
+      }
 
       const responseText = await response.text()
-      console.log("[v0] Error response body:", responseText)
+      if ((process.env.NEXT_PUBLIC_LOG_LEVEL || "error").toLowerCase() === "debug") {
+        console.log("[v0] Error response body:", responseText)
+      }
 
       await debitAccountBalance(validatedData.sourceAccount, -transferAmount)
 
@@ -566,7 +636,9 @@ export async function executeTransfer(prevState: any, formData: FormData) {
     }
 
     const result = await response.json()
-    console.log("[v0] Epayment created successfully:", result)
+    if ((process.env.NEXT_PUBLIC_LOG_LEVEL || "error").toLowerCase() === "debug") {
+      console.log("[v0] Epayment created successfully")
+    }
 
     let successMessage = `✅ Virement de ${new Intl.NumberFormat("fr-FR").format(transferAmount)} GNF effectué avec succès.`
 
@@ -576,9 +648,11 @@ export async function executeTransfer(prevState: any, formData: FormData) {
       successMessage += " Compte source débité, virement vers bénéficiaire en cours."
     }
 
-    console.log(
-      `[AUDIT] Virement exécuté avec débit immédiat - RequestID: ${requestID}, Type: ${validatedData.transferType}, Montant: ${validatedData.amount} GNF, Compte source: ${validatedData.sourceAccount}, Bénéficiaire: ${nomBeneficiaire}, RIB Bénéficiaire: ${ribBeneficiaire}, Nouveau solde disponible: ${debitResult.newBalance} à ${new Date().toISOString()}`,
-    )
+    if ((process.env.NEXT_PUBLIC_LOG_LEVEL || "error").toLowerCase() === "debug") {
+      console.log(
+        `[AUDIT] Virement exécuté - RequestID: ${requestID}, Type: ${validatedData.transferType}, Nouveau solde disponible: ${debitResult.newBalance} à ${new Date().toISOString()}`,
+      )
+    }
 
     revalidatePath("/transfers/new")
     revalidatePath("/accounts")
@@ -801,6 +875,41 @@ export async function getTransactions(): Promise<{ data: any[] }> {
       ],
     }
   }
+}
+
+export async function getEpayments(): Promise<{ rows: any[] }> {
+  const cookieToken = (await cookies()).get("token")?.value
+  const usertoken = cookieToken
+  if (!usertoken) return { rows: [] }
+
+  let currentUserId: string | null = null
+  try {
+    const me = await fetch(`${API_BASE_URL}/auth/me`, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${usertoken}`, "Content-Type": "application/json" },
+    })
+    if (me.ok) {
+      const userData = await me.json()
+      currentUserId = userData.id || null
+    }
+  } catch (_) {}
+
+  const res = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/epayments?orderBy=createdAt_DESC&limit=500`, {
+    method: "GET",
+    headers: { Authorization: `Bearer ${usertoken}`, Accept: "application/json" },
+    cache: "no-store",
+  })
+  const contentType = res.headers.get("content-type") || ""
+  const bodyText = await res.text()
+  if (!res.ok) {
+    // eslint-disable-next-line no-console
+    console.error("[EPAY] API", res.status, bodyText)
+    return { rows: [] }
+  }
+  const parsed = contentType.includes("application/json") && bodyText ? JSON.parse(bodyText) : { rows: [] }
+  let rows: any[] = parsed.rows || []
+  if (currentUserId) rows = rows.filter((r: any) => r.clientId === currentUserId || r.createdById === currentUserId)
+  return { rows }
 }
 
 async function getBeneficiaryById(beneficiaryId: string) {

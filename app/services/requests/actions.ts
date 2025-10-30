@@ -246,6 +246,35 @@ export async function submitCheckbookRequest(formData: {
   }
 }
 
+// Secure path: submit already-encrypted payload to e-Portal endpoint
+export async function submitCheckbookRequestSecure(encryptedData: any) {
+  try {
+    const cookieToken = (await cookies()).get("token")?.value
+    const usertoken = cookieToken
+
+    if (!cookieToken) throw new Error("Token introuvable.")
+
+    // Backend will force stepflow=0 and clientId=req.currentUser.id
+    const response = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/me/commandes`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${usertoken}`,
+      },
+      body: JSON.stringify({ data: encryptedData }),
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json()
+      throw new Error(errorData.message || "Erreur lors de la soumission sécurisée")
+    }
+
+    return await response.json()
+  } catch (error: any) {
+    throw new Error(error.message)
+  }
+}
+
 // Fonction asynchrone pour récupérer les demandes de chéquier
 export async function getCheckbookRequest(id?: string): Promise<GetCommandesResponse | Commande> {
   try {

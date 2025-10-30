@@ -26,6 +26,7 @@ import {
 } from "lucide-react"
 
 import { fetchAllCards, createCardRequest, type Card as CardType, type NewCardRequest } from "../../actions/card"
+import { importAesGcmKeyFromBase64, isEncryptedJson, decryptAesGcmFromJson } from "@/lib/crypto"
 import { getAccounts } from "../accounts/actions"
 
 type CardWithUI = CardType & {
@@ -94,7 +95,45 @@ export default function CardsPage() {
 
     try {
       const response = await fetchAllCards()
-      const enhancedCards = response.rows.map((card) => ({
+      const secureMode = (process.env.NEXT_PUBLIC_PORTAL_SECURE_MODE || "false").toLowerCase() === "true"
+      const keyB64 = process.env.NEXT_PUBLIC_PORTAL_KEY_B64 || ""
+      const logDebug = (process.env.NEXT_PUBLIC_LOG_LEVEL || "").toLowerCase() === "debug"
+      let key: CryptoKey | null = null
+      try {
+        if (secureMode && keyB64) key = await importAesGcmKeyFromBase64(keyB64)
+      } catch (_) {
+        key = null
+      }
+      if (logDebug) console.log("[CARDS/UI] secure:", secureMode, "key:", !!key, "rows:", response.rows.length)
+
+      const decryptedRows = key
+        ? await Promise.all(
+            response.rows.map(async (c: any) => {
+              const out: any = { ...c }
+              try {
+                if (isEncryptedJson(out.numCard)) out.numCard = await decryptAesGcmFromJson(out.numCard, key as CryptoKey)
+                if (isEncryptedJson(out.accountNumber)) out.accountNumber = await decryptAesGcmFromJson(out.accountNumber, key as CryptoKey)
+                if (isEncryptedJson(out.typCard)) out.typCard = await decryptAesGcmFromJson(out.typCard, key as CryptoKey)
+                if (isEncryptedJson(out.status)) out.status = await decryptAesGcmFromJson(out.status, key as CryptoKey)
+                if (isEncryptedJson(out.dateEmission)) out.dateEmission = await decryptAesGcmFromJson(out.dateEmission, key as CryptoKey)
+                if (isEncryptedJson(out.dateExpiration)) out.dateExpiration = await decryptAesGcmFromJson(out.dateExpiration, key as CryptoKey)
+              } catch (_) {}
+              if (logDebug) console.log("[CARDS/UI] row:", {
+                id: out.id,
+                clientId: out.clientId,
+                numType: typeof out.numCard,
+                accType: typeof out.accountNumber,
+              })
+              out.numCard = typeof out.numCard === 'string' ? out.numCard : ''
+              out.accountNumber = typeof out.accountNumber === 'string' ? out.accountNumber : ''
+              out.typCard = typeof out.typCard === 'string' ? out.typCard : ''
+              out.status = typeof out.status === 'string' ? out.status : ''
+              return out
+            }),
+          )
+        : response.rows
+
+      const enhancedCards = decryptedRows.map((card) => ({
         ...card,
         holder: "MAMADOU DIALLO", // Default holder name
         dailyLimit: 500000,
@@ -103,6 +142,7 @@ export default function CardsPage() {
         lastTransaction: "Achat chez Carrefour - 45,000 FCFA",
         isNumberVisible: false,
       }))
+      if (logDebug) console.log("[CARDS/UI] final rows:", enhancedCards.length)
       setCards(enhancedCards)
       setTotal(response.count)
     } catch (e: any) {

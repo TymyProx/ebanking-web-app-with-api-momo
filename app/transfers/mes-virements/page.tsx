@@ -5,8 +5,9 @@ import { Badge } from "@/components/ui/badge"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { ArrowUpRight, ArrowDownRight, Receipt, Calendar, Clock, Hash, FileText, CreditCard } from "lucide-react"
 import { useState, useEffect } from "react"
-import { getTransactions } from "@/app/transfers/new/actions"
+import { getEpayments } from "@/app/transfers/new/actions"
 import { getAccounts } from "@/app/accounts/actions"
+import { importAesGcmKeyFromBase64, isEncryptedJson, decryptAesGcmFromJson } from "@/lib/crypto"
 
 export default function MesVirementsPage() {
   const [transactions, setTransactions] = useState<any[]>([])
@@ -18,9 +19,51 @@ export default function MesVirementsPage() {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const transactionsResult = await getTransactions()
+        const ep = await getEpayments()
         const accountsData = await getAccounts()
-        setTransactions(transactionsResult?.data || [])
+        const secureMode = (process.env.NEXT_PUBLIC_PORTAL_SECURE_MODE || "false").toLowerCase() === "true"
+        const keyB64 = process.env.NEXT_PUBLIC_PORTAL_KEY_B64 || ""
+        let key: CryptoKey | null = null
+        try {
+          if (secureMode && keyB64) key = await importAesGcmKeyFromBase64(keyB64)
+        } catch (_) {
+          key = null
+        }
+
+        const rows = ep?.rows || []
+        const decrypted = key
+          ? await Promise.all(
+              rows.map(async (t: any) => {
+                const out = { ...t }
+                const asEnc = (v: any) => {
+                  if (!v) return null
+                  if (isEncryptedJson(v)) return v
+                  if (typeof v === 'string') { try { const p = JSON.parse(v); return isEncryptedJson(p) ? p : null } catch { return null } }
+                  return null
+                }
+                try {
+                  const dEnc = asEnc(out.description) || asEnc(out.description_json)
+                  if (dEnc) out.description = await decryptAesGcmFromJson(dEnc, key as CryptoKey)
+                  const cEnc = asEnc(out.commentnotes) || asEnc(out.commentnotes_json)
+                  if (cEnc) out.commentnotes = await decryptAesGcmFromJson(cEnc, key as CryptoKey)
+                  const ncEnc = asEnc(out.nomClient) || asEnc(out.nomClient_json)
+                  if (ncEnc) out.nomClient = await decryptAesGcmFromJson(ncEnc, key as CryptoKey)
+                  const nbEnc = asEnc(out.nomBeneficiaire) || asEnc(out.nomBeneficiaire_json)
+                  if (nbEnc) out.nomBeneficiaire = await decryptAesGcmFromJson(nbEnc, key as CryptoKey)
+                  const rcEnc = asEnc(out.ribClient) || asEnc(out.ribClient_json)
+                  if (rcEnc) out.ribClient = await decryptAesGcmFromJson(rcEnc, key as CryptoKey)
+                  const rbEnc = asEnc(out.ribBeneficiaire) || asEnc(out.ribBeneficiaire_json)
+                  if (rbEnc) out.ribBeneficiaire = await decryptAesGcmFromJson(rbEnc, key as CryptoKey)
+                  const moEnc = asEnc(out.montantOperation_json)
+                  if (moEnc) out.montantOperation = await decryptAesGcmFromJson(moEnc, key as CryptoKey)
+                } catch (_) {}
+                out.description = typeof out.description === 'string' ? out.description : ''
+                return out
+              }),
+            )
+          : rows
+
+        setTransactions(decrypted)
         setAccounts(accountsData || [])
       } catch (error) {
         console.error("Error loading data:", error)
@@ -42,27 +85,21 @@ export default function MesVirementsPage() {
     }).format(numAmount)
   }
 
-  const formatTransaction = (transaction: any, accounts: any[]) => {
-    const amount = Number.parseFloat(transaction.amount)
-    const isCredit = transaction.txnType === "CREDIT"
-
-    const account = accounts.find((acc) => acc.id === transaction.accountId || acc.accountId === transaction.accountId)
+  const formatTransaction = (ep: any, accounts: any[]) => {
+    const safeText = (v: any) => (typeof v === 'string' ? v : '')
+    const amountStr = (ep.montantOperation ?? ep.amount ?? "0").toString()
+    const amount = Number.parseFloat(amountStr)
+    const isCredit = false // Mes virements: sorties
+    const account = accounts.find((acc) => acc.id === ep.accountId || acc.accountId === ep.accountId)
     const currency = account?.currency || "GNF"
-
+    const when = ep.dateExecution || ep.dateOrdre || ep.createdAt || new Date().toISOString()
     return {
       type: isCredit ? "Virement reçu" : "Virement émis",
-      from: transaction.description || "Transaction",
+      from: safeText(ep.description) || safeText(ep.referenceOperation) || "Virement",
       amount: `${isCredit ? "+" : "-"}${formatAmount(Math.abs(amount), currency)} ${currency}`,
-      date: new Date(transaction.valueDate).toLocaleDateString("fr-FR", {
-        day: "numeric",
-        month: "short",
-        year: "numeric",
-      }),
-      time: new Date(transaction.valueDate).toLocaleTimeString("fr-FR", {
-        hour: "2-digit",
-        minute: "2-digit",
-      }),
-      status: transaction.status || "Exécuté",
+      date: new Date(when).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" }),
+      time: new Date(when).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }),
+      status: safeText(ep.status) || "PENDING",
       isCredit,
       currency,
       rawAmount: Math.abs(amount),
@@ -230,7 +267,7 @@ export default function MesVirementsPage() {
                         <Hash className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" />
                         <div className="flex-1 min-w-0">
                           <p className="text-xs font-medium text-muted-foreground">Référence</p>
-                          <p className="text-sm font-mono truncate">{selectedTransaction.txnId || "N/A"}</p>
+                          <p className="text-sm font-mono truncate">{typeof selectedTransaction.txnId === 'string' ? selectedTransaction.txnId : (typeof selectedTransaction.referenceOperation === 'string' ? selectedTransaction.referenceOperation : 'N/A')}</p>
                         </div>
                       </div>
 
@@ -276,44 +313,47 @@ export default function MesVirementsPage() {
                         </div>
                       )}
 
-                      {selectedTransaction.creditAccount && (
+                      {(typeof selectedTransaction.creditAccount === 'string' && selectedTransaction.creditAccount) && (
                         <div className="flex items-start gap-2 p-3 bg-muted/30 rounded-lg">
                           <CreditCard className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" />
                           <div className="flex-1 min-w-0">
                             <p className="text-xs font-medium text-muted-foreground">Compte créditeur</p>
-                            <p className="text-sm font-mono truncate">{selectedTransaction.creditAccount}</p>
+                            <p className="text-sm font-mono truncate">{typeof selectedTransaction.creditAccount === 'string' ? selectedTransaction.creditAccount : ''}</p>
                           </div>
                         </div>
                       )}
 
-                      {selectedTransaction.codeDevise && (
+                      {(typeof selectedTransaction.codeDevise === 'string' && selectedTransaction.codeDevise) && (
                         <div className="flex items-start gap-2 p-3 bg-muted/30 rounded-lg">
                           <FileText className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" />
                           <div className="flex-1">
                             <p className="text-xs font-medium text-muted-foreground">Devise</p>
-                            <p className="text-sm">{selectedTransaction.codeDevise}</p>
+                            <p className="text-sm">{typeof selectedTransaction.codeDevise === 'string' ? selectedTransaction.codeDevise : ''}</p>
                           </div>
                         </div>
                       )}
 
-                      {selectedTransaction.referenceOperation && (
+                      {(typeof selectedTransaction.referenceOperation === 'string' && selectedTransaction.referenceOperation) && (
                         <div className="flex items-start gap-2 p-3 bg-muted/30 rounded-lg">
                           <Hash className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" />
                           <div className="flex-1 min-w-0">
                             <p className="text-xs font-medium text-muted-foreground">Réf. opération</p>
-                            <p className="text-sm font-mono truncate">{selectedTransaction.referenceOperation}</p>
+                            <p className="text-sm font-mono truncate">{typeof selectedTransaction.referenceOperation === 'string' ? selectedTransaction.referenceOperation : ''}</p>
                           </div>
                         </div>
                       )}
                     </div>
                   </div>
 
-                  {selectedTransaction.description && (
+                  {(() => {
+                    const desc = (formatted as any).from
+                    return !!desc
+                  })() && (
                     <div className="flex items-start gap-2 p-3 bg-muted/30 rounded-lg">
                       <FileText className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" />
                       <div className="flex-1">
                         <p className="text-xs font-medium text-muted-foreground">Description</p>
-                        <p className="text-sm">{selectedTransaction.description}</p>
+                        <p className="text-sm">{(formatted as any).from}</p>
                       </div>
                     </div>
                   )}

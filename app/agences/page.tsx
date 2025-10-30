@@ -8,128 +8,65 @@ import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { MapPin, Phone, Clock, Navigation, Search, Filter } from "lucide-react"
 import { toast } from "@/hooks/use-toast"
+import { config } from "@/lib/config"
 
-interface Agence {
+interface PortalAgence {
   id: string
-  nom: string
-  adresse: string
-  commune: string
-  telephone: string
-  email: string
-  horaires: {
-    semaine: string
-    samedi: string
-    dimanche: string
-  }
-  services: string[]
-  coordonnees: {
-    lat: number
-    lng: number
-  }
-  distance?: number
+  agenceName: string
+  address?: string
+  city?: string
+  postalCode?: string
+  openingHours?: any
+  branchManagerName?: string
+  branchManagerPhone?: string
+  exceptionalClosures?: any
+  isTemporarilyClosed?: boolean
+  mapEmbedUrl?: string
 }
 
-const agences: Agence[] = [
-  {
-    id: "1",
-    nom: "BNG Plateau",
-    adresse: "Avenue Chardy, Immeuble SCIAM, Plateau",
-    commune: "Plateau",
-    telephone: "+225 20 20 20 20",
-    email: "plateau@bng.ci",
-    horaires: {
-      semaine: "8h00 - 17h00",
-      samedi: "8h00 - 12h00",
-      dimanche: "Fermé",
-    },
-    services: ["Guichet automatique", "Conseiller clientèle", "Coffre-fort", "Change"],
-    coordonnees: { lat: 5.3196, lng: -4.0231 },
-  },
-  {
-    id: "2",
-    nom: "BNG Cocody",
-    adresse: "Boulevard Lagunaire, Riviera 2, Cocody",
-    commune: "Cocody",
-    telephone: "+225 20 20 20 21",
-    email: "cocody@bng.ci",
-    horaires: {
-      semaine: "8h00 - 17h00",
-      samedi: "8h00 - 12h00",
-      dimanche: "Fermé",
-    },
-    services: ["Guichet automatique", "Conseiller clientèle", "Crédit immobilier"],
-    coordonnees: { lat: 5.3441, lng: -3.9921 },
-  },
-  {
-    id: "3",
-    nom: "BNG Marcory",
-    adresse: "Boulevard VGE, Zone 4C, Marcory",
-    commune: "Marcory",
-    telephone: "+225 20 20 20 22",
-    email: "marcory@bng.ci",
-    horaires: {
-      semaine: "8h00 - 17h00",
-      samedi: "8h00 - 12h00",
-      dimanche: "Fermé",
-    },
-    services: ["Guichet automatique", "Conseiller clientèle", "Western Union"],
-    coordonnees: { lat: 5.2847, lng: -4.0162 },
-  },
-  {
-    id: "4",
-    nom: "BNG Adjamé",
-    adresse: "Avenue 13, près du marché d'Adjamé",
-    commune: "Adjamé",
-    telephone: "+225 20 20 20 23",
-    email: "adjame@bng.ci",
-    horaires: {
-      semaine: "8h00 - 17h00",
-      samedi: "8h00 - 12h00",
-      dimanche: "Fermé",
-    },
-    services: ["Guichet automatique", "Conseiller clientèle", "Microfinance"],
-    coordonnees: { lat: 5.378, lng: -4.0164 },
-  },
-  {
-    id: "5",
-    nom: "BNG Treichville",
-    adresse: "Avenue 7, Boulevard de la République, Treichville",
-    commune: "Treichville",
-    telephone: "+225 20 20 20 24",
-    email: "treichville@bng.ci",
-    horaires: {
-      semaine: "8h00 - 17h00",
-      samedi: "8h00 - 12h00",
-      dimanche: "Fermé",
-    },
-    services: ["Guichet automatique", "Conseiller clientèle", "Change", "Transfert international"],
-    coordonnees: { lat: 5.2944, lng: -4.0267 },
-  },
-]
-
 export default function AgencesPage() {
-  const [filteredAgences, setFilteredAgences] = useState<Agence[]>(agences)
+  const [allAgences, setAllAgences] = useState<PortalAgence[]>([])
+  const [filteredAgences, setFilteredAgences] = useState<PortalAgence[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedCommune, setSelectedCommune] = useState<string>("all")
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null)
   const [isLoadingLocation, setIsLoadingLocation] = useState(false)
 
-  const communes = Array.from(new Set(agences.map((a) => a.commune))).sort()
+  const communes = Array.from(new Set(allAgences.map((a) => a.city || ""))).filter(Boolean).sort()
 
   useEffect(() => {
-    let filtered = agences
+    const fetchAgences = async () => {
+      try {
+        const base = config.API_BASE_URL.replace(/\/$/, "")
+        const url = `${base}/api/portal/${config.TENANT_ID}/agences`
+        const res = await fetch(url, { headers: { "Accept": "application/json" } })
+        if (!res.ok) throw new Error(`HTTP ${res.status}`)
+        const json = await res.json()
+        const rows: PortalAgence[] = json.rows || []
+        setAllAgences(rows)
+        setFilteredAgences(rows)
+      } catch (e) {
+        console.error("Failed to load agences portal:", e)
+        toast({ title: "Erreur", description: "Impossible de charger les agences.", variant: "destructive" })
+      }
+    }
+    fetchAgences()
+  }, [])
+
+  useEffect(() => {
+    let filtered = allAgences
 
     if (searchTerm) {
       filtered = filtered.filter(
         (agence) =>
-          agence.nom.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          agence.adresse.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          agence.commune.toLowerCase().includes(searchTerm.toLowerCase()),
+          (agence.agenceName || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+          (agence.address || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+          (agence.city || "").toLowerCase().includes(searchTerm.toLowerCase()),
       )
     }
 
     if (selectedCommune !== "all") {
-      filtered = filtered.filter((agence) => agence.commune === selectedCommune)
+      filtered = filtered.filter((agence) => (agence.city || "") === selectedCommune)
     }
 
     // Calculer les distances si la géolocalisation est disponible
@@ -193,9 +130,15 @@ export default function AgencesPage() {
     }
   }
 
-  const openInMaps = (agence: Agence) => {
-    const url = `https://www.google.com/maps/dir/?api=1&destination=${agence.coordonnees.lat},${agence.coordonnees.lng}`
-    window.open(url, "_blank")
+  const openInMaps = (agence: PortalAgence) => {
+    if (agence.mapEmbedUrl) {
+      window.open(agence.mapEmbedUrl, "_blank")
+      return
+    }
+    if (agence.address || agence.city) {
+      const q = encodeURIComponent(`${agence.address || ""} ${agence.city || ""}`.trim())
+      window.open(`https://www.google.com/maps/search/?api=1&query=${q}`, "_blank")
+    }
   }
 
   return (
@@ -256,10 +199,10 @@ export default function AgencesPage() {
             <CardHeader>
               <div className="flex items-start justify-between">
                 <div>
-                  <CardTitle className="text-lg">{agence.nom}</CardTitle>
+                  <CardTitle className="text-lg">{agence.agenceName}</CardTitle>
                   <CardDescription className="flex items-center mt-1">
                     <MapPin className="w-4 h-4 mr-1" />
-                    {agence.commune}
+                    {agence.city || ""}
                     {agence.distance && (
                       <Badge variant="outline" className="ml-2">
                         {agence.distance.toFixed(1)} km
@@ -271,7 +214,7 @@ export default function AgencesPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <p className="text-sm text-gray-600">{agence.adresse}</p>
+                <p className="text-sm text-gray-600">{agence.address}</p>
                 <div className="flex items-center text-sm text-gray-600">
                   <Phone className="w-4 h-4 mr-2" />
                   {agence.telephone}
@@ -283,11 +226,15 @@ export default function AgencesPage() {
                   <Clock className="w-4 h-4 mr-2" />
                   Horaires
                 </div>
-                <div className="text-sm text-gray-600 space-y-1">
-                  <p>Lun-Ven: {agence.horaires.semaine}</p>
-                  <p>Samedi: {agence.horaires.samedi}</p>
-                  <p>Dimanche: {agence.horaires.dimanche}</p>
-                </div>
+                {agence.openingHours && (
+                  <div className="text-sm text-gray-600 space-y-1">
+                    <p>Lun: {agence.openingHours?.mon?.open || "-"} - {agence.openingHours?.mon?.close || "-"}</p>
+                    <p>Mar: {agence.openingHours?.tue?.open || "-"} - {agence.openingHours?.tue?.close || "-"}</p>
+                    <p>Mer: {agence.openingHours?.wed?.open || "-"} - {agence.openingHours?.wed?.close || "-"}</p>
+                    <p>Jeu: {agence.openingHours?.thu?.open || "-"} - {agence.openingHours?.thu?.close || "-"}</p>
+                    <p>Ven: {agence.openingHours?.fri?.open || "-"} - {agence.openingHours?.fri?.close || "-"}</p>
+                  </div>
+                )}
               </div>
 
               <div className="space-y-2">

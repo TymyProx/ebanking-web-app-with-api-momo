@@ -68,6 +68,7 @@ export async function fetchAllCards(): Promise<CardsResponse> {
   }
 
   let currentUserId: string | null = null
+  const logDebug = (process.env.LOG_LEVEL || "").toLowerCase() === "debug"
   try {
     const userResponse = await fetch(`${BASE_URL}/auth/me`, {
       method: "GET",
@@ -80,12 +81,13 @@ export async function fetchAllCards(): Promise<CardsResponse> {
     if (userResponse.ok) {
       const userData = await userResponse.json()
       currentUserId = userData.id
+      if (logDebug) console.log("[CARDS] currentUserId:", currentUserId)
     }
   } catch (error) {
     console.error("[v0] Error fetching user ID:", error)
   }
 
-  const res = await fetch(`${BASE_URL}/tenant/${TENANT_ID}/card`, {
+  const res = await fetch(`${BASE_URL}/tenant/${TENANT_ID}/card?limit=500&orderBy=createdAt_DESC`, {
     method: "GET",
     headers: {
       Accept: "application/json",
@@ -108,8 +110,20 @@ export async function fetchAllCards(): Promise<CardsResponse> {
   }
 
   let filteredRows = parsed?.rows ?? []
+  if (logDebug) {
+    console.log("[CARDS] api rows:", filteredRows.length)
+    if (filteredRows[0]) {
+      const c: any = filteredRows[0]
+      console.log("[CARDS] sample types:", {
+        clientIdType: typeof c.clientId,
+        numCardType: typeof c.numCard,
+      })
+    }
+  }
   if (currentUserId && filteredRows.length > 0) {
-    filteredRows = filteredRows.filter((card) => card.clientId === currentUserId)
+    const before = filteredRows.length
+    filteredRows = filteredRows.filter((card: any) => card.clientId === currentUserId || card.createdById === currentUserId)
+    if (logDebug) console.log("[CARDS] filtered by clientId/createdById:", before, "->", filteredRows.length)
   }
 
   return {
@@ -167,16 +181,38 @@ export async function createCardRequest(cardData: NewCardRequest): Promise<Card>
   expirationDate.setFullYear(expirationDate.getFullYear() + 4)
   const dateExpiration = expirationDate.toISOString().split("T")[0]
 
-  const requestBody = {
-    data: {
-      numCard: "",
-      typCard: cardData.typCard,
-      status: "EN_ATTENTE",
-      dateEmission: today,
-      dateExpiration: dateExpiration,
-      clientId: clientId,
-      accountNumber: cardData.accountNumber || "",
-    },
+  const secure = (process.env.NEXT_PUBLIC_PORTAL_SECURE_MODE || "false").toLowerCase() === "true"
+  const keyB64 = process.env.NEXT_PUBLIC_PORTAL_KEY_B64 || ""
+  let requestBody: any
+  if (secure && keyB64) {
+    const { encryptAesGcmNode } = await import("../app/transfers/new/secure")
+    const enc = (v: any) => ({ ...encryptAesGcmNode(v, keyB64), key_id: "k1-mobile-v1" })
+    requestBody = {
+      data: {
+        numCard_json: enc("AUTO"),
+        typCard_json: enc(cardData.typCard),
+        status_json: enc("EN_ATTENTE"),
+        dateEmission_json: enc(today),
+        dateExpiration_json: enc(dateExpiration),
+        clientId_json: enc(clientId),
+        // keep plaintext clientId for server-side filtering and client list
+        clientId: clientId,
+        accountNumber_json: enc(cardData.accountNumber || ""),
+        key_id: "k1-mobile-v1",
+      },
+    }
+  } else {
+    requestBody = {
+      data: {
+        numCard: "",
+        typCard: cardData.typCard,
+        status: "EN_ATTENTE",
+        dateEmission: today,
+        dateExpiration: dateExpiration,
+        clientId: clientId,
+        accountNumber: cardData.accountNumber || "",
+      },
+    }
   }
 
   const res = await fetch(`${BASE_URL}/tenant/${TENANT_ID}/card`, {
