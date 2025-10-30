@@ -299,6 +299,8 @@ export default function ServiceRequestsPage() {
     setSelectedRequestDetails(null)
   }
 
+// Affichage des modals
+
   const formatRequestDetails = (details: any, type: string) => {
     if (!details) return []
 
