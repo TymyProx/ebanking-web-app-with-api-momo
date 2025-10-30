@@ -8,14 +8,12 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Eye, EyeOff, User, Mail, Phone, MapPin } from "lucide-react"
-import { signupUser } from "./actions"
+import { User, Mail, Phone, MapPin } from "lucide-react"
+import { initiateSignup } from "./actions"
 
 export default function SignupPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
-  const [showPassword, setShowPassword] = useState(false)
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const router = useRouter()
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -29,30 +27,16 @@ export default function SignupPage() {
       const email = formData.get("email") as string
       const phone = formData.get("phone") as string
       const address = formData.get("address") as string
-      const password = formData.get("password") as string
-      const confirmPassword = formData.get("confirmPassword") as string
 
-      // Validate passwords match
-      if (password !== confirmPassword) {
-        setError("Les mots de passe ne correspondent pas")
-        setIsLoading(false)
-        return
-      }
-
-      const result = await signupUser({
+      const result = await initiateSignup({
         fullName,
         email,
         phone,
         address,
-        password,
       })
 
       if (result.success) {
-        if (result.requiresVerification) {
-          router.push(`/auth/verify-email?email=${encodeURIComponent(result.email || email)}`)
-        } else {
-          router.push("/dashboard")
-        }
+        router.push(`/auth/verify-email?email=${encodeURIComponent(email)}`)
       } else {
         setError(result.message)
       }
@@ -186,60 +170,6 @@ export default function SignupPage() {
                 </div>
               </div>
 
-              {/* Password Field */}
-              <div className="space-y-2">
-                <Label htmlFor="password" className="text-sm font-medium text-[hsl(220,13%,13%)]">
-                  Mot de passe
-                </Label>
-                <div className="relative">
-                  <Input
-                    id="password"
-                    name="password"
-                    type={showPassword ? "text" : "password"}
-                    placeholder="Créer un mot de passe"
-                    className="h-12 pr-10 bg-white border-gray-300 focus:border-[hsl(123,38%,57%)] focus:ring-[hsl(123,38%,57%)]"
-                    required
-                    disabled={isLoading}
-                    minLength={8}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                    disabled={isLoading}
-                  >
-                    {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                  </button>
-                </div>
-              </div>
-
-              {/* Confirm Password Field */}
-              <div className="space-y-2">
-                <Label htmlFor="confirmPassword" className="text-sm font-medium text-[hsl(220,13%,13%)]">
-                  Confirmer le mot de passe
-                </Label>
-                <div className="relative">
-                  <Input
-                    id="confirmPassword"
-                    name="confirmPassword"
-                    type={showConfirmPassword ? "text" : "password"}
-                    placeholder="Confirmer votre mot de passe"
-                    className="h-12 pr-10 bg-white border-gray-300 focus:border-[hsl(123,38%,57%)] focus:ring-[hsl(123,38%,57%)]"
-                    required
-                    disabled={isLoading}
-                    minLength={8}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                    disabled={isLoading}
-                  >
-                    {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                  </button>
-                </div>
-              </div>
-
               {/* Submit Button */}
               <Button
                 type="submit"
@@ -249,10 +179,10 @@ export default function SignupPage() {
                 {isLoading ? (
                   <div className="flex items-center space-x-2">
                     <div className="animate-spin rounded-full h-5 w-5 border-2 border-white/30 border-t-white"></div>
-                    <span>Inscription...</span>
+                    <span>Envoi...</span>
                   </div>
                 ) : (
-                  "S'inscrire"
+                  "Continuer"
                 )}
               </Button>
 

@@ -16,6 +16,103 @@ interface SignupData {
   address: string
 }
 
+interface InitialSignupData {
+  fullName: string
+  email: string
+  phone: string
+  address: string
+}
+
+export async function initiateSignup(data: InitialSignupData) {
+  try {
+    console.log("[v0] Starting initial signup process...")
+
+    if (!data.email) {
+      return { success: false, message: "Email requis" }
+    }
+    if (!data.fullName) {
+      return { success: false, message: "Nom complet requis" }
+    }
+    if (!data.phone) {
+      return { success: false, message: "Téléphone requis" }
+    }
+    if (!data.address) {
+      return { success: false, message: "Adresse requise" }
+    }
+
+    // Generate a unique client code
+    const codeClient = `CLI-${Date.now()}-${Math.random().toString(36).substring(2, 9).toUpperCase()}`
+
+    // Generate verification token
+    const verificationToken = randomBytes(32).toString("hex")
+
+    // Store signup data with verification token
+    const cookieStore = await cookies()
+    cookieStore.set(
+      "pending_signup_data",
+      JSON.stringify({
+        fullName: data.fullName,
+        email: data.email,
+        phone: data.phone,
+        address: data.address,
+        codeClient: codeClient,
+        verificationToken: verificationToken,
+      }),
+      {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        maxAge: 60 * 60 * 24, // 24 hours
+      },
+    )
+
+    console.log("[v0] Sending verification email via Resend...")
+
+    const emailResponse = await fetch(`${APP_URL}/api/send-verification-email`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        email: data.email,
+        token: verificationToken,
+        userName: data.fullName,
+      }),
+    })
+
+    console.log("[v0] Email API response status:", emailResponse.status)
+
+    let emailResponseData: any
+    try {
+      emailResponseData = await emailResponse.json()
+    } catch (e) {
+      const errorText = await emailResponse.text()
+      console.error("[v0] Failed to parse email response as JSON:", errorText)
+      throw new Error("Erreur lors de l'envoi de l'email de vérification")
+    }
+
+    console.log("[v0] Email API response:", emailResponseData)
+
+    if (!emailResponse.ok) {
+      console.error("[v0] Failed to send verification email:", emailResponseData)
+      throw new Error(emailResponseData.message || "Erreur lors de l'envoi de l'email de vérification")
+    }
+
+    console.log("[v0] Verification email sent successfully via Resend")
+
+    return {
+      success: true,
+      message: "Un email de vérification a été envoyé à votre adresse email.",
+    }
+  } catch (error: any) {
+    console.error("[v0] Initial signup error:", error)
+    return {
+      success: false,
+      message: error.message || "Une erreur est survenue lors de l'inscription",
+    }
+  }
+}
+
 export async function signupUser(data: SignupData) {
   try {
     console.log("[v0] Starting signup process...")
@@ -102,62 +199,7 @@ export async function signupUser(data: SignupData) {
 
     console.log("[v0] Auth account created successfully")
 
-    console.log("[v0] Step 2: Sending email verification via Resend...")
-
-    const verificationToken = randomBytes(32).toString("hex")
-
-    // Store signup data with verification token
-    const cookieStore = await cookies()
-    cookieStore.set(
-      "pending_signup_data",
-      JSON.stringify({
-        fullName: data.fullName,
-        email: data.email,
-        phone: data.phone,
-        address: data.address,
-        codeClient: codeClient,
-        token: token,
-        verificationToken: verificationToken,
-      }),
-      {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "lax",
-        maxAge: 60 * 60 * 24, // 24 hours
-      },
-    )
-
-    const emailResponse = await fetch(`${APP_URL}/api/send-verification-email`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        email: data.email,
-        token: verificationToken,
-        userName: data.fullName,
-      }),
-    })
-
-    console.log("[v0] Email API response status:", emailResponse.status)
-
-    let emailResponseData: any
-    try {
-      emailResponseData = await emailResponse.json()
-    } catch (e) {
-      const errorText = await emailResponse.text()
-      console.error("[v0] Failed to parse email response as JSON:", errorText)
-      throw new Error("Erreur lors de l'envoi de l'email de vérification")
-    }
-
-    console.log("[v0] Email API response:", emailResponseData)
-
-    if (!emailResponse.ok) {
-      console.error("[v0] Failed to send verification email:", emailResponseData)
-      throw new Error(emailResponseData.message || "Erreur lors de l'envoi de l'email de vérification")
-    }
-
-    console.log("[v0] Verification email sent successfully via Resend")
+    // Step 2: Sending email verification via Resend is now handled in initiateSignup
 
     console.log("[v0] Signup process completed - awaiting email verification")
 
