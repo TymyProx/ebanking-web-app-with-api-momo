@@ -874,7 +874,7 @@ export default function ServiceRequestsPage() {
                     <SelectValue placeholder="Choisir le type de chèque" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Standard">Standard barré</SelectItem>
+                    <SelectItem value="Standard barré">Standard barré</SelectItem>
                     <SelectItem value="Standard non barré">Standard non barré</SelectItem>
                     <SelectItem value="Certifié barré">Certifié barré</SelectItem>
                     <SelectItem value="Certifié non barré">Certifié non barré</SelectItem>
