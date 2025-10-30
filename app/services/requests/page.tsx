@@ -45,18 +45,16 @@ const serviceTypes = [
     icon: BookOpen,
     description: "Commander un nouveau carnet de chèques",
     category: "banking",
-    processingTime: "3-5 jours ouvrables",
-    cost: "Gratuit",
+    //processingTime: "3-5 jours ouvrables",
     requirements: ["Compte actif", "Pas de chèques impayés"],
   },
   {
     id: "credit",
     name: "Demande de crédit",
     icon: CreditCard,
-    description: "Demande de crédit (personnel, immobilier, automobile, étudiant)",
+    description: "Demande de crédit (personnel, immobilier,...etc)",
     category: "credit",
-    processingTime: "3-30 jours ouvrables",
-    cost: "Gratuit",
+    //processingTime: "3-30 jours ouvrables",
     requirements: ["Revenus réguliers", "Garanties", "Dossier complet"],
   },
 ]
@@ -802,7 +800,7 @@ export default function ServiceRequestsPage() {
                 name="nbrechequier"
                 type="number"
                 min="1"
-                max="10"
+                max="2"
                 value={formData.nbrechequier || ""}
                 onChange={(e) => handleInputChange("nbrechequier", e.target.value)}
                 placeholder="Ex: 2"
@@ -822,6 +820,7 @@ export default function ServiceRequestsPage() {
                 <SelectContent>
                   <SelectItem value="25">25 feuillets</SelectItem>
                   <SelectItem value="50">50 feuillets</SelectItem>
+                   <SelectItem value="100">100 feuillets</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -836,9 +835,10 @@ export default function ServiceRequestsPage() {
                   <SelectValue placeholder="Choisir le type de chèque" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Standard">Standard</SelectItem>
-                  <SelectItem value="Certifié">Certifié</SelectItem>
-                  <SelectItem value="Barré">Barré</SelectItem>
+                  <SelectItem value="Standard">Standard barré</SelectItem>
+                   <SelectItem value="Standard non barré">Standard non barré</SelectItem>
+                  <SelectItem value="Certifié barré">Certifié barré</SelectItem>
+                   <SelectItem value="Certifié non barré">Certifié non barré</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -850,7 +850,7 @@ export default function ServiceRequestsPage() {
                 onCheckedChange={(checked) => handleInputChange("talonCheque", checked)}
               />
               <Label htmlFor="talonCheque" className="text-sm font-normal">
-                Avec talon de chèque
+                Chèque à Talon
               </Label>
             </div>
 
@@ -1094,8 +1094,7 @@ export default function ServiceRequestsPage() {
               <Alert className="border-green-200 bg-green-50">
                 <CheckCircle className="h-4 w-4 text-green-600" />
                 <AlertDescription className="text-green-800">
-                  ✅ Votre demande de crédit a été envoyée avec succès. Référence: {creditSubmitState.reference}.
-                  Réponse sous {selectedServiceData?.processingTime}.
+                  ✅ Votre demande de crédit a été envoyée avec succès. Référence: {creditSubmitState.reference}. {/* Réponse sous {selectedServiceData?.processingTime}. */}
                 </AlertDescription>
               </Alert>
             )}
@@ -1212,8 +1211,7 @@ export default function ServiceRequestsPage() {
               <Alert className="border-green-200 bg-green-50">
                 <CheckCircle className="h-4 w-4 text-green-600" />
                 <AlertDescription className="text-green-800">
-                  ✅ Votre e-demande a été envoyée avec succès. Référence: {eDemandeSubmitState.reference}. Réponse sous{" "}
-                  {selectedServiceData?.processingTime}.
+                  ✅ Votre e-demande a été envoyée avec succès. Référence: {eDemandeSubmitState.reference}. {/* Réponse sous {selectedServiceData?.processingTime}. */}
                 </AlertDescription>
               </Alert>
             )}
@@ -1280,12 +1278,6 @@ export default function ServiceRequestsPage() {
                         <div className="flex-1">
                           <h3 className="font-medium text-sm">{service.name}</h3>
                           <p className="text-xs text-gray-500 mt-1">{service.description}</p>
-                          <div className="flex items-center justify-between mt-2">
-                            <Badge variant="outline" className="text-xs">
-                              {service.processingTime}
-                            </Badge>
-                            <span className="text-xs font-medium text-green-600">{service.cost}</span>
-                          </div>
                         </div>
                       </div>
                     </div>
@@ -1308,6 +1300,7 @@ export default function ServiceRequestsPage() {
               <CardContent className="space-y-6">
                 {/* Service Info */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-gray-50 rounded-lg">
+                  {/*
                   <div className="flex items-center space-x-2">
                     <Clock className="w-4 h-4 text-gray-500" />
                     <div>
@@ -1315,13 +1308,7 @@ export default function ServiceRequestsPage() {
                       <p className="text-xs text-gray-600">{selectedServiceData.processingTime}</p>
                     </div>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <Banknote className="w-4 h-4 text-gray-500" />
-                    <div>
-                      <p className="text-sm font-medium">Coût</p>
-                      <p className="text-xs text-gray-600">{selectedServiceData.cost}</p>
-                    </div>
-                  </div>
+                  */}
                   <div className="flex items-center space-x-2">
                     <Shield className="w-4 h-4 text-gray-500" />
                     <div>
@@ -1400,8 +1387,8 @@ export default function ServiceRequestsPage() {
                   <Alert className="border-green-200 bg-green-50">
                     <CheckCircle className="h-4 w-4 text-green-600" />
                     <AlertDescription className="text-green-800">
-                      ✅ Votre demande a été envoyée avec succès. Référence: {submitState.reference}. Réponse sous{" "}
-                      {selectedServiceData?.processingTime}.
+                      ✅ Votre demande a été envoyée avec succès. Référence: {submitState.reference}. {/*Réponse sous{" "}
+                      {selectedServiceData?.processingTime}.*/}
                     </AlertDescription>
                   </Alert>
                 )}
