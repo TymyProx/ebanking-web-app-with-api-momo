@@ -298,7 +298,7 @@ export default function ServiceRequestsPage() {
 
   const commonFields = [
     { label: "Référence", value: details.reference || "Non attribuée" },
-    { label: "Numéro de compte", value: details.numcompte || details.accountId || "Non spécifié" },
+    { label: "Numéro de compte", value: details.numcompte || details.numcompteId || "Non spécifié" },
     { label: "Intitulé du compte", value: details.intitulecompte || "Non spécifié" },
   ];
 
