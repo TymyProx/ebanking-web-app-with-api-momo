@@ -1,6 +1,7 @@
 "use server"
 
 import { cookies } from "next/headers"
+import { setSecureCookie } from "@/lib/cookie-config"
 
 const normalize = (u?: string) => (u ? u.replace(/\/$/, "") : "")
 const API_BASE_URL = `${normalize(process.env.NEXT_PUBLIC_API_URL || "https://35.184.98.9:4000")}/api`
@@ -104,12 +105,7 @@ export async function completeSignup(token: string, password: string) {
     const userId = userData.id
     console.log("[v0] User info retrieved successfully, userId:", userId)
 
-    cookieStore.set("user", JSON.stringify(userData), {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      maxAge: 60 * 60 * 24 * 7, // 7 days
-    })
+    await setSecureCookie("user", JSON.stringify(userData))
     console.log("[v0] User info stored in cookie")
 
     // Step 3: Create client profile

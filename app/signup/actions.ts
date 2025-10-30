@@ -2,6 +2,7 @@
 
 import { cookies } from "next/headers"
 import { randomBytes } from "crypto"
+import { getCookieConfig } from "@/lib/cookie-config"
 
 const normalize = (u?: string) => (u ? u.replace(/\/$/, "") : "")
 const API_BASE_URL = `${normalize(process.env.NEXT_PUBLIC_API_URL || "https://35.184.98.9:4000")}/api`
@@ -48,6 +49,7 @@ export async function initiateSignup(data: InitialSignupData) {
 
     // Store signup data with verification token
     const cookieStore = await cookies()
+    const cookieConfig = getCookieConfig()
     cookieStore.set(
       "pending_signup_data",
       JSON.stringify({
@@ -59,9 +61,7 @@ export async function initiateSignup(data: InitialSignupData) {
         verificationToken: verificationToken,
       }),
       {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "lax",
+        ...cookieConfig,
         maxAge: 60 * 60 * 24, // 24 hours
       },
     )
