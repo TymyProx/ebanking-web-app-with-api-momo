@@ -15,7 +15,7 @@ export async function getAccountDetails(accountId: string): Promise<Account | nu
 
     // Get user info to retrieve tenantId
     const normalize = (u?: string) => (u ? u.replace(/\/$/, "") : "")
-    const API_BASE_URL = `${normalize(process.env.NEXT_PUBLIC_API_URL || "https://35.184.98.9:4000")}/api`
+    const API_BASE_URL = `${normalize(process.env.NEXT_PUBLIC_API_URL || "https://35.184.98.9:4000/api")}`
     const userResponse = await fetch(`${API_BASE_URL}/auth/me`, {
       headers: {
         Authorization: `Bearer ${token}`,
