@@ -206,7 +206,7 @@ export default function ServiceRequestsPage() {
             ? new Date(new Date(item.dateorder).getTime() + 3 * 24 * 60 * 60 * 1000).toISOString().split("T")[0]
             : new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
           account: item.intitulecompte || "Compte non spécifié",
-          reference: item.reference || `CHQ-${new Date().getFullYear()}-${String(index + 1).padStart(3, "0")}`,
+          reference: item.referenceCommande || `CHQ-${new Date().getFullYear()}-${String(index + 1).padStart(3, "0")}`,
           details: {
             nbrechequier: item.nbrechequier || 0,
             nbrefeuille: item.nbrefeuille || 0,
