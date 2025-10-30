@@ -294,36 +294,43 @@ export default function ServiceRequestsPage() {
   }
 
   const formatRequestDetails = (details: any, type: string) => {
-    if (!details) return []
+  if (!details) return [];
 
-    const commonFields = [
-      { label: "Référence", value: details.reference || "Non attribuée" },
-      { label: "Numéro de compte", value: details.accountNumber || details.numcompteId || "Non spécifié" },
-    ]
+  const commonFields = [
+    { label: "Référence", value: details.reference || "Non attribuée" },
+    { label: "Numéro de compte", value: details.numcompte || details.accountId || "Non spécifié" },
+    { label: "Intitulé du compte", value: details.intitulecompte || "Non spécifié" },
+  ];
 
-    if (type === "credit") {
-      return [
-        ...commonFields,
-        { label: "Nom du demandeur", value: details.applicantName },
-        { label: "Montant du crédit", value: `${details.creditAmount} €` },
-        { label: "Durée (mois)", value: details.durationMonths },
-        { label: "Objet du crédit", value: details.purpose },
-      ]
-    } else if (type === "checkbook") {
-      return [
-        ...commonFields,
-        { label: "Date de commande", value: new Date(details.dateorder).toLocaleDateString("fr-FR") },
-        { label: "Nombre de feuilles", value: details.nbrefeuille },
-        { label: "Nombre de chéquiers", value: details.nbrechequier },
-        { label: "Type de chèque", value: details.typeCheque || "Non spécifié" },
-        { label: "Avec talon de chèque", value: details.talonCheque ? "Oui" : "Non" },
-        { label: "Intitulé du compte", value: details.intitulecompte },
-        { label: "Commentaire", value: details.commentaire || "Aucun commentaire" },
-      ]
-    }
-
-    return commonFields
+  if (type === "credit") {
+    return [
+      ...commonFields,
+      { label: "Nom du demandeur", value: details.applicant_name || "Non spécifié" },
+      { label: "Type de crédit", value: details.credit_type || "Non spécifié" },
+      { label: "Montant du crédit", value: details.loan_amount ? `${details.loan_amount} GNF` : "Non spécifié" },
+      { label: "Durée (mois)", value: details.loan_duration || "Non spécifié" },
+      { label: "Objet du crédit", value: details.loan_purpose || "Non spécifié" },
+      { label: "Téléphone", value: details.contact_phone || "Non spécifié" },
+      { label: "Commentaire", value: details.commentaire || "Aucun commentaire" },
+    ];
   }
+
+  if (type === "checkbook") {
+    return [
+      ...commonFields,
+      { label: "Date de commande", value: details.dateorder ? new Date(details.dateorder).toLocaleDateString("fr-FR") : "Non spécifiée" },
+      { label: "Nombre de feuilles", value: details.nbrefeuille || "Non spécifié" },
+      { label: "Nombre de chéquiers", value: details.nbrechequier || "Non spécifié" },
+      { label: "Type de chèque", value: details.typeCheque || "Non spécifié" },
+      { label: "Avec talon de chèque", value: details.talonCheque ? "Oui" : "Non" },
+      { label: "Intitulé du compte", value: details.intitulecompte || "Non spécifié" },
+      { label: "Commentaire", value: details.commentaire || "Aucun commentaire" },
+    ];
+  }
+
+  return commonFields;
+};
+
 
   useEffect(() => {
     console.log("[v0] useEffect déclenché, activeTab:", activeTab)
@@ -716,7 +723,7 @@ export default function ServiceRequestsPage() {
     if (!selectedServiceData) return null
 
     switch (selectedService) {
-      // COMMANDE CHEQUIER PAGE
+      // COMMANDE CHEQUIER PAGE 
      case "checkbook":
   return (
     <form onSubmit={handleCheckbookSubmit} className="space-y-4">
