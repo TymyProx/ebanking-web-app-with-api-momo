@@ -109,22 +109,25 @@ export default function BeneficiariesPage() {
     setIsLoading(true)
     try {
       const apiBeneficiaries = await getBeneficiaries()
-      const transformedBeneficiaries: Beneficiary[] = apiBeneficiaries.map(
-        (apiB: any) =>
-          ({
-            id: apiB.id,
-            name: apiB.name || "",
-            account: apiB.accountNumber || "",
-            bank: getBankNameFromCode(apiB.bankCode || apiB.bankName || ""),
-            type: apiB.typeBeneficiary,
-            favorite: apiB.favoris || false,
-            lastUsed: "Jamais",
-            addedDate: new Date(apiB.createdAt).toLocaleDateString("fr-FR"),
-            status: apiB.status,
-            codagence: apiB.codagence,
-            clerib: apiB.clerib,
-          }) as Beneficiary,
-      )
+      const toText = (v: any) => (typeof v === "string" ? v : v ? JSON.stringify(v) : "")
+      const transformedBeneficiaries: Beneficiary[] = apiBeneficiaries.map((apiB: any) => {
+        const name = toText(apiB.name ?? apiB.name_json)
+        const accountNumber = toText(apiB.accountNumber ?? apiB.accountNumber_json)
+        const bankRaw = toText(apiB.bankCode ?? apiB.bankName ?? apiB.bankCode_json ?? apiB.bankName_json)
+        return {
+          id: apiB.id,
+          name,
+          account: accountNumber,
+          bank: getBankNameFromCode(bankRaw),
+          type: apiB.typeBeneficiary,
+          favorite: Boolean(apiB.favoris),
+          lastUsed: "Jamais",
+          addedDate: new Date(apiB.createdAt).toLocaleDateString("fr-FR"),
+          status: apiB.status,
+          codagence: toText(apiB.codagence ?? apiB.codagence_json),
+          clerib: toText(apiB.clerib ?? apiB.clerib_json),
+        } as Beneficiary
+      })
       setBeneficiaries(transformedBeneficiaries)
     } catch (error) {
       console.error("Erreur lors du chargement des bénéficiaires:", error)
@@ -236,10 +239,12 @@ export default function BeneficiariesPage() {
   }
 
   const filteredBeneficiaries = beneficiaries.filter((beneficiary) => {
-    const matchesSearch =
-      (beneficiary.name || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (beneficiary.account || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (beneficiary.bank || "").toLowerCase().includes(searchTerm.toLowerCase())
+    const safe = (v: any) => (typeof v === "string" ? v : v ? JSON.stringify(v) : "")
+    const searchLc = searchTerm.toLowerCase()
+    const nameLc = safe(beneficiary.name).toLowerCase()
+    const accountLc = safe(beneficiary.account).toLowerCase()
+    const bankLc = safe(beneficiary.bank).toLowerCase()
+    const matchesSearch = nameLc.includes(searchLc) || accountLc.includes(searchLc) || bankLc.includes(searchLc)
 
     let matchesFilter = false
     if (filterType === "all") {
