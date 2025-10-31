@@ -4,6 +4,8 @@ import { cookies } from "next/headers"
 import { randomBytes } from "crypto"
 import { getCookieConfig } from "@/lib/cookie-config"
 import { config } from "@/lib/config"
+import { Resend } from "resend"
+import { VerificationEmail } from "@/emails/verification-email"
 
 const normalize = (u?: string) => (u ? u.replace(/\/$/, "") : "")
 const API_BASE_URL = `${normalize(config.API_BASE_URL)}/api`
@@ -67,35 +69,28 @@ export async function initiateSignup(data: InitialSignupData) {
       },
     )
 
-    console.log("[v0] Sending verification email via Resend...")
+    console.log("[v0] Sending verification email via Resend (server action)...")
 
-    const emailResponse = await fetch(`/api/send-verification-email`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        email: data.email,
-        token: verificationToken,
-        userName: data.fullName,
+    const resend = new Resend(process.env.RESEND_API_KEY)
+    const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || "no-reply@bngebanking.com"
+    const APP_URL = config.EBANKING_URL || "http://localhost:3000"
+    const verificationUrl = `${APP_URL.replace(/\/$/, "")}/auth/verify-email?token=${verificationToken}`
+
+    const { data: resendData, error: resendError } = await resend.emails.send({
+      from: FROM_EMAIL,
+      to: data.email,
+      subject: "Vérifiez votre adresse email - BNG E-Banking",
+      react: VerificationEmail({
+        userName: data.fullName || data.email.split("@")[0],
+        verificationLink: verificationUrl,
       }),
     })
 
-    console.log("[v0] Email API response status:", emailResponse.status)
-
-    const contentType = emailResponse.headers.get("content-type") || ""
-    let emailResponseData: any = null
-    if (contentType.includes("application/json")) {
-      emailResponseData = await emailResponse.json()
-      console.log("[v0] Email API response:", emailResponseData)
-      if (!emailResponse.ok) {
-        console.error("[v0] Failed to send verification email:", emailResponseData)
-        throw new Error(emailResponseData?.message || "Erreur lors de l'envoi de l'email de vérification")
-      }
-    } else if (!emailResponse.ok) {
-      console.error("[v0] Failed to send verification email - non JSON response, status:", emailResponse.status)
-      throw new Error("Erreur lors de l'envoi de l'email de vérification")
+    if (resendError) {
+      console.error("[v0] Resend error:", resendError)
+      throw new Error(resendError.message || "Erreur lors de l'envoi de l'email de vérification")
     }
+    console.log("[v0] Email sent successfully:", resendData)
 
     console.log("[v0] Verification email sent successfully via Resend")
 
