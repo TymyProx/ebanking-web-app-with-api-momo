@@ -94,6 +94,7 @@ export default function NewTransferPage() {
   const [isAmountValid, setIsAmountValid] = useState(true)
 
   // Fonctions utilitaires
+  const toText = (val: any): string => (typeof val === "string" ? val : val ? JSON.stringify(val) : "")
   const formatCurrency = (amount: number, currency: string) => {
     return new Intl.NumberFormat("fr-FR", {
       style: "currency",
@@ -410,7 +411,7 @@ export default function NewTransferPage() {
         <Alert className="border-l-4 border-green-500 bg-green-50/50 dark:bg-green-950/20">
           <Check className="h-4 w-4 text-green-600" />
           <AlertDescription className="text-green-800 dark:text-green-400">
-            {transferState.message || "Virement effectué avec succès !"}
+            {toText(transferState.message) || "Virement effectué avec succès !"}
           </AlertDescription>
         </Alert>
       )}
@@ -418,7 +419,7 @@ export default function NewTransferPage() {
       {transferState?.error && !isDialogOpen && (
         <Alert variant="destructive" className="border-l-4 border-destructive">
           <AlertCircle className="h-4 w-4" />
-          <AlertDescription>{transferState.error}</AlertDescription>
+          <AlertDescription>{toText(transferState.error)}</AlertDescription>
         </Alert>
       )}
 
