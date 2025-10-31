@@ -63,6 +63,12 @@ interface Bank {
   codeBank: string
 }
 
+type ActionResult = {
+  success?: boolean
+  error?: string
+  message?: string
+}
+
 export default function BeneficiariesPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [filterType, setFilterType] = useState("all")
@@ -83,10 +89,16 @@ export default function BeneficiariesPage() {
   const formRef = useRef<HTMLFormElement>(null)
   const editFormRef = useRef<HTMLFormElement>(null)
 
-  const [addState, addAction, isAddPending] = useActionState(addBeneficiary, null)
-  const [updateState, updateAction, isUpdatePending] = useActionState(updateBeneficiary, null)
-  const [deactivateState, deactivateAction, isDeactivatePending] = useActionState(deactivateBeneficiary, null)
-  const [reactivateState, reactivateAction, isReactivatePending] = useActionState(reactivateBeneficiary, null)
+  const [addState, addAction, isAddPending] = useActionState<any, any>(addBeneficiary as any, null as any)
+  const [updateState, updateAction, isUpdatePending] = useActionState<any, any>(updateBeneficiary as any, null as any)
+  const [deactivateState, deactivateAction, isDeactivatePending] = useActionState<any, any>(
+    deactivateBeneficiary as any,
+    null as any,
+  )
+  const [reactivateState, reactivateAction, isReactivatePending] = useActionState<any, any>(
+    reactivateBeneficiary as any,
+    null as any,
+  )
 
   const [showDeactivateSuccess, setShowDeactivateSuccess] = useState(false)
   const [showReactivateSuccess, setShowReactivateSuccess] = useState(false)
@@ -313,16 +325,8 @@ export default function BeneficiariesPage() {
       formData.set("bankCode", selectedBankCode)
     }
 
-    startTransition(async () => {
-      const result = await addAction(formData)
-      if (result?.success) {
-        setIsAddDialogOpen(false)
-        await loadBeneficiaries()
-        resetForm()
-        if (formRef.current) {
-          formRef.current.reset()
-        }
-      }
+    startTransition(() => {
+      addAction(formData)
     })
   }
 
@@ -363,14 +367,8 @@ export default function BeneficiariesPage() {
       formData.append("beneficiaryId", apiBeneficiary.beneficiaryId)
     }
 
-    startTransition(async () => {
-      const result = await updateAction(formData)
-      if (result?.success) {
-        setIsEditDialogOpen(false)
-        setEditingBeneficiary(null)
-        await loadBeneficiaries()
-        resetForm()
-      }
+    startTransition(() => {
+      updateAction(formData)
     })
   }
 
@@ -440,17 +438,12 @@ export default function BeneficiariesPage() {
 
   const handleDeactivateBeneficiary = async (id: string) => {
     try {
-      const result = await deactivateAction(id)
-      if (result.success) {
-        setBeneficiaries((prev) => prev.map((b) => (b.id === id ? { ...b, status: 1 } : b)))
-        setShowDeactivateSuccess(true)
-        const timer = setTimeout(() => {
-          setShowDeactivateSuccess(false)
-        }, 5000)
-        return () => clearTimeout(timer)
-      } else {
-        console.error("Erreur lors de la désactivation du bénéficiaire:", result.error)
-      }
+      const fd = new FormData()
+      fd.set("id", id)
+      deactivateAction(fd)
+      setBeneficiaries((prev) => prev.map((b) => (b.id === id ? { ...b, status: 1 } : b)))
+      setShowDeactivateSuccess(true)
+      setTimeout(() => setShowDeactivateSuccess(false), 5000)
     } catch (error) {
       console.error("Erreur lors de la désactivation du bénéficiaire:", error)
     }
@@ -458,17 +451,12 @@ export default function BeneficiariesPage() {
 
   const handleReactivateBeneficiary = async (id: string) => {
     try {
-      const result = await reactivateAction(id)
-      if (result.success) {
-        setBeneficiaries((prev) => prev.map((b) => (b.id === id ? { ...b, status: 0 } : b)))
-        setShowReactivateSuccess(true)
-        const timer = setTimeout(() => {
-          setShowReactivateSuccess(false)
-        }, 5000)
-        return () => clearTimeout(timer)
-      } else {
-        console.error("Erreur lors de la réactivation du bénéficiaire:", result.error)
-      }
+      const fd = new FormData()
+      fd.set("id", id)
+      reactivateAction(fd)
+      setBeneficiaries((prev) => prev.map((b) => (b.id === id ? { ...b, status: 0 } : b)))
+      setShowReactivateSuccess(true)
+      setTimeout(() => setShowReactivateSuccess(false), 5000)
     } catch (error) {
       console.error("Erreur lors de la réactivation du bénéficiaire:", error)
     }
