@@ -38,6 +38,7 @@ import {
 import { useActionState } from "react"
 import type React from "react"
 import { useRef } from "react"
+import { importAesGcmKeyFromBase64, decryptAesGcmFromJson, isEncryptedJson } from "@/lib/crypto"
 
 interface Beneficiary {
   id: string
@@ -109,25 +110,47 @@ export default function BeneficiariesPage() {
     setIsLoading(true)
     try {
       const apiBeneficiaries = await getBeneficiaries()
-      const toText = (v: any) => (typeof v === "string" ? v : v ? JSON.stringify(v) : "")
-      const transformedBeneficiaries: Beneficiary[] = apiBeneficiaries.map((apiB: any) => {
-        const name = toText(apiB.name ?? apiB.name_json)
-        const accountNumber = toText(apiB.accountNumber ?? apiB.accountNumber_json)
-        const bankRaw = toText(apiB.bankCode ?? apiB.bankName ?? apiB.bankCode_json ?? apiB.bankName_json)
-        return {
-          id: apiB.id,
-          name,
-          account: accountNumber,
-          bank: getBankNameFromCode(bankRaw),
-          type: apiB.typeBeneficiary,
-          favorite: Boolean(apiB.favoris),
-          lastUsed: "Jamais",
-          addedDate: new Date(apiB.createdAt).toLocaleDateString("fr-FR"),
-          status: apiB.status,
-          codagence: toText(apiB.codagence ?? apiB.codagence_json),
-          clerib: toText(apiB.clerib ?? apiB.clerib_json),
-        } as Beneficiary
-      })
+      const secureMode = (process.env.NEXT_PUBLIC_PORTAL_SECURE_MODE || "false").toLowerCase() === "true"
+      const keyB64 = process.env.NEXT_PUBLIC_PORTAL_KEY_B64 || ""
+      const key = secureMode && keyB64 ? await importAesGcmKeyFromBase64(keyB64) : null
+
+      async function resolveField(value: any): Promise<string> {
+        if (!value) return ""
+        if (secureMode && key && (isEncryptedJson(value) || typeof value === "string")) {
+          try {
+            return await decryptAesGcmFromJson(value, key)
+          } catch {
+            // Fallback to string if decrypt fails
+          }
+        }
+        return typeof value === "string" ? value : JSON.stringify(value)
+      }
+
+      const transformedBeneficiaries: Beneficiary[] = await Promise.all(
+        apiBeneficiaries.map(async (apiB: any) => {
+          const name = await resolveField(apiB.name ?? apiB.name_json)
+          const accountNumber = await resolveField(apiB.accountNumber ?? apiB.accountNumber_json)
+          const bankNamePlain = await resolveField(apiB.bankName ?? apiB.bankName_json)
+          const bankCodePlain = await resolveField(apiB.bankCode ?? apiB.bankCode_json)
+          const bankResolved = bankNamePlain || getBankNameFromCode(bankCodePlain)
+          const codagence = await resolveField(apiB.codagence ?? apiB.codagence_json)
+          const clerib = await resolveField(apiB.clerib ?? apiB.clerib_json)
+
+          return {
+            id: apiB.id,
+            name,
+            account: accountNumber,
+            bank: bankResolved,
+            type: apiB.typeBeneficiary,
+            favorite: Boolean(apiB.favoris),
+            lastUsed: "Jamais",
+            addedDate: new Date(apiB.createdAt).toLocaleDateString("fr-FR"),
+            status: apiB.status,
+            codagence,
+            clerib,
+          } as Beneficiary
+        }),
+      )
       setBeneficiaries(transformedBeneficiaries)
     } catch (error) {
       console.error("Erreur lors du chargement des bénéficiaires:", error)
