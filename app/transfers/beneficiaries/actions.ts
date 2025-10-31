@@ -3,6 +3,7 @@ process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0"
 import { revalidatePath } from "next/cache"
 import { cookies } from "next/headers"
 import { encryptAesGcmNode } from "../../transfers/new/secure"
+import { config } from "@/lib/config"
 
 interface ActionResult {
   success?: boolean
@@ -38,8 +39,8 @@ interface GetBeneficiariesResponse {
 }
 
 const normalize = (u?: string) => (u ? u.replace(/\/$/, "") : "")
-const API_BASE_URL = `${normalize(process.env.NEXT_PUBLIC_API_URL || "https://35.184.98.9:4000")}/api`
-const TENANT_ID = process.env.NEXT_PUBLIC_TENANT_ID || "aa1287f6-06af-45b7-a905-8c57363565c2"
+const API_BASE_URL = `${normalize(config.API_BASE_URL)}/api`
+const TENANT_ID = config.TENANT_ID
 
 async function getCurrentClientId(): Promise<string> {
   const cookieToken = (await cookies()).get("token")?.value
