@@ -157,7 +157,14 @@ export default function LandingPage() {
       >
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 flex h-20 items-center justify-between">
           <div className="flex items-center gap-2">
-            <Image src="/images/logo-bng.png" alt="Astra Bank" width={140} height={48} className="object-contain" />
+            <Image
+              src="/images/logo-bng.png"
+              alt="Astra Bank"
+              width={140}
+              height={48}
+              className="object-contain"
+              priority
+            />
           </div>
 
           {/* Desktop Navigation */}
@@ -319,7 +326,14 @@ export default function LandingPage() {
               }`}
             >
               <div className="relative h-full rounded-3xl overflow-hidden shadow-2xl transform hover:scale-105 transition-transform duration-700">
-                <Image src="/images/accessibilite.png" alt="Banking Interface" fill className="object-contain p-8" />
+                <Image
+                  src="/images/accessibilite.png"
+                  alt="Banking Interface"
+                  fill
+                  className="object-contain p-8"
+                  priority
+                  sizes="(min-width: 1024px) 50vw, 100vw"
+                />
               </div>
             </div>
           </div>
@@ -380,6 +394,7 @@ export default function LandingPage() {
                       alt={service.title}
                       fill
                       className="object-cover group-hover:scale-110 transition-transform duration-700"
+                      sizes="(min-width: 1024px) 50vw, 100vw"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent" />
                     <div className="absolute bottom-8 left-8 right-8 space-y-4 transform group-hover:translate-y-0 translate-y-2 transition-transform duration-500">
@@ -418,6 +433,7 @@ export default function LandingPage() {
                     alt="Mobile App"
                     fill
                     className="object-contain drop-shadow-2xl rounded-2xl"
+                    sizes="(min-width: 1024px) 40vw, 90vw"
                   />
                 </div>
 
@@ -427,6 +443,7 @@ export default function LandingPage() {
                     alt="Mobile App"
                     fill
                     className="object-contain drop-shadow-2xl rounded-2xl"
+                    sizes="(min-width: 1024px) 40vw, 90vw"
                   />
                 </div>
               </div>
@@ -614,7 +631,14 @@ export default function LandingPage() {
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid sm:grid-cols-2 md:grid-cols-4 gap-8 md:gap-12">
             <div className="space-y-4">
-              <Image src="/images/logo-bng.png" alt="Astra Bank" width={140} height={48} className="object-contain" />
+              <Image
+                src="/images/logo-bng.png"
+                alt="Astra Bank"
+                width={140}
+                height={48}
+                className="object-contain"
+                loading="lazy"
+              />
               <p className="text-sm text-gray-600 leading-relaxed">
                 Votre partenaire bancaire de confiance pour tous vos besoins financiers.
               </p>
