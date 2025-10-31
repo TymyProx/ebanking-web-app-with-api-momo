@@ -388,6 +388,8 @@ export async function executeTransfer(prevState: any, formData: FormData) {
         // Construire le RIB client (concaténation de codeBanque, codeAgence, accountNumber, cleRib)
         ribClient = `${sourceAccountData.codeBanque || ""}${sourceAccountData.codeAgence || ""}${sourceAccountData.accountNumber || ""}${sourceAccountData.cleRib || ""}`
         console.log("[v0] Source account RIB constructed:", ribClient)
+      } else {
+        console.error("[v0] Failed to fetch source account details:", accountResponse.status)
       }
     } catch (error) {
       console.error("[v0] Error fetching source account details:", error)
@@ -421,7 +423,6 @@ export async function executeTransfer(prevState: any, formData: FormData) {
       if (validatedData.targetAccount) {
         console.log(`[v0] Crédit automatique du compte destinataire: ${validatedData.targetAccount}`)
 
-        // Récupérer les informations du compte destinataire
         try {
           const targetAccountResponse = await fetch(
             `${API_BASE_URL}/tenant/${TENANT_ID}/compte/${validatedData.targetAccount}`,
@@ -439,6 +440,9 @@ export async function executeTransfer(prevState: any, formData: FormData) {
             const targetAccount = targetAccountData.data || targetAccountData
             nomBeneficiaire = targetAccount.accountName || ""
             ribBeneficiaire = `${targetAccount.codeBanque || ""}${targetAccount.codeAgence || ""}${targetAccount.accountNumber || ""}${targetAccount.cleRib || ""}`
+            console.log("[v0] Target account details retrieved:", { nomBeneficiaire, ribBeneficiaire })
+          } else {
+            console.error("[v0] Failed to fetch target account details:", targetAccountResponse.status)
           }
         } catch (error) {
           console.error("[v0] Error fetching target account details:", error)
@@ -458,7 +462,6 @@ export async function executeTransfer(prevState: any, formData: FormData) {
         console.log(`[v0] Compte destinataire crédité avec succès - Nouveau solde: ${creditResult.newBalance}`)
       }
     } else if (validatedData.beneficiaryId) {
-      // Pour les virements compte à bénéficiaire
       console.log(`[v0] Récupération des informations du bénéficiaire: ${validatedData.beneficiaryId}`)
       const beneficiary = await getBeneficiaryById(validatedData.beneficiaryId)
 
@@ -472,7 +475,7 @@ export async function executeTransfer(prevState: any, formData: FormData) {
       }
 
       nomBeneficiaire = beneficiary.name || ""
-      ribBeneficiaire = `${beneficiary.bankCode}${beneficiary.codagence}${beneficiary.accountNumber}${beneficiary.clerib}`
+      ribBeneficiaire = `${beneficiary.bankCode || ""}${beneficiary.codagence || ""}${beneficiary.accountNumber || ""}${beneficiary.clerib || ""}`
       console.log(`[v0] Bénéficiaire trouvé - nomBeneficiaire: ${nomBeneficiaire}, ribBeneficiaire: ${ribBeneficiaire}`)
     }
 

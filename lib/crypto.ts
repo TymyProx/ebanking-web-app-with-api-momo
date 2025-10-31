@@ -29,10 +29,40 @@ function concatArrayBuffers(a: ArrayBuffer, b: ArrayBuffer): ArrayBuffer {
   return out.buffer
 }
 
+export async function encryptAesGcmToJson(
+  plaintext: string,
+  key: CryptoKey,
+): Promise<{ iv: string; ct: string; tag: string }> {
+  // Generate a random 12-byte IV (recommended for AES-GCM)
+  const iv = crypto.getRandomValues(new Uint8Array(12))
+
+  // Encode the plaintext to bytes
+  const encoded = new TextEncoder().encode(plaintext)
+
+  // Encrypt the data
+  const encrypted = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, encoded)
+
+  // WebCrypto returns ciphertext with the 16-byte auth tag appended
+  // Split them for compatibility with Node crypto format
+  const encryptedArray = new Uint8Array(encrypted)
+  const ciphertext = encryptedArray.slice(0, -16)
+  const tag = encryptedArray.slice(-16)
+
+  return {
+    iv: arrayBufferToBase64(iv.buffer),
+    ct: arrayBufferToBase64(ciphertext.buffer),
+    tag: arrayBufferToBase64(tag.buffer),
+  }
+}
+
 export async function decryptAesGcmFromJson(payload: any, key: CryptoKey): Promise<string> {
   // Accept stringified JSON
   if (typeof payload === "string") {
-    try { payload = JSON.parse(payload) } catch { /* ignore */ }
+    try {
+      payload = JSON.parse(payload)
+    } catch {
+      /* ignore */
+    }
   }
   const iv = new Uint8Array(base64ToArrayBuffer(payload.iv))
   let ctBuf = base64ToArrayBuffer(payload.ct)
@@ -48,5 +78,3 @@ export async function decryptAesGcmFromJson(payload: any, key: CryptoKey): Promi
 export function isEncryptedJson(v: any): v is { iv: string; ct: string } {
   return v && typeof v === "object" && typeof v.iv === "string" && typeof v.ct === "string"
 }
-
-

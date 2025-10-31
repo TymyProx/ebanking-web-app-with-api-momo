@@ -45,6 +45,3 @@ export async function buildCommandeSecurePayload(
   secure.key_id = keyId
   return secure
 }
-
-
-
