@@ -83,20 +83,18 @@ export async function initiateSignup(data: InitialSignupData) {
 
     console.log("[v0] Email API response status:", emailResponse.status)
 
-    let emailResponseData: any
-    try {
+    const contentType = emailResponse.headers.get("content-type") || ""
+    let emailResponseData: any = null
+    if (contentType.includes("application/json")) {
       emailResponseData = await emailResponse.json()
-    } catch (e) {
-      const errorText = await emailResponse.text()
-      console.error("[v0] Failed to parse email response as JSON:", errorText)
+      console.log("[v0] Email API response:", emailResponseData)
+      if (!emailResponse.ok) {
+        console.error("[v0] Failed to send verification email:", emailResponseData)
+        throw new Error(emailResponseData?.message || "Erreur lors de l'envoi de l'email de vérification")
+      }
+    } else if (!emailResponse.ok) {
+      console.error("[v0] Failed to send verification email - non JSON response, status:", emailResponse.status)
       throw new Error("Erreur lors de l'envoi de l'email de vérification")
-    }
-
-    console.log("[v0] Email API response:", emailResponseData)
-
-    if (!emailResponse.ok) {
-      console.error("[v0] Failed to send verification email:", emailResponseData)
-      throw new Error(emailResponseData.message || "Erreur lors de l'envoi de l'email de vérification")
     }
 
     console.log("[v0] Verification email sent successfully via Resend")
