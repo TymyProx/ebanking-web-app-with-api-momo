@@ -69,7 +69,7 @@ export async function initiateSignup(data: InitialSignupData) {
 
     console.log("[v0] Sending verification email via Resend...")
 
-    const emailResponse = await fetch(`${APP_URL}/api/send-verification-email`, {
+    const emailResponse = await fetch(`/api/send-verification-email`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
