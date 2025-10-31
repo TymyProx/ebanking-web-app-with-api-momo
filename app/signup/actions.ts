@@ -74,7 +74,9 @@ export async function initiateSignup(data: InitialSignupData) {
     const resend = new Resend(process.env.RESEND_API_KEY)
     const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || "no-reply@bngebanking.com"
     const APP_URL = config.EBANKING_URL || "http://localhost:3000"
-    const verificationUrl = `${APP_URL.replace(/\/$/, "")}/auth/verify-email?token=${verificationToken}`
+    const verificationUrl = `${APP_URL.replace(/\/$/, "")}/auth/verify-email?token=${verificationToken}&email=${encodeURIComponent(
+      data.email,
+    )}`
 
     const { data: resendData, error: resendError } = await resend.emails.send({
       from: FROM_EMAIL,

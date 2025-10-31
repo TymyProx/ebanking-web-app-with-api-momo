@@ -8,19 +8,30 @@ const normalize = (u?: string) => (u ? u.replace(/\/$/, "") : "")
 const API_BASE_URL = `${normalize(config.API_BASE_URL)}/api`
 const TENANT_ID = config.TENANT_ID
 
-export async function completeSignup(token: string, password: string) {
+export async function completeSignup(token: string, password: string, emailFallback?: string) {
   try {
     console.log("[v0] Starting signup completion process...")
 
     const cookieStore = await cookies()
     const pendingDataCookie = cookieStore.get("pending_signup_data")
 
+    let pendingData: any | null = null
     if (!pendingDataCookie) {
-      console.error("[v0] No pending signup data found")
-      throw new Error("Données d'inscription manquantes ou expirées")
+      console.warn("[v0] No pending signup data found - using email fallback and skipping client profile creation")
+      if (!emailFallback) {
+        throw new Error("Données d'inscription manquantes ou expirées")
+      }
+      pendingData = {
+        email: emailFallback,
+        fullName: emailFallback.split("@")[0],
+        phone: "",
+        address: "",
+        codeClient: `CLI-${Date.now()}`,
+        verificationToken: token,
+      }
+    } else {
+      pendingData = JSON.parse(pendingDataCookie.value)
     }
-
-    const pendingData = JSON.parse(pendingDataCookie.value)
 
     // Verify the token matches
     if (pendingData.verificationToken !== token) {
@@ -112,47 +123,51 @@ export async function completeSignup(token: string, password: string) {
     // Step 3: Create client profile
     console.log("[v0] Step 3: Creating client profile...")
 
-    const clientRequestBody = {
-      data: {
-        nomComplet: String(pendingData.fullName),
-        email: String(pendingData.email),
-        telephone: String(pendingData.phone),
-        adresse: String(pendingData.address),
-        codeClient: String(pendingData.codeClient),
-        userid: String(userId),
-      },
-    }
-
-    console.log("[v0] Client request body:", JSON.stringify(clientRequestBody))
-
-    const clientResponse = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/client`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${authToken}`,
-      },
-      body: JSON.stringify(clientRequestBody),
-    })
-
-    console.log("[v0] Client response status:", clientResponse.status)
-    const clientResponseText = await clientResponse.text()
-    console.log("[v0] Client response body:", clientResponseText.substring(0, 200) + "...")
-
-    if (!clientResponse.ok) {
-      let errorData: any = {}
-      try {
-        errorData = JSON.parse(clientResponseText)
-      } catch (e) {
-        errorData = { message: clientResponseText || `HTTP ${clientResponse.status}` }
+    if (pendingDataCookie) {
+      const clientRequestBody = {
+        data: {
+          nomComplet: String(pendingData.fullName),
+          email: String(pendingData.email),
+          telephone: String(pendingData.phone),
+          adresse: String(pendingData.address),
+          codeClient: String(pendingData.codeClient),
+          userid: String(userId),
+        },
       }
-      console.error("[v0] Client creation failed:", errorData)
-      throw new Error(errorData.message || "Erreur lors de la création du profil client")
+
+      console.log("[v0] Client request body:", JSON.stringify(clientRequestBody))
+
+      const clientResponse = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/client`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${authToken}`,
+        },
+        body: JSON.stringify(clientRequestBody),
+      })
+
+      console.log("[v0] Client response status:", clientResponse.status)
+      const clientResponseText = await clientResponse.text()
+      console.log("[v0] Client response body:", clientResponseText.substring(0, 200) + "...")
+
+      if (!clientResponse.ok) {
+        let errorData: any = {}
+        try {
+          errorData = JSON.parse(clientResponseText)
+        } catch (e) {
+          errorData = { message: clientResponseText || `HTTP ${clientResponse.status}` }
+        }
+        console.error("[v0] Client creation failed:", errorData)
+        throw new Error(errorData.message || "Erreur lors de la création du profil client")
+      }
+
+      console.log("[v0] Client profile created successfully")
+
+      // Clear pending signup data
+      cookieStore.delete("pending_signup_data")
+    } else {
+      console.log("[v0] Skipping client profile creation due to missing pending signup data")
     }
-
-    console.log("[v0] Client profile created successfully")
-
-    // Clear pending signup data
-    cookieStore.delete("pending_signup_data")
 
     console.log("[v0] Signup completion successful!")
 

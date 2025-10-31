@@ -53,7 +53,7 @@ function VerifyEmailContent() {
 
     setStatus("creating")
 
-    const result = await completeSignup(token, password)
+    const result = await completeSignup(token, password, email || undefined)
 
     if (result.success) {
       setStatus("success")
