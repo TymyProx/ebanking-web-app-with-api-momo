@@ -38,7 +38,6 @@ import {
 import { useActionState } from "react"
 import type React from "react"
 import { useRef } from "react"
-import { importAesGcmKeyFromBase64, isEncryptedJson, decryptAesGcmFromJson } from "@/lib/crypto"
 
 interface Beneficiary {
   id: string
@@ -98,77 +97,13 @@ export default function BeneficiariesPage() {
     setIsLoading(true)
     try {
       const apiBeneficiaries = await getBeneficiaries()
-      const secureMode = (process.env.NEXT_PUBLIC_PORTAL_SECURE_MODE || "false").toLowerCase() === "true"
-      const keyB64 = process.env.NEXT_PUBLIC_PORTAL_KEY_B64 || ""
-      const logDebug = (process.env.NEXT_PUBLIC_LOG_LEVEL || "").toLowerCase() === "debug"
-      let key: CryptoKey | null = null
-      try {
-        if (secureMode && keyB64) key = await importAesGcmKeyFromBase64(keyB64)
-      } catch (_) {
-        key = null
-      }
-
-      if (logDebug) {
-        console.log("[BEN] secureMode:", secureMode, "key loaded:", !!key, "rows:", apiBeneficiaries.length)
-        if (apiBeneficiaries[0]) {
-          const s = apiBeneficiaries[0] as any
-          console.log("[BEN] sample raw:", {
-            id: s.id,
-            nameType: typeof s.name,
-            accountNumberType: typeof s.accountNumber,
-            bankCodeType: typeof s.bankCode,
-            bankNameType: typeof s.bankName,
-            namePreview: typeof s.name === 'string' ? s.name.slice(0, 40) : s.name,
-          })
-        }
-      }
-
-      const transformedBeneficiaries: Beneficiary[] = await Promise.all(
-        apiBeneficiaries.map(async (apiB: any) => {
-          let name: any = apiB.name
-          let accountNumber: any = apiB.accountNumber
-          let bankCode: any = apiB.bankCode
-          let bankName: any = apiB.bankName
-          const asEnc = (v: any) => {
-            if (!v) return null
-            if (isEncryptedJson(v)) return v
-            if (typeof v === 'string') {
-              try {
-                const parsed = JSON.parse(v)
-                return isEncryptedJson(parsed) ? parsed : null
-              } catch {
-                return null
-              }
-            }
-            return null
-          }
-          try {
-            const nEnc = key ? asEnc(name) : null
-            if (nEnc) name = await decryptAesGcmFromJson(nEnc, key as CryptoKey)
-            const aEnc = key ? asEnc(accountNumber) : null
-            if (aEnc) accountNumber = await decryptAesGcmFromJson(aEnc, key as CryptoKey)
-            const bcEnc = key ? asEnc(bankCode) : null
-            if (bcEnc) bankCode = await decryptAesGcmFromJson(bcEnc, key as CryptoKey)
-            const bnEnc = key ? asEnc(bankName) : null
-            if (bnEnc) bankName = await decryptAesGcmFromJson(bnEnc, key as CryptoKey)
-          } catch (_) {}
-
-          if (logDebug) {
-            console.log("[BEN] row decrypted:", {
-              id: apiB.id,
-              nameType: typeof name,
-              accountType: typeof accountNumber,
-              bankCodeType: typeof bankCode,
-              bankNameType: typeof bankName,
-              namePreview: typeof name === 'string' ? name.slice(0, 40) : name,
-            })
-          }
-
-          return {
+      const transformedBeneficiaries: Beneficiary[] = apiBeneficiaries.map(
+        (apiB: any) =>
+          ({
             id: apiB.id,
-            name: typeof name === 'string' ? name : '',
-            account: typeof accountNumber === 'string' ? accountNumber : '',
-            bank: getBankNameFromCode(typeof bankCode === 'string' && bankCode ? bankCode : (typeof bankName === 'string' ? bankName : '')),
+            name: apiB.name || "",
+            account: apiB.accountNumber || "",
+            bank: getBankNameFromCode(apiB.bankCode || apiB.bankName || ""),
             type: apiB.typeBeneficiary,
             favorite: apiB.favoris || false,
             lastUsed: "Jamais",
@@ -176,8 +111,7 @@ export default function BeneficiariesPage() {
             status: apiB.status,
             codagence: apiB.codagence,
             clerib: apiB.clerib,
-          } as Beneficiary
-        })
+          }) as Beneficiary,
       )
       setBeneficiaries(transformedBeneficiaries)
     } catch (error) {
@@ -291,9 +225,9 @@ export default function BeneficiariesPage() {
 
   const filteredBeneficiaries = beneficiaries.filter((beneficiary) => {
     const matchesSearch =
-      (beneficiary.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (beneficiary.account || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (beneficiary.bank || '').toLowerCase().includes(searchTerm.toLowerCase())
+      (beneficiary.name || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (beneficiary.account || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (beneficiary.bank || "").toLowerCase().includes(searchTerm.toLowerCase())
 
     let matchesFilter = false
     if (filterType === "all") {

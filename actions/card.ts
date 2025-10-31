@@ -1,6 +1,7 @@
 "use server"
 
 import { cookies } from "next/headers"
+import { encryptDataServer } from "@/lib/server-encryption"
 
 const normalize = (u?: string) => (u ? u.replace(/\/$/, "") : "")
 const BASE_URL = `${normalize(process.env.NEXT_PUBLIC_API_URL || "https://35.184.98.9:4000")}/api`
@@ -122,7 +123,9 @@ export async function fetchAllCards(): Promise<CardsResponse> {
   }
   if (currentUserId && filteredRows.length > 0) {
     const before = filteredRows.length
-    filteredRows = filteredRows.filter((card: any) => card.clientId === currentUserId || card.createdById === currentUserId)
+    filteredRows = filteredRows.filter(
+      (card: any) => card.clientId === currentUserId || card.createdById === currentUserId,
+    )
     if (logDebug) console.log("[CARDS] filtered by clientId/createdById:", before, "->", filteredRows.length)
   }
 
@@ -172,7 +175,6 @@ export async function createCardRequest(cardData: NewCardRequest): Promise<Card>
     throw new Error("Token d'authentification manquant")
   }
 
-  // Get clientId from logged-in user
   const clientId = await getCurrentUserInfo(usertoken)
 
   const today = new Date().toISOString().split("T")[0]
@@ -182,23 +184,23 @@ export async function createCardRequest(cardData: NewCardRequest): Promise<Card>
   const dateExpiration = expirationDate.toISOString().split("T")[0]
 
   const secure = (process.env.NEXT_PUBLIC_PORTAL_SECURE_MODE || "false").toLowerCase() === "true"
-  const keyB64 = process.env.NEXT_PUBLIC_PORTAL_KEY_B64 || ""
+
   let requestBody: any
-  if (secure && keyB64) {
-    const { encryptAesGcmNode } = await import("../app/transfers/new/secure")
-    const enc = (v: any) => ({ ...encryptAesGcmNode(v, keyB64), key_id: "k1-mobile-v1" })
+  if (secure) {
+    const encryptedData = await encryptDataServer({
+      numCard: "AUTO",
+      typCard: cardData.typCard,
+      status: "EN_ATTENTE",
+      dateEmission: today,
+      dateExpiration: dateExpiration,
+      clientId: clientId,
+      accountNumber: cardData.accountNumber || "",
+    })
+
     requestBody = {
       data: {
-        numCard_json: enc("AUTO"),
-        typCard_json: enc(cardData.typCard),
-        status_json: enc("EN_ATTENTE"),
-        dateEmission_json: enc(today),
-        dateExpiration_json: enc(dateExpiration),
-        clientId_json: enc(clientId),
-        // keep plaintext clientId for server-side filtering and client list
-        clientId: clientId,
-        accountNumber_json: enc(cardData.accountNumber || ""),
-        key_id: "k1-mobile-v1",
+        ...encryptedData,
+        clientId: clientId, // keep plaintext for server-side filtering
       },
     }
   } else {

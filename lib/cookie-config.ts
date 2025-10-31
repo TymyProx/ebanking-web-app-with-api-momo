@@ -23,17 +23,18 @@ export function getCookieConfig(): CookieOptions {
     path: "/",
   }
 
-  // In production, set cookie domain only for custom domains (not vercel.app, IPs, or localhost)
+  // In production, set the domain if NEXT_PUBLIC_EBANKING_URL is defined
   if (isProduction && process.env.NEXT_PUBLIC_EBANKING_URL) {
     try {
       const url = new URL(process.env.NEXT_PUBLIC_EBANKING_URL)
+      // Extract domain (e.g., vercel.app from proxyma1-bngebanking.vercel.app)
       const hostname = url.hostname
-      const isVercel = hostname === "vercel.app" || hostname.endsWith(".vercel.app")
-      const isLocalhost = hostname === "localhost"
-      const isIp = /^\d{1,3}(\.\d{1,3}){3}$/.test(hostname)
+      const parts = hostname.split(".")
 
-      // Only set domain for real custom domains
-      if (!isVercel && !isLocalhost && !isIp) {
+      // If it's a subdomain (e.g., xxx.vercel.app), use the parent domain
+      if (parts.length > 2) {
+        config.domain = `.${parts.slice(-2).join(".")}`
+      } else {
         config.domain = hostname
       }
     } catch (error) {

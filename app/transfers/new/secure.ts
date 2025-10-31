@@ -20,5 +20,3 @@ export function encryptAesGcmNode(value: unknown, base64Key: string): { iv: stri
 export function stringifyEncrypted(obj: { iv: string; ct: string; tag: string; key_id?: string }) {
   return JSON.stringify(obj)
 }
-
-

@@ -191,9 +191,25 @@ export async function addBeneficiary(prevState: ActionResult | null, formData: F
     const name = getStr("name") || getStr("1_name")
     const account = getStr("account") || getStr("1_account")
     const type = getStr("type") || getStr("1_type")
-    const bankname = getStr("bankname") || getStr("1_bankname")
+
+    // Extract bank code from multiple possible field names
+    let codeBanque =
+      getStr("codeBanque") || getStr("bankCode") || getStr("1_bankCode") || getStr("bank") || getStr("1_bank")
+
+    // Extract bank name
+    let bankname = getStr("bankname") || getStr("1_bankname") || getStr("bankName") || getStr("1_bankName")
+
+    // If we have a bank name but no code, try to derive the code
+    if (bankname && !codeBanque) {
+      codeBanque = getBankCode(bankname, type)
+    }
+
+    // If we have a code but no name, try to derive the name
+    if (codeBanque && !bankname) {
+      bankname = getBankNameFromCode(codeBanque)
+    }
+
     const codeAgence = getStr("codeAgence") || getStr("1_codeAgence")
-    const codeBanque = getStr("codeBanque") || getStr("bankCode") || getStr("1_bankCode") || getStr("bank") || getStr("1_bank")
     const cleRib = getStr("cleRib") || getStr("1_cleRib")
 
     if (!name || !account || !type) {
@@ -231,6 +247,7 @@ export async function addBeneficiary(prevState: ActionResult | null, formData: F
 
     const secureMode = (process.env.NEXT_PUBLIC_PORTAL_SECURE_MODE || "false").toLowerCase() === "true"
     const keyB64 = process.env.NEXT_PUBLIC_PORTAL_KEY_B64 || ""
+    const keyId = process.env.NEXT_PUBLIC_PORTAL_KEY_ID || "k1-mobile-v1"
 
     const base = {
       beneficiaryId: `BEN_${Date.now()}`,
@@ -242,17 +259,17 @@ export async function addBeneficiary(prevState: ActionResult | null, formData: F
 
     let apiData: any
     if (secureMode && keyB64) {
-      const enc = (v: any) => ({ ...encryptAesGcmNode(v, keyB64), key_id: "k1-mobile-v1" })
+      const enc = (v: any) => ({ ...encryptAesGcmNode(v, keyB64), key_id: keyId })
       apiData = {
         data: {
           ...base,
           name_json: enc(name),
           accountNumber_json: enc(account),
-          bankCode_json: enc(codeBanque),
-          bankName_json: enc(bankname),
+          bankCode_json: enc(codeBanque || ""),
+          bankName_json: enc(bankname || ""),
           codagence_json: enc(type === "BNG-INTERNATIONAL" ? "N/A" : codeAgence || "N/A"),
           clerib_json: enc(type === "BNG-INTERNATIONAL" ? "N/A" : cleRib || "N/A"),
-          key_id: "k1-mobile-v1",
+          key_id: keyId,
         },
       }
     } else {
@@ -261,8 +278,8 @@ export async function addBeneficiary(prevState: ActionResult | null, formData: F
           ...base,
           name: name,
           accountNumber: account,
-          bankCode: codeBanque,
-          bankName: bankname,
+          bankCode: codeBanque || "",
+          bankName: bankname || "",
           codagence: type === "BNG-INTERNATIONAL" ? "N/A" : codeAgence || "N/A",
           clerib: type === "BNG-INTERNATIONAL" ? "N/A" : cleRib || "N/A",
         },
