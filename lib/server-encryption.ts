@@ -17,7 +17,7 @@ export async function encryptDataServer(data: Record<string, any>): Promise<Reco
 
     for (const [fieldName, value] of Object.entries(data)) {
       if (value !== undefined && value !== null) {
-        encrypted[fieldName] = await encryptAesGcmToJson(String(value), key)
+        encrypted[`${fieldName}_json`] = await encryptAesGcmToJson(String(value), key)
       }
     }
 
