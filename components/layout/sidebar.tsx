@@ -346,11 +346,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>): 
               </SidebarGroupLabel>
               <SidebarGroupContent>
                 <SidebarMenu>
-                  {navigationData.accounts.map((item) => (
-                    <SidebarMenuItem key={item.title}>
-                      <MenuItemWithSubmenu item={item} />
-                    </SidebarMenuItem>
-                  ))}
+                  <SidebarMenuItem>
+                    <SidebarMenuButton asChild isActive={pathname === "/accounts/balance"}>
+                      <Link href="/accounts/balance">
+                        <BarChart3 />
+                        <span>Mes comptes</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
                 </SidebarMenu>
               </SidebarGroupContent>
             </SidebarGroup>
