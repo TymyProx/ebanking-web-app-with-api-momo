@@ -6,6 +6,37 @@ import { revalidatePath } from "next/cache"
 const API_BASE_URL = process.env.API_BASE_URL
 const TENANT_ID = process.env.TENANT_ID 
 
+interface CurrentUserInfo {
+  id: string | null
+  fullName?: string
+}
+
+async function getCurrentUserInfo(token: string): Promise<CurrentUserInfo | null> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/auth/me`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    })
+
+    if (!response.ok) {
+      console.error(`[v0] Impossible de récupérer les informations utilisateur: ${response.status}`)
+      return null
+    }
+
+    const data = await response.json()
+    return {
+      id: data?.id ?? null,
+      fullName: data?.fullName ?? data?.name ?? undefined,
+    }
+  } catch (error) {
+    console.error("[v0] Erreur lors de la récupération de l'utilisateur courant:", error)
+    return null
+  }
+}
+
 export async function createCard(prevState: any, formData: FormData) {
   const cookieToken = (await cookies()).get("token")?.value
   const usertoken = cookieToken
@@ -17,6 +48,15 @@ export async function createCard(prevState: any, formData: FormData) {
       return {
         success: false,
         error: "Token d'authentification manquant",
+      }
+    }
+
+    const currentUser = await getCurrentUserInfo(usertoken)
+
+    if (!currentUser?.id) {
+      return {
+        success: false,
+        error: "Utilisateur non authentifié",
       }
     }
 
@@ -41,7 +81,9 @@ export async function createCard(prevState: any, formData: FormData) {
       status: "EN_ATTENTE", // Statut par défaut
       dateEmission: currentDate.toISOString().split("T")[0], // Format YYYY-MM-DD
       dateExpiration: expirationDate.toISOString().split("T")[0], // Format YYYY-MM-DD
-      idClient: "CLIENT_ID_PLACEHOLDER", // ID client par défaut
+      idClient: currentUser.id,
+      clientId: currentUser.id,
+      holder: currentUser.fullName || undefined,
     }
 
     //console.log("[v0] Données de la carte:", cardData)
@@ -156,7 +198,23 @@ export async function getCards() {
       }
     }
 
-    const response = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/card`, {
+    const currentUser = await getCurrentUserInfo(usertoken)
+
+    if (!currentUser?.id) {
+      console.warn("[v0] Impossible de déterminer l'utilisateur courant pour les cartes")
+      return {
+        success: true,
+        data: [],
+      }
+    }
+
+    const params = new URLSearchParams({ limit: "200" })
+    params.set("filter[clientId]", currentUser.id)
+    params.set("filter[idClient]", currentUser.id)
+
+    const endpoint = `${API_BASE_URL}/tenant/${TENANT_ID}/card${params.toString() ? `?${params.toString()}` : ""}`
+
+    const response = await fetch(endpoint, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -208,25 +266,33 @@ export async function getCards() {
     //console.log("[v0] Résultat récupération cartes:", result)
 
     // Adapter les données API au format attendu par l'interface
-    let cardsData = []
-    if (result.data) {
-      // Si result.data est un tableau
-      if (Array.isArray(result.data)) {
-        cardsData = result.data
-      } else {
-        // Si result.data est un objet unique
-        cardsData = [result.data]
-      }
+    let cardsData: any[] = []
+    if (Array.isArray(result?.rows)) {
+      cardsData = result.rows
+    } else if (Array.isArray(result?.data)) {
+      cardsData = result.data
+    } else if (result?.data) {
+      cardsData = [result.data]
+    } else if (Array.isArray(result)) {
+      cardsData = result
     }
 
+    const secureCards = cardsData.filter((card: any) => {
+      const ownerId = card?.clientId ?? card?.idClient ?? card?.createdById ?? null
+      if (!ownerId) {
+        return false
+      }
+      return String(ownerId) === currentUser.id
+    })
+
     // Mapper les données API vers le format de l'interface
-    const formattedCards = cardsData.map((card: any, index: number) => ({
+    const formattedCards = secureCards.map((card: any, index: number) => ({
       id: card.id || `card_${index + 1}`,
       number: card.numCard || "****",
       type: getCardTypeFromTypCard(card.typCard),
       status: mapApiStatusToUIStatus(card.status),
       expiryDate: formatExpiryDate(card.dateExpiration),
-      holder: card.holder || "MAMADOU DIALLO",
+      holder: card.holder || currentUser.fullName || "",
       dailyLimit: card.dailyLimit || 500000,
       monthlyLimit: card.monthlyLimit || 2000000,
       balance: card.balance || 1000000,
@@ -239,25 +305,10 @@ export async function getCards() {
     }
   } catch (error) {
     console.error("[v0] Erreur lors de la récupération des cartes:", error)
-    // En cas d'erreur, retourner des données de test
+    // En cas d'erreur, ne retourner aucune carte pour éviter d'exposer des données incorrectes
     return {
       success: true,
-      data: [
-        {
-          id: "1",
-          numCard: "4532 **** **** 1234",
-          typCard: "GOLD",
-          status: "ACTIF",
-          dateEmission: "2024-01-01",
-          dateExpiration: "2026-12-31",
-          idClient: "CLIENT_001",
-          holder: "MAMADOU DIALLO",
-          dailyLimit: 500000,
-          monthlyLimit: 2000000,
-          balance: 1250000,
-          lastTransaction: "Achat chez Carrefour - 45,000 FCFA",
-        },
-      ],
+      data: [],
     }
   }
 }

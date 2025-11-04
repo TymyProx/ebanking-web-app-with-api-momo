@@ -5,10 +5,94 @@ import { cookies } from "next/headers"
 import { revalidatePath } from "next/cache"
 import { encryptAesGcmNode, stringifyEncrypted } from "./secure"
 import { config } from "@/lib/config"
+import { getAccounts as fetchAccounts } from "../../accounts/actions"
+import { getBeneficiaries as fetchBeneficiaries } from "../beneficiaries/actions"
 
 const normalize = (u?: string) => (u ? u.replace(/\/$/, "") : "")
 const API_BASE_URL = `${normalize(config.API_BASE_URL)}/api`
 const TENANT_ID = config.TENANT_ID
+
+interface CurrentUserInfo {
+  id: string | null
+  fullName?: string
+}
+
+interface ActionSecurityContext {
+  token?: string
+  currentUser?: CurrentUserInfo | null
+  allowedAccountIds?: Set<string>
+}
+
+interface BeneficiarySecurityContext extends ActionSecurityContext {
+  allowedBeneficiaryIds?: Set<string>
+}
+
+async function getCurrentUserInfo(token?: string): Promise<CurrentUserInfo | null> {
+  const cookieToken = token ?? (await cookies()).get("token")?.value
+  if (!cookieToken) {
+    return null
+  }
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/auth/me`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${cookieToken}`,
+      },
+    })
+
+    if (!response.ok) {
+      console.error(`[v0] Unable to retrieve current user info: ${response.status} ${response.statusText}`)
+      return null
+    }
+
+    const userData = await response.json()
+    return {
+      id: userData?.id ?? null,
+      fullName: userData?.fullName ?? userData?.name ?? undefined,
+    }
+  } catch (error) {
+    console.error("[v0] Error while fetching current user info:", error)
+    return null
+  }
+}
+
+function extractAccountOwnerId(account: any): string | null {
+  if (!account || typeof account !== "object") {
+    return null
+  }
+
+  return (
+    account.clientId ??
+    account.customerId ??
+    account.client?.id ??
+    account.ownerId ??
+    account.createdById ??
+    null
+  )
+}
+
+function extractBeneficiaryOwnerId(beneficiary: any): string | null {
+  if (!beneficiary || typeof beneficiary !== "object") {
+    return null
+  }
+
+  return beneficiary.clientId ?? beneficiary.createdById ?? null
+}
+
+function buildAllowedAccountIdSet(accounts: any[]): Set<string> {
+  const ids = new Set<string>()
+  for (const account of accounts || []) {
+    if (account?.id) {
+      ids.add(String(account.id))
+    }
+    if (account?.accountId) {
+      ids.add(String(account.accountId))
+    }
+  }
+  return ids
+}
 
 // Schéma de validation pour les virements
 const transferSchema = z
@@ -201,8 +285,12 @@ function getTransactionType(beneficiaryType: string): string {
   }
 }
 
-export async function debitAccountBalance(accountId: string, amount: number) {
-  const cookieToken = (await cookies()).get("token")?.value
+export async function debitAccountBalance(
+  accountId: string,
+  amount: number,
+  context: ActionSecurityContext = {},
+) {
+  const cookieToken = context.token ?? (await cookies()).get("token")?.value
   const usertoken = cookieToken
 
   try {
@@ -211,6 +299,18 @@ export async function debitAccountBalance(accountId: string, amount: number) {
     if (!usertoken) {
       console.log("[v0] Token manquant pour le débit du solde")
       return { success: false, error: "Token d'authentification manquant" }
+    }
+
+    if (context.allowedAccountIds && !context.allowedAccountIds.has(accountId)) {
+      console.warn(`[v0] Tentative de débit sur un compte non autorisé: ${accountId}`)
+      return { success: false, error: "Compte débiteur invalide pour cet utilisateur" }
+    }
+
+    const currentUser = context.currentUser ?? (await getCurrentUserInfo(usertoken))
+
+    if (!currentUser?.id) {
+      console.warn("[v0] Impossible de déterminer l'utilisateur courant pour le débit")
+      return { success: false, error: "Utilisateur non authentifié" }
     }
 
     // Récupérer d'abord les informations du compte
@@ -229,6 +329,14 @@ export async function debitAccountBalance(accountId: string, amount: number) {
 
     const accountData = await accountResponse.json()
     const account = accountData.data || accountData
+
+    const ownerId = extractAccountOwnerId(account)
+    if (ownerId && ownerId !== currentUser.id) {
+      console.warn(
+        `[v0] Tentative de débit refusée: compte ${accountId} appartient à ${ownerId}, utilisateur ${currentUser.id}`,
+      )
+      return { success: false, error: "Compte débiteur non autorisé" }
+    }
 
     const currentAvailableBalance = Number.parseFloat(account.availableBalance || "0")
     const newAvailableBalance = currentAvailableBalance - amount
@@ -275,8 +383,12 @@ export async function debitAccountBalance(accountId: string, amount: number) {
   }
 }
 
-export async function creditAccountBalance(accountId: string, amount: number) {
-  const cookieToken = (await cookies()).get("token")?.value
+export async function creditAccountBalance(
+  accountId: string,
+  amount: number,
+  context: ActionSecurityContext = {},
+) {
+  const cookieToken = context.token ?? (await cookies()).get("token")?.value
   const usertoken = cookieToken
 
   try {
@@ -285,6 +397,18 @@ export async function creditAccountBalance(accountId: string, amount: number) {
     if (!usertoken) {
       console.log("[v0] Token manquant pour le crédit du solde")
       return { success: false, error: "Token d'authentification manquant" }
+    }
+
+    if (context.allowedAccountIds && !context.allowedAccountIds.has(accountId)) {
+      console.warn(`[v0] Tentative de crédit sur un compte non autorisé: ${accountId}`)
+      return { success: false, error: "Compte destinataire invalide pour cet utilisateur" }
+    }
+
+    const currentUser = context.currentUser ?? (await getCurrentUserInfo(usertoken))
+
+    if (!currentUser?.id) {
+      console.warn("[v0] Impossible de déterminer l'utilisateur courant pour le crédit")
+      return { success: false, error: "Utilisateur non authentifié" }
     }
 
     // Récupérer d'abord les informations du compte
@@ -303,6 +427,14 @@ export async function creditAccountBalance(accountId: string, amount: number) {
 
     const accountData = await accountResponse.json()
     const account = accountData.data || accountData
+
+    const ownerId = extractAccountOwnerId(account)
+    if (ownerId && ownerId !== currentUser.id) {
+      console.warn(
+        `[v0] Tentative de crédit refusée: compte ${accountId} appartient à ${ownerId}, utilisateur ${currentUser.id}`,
+      )
+      return { success: false, error: "Compte destinataire non autorisé" }
+    }
 
     const currentAvailableBalance = Number.parseFloat(account.availableBalance || "0")
     const newAvailableBalance = currentAvailableBalance + amount
@@ -371,6 +503,54 @@ export async function executeTransfer(prevState: any, formData: FormData) {
     const cookieToken = (await cookies()).get("token")?.value
     const usertoken = cookieToken
 
+    if (!usertoken) {
+      return {
+        success: false,
+        error: "Utilisateur non authentifié",
+      }
+    }
+
+    const [currentUser, userAccounts] = await Promise.all([
+      getCurrentUserInfo(usertoken),
+      fetchAccounts(),
+    ])
+
+    if (!currentUser?.id) {
+      return {
+        success: false,
+        error: "Utilisateur non authentifié",
+      }
+    }
+
+    const allowedAccountIds = buildAllowedAccountIdSet(userAccounts)
+    if (!allowedAccountIds.has(validatedData.sourceAccount)) {
+      return {
+        success: false,
+        error: "Compte débiteur non autorisé",
+      }
+    }
+
+    if (validatedData.transferType === "account-to-account" && validatedData.targetAccount) {
+      if (!allowedAccountIds.has(validatedData.targetAccount)) {
+        return {
+          success: false,
+          error: "Compte destinataire non autorisé",
+        }
+      }
+    }
+
+    let allowedBeneficiaryIds: Set<string> | undefined
+    if (validatedData.transferType === "account-to-beneficiary" && validatedData.beneficiaryId) {
+      const userBeneficiaries = await fetchBeneficiaries()
+      allowedBeneficiaryIds = new Set<string>(userBeneficiaries.map((b: any) => String(b.id)))
+      if (!allowedBeneficiaryIds.has(validatedData.beneficiaryId)) {
+        return {
+          success: false,
+          error: "Bénéficiaire non autorisé",
+        }
+      }
+    }
+
     let sourceAccountData: any = null
     let ribClient = ""
     try {
@@ -382,20 +562,44 @@ export async function executeTransfer(prevState: any, formData: FormData) {
         },
       })
 
-      if (accountResponse.ok) {
-        const accountDataResponse = await accountResponse.json()
-        sourceAccountData = accountDataResponse.data || accountDataResponse
-        // Construire le RIB client (concaténation de codeBanque, codeAgence, accountNumber, cleRib)
-        ribClient = `${sourceAccountData.codeBanque || ""}${sourceAccountData.codeAgence || ""}${sourceAccountData.accountNumber || ""}${sourceAccountData.cleRib || ""}`
-        console.log("[v0] Source account RIB constructed:", ribClient)
-      } else {
+      if (!accountResponse.ok) {
         console.error("[v0] Failed to fetch source account details:", accountResponse.status)
+        return {
+          success: false,
+          error: "Impossible de récupérer les informations du compte source",
+        }
       }
+
+      const accountDataResponse = await accountResponse.json()
+      sourceAccountData = accountDataResponse.data || accountDataResponse
+
+      const ownerId = extractAccountOwnerId(sourceAccountData)
+      if (ownerId && ownerId !== currentUser.id) {
+        console.warn(
+          `[v0] Source account ownership mismatch: compte ${validatedData.sourceAccount} -> ${ownerId}, utilisateur ${currentUser.id}`,
+        )
+        return {
+          success: false,
+          error: "Compte débiteur non autorisé",
+        }
+      }
+
+      // Construire le RIB client (concaténation de codeBanque, codeAgence, accountNumber, cleRib)
+      ribClient = `${sourceAccountData.codeBanque || ""}${sourceAccountData.codeAgence || ""}${sourceAccountData.accountNumber || ""}${sourceAccountData.cleRib || ""}`
+      console.log("[v0] Source account RIB constructed:", ribClient)
     } catch (error) {
       console.error("[v0] Error fetching source account details:", error)
+      return {
+        success: false,
+        error: "Impossible de récupérer les informations du compte source",
+      }
     }
 
-    const debitResult = await debitAccountBalance(validatedData.sourceAccount, transferAmount)
+    const debitResult = await debitAccountBalance(validatedData.sourceAccount, transferAmount, {
+      token: usertoken,
+      currentUser,
+      allowedAccountIds,
+    })
 
     if (!debitResult.success) {
       return {
@@ -435,24 +639,67 @@ export async function executeTransfer(prevState: any, formData: FormData) {
             },
           )
 
-          if (targetAccountResponse.ok) {
-            const targetAccountData = await targetAccountResponse.json()
-            const targetAccount = targetAccountData.data || targetAccountData
-            nomBeneficiaire = targetAccount.accountName || ""
-            ribBeneficiaire = `${targetAccount.codeBanque || ""}${targetAccount.codeAgence || ""}${targetAccount.accountNumber || ""}${targetAccount.cleRib || ""}`
-            console.log("[v0] Target account details retrieved:", { nomBeneficiaire, ribBeneficiaire })
-          } else {
+          if (!targetAccountResponse.ok) {
             console.error("[v0] Failed to fetch target account details:", targetAccountResponse.status)
+            await debitAccountBalance(validatedData.sourceAccount, -transferAmount, {
+              token: usertoken,
+              currentUser,
+              allowedAccountIds,
+            })
+            return {
+              success: false,
+              error: "Impossible de récupérer le compte destinataire",
+            }
           }
+
+          const targetAccountData = await targetAccountResponse.json()
+          const targetAccount = targetAccountData.data || targetAccountData
+
+          const targetOwnerId = extractAccountOwnerId(targetAccount)
+          if (targetOwnerId && targetOwnerId !== currentUser.id) {
+            console.warn(
+              `[v0] Target account ownership mismatch: compte ${validatedData.targetAccount} -> ${targetOwnerId}, utilisateur ${currentUser.id}`,
+            )
+            await debitAccountBalance(validatedData.sourceAccount, -transferAmount, {
+              token: usertoken,
+              currentUser,
+              allowedAccountIds,
+            })
+            return {
+              success: false,
+              error: "Compte destinataire non autorisé",
+            }
+          }
+
+          nomBeneficiaire = targetAccount.accountName || ""
+          ribBeneficiaire = `${targetAccount.codeBanque || ""}${targetAccount.codeAgence || ""}${targetAccount.accountNumber || ""}${targetAccount.cleRib || ""}`
+          console.log("[v0] Target account details retrieved:", { nomBeneficiaire, ribBeneficiaire })
         } catch (error) {
           console.error("[v0] Error fetching target account details:", error)
+          await debitAccountBalance(validatedData.sourceAccount, -transferAmount, {
+            token: usertoken,
+            currentUser,
+            allowedAccountIds,
+          })
+          return {
+            success: false,
+            error: "Erreur lors de la récupération du compte destinataire",
+          }
         }
 
-        const creditResult = await creditAccountBalance(validatedData.targetAccount, transferAmount)
+        const creditResult = await creditAccountBalance(validatedData.targetAccount, transferAmount, {
+          token: usertoken,
+          currentUser,
+          allowedAccountIds,
+        })
 
         if (!creditResult.success) {
           console.log("[v0] Erreur lors du crédit, restauration du solde source")
-          await debitAccountBalance(validatedData.sourceAccount, -transferAmount)
+          await debitAccountBalance(validatedData.sourceAccount, -transferAmount, {
+            token: usertoken,
+            currentUser,
+            allowedAccountIds,
+          })
           return {
             success: false,
             error: creditResult.error || "Impossible de créditer le compte destinataire",
@@ -463,11 +710,19 @@ export async function executeTransfer(prevState: any, formData: FormData) {
       }
     } else if (validatedData.beneficiaryId) {
       console.log(`[v0] Récupération des informations du bénéficiaire: ${validatedData.beneficiaryId}`)
-      const beneficiary = await getBeneficiaryById(validatedData.beneficiaryId)
+      const beneficiary = await getBeneficiaryById(validatedData.beneficiaryId, {
+        token: usertoken,
+        currentUser,
+        allowedBeneficiaryIds,
+      })
 
       if (!beneficiary) {
         console.log("[v0] Bénéficiaire non trouvé, restauration du solde source")
-        await debitAccountBalance(validatedData.sourceAccount, -transferAmount)
+        await debitAccountBalance(validatedData.sourceAccount, -transferAmount, {
+          token: usertoken,
+          currentUser,
+          allowedAccountIds,
+        })
         return {
           success: false,
           error: "Bénéficiaire non trouvé",
@@ -614,10 +869,18 @@ export async function executeTransfer(prevState: any, formData: FormData) {
         console.log("[v0] Error response body:", responseText)
       }
 
-      await debitAccountBalance(validatedData.sourceAccount, -transferAmount)
+      await debitAccountBalance(validatedData.sourceAccount, -transferAmount, {
+        token: usertoken,
+        currentUser,
+        allowedAccountIds,
+      })
 
       if (validatedData.transferType === "account-to-account" && validatedData.targetAccount) {
-        await debitAccountBalance(validatedData.targetAccount, transferAmount)
+        await debitAccountBalance(validatedData.targetAccount, transferAmount, {
+          token: usertoken,
+          currentUser,
+          allowedAccountIds,
+        })
       }
 
       let errorMessage = `❌ Erreur API: ${response.status} ${response.statusText}`
@@ -914,12 +1177,27 @@ export async function getEpayments(): Promise<{ rows: any[] }> {
   return { rows }
 }
 
-async function getBeneficiaryById(beneficiaryId: string) {
-  const cookieToken = (await cookies()).get("token")?.value
+async function getBeneficiaryById(
+  beneficiaryId: string,
+  context: BeneficiarySecurityContext = {},
+) {
+  const cookieToken = context.token ?? (await cookies()).get("token")?.value
   const usertoken = cookieToken
 
+  if (context.allowedBeneficiaryIds && !context.allowedBeneficiaryIds.has(beneficiaryId)) {
+    console.warn(`[v0] Tentative d'accès à un bénéficiaire non autorisé: ${beneficiaryId}`)
+    return null
+  }
+
   try {
-    const response = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/beneficiaire`, {
+    if (!usertoken) {
+      console.warn("[v0] Token manquant pour la récupération du bénéficiaire")
+      return null
+    }
+
+    const currentUser = context.currentUser ?? (await getCurrentUserInfo(usertoken))
+
+    const response = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/beneficiaire/${beneficiaryId}`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -929,16 +1207,28 @@ async function getBeneficiaryById(beneficiaryId: string) {
     })
 
     if (!response.ok) {
-      console.error(`[v0] Erreur lors de la récupération des bénéficiaires: ${response.status}`)
+      console.error(`[v0] Erreur lors de la récupération du bénéficiaire ${beneficiaryId}: ${response.status}`)
       return null
     }
 
     const data = await response.json()
-    const beneficiaries = Array.isArray(data.rows) ? data.rows : Array.isArray(data) ? data : [data]
+    const beneficiary = data.data || data
 
-    // Trouver le bénéficiaire par son ID
-    const beneficiary = beneficiaries.find((b: any) => b.id === beneficiaryId)
-    return beneficiary || null
+    const ownerId = extractBeneficiaryOwnerId(beneficiary)
+    if (currentUser?.id && ownerId && ownerId !== currentUser.id) {
+      console.warn(
+        `[v0] Tentative d'accès refusée: bénéficiaire ${beneficiaryId} appartient à ${ownerId}, utilisateur ${currentUser.id}`,
+      )
+      return null
+    }
+
+    if (context.allowedBeneficiaryIds && !ownerId) {
+      // Si nous ne pouvons pas confirmer le propriétaire, refuser par défaut
+      console.warn(`[v0] Propriété bénéficiaire inconnue pour ${beneficiaryId}, accès refusé`)
+      return null
+    }
+
+    return beneficiary
   } catch (error) {
     console.error("[v0] Erreur lors de la récupération du bénéficiaire:", error)
     return null
