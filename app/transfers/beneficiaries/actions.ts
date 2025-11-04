@@ -27,6 +27,8 @@ interface ApiBeneficiary {
   bankCode: string
   bankName: string
   status: number
+  workflowStatus?: string
+  workflowMetadata?: any
   typeBeneficiary: string
   favoris: boolean
   codagence: string
@@ -41,6 +43,14 @@ interface GetBeneficiariesResponse {
 const normalize = (u?: string) => (u ? u.replace(/\/$/, "") : "")
 const API_BASE_URL = `${normalize(config.API_BASE_URL)}/api`
 const TENANT_ID = config.TENANT_ID
+
+const WORKFLOW_STATUS = {
+  CREATED: "cree",
+  VERIFIED: "verifie",
+  VALIDATED: "valide",
+  AVAILABLE: "disponible",
+  SUSPENDED: "suspendu",
+} as const
 
 async function getCurrentClientId(): Promise<string> {
   const cookieToken = (await cookies()).get("token")?.value
@@ -254,6 +264,7 @@ export async function addBeneficiary(prevState: ActionResult | null, formData: F
       beneficiaryId: `BEN_${Date.now()}`,
       clientId: clientId,
       status: 0,
+      workflowStatus: WORKFLOW_STATUS.CREATED,
       typeBeneficiary: type,
       favoris: false,
     }
@@ -271,6 +282,7 @@ export async function addBeneficiary(prevState: ActionResult | null, formData: F
           codagence_json: enc(type === "BNG-INTERNATIONAL" ? "N/A" : codeAgence || "N/A"),
           clerib_json: enc(type === "BNG-INTERNATIONAL" ? "N/A" : cleRib || "N/A"),
           key_id: keyId,
+          workflowStatus: WORKFLOW_STATUS.CREATED,
         },
       }
     } else {
@@ -283,6 +295,7 @@ export async function addBeneficiary(prevState: ActionResult | null, formData: F
           bankName: bankname || "",
           codagence: type === "BNG-INTERNATIONAL" ? "N/A" : codeAgence || "N/A",
           clerib: type === "BNG-INTERNATIONAL" ? "N/A" : cleRib || "N/A",
+          workflowStatus: WORKFLOW_STATUS.CREATED,
         },
       }
     }
@@ -387,6 +400,7 @@ export async function updateBeneficiary(prevState: ActionResult | null, formData
         favoris: currentBeneficiary?.favoris || false,
         codagence: type === "BNG-INTERNATIONAL" ? "N/A" : codeAgence || "N/A",
         clerib: type === "BNG-INTERNATIONAL" ? "N/A" : cleRib || "N/A",
+        workflowStatus: currentBeneficiary?.workflowStatus || WORKFLOW_STATUS.AVAILABLE,
       },
     }
 
@@ -508,6 +522,7 @@ export async function toggleBeneficiaryFavorite(
         favoris: !currentFavoriteStatus,
         codagence: currentBeneficiary.codagence,
         clerib: currentBeneficiary.clerib,
+        workflowStatus: currentBeneficiary.workflowStatus || WORKFLOW_STATUS.AVAILABLE,
       },
     }
 
@@ -585,6 +600,7 @@ export async function deactivateBeneficiary(prevState: ActionResult | null, form
         favoris: currentBeneficiary.favoris,
         codagence: currentBeneficiary.codagence,
         clerib: currentBeneficiary.clerib,
+        workflowStatus: WORKFLOW_STATUS.SUSPENDED,
       },
     }
 
@@ -662,6 +678,7 @@ export async function reactivateBeneficiary(prevState: ActionResult | null, form
         favoris: currentBeneficiary.favoris,
         codagence: currentBeneficiary.codagence,
         clerib: currentBeneficiary.clerib,
+        workflowStatus: WORKFLOW_STATUS.AVAILABLE,
       },
     }
 

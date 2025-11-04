@@ -1,0 +1,329 @@
+{
+  "agences": [
+    {
+      "id": "agence-001",
+      "agenceName": "Agence Kaloum - Siège",
+      "address": "Avenue de la République, Immeuble BNG",
+      "city": "Conakry",
+      "country": "Guinée",
+      "postalCode": "BP 3046",
+      "latitude": 9.5092,
+      "longitude": -13.7122,
+      "telephone": "+224 622 123 456",
+      "email": "kaloum@bng.gn",
+      "services": [
+        "Comptes courants",
+        "Épargne",
+        "Crédits",
+        "Cartes bancaires",
+        "Virements internationaux",
+        "Change de devises",
+        "Coffres-forts"
+      ],
+      "openingHours": {
+        "mon": { "open": "08:00", "close": "16:30", "closed": false },
+        "tue": { "open": "08:00", "close": "16:30", "closed": false },
+        "wed": { "open": "08:00", "close": "16:30", "closed": false },
+        "thu": { "open": "08:00", "close": "16:30", "closed": false },
+        "fri": { "open": "08:00", "close": "16:30", "closed": false },
+        "sat": { "open": "08:30", "close": "13:00", "closed": false },
+        "sun": { "closed": true }
+      },
+      "exceptionalClosures": [],
+      "publicHolidays": ["2025-12-25", "2026-01-01", "2026-04-03", "2026-10-02"],
+      "isTemporarilyClosed": false
+    },
+    {
+      "id": "agence-002",
+      "agenceName": "Agence Madina",
+      "address": "Marché Madina, Route de Donka",
+      "city": "Conakry",
+      "country": "Guinée",
+      "postalCode": "BP 3047",
+      "latitude": 9.5315,
+      "longitude": -13.6778,
+      "telephone": "+224 622 234 567",
+      "email": "madina@bng.gn",
+      "services": [
+        "Comptes courants",
+        "Épargne",
+        "Microcrédits",
+        "Cartes bancaires",
+        "Mobile banking",
+        "Transferts d'argent",
+        "Western Union"
+      ],
+      "openingHours": {
+        "mon": { "open": "08:00", "close": "17:00", "closed": false },
+        "tue": { "open": "08:00", "close": "17:00", "closed": false },
+        "wed": { "open": "08:00", "close": "17:00", "closed": false },
+        "thu": { "open": "08:00", "close": "17:00", "closed": false },
+        "fri": { "open": "08:00", "close": "17:00", "closed": false },
+        "sat": { "open": "09:00", "close": "13:00", "closed": false },
+        "sun": { "closed": true }
+      },
+      "exceptionalClosures": [],
+      "publicHolidays": ["2025-12-25", "2026-01-01", "2026-04-03", "2026-10-02"],
+      "isTemporarilyClosed": false
+    },
+    {
+      "id": "agence-003",
+      "agenceName": "Agence Taouyah",
+      "address": "Centre commercial Taouyah, Route de Fidel Castro",
+      "city": "Conakry",
+      "country": "Guinée",
+      "postalCode": "BP 3048",
+      "latitude": 9.5380,
+      "longitude": -13.6530,
+      "telephone": "+224 622 345 678",
+      "email": "taouyah@bng.gn",
+      "services": [
+        "Comptes courants",
+        "Épargne",
+        "Crédits PME",
+        "Cartes bancaires",
+        "Banque en ligne",
+        "Conseil patrimonial"
+      ],
+      "openingHours": {
+        "mon": { "open": "08:00", "close": "16:30", "closed": false },
+        "tue": { "open": "08:00", "close": "16:30", "closed": false },
+        "wed": { "open": "08:00", "close": "16:30", "closed": false },
+        "thu": { "open": "08:00", "close": "16:30", "closed": false },
+        "fri": { "open": "08:00", "close": "16:30", "closed": false },
+        "sat": { "open": "08:30", "close": "12:30", "closed": false },
+        "sun": { "closed": true }
+      },
+      "exceptionalClosures": [],
+      "publicHolidays": ["2025-12-25", "2026-01-01", "2026-04-03", "2026-10-02"],
+      "isTemporarilyClosed": false
+    },
+    {
+      "id": "agence-004",
+      "agenceName": "Agence Ratoma",
+      "address": "Carrefour Sonfonia, Commune de Ratoma",
+      "city": "Conakry",
+      "country": "Guinée",
+      "postalCode": "BP 3049",
+      "latitude": 9.5750,
+      "longitude": -13.6480,
+      "telephone": "+224 622 456 789",
+      "email": "ratoma@bng.gn",
+      "services": [
+        "Comptes courants",
+        "Épargne",
+        "Crédits immobiliers",
+        "Cartes bancaires",
+        "Assurances",
+        "Mobile banking"
+      ],
+      "openingHours": {
+        "mon": { "open": "08:00", "close": "16:00", "closed": false },
+        "tue": { "open": "08:00", "close": "16:00", "closed": false },
+        "wed": { "open": "08:00", "close": "16:00", "closed": false },
+        "thu": { "open": "08:00", "close": "16:00", "closed": false },
+        "fri": { "open": "08:00", "close": "16:00", "closed": false },
+        "sat": { "closed": true },
+        "sun": { "closed": true }
+      },
+      "exceptionalClosures": [],
+      "publicHolidays": ["2025-12-25", "2026-01-01", "2026-04-03", "2026-10-02"],
+      "isTemporarilyClosed": false
+    },
+    {
+      "id": "agence-005",
+      "agenceName": "Agence Matoto Aéroport",
+      "address": "Avenue de l'Aéroport, Matoto Centre",
+      "city": "Conakry",
+      "country": "Guinée",
+      "postalCode": "BP 3050",
+      "latitude": 9.5770,
+      "longitude": -13.6120,
+      "telephone": "+224 622 567 890",
+      "email": "matoto@bng.gn",
+      "services": [
+        "Comptes courants",
+        "Épargne",
+        "Change de devises",
+        "Cartes bancaires",
+        "Virements internationaux",
+        "Transferts d'argent"
+      ],
+      "openingHours": {
+        "mon": { "open": "08:00", "close": "17:00", "closed": false },
+        "tue": { "open": "08:00", "close": "17:00", "closed": false },
+        "wed": { "open": "08:00", "close": "17:00", "closed": false },
+        "thu": { "open": "08:00", "close": "17:00", "closed": false },
+        "fri": { "open": "08:00", "close": "17:00", "closed": false },
+        "sat": { "open": "09:00", "close": "13:00", "closed": false },
+        "sun": { "closed": true }
+      },
+      "exceptionalClosures": [],
+      "publicHolidays": ["2025-12-25", "2026-01-01", "2026-04-03", "2026-10-02"],
+      "isTemporarilyClosed": false
+    },
+    {
+      "id": "agence-006",
+      "agenceName": "Agence Kindia",
+      "address": "Avenue de la République, Centre-ville",
+      "city": "Kindia",
+      "country": "Guinée",
+      "postalCode": "BP 150",
+      "latitude": 10.0570,
+      "longitude": -12.8470,
+      "telephone": "+224 622 678 901",
+      "email": "kindia@bng.gn",
+      "services": [
+        "Comptes courants",
+        "Épargne",
+        "Crédits agricoles",
+        "Microcrédits",
+        "Mobile banking",
+        "Transferts d'argent"
+      ],
+      "openingHours": {
+        "mon": { "open": "08:00", "close": "15:30", "closed": false },
+        "tue": { "open": "08:00", "close": "15:30", "closed": false },
+        "wed": { "open": "08:00", "close": "15:30", "closed": false },
+        "thu": { "open": "08:00", "close": "15:30", "closed": false },
+        "fri": { "open": "08:00", "close": "15:30", "closed": false },
+        "sat": { "closed": true },
+        "sun": { "closed": true }
+      },
+      "exceptionalClosures": [
+        {
+          "date": "2025-12-24",
+          "reason": "Réveillon de Noël"
+        }
+      ],
+      "publicHolidays": ["2025-12-25", "2026-01-01", "2026-04-03", "2026-10-02"],
+      "isTemporarilyClosed": false
+    },
+    {
+      "id": "agence-007",
+      "agenceName": "Agence Labé",
+      "address": "Quartier Tata, Route Nationale",
+      "city": "Labé",
+      "country": "Guinée",
+      "postalCode": "BP 240",
+      "latitude": 11.3180,
+      "longitude": -12.2890,
+      "telephone": "+224 622 789 012",
+      "email": "labe@bng.gn",
+      "services": [
+        "Comptes courants",
+        "Épargne",
+        "Crédits PME",
+        "Microcrédits",
+        "Western Union",
+        "Mobile banking"
+      ],
+      "openingHours": {
+        "mon": { "open": "08:00", "close": "15:30", "closed": false },
+        "tue": { "open": "08:00", "close": "15:30", "closed": false },
+        "wed": { "open": "08:00", "close": "15:30", "closed": false },
+        "thu": { "open": "08:00", "close": "15:30", "closed": false },
+        "fri": { "open": "08:00", "close": "15:30", "closed": false },
+        "sat": { "closed": true },
+        "sun": { "closed": true }
+      },
+      "exceptionalClosures": [],
+      "publicHolidays": ["2025-12-25", "2026-01-01", "2026-04-03", "2026-10-02"],
+      "isTemporarilyClosed": false
+    },
+    {
+      "id": "agence-008",
+      "agenceName": "Agence Kankan",
+      "address": "Quartier Bord, Avenue Almamy Samory Touré",
+      "city": "Kankan",
+      "country": "Guinée",
+      "postalCode": "BP 320",
+      "latitude": 10.3850,
+      "longitude": -9.3060,
+      "telephone": "+224 622 890 123",
+      "email": "kankan@bng.gn",
+      "services": [
+        "Comptes courants",
+        "Épargne",
+        "Crédits commerciaux",
+        "Cartes bancaires",
+        "Transferts d'argent",
+        "Mobile banking"
+      ],
+      "openingHours": {
+        "mon": { "open": "08:00", "close": "15:30", "closed": false },
+        "tue": { "open": "08:00", "close": "15:30", "closed": false },
+        "wed": { "open": "08:00", "close": "15:30", "closed": false },
+        "thu": { "open": "08:00", "close": "15:30", "closed": false },
+        "fri": { "open": "08:00", "close": "15:30", "closed": false },
+        "sat": { "closed": true },
+        "sun": { "closed": true }
+      },
+      "exceptionalClosures": [],
+      "publicHolidays": ["2025-12-25", "2026-01-01", "2026-04-03", "2026-10-02"],
+      "isTemporarilyClosed": false
+    },
+    {
+      "id": "agence-009",
+      "agenceName": "Agence Nzérékoré",
+      "address": "Centre-ville, Avenue Principale",
+      "city": "Nzérékoré",
+      "country": "Guinée",
+      "postalCode": "BP 420",
+      "latitude": 7.7560,
+      "longitude": -8.8170,
+      "telephone": "+224 622 901 234",
+      "email": "nzerekore@bng.gn",
+      "services": [
+        "Comptes courants",
+        "Épargne",
+        "Crédits agricoles",
+        "Microcrédits",
+        "Transferts d'argent"
+      ],
+      "openingHours": {
+        "mon": { "open": "08:00", "close": "15:00", "closed": false },
+        "tue": { "open": "08:00", "close": "15:00", "closed": false },
+        "wed": { "open": "08:00", "close": "15:00", "closed": false },
+        "thu": { "open": "08:00", "close": "15:00", "closed": false },
+        "fri": { "open": "08:00", "close": "15:00", "closed": false },
+        "sat": { "closed": true },
+        "sun": { "closed": true }
+      },
+      "exceptionalClosures": [],
+      "publicHolidays": ["2025-12-25", "2026-01-01", "2026-04-03", "2026-10-02"],
+      "isTemporarilyClosed": false
+    },
+    {
+      "id": "agence-010",
+      "agenceName": "Agence Dubréka",
+      "address": "Carrefour Central, Route Nationale",
+      "city": "Dubréka",
+      "country": "Guinée",
+      "postalCode": "BP 180",
+      "latitude": 9.7920,
+      "longitude": -13.5140,
+      "telephone": "+224 622 012 345",
+      "email": "dubreka@bng.gn",
+      "services": [
+        "Comptes courants",
+        "Épargne",
+        "Microcrédits",
+        "Mobile banking",
+        "Transferts d'argent"
+      ],
+      "openingHours": {
+        "mon": { "open": "08:00", "close": "15:00", "closed": false },
+        "tue": { "open": "08:00", "close": "15:00", "closed": false },
+        "wed": { "open": "08:00", "close": "15:00", "closed": false },
+        "thu": { "open": "08:00", "close": "15:00", "closed": false },
+        "fri": { "open": "08:00", "close": "15:00", "closed": false },
+        "sat": { "closed": true },
+        "sun": { "closed": true }
+      },
+      "exceptionalClosures": [],
+      "publicHolidays": ["2025-12-25", "2026-01-01", "2026-04-03", "2026-10-02"],
+      "isTemporarilyClosed": false
+    }
+  ]
+}

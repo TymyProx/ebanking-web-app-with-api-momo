@@ -55,6 +55,8 @@ interface Beneficiary {
   status: number
   codagence?: string
   clerib?: string
+  workflowStatus: WorkflowStatus
+  workflowMetadata?: Record<string, any> | null
 }
 
 interface Bank {
@@ -68,6 +70,35 @@ type ActionResult = {
   success?: boolean
   error?: string
   message?: string
+}
+
+const WORKFLOW_STATUS = {
+  CREATED: "cree",
+  VERIFIED: "verifie",
+  VALIDATED: "valide",
+  AVAILABLE: "disponible",
+  SUSPENDED: "suspendu",
+} as const
+
+type WorkflowStatus = (typeof WORKFLOW_STATUS)[keyof typeof WORKFLOW_STATUS]
+
+const PENDING_WORKFLOW_STATUSES: WorkflowStatus[] = [
+  WORKFLOW_STATUS.CREATED,
+  WORKFLOW_STATUS.VERIFIED,
+  WORKFLOW_STATUS.VALIDATED,
+]
+
+const WORKFLOW_LABELS: Record<WorkflowStatus, string> = {
+  [WORKFLOW_STATUS.CREATED]: "Créé",
+  [WORKFLOW_STATUS.VERIFIED]: "Vérification",
+  [WORKFLOW_STATUS.VALIDATED]: "Validation",
+  [WORKFLOW_STATUS.AVAILABLE]: "Disponible",
+  [WORKFLOW_STATUS.SUSPENDED]: "Suspendu",
+}
+
+const toWorkflowStatus = (value: any): WorkflowStatus => {
+  const allowed = Object.values(WORKFLOW_STATUS) as WorkflowStatus[]
+  return allowed.includes(value as WorkflowStatus) ? (value as WorkflowStatus) : WORKFLOW_STATUS.AVAILABLE
 }
 
 export default function BeneficiariesPage() {
@@ -135,6 +166,15 @@ export default function BeneficiariesPage() {
           const bankResolved = bankNamePlain || getBankNameFromCode(bankCodePlain)
           const codagence = await resolveField(apiB.codagence ?? apiB.codagence_json)
           const clerib = await resolveField(apiB.clerib ?? apiB.clerib_json)
+          const workflowStatus = toWorkflowStatus(apiB.workflowStatus)
+          let workflowMetadata = apiB.workflowMetadata || null
+          if (workflowMetadata && typeof workflowMetadata === "string") {
+            try {
+              workflowMetadata = JSON.parse(workflowMetadata)
+            } catch {
+              workflowMetadata = null
+            }
+          }
 
           return {
             id: apiB.id,
@@ -148,6 +188,8 @@ export default function BeneficiariesPage() {
             status: apiB.status,
             codagence,
             clerib,
+            workflowStatus,
+            workflowMetadata,
           } as Beneficiary
         }),
       )
@@ -269,15 +311,21 @@ export default function BeneficiariesPage() {
     const bankLc = safe(beneficiary.bank).toLowerCase()
     const matchesSearch = nameLc.includes(searchLc) || accountLc.includes(searchLc) || bankLc.includes(searchLc)
 
+    const isAvailable = beneficiary.status === 0 && beneficiary.workflowStatus === WORKFLOW_STATUS.AVAILABLE
+    const isSuspended = beneficiary.status === 1 || beneficiary.workflowStatus === WORKFLOW_STATUS.SUSPENDED
+    const isPending = PENDING_WORKFLOW_STATUSES.includes(beneficiary.workflowStatus)
+
     let matchesFilter = false
     if (filterType === "all") {
-      matchesFilter = beneficiary.status === 0 // Only show active beneficiaries by default
+      matchesFilter = !isSuspended
     } else if (filterType === "inactive") {
-      matchesFilter = beneficiary.status === 1 // Show inactive beneficiaries
+      matchesFilter = isSuspended
     } else if (filterType === "favorites") {
-      matchesFilter = beneficiary.favorite && beneficiary.status === 0 // Only active favorites
+      matchesFilter = beneficiary.favorite && isAvailable
+    } else if (filterType === "pending") {
+      matchesFilter = isPending
     } else {
-      matchesFilter = beneficiary.type === filterType && beneficiary.status === 0 // Only active of specific type
+      matchesFilter = beneficiary.type === filterType && isAvailable
     }
 
     return matchesSearch && matchesFilter
@@ -460,6 +508,22 @@ export default function BeneficiariesPage() {
     }
   }
 
+  const getWorkflowBadge = (status: WorkflowStatus) => {
+    switch (status) {
+      case WORKFLOW_STATUS.CREATED:
+        return <Badge variant="outline" className="border-blue-200 text-blue-600">Créé</Badge>
+      case WORKFLOW_STATUS.VERIFIED:
+        return <Badge variant="outline" className="border-blue-400 text-blue-700">Vérifié</Badge>
+      case WORKFLOW_STATUS.VALIDATED:
+        return <Badge variant="outline" className="border-amber-400 text-amber-600">Validé</Badge>
+      case WORKFLOW_STATUS.SUSPENDED:
+        return <Badge variant="destructive">Suspendu</Badge>
+      case WORKFLOW_STATUS.AVAILABLE:
+      default:
+        return <Badge variant="default">Disponible</Badge>
+    }
+  }
+
   const handleFormSuccess = async () => {
     await loadBeneficiaries()
   }
@@ -516,7 +580,7 @@ export default function BeneficiariesPage() {
               {addState?.success && (
                 <Alert variant="default" className="border-green-200 bg-green-50">
                   <CheckCircle className="h-4 w-4 text-green-600" />
-                  <AlertDescription className="text-green-800">Bénéficiaire ajouté avec succès</AlertDescription>
+                  <AlertDescription className="text-green-800">Bénéficiaire créé. Vérification en cours.</AlertDescription>
                 </Alert>
               )}
 
@@ -683,9 +747,16 @@ export default function BeneficiariesPage() {
       {showAddSuccess && (
         <Alert className="border-green-200 bg-green-50">
           <CheckCircle className="h-4 w-4 text-green-600" />
-          <AlertDescription className="text-green-800">✅ Bénéficiaire ajouté avec succès.</AlertDescription>
+          <AlertDescription className="text-green-800">✅ Bénéficiaire créé. Vérification en cours avant validation.</AlertDescription>
         </Alert>
       )}
+
+      <Alert className="border-blue-200 bg-blue-50">
+        <AlertCircle className="h-4 w-4 text-blue-600" />
+        <AlertDescription className="text-blue-800">
+          Les nouveaux bénéficiaires doivent être vérifiés puis validés par nos équipes avant d'être disponibles pour vos virements.
+        </AlertDescription>
+      </Alert>
 
       {addState?.error && (
         <Alert variant="destructive">
@@ -742,6 +813,7 @@ export default function BeneficiariesPage() {
                 <SelectItem value="all">Tous les bénéficiaires</SelectItem>
                 <SelectItem value="BNG-CONFRERE">Confrère(Guinée)</SelectItem>
                 <SelectItem value="favorites">Favoris</SelectItem>
+                <SelectItem value="pending">En validation</SelectItem>
                 <SelectItem value="inactive">Inactifs</SelectItem>
                 <SelectItem value="BNG-BNG">Interne</SelectItem>
                 <SelectItem value="BNG-INTERNATIONAL">International</SelectItem>
@@ -839,11 +911,17 @@ export default function BeneficiariesPage() {
                         <h3 className="font-semibold text-gray-900">{beneficiary.name}</h3>
                         {beneficiary.favorite && <Star className="w-4 h-4 text-yellow-500 fill-current" />}
                         {getTypeBadge(beneficiary.type)}
+                        {getWorkflowBadge(beneficiary.workflowStatus)}
                       </div>
 
                       <div className="text-sm text-gray-600 space-y-1">
                         <p className="font-mono">{beneficiary.account}</p>
                         <p className="font-medium">{beneficiary.bank}</p>
+                        {beneficiary.workflowStatus !== WORKFLOW_STATUS.AVAILABLE && (
+                          <p className="text-xs text-amber-600">
+                            Statut workflow : {WORKFLOW_LABELS[beneficiary.workflowStatus] || beneficiary.workflowStatus}
+                          </p>
+                        )}
                         {beneficiary.country && <p className="text-xs text-gray-500">{beneficiary.country}</p>}
                       </div>
                     </div>
@@ -856,7 +934,7 @@ export default function BeneficiariesPage() {
                   </div>
 
                   <div className="flex items-center space-x-2">
-                    {beneficiary.status === 0 && (
+                    {beneficiary.status === 0 && beneficiary.workflowStatus === WORKFLOW_STATUS.AVAILABLE && (
                       <Button variant="ghost" size="sm" onClick={() => toggleFavorite(beneficiary.id)}>
                         {beneficiary.favorite ? (
                           <Star className="w-4 h-4 text-yellow-500 fill-current" />
@@ -879,10 +957,12 @@ export default function BeneficiariesPage() {
                               <Edit className="w-4 h-4 mr-2" />
                               Modifier
                             </DropdownMenuItem>
-                            <DropdownMenuItem>
-                              <Users className="w-4 h-4 mr-2" />
-                              Faire un virement
-                            </DropdownMenuItem>
+                              <DropdownMenuItem disabled={beneficiary.workflowStatus !== WORKFLOW_STATUS.AVAILABLE}>
+                                <Users className="w-4 h-4 mr-2" />
+                                {beneficiary.workflowStatus === WORKFLOW_STATUS.AVAILABLE
+                                  ? "Faire un virement"
+                                  : "En attente de disponibilité"}
+                              </DropdownMenuItem>
                             <DropdownMenuItem
                               className="text-orange-600"
                               onClick={() => handleDeactivateBeneficiary(beneficiary.id)}

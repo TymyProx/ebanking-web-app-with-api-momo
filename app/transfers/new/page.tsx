@@ -25,6 +25,7 @@ interface Beneficiary {
   account: string
   bank: string
   type: "BNG-BNG" | "BNG-CONFRERE" | "International"
+  workflowStatus?: string
 }
 
 interface Account {
@@ -283,12 +284,17 @@ export default function NewTransferPage() {
               account: apiBeneficiary.accountNumber || "",
               bank: apiBeneficiary.bankName || "",
               type: apiBeneficiary.beneficiaryType || "BNG-BNG",
+              workflowStatus: apiBeneficiary.workflowStatus || "disponible",
             }) as Beneficiary,
         )
 
         const activeBeneficiaries = adaptedBeneficiaries.filter((beneficiary: any) => {
           const originalBeneficiary = result.find((api: any) => api.id === beneficiary.id)
-          return originalBeneficiary && String(originalBeneficiary.status) === "0"
+          return (
+            originalBeneficiary &&
+            String(originalBeneficiary.status) === "0" &&
+            (originalBeneficiary.workflowStatus || "disponible") === "disponible"
+          )
         })
         setBeneficiaries(activeBeneficiaries)
       } else {
@@ -311,7 +317,7 @@ export default function NewTransferPage() {
     if (addBeneficiaryState?.success) {
       setBeneficiaryMessage({
         type: "success",
-        text: addBeneficiaryState.message || "Bénéficiaire ajouté avec succès !",
+        text: "Bénéficiaire enregistré. Il sera disponible après vérification et validation.",
       })
       // Recharger la liste des bénéficiaires
       loadBeneficiaries()
