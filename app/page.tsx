@@ -343,7 +343,7 @@ export default function LandingPage() {
       <section className="py-20 md:py-24 bg-gray-100 border-y border-gray-200 text-black">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-12 lg:gap-16">
-            <AnimatedStat value={50000} suffix="+" label="Clients actifs" delay={0} />
+            <AnimatedStat value={5000} suffix="+" label="Clients actifs" delay={0} />
             <AnimatedStat value={99.9} suffix="%" label="Disponibilité" delay={150} />
             <AnimatedStat value={24} suffix="/7" label="Support client" delay={300} />
             <AnimatedStat value={100} suffix="%" label="Sécurisé" delay={450} />

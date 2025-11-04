@@ -33,6 +33,7 @@ export type CardsResponse = {
 export type NewCardRequest = {
   typCard: string
   accountNumber?: string
+  clientId:string
 }
 
 async function getCurrentUserInfo(token: string) {
