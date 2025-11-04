@@ -224,4 +224,3 @@ export function AgenceCard({ agence, onGetDirections }: AgenceCardProps) {
     </Card>
   )
 }
-

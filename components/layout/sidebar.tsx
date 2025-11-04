@@ -23,6 +23,7 @@ import {
   Clock,
   Sparkles,
   AlertCircle,
+  Loader2,
 } from "lucide-react"
 import Image from "next/image"
 import { cn } from "@/lib/utils"
@@ -75,11 +76,11 @@ const navigationData = {
   ],
   accounts: [
     {
-      title: "Mes Comptes",
+      title: "Gérer vos comptes",
       icon: Wallet,
       items: [
         {
-          title: "Soldes",
+          title: "Mes comptes",
           url: "/accounts/balance",
           icon: BarChart3,
         },
@@ -204,7 +205,7 @@ const SidebarGroupLabel = React.forwardRef<HTMLDivElement, React.ComponentProps<
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>): ReactElement {
   const pathname = usePathname()
   const [userData, setUserData] = useState<any>(null)
-  const [hasActiveAccount, setHasActiveAccount] = useState<boolean>(true)
+  const [hasActiveAccount, setHasActiveAccount] = useState<boolean>(false)
   const [isCheckingAccounts, setIsCheckingAccounts] = useState<boolean>(true)
   const { state } = useSidebar()
 
@@ -220,17 +221,13 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>): 
       try {
         setIsCheckingAccounts(true)
         const accounts = await getAccounts()
-        console.log("[v0] Sidebar - Fetched accounts:", accounts)
 
-        // Check if user has at least one account with status "ACTIF"
         const hasActive = accounts.some((account) => account.status === "ACTIF")
-        console.log("[v0] Sidebar - Has active account:", hasActive)
 
         setHasActiveAccount(hasActive)
       } catch (error) {
-        console.error("[v0] Sidebar - Error checking accounts:", error)
-        // On error, assume user has access to avoid blocking them
-        setHasActiveAccount(true)
+        console.error("Error checking accounts:", error)
+        setHasActiveAccount(false)
       } finally {
         setIsCheckingAccounts(false)
       }
@@ -327,31 +324,36 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>): 
       </SidebarHeader>
 
       <SidebarContent>
-        {!isCheckingAccounts && !hasActiveAccount && (
-          <div className="px-3 py-2">
-            <Alert className="border-amber-500/50 bg-amber-50 dark:bg-amber-950/20">
-              <AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-500" />
-              <AlertDescription className="text-xs text-amber-800 dark:text-amber-300">
-                Ouvrez un compte pour accéder à toutes les fonctionnalités
-              </AlertDescription>
-            </Alert>
+        {isCheckingAccounts ? (
+          <div className="flex flex-col items-center justify-center py-8 space-y-3">
+            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            <p className="text-sm text-muted-foreground">Chargement...</p>
           </div>
-        )}
-
-        {!isCheckingAccounts && !hasActiveAccount ? (
+        ) : !hasActiveAccount ? (
           <>
-            {/* Comptes - Always visible */}
+            <div className="px-3 py-2">
+              <Alert className="border-amber-500/50 bg-amber-50 dark:bg-amber-950/20">
+                <AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-500" />
+                <AlertDescription className="text-xs text-amber-800 dark:text-amber-300">
+                  Ouvrez un compte pour accéder à toutes les fonctionnalités
+                </AlertDescription>
+              </Alert>
+            </div>
+
             <SidebarGroup>
               <SidebarGroupLabel asChild>
                 <div>Comptes</div>
               </SidebarGroupLabel>
               <SidebarGroupContent>
                 <SidebarMenu>
-                  {navigationData.accounts.map((item) => (
-                    <SidebarMenuItem key={item.title}>
-                      <MenuItemWithSubmenu item={item} />
-                    </SidebarMenuItem>
-                  ))}
+                  <SidebarMenuItem>
+                    <SidebarMenuButton asChild isActive={pathname === "/accounts/balance"}>
+                      <Link href="/accounts/balance">
+                        <BarChart3 />
+                        <span>Mes comptes</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
                 </SidebarMenu>
               </SidebarGroupContent>
             </SidebarGroup>

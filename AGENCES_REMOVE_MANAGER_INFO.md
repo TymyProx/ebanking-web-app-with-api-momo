@@ -9,7 +9,7 @@ Retirer toutes les informations relatives au chef d'agence (responsable) des car
 ### 1. **Interface TypeScript** - `/hooks/use-agences.ts`
 
 **Avant ❌**
-```typescript
+\`\`\`typescript
 export interface Agence {
   id: string
   agenceName: string
@@ -21,10 +21,10 @@ export interface Agence {
   services?: string[]
   // ...
 }
-```
+\`\`\`
 
 **Après ✅**
-```typescript
+\`\`\`typescript
 export interface Agence {
   id: string
   agenceName: string
@@ -34,27 +34,27 @@ export interface Agence {
   services?: string[]            // ← Les champs manager retirés
   // ...
 }
-```
+\`\`\`
 
 ### 2. **Composant Card** - `/components/agence-card.tsx`
 
 #### Import nettoyé
 
 **Avant ❌**
-```typescript
+\`\`\`typescript
 import { MapPin, Phone, Clock, Navigation, Mail, Users } from "lucide-react"
-```
+\`\`\`
 
 **Après ✅**
-```typescript
+\`\`\`typescript
 import { MapPin, Phone, Clock, Navigation, Mail } from "lucide-react"
-```
+\`\`\`
 *L'icône `Users` n'est plus nécessaire*
 
 #### Affichage retiré
 
 **Avant ❌**
-```tsx
+\`\`\`tsx
 {agence.telephone && (
   <div className="flex items-center text-sm text-muted-foreground">
     <Phone className="w-4 h-4 mr-2" />
@@ -73,10 +73,10 @@ import { MapPin, Phone, Clock, Navigation, Mail } from "lucide-react"
     <span>Responsable: {agence.branchManagerName}</span>
   </div>
 )}
-```
+\`\`\`
 
 **Après ✅**
-```tsx
+\`\`\`tsx
 {agence.telephone && (
   <div className="flex items-center text-sm text-muted-foreground">
     <Phone className="w-4 h-4 mr-2" />
@@ -90,14 +90,14 @@ import { MapPin, Phone, Clock, Navigation, Mail } from "lucide-react"
   </div>
 )}
 // Section chef d'agence complètement retirée ✅
-```
+\`\`\`
 
 ### 3. **Données de backup** - `/public/data/agences-backup.json`
 
 Toutes les entrées `branchManagerName` et `branchManagerPhone` ont été retirées des 10 agences du fichier JSON.
 
 **Avant ❌**
-```json
+\`\`\`json
 {
   "id": "agence-001",
   "agenceName": "Agence Kaloum - Siège",
@@ -107,10 +107,10 @@ Toutes les entrées `branchManagerName` et `branchManagerPhone` ont été retir�
   "branchManagerPhone": "+224 628 123 456",   // ← RETIRÉ
   "services": [...]
 }
-```
+\`\`\`
 
 **Après ✅**
-```json
+\`\`\`json
 {
   "id": "agence-001",
   "agenceName": "Agence Kaloum - Siège",
@@ -118,7 +118,7 @@ Toutes les entrées `branchManagerName` et `branchManagerPhone` ont été retir�
   "email": "kaloum@bng.gn",
   "services": [...]                            // ← Champs manager retirés
 }
-```
+\`\`\`
 
 ### 4. **Composant Map** - `/components/agence-map.tsx`
 
@@ -130,7 +130,7 @@ Ce composant n'affichait déjà pas les informations du chef d'agence dans les p
 
 ### Avant ❌
 
-```
+\`\`\`
 ┌──────────────────────────────────┐
 │ Agence Kaloum - Siège            │
 │ 📍 Conakry, Guinée              │
@@ -144,11 +144,11 @@ Ce composant n'affichait déjà pas les informations du chef d'agence dans les p
 │ ⏰ Horaires d'ouverture         │
 │ ...                              │
 └──────────────────────────────────┘
-```
+\`\`\`
 
 ### Après ✅
 
-```
+\`\`\`
 ┌──────────────────────────────────┐
 │ Agence Kaloum - Siège            │
 │ 📍 Conakry, Guinée              │
@@ -161,7 +161,7 @@ Ce composant n'affichait déjà pas les informations du chef d'agence dans les p
 │ ⏰ Horaires d'ouverture         │
 │ ...                              │
 └──────────────────────────────────┘
-```
+\`\`\`
 
 ## 📦 Fichiers modifiés
 
@@ -234,10 +234,10 @@ Aucune action supplémentaire requise :
 
 Le changement sera effectif dès le prochain build de l'application e-Portal.
 
-```bash
+\`\`\`bash
 cd /Users/gib/Documents/project/ebanking-web-app-with-api-momo
 npm run build
-```
+\`\`\`
 
 ---
 
@@ -245,4 +245,3 @@ npm run build
 **Date:** 3 novembre 2025  
 **Status:** ✅ Terminé  
 **Impact:** Faible (amélioration de la confidentialité)
-

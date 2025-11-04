@@ -25,20 +25,20 @@ Le nouveau template RIB a été redesigné en s'inspirant du modèle réel de Cr
 
 ## 🎨 Palette de Couleurs BNG
 
-```
+\`\`\`
 Bleu BNG Foncé:      #003366  (RGB: 0, 51, 102)    ← Titres et séparations
 Bleu Clair:          #DCE6F0  (RGB: 220, 230, 240) ← Fond encadré info
 Noir Pur:            #000000  (RGB: 0, 0, 0)       ← Texte principal
 Gris Bordure:        #646464  (RGB: 100, 100, 100) ← Lignes
 Blanc:               #FFFFFF                        ← Fond
-```
+\`\`\`
 
 ---
 
 ## 📐 Structure du Document
 
 ### En-Tête
-```
+\`\`\`
 ┌────────────────────────────────────────────────────────┐
 │ [Ligne bleu mince - 3mm]                              │
 │                                                        │
@@ -46,18 +46,18 @@ Blanc:               #FFFFFF                        ← Fond
 │ RELEVÉ D'IDENTITÉ BANCAIRE                            │
 │ ────────────────────────────────────────────────────  │
 └────────────────────────────────────────────────────────┘
-```
+\`\`\`
 
 ### Section 1: Identifiant International
-```
+\`\`\`
 Identifiant international de compte bancaire
 
 IBAN (International Bank Account Number)
 GN82 BNG 001 0001234567890      |    BIC: BNGNGNCX
-```
+\`\`\`
 
 ### Section 2: Domiciliation
-```
+\`\`\`
 Domiciliation
 
 Code Banque: BNG
@@ -65,32 +65,32 @@ Code Agence: 001
 Agence: Agence Kaloum
 Banque Nationale de Guinée
 CONAKRY - RÉPUBLIQUE DE GUINÉE
-```
+\`\`\`
 
 ### Section 3: Numéro de Compte
-```
+\`\`\`
 Numéro de compte
 
 0001-234567-89                   |    RIB: BNG 001 0001234567890
-```
+\`\`\`
 
 ### Section 4: Titulaire
-```
+\`\`\`
 Titulaire du compte (Account Owner)
 
 Jean DUPONT
-```
+\`\`\`
 
 ### Section 5: Informations du Compte
-```
+\`\`\`
 Informations du compte
 
 Type de compte: Courant    |    Devise: GNF
 Solde: 2 500 000 GNF     |    Statut: Actif
-```
+\`\`\`
 
 ### Encadré Important
-```
+\`\`\`
 ┌─────────────────────────────────────────────────┐
 │ IMPORTANT - À CONSERVER PRÉCIEUSEMENT          │
 │                                                 │
@@ -98,7 +98,7 @@ Solde: 2 500 000 GNF     |    Statut: Actif
 │ officiel nécessaire pour recevoir des virements│
 │ ...                                             │
 └─────────────────────────────────────────────────┘
-```
+\`\`\`
 
 ---
 
@@ -177,19 +177,19 @@ Solde: 2 500 000 GNF     |    Statut: Actif
 ## 📋 Sections Détaillées
 
 ### 1️⃣ Identifiant International (28mm)
-```
+\`\`\`
 Identifiant international de compte bancaire
 │
 IBAN (International Bank Account Number)
 GN82 BNG 001 0001234567890
                                   BIC (Bank Identifier Code)
                                   BNGNGNCX
-```
+\`\`\`
 **Pourquoi?** Pour les virements internationaux  
 **Placement**: En-tête pour visibilité maximale
 
 ### 2️⃣ Domiciliation (30mm)
-```
+\`\`\`
 Domiciliation
 │
 Code Banque: BNG
@@ -197,41 +197,41 @@ Code Agence: 001
 Agence: Agence Kaloum
 Banque Nationale de Guinée
 CONAKRY - RÉPUBLIQUE DE GUINÉE
-```
+\`\`\`
 **Pourquoi?** Localiser l'agence et identifier la banque  
 **Placement**: Après IBAN
 
 ### 3️⃣ Numéro de Compte (20mm)
-```
+\`\`\`
 Numéro de compte
 │
 0001-234567-89                    RIB (Relevé d'Identité Bancaire)
                                   BNG 001 0001234567890
-```
+\`\`\`
 **Pourquoi?** Identifier le compte spécifique  
 **Placement**: Au centre du document
 
 ### 4️⃣ Titulaire (15mm)
-```
+\`\`\`
 Titulaire du compte (Account Owner)
 │
 Jean DUPONT
-```
+\`\`\`
 **Pourquoi?** Vérifier que c'est le bon titulaire  
 **Placement**: Avec ligne de séparation pour emphasis
 
 ### 5️⃣ Informations du Compte (20mm)
-```
+\`\`\`
 Informations du compte
 │
 Type de compte: Courant    │    Devise: GNF
 Solde: 2 500 000 GNF      │    Statut: Actif
-```
+\`\`\`
 **Pourquoi?** Détails supplémentaires utiles  
 **Placement**: Vers la fin
 
 ### 6️⃣ Encadré Important (33mm)
-```
+\`\`\`
 ╔═════════════════════════════════════════════╗
 ║ IMPORTANT - À CONSERVER PRÉCIEUSEMENT      ║
 ║                                             ║
@@ -242,7 +242,7 @@ Solde: 2 500 000 GNF      │    Statut: Actif
 ║ les prélèvements automatiques et la        ║
 ║ domiciliation de votre salaire...          ║
 ╚═════════════════════════════════════════════╝
-```
+\`\`\`
 **Pourquoi?** Information légale importante  
 **Placement**: Avant le pied de page
 
@@ -251,7 +251,7 @@ Solde: 2 500 000 GNF      │    Statut: Actif
 ## 🎨 Couleurs Détaillées
 
 ### Bleu BNG Foncé
-```
+\`\`\`
 RGB: 0, 51, 102
 Hex: #003366
 Utilisé pour:
@@ -260,19 +260,19 @@ Utilisé pour:
   • Titres des sections
   • Ligne de séparation principale
   • Bordure de l'encadré
-```
+\`\`\`
 
 ### Bleu Clair
-```
+\`\`\`
 RGB: 220, 230, 240
 Hex: #DCE6F0
 Utilisé pour:
   • Fond de l'encadré important
   • Crée un contraste subtil
-```
+\`\`\`
 
 ### Noir Pur
-```
+\`\`\`
 RGB: 0, 0, 0
 Hex: #000000
 Utilisé pour:
@@ -280,17 +280,17 @@ Utilisé pour:
   • Valeurs des champs
   • Texte des sections
   • Garantit excellente lisibilité
-```
+\`\`\`
 
 ### Gris Bordure
-```
+\`\`\`
 RGB: 100, 100, 100
 Hex: #646464
 Utilisé pour:
   • Lignes de séparation
   • Bordures légères
   • Pied de page
-```
+\`\`\`
 
 ---
 
@@ -312,32 +312,32 @@ Utilisé pour:
 ## 📝 Texte Standard Utilisé
 
 ### En-tête
-```
+\`\`\`
 BANQUE NATIONALE DE GUINÉE
 RELEVÉ D'IDENTITÉ BANCAIRE
-```
+\`\`\`
 
 ### Sections
-```
+\`\`\`
 Identifiant international de compte bancaire
 Domiciliation
 Numéro de compte
 Titulaire du compte (Account Owner)
 Informations du compte
-```
+\`\`\`
 
 ### Labels
-```
+\`\`\`
 IBAN (International Bank Account Number)
 BIC (Bank Identifier Code)
 Code Banque, Code Agence, Agence
 Numéro de compte
 RIB (Relevé d'Identité Bancaire)
 Type de compte, Devise, Solde, Statut
-```
+\`\`\`
 
 ### Encadré
-```
+\`\`\`
 IMPORTANT - À CONSERVER PRÉCIEUSEMENT
 
 Ce relevé d'identité bancaire est un document officiel nécessaire pour recevoir
@@ -345,7 +345,7 @@ des virements. Il est valable pour les virements nationaux et internationaux,
 les prélèvements automatiques et la domiciliation de votre salaire.
 Ne le communiquez qu'à des organismes de confiance.
 Conservez-le précieusement. Toute utilisation frauduleuse est pénalement sanctionnée.
-```
+\`\`\`
 
 ---
 
@@ -370,14 +370,14 @@ Conservez-le précieusement. Toute utilisation frauduleuse est pénalement sanct
 
 ## 📄 Fichiers Modifiés
 
-```
+\`\`\`
 app/services/rib/page.tsx
   └─ Fonction generatePDF() entièrement redesignée
   └─ Template inspiré de Crédit Mutuel
   └─ Couleurs BNG (#003366)
   └─ Texte 100% noir
   └─ 6 sections logiques
-```
+\`\`\`
 
 ---
 
