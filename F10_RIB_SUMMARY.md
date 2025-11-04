@@ -23,24 +23,24 @@ La Feature F-10 a été complètement implémentée. Elle permet aux utilisateur
 ## 🗂️ Fichiers Créés/Modifiés
 
 ### Fichiers Créés:
-```
+\`\`\`
 /app/services/rib/
 ├── actions.ts                 (Nouveau) - Server actions pour API
 ├── RIB_IMPLEMENTATION.md      (Nouveau) - Documentation technique
 └── RIB_TESTING.md             (Nouveau) - Guide de test complet
-```
+\`\`\`
 
 ### Fichiers Modifiés:
-```
+\`\`\`
 /app/services/rib/
 └── page.tsx                   (Modifié) - Page client améliorée avec vraies données
-```
+\`\`\`
 
 ### Fichiers Documentaires:
-```
+\`\`\`
 /ebanking-web-app-with-api-momo/
 └── F10_RIB_SUMMARY.md         (Nouveau) - Ce fichier
-```
+\`\`\`
 
 ---
 
@@ -49,25 +49,25 @@ La Feature F-10 a été complètement implémentée. Elle permet aux utilisateur
 ### Server Actions (`actions.ts`)
 
 #### 1. `getUserProfile()`
-```typescript
+\`\`\`typescript
 export async function getUserProfile(): Promise<UserProfile | null>
-```
+\`\`\`
 - **Endpoint**: `GET /api/auth/me`
 - **Retourne**: Profil utilisateur (firstName, lastName, email, phoneNumber)
 - **Authentification**: Bearer token depuis les cookies
 
 #### 2. `getAccountForRib(accountId: string)`
-```typescript
+\`\`\`typescript
 export async function getAccountForRib(accountId: string): Promise<RibInfo | null>
-```
+\`\`\`
 - **Endpoint**: `GET /api/tenant/{TENANT_ID}/compte/{accountId}`
 - **Retourne**: Infos complètes du compte (codeBanque, codeAgence, cleRib, etc.)
 - **Authentification**: Bearer token depuis les cookies
 
 #### 3. `generateRibData(account, userProfile)`
-```typescript
+\`\`\`typescript
 export function generateRibData(account: RibInfo, userProfile: UserProfile | null)
-```
+\`\`\`
 - **Fonction Pure**: Formate les données en structure RIB
 - **Génère**: IBAN, RIB brut, informations formatées
 - **Utilisée**: Dans le composant client pour enrichissement des données
@@ -91,7 +91,7 @@ export function generateRibData(account: RibInfo, userProfile: UserProfile | nul
 
 ## 📊 Flux de Données
 
-```
+\`\`\`
 ┌─────────────────────────────────┐
 │   User Access: /services/rib    │
 └────────────┬────────────────────┘
@@ -131,7 +131,7 @@ export function generateRibData(account: RibInfo, userProfile: UserProfile | nul
           ├─▶ Télécharger PDF ─▶ generatePDF()
           ├─▶ Copier IBAN ────▶ clipboard API
           └─▶ Imprimer ───────▶ print() navigateur
-```
+\`\`\`
 
 ---
 
@@ -140,26 +140,26 @@ export function generateRibData(account: RibInfo, userProfile: UserProfile | nul
 ### Sections Principales
 
 #### 1. En-tête
-```
+\`\`\`
 Relevé d'Identité Bancaire (RIB)
 Consultez et téléchargez votre RIB
-```
+\`\`\`
 
 #### 2. Alerte Pré-sélection (si applicable)
-```
+\`\`\`
 ✓ Compte pré-sélectionné : [Nom] ([Numéro])
-```
+\`\`\`
 
 #### 3. Sélection du Compte
-```
+\`\`\`
 Dropdown avec:
 - Icon du type de compte
 - Nom et numéro
 - Badge "Suggéré" si pré-sélectionné
-```
+\`\`\`
 
 #### 4. Informations Bancaires (Affichage Principal)
-```
+\`\`\`
 ┌─ Titulaire du compte ────▶ [Real User Name]
 ├─ Numéro de compte ───────▶ [Real Account Number]
 ├─ Code banque ────────────▶ [codeBanque from API]
@@ -167,7 +167,7 @@ Dropdown avec:
 ├─ RIB ────────────────────▶ Formatted RIB
 ├─ IBAN ───────────────────▶ [Generated IBAN]
 └─ Code SWIFT ─────────────▶ BNGNGNCX
-```
+\`\`\`
 
 #### 5. Boutons d'Action
 - 📥 Télécharger PDF
@@ -232,14 +232,14 @@ Si la génération PDF échoue:
 - [x] Test 12: Sans profil utilisateur
 
 ### Données de Test SQL:
-```sql
+\`\`\`sql
 -- Voir RIB_TESTING.md pour le script complet
 INSERT INTO users (id, firstName, lastName, email) 
 VALUES ('user-1', 'Jean', 'DUPONT', 'jean@test.com');
 
 INSERT INTO comptes (id, accountId, accountNumber, codeBanque, codeAgence, cleRib, clientId) 
 VALUES ('acc-1', 'ACC001', '0001234567890', 'BNG', '001', '12', 'user-1');
-```
+\`\`\`
 
 ---
 
@@ -252,15 +252,15 @@ VALUES ('acc-1', 'ACC001', '0001234567890', 'BNG', '001', '12', 'user-1');
 - ✅ jsPDF installé (package.json)
 
 ### Installation
-```bash
+\`\`\`bash
 # Les dépendances sont déjà dans package.json
 npm install  # ou pnpm install
 
 # Aucune configuration supplémentaire requise
-```
+\`\`\`
 
 ### Vérification
-```bash
+\`\`\`bash
 # Accéder à la page
 http://localhost:3000/services/rib
 
@@ -268,7 +268,7 @@ http://localhost:3000/services/rib
 [RIB] Profil utilisateur récupéré: [email]
 [RIB] Comptes récupérés: [nombre]
 [RIB] Comptes actifs avec données complètes: [nombre]
-```
+\`\`\`
 
 ---
 
@@ -323,14 +323,14 @@ Pour plus de détails:
 ### En cas de Problème
 
 **Logs de Diagnostic**:
-```javascript
+\`\`\`javascript
 // Console > Onglet Network
 // Chercher les requêtes: /auth/me et /compte
 // Vérifier status: 200 OK
 
 // Console > Onglet Console  
 // Chercher "[RIB]" pour les logs de la feature
-```
+\`\`\`
 
 **Erreur Commune**: "Aucun compte disponible"
 - ✓ Vérifier que l'utilisateur a des comptes

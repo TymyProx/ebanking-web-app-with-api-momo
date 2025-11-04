@@ -16,7 +16,7 @@ La page de localisation des agences est une interface complète permettant aux c
 - **Filtres multiples:** Recherche textuelle, filtres par ville, pays et statut
 
 #### API
-```typescript
+\`\`\`typescript
 const { 
   agences,           // Liste paginée des agences filtrées
   loading,           // État de chargement
@@ -34,14 +34,14 @@ const {
   page: 1,
   limit: 25
 })
-```
+\`\`\`
 
 #### Fonction utilitaire: `getAgenceStatus`
 Retourne le statut d'une agence avec des informations visuelles:
-```typescript
+\`\`\`typescript
 const status = getAgenceStatus(agence)
 // Retourne: { status: "open" | "closed" | "exceptional" | "holiday", label: string, color: string }
-```
+\`\`\`
 
 ### 2. Composant `AgenceCard`
 **Fichier:** `/components/agence-card.tsx`
@@ -55,12 +55,12 @@ const status = getAgenceStatus(agence)
 - **Accessibilité AA:** Contrastes conformes, focus visible, ARIA labels
 
 #### Props
-```typescript
+\`\`\`typescript
 interface AgenceCardProps {
   agence: Agence
   onGetDirections?: (agence: Agence) => void
 }
-```
+\`\`\`
 
 #### Badges spéciaux
 - **Fermeture exceptionnelle:** Badge rouge avec la raison
@@ -80,7 +80,7 @@ interface AgenceCardProps {
 - **Chargement paresseux** pour optimiser les performances
 
 #### Props
-```typescript
+\`\`\`typescript
 interface AgenceMapProps {
   agences: Agence[]
   selectedAgence?: Agence | null
@@ -88,7 +88,7 @@ interface AgenceMapProps {
   onGetDirections?: (agence: Agence) => void
   className?: string
 }
-```
+\`\`\`
 
 #### Légende de la carte
 - 🟢 Vert: Agence ouverte
@@ -150,7 +150,7 @@ interface AgenceMapProps {
 **Fichier:** `/public/data/agences-backup.json`
 
 Structure:
-```json
+\`\`\`json
 {
   "agences": [
     {
@@ -180,25 +180,25 @@ Structure:
     }
   ]
 }
-```
+\`\`\`
 
 Ce fichier est automatiquement utilisé si l'API principale est indisponible.
 
 ## API Backend
 
 ### Endpoint principal
-```
+\`\`\`
 GET /api/portal/{tenantId}/agences
-```
+\`\`\`
 
 Réponse attendue:
-```json
+\`\`\`json
 {
   "rows": [
     { /* agence object */ }
   ]
 }
-```
+\`\`\`
 
 ## Variables d'environnement
 
@@ -335,4 +335,3 @@ Les horaires sont définis par jour de la semaine. Pour modifier:
 ## Support
 
 Pour toute question sur l'implémentation, contacter l'équipe technique BNG.
-

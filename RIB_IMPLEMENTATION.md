@@ -45,7 +45,7 @@ Page client pour afficher et télécharger le RIB :
 
 ### Flux de Données
 
-```
+\`\`\`
 API Backend
     ↓
 [getUserProfile()] → Récupère firstName, lastName, email, etc.
@@ -55,12 +55,12 @@ API Backend
 [generateRibData()] → Formate les données en structure RIB
     ↓
 Page RIB → Affiche et permet téléchargement
-```
+\`\`\`
 
 ## Champs API Utilisés
 
 ### De `getUserProfile()` (endpoint: `/auth/me`)
-```typescript
+\`\`\`typescript
 {
   id: string
   firstName?: string
@@ -69,10 +69,10 @@ Page RIB → Affiche et permet téléchargement
   email: string
   phoneNumber?: string
 }
-```
+\`\`\`
 
 ### De `getAccountForRib()` (endpoint: `/tenant/{TENANT_ID}/compte/{accountId}`)
-```typescript
+\`\`\`typescript
 {
   id: string
   accountId: string
@@ -88,18 +88,18 @@ Page RIB → Affiche et permet téléchargement
   cleRib?: string
   clientId: string
 }
-```
+\`\`\`
 
 ## Exemples
 
 ### Affichage des Informations RIB
-```
+\`\`\`
 TITULAIRE : DIALLO Mamadou
 IBAN : GN82 BNG 001 0001234567890
 RIB : BNG 001 0001234567890[CLÉRIB]
 SWIFT : BNGNGNCX
 Agence : Agence Kaloum
-```
+\`\`\`
 
 ### Téléchargement du PDF
 - Clic sur le bouton "Télécharger PDF"

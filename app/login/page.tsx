@@ -12,6 +12,7 @@ import { Eye, EyeOff, User } from "lucide-react"
 import AuthService from "@/lib/auth-service"
 import { config } from "@/lib/config"
 import { storeAuthToken } from "./actions"
+import { getAccounts } from "@/app/accounts/actions"
 
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false)
@@ -44,7 +45,19 @@ export default function LoginPage() {
           localStorage.setItem("rememberMe", "true")
         }
 
-        router.push("/dashboard")
+        try {
+          const accounts = await getAccounts()
+          const hasActiveAccount = accounts.some((account) => account.status === "ACTIF")
+
+          if (hasActiveAccount) {
+            router.push("/dashboard")
+          } else {
+            router.push("/accounts/balance")
+          }
+        } catch (error) {
+          console.error("Error checking accounts:", error)
+          router.push("/accounts/balance")
+        }
       }
     } catch (err: any) {
       setError(err.message)

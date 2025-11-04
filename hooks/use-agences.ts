@@ -293,4 +293,3 @@ export function getAgenceStatus(agence: Agence): {
     color: isOpen ? "green" : "gray",
   }
 }
-
