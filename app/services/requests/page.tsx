@@ -195,7 +195,7 @@ export default function ServiceRequestsPage() {
                 : item.stepflow === 2
                   ? "En cours de traitement"
                   : item.stepflow === 3
-                    ? "Disponible à l’agence"
+                    ? "Disponible à l agency"
                     : item.stepflow === 4
                       ? "Disponible"
                       : item.stepflow === 5
@@ -248,6 +248,13 @@ export default function ServiceRequestsPage() {
         console.log("[v0] Aucune donnée de crédit trouvée ou structure incorrecte")
       }
 
+      allTransformedRequests.sort((a, b) => {
+        const dateA = new Date(a.submittedAt).getTime()
+        const dateB = new Date(b.submittedAt).getTime()
+        return dateB - dateA // Ordre décroissant (plus récent en premier)
+      })
+      console.log("[v0] Demandes triées par date (plus récent en premier)")
+
       console.log("[v0] Toutes les demandes transformées:", allTransformedRequests)
       console.log("[v0] Nombre total de demandes:", allTransformedRequests.length)
 
@@ -299,7 +306,7 @@ export default function ServiceRequestsPage() {
     setSelectedRequestDetails(null)
   }
 
-// Affichage des modals
+  // Affichage des modals
 
   const formatRequestDetails = (details: any, type: string) => {
     if (!details) return []
@@ -944,243 +951,242 @@ export default function ServiceRequestsPage() {
 
       // DEMANDE CREDIT PAGE
       case "credit":
-  return (
-    <form onSubmit={handleCreditSubmit} className="space-y-4">
-      {/* Sélectionner un compte et Numéro de compte sur la même ligne sans décalage */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
-        <div className="space-y-2">
-          <Label htmlFor="intitulecompte">Sélectionner un compte *</Label>
-          <Select
-            value={formData.accountId || ""}
-            onValueChange={(value) => {
-              const selectedAccount = accounts.find((acc) => acc.id === value)
-              if (selectedAccount) {
-                handleInputChange("accountId", selectedAccount.id)
-                handleInputChange("intitulecompte", selectedAccount.name)
-                handleInputChange("numcompte", selectedAccount.number)
-              }
-            }}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder={isLoadingAccounts ? "Chargement..." : "Choisir un compte"} />
-            </SelectTrigger>
-            <SelectContent>
-              {isLoadingAccounts ? (
-                <SelectItem value="loading" disabled>
-                  Chargement des comptes...
-                </SelectItem>
-              ) : accounts.length === 0 ? (
-                <SelectItem value="empty" disabled>
-                  Aucun compte courant trouvé
-                </SelectItem>
-              ) : (
-                accounts.map((account) => (
-                  <SelectItem key={account.id} value={account.id}>
-                    <div className="flex flex-col">
-                      <span className="font-medium">{account.name}</span>
-                      <span className="text-sm text-gray-500">
-                        {account.number} •{" "}
-                        {new Intl.NumberFormat("fr-FR", {
-                          style: "currency",
-                          currency: account.currency === "GNF" ? "GNF" : account.currency,
-                          minimumFractionDigits: account.currency === "GNF" ? 0 : 2,
-                        }).format(account.balance)}
-                      </span>
-                    </div>
-                  </SelectItem>
-                ))
-              )}
-            </SelectContent>
-          </Select>
-        </div>
+        return (
+          <form onSubmit={handleCreditSubmit} className="space-y-4">
+            {/* Sélectionner un compte et Numéro de compte sur la même ligne sans décalage */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
+              <div className="space-y-2">
+                <Label htmlFor="intitulecompte">Sélectionner un compte *</Label>
+                <Select
+                  value={formData.accountId || ""}
+                  onValueChange={(value) => {
+                    const selectedAccount = accounts.find((acc) => acc.id === value)
+                    if (selectedAccount) {
+                      handleInputChange("accountId", selectedAccount.id)
+                      handleInputChange("intitulecompte", selectedAccount.name)
+                      handleInputChange("numcompte", selectedAccount.number)
+                    }
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder={isLoadingAccounts ? "Chargement..." : "Choisir un compte"} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {isLoadingAccounts ? (
+                      <SelectItem value="loading" disabled>
+                        Chargement des comptes...
+                      </SelectItem>
+                    ) : accounts.length === 0 ? (
+                      <SelectItem value="empty" disabled>
+                        Aucun compte courant trouvé
+                      </SelectItem>
+                    ) : (
+                      accounts.map((account) => (
+                        <SelectItem key={account.id} value={account.id}>
+                          <div className="flex flex-col">
+                            <span className="font-medium">{account.name}</span>
+                            <span className="text-sm text-gray-500">
+                              {account.number} •{" "}
+                              {new Intl.NumberFormat("fr-FR", {
+                                style: "currency",
+                                currency: account.currency === "GNF" ? "GNF" : account.currency,
+                                minimumFractionDigits: account.currency === "GNF" ? 0 : 2,
+                              }).format(account.balance)}
+                            </span>
+                          </div>
+                        </SelectItem>
+                      ))
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
 
-        <div>
-          <Label htmlFor="numcompte_credit">Numéro de compte *</Label>
-          <Input
-            id="numcompte_credit"
-            name="numcompte_credit"
-            type="text"
-            value={formData.numcompte || ""}
-            onChange={(e) => handleInputChange("numcompte", e.target.value)}
-            placeholder="Ex: 000123456789"
-            required
-            readOnly
-            className="bg-gray-50"
-          />
-        </div>
-      </div>
+              <div>
+                <Label htmlFor="numcompte_credit">Numéro de compte *</Label>
+                <Input
+                  id="numcompte_credit"
+                  name="numcompte_credit"
+                  type="text"
+                  value={formData.numcompte || ""}
+                  onChange={(e) => handleInputChange("numcompte", e.target.value)}
+                  placeholder="Ex: 000123456789"
+                  required
+                  readOnly
+                  className="bg-gray-50"
+                />
+              </div>
+            </div>
 
-      {/* Type de crédit seul sur sa ligne avec largeur réduite */}
-      <div className="max-w-md">
-        <Label htmlFor="credit_type">Type de crédit *</Label>
-        <Select onValueChange={(value) => handleInputChange("credit_type", value)} required>
-          <SelectTrigger>
-            <SelectValue placeholder="Sélectionnez le type de crédit" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="Personnel">Crédit personnel</SelectItem>
-            <SelectItem value="Immobilier">Crédit immobilier</SelectItem>
-            <SelectItem value="Etudiant">Crédit étudiant</SelectItem>
-            <SelectItem value="Automobile">Crédit automobile</SelectItem>
-            <SelectItem value="Autre">Autre</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
+            {/* Type de crédit seul sur sa ligne avec largeur réduite */}
+            <div className="max-w-md">
+              <Label htmlFor="credit_type">Type de crédit *</Label>
+              <Select onValueChange={(value) => handleInputChange("credit_type", value)} required>
+                <SelectTrigger>
+                  <SelectValue placeholder="Sélectionnez le type de crédit" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Personnel">Crédit personnel</SelectItem>
+                  <SelectItem value="Immobilier">Crédit immobilier</SelectItem>
+                  <SelectItem value="Etudiant">Crédit étudiant</SelectItem>
+                  <SelectItem value="Automobile">Crédit automobile</SelectItem>
+                  <SelectItem value="Autre">Autre</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
-      {/* Montant du crédit et Durée (inchangés) */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <Label htmlFor="loan_amount">Montant du crédit (GNF) *</Label>
-          <Input
-            id="loan_amount"
-            type="number"
-            placeholder="Ex: 10000000"
-            value={formData.loan_amount || ""}
-            onChange={(e) => handleInputChange("loan_amount", e.target.value)}
-            required
-          />
-        </div>
-        <div>
-          <Label htmlFor="loan_duration">Durée (mois) *</Label>
-          <Select onValueChange={(value) => handleInputChange("loan_duration", value)} required>
-            <SelectTrigger>
-              <SelectValue placeholder="Durée" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="12">12 mois</SelectItem>
-              <SelectItem value="24">24 mois</SelectItem>
-              <SelectItem value="36">36 mois</SelectItem>
-              <SelectItem value="48">48 mois</SelectItem>
-              <SelectItem value="60">60 mois</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
+            {/* Montant du crédit et Durée (inchangés) */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="loan_amount">Montant du crédit (GNF) *</Label>
+                <Input
+                  id="loan_amount"
+                  type="number"
+                  placeholder="Ex: 10000000"
+                  value={formData.loan_amount || ""}
+                  onChange={(e) => handleInputChange("loan_amount", e.target.value)}
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="loan_duration">Durée (mois) *</Label>
+                <Select onValueChange={(value) => handleInputChange("loan_duration", value)} required>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Durée" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="12">12 mois</SelectItem>
+                    <SelectItem value="24">24 mois</SelectItem>
+                    <SelectItem value="36">36 mois</SelectItem>
+                    <SelectItem value="48">48 mois</SelectItem>
+                    <SelectItem value="60">60 mois</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
 
-      {/* Objet du crédit seul sur sa ligne avec largeur réduite */}
-      <div className="max-w-md">
-        <Label htmlFor="loan_purpose">Objet du crédit *</Label>
-        <Select onValueChange={(value) => handleInputChange("loan_purpose", value)} required>
-          <SelectTrigger>
-            <SelectValue placeholder="Sélectionnez l'objet" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="Consommation">Consommation</SelectItem>
-            <SelectItem value="Équipement">Équipement</SelectItem>
-            <SelectItem value="Rénovation">Rénovation</SelectItem>
-            <SelectItem value="Éducation">Éducation</SelectItem>
-            <SelectItem value="Santé">Santé</SelectItem>
-            <SelectItem value="Autre">Autre</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
+            {/* Objet du crédit seul sur sa ligne avec largeur réduite */}
+            <div className="max-w-md">
+              <Label htmlFor="loan_purpose">Objet du crédit *</Label>
+              <Select onValueChange={(value) => handleInputChange("loan_purpose", value)} required>
+                <SelectTrigger>
+                  <SelectValue placeholder="Sélectionnez l'objet" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Consommation">Consommation</SelectItem>
+                  <SelectItem value="Équipement">Équipement</SelectItem>
+                  <SelectItem value="Rénovation">Rénovation</SelectItem>
+                  <SelectItem value="Éducation">Éducation</SelectItem>
+                  <SelectItem value="Santé">Santé</SelectItem>
+                  <SelectItem value="Autre">Autre</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
-      {/* Revenus mensuels et Type d'emploi (inchangés) */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <Label htmlFor="monthly_income">Revenus mensuels (GNF) *</Label>
-          <Input
-            id="monthly_income"
-            type="number"
-            placeholder="Ex: 2000000"
-            value={formData.monthly_income || ""}
-            onChange={(e) => handleInputChange("monthly_income", e.target.value)}
-            required
-          />
-        </div>
-        <div>
-          <Label htmlFor="employment_type">Type d'emploi *</Label>
-          <Select onValueChange={(value) => handleInputChange("employment_type", value)} required>
-            <SelectTrigger>
-              <SelectValue placeholder="Type d'emploi" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="Salarié">Salarié</SelectItem>
-              <SelectItem value="Fonctionnaire">Fonctionnaire</SelectItem>
-              <SelectItem value="Indépendant">Indépendant</SelectItem>
-              <SelectItem value="Chef dentreprise">Chef d'entreprise</SelectItem>
-              <SelectItem value="Autre">Autre</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
+            {/* Revenus mensuels et Type d'emploi (inchangés) */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="monthly_income">Revenus mensuels (GNF) *</Label>
+                <Input
+                  id="monthly_income"
+                  type="number"
+                  placeholder="Ex: 2000000"
+                  value={formData.monthly_income || ""}
+                  onChange={(e) => handleInputChange("monthly_income", e.target.value)}
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="employment_type">Type d'emploi *</Label>
+                <Select onValueChange={(value) => handleInputChange("employment_type", value)} required>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Type d'emploi" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Salarié">Salarié</SelectItem>
+                    <SelectItem value="Fonctionnaire">Fonctionnaire</SelectItem>
+                    <SelectItem value="Indépendant">Indépendant</SelectItem>
+                    <SelectItem value="Chef dentreprise">Chef d'entreprise</SelectItem>
+                    <SelectItem value="Autre">Autre</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
 
-      {/* Nom du demandeur réduit */}
-      <div className="max-w-md">
-        <Label htmlFor="applicant_name">Nom du demandeur *</Label>
-        <Input
-          id="applicant_name"
-          placeholder="Nom du demandeur"
-          value={formData.applicant_name || ""}
-          onChange={(e) => handleInputChange("applicant_name", e.target.value)}
-          required
-        />
-      </div>
+            {/* Nom du demandeur réduit */}
+            <div className="max-w-md">
+              <Label htmlFor="applicant_name">Nom du demandeur *</Label>
+              <Input
+                id="applicant_name"
+                placeholder="Nom du demandeur"
+                value={formData.applicant_name || ""}
+                onChange={(e) => handleInputChange("applicant_name", e.target.value)}
+                required
+              />
+            </div>
 
-      {/* Contact Information */}
-      <div className="space-y-4">
-        <h4 className="font-medium">Informations de contact</h4>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <Label htmlFor="contact_phone">Téléphone *</Label>
-            <Input
-              id="contact_phone"
-              placeholder="+224 6XX XXX XXX"
-              value={formData.contact_phone || ""}
-              onChange={(e) => handleInputChange("contact_phone", e.target.value)}
-            />
-          </div>
-          <div>
-            <Label htmlFor="contact_email">Email *</Label>
-            <Input
-              id="contact_email"
-              type="email"
-              placeholder="votre@email.com"
-              value={formData.contact_email || ""}
-              onChange={(e) => handleInputChange("contact_email", e.target.value)}
-            />
-          </div>
-        </div>
-      </div>
+            {/* Contact Information */}
+            <div className="space-y-4">
+              <h4 className="font-medium">Informations de contact</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="contact_phone">Téléphone *</Label>
+                  <Input
+                    id="contact_phone"
+                    placeholder="+224 6XX XXX XXX"
+                    value={formData.contact_phone || ""}
+                    onChange={(e) => handleInputChange("contact_phone", e.target.value)}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="contact_email">Email *</Label>
+                  <Input
+                    id="contact_email"
+                    type="email"
+                    placeholder="votre@email.com"
+                    value={formData.contact_email || ""}
+                    onChange={(e) => handleInputChange("contact_email", e.target.value)}
+                  />
+                </div>
+              </div>
+            </div>
 
-      {/* Feedback Messages */}
-      {creditSubmitState?.success && (
-        <Alert className="border-green-200 bg-green-50">
-          <CheckCircle className="h-4 w-4 text-green-600" />
-          <AlertDescription className="text-green-800">
-            ✅ Votre demande de crédit a été envoyée avec succès. Référence: {creditSubmitState.reference}.{" "}
-            {/* Réponse sous {selectedServiceData?.processingTime}. */}
-          </AlertDescription>
-        </Alert>
-      )}
+            {/* Feedback Messages */}
+            {creditSubmitState?.success && (
+              <Alert className="border-green-200 bg-green-50">
+                <CheckCircle className="h-4 w-4 text-green-600" />
+                <AlertDescription className="text-green-800">
+                  ✅ Votre demande de crédit a été envoyée avec succès. Référence: {creditSubmitState.reference}.{" "}
+                  {/* Réponse sous {selectedServiceData?.processingTime}. */}
+                </AlertDescription>
+              </Alert>
+            )}
 
-      {creditSubmitState?.error && (
-        <Alert className="border-red-200 bg-red-50">
-          <AlertCircle className="h-4 w-4 text-red-600" />
-          <AlertDescription className="text-red-800">
-            ❌ Une erreur est survenue: {creditSubmitState.error}. Veuillez réessayer.
-          </AlertDescription>
-        </Alert>
-      )}
+            {creditSubmitState?.error && (
+              <Alert className="border-red-200 bg-red-50">
+                <AlertCircle className="h-4 w-4 text-red-600" />
+                <AlertDescription className="text-red-800">
+                  ❌ Une erreur est survenue: {creditSubmitState.error}. Veuillez réessayer.
+                </AlertDescription>
+              </Alert>
+            )}
 
-      <div className="flex items-start space-x-2">
-        <Checkbox
-          id="credit_terms"
-          checked={formData.terms || false}
-          onCheckedChange={(checked) => handleInputChange("terms", checked)}
-        />
-        <Label htmlFor="credit_terms" className="text-sm">
-          J'accepte les{" "}
-          <a href="#" className="text-blue-600 hover:underline">
-            conditions générales
-          </a>{" "}
-          et autorise le traitement de ma demande
-        </Label>
-      </div>
-    </form>
-  )
+            <div className="flex items-start space-x-2">
+              <Checkbox
+                id="credit_terms"
+                checked={formData.terms || false}
+                onCheckedChange={(checked) => handleInputChange("terms", checked)}
+              />
+              <Label htmlFor="credit_terms" className="text-sm">
+                J'accepte les{" "}
+                <a href="#" className="text-blue-600 hover:underline">
+                  conditions générales
+                </a>{" "}
+                et autorise le traitement de ma demande
+              </Label>
+            </div>
+          </form>
+        )
 
-      
       // E-DEMANDE PAGE
       case "e-demande":
         return (
