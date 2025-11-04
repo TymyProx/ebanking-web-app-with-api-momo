@@ -22,6 +22,7 @@ import {
   BarChart3,
   Clock,
   Sparkles,
+  AlertCircle,
 } from "lucide-react"
 import Image from "next/image"
 import { cn } from "@/lib/utils"
@@ -55,6 +56,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import { LogoutButton } from "@/components/auth/logout-button"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { getAccounts } from "@/app/accounts/actions"
 
 const navigationData = {
   main: [
@@ -110,22 +113,6 @@ const navigationData = {
         },
       ],
     },
-    // {
-    //   title: "Paiements",
-    //   icon: Receipt,
-    //   items: [
-    //     {
-    //       title: "Payer une facture",
-    //       url: "/payments/bills",
-    //       icon: Receipt,
-    //     },
-    //     {
-    //       title: "Paiements groupés",
-    //       url: "/payments/bulk",
-    //       icon: FileText,
-    //     },
-    //   ],
-    // },
     {
       title: "Cartes",
       url: "/cartes",
@@ -148,63 +135,9 @@ const navigationData = {
           url: "/services/rib",
           icon: FileText,
         },
-        // {
-        //   title: "Signature électronique",
-        //   url: "/services/signature",
-        //   icon: Shield,
-        // },
-        // {
-        //   title: "Provision de fonds",
-        //   url: "/services/funds-provision",
-        //   icon: DollarSign,
-        // },
-        // {
-        //   title: "Dépôt de chèque",
-        //   url: "/services/check-deposit",
-        //   icon: Receipt,
-        // },
-        // {
-        //   title: "Réclamations",
-        //   url: "/complaints",
-        //   icon: AlertTriangle,
-        // },
       ],
     },
   ],
-  // investments: [
-  //   {
-  //     title: "Investissements",
-  //     icon: TrendingUp,
-  //     items: [
-  //       {
-  //         title: "Mes investissements",
-  //         url: "/investments",
-  //         icon: TrendingUp,
-  //       },
-  //       {
-  //         title: "Nouveau placement",
-  //         url: "/investments/new",
-  //         icon: TrendingUp,
-  //       },
-  //     ],
-  //   },
-  //   {
-  //     title: "Budget",
-  //     icon: PiggyBank,
-  //     items: [
-  //       {
-  //         title: "Vue d'ensemble",
-  //         url: "/budget",
-  //         icon: BarChart3,
-  //       },
-  //       {
-  //         title: "Budget personnel",
-  //         url: "/budget/personal",
-  //         icon: PiggyBank,
-  //       },
-  //     ],
-  //   },
-  // ],
   support: [
     {
       title: "Support",
@@ -271,6 +204,8 @@ const SidebarGroupLabel = React.forwardRef<HTMLDivElement, React.ComponentProps<
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>): ReactElement {
   const pathname = usePathname()
   const [userData, setUserData] = useState<any>(null)
+  const [hasActiveAccount, setHasActiveAccount] = useState<boolean>(true)
+  const [isCheckingAccounts, setIsCheckingAccounts] = useState<boolean>(true)
   const { state } = useSidebar()
 
   useEffect(() => {
@@ -278,6 +213,30 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>): 
     if (storedUserData) {
       setUserData(JSON.parse(storedUserData))
     }
+  }, [])
+
+  useEffect(() => {
+    async function checkActiveAccounts() {
+      try {
+        setIsCheckingAccounts(true)
+        const accounts = await getAccounts()
+        console.log("[v0] Sidebar - Fetched accounts:", accounts)
+
+        // Check if user has at least one account with status "ACTIF"
+        const hasActive = accounts.some((account) => account.status === "ACTIF")
+        console.log("[v0] Sidebar - Has active account:", hasActive)
+
+        setHasActiveAccount(hasActive)
+      } catch (error) {
+        console.error("[v0] Sidebar - Error checking accounts:", error)
+        // On error, assume user has access to avoid blocking them
+        setHasActiveAccount(true)
+      } finally {
+        setIsCheckingAccounts(false)
+      }
+    }
+
+    checkActiveAccounts()
   }, [])
 
   const getInitials = (fullName: string) => {
@@ -368,144 +327,177 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>): 
       </SidebarHeader>
 
       <SidebarContent>
-        {/* Navigation principale */}
-        <SidebarGroup>
-          <SidebarGroupLabel asChild>
-            <div>Principal</div>
-          </SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {navigationData.main.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild isActive={pathname === item.url}>
-                    <Link href={item.url}>
-                      <item.icon />
-                      <span>{item.title}</span>
-                      {item.badge && (
-                        <Badge variant="secondary" className="ml-auto">
-                          {item.badge}
-                        </Badge>
+        {!isCheckingAccounts && !hasActiveAccount && (
+          <div className="px-3 py-2">
+            <Alert className="border-amber-500/50 bg-amber-50 dark:bg-amber-950/20">
+              <AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-500" />
+              <AlertDescription className="text-xs text-amber-800 dark:text-amber-300">
+                Ouvrez un compte pour accéder à toutes les fonctionnalités
+              </AlertDescription>
+            </Alert>
+          </div>
+        )}
+
+        {!isCheckingAccounts && !hasActiveAccount ? (
+          <>
+            {/* Comptes - Always visible */}
+            <SidebarGroup>
+              <SidebarGroupLabel asChild>
+                <div>Comptes</div>
+              </SidebarGroupLabel>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  {navigationData.accounts.map((item) => (
+                    <SidebarMenuItem key={item.title}>
+                      <MenuItemWithSubmenu item={item} />
+                    </SidebarMenuItem>
+                  ))}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+          </>
+        ) : (
+          <>
+            {/* Navigation principale */}
+            <SidebarGroup>
+              <SidebarGroupLabel asChild>
+                <div>Principal</div>
+              </SidebarGroupLabel>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  {navigationData.main.map((item) => (
+                    <SidebarMenuItem key={item.title}>
+                      <SidebarMenuButton asChild isActive={pathname === item.url}>
+                        <Link href={item.url}>
+                          <item.icon />
+                          <span>{item.title}</span>
+                          {item.badge && (
+                            <Badge variant="secondary" className="ml-auto">
+                              {item.badge}
+                            </Badge>
+                          )}
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  ))}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+
+            {/* Comptes */}
+            <SidebarGroup>
+              <SidebarGroupLabel asChild>
+                <div>Comptes</div>
+              </SidebarGroupLabel>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  {navigationData.accounts.map((item) => (
+                    <SidebarMenuItem key={item.title}>
+                      <MenuItemWithSubmenu item={item} />
+                    </SidebarMenuItem>
+                  ))}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+
+            {/* Opérations */}
+            <SidebarGroup>
+              <SidebarGroupLabel asChild>
+                <div>Opérations</div>
+              </SidebarGroupLabel>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  {navigationData.operations.map((item) => (
+                    <SidebarMenuItem key={item.title}>
+                      {item.items ? (
+                        <MenuItemWithSubmenu item={item} />
+                      ) : (
+                        <SidebarMenuButton asChild isActive={pathname === item.url}>
+                          <Link href={item.url!}>
+                            <item.icon />
+                            <span>{item.title}</span>
+                            {item.badge && (
+                              <Badge variant="secondary" className="ml-auto">
+                                {item.badge}
+                              </Badge>
+                            )}
+                          </Link>
+                        </SidebarMenuButton>
                       )}
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+                    </SidebarMenuItem>
+                  ))}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
 
-        {/* Comptes */}
-        <SidebarGroup>
-          <SidebarGroupLabel asChild>
-            <div>Comptes</div>
-          </SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {navigationData.accounts.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <MenuItemWithSubmenu item={item} />
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+            {/* Services */}
+            <SidebarGroup>
+              <SidebarGroupLabel asChild>
+                <div>Services</div>
+              </SidebarGroupLabel>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  {navigationData.services.map((item) => (
+                    <SidebarMenuItem key={item.title}>
+                      <MenuItemWithSubmenu item={item} />
+                    </SidebarMenuItem>
+                  ))}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
 
-        {/* Opérations */}
-        <SidebarGroup>
-          <SidebarGroupLabel asChild>
-            <div>Opérations</div>
-          </SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {navigationData.operations.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  {item.items ? (
-                    <MenuItemWithSubmenu item={item} />
-                  ) : (
-                    <SidebarMenuButton asChild isActive={pathname === item.url}>
-                      <Link href={item.url!}>
-                        <item.icon />
-                        <span>{item.title}</span>
-                        {item.badge && (
-                          <Badge variant="secondary" className="ml-auto">
-                            {item.badge}
-                          </Badge>
-                        )}
-                      </Link>
-                    </SidebarMenuButton>
-                  )}
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-
-        {/* Services */}
-        <SidebarGroup>
-          <SidebarGroupLabel asChild>
-            <div>Services</div>
-          </SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {navigationData.services.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <MenuItemWithSubmenu item={item} />
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-
-        {/* Support */}
-        <SidebarGroup>
-          <SidebarGroupLabel asChild>
-            <div>Support</div>
-          </SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {navigationData.support.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  {item.items ? (
-                    <MenuItemWithSubmenu item={item} />
-                  ) : (
-                    <SidebarMenuButton asChild isActive={pathname === item.url}>
-                      <Link href={item.url!}>
-                        <item.icon />
-                        <span>{item.title}</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  )}
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-
-        {/* Autres */}
-        <SidebarGroup>
-          <SidebarGroupLabel asChild>
-            <div>Autres</div>
-          </SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {navigationData.other.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild isActive={pathname === item.url}>
-                    <Link href={item.url}>
-                      <item.icon />
-                      <span>{item.title}</span>
-                      {item.badge && (
-                        <Badge variant="destructive" className="ml-auto">
-                          {item.badge}
-                        </Badge>
+            {/* Support */}
+            <SidebarGroup>
+              <SidebarGroupLabel asChild>
+                <div>Support</div>
+              </SidebarGroupLabel>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  {navigationData.support.map((item) => (
+                    <SidebarMenuItem key={item.title}>
+                      {item.items ? (
+                        <MenuItemWithSubmenu item={item} />
+                      ) : (
+                        <SidebarMenuButton asChild isActive={pathname === item.url}>
+                          <Link href={item.url!}>
+                            <item.icon />
+                            <span>{item.title}</span>
+                          </Link>
+                        </SidebarMenuButton>
                       )}
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+                    </SidebarMenuItem>
+                  ))}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+
+            {/* Autres */}
+            <SidebarGroup>
+              <SidebarGroupLabel asChild>
+                <div>Autres</div>
+              </SidebarGroupLabel>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  {navigationData.other.map((item) => (
+                    <SidebarMenuItem key={item.title}>
+                      <SidebarMenuButton asChild isActive={pathname === item.url}>
+                        <Link href={item.url}>
+                          <item.icon />
+                          <span>{item.title}</span>
+                          {item.badge && (
+                            <Badge variant="destructive" className="ml-auto">
+                              {item.badge}
+                            </Badge>
+                          )}
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  ))}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+          </>
+        )}
       </SidebarContent>
 
       <SidebarFooter>
