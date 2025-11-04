@@ -76,11 +76,11 @@ const navigationData = {
   ],
   accounts: [
     {
-      title: "Mes Comptes",
+      title: "Gérer vos comptes",
       icon: Wallet,
       items: [
         {
-          title: "Soldes",
+          title: "Mes comptes",
           url: "/accounts/balance",
           icon: BarChart3,
         },
