@@ -27,6 +27,7 @@ interface Beneficiary {
   bank: string
   type: "BNG-BNG" | "BNG-CONFRERE" | "International"
   workflowStatus?: string
+  status?: number
 }
 
 interface Account {
@@ -353,17 +354,26 @@ export default function NewTransferPage() {
               bank: bankName,
               type: normalizedType,
               workflowStatus,
+              status: Number.parseInt(String(apiBeneficiary.status ?? "0"), 10),
             } as Beneficiary
           }),
         )
 
         const activeBeneficiaries = adaptedBeneficiaries.filter((beneficiary: any) => {
           const originalBeneficiary = result.find((api: any) => api.id === beneficiary.id)
-          return (
-            originalBeneficiary &&
-            String(originalBeneficiary.status) === "0" &&
-            (originalBeneficiary.workflowStatus || "disponible") === "disponible"
-          )
+          if (!originalBeneficiary) {
+            return false
+          }
+
+          const workflow = (originalBeneficiary.workflowStatus || beneficiary.workflowStatus || "").toLowerCase()
+          const statusRaw = originalBeneficiary.status ?? beneficiary.status
+          const statusValue = Number(statusRaw)
+          const normalizedStatus = Number.isNaN(statusValue) ? 0 : statusValue
+
+          const isStatusActive = normalizedStatus === 0 || normalizedStatus === 1
+          const isWorkflowActive = workflow === "" || workflow === "disponible"
+
+          return isStatusActive && isWorkflowActive
         })
         setBeneficiaries(activeBeneficiaries)
       } else {

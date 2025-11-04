@@ -101,7 +101,15 @@ export async function getBeneficiaries(): Promise<ApiBeneficiary[]> {
       console.error("Erreur lors de la récupération du user ID:", error)
     }
 
-    const response = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/beneficiaire`, {
+    const queryParams = new URLSearchParams()
+    if (currentUserId) {
+      queryParams.set("filter[clientId]", currentUserId)
+    }
+    queryParams.set("limit", "200")
+
+    const endpoint = `${API_BASE_URL}/tenant/${TENANT_ID}/beneficiaire${queryParams.toString() ? `?${queryParams.toString()}` : ""}`
+
+    const response = await fetch(endpoint, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",

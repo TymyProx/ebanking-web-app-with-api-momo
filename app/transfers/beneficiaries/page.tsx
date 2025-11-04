@@ -953,10 +953,6 @@ export default function BeneficiariesPage() {
                       <DropdownMenuContent align="end">
                         {beneficiary.status === 0 ? (
                           <>
-                            <DropdownMenuItem onClick={() => openEditDialog(beneficiary)}>
-                              <Edit className="w-4 h-4 mr-2" />
-                              Modifier
-                            </DropdownMenuItem>
                               <DropdownMenuItem disabled={beneficiary.workflowStatus !== WORKFLOW_STATUS.AVAILABLE}>
                                 <Users className="w-4 h-4 mr-2" />
                                 {beneficiary.workflowStatus === WORKFLOW_STATUS.AVAILABLE
