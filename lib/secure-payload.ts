@@ -14,18 +14,14 @@ type CommandeFormValues = {
   referenceCommande?: string
 }
 
-export async function buildCommandeSecurePayload(
-  values: CommandeFormValues,
-  base64Key: string,
-  keyId: string,
-) {
+export async function buildCommandeSecurePayload(values: CommandeFormValues, base64Key: string, keyId: string) {
   const key = await importAesGcmKeyFromBase64(base64Key)
 
   const secure: Record<string, any> = {}
 
   async function putEnc(name: string, value: any) {
     if (value === undefined || value === null) return
-    secure[`${name}_json`] = await encryptAesGcmToJson(value, key)
+    secure[name] = await encryptAesGcmToJson(value, key)
   }
 
   await Promise.all([

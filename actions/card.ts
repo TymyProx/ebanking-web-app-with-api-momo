@@ -123,7 +123,9 @@ export async function fetchAllCards(): Promise<CardsResponse> {
   }
   if (currentUserId && filteredRows.length > 0) {
     const before = filteredRows.length
-    filteredRows = filteredRows.filter((card: any) => card.clientId === currentUserId || card.createdById === currentUserId)
+    filteredRows = filteredRows.filter(
+      (card: any) => card.clientId === currentUserId || card.createdById === currentUserId,
+    )
     if (logDebug) console.log("[CARDS] filtered by clientId/createdById:", before, "->", filteredRows.length)
   }
 
@@ -190,15 +192,13 @@ export async function createCardRequest(cardData: NewCardRequest): Promise<Card>
     const enc = (v: any) => ({ ...encryptAesGcmNode(v, keyB64), key_id: "k1-mobile-v1" })
     requestBody = {
       data: {
-        numCard_json: enc("AUTO"),
-        typCard_json: enc(cardData.typCard),
-        status_json: enc("EN_ATTENTE"),
-        dateEmission_json: enc(today),
-        dateExpiration_json: enc(dateExpiration),
-        clientId_json: enc(clientId),
-        // keep plaintext clientId for server-side filtering and client list
-        clientId: clientId,
-        accountNumber_json: enc(cardData.accountNumber || ""),
+        numCard: enc("AUTO"),
+        typCard: enc(cardData.typCard),
+        status: enc("EN_ATTENTE"),
+        dateEmission: enc(today),
+        dateExpiration: enc(dateExpiration),
+        clientId: enc(clientId),
+        accountNumber: enc(cardData.accountNumber || ""),
         key_id: "k1-mobile-v1",
       },
     }

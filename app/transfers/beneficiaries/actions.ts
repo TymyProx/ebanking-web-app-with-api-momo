@@ -275,12 +275,12 @@ export async function addBeneficiary(prevState: ActionResult | null, formData: F
       apiData = {
         data: {
           ...base,
-          name_json: enc(name),
-          accountNumber_json: enc(account),
-          bankCode_json: enc(codeBanque || ""),
-          bankName_json: enc(bankname || ""),
-          codagence_json: enc(type === "BNG-INTERNATIONAL" ? "N/A" : codeAgence || "N/A"),
-          clerib_json: enc(type === "BNG-INTERNATIONAL" ? "N/A" : cleRib || "N/A"),
+          name: enc(name),
+          accountNumber: enc(account),
+          bankCode: enc(codeBanque || ""),
+          bankName: enc(bankname || ""),
+          codagence: enc(type === "BNG-INTERNATIONAL" ? "N/A" : codeAgence || "N/A"),
+          clerib: enc(type === "BNG-INTERNATIONAL" ? "N/A" : cleRib || "N/A"),
           key_id: keyId,
           workflowStatus: WORKFLOW_STATUS.CREATED,
         },
