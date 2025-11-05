@@ -15,15 +15,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { AlertCircle, CheckCircle, Send, Eye, Plus, Search, FileText, MessageSquare, Upload } from "lucide-react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 
-// Types de réclamation et leurs objets associés
 const complainTypes = {
-  Compte: [
-    "Erreur de solde",
-    "Opération non autorisée",
-    "Frais bancaires incorrects",
-    "Problème de clôture de compte",
-    "Autre problème de compte",
-  ],
+  Compte: [],
   Carte: [
     "Carte non reçue",
     "Carte bloquée ou avalée",
@@ -70,8 +63,7 @@ const complainTypes = {
   ],
 }
 
-// Types nécessitant des pièces jointes
-const typesRequiringAttachments = ["Carte", "Virement", "Crédit"]
+const typesRequiringAttachments = ["Carte", "Virement"]
 
 export default function ComplainPage() {
   const [activeTab, setActiveTab] = useState("new")
