@@ -127,7 +127,7 @@ export async function initiateExistingClientSignup(data: ExistingClientSignupDat
 
     console.log("[v0] Step 1: Creating temporary user to obtain token...")
 
-    const tempEmail = `temp-${Date.now()}-${Math.random().toString(36).substring(2, 9)}@temp.bngebanking.com`
+    const tempEmail = `${data.clientCode}@temp.bngebanking.com`
     const tempPassword = randomBytes(32).toString("hex")
 
     const signupPayload = {
@@ -296,56 +296,17 @@ export async function initiateExistingClientSignup(data: ExistingClientSignupDat
     const clientEmail = client.email
     const clientId = client.id
 
-    console.log("[v0] Step 3: Updating user email to client email...")
-
-    const updateResponse = await fetch(`${API_BASE_URL}/auth/profile`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${tempToken}`,
-      },
-      body: JSON.stringify({
-        email: clientEmail,
-      }),
-    })
-
-    if (!updateResponse.ok) {
-      const errorText = await updateResponse.text()
-      console.error("[v0] Failed to update user email:", errorText)
-
-      // Try to delete temporary user
-      if (tempUserId && tempToken) {
-        try {
-          await fetch(`${API_BASE_URL}/auth/profile`, {
-            method: "DELETE",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${tempToken}`,
-            },
-          })
-          console.log("[v0] Temporary user deleted (update failed)")
-        } catch (deleteError) {
-          console.error("[v0] Failed to delete temporary user:", deleteError)
-        }
-      }
-
-      return {
-        success: false,
-        message: "Erreur lors de la mise à jour du compte. Veuillez réessayer.",
-      }
-    }
-
-    console.log("[v0] User email updated successfully to:", clientEmail)
+    console.log("[v0] Step 3: Keeping user email as client code, sending verification to client email...")
 
     const verificationToken = randomBytes(32).toString("hex")
 
-    // Store signup data with verification token and mark as existing client
     const cookieStore = await cookies()
     const cookieConfig = getCookieConfig()
     cookieStore.set(
       "pending_signup_data",
       JSON.stringify({
-        email: clientEmail,
+        email: tempEmail,
+        clientEmail: clientEmail,
         codeClient: data.clientCode,
         clientId: clientId,
         verificationToken: verificationToken,
@@ -364,7 +325,7 @@ export async function initiateExistingClientSignup(data: ExistingClientSignupDat
     const resend = new Resend(process.env.RESEND_API_KEY)
     const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || "no-reply@bngebanking.com"
     const verificationUrl = `${APP_URL.replace(/\/$/, "")}/auth/verify-email?token=${verificationToken}&email=${encodeURIComponent(
-      clientEmail,
+      tempEmail,
     )}`
 
     const { data: resendData, error: resendError } = await resend.emails.send({
@@ -379,6 +340,22 @@ export async function initiateExistingClientSignup(data: ExistingClientSignupDat
 
     if (resendError) {
       console.error("[v0] Resend error:", resendError)
+
+      if (tempUserId && tempToken) {
+        try {
+          await fetch(`${API_BASE_URL}/auth/profile`, {
+            method: "DELETE",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${tempToken}`,
+            },
+          })
+          console.log("[v0] Temporary user deleted (email failed)")
+        } catch (deleteError) {
+          console.error("[v0] Failed to delete temporary user:", deleteError)
+        }
+      }
+
       throw new Error(resendError.message || "Erreur lors de l'envoi de l'email de vérification")
     }
     console.log("[v0] Email sent successfully:", resendData)
@@ -501,10 +478,6 @@ export async function signupUser(data: SignupData) {
     }
 
     console.log("[v0] Auth account created successfully")
-
-    // Step 2: Sending email verification via Resend is now handled in initiateSignup
-
-    console.log("[v0] Signup process completed - awaiting email verification")
 
     return {
       success: true,
