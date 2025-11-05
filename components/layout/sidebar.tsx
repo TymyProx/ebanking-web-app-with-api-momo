@@ -22,6 +22,7 @@ import {
   BarChart3,
   Clock,
   Sparkles,
+  AlertTriangle,
 } from "lucide-react"
 import Image from "next/image"
 import { cn } from "@/lib/utils"
@@ -148,26 +149,11 @@ const navigationData = {
           url: "/services/rib",
           icon: FileText,
         },
-        // {
-        //   title: "Signature électronique",
-        //   url: "/services/signature",
-        //   icon: Shield,
-        // },
-        // {
-        //   title: "Provision de fonds",
-        //   url: "/services/funds-provision",
-        //   icon: DollarSign,
-        // },
-        // {
-        //   title: "Dépôt de chèque",
-        //   url: "/services/check-deposit",
-        //   icon: Receipt,
-        // },
-        // {
-        //   title: "Réclamations",
-        //   url: "/complaints",
-        //   icon: AlertTriangle,
-        // },
+        {
+          title: "Réclamations",
+          url: "/services/complain",
+          icon: AlertTriangle,
+        },
       ],
     },
   ],
