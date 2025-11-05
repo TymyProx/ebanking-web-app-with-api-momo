@@ -121,7 +121,66 @@ export async function initiateExistingClientSignup(data: ExistingClientSignupDat
       return { success: false, message: "Code client requis" }
     }
 
-    console.log("[v0] Storing client code for verification:", data.clientCode)
+    console.log("[v0] Searching for client with code:", data.clientCode)
+
+    // Try to fetch all clients first
+    const clientResponse = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/client`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    })
+
+    console.log("[v0] Client API response status:", clientResponse.status)
+
+    if (!clientResponse.ok) {
+      const errorText = await clientResponse.text()
+      console.error("[v0] Client API error:", errorText)
+      return {
+        success: false,
+        message: "Erreur lors de la recherche du client. Veuillez réessayer.",
+      }
+    }
+
+    const clientData = await clientResponse.json()
+    console.log("[v0] Client API response:", JSON.stringify(clientData).substring(0, 200))
+
+    // Extract clients array from response
+    let clients: any[] = []
+    if (clientData.rows && Array.isArray(clientData.rows)) {
+      clients = clientData.rows
+    } else if (clientData.data && Array.isArray(clientData.data)) {
+      clients = clientData.data
+    } else if (Array.isArray(clientData)) {
+      clients = clientData
+    }
+
+    console.log("[v0] Found", clients.length, "clients in database")
+
+    // Find the client with matching code
+    const client = clients.find(
+      (c) => c.codeClient === data.clientCode || c.code === data.clientCode || c.clientCode === data.clientCode,
+    )
+
+    if (!client) {
+      console.error("[v0] Client not found with code:", data.clientCode)
+      return {
+        success: false,
+        message: "Code client invalide. Veuillez vérifier votre code et réessayer.",
+      }
+    }
+
+    console.log("[v0] Client found:", client.id, client.nomComplet || client.email)
+
+    if (!client.email) {
+      return {
+        success: false,
+        message: "Aucun email associé à ce code client. Veuillez contacter votre agence.",
+      }
+    }
+
+    const clientEmail = client.email
+    const clientId = client.id
 
     // Generate verification token
     const verificationToken = randomBytes(32).toString("hex")
@@ -132,10 +191,12 @@ export async function initiateExistingClientSignup(data: ExistingClientSignupDat
     cookieStore.set(
       "pending_signup_data",
       JSON.stringify({
+        email: clientEmail,
         codeClient: data.clientCode,
+        clientId: clientId,
         verificationToken: verificationToken,
         isExistingClient: true, // Mark as existing client
-        // Email will be fetched after auth account creation
+        fullName: client.nomComplet || clientEmail.split("@")[0],
       }),
       {
         ...cookieConfig,
@@ -143,12 +204,34 @@ export async function initiateExistingClientSignup(data: ExistingClientSignupDat
       },
     )
 
-    console.log("[v0] Client code stored, proceeding to password setup")
+    console.log("[v0] Sending verification email via Resend (server action)...")
+
+    const resend = new Resend(process.env.RESEND_API_KEY)
+    const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || "no-reply@bngebanking.com"
+    const verificationUrl = `${APP_URL.replace(/\/$/, "")}/auth/verify-email?token=${verificationToken}&email=${encodeURIComponent(
+      clientEmail,
+    )}`
+
+    const { data: resendData, error: resendError } = await resend.emails.send({
+      from: FROM_EMAIL,
+      to: clientEmail,
+      subject: "Activez votre compte en ligne - BNG E-Banking",
+      react: VerificationEmail({
+        userName: client.nomComplet || clientEmail.split("@")[0],
+        verificationLink: verificationUrl,
+      }),
+    })
+
+    if (resendError) {
+      console.error("[v0] Resend error:", resendError)
+      throw new Error(resendError.message || "Erreur lors de l'envoi de l'email de vérification")
+    }
+    console.log("[v0] Email sent successfully:", resendData)
 
     return {
       success: true,
-      message: "Veuillez créer votre mot de passe pour continuer.",
-      requiresPassword: true,
+      message: "Un email de vérification a été envoyé à l'adresse associée à votre compte.",
+      email: clientEmail,
     }
   } catch (error: any) {
     console.error("[v0] Existing client signup error:", error)
