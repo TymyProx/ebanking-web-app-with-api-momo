@@ -121,31 +121,58 @@ export async function initiateExistingClientSignup(data: ExistingClientSignupDat
       return { success: false, message: "Code client requis" }
     }
 
-    // Search for the client by code
     console.log("[v0] Searching for client with code:", data.clientCode)
 
-    const clientResponse = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/client?codeClient=${data.clientCode}`, {
+    // Try to fetch all clients first
+    const clientResponse = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/client`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
       },
     })
 
+    console.log("[v0] Client API response status:", clientResponse.status)
+
     if (!clientResponse.ok) {
-      console.error("[v0] Client not found")
+      const errorText = await clientResponse.text()
+      console.error("[v0] Client API error:", errorText)
+      return {
+        success: false,
+        message: "Erreur lors de la recherche du client. Veuillez réessayer.",
+      }
+    }
+
+    const clientData = await clientResponse.json()
+    console.log("[v0] Client API response:", JSON.stringify(clientData).substring(0, 200))
+
+    // Extract clients array from response
+    let clients: any[] = []
+    if (clientData.rows && Array.isArray(clientData.rows)) {
+      clients = clientData.rows
+    } else if (clientData.data && Array.isArray(clientData.data)) {
+      clients = clientData.data
+    } else if (Array.isArray(clientData)) {
+      clients = clientData
+    }
+
+    console.log("[v0] Found", clients.length, "clients in database")
+
+    // Find the client with matching code
+    const client = clients.find(
+      (c) => c.codeClient === data.clientCode || c.code === data.clientCode || c.clientCode === data.clientCode,
+    )
+
+    if (!client) {
+      console.error("[v0] Client not found with code:", data.clientCode)
       return {
         success: false,
         message: "Code client invalide. Veuillez vérifier votre code et réessayer.",
       }
     }
 
-    const clientData = await clientResponse.json()
-    console.log("[v0] Client found:", clientData)
+    console.log("[v0] Client found:", client.id, client.nomComplet || client.email)
 
-    // Extract client information
-    const client = clientData.data?.[0] || clientData[0] || clientData
-
-    if (!client || !client.email) {
+    if (!client.email) {
       return {
         success: false,
         message: "Aucun email associé à ce code client. Veuillez contacter votre agence.",
@@ -169,6 +196,7 @@ export async function initiateExistingClientSignup(data: ExistingClientSignupDat
         clientId: clientId,
         verificationToken: verificationToken,
         isExistingClient: true, // Mark as existing client
+        fullName: client.nomComplet || clientEmail.split("@")[0],
       }),
       {
         ...cookieConfig,
