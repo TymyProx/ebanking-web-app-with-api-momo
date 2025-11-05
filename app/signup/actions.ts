@@ -27,6 +27,10 @@ interface InitialSignupData {
   address: string
 }
 
+interface ExistingClientSignupData {
+  clientCode: string
+}
+
 export async function initiateSignup(data: InitialSignupData) {
   try {
     console.log("[v0] Starting initial signup process...")
@@ -102,6 +106,107 @@ export async function initiateSignup(data: InitialSignupData) {
     }
   } catch (error: any) {
     console.error("[v0] Initial signup error:", error)
+    return {
+      success: false,
+      message: error.message || "Une erreur est survenue lors de l'inscription",
+    }
+  }
+}
+
+export async function initiateExistingClientSignup(data: ExistingClientSignupData) {
+  try {
+    console.log("[v0] Starting existing client signup process...")
+
+    if (!data.clientCode) {
+      return { success: false, message: "Code client requis" }
+    }
+
+    // Search for the client by code
+    console.log("[v0] Searching for client with code:", data.clientCode)
+
+    const clientResponse = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/client?codeClient=${data.clientCode}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    })
+
+    if (!clientResponse.ok) {
+      console.error("[v0] Client not found")
+      return {
+        success: false,
+        message: "Code client invalide. Veuillez vérifier votre code et réessayer.",
+      }
+    }
+
+    const clientData = await clientResponse.json()
+    console.log("[v0] Client found:", clientData)
+
+    // Extract client information
+    const client = clientData.data?.[0] || clientData[0] || clientData
+
+    if (!client || !client.email) {
+      return {
+        success: false,
+        message: "Aucun email associé à ce code client. Veuillez contacter votre agence.",
+      }
+    }
+
+    const clientEmail = client.email
+    const clientId = client.id
+
+    // Generate verification token
+    const verificationToken = randomBytes(32).toString("hex")
+
+    // Store signup data with verification token and mark as existing client
+    const cookieStore = await cookies()
+    const cookieConfig = getCookieConfig()
+    cookieStore.set(
+      "pending_signup_data",
+      JSON.stringify({
+        email: clientEmail,
+        codeClient: data.clientCode,
+        clientId: clientId,
+        verificationToken: verificationToken,
+        isExistingClient: true, // Mark as existing client
+      }),
+      {
+        ...cookieConfig,
+        maxAge: 60 * 60 * 24, // 24 hours
+      },
+    )
+
+    console.log("[v0] Sending verification email via Resend (server action)...")
+
+    const resend = new Resend(process.env.RESEND_API_KEY)
+    const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || "no-reply@bngebanking.com"
+    const verificationUrl = `${APP_URL.replace(/\/$/, "")}/auth/verify-email?token=${verificationToken}&email=${encodeURIComponent(
+      clientEmail,
+    )}`
+
+    const { data: resendData, error: resendError } = await resend.emails.send({
+      from: FROM_EMAIL,
+      to: clientEmail,
+      subject: "Activez votre compte en ligne - BNG E-Banking",
+      react: VerificationEmail({
+        userName: client.nomComplet || clientEmail.split("@")[0],
+        verificationLink: verificationUrl,
+      }),
+    })
+
+    if (resendError) {
+      console.error("[v0] Resend error:", resendError)
+      throw new Error(resendError.message || "Erreur lors de l'envoi de l'email de vérification")
+    }
+    console.log("[v0] Email sent successfully:", resendData)
+
+    return {
+      success: true,
+      message: "Un email de vérification a été envoyé à l'adresse associée à votre compte.",
+      email: clientEmail,
+    }
+  } catch (error: any) {
+    console.error("[v0] Existing client signup error:", error)
     return {
       success: false,
       message: error.message || "Une erreur est survenue lors de l'inscription",

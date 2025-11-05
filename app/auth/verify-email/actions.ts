@@ -28,6 +28,8 @@ export async function completeSignup(token: string, password: string, emailFallb
         address: "",
         codeClient: `CLI-${Date.now()}`,
         verificationToken: token,
+        isExistingClient: false,
+        clientId: null,
       }
     } else {
       pendingData = JSON.parse(pendingDataCookie.value)
@@ -120,10 +122,10 @@ export async function completeSignup(token: string, password: string, emailFallb
     await setSecureCookie("user", JSON.stringify(userData))
     console.log("[v0] User info stored in cookie")
 
-    // Step 3: Create client profile
     console.log("[v0] Step 3: Creating client profile...")
 
-    if (pendingDataCookie) {
+    if (pendingDataCookie && !pendingData.isExistingClient) {
+      // Only create new client profile if this is a new client
       const clientRequestBody = {
         data: {
           nomComplet: String(pendingData.fullName),
@@ -162,6 +164,34 @@ export async function completeSignup(token: string, password: string, emailFallb
       }
 
       console.log("[v0] Client profile created successfully")
+
+      // Clear pending signup data
+      cookieStore.delete("pending_signup_data")
+    } else if (pendingData.isExistingClient) {
+      console.log("[v0] Linking user account to existing client...")
+
+      // Update the existing client with the new userid
+      const updateClientBody = {
+        data: {
+          userid: String(userId),
+        },
+      }
+
+      const updateResponse = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/client/${pendingData.clientId}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${authToken}`,
+        },
+        body: JSON.stringify(updateClientBody),
+      })
+
+      if (!updateResponse.ok) {
+        console.error("[v0] Failed to link user to existing client")
+        throw new Error("Erreur lors de la liaison du compte utilisateur")
+      }
+
+      console.log("[v0] User account linked to existing client successfully")
 
       // Clear pending signup data
       cookieStore.delete("pending_signup_data")
