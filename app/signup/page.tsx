@@ -17,7 +17,17 @@ export default function SignupPage() {
   const [clientType, setClientType] = useState<ClientType>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
+  const [successMessage, setSuccessMessage] = useState<{ email: string; maskedEmail: string } | null>(null)
   const router = useRouter()
+
+  const maskEmail = (email: string): string => {
+    const [localPart, domain] = email.split("@")
+    if (!localPart || !domain) return email
+
+    const visibleChars = Math.min(2, Math.floor(localPart.length / 3))
+    const masked = localPart.substring(0, visibleChars) + "******"
+    return `${masked}@${domain}`
+  }
 
   const handleNewClientSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -54,6 +64,7 @@ export default function SignupPage() {
     e.preventDefault()
     setIsLoading(true)
     setError("")
+    setSuccessMessage(null)
 
     try {
       const formData = new FormData(e.target as HTMLFormElement)
@@ -61,20 +72,11 @@ export default function SignupPage() {
 
       const result = await initiateExistingClientSignup({ clientCode })
 
-      if (result.success) {
-        setError("")
-
-        // Show success message for 2 seconds before redirecting
-        const successDiv = document.createElement("div")
-        successDiv.className = "p-4 rounded-lg bg-green-50 border border-green-200 mb-4"
-        successDiv.innerHTML = `<p class="text-sm text-green-600">${result.message}</p>`
-
-        const form = e.target as HTMLFormElement
-        form.insertBefore(successDiv, form.firstChild)
-
-        setTimeout(() => {
-          router.push(`/auth/verify-email?email=${encodeURIComponent(result.email!)}`)
-        }, 2000)
+      if (result.success && result.email) {
+        setSuccessMessage({
+          email: result.email,
+          maskedEmail: maskEmail(result.email),
+        })
       } else {
         setError(result.message)
       }
@@ -292,7 +294,14 @@ export default function SignupPage() {
           ) : (
             <div className="space-y-6">
               <div className="flex items-center space-x-2">
-                <button onClick={() => setClientType(null)} className="text-[hsl(123,38%,57%)] hover:underline text-sm">
+                <button
+                  onClick={() => {
+                    setClientType(null)
+                    setSuccessMessage(null)
+                    setError("")
+                  }}
+                  className="text-[hsl(123,38%,57%)] hover:underline text-sm"
+                >
                   ← Retour
                 </button>
               </div>
@@ -302,61 +311,107 @@ export default function SignupPage() {
                 Entrez votre code client pour créer votre accès en ligne
               </p>
 
-              <form onSubmit={handleExistingClientSubmit} className="space-y-5">
-                {error && (
-                  <div className="p-3 rounded-lg bg-red-50 border border-red-200">
-                    <p className="text-sm text-red-600">{error}</p>
-                  </div>
-                )}
-
-                {/* Client Code Field */}
-                <div className="space-y-2">
-                  <Label htmlFor="clientCode" className="text-sm font-medium text-[hsl(220,13%,13%)]">
-                    Code Client
-                  </Label>
-                  <div className="relative">
-                    <Input
-                      id="clientCode"
-                      name="clientCode"
-                      type="text"
-                      placeholder="CLI-XXXXXXXXXX"
-                      className="h-12 pr-10 bg-white border-gray-300 focus:border-[hsl(123,38%,57%)] focus:ring-[hsl(123,38%,57%)]"
-                      required
-                      disabled={isLoading}
-                    />
-                    <UserCheck className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-                  </div>
-                  <p className="text-xs text-[hsl(220,13%,46%)]">
-                    Vous trouverez votre code client sur vos documents bancaires
-                  </p>
-                </div>
-
-                {/* Submit Button */}
-                <Button
-                  type="submit"
-                  className="w-full h-12 bg-gradient-to-r from-[hsl(45,93%,47%)] to-[hsl(123,38%,57%)] hover:opacity-90 text-white font-semibold text-base shadow-lg"
-                  disabled={isLoading}
-                >
-                  {isLoading ? (
-                    <div className="flex items-center space-x-2">
-                      <div className="animate-spin rounded-full h-5 w-5 border-2 border-white/30 border-t-white"></div>
-                      <span>Vérification...</span>
+              {successMessage ? (
+                <div className="space-y-4">
+                  <div className="p-4 rounded-lg bg-green-50 border border-green-200">
+                    <div className="flex items-start space-x-3">
+                      <Mail className="h-5 w-5 text-green-600 mt-0.5" />
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-green-800">Email de vérification envoyé</p>
+                        <p className="text-sm text-green-700 mt-1">
+                          Un email de vérification a été envoyé à{" "}
+                          <span className="font-mono font-semibold">{successMessage.maskedEmail}</span>
+                        </p>
+                        <p className="text-xs text-green-600 mt-2">
+                          Veuillez cliquer sur le lien dans l'email pour définir votre mot de passe et activer votre
+                          compte.
+                        </p>
+                      </div>
                     </div>
-                  ) : (
-                    "Continuer"
-                  )}
-                </Button>
+                  </div>
 
-                {/* Login Link */}
-                <div className="text-center">
-                  <p className="text-sm text-[hsl(220,13%,46%)]">
-                    Vous avez déjà un compte ?{" "}
-                    <Link href="/login" className="text-[hsl(123,38%,57%)] hover:underline font-semibold">
-                      Se connecter
-                    </Link>
-                  </p>
+                  <div className="text-center">
+                    <p className="text-sm text-[hsl(220,13%,46%)]">
+                      Vous n'avez pas reçu l'email ?{" "}
+                      <button
+                        onClick={() => {
+                          setSuccessMessage(null)
+                          setError("")
+                        }}
+                        className="text-[hsl(123,38%,57%)] hover:underline font-semibold"
+                      >
+                        Réessayer
+                      </button>
+                    </p>
+                  </div>
                 </div>
-              </form>
+              ) : (
+                <form onSubmit={handleExistingClientSubmit} className="space-y-5">
+                  {error && (
+                    <div className="p-3 rounded-lg bg-red-50 border border-red-200">
+                      <p className="text-sm text-red-600">{error}</p>
+                    </div>
+                  )}
+
+                  {/* Client Code Field */}
+                  <div className="space-y-2">
+                    <Label htmlFor="clientCode" className="text-sm font-medium text-[hsl(220,13%,13%)]">
+                      Code Client
+                    </Label>
+                    <div className="relative">
+                      <Input
+                        id="clientCode"
+                        name="clientCode"
+                        type="text"
+                        placeholder="CLI-XXXXXXXXXX"
+                        className="h-12 pr-10 bg-white border-gray-300 focus:border-[hsl(123,38%,57%)] focus:ring-[hsl(123,38%,57%)]"
+                        required
+                        disabled={isLoading}
+                      />
+                      <UserCheck className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                    </div>
+                    <p className="text-xs text-[hsl(220,13%,46%)]">
+                      Vous trouverez votre code client sur vos documents bancaires
+                    </p>
+                  </div>
+
+                  {/* Submit Button */}
+                  <Button
+                    type="submit"
+                    className="w-full h-12 bg-gradient-to-r from-[hsl(45,93%,47%)] to-[hsl(123,38%,57%)] hover:opacity-90 text-white font-semibold text-base shadow-lg"
+                    disabled={isLoading}
+                  >
+                    {isLoading ? (
+                      <div className="flex items-center space-x-2">
+                        <div className="animate-spin rounded-full h-5 w-5 border-2 border-white/30 border-t-white"></div>
+                        <span>Vérification...</span>
+                      </div>
+                    ) : (
+                      "Continuer"
+                    )}
+                  </Button>
+
+                  {/* Login Link */}
+                  <div className="text-center">
+                    <p className="text-sm text-[hsl(220,13%,46%)]">
+                      Vous avez déjà un compte ?{" "}
+                      <Link href="/login" className="text-[hsl(123,38%,57%)] hover:underline font-semibold">
+                        Se connecter
+                      </Link>
+                    </p>
+                  </div>
+                </form>
+              )}
+
+              {/* Login Link */}
+              <div className="text-center">
+                <p className="text-sm text-[hsl(220,13%,46%)]">
+                  Vous avez déjà un compte ?{" "}
+                  <Link href="/login" className="text-[hsl(123,38%,57%)] hover:underline font-semibold">
+                    Se connecter
+                  </Link>
+                </p>
+              </div>
             </div>
           )}
 

@@ -6,7 +6,6 @@ import { getCookieConfig } from "@/lib/cookie-config"
 import { config } from "@/lib/config"
 import { Resend } from "resend"
 import { VerificationEmail } from "@/emails/verification-email"
-import { maskEmail } from "@/lib/utils"
 
 const normalize = (u?: string) => (u ? u.replace(/\/$/, "") : "")
 const API_BASE_URL = `${normalize(config.API_BASE_URL)}/api`
@@ -78,7 +77,6 @@ export async function initiateSignup(data: InitialSignupData) {
 
     const resend = new Resend(process.env.RESEND_API_KEY)
     const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || "no-reply@bngebanking.com"
-    const APP_URL = config.EBANKING_URL || "http://localhost:3000"
     const verificationUrl = `${APP_URL.replace(/\/$/, "")}/auth/verify-email?token=${verificationToken}&email=${encodeURIComponent(
       data.email,
     )}`
@@ -120,6 +118,7 @@ export async function initiateExistingClientSignup(data: ExistingClientSignupDat
 
   try {
     console.log("[v0] Starting existing client signup process...")
+    console.log("[v0] Client code:", data.clientCode)
 
     if (!data.clientCode) {
       return { success: false, message: "Code client requis" }
@@ -127,66 +126,59 @@ export async function initiateExistingClientSignup(data: ExistingClientSignupDat
 
     console.log("[v0] Step 1: Creating temporary user to obtain token...")
 
-    const tempEmail = `${data.clientCode}@temp.bngebanking.com`
+    const tempEmail = `temp-${Date.now()}-${Math.random().toString(36).substring(7)}@temp.bngebanking.com`
     const tempPassword = randomBytes(32).toString("hex")
 
-    const signupPayload = {
+    const tempUserPayload = {
       email: tempEmail,
       password: tempPassword,
       tenantId: String(TENANT_ID),
     }
 
-    const signupResponse = await fetch(`${API_BASE_URL}/auth/sign-up`, {
+    const tempUserResponse = await fetch(`${API_BASE_URL}/auth/sign-up`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(signupPayload),
+      body: JSON.stringify(tempUserPayload),
     })
 
-    console.log("[v0] Temp user signup response status:", signupResponse.status)
+    console.log("[v0] Temp user creation response status:", tempUserResponse.status)
 
-    if (!signupResponse.ok) {
-      const errorText = await signupResponse.text()
-      console.error("[v0] Failed to create temporary user:", errorText)
-      return {
-        success: false,
-        message: "Erreur lors de la vérification du code client. Veuillez réessayer.",
-      }
+    if (!tempUserResponse.ok) {
+      const errorText = await tempUserResponse.text()
+      console.error("[v0] Failed to create temp user:", errorText)
+      throw new Error("Erreur lors de la vérification du code client")
     }
 
-    const signupResponseText = await signupResponse.text()
+    const tempUserResponseText = await tempUserResponse.text()
 
     // Extract token
-    if (signupResponseText.startsWith("eyJ")) {
-      tempToken = signupResponseText
+    if (tempUserResponseText.startsWith("eyJ")) {
+      tempToken = tempUserResponseText
     } else {
-      const signupData = JSON.parse(signupResponseText)
-      tempToken = signupData.token || signupData.data?.token || signupData
+      const tempUserData = JSON.parse(tempUserResponseText)
+      tempToken = tempUserData.token || tempUserData.data?.token || tempUserData
     }
 
     if (!tempToken) {
-      console.error("[v0] No token received from temporary user creation")
-      return {
-        success: false,
-        message: "Erreur lors de la vérification. Veuillez réessayer.",
-      }
+      throw new Error("Impossible d'obtenir le token d'authentification")
     }
 
-    console.log("[v0] Temporary user created successfully, token obtained")
+    console.log("[v0] Temporary token obtained successfully")
 
+    // Get temp user ID for cleanup if needed
     const meResponse = await fetch(`${API_BASE_URL}/auth/me`, {
       method: "GET",
       headers: {
-        "Content-Type": "application/json",
         Authorization: `Bearer ${tempToken}`,
       },
     })
 
     if (meResponse.ok) {
-      const userData = await meResponse.json()
-      tempUserId = userData.id
-      console.log("[v0] Temporary user ID:", tempUserId)
+      const meData = await meResponse.json()
+      tempUserId = meData.id
+      console.log("[v0] Temp user ID:", tempUserId)
     }
 
     console.log("[v0] Step 2: Searching for client with code:", data.clientCode)
@@ -206,24 +198,16 @@ export async function initiateExistingClientSignup(data: ExistingClientSignupDat
       console.error("[v0] Client API error:", errorText)
 
       if (tempUserId && tempToken) {
-        try {
-          await fetch(`${API_BASE_URL}/auth/profile`, {
-            method: "DELETE",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${tempToken}`,
-            },
-          })
-          console.log("[v0] Temporary user deleted")
-        } catch (deleteError) {
-          console.error("[v0] Failed to delete temporary user:", deleteError)
-        }
+        console.log("[v0] Deleting temporary user...")
+        await fetch(`${API_BASE_URL}/auth/user/${tempUserId}`, {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${tempToken}`,
+          },
+        }).catch((err) => console.error("[v0] Failed to delete temp user:", err))
       }
 
-      return {
-        success: false,
-        message: "Erreur lors de la recherche du client. Veuillez réessayer.",
-      }
+      throw new Error("Erreur lors de la recherche du client")
     }
 
     const clientData = await clientResponse.json()
@@ -249,18 +233,13 @@ export async function initiateExistingClientSignup(data: ExistingClientSignupDat
       console.error("[v0] Client not found with code:", data.clientCode)
 
       if (tempUserId && tempToken) {
-        try {
-          await fetch(`${API_BASE_URL}/auth/profile`, {
-            method: "DELETE",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${tempToken}`,
-            },
-          })
-          console.log("[v0] Temporary user deleted (client not found)")
-        } catch (deleteError) {
-          console.error("[v0] Failed to delete temporary user:", deleteError)
-        }
+        console.log("[v0] Deleting temporary user...")
+        await fetch(`${API_BASE_URL}/auth/user/${tempUserId}`, {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${tempToken}`,
+          },
+        }).catch((err) => console.error("[v0] Failed to delete temp user:", err))
       }
 
       return {
@@ -273,18 +252,13 @@ export async function initiateExistingClientSignup(data: ExistingClientSignupDat
 
     if (!client.email) {
       if (tempUserId && tempToken) {
-        try {
-          await fetch(`${API_BASE_URL}/auth/profile`, {
-            method: "DELETE",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${tempToken}`,
-            },
-          })
-          console.log("[v0] Temporary user deleted (no email)")
-        } catch (deleteError) {
-          console.error("[v0] Failed to delete temporary user:", deleteError)
-        }
+        console.log("[v0] Deleting temporary user...")
+        await fetch(`${API_BASE_URL}/auth/user/${tempUserId}`, {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${tempToken}`,
+          },
+        }).catch((err) => console.error("[v0] Failed to delete temp user:", err))
       }
 
       return {
@@ -296,23 +270,32 @@ export async function initiateExistingClientSignup(data: ExistingClientSignupDat
     const clientEmail = client.email
     const clientId = client.id
 
-    console.log("[v0] Step 3: Keeping user email as client code, sending verification to client email...")
+    // Delete temporary user now that we have the client info
+    if (tempUserId && tempToken) {
+      console.log("[v0] Deleting temporary user...")
+      await fetch(`${API_BASE_URL}/auth/user/${tempUserId}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${tempToken}`,
+        },
+      }).catch((err) => console.error("[v0] Failed to delete temp user:", err))
+    }
 
+    // Generate verification token and send email
     const verificationToken = randomBytes(32).toString("hex")
 
+    // Store signup data with verification token and mark as existing client
     const cookieStore = await cookies()
     const cookieConfig = getCookieConfig()
     cookieStore.set(
       "pending_signup_data",
       JSON.stringify({
-        email: tempEmail,
-        clientEmail: clientEmail,
+        email: clientEmail,
         codeClient: data.clientCode,
         clientId: clientId,
         verificationToken: verificationToken,
         isExistingClient: true,
         fullName: client.nomComplet || clientEmail.split("@")[0],
-        tempUserId: tempUserId,
       }),
       {
         ...cookieConfig,
@@ -320,12 +303,12 @@ export async function initiateExistingClientSignup(data: ExistingClientSignupDat
       },
     )
 
-    console.log("[v0] Step 4: Sending verification email via Resend...")
+    console.log("[v0] Sending verification email via Resend...")
 
     const resend = new Resend(process.env.RESEND_API_KEY)
     const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || "no-reply@bngebanking.com"
     const verificationUrl = `${APP_URL.replace(/\/$/, "")}/auth/verify-email?token=${verificationToken}&email=${encodeURIComponent(
-      tempEmail,
+      clientEmail,
     )}`
 
     const { data: resendData, error: resendError } = await resend.emails.send({
@@ -340,50 +323,27 @@ export async function initiateExistingClientSignup(data: ExistingClientSignupDat
 
     if (resendError) {
       console.error("[v0] Resend error:", resendError)
-
-      if (tempUserId && tempToken) {
-        try {
-          await fetch(`${API_BASE_URL}/auth/profile`, {
-            method: "DELETE",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${tempToken}`,
-            },
-          })
-          console.log("[v0] Temporary user deleted (email failed)")
-        } catch (deleteError) {
-          console.error("[v0] Failed to delete temporary user:", deleteError)
-        }
-      }
-
       throw new Error(resendError.message || "Erreur lors de l'envoi de l'email de vérification")
     }
-    console.log("[v0] Email sent successfully:", resendData)
 
-    const maskedEmail = maskEmail(clientEmail)
+    console.log("[v0] Email sent successfully:", resendData)
 
     return {
       success: true,
-      message: `Un email de vérification a été envoyé à ${maskedEmail}`,
+      message: "Un email de vérification a été envoyé à l'adresse associée à votre compte.",
       email: clientEmail,
-      maskedEmail: maskedEmail,
     }
   } catch (error: any) {
     console.error("[v0] Existing client signup error:", error)
 
     if (tempUserId && tempToken) {
-      try {
-        await fetch(`${API_BASE_URL}/auth/profile`, {
-          method: "DELETE",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${tempToken}`,
-          },
-        })
-        console.log("[v0] Temporary user deleted (error cleanup)")
-      } catch (deleteError) {
-        console.error("[v0] Failed to delete temporary user during cleanup:", deleteError)
-      }
+      console.log("[v0] Cleaning up temporary user due to error...")
+      await fetch(`${API_BASE_URL}/auth/user/${tempUserId}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${tempToken}`,
+        },
+      }).catch((err) => console.error("[v0] Failed to delete temp user during cleanup:", err))
     }
 
     return {
@@ -478,6 +438,10 @@ export async function signupUser(data: SignupData) {
     }
 
     console.log("[v0] Auth account created successfully")
+
+    // Step 2: Sending email verification via Resend is now handled in initiateSignup
+
+    console.log("[v0] Signup process completed - awaiting email verification")
 
     return {
       success: true,
