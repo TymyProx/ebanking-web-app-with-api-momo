@@ -62,7 +62,12 @@ export default function SignupPage() {
       const result = await initiateExistingClientSignup({ clientCode })
 
       if (result.success) {
-        router.push(`/auth/verify-email?email=${encodeURIComponent(result.email!)}`)
+        if (result.requiresPassword) {
+          // Redirect to verify-email page which will handle password setup
+          router.push(`/auth/verify-email?existingClient=true`)
+        } else if (result.email) {
+          router.push(`/auth/verify-email?email=${encodeURIComponent(result.email)}`)
+        }
       } else {
         setError(result.message)
       }

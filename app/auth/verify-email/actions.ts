@@ -35,6 +35,16 @@ export async function completeSignup(token: string, password: string, emailFallb
       pendingData = JSON.parse(pendingDataCookie.value)
     }
 
+    if (pendingData.isExistingClient && !pendingData.email) {
+      console.log("[v0] Existing client flow - need to verify client code first")
+
+      // We need to create a temporary auth account to get a token for verification
+      // This is a workaround since we can't access the client API without authentication
+
+      // For now, we'll ask the user to provide their email along with client code
+      throw new Error("Pour les clients existants, veuillez contacter votre agence pour obtenir votre email associé.")
+    }
+
     // Verify the token matches
     if (pendingData.verificationToken !== token) {
       console.error("[v0] Token mismatch")
@@ -170,6 +180,51 @@ export async function completeSignup(token: string, password: string, emailFallb
     } else if (pendingData.isExistingClient) {
       console.log("[v0] Linking user account to existing client...")
 
+      console.log("[v0] Verifying client code:", pendingData.codeClient)
+
+      // Fetch all clients with authentication
+      const clientsResponse = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/client`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${authToken}`,
+        },
+      })
+
+      if (!clientsResponse.ok) {
+        console.error("[v0] Failed to fetch clients")
+        throw new Error("Erreur lors de la vérification du code client")
+      }
+
+      const clientsData = await clientsResponse.json()
+
+      // Extract clients array from response
+      let clients: any[] = []
+      if (clientsData.rows && Array.isArray(clientsData.rows)) {
+        clients = clientsData.rows
+      } else if (clientsData.data && Array.isArray(clientsData.data)) {
+        clients = clientsData.data
+      } else if (Array.isArray(clientsData)) {
+        clients = clientsData
+      }
+
+      console.log("[v0] Found", clients.length, "clients in database")
+
+      // Find the client with matching code
+      const client = clients.find(
+        (c) =>
+          c.codeClient === pendingData.codeClient ||
+          c.code === pendingData.codeClient ||
+          c.clientCode === pendingData.codeClient,
+      )
+
+      if (!client) {
+        console.error("[v0] Client not found with code:", pendingData.codeClient)
+        throw new Error("Code client invalide. Veuillez vérifier votre code.")
+      }
+
+      console.log("[v0] Client found:", client.id)
+
       // Update the existing client with the new userid
       const updateClientBody = {
         data: {
@@ -177,7 +232,7 @@ export async function completeSignup(token: string, password: string, emailFallb
         },
       }
 
-      const updateResponse = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/client/${pendingData.clientId}`, {
+      const updateResponse = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/client/${client.id}`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
