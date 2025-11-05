@@ -25,19 +25,38 @@ import { LogoutButton } from "@/components/auth/logout-button"
 import { NotificationDropdown } from "@/components/notifications/notification-dropdown"
 import { usePathname } from "next/navigation"
 import { useState, useEffect } from "react"
+import { getAccounts } from "@/app/accounts/actions"
 
 export function Header() {
   const pathname = usePathname()
   const [userData, setUserData] = useState<any>(null)
+  const [hasActiveAccount, setHasActiveAccount] = useState<boolean>(false)
+  const [isCheckingAccounts, setIsCheckingAccounts] = useState<boolean>(true)
 
   useEffect(() => {
     const storedUserData = localStorage.getItem("userData")
     const token = localStorage.getItem("token")
-    //console.log("Token récupéré:", token)
 
     if (storedUserData) {
       setUserData(JSON.parse(storedUserData))
     }
+  }, [])
+
+  useEffect(() => {
+    const checkActiveAccounts = async () => {
+      try {
+        const accounts = await getAccounts()
+        const activeAccounts = accounts.filter((account) => account.status?.toUpperCase() === "ACTIF")
+        setHasActiveAccount(activeAccounts.length > 0)
+      } catch (error) {
+        console.error("Error checking active accounts:", error)
+        setHasActiveAccount(true) // Default to true on error to show breadcrumb
+      } finally {
+        setIsCheckingAccounts(false)
+      }
+    }
+
+    checkActiveAccounts()
   }, [])
 
   const getInitials = (fullName: string) => {
@@ -76,23 +95,24 @@ export function Header() {
       <SidebarTrigger className="-ml-1" />
       <Separator orientation="vertical" className="mr-2 h-4" />
 
-      {/* Breadcrumb */}
-      <Breadcrumb>
-        <BreadcrumbList>
-          {breadcrumbItems.map((item, index) => (
-            <div key={item.href} className="flex items-center">
-              {index > 0 && <BreadcrumbSeparator className="hidden md:block" />}
-              <BreadcrumbItem className="hidden md:block">
-                {index === breadcrumbItems.length - 1 ? (
-                  <BreadcrumbPage>{item.label}</BreadcrumbPage>
-                ) : (
-                  <BreadcrumbLink href={item.href}>{item.label}</BreadcrumbLink>
-                )}
-              </BreadcrumbItem>
-            </div>
-          ))}
-        </BreadcrumbList>
-      </Breadcrumb>
+      {!isCheckingAccounts && hasActiveAccount && (
+        <Breadcrumb>
+          <BreadcrumbList>
+            {breadcrumbItems.map((item, index) => (
+              <div key={item.href} className="flex items-center">
+                {index > 0 && <BreadcrumbSeparator className="hidden md:block" />}
+                <BreadcrumbItem className="hidden md:block">
+                  {index === breadcrumbItems.length - 1 ? (
+                    <BreadcrumbPage>{item.label}</BreadcrumbPage>
+                  ) : (
+                    <BreadcrumbLink href={item.href}>{item.label}</BreadcrumbLink>
+                  )}
+                </BreadcrumbItem>
+              </div>
+            ))}
+          </BreadcrumbList>
+        </Breadcrumb>
+      )}
 
       {/* Spacer */}
       <div className="ml-auto flex items-center gap-2">
