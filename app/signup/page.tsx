@@ -62,7 +62,19 @@ export default function SignupPage() {
       const result = await initiateExistingClientSignup({ clientCode })
 
       if (result.success) {
-        router.push(`/auth/verify-email?email=${encodeURIComponent(result.email!)}`)
+        setError("")
+
+        // Show success message for 2 seconds before redirecting
+        const successDiv = document.createElement("div")
+        successDiv.className = "p-4 rounded-lg bg-green-50 border border-green-200 mb-4"
+        successDiv.innerHTML = `<p class="text-sm text-green-600">${result.message}</p>`
+
+        const form = e.target as HTMLFormElement
+        form.insertBefore(successDiv, form.firstChild)
+
+        setTimeout(() => {
+          router.push(`/auth/verify-email?email=${encodeURIComponent(result.email!)}`)
+        }, 2000)
       } else {
         setError(result.message)
       }

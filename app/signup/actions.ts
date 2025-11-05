@@ -6,6 +6,7 @@ import { getCookieConfig } from "@/lib/cookie-config"
 import { config } from "@/lib/config"
 import { Resend } from "resend"
 import { VerificationEmail } from "@/emails/verification-email"
+import { maskEmail } from "@/lib/utils"
 
 const normalize = (u?: string) => (u ? u.replace(/\/$/, "") : "")
 const API_BASE_URL = `${normalize(config.API_BASE_URL)}/api`
@@ -114,6 +115,9 @@ export async function initiateSignup(data: InitialSignupData) {
 }
 
 export async function initiateExistingClientSignup(data: ExistingClientSignupData) {
+  let tempUserId: string | null = null
+  let tempToken: string | null = null
+
   try {
     console.log("[v0] Starting existing client signup process...")
 
@@ -121,13 +125,77 @@ export async function initiateExistingClientSignup(data: ExistingClientSignupDat
       return { success: false, message: "Code client requis" }
     }
 
-    console.log("[v0] Searching for client with code:", data.clientCode)
+    console.log("[v0] Step 1: Creating temporary user to obtain token...")
 
-    // Try to fetch all clients first
+    const tempEmail = `temp-${Date.now()}-${Math.random().toString(36).substring(2, 9)}@temp.bngebanking.com`
+    const tempPassword = randomBytes(32).toString("hex")
+
+    const signupPayload = {
+      email: tempEmail,
+      password: tempPassword,
+      tenantId: String(TENANT_ID),
+    }
+
+    const signupResponse = await fetch(`${API_BASE_URL}/auth/sign-up`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(signupPayload),
+    })
+
+    console.log("[v0] Temp user signup response status:", signupResponse.status)
+
+    if (!signupResponse.ok) {
+      const errorText = await signupResponse.text()
+      console.error("[v0] Failed to create temporary user:", errorText)
+      return {
+        success: false,
+        message: "Erreur lors de la vérification du code client. Veuillez réessayer.",
+      }
+    }
+
+    const signupResponseText = await signupResponse.text()
+
+    // Extract token
+    if (signupResponseText.startsWith("eyJ")) {
+      tempToken = signupResponseText
+    } else {
+      const signupData = JSON.parse(signupResponseText)
+      tempToken = signupData.token || signupData.data?.token || signupData
+    }
+
+    if (!tempToken) {
+      console.error("[v0] No token received from temporary user creation")
+      return {
+        success: false,
+        message: "Erreur lors de la vérification. Veuillez réessayer.",
+      }
+    }
+
+    console.log("[v0] Temporary user created successfully, token obtained")
+
+    const meResponse = await fetch(`${API_BASE_URL}/auth/me`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${tempToken}`,
+      },
+    })
+
+    if (meResponse.ok) {
+      const userData = await meResponse.json()
+      tempUserId = userData.id
+      console.log("[v0] Temporary user ID:", tempUserId)
+    }
+
+    console.log("[v0] Step 2: Searching for client with code:", data.clientCode)
+
     const clientResponse = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/client`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
+        Authorization: `Bearer ${tempToken}`,
       },
     })
 
@@ -136,6 +204,22 @@ export async function initiateExistingClientSignup(data: ExistingClientSignupDat
     if (!clientResponse.ok) {
       const errorText = await clientResponse.text()
       console.error("[v0] Client API error:", errorText)
+
+      if (tempUserId && tempToken) {
+        try {
+          await fetch(`${API_BASE_URL}/auth/profile`, {
+            method: "DELETE",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${tempToken}`,
+            },
+          })
+          console.log("[v0] Temporary user deleted")
+        } catch (deleteError) {
+          console.error("[v0] Failed to delete temporary user:", deleteError)
+        }
+      }
+
       return {
         success: false,
         message: "Erreur lors de la recherche du client. Veuillez réessayer.",
@@ -143,7 +227,7 @@ export async function initiateExistingClientSignup(data: ExistingClientSignupDat
     }
 
     const clientData = await clientResponse.json()
-    console.log("[v0] Client API response:", JSON.stringify(clientData).substring(0, 200))
+    console.log("[v0] Client API response received")
 
     // Extract clients array from response
     let clients: any[] = []
@@ -157,13 +241,28 @@ export async function initiateExistingClientSignup(data: ExistingClientSignupDat
 
     console.log("[v0] Found", clients.length, "clients in database")
 
-    // Find the client with matching code
     const client = clients.find(
       (c) => c.codeClient === data.clientCode || c.code === data.clientCode || c.clientCode === data.clientCode,
     )
 
     if (!client) {
       console.error("[v0] Client not found with code:", data.clientCode)
+
+      if (tempUserId && tempToken) {
+        try {
+          await fetch(`${API_BASE_URL}/auth/profile`, {
+            method: "DELETE",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${tempToken}`,
+            },
+          })
+          console.log("[v0] Temporary user deleted (client not found)")
+        } catch (deleteError) {
+          console.error("[v0] Failed to delete temporary user:", deleteError)
+        }
+      }
+
       return {
         success: false,
         message: "Code client invalide. Veuillez vérifier votre code et réessayer.",
@@ -173,6 +272,21 @@ export async function initiateExistingClientSignup(data: ExistingClientSignupDat
     console.log("[v0] Client found:", client.id, client.nomComplet || client.email)
 
     if (!client.email) {
+      if (tempUserId && tempToken) {
+        try {
+          await fetch(`${API_BASE_URL}/auth/profile`, {
+            method: "DELETE",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${tempToken}`,
+            },
+          })
+          console.log("[v0] Temporary user deleted (no email)")
+        } catch (deleteError) {
+          console.error("[v0] Failed to delete temporary user:", deleteError)
+        }
+      }
+
       return {
         success: false,
         message: "Aucun email associé à ce code client. Veuillez contacter votre agence.",
@@ -182,7 +296,47 @@ export async function initiateExistingClientSignup(data: ExistingClientSignupDat
     const clientEmail = client.email
     const clientId = client.id
 
-    // Generate verification token
+    console.log("[v0] Step 3: Updating user email to client email...")
+
+    const updateResponse = await fetch(`${API_BASE_URL}/auth/profile`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${tempToken}`,
+      },
+      body: JSON.stringify({
+        email: clientEmail,
+      }),
+    })
+
+    if (!updateResponse.ok) {
+      const errorText = await updateResponse.text()
+      console.error("[v0] Failed to update user email:", errorText)
+
+      // Try to delete temporary user
+      if (tempUserId && tempToken) {
+        try {
+          await fetch(`${API_BASE_URL}/auth/profile`, {
+            method: "DELETE",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${tempToken}`,
+            },
+          })
+          console.log("[v0] Temporary user deleted (update failed)")
+        } catch (deleteError) {
+          console.error("[v0] Failed to delete temporary user:", deleteError)
+        }
+      }
+
+      return {
+        success: false,
+        message: "Erreur lors de la mise à jour du compte. Veuillez réessayer.",
+      }
+    }
+
+    console.log("[v0] User email updated successfully to:", clientEmail)
+
     const verificationToken = randomBytes(32).toString("hex")
 
     // Store signup data with verification token and mark as existing client
@@ -195,8 +349,9 @@ export async function initiateExistingClientSignup(data: ExistingClientSignupDat
         codeClient: data.clientCode,
         clientId: clientId,
         verificationToken: verificationToken,
-        isExistingClient: true, // Mark as existing client
+        isExistingClient: true,
         fullName: client.nomComplet || clientEmail.split("@")[0],
+        tempUserId: tempUserId,
       }),
       {
         ...cookieConfig,
@@ -204,7 +359,7 @@ export async function initiateExistingClientSignup(data: ExistingClientSignupDat
       },
     )
 
-    console.log("[v0] Sending verification email via Resend (server action)...")
+    console.log("[v0] Step 4: Sending verification email via Resend...")
 
     const resend = new Resend(process.env.RESEND_API_KEY)
     const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || "no-reply@bngebanking.com"
@@ -228,13 +383,32 @@ export async function initiateExistingClientSignup(data: ExistingClientSignupDat
     }
     console.log("[v0] Email sent successfully:", resendData)
 
+    const maskedEmail = maskEmail(clientEmail)
+
     return {
       success: true,
-      message: "Un email de vérification a été envoyé à l'adresse associée à votre compte.",
+      message: `Un email de vérification a été envoyé à ${maskedEmail}`,
       email: clientEmail,
+      maskedEmail: maskedEmail,
     }
   } catch (error: any) {
     console.error("[v0] Existing client signup error:", error)
+
+    if (tempUserId && tempToken) {
+      try {
+        await fetch(`${API_BASE_URL}/auth/profile`, {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${tempToken}`,
+          },
+        })
+        console.log("[v0] Temporary user deleted (error cleanup)")
+      } catch (deleteError) {
+        console.error("[v0] Failed to delete temporary user during cleanup:", deleteError)
+      }
+    }
+
     return {
       success: false,
       message: error.message || "Une erreur est survenue lors de l'inscription",
