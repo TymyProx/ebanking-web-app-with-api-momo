@@ -12,6 +12,7 @@ import { Eye, EyeOff, User } from "lucide-react"
 import AuthService from "@/lib/auth-service"
 import { config } from "@/lib/config"
 import { storeAuthToken } from "./actions"
+import { getAccounts } from "@/app/accounts/actions"
 
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false)
@@ -39,6 +40,8 @@ export default function LoginPage() {
         const userData = await AuthService.fetchMe()
 
         await storeAuthToken(loginResult.token, userData)
+
+        await getAccounts()
 
         if (rememberMe) {
           localStorage.setItem("rememberMe", "true")
