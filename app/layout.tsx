@@ -1,20 +1,22 @@
 import type React from "react"
 import type { Metadata } from "next"
-import { Space_Grotesk, DM_Sans } from "next/font/google"
+import { Poppins } from "next/font/google"
 import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
 import { AuthGuard } from "@/components/auth/auth-guard"
 import { ConditionalLayout } from "@/components/layout/conditional-layout"
 import { NotificationProvider } from "@/contexts/notification-context"
 
-const spaceGrotesk = Space_Grotesk({
+const poppins = Poppins({
   subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700", "800"],
   variable: "--font-heading",
   display: "swap",
 })
 
-const dmSans = DM_Sans({
+const poppinsBody = Poppins({
   subsets: ["latin"],
+  weight: ["300", "400", "500", "600"],
   variable: "--font-body",
   display: "swap",
 })
@@ -39,7 +41,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="fr" suppressHydrationWarning>
-      <body className={`${spaceGrotesk.variable} ${dmSans.variable} font-body antialiased`}>
+      <body className={`${poppins.variable} ${poppinsBody.variable} font-body antialiased`}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
           <AuthGuard>
             <NotificationProvider>
