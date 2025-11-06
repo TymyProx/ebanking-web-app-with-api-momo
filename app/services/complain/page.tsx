@@ -9,10 +9,9 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { AlertCircle, CheckCircle, Send, Eye, Plus, Search, FileText, MessageSquare, Upload } from "lucide-react"
+import { Send, Eye, Plus, Search, FileText, MessageSquare, Upload } from "lucide-react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { createReclamation, getReclamations } from "./actions"
 
@@ -265,7 +264,7 @@ export default function ComplainPage() {
                     </Select>
                   </div>
 
-                  {/* Motif de la réclamation (conditionnel) */}
+                  {/* Motif de la réclamation */}
                   <div className="space-y-2">
                     <Label htmlFor="complainObject">Motif de la réclamation {availableObjects.length > 0 && "*"}</Label>
                     <Select
@@ -295,10 +294,9 @@ export default function ComplainPage() {
                   </div>
                 </div>
 
-                {/* Date de réclamation et Pièces jointes sur la même ligne */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   {/* Date de la réclamation */}
-                  <div className="space-y-2 ml-4">
+                  <div className="space-y-2">
                     <Label htmlFor="complainDate">Date de la réclamation *</Label>
                     <Input
                       id="complainDate"
@@ -307,29 +305,54 @@ export default function ComplainPage() {
                       onChange={(e) => handleInputChange("complainDate", e.target.value)}
                       max={new Date().toISOString().split("T")[0]}
                       required
-                      className="w-40"
+                      className="w-full"
                     />
                   </div>
 
-                  {/* Champ de pièces jointes (conditionnel) */}
-                  {showAttachmentField && (
-                    <div className="space-y-2">
-                      <Label htmlFor="attachments">Pièces jointes</Label>
-                      <div className="flex items-center space-x-2">
-                        <Input
-                          id="attachments"
-                          type="file"
-                          multiple
-                          accept="image/*,.pdf"
-                          onChange={(e) => handleInputChange("attachments", e.target.files)}
-                          className="w-80"
-                        />
-                        <Upload className="w-5 h-5 text-gray-400" />
-                      </div>
-                      <p className="text-xs text-gray-500">images (JPG, PNG) et PDF. Taille max: 5 Mo par fichier.</p>
-                    </div>
-                  )}
+                  {/* Téléphone */}
+                  <div className="space-y-2">
+                    <Label htmlFor="phone">Téléphone *</Label>
+                    <Input
+                      id="phone"
+                      type="tel"
+                      value={formData.phone || ""}
+                      onChange={(e) => handleInputChange("phone", e.target.value)}
+                      placeholder="+224 6XX XXX XXX"
+                      required
+                    />
+                  </div>
+
+                  {/* Email */}
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Email *</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      value={formData.email || ""}
+                      onChange={(e) => handleInputChange("email", e.target.value)}
+                      placeholder="votre@email.com"
+                      required
+                    />
+                  </div>
                 </div>
+
+                {showAttachmentField && (
+                  <div className="space-y-2">
+                    <Label htmlFor="attachments">Pièces jointes</Label>
+                    <div className="flex items-center space-x-2">
+                      <Input
+                        id="attachments"
+                        type="file"
+                        multiple
+                        accept="image/*,.pdf"
+                        onChange={(e) => handleInputChange("attachments", e.target.files)}
+                        className="w-full"
+                      />
+                      <Upload className="w-5 h-5 text-gray-400" />
+                    </div>
+                    <p className="text-xs text-gray-500">images (JPG, PNG) et PDF. Taille max: 5 Mo par fichier.</p>
+                  </div>
+                )}
 
                 {/* Description détaillée */}
                 <div className="space-y-2 max-w-3xl">
@@ -344,50 +367,6 @@ export default function ComplainPage() {
                     className="w-full"
                   />
                 </div>
-
-                {/* Téléphone et Email sur la même ligne */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="phone">Téléphone *</Label>
-                    <Input
-                      id="phone"
-                      type="tel"
-                      value={formData.phone || ""}
-                      onChange={(e) => handleInputChange("phone", e.target.value)}
-                      placeholder="+224 6XX XXX XXX"
-                      required
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="email">Email *</Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      value={formData.email || ""}
-                      onChange={(e) => handleInputChange("email", e.target.value)}
-                      placeholder="votre@email.com"
-                      required
-                    />
-                  </div>
-                </div>
-
-                {/* Messages de feedback */}
-                {submitState?.success && (
-                  <Alert className="border-green-200 bg-green-50">
-                    <CheckCircle className="h-4 w-4 text-green-600" />
-                    <AlertDescription className="text-green-800">
-                      Votre réclamation a été soumise avec succès. Référence: {submitState.reference}
-                    </AlertDescription>
-                  </Alert>
-                )}
-
-                {submitState?.error && (
-                  <Alert variant="destructive">
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertDescription>{submitState.error}</AlertDescription>
-                  </Alert>
-                )}
 
                 {/* Conditions générales */}
                 <div className="flex items-start space-x-2">
