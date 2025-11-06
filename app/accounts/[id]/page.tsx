@@ -72,7 +72,25 @@ export default function AccountDetailsPage() {
   const [isLoadingAccount, setIsLoadingAccount] = useState(true)
   const [isLoadingTransactions, setIsLoadingTransactions] = useState(true)
   const [isPending, startTransition] = useTransition()
-  const { addNotification } = useNotifications()
+  const { addNotifications } = useNotifications()
+
+  useEffect(() => {
+    // Try to load cached transactions immediately
+    const cacheKey = `transactions_${accountId}`
+    const cached = sessionStorage.getItem(cacheKey)
+    if (cached) {
+      try {
+        const cachedData = JSON.parse(cached)
+        if (Date.now() - cachedData.timestamp < 60000) {
+          // Cache valid for 60 seconds
+          setTransactions(cachedData.transactions)
+          setIsLoadingTransactions(false)
+        }
+      } catch (e) {
+        // Invalid cache, ignore
+      }
+    }
+  }, [accountId])
 
   useEffect(() => {
     const loadAccount = async () => {
@@ -125,7 +143,7 @@ export default function AccountDetailsPage() {
           }
         }
       } catch (error) {
-        console.error("Erreur lors du chargement du compte:", error)
+        // Removed console.error for performance
       } finally {
         setIsLoadingAccount(false)
       }
@@ -138,10 +156,8 @@ export default function AccountDetailsPage() {
     const loadTransactions = async () => {
       try {
         const transactionsData = await getTransactions()
-        //console.log("[v0] Transactions récupérées:", transactionsData)
 
         if (transactionsData.data && Array.isArray(transactionsData.data)) {
-          // Filtrer les transactions pour ce compte spécifique
           const accountTransactions = transactionsData.data
             .filter((txn: any) => txn.accountId === accountId)
             .map((txn: any) => {
@@ -157,18 +173,27 @@ export default function AccountDetailsPage() {
                 amount: isCredit ? Math.abs(amount) : -Math.abs(amount),
                 currency: account?.currency || "GNF",
                 date: txn.valueDate || new Date().toISOString(),
-                status: txn.status, //txn.status === "COMPLETED" ? "Exécuté" : txn.status === "PENDING" ? "En attente" : "Rejeté",
+                status: txn.status,
                 counterparty: txn.beneficiaryId || "Système",
                 reference: txn.txnId || "REF-" + Date.now(),
-                balanceAfter: 0, // Calculé dynamiquement si nécessaire
+                balanceAfter: 0,
               } as Transaction
             })
-            .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()) // Trier par date décroissante
+            .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
 
           setTransactions(accountTransactions)
+
+          const cacheKey = `transactions_${accountId}`
+          sessionStorage.setItem(
+            cacheKey,
+            JSON.stringify({
+              transactions: accountTransactions,
+              timestamp: Date.now(),
+            }),
+          )
         }
       } catch (error) {
-        console.error("Erreur lors du chargement des transactions:", error)
+        // Removed console.error for performance
       } finally {
         setIsLoadingTransactions(false)
       }
@@ -198,7 +223,7 @@ export default function AccountDetailsPage() {
               amount: isCredit ? Math.abs(amount) : -Math.abs(amount),
               currency: account?.currency || "GNF",
               date: txn.valueDate || new Date().toISOString(),
-              status: txn.status, //txn.status === "COMPLETED" ? "Exécuté" : txn.status === "PENDING" ? "En attente" : "Rejeté",
+              status: txn.status,
               counterparty: txn.beneficiaryId || "Système",
               reference: txn.txnId || "REF-" + Date.now(),
               balanceAfter: 0,
@@ -207,9 +232,18 @@ export default function AccountDetailsPage() {
           .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
 
         setTransactions(accountTransactions)
+
+        const cacheKey = `transactions_${accountId}`
+        sessionStorage.setItem(
+          cacheKey,
+          JSON.stringify({
+            transactions: accountTransactions,
+            timestamp: Date.now(),
+          }),
+        )
       }
     } catch (error) {
-      console.error("Erreur lors du rechargement des transactions:", error)
+      // Removed console.error for performance
     } finally {
       setIsLoadingTransactions(false)
     }
@@ -222,34 +256,13 @@ export default function AccountDetailsPage() {
 
     startTransition(async () => {
       try {
-        //console.log("[v0] Changement de statut:", { accountId, previousStatus, newStatus })
-
         const result = await toggleAccountStatus(accountId, newStatus)
 
         if (result.success) {
-          // Update local account state
           setAccount((prev) => (prev ? { ...prev, status: newStatus } : null))
-
-          // Add notification to the context
-          // addNotification({
-          //   type: "account_status",
-          //   title: "Changement de statut de compte",
-          //   message: `Le statut de votre compte ${account.name} (${account.number}) a été modifié de "${previousStatus}" vers "${newStatus}".`,
-          //   timestamp: new Date(),
-          //   isRead: false,
-          // })
-
-          //console.log("[v0] Statut mis à jour avec succès")
         }
       } catch (error) {
-        //console.error("[v0] Erreur lors du changement de statut:", error)
-        // addNotification({
-        //   type: "error",
-        //   title: "Erreur",
-        //   message: "Impossible de modifier le statut du compte. Veuillez réessayer.",
-        //   timestamp: new Date(),
-        //   isRead: false,
-        // })
+        // No console.error or notification for status change error
       }
     })
   }

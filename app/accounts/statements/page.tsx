@@ -172,21 +172,48 @@ export default function StatementsPage() {
   }, [])
 
   useEffect(() => {
+    if (!selectedAccount) return
+
+    // Try to load cached transactions immediately
+    const cacheKey = `transactions_${selectedAccount}`
+    const cached = sessionStorage.getItem(cacheKey)
+    if (cached) {
+      try {
+        const cachedData = JSON.parse(cached)
+        if (Date.now() - cachedData.timestamp < 60000) {
+          // Cache valid for 60 seconds
+          setTransactions(cachedData.transactions)
+        }
+      } catch (e) {
+        // Invalid cache, ignore
+      }
+    }
+  }, [selectedAccount])
+
+  useEffect(() => {
     const loadTransactions = async () => {
       if (!selectedAccount) return
 
       try {
         const transactionsData = await getTransactions()
-        //console.log("[v0] Transactions récupérées pour relevé:", transactionsData)
 
         if (transactionsData.data && Array.isArray(transactionsData.data)) {
           const accountTransactions = transactionsData.data.filter(
             (txn: any) => txn.accountId === selectedAccount || txn.creditAccount === selectedAccount,
           )
           setTransactions(accountTransactions)
+
+          const cacheKey = `transactions_${selectedAccount}`
+          sessionStorage.setItem(
+            cacheKey,
+            JSON.stringify({
+              transactions: accountTransactions,
+              timestamp: Date.now(),
+            }),
+          )
         }
       } catch (error) {
-        console.error("Erreur lors du chargement des transactions:", error)
+        // Removed console.error for performance
         setTransactions([])
       }
     }

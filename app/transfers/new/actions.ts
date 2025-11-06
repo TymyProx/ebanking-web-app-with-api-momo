@@ -63,14 +63,7 @@ function extractAccountOwnerId(account: any): string | null {
     return null
   }
 
-  return (
-    account.clientId ??
-    account.customerId ??
-    account.client?.id ??
-    account.ownerId ??
-    account.createdById ??
-    null
-  )
+  return account.clientId ?? account.customerId ?? account.client?.id ?? account.ownerId ?? account.createdById ?? null
 }
 
 function extractBeneficiaryOwnerId(beneficiary: any): string | null {
@@ -285,11 +278,7 @@ function getTransactionType(beneficiaryType: string): string {
   }
 }
 
-export async function debitAccountBalance(
-  accountId: string,
-  amount: number,
-  context: ActionSecurityContext = {},
-) {
+export async function debitAccountBalance(accountId: string, amount: number, context: ActionSecurityContext = {}) {
   const cookieToken = context.token ?? (await cookies()).get("token")?.value
   const usertoken = cookieToken
 
@@ -383,11 +372,7 @@ export async function debitAccountBalance(
   }
 }
 
-export async function creditAccountBalance(
-  accountId: string,
-  amount: number,
-  context: ActionSecurityContext = {},
-) {
+export async function creditAccountBalance(accountId: string, amount: number, context: ActionSecurityContext = {}) {
   const cookieToken = context.token ?? (await cookies()).get("token")?.value
   const usertoken = cookieToken
 
@@ -510,10 +495,7 @@ export async function executeTransfer(prevState: any, formData: FormData) {
       }
     }
 
-    const [currentUser, userAccounts] = await Promise.all([
-      getCurrentUserInfo(usertoken),
-      fetchAccounts(),
-    ])
+    const [currentUser, userAccounts] = await Promise.all([getCurrentUserInfo(usertoken), fetchAccounts()])
 
     if (!currentUser?.id) {
       return {
@@ -1053,14 +1035,13 @@ export async function getTransactions(): Promise<{ data: any[] }> {
         headers: {
           Authorization: `Bearer ${usertoken}`,
         },
+        next: { revalidate: 60 },
       })
       if (meResponse.ok) {
         const userData = await meResponse.json()
         clientId = userData.id || ""
       }
-    } catch (error) {
-      console.error("[v0] Error fetching user info:", error)
-    }
+    } catch (_) {}
 
     const response = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/transactions`, {
       method: "GET",
@@ -1068,12 +1049,11 @@ export async function getTransactions(): Promise<{ data: any[] }> {
         "Content-Type": "application/json",
         Authorization: `Bearer ${usertoken}`,
       },
-      cache: "no-store",
+      next: { revalidate: 60 }, // Cache for 60 seconds instead of no-store
     })
 
     if (!response.ok) {
       if (response.status === 401) {
-        console.error("[v0] Token d'authentification invalide ou expiré")
         return {
           data: [
             {
@@ -1089,22 +1069,11 @@ export async function getTransactions(): Promise<{ data: any[] }> {
         }
       }
 
-      console.error(`[v0] Erreur API: ${response.status} ${response.statusText}`)
-      const contentType = response.headers.get("content-type")
-      if (contentType && contentType.includes("application/json")) {
-        const errorData = await response.json()
-        console.error("[v0] Erreur JSON:", errorData)
-      } else {
-        const errorText = await response.text()
-        console.error("[v0] Réponse non-JSON:", errorText)
-      }
       return { data: [] }
     }
 
     const contentType = response.headers.get("content-type")
     if (!contentType || !contentType.includes("application/json")) {
-      const responseText = await response.text()
-      console.error("[v0] Réponse non-JSON reçue:", responseText)
       return { data: [] }
     }
 
@@ -1124,8 +1093,7 @@ export async function getTransactions(): Promise<{ data: any[] }> {
     }
 
     return { data: transactions }
-  } catch (error) {
-    console.error("[v0] Erreur lors de la récupération des transactions:", error)
+  } catch (_) {
     return {
       data: [
         {
@@ -1177,10 +1145,7 @@ export async function getEpayments(): Promise<{ rows: any[] }> {
   return { rows }
 }
 
-async function getBeneficiaryById(
-  beneficiaryId: string,
-  context: BeneficiarySecurityContext = {},
-) {
+async function getBeneficiaryById(beneficiaryId: string, context: BeneficiarySecurityContext = {}) {
   const cookieToken = context.token ?? (await cookies()).get("token")?.value
   const usertoken = cookieToken
 
