@@ -67,7 +67,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex bg-gray-100">
+    <div className="min-h-screen flex bg-gradient-to-br from-primary/5 via-white to-secondary/5">
       {/* Left side - Hero Image */}
       <div className="hidden lg:flex lg:w-1/2 relative">
         <div className="relative w-full h-full p-8">
@@ -96,15 +96,15 @@ export default function LoginPage() {
 
           {/* Welcome Text */}
           <div className="space-y-2">
-            <h1 className="text-5xl font-bold text-[hsl(45,93%,47%)]">Bienvenue</h1>
-            <p className="text-3xl font-semibold text-[hsl(123,38%,57%)]">
+            <h1 className="text-5xl font-bold text-secondary">Bienvenue</h1>
+            <p className="text-3xl font-semibold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
               sur <span className="font-bold">MyBNG Bank</span>
             </p>
           </div>
 
           {/* Login Form */}
           <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-[hsl(220,13%,13%)]">Se connecter</h2>
+            <h2 className="text-2xl font-bold text-foreground">Se connecter</h2>
 
             <form onSubmit={handleSubmit} className="space-y-5">
               {error && (
@@ -184,7 +184,7 @@ export default function LoginPage() {
               {/* Submit Button */}
               <Button
                 type="submit"
-                className="w-full h-12 bg-gradient-to-r from-[hsl(45,93%,47%)] to-[hsl(123,38%,57%)] hover:opacity-90 text-white font-semibold text-base shadow-lg"
+                className="w-full h-12 bg-gradient-to-r from-primary to-accent hover:shadow-lg hover:shadow-primary/30 text-white font-semibold text-base transition-all duration-300"
                 disabled={isLoading}
               >
                 {isLoading ? (
