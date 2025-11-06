@@ -164,7 +164,7 @@ export default function AccountDetailsPage() {
         const transactionsData = await getTransactions()
         console.log("[v0] Transactions data received:", transactionsData)
 
-        if (transactionsData.data && Array.isArray(transactionsData.data)) {
+        if (transactionsData && transactionsData.data && Array.isArray(transactionsData.data)) {
           console.log("[v0] Total transactions:", transactionsData.data.length)
 
           const accountTransactions = transactionsData.data
@@ -211,10 +211,12 @@ export default function AccountDetailsPage() {
             }),
           )
         } else {
-          console.log("[v0] No transaction data or invalid format")
+          console.log("[v0] No transaction data or invalid format. transactionsData:", transactionsData)
+          setTransactions([])
         }
       } catch (error) {
         console.error("[v0] Error loading transactions:", error)
+        setTransactions([])
       } finally {
         setIsLoadingTransactions(false)
       }
@@ -229,7 +231,7 @@ export default function AccountDetailsPage() {
       console.log("[v0] Refreshing transactions for accountId:", accountId)
       const transactionsData = await getTransactions()
 
-      if (transactionsData.data && Array.isArray(transactionsData.data)) {
+      if (transactionsData && transactionsData.data && Array.isArray(transactionsData.data)) {
         const accountTransactions = transactionsData.data
           .filter((txn: any) => {
             const txnAccountId = txn.accountId || txn.account_id || txn.accountNumber || txn.account_number
@@ -267,9 +269,13 @@ export default function AccountDetailsPage() {
             timestamp: Date.now(),
           }),
         )
+      } else {
+        console.log("[v0] No transaction data on refresh")
+        setTransactions([])
       }
     } catch (error) {
       console.error("[v0] Error refreshing transactions:", error)
+      setTransactions([])
     } finally {
       setIsLoadingTransactions(false)
     }
