@@ -266,26 +266,33 @@ export default function ComplainPage() {
                   </div>
 
                   {/* Motif de la réclamation (conditionnel) */}
-                  {selectedType && availableObjects.length > 0 && (
-                    <div className="space-y-2">
-                      <Label htmlFor="complainObject">Motif de la réclamation *</Label>
-                      <Select
-                        value={formData.complainObject || ""}
-                        onValueChange={(value) => handleInputChange("complainObject", value)}
-                      >
-                        <SelectTrigger className="w-80">
-                          <SelectValue placeholder="Sélectionnez le motif de la réclamation" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {availableObjects.map((object) => (
-                            <SelectItem key={object} value={object}>
-                              {object}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  )}
+                  <div className="space-y-2">
+                    <Label htmlFor="complainObject">Motif de la réclamation {availableObjects.length > 0 && "*"}</Label>
+                    <Select
+                      value={formData.complainObject || ""}
+                      onValueChange={(value) => handleInputChange("complainObject", value)}
+                      disabled={!selectedType || availableObjects.length === 0}
+                    >
+                      <SelectTrigger className="w-80">
+                        <SelectValue
+                          placeholder={
+                            !selectedType
+                              ? "Sélectionnez d'abord un type de réclamation"
+                              : availableObjects.length === 0
+                                ? "Aucun motif disponible pour ce type"
+                                : "Sélectionnez le motif de la réclamation"
+                          }
+                        />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {availableObjects.map((object) => (
+                          <SelectItem key={object} value={object}>
+                            {object}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
 
                 {/* Date de réclamation et Pièces jointes sur la même ligne */}
@@ -491,7 +498,7 @@ export default function ComplainPage() {
 
                         <div className="flex-1">
                           <div className="flex items-center space-x-2">
-                            <h3 className="font-semibold text-gray-900">{complain.typeName}</h3>
+                            <h3 className="font-semibold text-gray-900">{complain.type}</h3>
                             {getStatusBadge(complain.status)}
                           </div>
 
