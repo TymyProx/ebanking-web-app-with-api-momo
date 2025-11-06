@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -10,51 +10,56 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Textarea } from "@/components/ui/textarea"
-import { Building2, CreditCard, CheckCircle, AlertCircle, ArrowLeft, FileText, Shield, Clock } from "lucide-react"
+import { Building2, CheckCircle, AlertCircle, ArrowLeft, FileText, Clock, ChevronRight, Sparkles } from "lucide-react"
 import Link from "next/link"
 import { createAccount } from "../actions"
 import { useActionState } from "react"
 
 const accountTypes = [
   {
-    id: "current",
+    id: "COURANT",
     name: "Compte Courant",
     description: "Pour vos opérations quotidiennes",
     currency: "GNF",
     minBalance: "50000",
     features: ["Carte bancaire incluse", "Chéquier gratuit", "Virements illimités", "Découvert autorisé"],
     fees: "Gratuit les 6 premiers mois",
+    icon: "💳",
   },
   {
-    id: "savings",
+    id: "EPARGNE",
     name: "Compte Épargne",
     description: "Pour faire fructifier votre argent",
     currency: "GNF",
     minBalance: "100000",
     features: ["Taux d'intérêt attractif", "Pas de frais de tenue", "Épargne programmée", "Objectifs d'épargne"],
     fees: "Gratuit",
+    icon: "🏦",
   },
   {
-    id: "foreign",
+    id: "DEVISE",
     name: "Compte Devises",
     description: "Pour vos opérations en devises étrangères",
     currency: "USD",
     minBalance: "100",
     features: ["Multi-devises", "Virements internationaux", "Change avantageux", "Carte internationale"],
     fees: "25,000 GNF/mois",
+    icon: "💵",
   },
   {
-    id: "business",
-    name: "Compte Professionnel",
-    description: "Pour votre activité professionnelle",
+    id: "TERME",
+    name: "Compte à Terme",
+    description: "Pour vos placements à long terme",
     currency: "GNF",
-    minBalance: "200000",
-    features: ["Services entreprise", "Terminal de paiement", "Crédits professionnels", "Conseiller dédié"],
-    fees: "50,000 GNF/mois",
+    minBalance: "500000",
+    features: ["Taux d'intérêt élevé", "Durée flexible", "Renouvellement automatique", "Garantie capital"],
+    fees: "Gratuit",
+    icon: "📈",
   },
 ]
 
 export default function NewAccountPage() {
+  const [step, setStep] = useState(1)
   const [selectedType, setSelectedType] = useState("")
   const [formData, setFormData] = useState<Record<string, any>>({})
   const [createState, createAction, isCreating] = useActionState(createAccount, null)
@@ -70,289 +75,321 @@ export default function NewAccountPage() {
     return new Intl.NumberFormat("fr-FR").format(num)
   }
 
+  const canProceedToStep2 = selectedType !== ""
+  const canProceedToStep3 =
+    formData.accountName && formData.currency && formData.accountPurpose
+  const canSubmit = formData.terms && formData.dataProcessing
+
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <div className="flex items-center space-x-4 mb-2">
-            <Button variant="ghost" size="sm" asChild>
-              <Link href="/accounts">
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Retour
-              </Link>
-            </Button>
-          </div>
-          <h1 className="text-2xl font-bold text-gray-900">Nouvelle Demande d'Ouverture de Compte</h1>
-          <p className="text-gray-600">Choisissez le type de compte qui correspond à vos besoins</p>
-        </div>
-      </div>
-
-      {/* Sélection du Type de Compte */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <Building2 className="w-5 h-5" />
-            <span>Type de Compte</span>
-          </CardTitle>
-          <CardDescription>Sélectionnez le type de compte que vous souhaitez ouvrir</CardDescription>
-        </CardHeader>
-        <CardContent>
-         <div className="space-y-2">
-        <Label>Type de compte</Label>
-            <Select value={formData.accountType} onValueChange={(value) => handleInputChange("accountType", value)}>
-              <SelectTrigger>
-                <SelectValue placeholder="Sélectionnez le type de compte" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="COURANT">Compte courant</SelectItem>
-                <SelectItem value="EPARGNE">Compte épargne</SelectItem>
-                <SelectItem value="TERME">Compte à terme</SelectItem>
-                <SelectItem value="DEVISE">Compte en devise</SelectItem>
-              </SelectContent>
-            </Select>
-      </div>
-        </CardContent>
-      </Card>
-
-      {/* Formulaire de Demande */}
-      {selectedAccountType && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <FileText className="w-5 h-5" />
-              <span>Informations du Compte</span>
-            </CardTitle>
-            <CardDescription>
-              Remplissez les informations pour votre {selectedAccountType.name.toLowerCase()}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {/* Informations du Compte */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="accountName">Nom du Compte *</Label>
-                <Input
-                  id="accountName"
-                  placeholder="Ex: Mon Compte Courant"
-                  value={formData.accountName || ""}
-                  onChange={(e) => handleInputChange("accountName", e.target.value)}
-                />
-              </div>
-              <div>
-                <Label htmlFor="currency">Devise *</Label>
-                <Select
-                  value={formData.currency || selectedAccountType.currency}
-                  onValueChange={(value) => handleInputChange("currency", value)}
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50">
+      <div className="max-w-6xl mx-auto p-4 space-y-4">
+        <div className="relative">
+          <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-secondary/10 to-primary/10 rounded-xl blur-3xl -z-10" />
+          <Card className="border-2 border-primary/20 shadow-xl bg-white/80 backdrop-blur-sm">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between mb-3">
+                <Button variant="ghost" size="sm" asChild className="hover:bg-primary/10 h-8">
+                  <Link href="/accounts/balance">
+                    <ArrowLeft className="w-3 h-3 mr-1" />
+                    Retour
+                  </Link>
+                </Button>
+                <Badge
+                  variant="outline"
+                  className="bg-gradient-to-r from-primary to-secondary text-white border-0 text-xs"
                 >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Sélectionnez la devise" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="GNF">Franc Guinéen (GNF)</SelectItem>
-                    <SelectItem value="USD">Dollar Américain (USD)</SelectItem>
-                    <SelectItem value="EUR">Euro (EUR)</SelectItem>
-                  </SelectContent>
-                </Select>
+                  Étape {step}/3
+                </Badge>
               </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="initialDeposit">Dépôt Initial</Label>
-                <Input
-                  id="initialDeposit"
-                  type="number"
-                  placeholder={`Minimum: ${selectedAccountType.minBalance}`}
-                  value={formData.initialDeposit || ""}
-                  onChange={(e) => handleInputChange("initialDeposit", e.target.value)}
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  Minimum requis: {formatAmount(selectedAccountType.minBalance, selectedAccountType.currency)}{" "}
-                  {selectedAccountType.currency}
-                </p>
-              </div>
-              <div>
-                <Label htmlFor="accountPurpose">Objectif du Compte</Label>
-                <Select onValueChange={(value) => handleInputChange("accountPurpose", value)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Sélectionnez l'objectif" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="personal">Usage personnel</SelectItem>
-                    <SelectItem value="business">Usage professionnel</SelectItem>
-                    <SelectItem value="savings">Épargne</SelectItem>
-                    <SelectItem value="investment">Investissement</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            {/* Services Additionnels */}
-            <div>
-              <Label className="text-base font-medium">Services Additionnels</Label>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3">
-                <div className="flex items-start space-x-2">
-                  <Checkbox
-                    id="bankCard"
-                    checked={formData.bankCard || false}
-                    onCheckedChange={(checked) => handleInputChange("bankCard", checked)}
-                  />
-                  <div>
-                    <Label htmlFor="bankCard" className="font-medium">
-                      Carte bancaire
-                    </Label>
-                    <p className="text-xs text-gray-500">Carte de débit gratuite</p>
-                  </div>
-                </div>
-                <div className="flex items-start space-x-2">
-                  <Checkbox
-                    id="checkbook"
-                    checked={formData.checkbook || false}
-                    onCheckedChange={(checked) => handleInputChange("checkbook", checked)}
-                  />
-                  <div>
-                    <Label htmlFor="checkbook" className="font-medium">
-                      Chéquier
-                    </Label>
-                    <p className="text-xs text-gray-500">Carnet de 25 chèques</p>
-                  </div>
-                </div>
-                <div className="flex items-start space-x-2">
-                  <Checkbox
-                    id="mobileBanking"
-                    checked={formData.mobileBanking || true}
-                    onCheckedChange={(checked) => handleInputChange("mobileBanking", checked)}
-                  />
-                  <div>
-                    <Label htmlFor="mobileBanking" className="font-medium">
-                      Banque mobile
-                    </Label>
-                    <p className="text-xs text-gray-500">Accès à l'application mobile</p>
-                  </div>
-                </div>
-                <div className="flex items-start space-x-2">
-                  <Checkbox
-                    id="smsAlerts"
-                    checked={formData.smsAlerts || false}
-                    onCheckedChange={(checked) => handleInputChange("smsAlerts", checked)}
-                  />
-                  <div>
-                    <Label htmlFor="smsAlerts" className="font-medium">
-                      Alertes SMS
-                    </Label>
-                    <p className="text-xs text-gray-500">Notifications par SMS</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Commentaires */}
-            <div>
-              <Label htmlFor="comments">Commentaires Additionnels</Label>
-              <Textarea
-                id="comments"
-                placeholder="Informations supplémentaires ou demandes spéciales..."
-                value={formData.comments || ""}
-                onChange={(e) => handleInputChange("comments", e.target.value)}
-              />
-            </div>
-
-            {/* Conditions */}
-            <div className="space-y-4 p-4 bg-gray-50 rounded-lg">
               <div className="flex items-center space-x-2">
-                <Shield className="w-5 h-5 text-blue-600" />
-                <span className="font-medium">Conditions et Engagements</span>
+                <div>
+                  <h1 className="text-xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+                    Demande d'Ouverture de Compte
+                  </h1>
+                  <p className="text-xs text-muted-foreground">Choisissez le compte qui correspond à vos besoins</p>
+                </div>
               </div>
 
-              <div className="space-y-3">
+              <div className="mt-3 flex items-center justify-between">
+                {[1, 2, 3].map((s) => (
+                  <div key={s} className="flex items-center flex-1">
+                    <div
+                      className={`flex items-center justify-center w-7 h-7 rounded-full text-xs font-semibold transition-all ${
+                        s <= step
+                          ? "bg-gradient-to-r from-primary to-secondary text-white shadow-lg"
+                          : "bg-gray-200 text-gray-500"
+                      }`}
+                    >
+                      {s < step ? <CheckCircle className="w-4 h-4" /> : s}
+                    </div>
+                    {s < 3 && (
+                      <div
+                        className={`flex-1 h-0.5 mx-1 rounded-full transition-all ${
+                          s < step ? "bg-gradient-to-r from-primary to-secondary" : "bg-gray-200"
+                        }`}
+                      />
+                    )}
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {step === 1 && (
+          <Card className="border-2 border-primary/20 shadow-lg">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center space-x-2 text-lg">
+                <Building2 className="w-5 h-5 text-primary" />
+                <span>Choisissez votre type de compte</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+                {accountTypes.map((type) => (
+                  <div
+                    key={type.id}
+                    onClick={() => {
+                      setSelectedType(type.id)
+                      handleInputChange("accountType", type.id)
+                    }}
+                    className={`relative p-3 rounded-lg border-2 cursor-pointer transition-all hover:shadow-lg ${
+                      selectedType === type.id
+                        ? "border-primary bg-gradient-to-br from-primary/5 to-secondary/5 shadow-md"
+                        : "border-gray-200 hover:border-primary/50"
+                    }`}
+                  >
+                    {selectedType === type.id && (
+                      <div className="absolute top-2 right-2">
+                        <CheckCircle className="w-4 h-4 text-primary" />
+                      </div>
+                    )}
+                    <div className="text-2xl mb-2">{type.icon}</div>
+                    <h3 className="text-sm font-bold mb-1">{type.name}</h3>
+                    <p className="text-xs text-muted-foreground mb-2 line-clamp-2">{type.description}</p>
+                    <div className="space-y-1 mb-2">
+                      {type.features.slice(0, 2).map((feature, idx) => (
+                        <div key={idx} className="flex items-center text-xs">
+                          <CheckCircle className="w-3 h-3 text-primary mr-1 flex-shrink-0" />
+                          <span className="line-clamp-1">{feature}</span>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="pt-2 border-t border-gray-200 space-y-1">
+                      <div className="text-xs">
+                        <span className="text-muted-foreground">Frais: </span>
+                        <span className="font-semibold text-primary">{type.fees}</span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-4 flex justify-end">
+                <Button
+                  onClick={() => setStep(2)}
+                  disabled={!canProceedToStep2}
+                  className="bg-gradient-to-r from-primary to-secondary hover:opacity-90 transition-opacity h-9"
+                >
+                  Continuer
+                  <ChevronRight className="w-4 h-4 ml-1" />
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {step === 2 && selectedAccountType && (
+          <Card className="border-2 border-primary/20 shadow-lg">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center space-x-2 text-lg">
+                <FileText className="w-5 h-5 text-primary" />
+                <span>Détails du compte</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div className="space-y-1">
+                  <Label htmlFor="accountName" className="text-sm">
+                    Nom du Compte *
+                  </Label>
+                  <Input
+                    id="accountName"
+                    placeholder="Ex: Mon Compte Courant"
+                    value={formData.accountName || ""}
+                    onChange={(e) => handleInputChange("accountName", e.target.value)}
+                    className="border-2 focus:border-primary h-9 text-sm"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="currency" className="text-sm">
+                    Devise *
+                  </Label>
+                  <Select
+                    value={formData.currency || selectedAccountType.currency}
+                    onValueChange={(value) => handleInputChange("currency", value)}
+                  >
+                    <SelectTrigger className="border-2 focus:border-primary h-9 text-sm">
+                      <SelectValue placeholder="Devise" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="GNF">GNF</SelectItem>
+                      <SelectItem value="USD">USD</SelectItem>
+                      <SelectItem value="EUR">EUR</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                 <div className="space-y-1">
+                  <Label htmlFor="accountPurpose" className="text-sm">
+                    Objectif du Compte *
+                  </Label>
+                  <Select
+                    value={formData.accountPurpose}
+                    onValueChange={(value) => handleInputChange("accountPurpose", value)}
+                  >
+                    <SelectTrigger className="border-2 focus:border-primary h-9 text-sm">
+                      <SelectValue placeholder="Objectif" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="personal">Personnel</SelectItem>
+                      <SelectItem value="business">Professionnel</SelectItem>
+                      <SelectItem value="savings">Épargne</SelectItem>
+                      <SelectItem value="investment">Investissement</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="flex justify-between pt-2">
+                <Button onClick={() => setStep(1)} variant="outline" size="sm">
+                  <ArrowLeft className="w-3 h-3 mr-1" />
+                  Retour
+                </Button>
+                <Button
+                  onClick={() => setStep(3)}
+                  disabled={!canProceedToStep3}
+                  className="bg-gradient-to-r from-primary to-secondary hover:opacity-90 transition-opacity"
+                  size="sm"
+                >
+                  Continuer
+                  <ChevronRight className="w-3 h-3 ml-1" />
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {step === 3 && selectedAccountType && (
+          <Card className="border-2 border-primary/20 shadow-lg">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center space-x-2 text-lg">
+                <CheckCircle className="w-5 h-5 text-primary" />
+                <span>Récapitulatif et Validation</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                <div className="p-2 rounded bg-gradient-to-br from-primary/5 to-secondary/5">
+                  <p className="text-xs text-muted-foreground">Type</p>
+                  <p className="text-sm font-semibold">{selectedAccountType.name}</p>
+                </div>
+                <div className="p-2 rounded bg-gradient-to-br from-primary/5 to-secondary/5">
+                  <p className="text-xs text-muted-foreground">Nom</p>
+                  <p className="text-sm font-semibold">{formData.accountName}</p>
+                </div>
+                <div className="p-2 rounded bg-gradient-to-br from-primary/5 to-secondary/5">
+                  <p className="text-xs text-muted-foreground">Dévise</p>
+                  <p className="text-sm font-semibold">
+                  {formData.currency}
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-2 p-3 rounded-lg bg-gradient-to-br from-primary/5 to-secondary/5">
                 <div className="flex items-start space-x-2">
                   <Checkbox
                     id="terms"
                     checked={formData.terms || false}
                     onCheckedChange={(checked) => handleInputChange("terms", checked)}
+                    className="mt-0.5"
                   />
-                  <Label htmlFor="terms" className="text-sm">
+                  <Label htmlFor="terms" className="text-xs leading-tight cursor-pointer">
                     J'accepte les{" "}
-                    <a href="#" className="text-blue-600 hover:underline">
+                    <a href="#" className="text-primary hover:underline font-semibold">
                       conditions générales
-                    </a>{" "}
-                    d'ouverture de compte
+                    </a>
                   </Label>
                 </div>
-
                 <div className="flex items-start space-x-2">
                   <Checkbox
                     id="dataProcessing"
                     checked={formData.dataProcessing || false}
                     onCheckedChange={(checked) => handleInputChange("dataProcessing", checked)}
+                    className="mt-0.5"
                   />
-                  <Label htmlFor="dataProcessing" className="text-sm">
-                    J'autorise le traitement de mes données personnelles conformément à la{" "}
-                    <a href="#" className="text-blue-600 hover:underline">
-                      politique de confidentialité
-                    </a>
+                  <Label htmlFor="dataProcessing" className="text-xs leading-tight cursor-pointer">
+                    J'autorise le traitement de mes données personnelles
                   </Label>
                 </div>
               </div>
-            </div>
 
-            {/* Informations Importantes */}
-            <Alert>
-              <Clock className="h-4 w-4" />
-              <AlertDescription>
-                <strong>Délai de traitement :</strong> Votre demande sera traitée sous 3-5 jours ouvrables. Vous
-                recevrez une notification par SMS et email une fois votre compte activé.
-              </AlertDescription>
-            </Alert>
-
-            {/* Bouton de Soumission */}
-            <form action={createAction}>
-              <input type="hidden" name="accountId" value={`ACC_${Date.now()}`} />
-              <input type="hidden" name="customerId" value="CUSTOMER_ID_PLACEHOLDER" />
-              <input type="hidden" name="accountNumber" value={`000${Date.now().toString().slice(-7)}`} />
-              <input type="hidden" name="accountName" value={formData.accountName || ""} />
-              <input type="hidden" name="currency" value={formData.currency || selectedAccountType.currency} />
-              <input type="hidden" name="bookBalance" value={formData.initialDeposit || "0"} />
-              <input type="hidden" name="availableBalance" value={formData.initialDeposit || "0"} />
-              <input type="hidden" name="accountType" value={selectedType} />
-
-              <Button
-                type="submit"
-                disabled={isCreating || !formData.terms || !formData.dataProcessing || !formData.accountName}
-                className="w-full"
-              >
-                {isCreating ? (
-                  <>
-                    <Clock className="w-4 h-4 mr-2 animate-spin" />
-                    Soumission en cours...
-                  </>
-                ) : (
-                  <>
-                    <CreditCard className="w-4 h-4 mr-2" />
-                    Soumettre la Demande d'Ouverture
-                  </>
-                )}
-              </Button>
-            </form>
-
-            {/* Messages de Feedback */}
-            {createState?.success && (
-              <Alert className="border-green-200 bg-green-50">
-                <CheckCircle className="h-4 w-4 text-green-600" />
-                <AlertDescription className="text-green-800">✅ {createState.message}</AlertDescription>
+              <Alert className="border-primary/20 bg-gradient-to-r from-primary/5 to-secondary/5 py-2">
+                <Clock className="h-3 w-3 text-primary" />
+                <AlertDescription className="text-xs">Délai de traitement : 3-5 jours ouvrables</AlertDescription>
               </Alert>
-            )}
 
-            {createState?.error && (
-              <Alert className="border-red-200 bg-red-50">
-                <AlertCircle className="h-4 w-4 text-red-600" />
-                <AlertDescription className="text-red-800">❌ {createState.error}</AlertDescription>
-              </Alert>
-            )}
-          </CardContent>
-        </Card>
-      )}
+              <form action={createAction}>
+                <input type="hidden" name="accountId" value={`ACC_${Date.now()}`} />
+                <input type="hidden" name="customerId" value="CUSTOMER_ID_PLACEHOLDER" />
+                <input type="hidden" name="accountNumber" value={`000${Date.now().toString().slice(-7)}`} />
+                <input type="hidden" name="accountName" value={formData.accountName || ""} />
+                <input type="hidden" name="currency" value={formData.currency || selectedAccountType.currency} />
+                <input type="hidden" name="bookBalance" value={formData.initialDeposit || "0"} />
+                <input type="hidden" name="availableBalance" value={formData.initialDeposit || "0"} />
+                <input type="hidden" name="accountType" value={selectedType} />
+
+                <div className="flex justify-between pt-2">
+                  <Button onClick={() => setStep(2)} variant="outline" size="sm" type="button">
+                    <ArrowLeft className="w-3 h-3 mr-1" />
+                    Retour
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={isCreating || !canSubmit}
+                    className="bg-gradient-to-r from-primary to-secondary hover:opacity-90 transition-opacity"
+                    size="sm"
+                  >
+                    {isCreating ? (
+                      <>
+                        <Clock className="w-3 h-3 mr-1 animate-spin" />
+                        Soumission...
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle className="w-3 h-3 mr-1" />
+                        Soumettre
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </form>
+
+              {createState?.success && (
+                <Alert className="border-green-200 bg-green-50 py-2">
+                  <CheckCircle className="h-3 w-3 text-green-600" />
+                  <AlertDescription className="text-xs text-green-800">{createState.message}</AlertDescription>
+                </Alert>
+              )}
+
+              {createState?.error && (
+                <Alert variant="destructive" className="py-2">
+                  <AlertCircle className="h-3 w-3" />
+                  <AlertDescription className="text-xs">{createState.error}</AlertDescription>
+                </Alert>
+              )}
+            </CardContent>
+          </Card>
+        )}
+      </div>
     </div>
   )
 }
