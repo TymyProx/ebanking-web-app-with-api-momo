@@ -23,6 +23,7 @@ import {
   Clock,
   Sparkles,
   AlertCircle,
+  Loader2,
 } from "lucide-react"
 import Image from "next/image"
 import { cn } from "@/lib/utils"
@@ -313,33 +314,27 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>): 
   }
 
   return (
-    <Sidebar collapsible="icon" variant="inset" {...props} className="border-r-0">
-      <SidebarHeader className="border-b border-border/40 bg-gradient-to-br from-[#0B8338]/5 to-[#FFEB00]/5">
-        <div className="flex items-center gap-3 px-4 py-4">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-[#0B8338] to-[#0B8338]/80 shadow-lg shadow-[#0B8338]/20">
-            <Image src="/images/logo-bng.png" alt="BNG Logo" width={32} height={32} className="object-contain" />
-          </div>
-          <div className="flex flex-col">
-            <span className="text-sm font-bold text-[#0B8338]">BNG</span>
-            <span className="text-xs text-muted-foreground">E-Banking</span>
+    <Sidebar collapsible="icon" variant="inset" {...props}>
+      <SidebarHeader>
+        <div className="flex items-center gap-2 px-4 py-2">
+          <div className="flex h-120 w-120 items-center justify-center">
+            <Image src="/images/logo-bng.png" alt="BNG Logo" width={120} height={120} className="object-contain" />
           </div>
         </div>
       </SidebarHeader>
 
-      <SidebarContent className="bg-gradient-to-b from-background to-muted/20">
+      <SidebarContent>
         {isCheckingAccounts ? (
-          <div className="flex flex-col items-center justify-center py-12 space-y-4">
-            <div className="relative">
-              <div className="h-12 w-12 rounded-full border-4 border-[#0B8338]/20 border-t-[#0B8338] animate-spin" />
-            </div>
-            <p className="text-sm font-medium text-muted-foreground">Chargement...</p>
+          <div className="flex flex-col items-center justify-center py-8 space-y-3">
+            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            <p className="text-sm text-muted-foreground">Chargement...</p>
           </div>
         ) : !hasActiveAccount ? (
           <>
-            <div className="px-3 py-4">
-              <Alert className="border-[#FFEB00]/50 bg-gradient-to-br from-[#FFEB00]/10 to-[#FFEB00]/5 shadow-sm">
-                <AlertCircle className="h-4 w-4 text-[#0B8338]" />
-                <AlertDescription className="text-xs font-medium text-foreground">
+            <div className="px-3 py-2">
+              <Alert className="border-amber-500/50 bg-amber-50 dark:bg-amber-950/20">
+                <AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-500" />
+                <AlertDescription className="text-xs text-amber-800 dark:text-amber-300">
                   Ouvrez un compte pour accéder à toutes les fonctionnalités
                 </AlertDescription>
               </Alert>
@@ -347,16 +342,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>): 
 
             <SidebarGroup>
               <SidebarGroupLabel asChild>
-                <div className="text-[#0B8338] font-bold">Comptes</div>
+                <div>Comptes</div>
               </SidebarGroupLabel>
               <SidebarGroupContent>
                 <SidebarMenu>
                   <SidebarMenuItem>
-                    <SidebarMenuButton
-                      asChild
-                      isActive={pathname === "/accounts/balance"}
-                      className="hover:bg-[#0B8338]/10 data-[active=true]:bg-gradient-to-r data-[active=true]:from-[#0B8338] data-[active=true]:to-[#0B8338]/80 data-[active=true]:text-white data-[active=true]:shadow-md transition-all duration-200"
-                    >
+                    <SidebarMenuButton asChild isActive={pathname === "/accounts/balance"}>
                       <Link href="/accounts/balance">
                         <BarChart3 />
                         <span>Mes comptes</span>
@@ -369,27 +360,21 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>): 
           </>
         ) : (
           <>
+            {/* Navigation principale */}
             <SidebarGroup>
               <SidebarGroupLabel asChild>
-                <div className="text-[#0B8338] font-bold">Principal</div>
+                <div>Principal</div>
               </SidebarGroupLabel>
               <SidebarGroupContent>
                 <SidebarMenu>
                   {navigationData.main.map((item) => (
                     <SidebarMenuItem key={item.title}>
-                      <SidebarMenuButton
-                        asChild
-                        isActive={pathname === item.url}
-                        className="hover:bg-[#0B8338]/10 data-[active=true]:bg-gradient-to-r data-[active=true]:from-[#0B8338] data-[active=true]:to-[#0B8338]/80 data-[active=true]:text-white data-[active=true]:shadow-md transition-all duration-200"
-                      >
+                      <SidebarMenuButton asChild isActive={pathname === item.url}>
                         <Link href={item.url}>
                           <item.icon />
                           <span>{item.title}</span>
                           {item.badge && (
-                            <Badge
-                              variant="secondary"
-                              className="ml-auto bg-[#FFEB00] text-[#0B8338] border-0 font-semibold"
-                            >
+                            <Badge variant="secondary" className="ml-auto">
                               {item.badge}
                             </Badge>
                           )}
@@ -401,9 +386,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>): 
               </SidebarGroupContent>
             </SidebarGroup>
 
+            {/* Comptes */}
             <SidebarGroup>
               <SidebarGroupLabel asChild>
-                <div className="text-[#0B8338] font-bold">Comptes</div>
+                <div>Comptes</div>
               </SidebarGroupLabel>
               <SidebarGroupContent>
                 <SidebarMenu>
@@ -416,9 +402,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>): 
               </SidebarGroupContent>
             </SidebarGroup>
 
+            {/* Opérations */}
             <SidebarGroup>
               <SidebarGroupLabel asChild>
-                <div className="text-[#0B8338] font-bold">Opérations</div>
+                <div>Opérations</div>
               </SidebarGroupLabel>
               <SidebarGroupContent>
                 <SidebarMenu>
@@ -427,19 +414,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>): 
                       {item.items ? (
                         <MenuItemWithSubmenu item={item} />
                       ) : (
-                        <SidebarMenuButton
-                          asChild
-                          isActive={pathname === item.url}
-                          className="hover:bg-[#0B8338]/10 data-[active=true]:bg-gradient-to-r data-[active=true]:from-[#0B8338] data-[active=true]:to-[#0B8338]/80 data-[active=true]:text-white data-[active=true]:shadow-md transition-all duration-200"
-                        >
+                        <SidebarMenuButton asChild isActive={pathname === item.url}>
                           <Link href={item.url!}>
                             <item.icon />
                             <span>{item.title}</span>
                             {item.badge && (
-                              <Badge
-                                variant="secondary"
-                                className="ml-auto bg-[#FFEB00] text-[#0B8338] border-0 font-semibold"
-                              >
+                              <Badge variant="secondary" className="ml-auto">
                                 {item.badge}
                               </Badge>
                             )}
@@ -452,9 +432,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>): 
               </SidebarGroupContent>
             </SidebarGroup>
 
+            {/* Services */}
             <SidebarGroup>
               <SidebarGroupLabel asChild>
-                <div className="text-[#0B8338] font-bold">Services</div>
+                <div>Services</div>
               </SidebarGroupLabel>
               <SidebarGroupContent>
                 <SidebarMenu>
@@ -467,9 +448,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>): 
               </SidebarGroupContent>
             </SidebarGroup>
 
+            {/* Support */}
             <SidebarGroup>
               <SidebarGroupLabel asChild>
-                <div className="text-[#0B8338] font-bold">Support</div>
+                <div>Support</div>
               </SidebarGroupLabel>
               <SidebarGroupContent>
                 <SidebarMenu>
@@ -478,11 +460,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>): 
                       {item.items ? (
                         <MenuItemWithSubmenu item={item} />
                       ) : (
-                        <SidebarMenuButton
-                          asChild
-                          isActive={pathname === item.url}
-                          className="hover:bg-[#0B8338]/10 data-[active=true]:bg-gradient-to-r data-[active=true]:from-[#0B8338] data-[active=true]:to-[#0B8338]/80 data-[active=true]:text-white data-[active=true]:shadow-md transition-all duration-200"
-                        >
+                        <SidebarMenuButton asChild isActive={pathname === item.url}>
                           <Link href={item.url!}>
                             <item.icon />
                             <span>{item.title}</span>
@@ -495,24 +473,21 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>): 
               </SidebarGroupContent>
             </SidebarGroup>
 
+            {/* Autres */}
             <SidebarGroup>
               <SidebarGroupLabel asChild>
-                <div className="text-[#0B8338] font-bold">Autres</div>
+                <div>Autres</div>
               </SidebarGroupLabel>
               <SidebarGroupContent>
                 <SidebarMenu>
                   {navigationData.other.map((item) => (
                     <SidebarMenuItem key={item.title}>
-                      <SidebarMenuButton
-                        asChild
-                        isActive={pathname === item.url}
-                        className="hover:bg-[#0B8338]/10 data-[active=true]:bg-gradient-to-r data-[active=true]:from-[#0B8338] data-[active=true]:to-[#0B8338]/80 data-[active=true]:text-white data-[active=true]:shadow-md transition-all duration-200"
-                      >
+                      <SidebarMenuButton asChild isActive={pathname === item.url}>
                         <Link href={item.url}>
                           <item.icon />
                           <span>{item.title}</span>
                           {item.badge && (
-                            <Badge variant="destructive" className="ml-auto bg-red-500 border-0 font-semibold">
+                            <Badge variant="destructive" className="ml-auto">
                               {item.badge}
                             </Badge>
                           )}
@@ -527,34 +502,32 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>): 
         )}
       </SidebarContent>
 
-      <SidebarFooter className="border-t border-border/40 bg-gradient-to-br from-[#0B8338]/5 to-[#FFEB00]/5">
+      <SidebarFooter>
         <SidebarMenu>
           <SidebarMenuItem>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <SidebarMenuButton
                   size="lg"
-                  className="data-[state=open]:bg-[#0B8338]/10 hover:bg-[#0B8338]/10 transition-all duration-200"
+                  className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
                 >
-                  <Avatar className="h-8 w-8 rounded-lg ring-2 ring-[#0B8338]/20">
+                  <Avatar className="h-8 w-8 rounded-lg">
                     <AvatarImage src="/placeholder-user.jpg" alt={userData?.fullName || "Utilisateur"} />
-                    <AvatarFallback className="rounded-lg bg-gradient-to-br from-[#0B8338] to-[#0B8338]/80 text-white font-semibold">
+                    <AvatarFallback className="rounded-lg bg-gradient-to-br from-blue-600 to-blue-800 text-white">
                       {userData?.fullName ? getInitials(userData.fullName) : "U"}
                     </AvatarFallback>
                   </Avatar>
                   <div className="grid flex-1 text-left text-sm leading-tight">
-                    <span className="truncate font-semibold text-foreground">
-                      {userData?.fullName || "Utilisateur"}
-                    </span>
+                    <span className="truncate font-semibold">{userData?.fullName || "Utilisateur"}</span>
                     <span className="truncate text-xs text-muted-foreground">
                       {userData?.email || "Client Particulier"}
                     </span>
                   </div>
-                  <ChevronRight className="ml-auto size-4 text-[#0B8338]" />
+                  <ChevronRight className="ml-auto size-4" />
                 </SidebarMenuButton>
               </DropdownMenuTrigger>
               <DropdownMenuContent
-                className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-lg shadow-lg border-[#0B8338]/20"
+                className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-lg"
                 side="bottom"
                 align="end"
                 sideOffset={4}
@@ -563,7 +536,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>): 
                   <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
                     <Avatar className="h-8 w-8 rounded-lg">
                       <AvatarImage src="/placeholder-user.jpg" alt={userData?.fullName || "Utilisateur"} />
-                      <AvatarFallback className="rounded-lg bg-gradient-to-br from-[#0B8338] to-[#0B8338]/80 text-white font-semibold">
+                      <AvatarFallback className="rounded-lg bg-gradient-to-br from-blue-600 to-blue-800 text-white">
                         {userData?.fullName ? getInitials(userData.fullName) : "U"}
                       </AvatarFallback>
                     </Avatar>

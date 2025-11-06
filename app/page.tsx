@@ -108,11 +108,11 @@ function AnimatedStat({
         transitionDelay: `${delay}ms`,
       }}
     >
-      <div className="text-4xl md:text-5xl lg:text-6xl font-bold text-white drop-shadow-lg">
+      <div className="text-4xl md:text-5xl lg:text-6xl font-bold bg-gradient-to-r from-green-800 via-green-700 to-green-600 bg-clip-text text-transparent">
         {count}
         {suffix}
       </div>
-      <div className="text-sm md:text-base text-white/90 font-medium uppercase tracking-wide">{label}</div>
+      <div className="text-sm md:text-base text-muted-foreground font-medium uppercase tracking-wide">{label}</div>
     </div>
   )
 }
@@ -152,7 +152,7 @@ export default function LandingPage() {
     <div className="min-h-screen bg-white overflow-hidden">
       <header
         className={`fixed top-0 z-50 w-full transition-all duration-300 ${
-          scrolled ? "bg-white/95 backdrop-blur-xl border-b shadow-sm" : "bg-transparent"
+          scrolled ? "bg-white/80 backdrop-blur-xl border-b shadow-sm" : "bg-transparent"
         }`}
       >
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 flex h-20 items-center justify-between">
@@ -172,48 +172,45 @@ export default function LandingPage() {
             <a
               href="#accueil"
               onClick={(e) => handleNavClick(e, "#accueil")}
-              className="text-sm font-medium hover:text-primary transition-colors relative group cursor-pointer"
+              className="text-sm font-medium hover:text-gray-700 transition-colors relative group cursor-pointer"
             >
               Accueil
-              <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-primary transition-all group-hover:w-full" />
+              <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-gray-700 transition-all group-hover:w-full" />
             </a>
             <a
               href="#services"
               onClick={(e) => handleNavClick(e, "#services")}
-              className="text-sm font-medium hover:text-primary transition-colors relative group cursor-pointer"
+              className="text-sm font-medium hover:text-gray-700 transition-colors relative group cursor-pointer"
             >
               Services
-              <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-primary transition-all group-hover:w-full" />
+              <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-gray-700 transition-all group-hover:w-full" />
             </a>
             <a
               href="#ebanking"
               onClick={(e) => handleNavClick(e, "#ebanking")}
-              className="text-sm font-medium hover:text-primary transition-colors relative group cursor-pointer"
+              className="text-sm font-medium hover:text-gray-700 transition-colors relative group cursor-pointer"
             >
               E-Banking
-              <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-primary transition-all group-hover:w-full" />
+              <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-gray-700 transition-all group-hover:w-full" />
             </a>
             <a
               href="#contact"
               onClick={(e) => handleNavClick(e, "#contact")}
-              className="text-sm font-medium hover:text-primary transition-colors relative group cursor-pointer"
+              className="text-sm font-medium hover:text-gray-700 transition-colors relative group cursor-pointer"
             >
               Contact
-              <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-primary transition-all group-hover:w-full" />
+              <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-gray-700 transition-all group-hover:w-full" />
             </a>
           </nav>
 
           <div className="flex items-center gap-3">
             <Link href="/signup" className="hidden md:inline-flex">
-              <Button
-                variant="outline"
-                className="group border-2 border-primary/20 hover:border-primary hover:bg-primary/5 bg-transparent"
-              >
+              <Button variant="outline" className="group bg-transparent hover:bg-yellow-200">
                 S'inscrire
               </Button>
             </Link>
             <Link href="/login">
-              <Button className="hidden md:inline-flex group bg-gradient-to-r from-primary to-accent hover:shadow-lg hover:shadow-primary/30">
+              <Button className="hidden md:inline-flex group bg-green-700 hover:bg-green-800">
                 Se connecter
                 <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
               </Button>
@@ -231,38 +228,38 @@ export default function LandingPage() {
               <a
                 href="#accueil"
                 onClick={(e) => handleNavClick(e, "#accueil")}
-                className="text-sm font-medium hover:text-primary transition-colors cursor-pointer"
+                className="text-sm font-medium hover:text-gray-700 transition-colors cursor-pointer"
               >
                 Accueil
               </a>
               <a
                 href="#services"
                 onClick={(e) => handleNavClick(e, "#services")}
-                className="text-sm font-medium hover:text-primary transition-colors cursor-pointer"
+                className="text-sm font-medium hover:text-gray-700 transition-colors cursor-pointer"
               >
                 Services
               </a>
               <a
                 href="#ebanking"
                 onClick={(e) => handleNavClick(e, "#ebanking")}
-                className="text-sm font-medium hover:text-primary transition-colors cursor-pointer"
+                className="text-sm font-medium hover:text-gray-700 transition-colors cursor-pointer"
               >
                 E-Banking
               </a>
               <a
                 href="#contact"
                 onClick={(e) => handleNavClick(e, "#contact")}
-                className="text-sm font-medium hover:text-primary transition-colors cursor-pointer"
+                className="text-sm font-medium hover:text-gray-700 transition-colors cursor-pointer"
               >
                 Contact
               </a>
               <Link href="/signup">
-                <Button variant="outline" className="w-full bg-transparent border-primary/20">
+                <Button variant="outline" className="w-full bg-transparent border-gray-300">
                   S'inscrire
                 </Button>
               </Link>
               <Link href="/login">
-                <Button className="w-full bg-gradient-to-r from-primary to-accent">Se connecter</Button>
+                <Button className="w-full bg-green-700 hover:bg-green-800">Se connecter</Button>
               </Link>
             </nav>
           </div>
@@ -271,7 +268,7 @@ export default function LandingPage() {
 
       <section
         id="accueil"
-        className="relative overflow-hidden pt-32 pb-20 md:pt-40 md:pb-32 bg-gradient-to-br from-primary/5 via-white to-secondary/5"
+        className="relative overflow-hidden pt-32 pb-20 md:pt-40 md:pb-32 bg-gradient-to-br from-gray-50 to-white"
       >
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative" ref={heroAnimation.ref}>
           <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
@@ -280,11 +277,11 @@ export default function LandingPage() {
                 heroAnimation.isVisible ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-20"
               }`}
             >
-              <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight leading-tight">
-                <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                  Votre banque,
-                </span>{" "}
-                <span className="text-secondary">accessible partout</span>
+              <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight leading-tight text-green-700">
+                Votre banque,{" "}
+                <span className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold  text-yellow-400">
+                  accessible partout
+                </span>
               </h1>
 
               <p className="text-lg sm:text-xl md:text-2xl text-gray-600 leading-relaxed">
@@ -296,7 +293,7 @@ export default function LandingPage() {
                 <Link href="/login">
                   <Button
                     size="lg"
-                    className="w-full sm:w-auto text-base px-8 py-6 group shadow-lg hover:shadow-xl transition-all bg-gradient-to-r from-primary to-accent hover:shadow-primary/30"
+                    className="w-full sm:w-auto text-base px-8 py-6 group shadow-lg hover:shadow-xl transition-all bg-green-700 hover:bg-green-800"
                   >
                     Accéder à mon espace
                     <ChevronRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
@@ -305,20 +302,20 @@ export default function LandingPage() {
                 <Button
                   size="lg"
                   variant="outline"
-                  className="w-full sm:w-auto text-base px-8 py-6 border-2 border-primary/20 hover:border-primary hover:bg-primary/5 bg-transparent"
+                  className="w-full sm:w-auto text-base px-8 py-6 border-2 bg-transparent group bg-transparent hover:bg-yellow-200"
                 >
                   En savoir plus
                 </Button>
               </div>
 
-              <div className="flex flex-wrap items-center gap-6 md:gap-8 pt-6 md:pt-8 border-t border-border">
+              <div className="flex flex-wrap items-center gap-6 md:gap-8 pt-6 md:pt-8 border-t border-gray-200">
                 <div className="flex items-center gap-2">
-                  <Shield className="h-5 w-5 text-primary" />
-                  <span className="text-sm font-medium text-foreground">Sécurisé</span>
+                  <Shield className="h-5 w-5 text-gray-700" />
+                  <span className="text-sm font-medium text-gray-700">Sécurisé</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Clock className="h-5 w-5 text-primary" />
-                  <span className="text-sm font-medium text-foreground">24/7</span>
+                  <Clock className="h-5 w-5 text-gray-700" />
+                  <span className="text-sm font-medium text-gray-700">24/7</span>
                 </div>
               </div>
             </div>
@@ -343,7 +340,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <section className="py-20 md:py-24 bg-gradient-to-r from-primary to-accent border-y border-primary/20">
+      <section className="py-20 md:py-24 bg-gray-100 border-y border-gray-200 text-black">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-12 lg:gap-16">
             <AnimatedStat value={5000} suffix="+" label="Clients actifs" delay={0} />
@@ -361,7 +358,7 @@ export default function LandingPage() {
               servicesAnimation.isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"
             }`}
           >
-            <Badge variant="outline" className="mb-4 border-primary/20">
+            <Badge variant="outline" className="mb-4 border-gray-300">
               Nos services
             </Badge>
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900">Solutions bancaires sur mesure</h2>
@@ -385,7 +382,7 @@ export default function LandingPage() {
             ].map((service, index) => (
               <Card
                 key={index}
-                className={`group overflow-hidden hover:shadow-2xl transition-all duration-700 border-2 hover:border-primary/40 ${
+                className={`group overflow-hidden hover:shadow-2xl transition-all duration-700 border-2 hover:border-gray-400 ${
                   servicesAnimation.isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-20"
                 }`}
                 style={{ transitionDelay: `${index * 200}ms` }}
@@ -481,8 +478,8 @@ export default function LandingPage() {
                   "Et bien plus encore",
                 ].map((advantage, index) => (
                   <div key={index} className="flex items-start gap-3 group">
-                    <div className="mt-1 rounded-full bg-primary/10 p-1 group-hover:bg-primary/20 transition-colors">
-                      <Check className="h-4 w-4 text-primary" />
+                    <div className="mt-1 rounded-full bg-gray-100 p-1 group-hover:bg-gray-200 transition-colors">
+                      <Check className="h-4 w-4 text-gray-900" />
                     </div>
                     <span className="text-sm sm:text-base text-gray-600">{advantage}</span>
                   </div>
@@ -490,7 +487,7 @@ export default function LandingPage() {
               </div>
 
               <Link href="/login">
-                <Button size="lg" className="group mt-2 bg-primary hover:bg-accent text-white">
+                <Button size="lg" className="group mt-2 bg-green-700 hover:bg-green-800 text-white">
                   Commencer maintenant
                   <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
                 </Button>
@@ -557,13 +554,13 @@ export default function LandingPage() {
             ].map((feature, index) => (
               <Card
                 key={index}
-                className={`group overflow-hidden hover:shadow-2xl transition-all duration-700 border-2 hover:border-primary/40 hover:-translate-y-3 bg-gradient-to-br from-background to-muted/30 ${
+                className={`group overflow-hidden hover:shadow-2xl transition-all duration-700 border-2 hover:border-gray-400 hover:-translate-y-3 bg-gradient-to-br from-background to-muted/30 ${
                   featuresAnimation.isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-20"
                 }`}
                 style={{ transitionDelay: `${index * 100}ms` }}
               >
                 <CardContent className="p-8 space-y-4 relative overflow-hidden">
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-primary/10 to-transparent rounded-full blur-2xl group-hover:scale-150 transition-transform duration-700" />
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-gray-100 to-transparent rounded-full blur-2xl group-hover:scale-150 transition-transform duration-700" />
                   <div
                     className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${feature.color} flex items-center justify-center group-hover:scale-110 group-hover:rotate-12 transition-all duration-500 shadow-lg relative z-10`}
                   >
@@ -578,17 +575,14 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <section
-        className="py-24 md:py-32 relative overflow-hidden bg-gradient-to-br from-primary/10 via-white to-secondary/10"
-        ref={ctaAnimation.ref}
-      >
+      <section className="py-24 md:py-32 relative overflow-hidden bg-green-50" ref={ctaAnimation.ref}>
         <div
           className={`container mx-auto px-4 sm:px-6 lg:px-8 relative text-center transition-all duration-1000 ${
             ctaAnimation.isVisible ? "opacity-100 scale-100" : "opacity-0 scale-95"
           }`}
         >
           <div className="max-w-4xl mx-auto space-y-8 md:space-y-10">
-            <h2 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent leading-tight">
+            <h2 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-green-700 leading-tight">
               Prêt à commencer ?
             </h2>
 
@@ -600,7 +594,7 @@ export default function LandingPage() {
               <Link href="/login">
                 <Button
                   size="lg"
-                  className="text-base sm:text-lg px-10 sm:px-12 py-7 sm:py-8 shadow-2xl hover:shadow-3xl transition-all duration-500 group bg-gradient-to-r from-primary to-accent hover:shadow-primary/40 hover:scale-105"
+                  className="text-base sm:text-lg px-10 sm:px-12 py-7 sm:py-8 shadow-2xl hover:shadow-3xl transition-all duration-500 group bg-green-600 hover:bg-green-700 text-white border-2 border-green-600 hover:border-green-700 hover:scale-105"
                 >
                   Accéder à mon espace
                   <ChevronRight className="ml-2 h-5 w-5 sm:h-6 sm:w-6 transition-transform group-hover:translate-x-2" />
@@ -611,7 +605,7 @@ export default function LandingPage() {
                 <Button
                   size="lg"
                   variant="outline"
-                  className="text-base sm:text-lg px-10 sm:px-12 py-7 sm:py-8 shadow-lg hover:shadow-xl transition-all duration-500 group bg-white border-2 border-secondary hover:bg-secondary/10 hover:border-secondary text-foreground hover:scale-105"
+                  className="text-base sm:text-lg px-10 sm:px-12 py-7 sm:py-8 shadow-lg hover:shadow-xl transition-all duration-500 group bg-white/80 backdrop-blur-sm border-2 border-yellow-400 hover:bg-yellow-50 hover:border-yellow-500 text-gray-900 hover:scale-105"
                 >
                   Créer un compte
                   <ArrowRight className="ml-2 h-5 w-5 sm:h-6 sm:w-6 transition-transform group-hover:translate-x-2" />
@@ -620,12 +614,12 @@ export default function LandingPage() {
             </div>
 
             <div className="flex flex-wrap justify-center items-center gap-8 pt-8">
-              <div className="flex items-center gap-2 text-foreground">
-                <Shield className="h-5 w-5 text-primary" />
+              <div className="flex items-center gap-2 text-gray-700">
+                <Shield className="h-5 w-5 text-green-600" />
                 <span className="text-sm font-medium">100% Sécurisé</span>
               </div>
-              <div className="flex items-center gap-2 text-foreground">
-                <Clock className="h-5 w-5 text-primary" />
+              <div className="flex items-center gap-2 text-gray-700">
+                <Clock className="h-5 w-5 text-green-600" />
                 <span className="text-sm font-medium">Activation immédiate</span>
               </div>
             </div>
@@ -633,7 +627,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <footer id="contact" className="py-16 md:py-20 border-t bg-gray-100 border-primary/20">
+      <footer id="contact" className="py-16 md:py-20 border-t bg-gray-100 border-gray-200">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid sm:grid-cols-2 md:grid-cols-4 gap-8 md:gap-12">
             <div className="space-y-4">
@@ -653,22 +647,22 @@ export default function LandingPage() {
               <h3 className="font-semibold mb-4 text-base md:text-lg text-gray-900">Services</h3>
               <ul className="space-y-3 text-sm text-gray-600">
                 <li>
-                  <Link href="#" className="hover:text-primary transition-colors">
+                  <Link href="#" className="hover:text-gray-700 transition-colors">
                     Comptes bancaires
                   </Link>
                 </li>
                 <li>
-                  <Link href="#" className="hover:text-primary transition-colors">
+                  <Link href="#" className="hover:text-gray-700 transition-colors">
                     Cartes bancaires
                   </Link>
                 </li>
                 <li>
-                  <Link href="#" className="hover:text-primary transition-colors">
+                  <Link href="#" className="hover:text-gray-700 transition-colors">
                     Crédits
                   </Link>
                 </li>
                 <li>
-                  <Link href="#" className="hover:text-primary transition-colors">
+                  <Link href="#" className="hover:text-gray-700 transition-colors">
                     Épargne
                   </Link>
                 </li>
@@ -678,22 +672,22 @@ export default function LandingPage() {
               <h3 className="font-semibold mb-4 text-base md:text-lg text-gray-900">À propos</h3>
               <ul className="space-y-3 text-sm text-gray-600">
                 <li>
-                  <Link href="#" className="hover:text-primary transition-colors">
+                  <Link href="#" className="hover:text-gray-700 transition-colors">
                     Qui sommes-nous
                   </Link>
                 </li>
                 <li>
-                  <Link href="#" className="hover:text-primary transition-colors">
+                  <Link href="#" className="hover:text-gray-700 transition-colors">
                     Carrières
                   </Link>
                 </li>
                 <li>
-                  <Link href="#" className="hover:text-primary transition-colors">
+                  <Link href="#" className="hover:text-gray-700 transition-colors">
                     Actualités
                   </Link>
                 </li>
                 <li>
-                  <Link href="#" className="hover:text-primary transition-colors">
+                  <Link href="#" className="hover:text-gray-700 transition-colors">
                     Contact
                   </Link>
                 </li>
@@ -703,17 +697,17 @@ export default function LandingPage() {
               <h3 className="font-semibold mb-4 text-base md:text-lg text-gray-900">Légal</h3>
               <ul className="space-y-3 text-sm text-gray-600">
                 <li>
-                  <Link href="#" className="hover:text-primary transition-colors">
+                  <Link href="#" className="hover:text-gray-700 transition-colors">
                     Mentions légales
                   </Link>
                 </li>
                 <li>
-                  <Link href="#" className="hover:text-primary transition-colors">
+                  <Link href="#" className="hover:text-gray-700 transition-colors">
                     Politique de confidentialité
                   </Link>
                 </li>
                 <li>
-                  <Link href="#" className="hover:text-primary transition-colors">
+                  <Link href="#" className="hover:text-gray-700 transition-colors">
                     CGU
                   </Link>
                 </li>

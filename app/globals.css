@@ -10,94 +10,74 @@
 
 @layer base {
   :root {
-    /* Updated to BNG brand colors - Green #0B8338 and Yellow #FFEB00 */
+    /* Updated color palette for modern gradient design */
     --background: 0 0% 100%;
-    --foreground: 142 10% 15%;
+    --foreground: 220 13% 13%;
     --card: 0 0% 100%;
-    --card-foreground: 142 10% 15%;
+    --card-foreground: 220 13% 13%;
     --popover: 0 0% 100%;
-    --popover-foreground: 142 10% 15%;
-
-    /* BNG Primary Green: #0B8338 */
-    --primary: 142 85% 28%;
+    --popover-foreground: 220 13% 13%;
+    --primary: 123 38% 57%;
     --primary-foreground: 0 0% 100%;
-
-    /* BNG Secondary Yellow: #FFEB00 */
-    --secondary: 55 100% 50%;
-    --secondary-foreground: 142 10% 15%;
-
-    --muted: 142 10% 96%;
-    --muted-foreground: 142 10% 40%;
-    --accent: 142 85% 35%;
+    --secondary: 45 93% 47%;
+    --secondary-foreground: 220 13% 13%;
+    --muted: 210 40% 96%;
+    --muted-foreground: 220 13% 46%;
+    --accent: 25 95% 53%;
     --accent-foreground: 0 0% 100%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
-    --border: 142 10% 90%;
-    --input: 142 10% 90%;
-    --ring: 142 85% 28%;
-
-    /* Chart colors using BNG palette */
-    --chart-1: 142 85% 28%;
-    --chart-2: 55 100% 50%;
-    --chart-3: 142 85% 35%;
-    --chart-4: 142 60% 45%;
-    --chart-5: 55 90% 60%;
-
-    --radius: 0.75rem;
-
-    /* Sidebar with BNG colors */
-    --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 142 10% 20%;
-    --sidebar-primary: 142 85% 28%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 142 10% 96%;
-    --sidebar-accent-foreground: 142 85% 28%;
-    --sidebar-border: 142 10% 90%;
-    --sidebar-ring: 142 85% 28%;
+    --border: 220 13% 91%;
+    --input: 210 40% 96%;
+    --ring: 25 95% 53%;
+    --chart-1: 123 38% 57%;
+    --chart-2: 45 93% 47%;
+    --chart-3: 25 95% 53%;
+    --chart-4: 0 84% 60%;
+    --chart-5: 217 91% 60%;
+    --radius: 1rem;
+    --sidebar-background: 210 40% 98%;
+    --sidebar-foreground: 220 13% 23%;
+    --sidebar-primary: 0 0% 100%;
+    --sidebar-primary-foreground: 220 13% 23%;
+    --sidebar-accent: 237 49% 64%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 188 78% 41%;
   }
-
   .dark {
-    --background: 142 10% 8%;
-    --foreground: 0 0% 98%;
-    --card: 142 10% 10%;
-    --card-foreground: 0 0% 98%;
-    --popover: 142 10% 10%;
-    --popover-foreground: 0 0% 98%;
-
-    /* BNG Primary Green adjusted for dark mode */
-    --primary: 142 75% 35%;
+    --background: 220 13% 9%;
+    --foreground: 210 40% 98%;
+    --card: 220 13% 11%;
+    --card-foreground: 210 40% 98%;
+    --popover: 220 13% 11%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 123 38% 57%;
     --primary-foreground: 0 0% 100%;
-
-    /* BNG Secondary Yellow adjusted for dark mode */
-    --secondary: 55 100% 50%;
-    --secondary-foreground: 142 10% 8%;
-
-    --muted: 142 10% 15%;
-    --muted-foreground: 142 10% 65%;
-    --accent: 142 75% 35%;
+    --secondary: 45 93% 47%;
+    --secondary-foreground: 220 13% 9%;
+    --muted: 220 13% 15%;
+    --muted-foreground: 220 13% 64%;
+    --accent: 25 95% 53%;
     --accent-foreground: 0 0% 100%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
-    --border: 142 10% 20%;
-    --input: 142 10% 20%;
-    --ring: 142 75% 35%;
-
-    /* Chart colors for dark mode */
-    --chart-1: 142 75% 35%;
-    --chart-2: 55 100% 50%;
-    --chart-3: 142 75% 45%;
-    --chart-4: 142 60% 50%;
-    --chart-5: 55 90% 60%;
-
-    /* Sidebar dark mode with BNG colors */
-    --sidebar-background: 142 10% 10%;
-    --sidebar-foreground: 0 0% 98%;
-    --sidebar-primary: 142 75% 35%;
+    --border: 220 13% 15%;
+    --input: 220 13% 15%;
+    --ring: 25 95% 53%;
+    --chart-1: 123 38% 57%;
+    --chart-2: 45 93% 47%;
+    --chart-3: 25 95% 53%;
+    --chart-4: 0 84% 60%;
+    --chart-5: 217 91% 60%;
+    --sidebar-background: 220 13% 11%;
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-primary: 237 49% 64%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 142 10% 15%;
-    --sidebar-accent-foreground: 0 0% 98%;
-    --sidebar-border: 142 10% 20%;
-    --sidebar-ring: 142 75% 35%;
+    --sidebar-accent: 220 13% 15%;
+    --sidebar-accent-foreground: 210 40% 98%;
+    --sidebar-border: 220 13% 15%;
+    --sidebar-ring: 188 78% 41%;
   }
 }
 
@@ -105,13 +85,12 @@
   * {
     @apply border-border;
   }
-
   body {
     @apply bg-background text-foreground antialiased;
-    font-family: var(--font-poppins);
+    font-family: var(--font-body);
   }
 
-  /* Poppins for all headings per BNG brand guidelines */
+  /* Added font configuration for headings using custom variables */
   h1,
   h2,
   h3,
@@ -119,7 +98,7 @@
   h5,
   h6 {
     @apply font-semibold tracking-tight;
-    font-family: var(--font-poppins);
+    font-family: var(--font-heading);
   }
 
   /* Smooth transitions for interactive elements */
@@ -129,13 +108,13 @@
     @apply transition-all duration-200 ease-in-out;
   }
 
-  /* Enhanced focus states with BNG green */
+  /* Enhanced focus states for accessibility */
   button:focus-visible,
   a:focus-visible,
   input:focus-visible,
   select:focus-visible,
   textarea:focus-visible {
-    @apply outline-none ring-2 ring-primary ring-offset-2 ring-offset-background;
+    @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
   }
 
   /* Card hover effects */
@@ -159,7 +138,7 @@
     }
   }
 
-  /* BNG brand gradient using green and yellow */
+  /* Premium gradient button styles */
   .btn-gradient {
     background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--secondary)));
     @apply text-white shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-300;
@@ -171,7 +150,7 @@
   }
 }
 
-/* Custom scrollbar and gradient utilities */
+/* Added custom scrollbar styling and gradient utilities */
 @layer utilities {
   .scrollbar-thin {
     scrollbar-width: thin;
@@ -193,12 +172,11 @@
   }
 
   .scrollbar-thin::-webkit-scrollbar-thumb:hover {
-    background: hsl(var(--primary));
+    background: hsl(var(--foreground));
   }
 
-  /* BNG brand gradient utilities */
   .gradient-bg {
-    background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--secondary)) 100%);
+    background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--secondary)) 50%, hsl(var(--accent)) 100%);
   }
 
   .gradient-text {
@@ -208,9 +186,12 @@
     background-clip: text;
   }
 
-  /* BNG geometric pattern inspired by logo */
-  .bng-pattern {
-    background-image: radial-gradient(circle at 20% 50%, hsla(var(--primary), 0.05) 0%, transparent 50%),
-      radial-gradient(circle at 80% 50%, hsla(var(--secondary), 0.05) 0%, transparent 50%);
+  /* Added utility classes for custom font families */
+  .font-heading {
+    font-family: var(--font-heading);
+  }
+
+  .font-body {
+    font-family: var(--font-body);
   }
 }
