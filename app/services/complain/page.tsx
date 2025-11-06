@@ -249,168 +249,176 @@ export default function ComplainPage() {
               <CardDescription>Remplissez le formulaire pour déposer une réclamation</CardDescription>
             </CardHeader>
             <CardContent>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                {/* Type de réclamation */}
-                <div className="space-y-2">
-                  <Label htmlFor="complainType">Type de réclamation *</Label>
-                  <Select value={selectedType} onValueChange={handleTypeChange}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Sélectionnez le type de réclamation" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {Object.keys(complainTypes).map((type) => (
-                        <SelectItem key={type} value={type}>
-                          {type}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+             <form onSubmit={handleSubmit} className="space-y-4">
+  {/* Type de réclamation et Objet sur la même ligne */}
+  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    {/* Type de réclamation */}
+    <div className="space-y-2">
+      <Label htmlFor="complainType">Type de réclamation *</Label>
+      <Select value={selectedType} onValueChange={handleTypeChange}>
+        <SelectTrigger className="w-90">
+          <SelectValue placeholder="Sélectionnez le type de réclamation" />
+        </SelectTrigger>
+        <SelectContent>
+          {Object.keys(complainTypes).map((type) => (
+            <SelectItem key={type} value={type}>
+              {type}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
 
-                {/* Objet de la réclamation (dépendant du type) */}
-                {selectedType && (
-                  <div className="space-y-2">
-                    <Label htmlFor="complainObject">Objet de la réclamation *</Label>
-                    <Select
-                      value={formData.complainObject || ""}
-                      onValueChange={(value) => handleInputChange("complainObject", value)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Sélectionnez l'objet de la réclamation" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {availableObjects.map((object) => (
-                          <SelectItem key={object} value={object}>
-                            {object}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                )}
+    {/* Objet de la réclamation (dépendant du type) */}
+    {selectedType && (
+      <div className="space-y-2">
+        <Label htmlFor="complainObject">Objet de la réclamation *</Label>
+        <Select
+          value={formData.complainObject || ""}
+          onValueChange={(value) => handleInputChange("complainObject", value)}
+        >
+          <SelectTrigger className="w-80">
+            <SelectValue placeholder="Sélectionnez l'objet de la réclamation" />
+          </SelectTrigger>
+          <SelectContent>
+            {availableObjects.map((object) => (
+              <SelectItem key={object} value={object}>
+                {object}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+    )}
+  </div>
 
-                {/* Date de la réclamation */}
-                <div className="space-y-2">
-                  <Label htmlFor="complainDate">Date de la réclamation *</Label>
-                  <Input
-                    id="complainDate"
-                    type="date"
-                    value={formData.complainDate || ""}
-                    onChange={(e) => handleInputChange("complainDate", e.target.value)}
-                    max={new Date().toISOString().split("T")[0]}
-                    required
-                  />
-                </div>
+  {/* Date de réclamation et Pièces jointes sur la même ligne */}
+  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    {/* Date de la réclamation */}
+    <div className="space-y-2 ml-4">
+      <Label htmlFor="complainDate">Date de la réclamation *</Label>
+      <Input
+        id="complainDate"
+        type="date"
+        value={formData.complainDate || ""}
+        onChange={(e) => handleInputChange("complainDate", e.target.value)}
+        max={new Date().toISOString().split("T")[0]}
+        required
+        className="w-40"
+      />
+    </div>
 
-                {/* Description détaillée */}
-                <div className="space-y-2">
-                  <Label htmlFor="description">Description détaillée *</Label>
-                  <Textarea
-                    id="description"
-                    value={formData.description || ""}
-                    onChange={(e) => handleInputChange("description", e.target.value)}
-                    placeholder="Décrivez votre réclamation en détail..."
-                    rows={5}
-                    required
-                  />
-                </div>
+    {/* Champ de pièces jointes (conditionnel) */}
+    {showAttachmentField && (
+      <div className="space-y-2">
+        <Label htmlFor="attachments">Pièces jointes</Label>
+        <div className="flex items-center space-x-2">
+          <Input
+            id="attachments"
+            type="file"
+            multiple
+            accept="image/*,.pdf"
+            onChange={(e) => handleInputChange("attachments", e.target.files)}
+            className="w-80"
+          />
+          <Upload className="w-5 h-5 text-gray-400" />
+        </div>
+        <p className="text-xs text-gray-500">
+            images (JPG, PNG) et PDF. Taille max: 5 Mo par fichier.
+        </p>
+      </div>
+    )}
+  </div>
 
-                {/* Téléphone et Email sur la même ligne */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="phone">Téléphone *</Label>
-                    <Input
-                      id="phone"
-                      type="tel"
-                      value={formData.phone || ""}
-                      onChange={(e) => handleInputChange("phone", e.target.value)}
-                      placeholder="+224 6XX XXX XXX"
-                      required
-                    />
-                  </div>
+  {/* Description détaillée */}
+  <div className="space-y-2 max-w-3xl">
+    <Label htmlFor="description">Description détaillée *</Label>
+    <Textarea
+      id="description"
+      value={formData.description || ""}
+      onChange={(e) => handleInputChange("description", e.target.value)}
+      placeholder="Décrivez votre réclamation en détail..."
+      rows={5}
+      required
+      className="w-full"
+    />
+  </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="email">Email *</Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      value={formData.email || ""}
-                      onChange={(e) => handleInputChange("email", e.target.value)}
-                      placeholder="votre@email.com"
-                      required
-                    />
-                  </div>
-                </div>
+  {/* Téléphone et Email sur la même ligne */}
+  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div className="space-y-2">
+      <Label htmlFor="phone">Téléphone *</Label>
+      <Input
+        id="phone"
+        type="tel"
+        value={formData.phone || ""}
+        onChange={(e) => handleInputChange("phone", e.target.value)}
+        placeholder="+224 6XX XXX XXX"
+        required
+      />
+    </div>
 
-                {/* Champ de pièces jointes (conditionnel) */}
-                {showAttachmentField && (
-                  <div className="space-y-2">
-                    <Label htmlFor="attachments">Pièces jointes</Label>
-                    <div className="flex items-center space-x-2">
-                      <Input
-                        id="attachments"
-                        type="file"
-                        multiple
-                        accept="image/*,.pdf"
-                        onChange={(e) => handleInputChange("attachments", e.target.files)}
-                        className="flex-1"
-                      />
-                      <Upload className="w-5 h-5 text-gray-400" />
-                    </div>
-                    <p className="text-xs text-gray-500">
-                      Formats acceptés: images (JPG, PNG) et PDF. Taille max: 5 Mo par fichier.
-                    </p>
-                  </div>
-                )}
+    <div className="space-y-2">
+      <Label htmlFor="email">Email *</Label>
+      <Input
+        id="email"
+        type="email"
+        value={formData.email || ""}
+        onChange={(e) => handleInputChange("email", e.target.value)}
+        placeholder="votre@email.com"
+        required
+      />
+    </div>
+  </div>
 
-                {/* Messages de feedback */}
-                {submitState?.success && (
-                  <Alert className="border-green-200 bg-green-50">
-                    <CheckCircle className="h-4 w-4 text-green-600" />
-                    <AlertDescription className="text-green-800">
-                      Votre réclamation a été soumise avec succès. Référence: {submitState.reference}
-                    </AlertDescription>
-                  </Alert>
-                )}
+  {/* Messages de feedback */}
+  {submitState?.success && (
+    <Alert className="border-green-200 bg-green-50">
+      <CheckCircle className="h-4 w-4 text-green-600" />
+      <AlertDescription className="text-green-800">
+        Votre réclamation a été soumise avec succès. Référence: {submitState.reference}
+      </AlertDescription>
+    </Alert>
+  )}
 
-                {submitState?.error && (
-                  <Alert variant="destructive">
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertDescription>{submitState.error}</AlertDescription>
-                  </Alert>
-                )}
+  {submitState?.error && (
+    <Alert variant="destructive">
+      <AlertCircle className="h-4 w-4" />
+      <AlertDescription>{submitState.error}</AlertDescription>
+    </Alert>
+  )}
 
-                {/* Conditions générales */}
-                <div className="flex items-start space-x-2">
-                  <Checkbox
-                    id="terms"
-                    checked={formData.terms || false}
-                    onCheckedChange={(checked) => handleInputChange("terms", checked)}
-                  />
-                  <Label htmlFor="terms" className="text-sm">
-                    J'accepte les{" "}
-                    <a href="#" className="text-blue-600 hover:underline">
-                      conditions générales
-                    </a>{" "}
-                    et autorise le traitement de ma réclamation
-                  </Label>
-                </div>
+  {/* Conditions générales */}
+  <div className="flex items-start space-x-2">
+    <Checkbox
+      id="terms"
+      checked={formData.terms || false}
+      onCheckedChange={(checked) => handleInputChange("terms", checked)}
+    />
+    <Label htmlFor="terms" className="text-sm">
+      J'accepte les{" "}
+      <a href="#" className="text-blue-600 hover:underline">
+        conditions générales
+      </a>{" "}
+      et autorise le traitement de ma réclamation
+    </Label>
+  </div>
 
-                {/* Bouton de soumission */}
-                <Button type="submit" disabled={isSubmitting || !formData.terms} className="w-full">
-                  {isSubmitting ? (
-                    <>
-                      <MessageSquare className="w-4 h-4 mr-2 animate-spin" />
-                      Envoi en cours...
-                    </>
-                  ) : (
-                    <>
-                      <Send className="w-4 h-4 mr-2" />
-                      Envoyer la réclamation
-                    </>
-                  )}
-                </Button>
-              </form>
+  {/* Bouton de soumission */}
+  <Button type="submit" disabled={isSubmitting || !formData.terms} className="w-full">
+    {isSubmitting ? (
+      <>
+        <MessageSquare className="w-4 h-4 mr-2 animate-spin" />
+        Envoi en cours...
+      </>
+    ) : (
+      <>
+        <Send className="w-4 h-4 mr-2" />
+        Envoyer la réclamation
+      </>
+    )}
+  </Button>
+</form>
             </CardContent>
           </Card>
         </TabsContent>
