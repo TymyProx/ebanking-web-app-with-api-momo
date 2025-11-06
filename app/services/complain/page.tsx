@@ -14,7 +14,7 @@ import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { AlertCircle, CheckCircle, Send, Eye, Plus, Search, FileText, MessageSquare, Upload } from "lucide-react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { createReclamation } from "./actions"
+import { createReclamation, getReclamations } from "./actions"
 
 const complainTypes = {
   Compte: [],
@@ -156,38 +156,24 @@ export default function ComplainPage() {
   const loadComplains = async () => {
     setIsLoadingComplains(true)
     try {
-      // Simuler le chargement des réclamations (à remplacer par l'appel API réel)
-      await new Promise((resolve) => setTimeout(resolve, 1000))
+      const response = await getReclamations()
 
-      // Données de test
-      const mockComplains = [
-        {
-          id: "REC001",
-          type: "Carte",
-          typeName: "Réclamation Carte",
-          object: "Carte non reçue",
-          status: "En cours",
-          submittedAt: "2025-01-15",
-          description: "Je n'ai pas reçu ma carte bancaire commandée il y a 2 semaines",
-          phone: "+224 622 123 456",
-          email: "user@example.com",
-        },
-        {
-          id: "REC002",
-          type: "Virement",
-          typeName: "Réclamation Virement",
-          object: "Virement non exécuté",
-          status: "Résolue",
-          submittedAt: "2025-01-10",
-          description: "Mon virement de 500000 GNF n'a pas été exécuté",
-          phone: "+224 622 123 456",
-          email: "user@example.com",
-        },
-      ]
+      // Mapper les données de l'API vers le format attendu par l'interface
+      const mappedComplains = response.rows.map((reclamation) => ({
+        id: reclamation.claimId,
+        type: reclamation.motifRecl.split(" - ")[0] || "Autre", // Extraire le type du motif
+        typeName: `Réclamation ${reclamation.motifRecl.split(" - ")[0] || "Autre"}`,
+        object: reclamation.motifRecl,
+        status: reclamation.status,
+        submittedAt: reclamation.dateRecl,
+        description: reclamation.description,
+        phone: reclamation.telephone,
+        email: reclamation.email,
+      }))
 
-      setComplains(mockComplains)
+      setComplains(mappedComplains)
     } catch (error) {
-      console.error("Erreur lors du chargement des réclamations:", error)
+      console.error("[v0] Erreur lors du chargement des réclamations:", error)
       setComplains([])
     } finally {
       setIsLoadingComplains(false)
