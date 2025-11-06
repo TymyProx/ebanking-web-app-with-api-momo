@@ -6,11 +6,11 @@ import { getTransactions } from "@/app/transfers/new/actions"
 import { getAccounts } from "@/app/accounts/actions"
 import { AccountsCarousel } from "@/components/accounts-carousel"
 import { BankProductsCarousel } from "@/components/bank-products-carousel"
+import { Suspense } from "react"
 
-export default async function Dashboard() {
+async function RecentTransactions() {
   const transactionsResult = await getTransactions()
   const transactions = transactionsResult?.data || []
-
   const accounts = await getAccounts()
 
   const formatAmount = (amount: number | string, currency = "GNF") => {
@@ -28,7 +28,6 @@ export default async function Dashboard() {
     const amount = Number.parseFloat(transaction.amount)
     const isCredit = transaction.txnType === "CREDIT"
 
-    // Find the account to get its currency
     const account = accounts.find((acc) => acc.id === transaction.accountId || acc.accountId === transaction.accountId)
     const currency = account?.currency || "GNF"
 
@@ -46,6 +45,107 @@ export default async function Dashboard() {
   }
 
   return (
+    <Card className="border-0 shadow-lg">
+      <CardHeader className="flex flex-row items-center justify-between">
+        <CardTitle className="font-heading text-xl">Dernières transactions</CardTitle>
+        <Link
+          href="/transfers/mes-virements"
+          className="text-sm text-primary hover:text-primary/80 font-medium flex items-center gap-1 transition-colors"
+        >
+          Voir tout
+          <ArrowUpRight className="h-4 w-4" />
+        </Link>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-4">
+          {transactions.length > 0 ? (
+            transactions.slice(0, 3).map((transaction: any, index: number) => {
+              const formattedTransaction = formatTransaction(transaction, accounts)
+              return (
+                <div
+                  key={transaction.txnId || index}
+                  className="flex items-center justify-between p-4 bg-gradient-to-r from-muted/50 to-muted/30 rounded-xl border border-border/50 hover:shadow-md transition-all duration-200"
+                >
+                  <div className="flex items-center space-x-4">
+                    <div
+                      className={`w-12 h-12 rounded-full flex items-center justify-center ${
+                        formattedTransaction.amount.startsWith("+")
+                          ? "bg-secondary/20 text-secondary"
+                          : "bg-destructive/20 text-destructive"
+                      }`}
+                    >
+                      {formattedTransaction.amount.startsWith("+") ? (
+                        <ArrowDownRight className="w-5 h-5" />
+                      ) : (
+                        <ArrowUpRight className="w-5 h-5" />
+                      )}
+                    </div>
+                    <div>
+                      <p className="font-medium text-sm">{formattedTransaction.type}</p>
+                      <p className="text-xs text-muted-foreground">{formattedTransaction.from}</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p
+                      className={`font-semibold text-sm ${
+                        formattedTransaction.amount.startsWith("+") ? "text-secondary" : "text-destructive"
+                      }`}
+                    >
+                      {formattedTransaction.amount}
+                    </p>
+                    <p className="text-xs text-muted-foreground">{formattedTransaction.date}</p>
+                  </div>
+                </div>
+              )
+            })
+          ) : (
+            <div className="text-center py-12 text-muted-foreground">
+              <div className="p-4 rounded-full bg-muted/50 mx-auto mb-4 w-fit">
+                <Receipt className="h-6 w-6" />
+              </div>
+              <p className="text-sm">Aucune transaction récente</p>
+            </div>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
+async function AccountsSection() {
+  const accounts = await getAccounts()
+  return <AccountsCarousel accounts={accounts} />
+}
+
+function TransactionsLoading() {
+  return (
+    <Card className="border-0 shadow-lg">
+      <CardHeader>
+        <div className="h-6 w-48 bg-muted rounded-lg animate-pulse" />
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-4">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="h-20 bg-muted/30 rounded-xl animate-pulse" />
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
+function AccountsLoading() {
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {[1, 2, 3].map((i) => (
+        <div key={i} className="h-48 bg-gradient-to-br from-muted to-muted/50 rounded-xl animate-pulse" />
+      ))}
+    </div>
+  )
+}
+
+export default async function Dashboard() {
+  return (
     <div className="space-y-8 fade-in">
       <div className="space-y-2">
         <h1 className="text-3xl font-heading font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
@@ -54,7 +154,9 @@ export default async function Dashboard() {
         <p className="text-muted-foreground text-lg">Bienvenue sur votre espace Astra eBanking</p>
       </div>
 
-      <AccountsCarousel accounts={accounts} />
+      <Suspense fallback={<AccountsLoading />}>
+        <AccountsSection />
+      </Suspense>
 
       <Card className="border-0 shadow-lg bg-gradient-to-r from-primary/5 to-secondary/5">
         <CardHeader>
@@ -96,70 +198,9 @@ export default async function Dashboard() {
       </Card>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <Card className="border-0 shadow-lg">
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle className="font-heading text-xl">Dernières transactions</CardTitle>
-            <Link
-              href="/transfers/mes-virements"
-              className="text-sm text-primary hover:text-primary/80 font-medium flex items-center gap-1 transition-colors"
-            >
-              Voir tout
-              <ArrowUpRight className="h-4 w-4" />
-            </Link>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {transactions.length > 0 ? (
-                transactions.slice(0, 3).map((transaction: any, index: number) => {
-                  const formattedTransaction = formatTransaction(transaction, accounts)
-                  return (
-                    <div
-                      key={transaction.txnId || index}
-                      className="flex items-center justify-between p-4 bg-gradient-to-r from-muted/50 to-muted/30 rounded-xl border border-border/50 hover:shadow-md transition-all duration-200"
-                    >
-                      <div className="flex items-center space-x-4">
-                        <div
-                          className={`w-12 h-12 rounded-full flex items-center justify-center ${
-                            formattedTransaction.amount.startsWith("+")
-                              ? "bg-secondary/20 text-secondary"
-                              : "bg-destructive/20 text-destructive"
-                          }`}
-                        >
-                          {formattedTransaction.amount.startsWith("+") ? (
-                            <ArrowDownRight className="w-5 h-5" />
-                          ) : (
-                            <ArrowUpRight className="w-5 h-5" />
-                          )}
-                        </div>
-                        <div>
-                          <p className="font-medium text-sm">{formattedTransaction.type}</p>
-                          <p className="text-xs text-muted-foreground">{formattedTransaction.from}</p>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <p
-                          className={`font-semibold text-sm ${
-                            formattedTransaction.amount.startsWith("+") ? "text-secondary" : "text-destructive"
-                          }`}
-                        >
-                          {formattedTransaction.amount}
-                        </p>
-                        <p className="text-xs text-muted-foreground">{formattedTransaction.date}</p>
-                      </div>
-                    </div>
-                  )
-                })
-              ) : (
-                <div className="text-center py-12 text-muted-foreground">
-                  <div className="p-4 rounded-full bg-muted/50 mx-auto mb-4 w-fit">
-                    <Receipt className="h-6 w-6" />
-                  </div>
-                  <p className="text-sm">Aucune transaction récente</p>
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+        <Suspense fallback={<TransactionsLoading />}>
+          <RecentTransactions />
+        </Suspense>
 
         <div>
           <div className="mb-4">

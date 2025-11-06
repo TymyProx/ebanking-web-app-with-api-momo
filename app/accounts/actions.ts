@@ -40,68 +40,49 @@ export async function getAccounts(): Promise<Account[]> {
   const cookieToken = (await cookies()).get("token")?.value
   const usertoken = cookieToken
 
-  console.log("[v0] getAccounts - Token from cookie:", usertoken ? `${usertoken.substring(0, 20)}...` : "NO TOKEN")
-  console.log("[v0] getAccounts - API_BASE_URL:", API_BASE_URL)
-  console.log("[v0] getAccounts - TENANT_ID:", TENANT_ID)
-
   try {
     if (!usertoken) {
-      console.log("[v0] getAccounts - Token manquant, returning empty array")
       return []
     }
 
     let currentUserId: string | null = null
     try {
-      console.log("[v0] getAccounts - Fetching user info from /auth/me")
       const userResponse = await fetch(`${API_BASE_URL}/auth/me`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${usertoken}`,
         },
+        next: { revalidate: 60 },
       })
-
-      console.log("[v0] getAccounts - /auth/me response status:", userResponse.status)
 
       if (userResponse.ok) {
         const userData = await userResponse.json()
         currentUserId = userData.id
-        console.log("[v0] getAccounts - Current user ID:", currentUserId)
-      } else {
-        const errorText = await userResponse.text()
-        console.error("[v0] getAccounts - /auth/me error:", errorText)
       }
     } catch (error) {
-      console.error("[v0] getAccounts - Error fetching user ID:", error)
+      console.error("Error fetching user ID:", error)
     }
 
-    console.log("[v0] getAccounts - Fetching accounts from API")
     const response = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/compte`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${usertoken}`,
       },
-      cache: "no-store",
+      next: { revalidate: 60 },
     })
-
-    console.log("[v0] getAccounts - API response status:", response.status)
 
     if (!response.ok) {
       const contentType = response.headers.get("content-type")
-      console.log("[v0] getAccounts - Response content-type:", contentType)
 
       if (contentType && contentType.includes("application/json")) {
         const errorData = await response.json()
-        console.error("[v0] getAccounts - API error:", errorData)
         throw new Error(errorData.message || "Erreur lors de la récupération des comptes")
       } else {
         const errorText = await response.text()
-        console.error("[v0] getAccounts - Non-JSON response:", errorText)
 
-        // Si l'API n'est pas accessible, retourner des données de test
         if (errorText.includes("only public URLs are supported") || errorText.includes("only https is supported")) {
-          console.log("[v0] getAccounts - API not accessible, using test data")
           return [
             {
               id: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
@@ -156,19 +137,15 @@ export async function getAccounts(): Promise<Account[]> {
     }
 
     const responseData = await response.json()
-    console.log("[v0] getAccounts - Response data received, rows count:", responseData.rows?.length || 0)
 
     let accounts: Account[] = []
 
     if (responseData.rows && Array.isArray(responseData.rows)) {
       accounts = responseData.rows
     } else if (responseData.data) {
-      // Si responseData.data est un tableau
       if (Array.isArray(responseData.data)) {
         accounts = responseData.data
-      }
-      // Si responseData.data est un objet unique (un seul compte)
-      else if (typeof responseData.data === "object") {
+      } else if (typeof responseData.data === "object") {
         accounts = [responseData.data]
       }
     } else if (Array.isArray(responseData)) {
@@ -181,7 +158,7 @@ export async function getAccounts(): Promise<Account[]> {
 
     return accounts
   } catch (error) {
-    console.error("[v0] getAccounts - Fatal error:", error)
+    console.error("Error in getAccounts:", error)
     return []
   }
 }
@@ -190,8 +167,6 @@ export async function createAccount(prevState: any, formData: FormData) {
   const cookieToken = (await cookies()).get("token")?.value
   const usertoken = cookieToken
   try {
-    //console.log("[v0] Création d'un nouveau compte...")
-
     if (!usertoken) {
       return {
         success: false,
@@ -212,10 +187,9 @@ export async function createAccount(prevState: any, formData: FormData) {
       if (userResponse.ok) {
         const userData = await userResponse.json()
         clientId = userData.id || "CUSTOMER_ID_PLACEHOLDER"
-        //console.log("[v0] Client ID récupéré:", clientId)
       }
     } catch (error) {
-      console.error("[v0] Erreur lors de la récupération du client ID:", error)
+      console.error("Erreur lors de la récupération du client ID:", error)
     }
 
     const accountData = {
@@ -233,9 +207,6 @@ export async function createAccount(prevState: any, formData: FormData) {
       cleRib: "N/A", // Valeur par défaut
     }
 
-    //console.log("[v0] Données du compte:", accountData)
-
-    // Validation des champs requis
     if (!accountData.accountName || !accountData.currency) {
       return {
         success: false,
@@ -254,24 +225,18 @@ export async function createAccount(prevState: any, formData: FormData) {
       }),
     })
 
-    //console.log("[v0] Statut réponse création:", response.status)
-
     if (!response.ok) {
       const contentType = response.headers.get("content-type")
       if (contentType && contentType.includes("application/json")) {
         const errorData = await response.json()
-        //console.log("[v0] Erreur API création:", errorData)
         return {
           success: false,
           error: errorData.message || "Erreur lors de la création du compte",
         }
       } else {
         const errorText = await response.text()
-        //console.log("[v0] Réponse non-JSON reçue:", errorText)
 
-        // Si l'API n'est pas accessible, simuler le succès
         if (errorText.includes("only public URLs are supported") || errorText.includes("only https is supported")) {
-          //console.log("[v0] API non accessible, simulation du succès")
           revalidatePath("/accounts")
           return {
             success: true,
@@ -287,9 +252,7 @@ export async function createAccount(prevState: any, formData: FormData) {
     }
 
     const result = await response.json()
-    //console.log("[v0] Résultat création:", result)
 
-    // Rafraîchir la page des comptes
     revalidatePath("/accounts")
 
     return {
@@ -298,7 +261,7 @@ export async function createAccount(prevState: any, formData: FormData) {
       data: result.data,
     }
   } catch (error) {
-    console.error("[v0] Erreur lors de la création du compte:", error)
+    console.error("Erreur lors de la création du compte:", error)
     return {
       success: false,
       error: "Erreur lors de la création du compte. Veuillez réessayer.",
@@ -308,13 +271,10 @@ export async function createAccount(prevState: any, formData: FormData) {
 
 export async function getAccountById(accountId: string) {
   try {
-    //console.log("[v0] Récupération du compte:", accountId)
-
     const cookieStore = await cookies()
     const token = cookieStore.get("token")?.value
 
     if (!token) {
-      //console.log("[v0] Token manquant")
       return { data: null }
     }
 
@@ -327,21 +287,15 @@ export async function getAccountById(accountId: string) {
       cache: "no-store",
     })
 
-    //console.log("[v0] Statut réponse détail compte:", response.status)
-
     if (!response.ok) {
       const contentType = response.headers.get("content-type")
       if (contentType && contentType.includes("application/json")) {
         const errorData = await response.json()
-        //console.log("[v0] Erreur API détail:", errorData)
         throw new Error(errorData.message || "Erreur lors de la récupération du compte")
       } else {
         const errorText = await response.text()
-        //console.log("[v0] Réponse non-JSON reçue:", errorText)
 
-        // Si l'API n'est pas accessible, retourner des données de test
         if (errorText.includes("only public URLs are supported") || errorText.includes("only https is supported")) {
-          //console.log("[v0] API non accessible, utilisation de données de test")
           return {
             data: {
               id: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
@@ -366,11 +320,10 @@ export async function getAccountById(accountId: string) {
     }
 
     const data = await response.json()
-    //console.log("[v0] Données compte reçues:", data)
 
     return { data: data.data || data }
   } catch (error) {
-    console.error("[v0] Erreur lors de la récupération du compte:", error)
+    console.error("Erreur lors de la récupération du compte:", error)
     return { data: null }
   }
 }
