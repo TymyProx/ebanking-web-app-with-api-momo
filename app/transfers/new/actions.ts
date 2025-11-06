@@ -1127,16 +1127,14 @@ export async function getEpayments(): Promise<{ rows: any[] }> {
     }
   } catch (_) {}
 
-  const res = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/epayments?orderBy=createdAt_DESC&limit=500`, {
+  const res = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/epayments?orderBy=createdAt_DESC&limit=100`, {
     method: "GET",
     headers: { Authorization: `Bearer ${usertoken}`, Accept: "application/json" },
-    cache: "no-store",
+    next: { revalidate: 60 },
   })
   const contentType = res.headers.get("content-type") || ""
   const bodyText = await res.text()
   if (!res.ok) {
-    // eslint-disable-next-line no-console
-    console.error("[EPAY] API", res.status, bodyText)
     return { rows: [] }
   }
   const parsed = contentType.includes("application/json") && bodyText ? JSON.parse(bodyText) : { rows: [] }

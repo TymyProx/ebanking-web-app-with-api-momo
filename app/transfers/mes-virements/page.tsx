@@ -2,9 +2,10 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { ArrowUpRight, ArrowDownRight, Receipt, Calendar, Clock, Hash, FileText, CreditCard } from "lucide-react"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { getEpayments } from "@/app/transfers/new/actions"
 import { getAccounts } from "@/app/accounts/actions"
 import { importAesGcmKeyFromBase64, isEncryptedJson, decryptAesGcmFromJson } from "@/lib/crypto"
@@ -15,12 +16,24 @@ export default function MesVirementsPage() {
   const [selectedTransaction, setSelectedTransaction] = useState<any>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [displayCount, setDisplayCount] = useState(20)
 
   useEffect(() => {
     const loadData = async () => {
+      const cachedTransactions = sessionStorage.getItem("mes-virements-transactions")
+      const cachedAccounts = sessionStorage.getItem("mes-virements-accounts")
+
+      if (cachedTransactions && cachedAccounts) {
+        try {
+          setTransactions(JSON.parse(cachedTransactions))
+          setAccounts(JSON.parse(cachedAccounts))
+          setLoading(false)
+        } catch (e) {}
+      }
+
       try {
-        const ep = await getEpayments()
-        const accountsData = await getAccounts()
+        const [ep, accountsData] = await Promise.all([getEpayments(), getAccounts()])
+
         const secureMode = (process.env.NEXT_PUBLIC_PORTAL_SECURE_MODE || "false").toLowerCase() === "true"
         const keyB64 = process.env.NEXT_PUBLIC_PORTAL_KEY_B64 || ""
         let key: CryptoKey | null = null
@@ -38,7 +51,14 @@ export default function MesVirementsPage() {
                 const asEnc = (v: any) => {
                   if (!v) return null
                   if (isEncryptedJson(v)) return v
-                  if (typeof v === 'string') { try { const p = JSON.parse(v); return isEncryptedJson(p) ? p : null } catch { return null } }
+                  if (typeof v === "string") {
+                    try {
+                      const p = JSON.parse(v)
+                      return isEncryptedJson(p) ? p : null
+                    } catch {
+                      return null
+                    }
+                  }
                   return null
                 }
                 try {
@@ -57,7 +77,7 @@ export default function MesVirementsPage() {
                   const moEnc = asEnc(out.montantOperation_json)
                   if (moEnc) out.montantOperation = await decryptAesGcmFromJson(moEnc, key as CryptoKey)
                 } catch (_) {}
-                out.description = typeof out.description === 'string' ? out.description : ''
+                out.description = typeof out.description === "string" ? out.description : ""
                 return out
               }),
             )
@@ -65,6 +85,11 @@ export default function MesVirementsPage() {
 
         setTransactions(decrypted)
         setAccounts(accountsData || [])
+
+        try {
+          sessionStorage.setItem("mes-virements-transactions", JSON.stringify(decrypted))
+          sessionStorage.setItem("mes-virements-accounts", JSON.stringify(accountsData || []))
+        } catch (e) {}
       } catch (error) {
         console.error("Error loading data:", error)
       } finally {
@@ -73,6 +98,10 @@ export default function MesVirementsPage() {
     }
     loadData()
   }, [])
+
+  const displayedTransactions = useMemo(() => {
+    return transactions.slice(0, displayCount)
+  }, [transactions, displayCount])
 
   const formatAmount = (amount: number | string, currency = "GNF") => {
     const numAmount = typeof amount === "string" ? Number.parseFloat(amount) : amount
@@ -86,10 +115,10 @@ export default function MesVirementsPage() {
   }
 
   const formatTransaction = (ep: any, accounts: any[]) => {
-    const safeText = (v: any) => (typeof v === 'string' ? v : '')
+    const safeText = (v: any) => (typeof v === "string" ? v : "")
     const amountStr = (ep.montantOperation ?? ep.amount ?? "0").toString()
     const amount = Number.parseFloat(amountStr)
-    const isCredit = false // Mes virements: sorties
+    const isCredit = false
     const account = accounts.find((acc) => acc.id === ep.accountId || acc.accountId === ep.accountId)
     const currency = account?.currency || "GNF"
     const when = ep.dateExecution || ep.dateOrdre || ep.createdAt || new Date().toISOString()
@@ -136,6 +165,10 @@ export default function MesVirementsPage() {
     setIsModalOpen(true)
   }
 
+  const handleLoadMore = () => {
+    setDisplayCount((prev) => Math.min(prev + 20, transactions.length))
+  }
+
   if (loading) {
     return (
       <div className="space-y-6 fade-in">
@@ -160,56 +193,73 @@ export default function MesVirementsPage() {
 
       <Card className="border-0 shadow-lg">
         <CardHeader>
-          <CardTitle className="font-heading text-xl">Toutes les transactions</CardTitle>
+          <CardTitle className="font-heading text-xl">
+            Toutes les transactions
+            {transactions.length > 0 && (
+              <span className="text-sm font-normal text-muted-foreground ml-2">
+                ({displayedTransactions.length} sur {transactions.length})
+              </span>
+            )}
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
-            {transactions.length > 0 ? (
-              transactions.map((transaction: any, index: number) => {
-                const formattedTransaction = formatTransaction(transaction, accounts)
-                return (
-                  <div
-                    key={transaction.txnId || index}
-                    onClick={() => handleTransactionClick(transaction)}
-                    className="flex items-center justify-between p-4 bg-gradient-to-r from-muted/50 to-muted/30 rounded-xl border border-border/50 hover:shadow-md transition-all duration-200 hover:scale-[1.01] cursor-pointer"
-                  >
-                    <div className="flex items-center space-x-4 flex-1">
-                      <div
-                        className={`w-12 h-12 rounded-full flex items-center justify-center shrink-0 ${
-                          formattedTransaction.isCredit
-                            ? "bg-secondary/20 text-secondary"
-                            : "bg-destructive/20 text-destructive"
-                        }`}
-                      >
-                        {formattedTransaction.isCredit ? (
-                          <ArrowDownRight className="w-5 h-5" />
-                        ) : (
-                          <ArrowUpRight className="w-5 h-5" />
-                        )}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium text-sm">{formattedTransaction.type}</p>
-                        <p className="text-xs text-muted-foreground truncate">{formattedTransaction.from}</p>
-                        <div className="flex items-center gap-2 mt-1">
-                          <p className="text-xs text-muted-foreground">
-                            {formattedTransaction.date} à {formattedTransaction.time}
-                          </p>
-                          {getStatusBadge(formattedTransaction.status)}
+            {displayedTransactions.length > 0 ? (
+              <>
+                {displayedTransactions.map((transaction: any, index: number) => {
+                  const formattedTransaction = formatTransaction(transaction, accounts)
+                  return (
+                    <div
+                      key={transaction.txnId || index}
+                      onClick={() => handleTransactionClick(transaction)}
+                      className="flex items-center justify-between p-4 bg-gradient-to-r from-muted/50 to-muted/30 rounded-xl border border-border/50 hover:shadow-md transition-all duration-200 hover:scale-[1.01] cursor-pointer"
+                    >
+                      <div className="flex items-center space-x-4 flex-1">
+                        <div
+                          className={`w-12 h-12 rounded-full flex items-center justify-center shrink-0 ${
+                            formattedTransaction.isCredit
+                              ? "bg-secondary/20 text-secondary"
+                              : "bg-destructive/20 text-destructive"
+                          }`}
+                        >
+                          {formattedTransaction.isCredit ? (
+                            <ArrowDownRight className="w-5 h-5" />
+                          ) : (
+                            <ArrowUpRight className="w-5 h-5" />
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-sm">{formattedTransaction.type}</p>
+                          <p className="text-xs text-muted-foreground truncate">{formattedTransaction.from}</p>
+                          <div className="flex items-center gap-2 mt-1">
+                            <p className="text-xs text-muted-foreground">
+                              {formattedTransaction.date} à {formattedTransaction.time}
+                            </p>
+                            {getStatusBadge(formattedTransaction.status)}
+                          </div>
                         </div>
                       </div>
+                      <div className="text-right shrink-0 ml-4">
+                        <p
+                          className={`font-semibold text-sm ${
+                            formattedTransaction.isCredit ? "text-secondary" : "text-destructive"
+                          }`}
+                        >
+                          {formattedTransaction.amount}
+                        </p>
+                      </div>
                     </div>
-                    <div className="text-right shrink-0 ml-4">
-                      <p
-                        className={`font-semibold text-sm ${
-                          formattedTransaction.isCredit ? "text-secondary" : "text-destructive"
-                        }`}
-                      >
-                        {formattedTransaction.amount}
-                      </p>
-                    </div>
+                  )
+                })}
+
+                {displayCount < transactions.length && (
+                  <div className="flex justify-center pt-4">
+                    <Button onClick={handleLoadMore} variant="outline" className="w-full max-w-xs bg-transparent">
+                      Afficher plus ({transactions.length - displayCount} restants)
+                    </Button>
                   </div>
-                )
-              })
+                )}
+              </>
             ) : (
               <div className="text-center py-16 text-muted-foreground">
                 <div className="p-4 rounded-full bg-muted/50 mx-auto mb-4 w-fit">
@@ -261,13 +311,18 @@ export default function MesVirementsPage() {
                   </div>
 
                   <div className="grid grid-cols-2 gap-3">
-                    {/* Left Column */}
                     <div className="space-y-3">
                       <div className="flex items-start gap-2 p-3 bg-muted/30 rounded-lg">
                         <Hash className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" />
                         <div className="flex-1 min-w-0">
                           <p className="text-xs font-medium text-muted-foreground">Référence</p>
-                          <p className="text-sm font-mono truncate">{typeof selectedTransaction.txnId === 'string' ? selectedTransaction.txnId : (typeof selectedTransaction.referenceOperation === 'string' ? selectedTransaction.referenceOperation : 'N/A')}</p>
+                          <p className="text-sm font-mono truncate">
+                            {typeof selectedTransaction.txnId === "string"
+                              ? selectedTransaction.txnId
+                              : typeof selectedTransaction.referenceOperation === "string"
+                                ? selectedTransaction.referenceOperation
+                                : "N/A"}
+                          </p>
                         </div>
                       </div>
 
@@ -298,7 +353,6 @@ export default function MesVirementsPage() {
                       )}
                     </div>
 
-                    {/* Right Column */}
                     <div className="space-y-3">
                       {formatted.account && (
                         <div className="flex items-start gap-2 p-3 bg-muted/30 rounded-lg">
@@ -313,35 +367,46 @@ export default function MesVirementsPage() {
                         </div>
                       )}
 
-                      {(typeof selectedTransaction.creditAccount === 'string' && selectedTransaction.creditAccount) && (
+                      {typeof selectedTransaction.creditAccount === "string" && selectedTransaction.creditAccount && (
                         <div className="flex items-start gap-2 p-3 bg-muted/30 rounded-lg">
                           <CreditCard className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" />
                           <div className="flex-1 min-w-0">
                             <p className="text-xs font-medium text-muted-foreground">Compte créditeur</p>
-                            <p className="text-sm font-mono truncate">{typeof selectedTransaction.creditAccount === 'string' ? selectedTransaction.creditAccount : ''}</p>
+                            <p className="text-sm font-mono truncate">
+                              {typeof selectedTransaction.creditAccount === "string"
+                                ? selectedTransaction.creditAccount
+                                : ""}
+                            </p>
                           </div>
                         </div>
                       )}
 
-                      {(typeof selectedTransaction.codeDevise === 'string' && selectedTransaction.codeDevise) && (
+                      {typeof selectedTransaction.codeDevise === "string" && selectedTransaction.codeDevise && (
                         <div className="flex items-start gap-2 p-3 bg-muted/30 rounded-lg">
                           <FileText className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" />
                           <div className="flex-1">
                             <p className="text-xs font-medium text-muted-foreground">Devise</p>
-                            <p className="text-sm">{typeof selectedTransaction.codeDevise === 'string' ? selectedTransaction.codeDevise : ''}</p>
+                            <p className="text-sm">
+                              {typeof selectedTransaction.codeDevise === "string" ? selectedTransaction.codeDevise : ""}
+                            </p>
                           </div>
                         </div>
                       )}
 
-                      {(typeof selectedTransaction.referenceOperation === 'string' && selectedTransaction.referenceOperation) && (
-                        <div className="flex items-start gap-2 p-3 bg-muted/30 rounded-lg">
-                          <Hash className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" />
-                          <div className="flex-1 min-w-0">
-                            <p className="text-xs font-medium text-muted-foreground">Réf. opération</p>
-                            <p className="text-sm font-mono truncate">{typeof selectedTransaction.referenceOperation === 'string' ? selectedTransaction.referenceOperation : ''}</p>
+                      {typeof selectedTransaction.referenceOperation === "string" &&
+                        selectedTransaction.referenceOperation && (
+                          <div className="flex items-start gap-2 p-3 bg-muted/30 rounded-lg">
+                            <Hash className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-xs font-medium text-muted-foreground">Réf. opération</p>
+                              <p className="text-sm font-mono truncate">
+                                {typeof selectedTransaction.referenceOperation === "string"
+                                  ? selectedTransaction.referenceOperation
+                                  : ""}
+                              </p>
+                            </div>
                           </div>
-                        </div>
-                      )}
+                        )}
                     </div>
                   </div>
 
