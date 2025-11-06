@@ -30,7 +30,6 @@ import {
 import { getAccounts } from "../actions"
 import { getTransactions } from "../../transfers/new/actions"
 import { toggleAccountStatus, getAccountDetails } from "./actions"
-import { useNotifications } from "@/contexts/notification-context"
 
 interface Account {
   id: string
@@ -90,7 +89,6 @@ export default function AccountDetailsPage() {
   const [isLoadingAccount, setIsLoadingAccount] = useState(true)
   const [isLoadingTransactions, setIsLoadingTransactions] = useState(true)
   const [isPending, startTransition] = useTransition()
-  const { addNotifications } = useNotifications()
   const [displayLimit, setDisplayLimit] = useState(20)
 
   const displayedTransactions = useMemo(() => {
@@ -163,11 +161,39 @@ export default function AccountDetailsPage() {
       try {
         const transactionsData = await getTransactions()
 
+        console.log("[v0] All transactions data:", transactionsData)
+        console.log("[v0] Looking for accountId:", accountId)
+
         if (transactionsData && transactionsData.data && Array.isArray(transactionsData.data)) {
+          console.log("[v0] Total transactions fetched:", transactionsData.data.length)
+
+          if (transactionsData.data.length > 0) {
+            console.log("[v0] Sample transaction structure:", transactionsData.data[0])
+          }
+
           const accountTransactions = transactionsData.data
             .filter((txn: any) => {
-              const txnAccountId = txn.accountId || txn.account_id || txn.accountNumber || txn.account_number
-              return txnAccountId === accountId
+              // Get all possible account identifiers from transaction
+              const txnAccountId = txn.accountId || txn.account_id
+              const txnAccountNumber = txn.accountNumber || txn.account_number
+              const txnDebitAccount = txn.debitAccount || txn.debit_account
+              const txnCreditAccount = txn.creditAccount || txn.credit_account
+
+              // Check if any of these match the accountId from URL
+              const matches =
+                txnAccountId === accountId ||
+                txnAccountNumber === accountId ||
+                txnDebitAccount === accountId ||
+                txnCreditAccount === accountId ||
+                // Also check if accountId is contained in any of these fields
+                (txnAccountNumber && String(txnAccountNumber).includes(accountId)) ||
+                (txnAccountId && String(txnAccountId).includes(accountId))
+
+              if (matches) {
+                console.log("[v0] Transaction matched:", txn)
+              }
+
+              return matches
             })
             .slice(0, 100)
             .map((txn: any) => {
@@ -190,6 +216,7 @@ export default function AccountDetailsPage() {
             })
             .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
 
+          console.log("[v0] Filtered transactions for this account:", accountTransactions.length)
           setTransactions(accountTransactions)
 
           const cacheKey = `transactions_${accountId}`
@@ -201,9 +228,11 @@ export default function AccountDetailsPage() {
             }),
           )
         } else {
+          console.log("[v0] No transaction data available")
           setTransactions([])
         }
       } catch (error) {
+        console.log("[v0] Error loading transactions:", error)
         setTransactions([])
       } finally {
         setIsLoadingTransactions(false)
@@ -211,7 +240,7 @@ export default function AccountDetailsPage() {
     }
 
     loadData()
-  }, [accountId]) // Removed account dependency - load immediately
+  }, [accountId])
 
   const handleRefreshTransactions = async () => {
     setIsLoadingTransactions(true)
@@ -221,8 +250,19 @@ export default function AccountDetailsPage() {
       if (transactionsData && transactionsData.data && Array.isArray(transactionsData.data)) {
         const accountTransactions = transactionsData.data
           .filter((txn: any) => {
-            const txnAccountId = txn.accountId || txn.account_id || txn.accountNumber || txn.account_number
-            return txnAccountId === accountId
+            const txnAccountId = txn.accountId || txn.account_id
+            const txnAccountNumber = txn.accountNumber || txn.account_number
+            const txnDebitAccount = txn.debitAccount || txn.debit_account
+            const txnCreditAccount = txn.creditAccount || txn.credit_account
+
+            return (
+              txnAccountId === accountId ||
+              txnAccountNumber === accountId ||
+              txnDebitAccount === accountId ||
+              txnCreditAccount === accountId ||
+              (txnAccountNumber && String(txnAccountNumber).includes(accountId)) ||
+              (txnAccountId && String(txnAccountId).includes(accountId))
+            )
           })
           .slice(0, 100)
           .map((txn: any) => {
