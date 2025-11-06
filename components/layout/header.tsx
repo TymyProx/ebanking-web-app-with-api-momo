@@ -91,21 +91,26 @@ export function Header() {
   const breadcrumbItems = generateBreadcrumb()
 
   return (
-    <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
-      <SidebarTrigger className="-ml-1" />
-      <Separator orientation="vertical" className="mr-2 h-4" />
+    <header className="flex h-16 shrink-0 items-center gap-2 border-b border-border/40 bg-gradient-to-r from-[#0B8338]/5 via-background to-[#FFEB00]/5 px-4 backdrop-blur-sm">
+      <SidebarTrigger className="-ml-1 hover:bg-[#0B8338]/10 transition-colors" />
+      <Separator orientation="vertical" className="mr-2 h-4 bg-[#0B8338]/20" />
 
       {!isCheckingAccounts && hasActiveAccount && (
         <Breadcrumb>
           <BreadcrumbList>
             {breadcrumbItems.map((item, index) => (
               <div key={item.href} className="flex items-center">
-                {index > 0 && <BreadcrumbSeparator className="hidden md:block" />}
+                {index > 0 && <BreadcrumbSeparator className="hidden md:block text-[#0B8338]/40" />}
                 <BreadcrumbItem className="hidden md:block">
                   {index === breadcrumbItems.length - 1 ? (
-                    <BreadcrumbPage>{item.label}</BreadcrumbPage>
+                    <BreadcrumbPage className="font-semibold text-[#0B8338]">{item.label}</BreadcrumbPage>
                   ) : (
-                    <BreadcrumbLink href={item.href}>{item.label}</BreadcrumbLink>
+                    <BreadcrumbLink
+                      href={item.href}
+                      className="text-muted-foreground hover:text-[#0B8338] transition-colors"
+                    >
+                      {item.label}
+                    </BreadcrumbLink>
                   )}
                 </BreadcrumbItem>
               </div>
@@ -116,8 +121,11 @@ export function Header() {
 
       {/* Spacer */}
       <div className="ml-auto flex items-center gap-2">
-        {/* Search */}
-        <Button variant="ghost" size="icon" className="h-8 w-8">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-9 w-9 hover:bg-[#0B8338]/10 hover:text-[#0B8338] transition-all duration-200"
+        >
           <Search className="h-4 w-4" />
           <span className="sr-only">Rechercher</span>
         </Button>
@@ -127,30 +135,37 @@ export function Header() {
         {/* User Menu */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-              <Avatar className="h-8 w-8">
+            <Button
+              variant="ghost"
+              className="relative h-9 w-9 rounded-full hover:bg-[#0B8338]/10 transition-all duration-200"
+            >
+              <Avatar className="h-9 w-9 ring-2 ring-[#0B8338]/20 ring-offset-2 ring-offset-background">
                 <AvatarImage src="/placeholder-user.jpg" alt="Avatar" />
-                <AvatarFallback>{userData?.fullName ? getInitials(userData.fullName) : "U"}</AvatarFallback>
+                <AvatarFallback className="bg-gradient-to-br from-[#0B8338] to-[#0B8338]/80 text-white font-semibold">
+                  {userData?.fullName ? getInitials(userData.fullName) : "U"}
+                </AvatarFallback>
               </Avatar>
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent className="w-56" align="end" forceMount>
+          <DropdownMenuContent className="w-56 shadow-lg border-[#0B8338]/20" align="end" forceMount>
             <DropdownMenuLabel className="font-normal">
               <div className="flex flex-col space-y-1">
-                <p className="text-sm font-medium leading-none">{userData?.fullName || "Utilisateur"}</p>
+                <p className="text-sm font-semibold leading-none text-[#0B8338]">
+                  {userData?.fullName || "Utilisateur"}
+                </p>
                 <p className="text-xs leading-none text-muted-foreground">{userData?.email || "email@example.com"}</p>
               </div>
             </DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem>
-              <User className="mr-2 h-4 w-4" />
+            <DropdownMenuSeparator className="bg-[#0B8338]/10" />
+            <DropdownMenuItem className="hover:bg-[#0B8338]/10 focus:bg-[#0B8338]/10 cursor-pointer">
+              <User className="mr-2 h-4 w-4 text-[#0B8338]" />
               <span>Profil</span>
             </DropdownMenuItem>
-            <DropdownMenuItem>
-              <Settings className="mr-2 h-4 w-4" />
+            <DropdownMenuItem className="hover:bg-[#0B8338]/10 focus:bg-[#0B8338]/10 cursor-pointer">
+              <Settings className="mr-2 h-4 w-4 text-[#0B8338]" />
               <span>Paramètres</span>
             </DropdownMenuItem>
-            <DropdownMenuSeparator />
+            <DropdownMenuSeparator className="bg-[#0B8338]/10" />
             <DropdownMenuItem asChild>
               <LogoutButton variant="ghost" size="sm" showIcon={true}>
                 Déconnexion
