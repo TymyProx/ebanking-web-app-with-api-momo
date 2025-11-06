@@ -9,8 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Textarea } from "@/components/ui/textarea"
-import { Building2, CheckCircle, AlertCircle, ArrowLeft, FileText, Clock, ChevronRight, Sparkles } from "lucide-react"
+import { Building2, CheckCircle, AlertCircle, ArrowLeft, FileText, Clock, ChevronRight } from "lucide-react"
 import Link from "next/link"
 import { createAccount } from "../actions"
 import { useActionState } from "react"
@@ -76,8 +75,7 @@ export default function NewAccountPage() {
   }
 
   const canProceedToStep2 = selectedType !== ""
-  const canProceedToStep3 =
-    formData.accountName && formData.currency && formData.accountPurpose
+  const canProceedToStep3 = formData.accountName && formData.currency && formData.accountPurpose
   const canSubmit = formData.terms && formData.dataProcessing
 
   return (
@@ -226,11 +224,11 @@ export default function NewAccountPage() {
                     Devise *
                   </Label>
                   <Select
-                    value={formData.currency || selectedAccountType.currency}
+                    value={formData.currency || ""}
                     onValueChange={(value) => handleInputChange("currency", value)}
                   >
                     <SelectTrigger className="border-2 focus:border-primary h-9 text-sm">
-                      <SelectValue placeholder="Devise" />
+                      <SelectValue placeholder="Dévise" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="GNF">GNF</SelectItem>
@@ -239,7 +237,7 @@ export default function NewAccountPage() {
                     </SelectContent>
                   </Select>
                 </div>
-                 <div className="space-y-1">
+                <div className="space-y-1">
                   <Label htmlFor="accountPurpose" className="text-sm">
                     Objectif du Compte *
                   </Label>
@@ -298,9 +296,7 @@ export default function NewAccountPage() {
                 </div>
                 <div className="p-2 rounded bg-gradient-to-br from-primary/5 to-secondary/5">
                   <p className="text-xs text-muted-foreground">Dévise</p>
-                  <p className="text-sm font-semibold">
-                  {formData.currency}
-                  </p>
+                  <p className="text-sm font-semibold">{formData.currency}</p>
                 </div>
               </div>
 
