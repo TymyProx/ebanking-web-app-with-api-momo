@@ -252,7 +252,7 @@ export default function ComplainPage() {
                   <div className="space-y-2">
                     <Label htmlFor="complainType">Type de réclamation *</Label>
                     <Select value={selectedType} onValueChange={handleTypeChange}>
-                      <SelectTrigger className="w-90">
+                      <SelectTrigger className="w-full">
                         <SelectValue placeholder="Sélectionnez le type de réclamation" />
                       </SelectTrigger>
                       <SelectContent>
