@@ -273,7 +273,7 @@ export default function ComplainPage() {
                       onValueChange={(value) => handleInputChange("complainObject", value)}
                       disabled={!selectedType || availableObjects.length === 0}
                     >
-                      <SelectTrigger className="w-80">
+                      <SelectTrigger className="w-full">
                         <SelectValue
                           placeholder={
                             !selectedType
