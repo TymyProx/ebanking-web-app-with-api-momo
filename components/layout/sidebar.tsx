@@ -24,6 +24,7 @@ import {
   Sparkles,
   AlertCircle,
   Loader2,
+  PlusCircle,
 } from "lucide-react"
 import Image from "next/image"
 import { cn } from "@/lib/utils"
@@ -88,6 +89,11 @@ const navigationData = {
           title: "Relevés de compte",
           url: "/accounts/statements",
           icon: FileText,
+        },
+        {
+          title: "Ouverture compte",
+          url: "/accounts/new",
+          icon: PlusCircle,
         },
       ],
     },
