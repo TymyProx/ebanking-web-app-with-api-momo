@@ -68,37 +68,42 @@ export default function AccountDetailsPage() {
   const accountId = params.id as string
   const [showBalance, setShowBalance] = useState(true)
   const [account, setAccount] = useState<Account | null>(null)
-  const [transactions, setTransactions] = useState<Transaction[]>([])
+
+  const [transactions, setTransactions] = useState<Transaction[]>(() => {
+    if (typeof window !== "undefined") {
+      const cacheKey = `transactions_${accountId}`
+      const cached = sessionStorage.getItem(cacheKey)
+      if (cached) {
+        try {
+          const cachedData = JSON.parse(cached)
+          if (Date.now() - cachedData.timestamp < 60000) {
+            return cachedData.transactions
+          }
+        } catch (e) {
+          // Invalid cache, return empty array
+        }
+      }
+    }
+    return []
+  })
+
   const [isLoadingAccount, setIsLoadingAccount] = useState(true)
   const [isLoadingTransactions, setIsLoadingTransactions] = useState(true)
   const [isPending, startTransition] = useTransition()
   const { addNotifications } = useNotifications()
-  const [displayLimit, setDisplayLimit] = useState(20) // Only show 20 transactions initially
+  const [displayLimit, setDisplayLimit] = useState(20)
 
   const displayedTransactions = useMemo(() => {
     return transactions.slice(0, displayLimit)
   }, [transactions, displayLimit])
 
   useEffect(() => {
-    // Try to load cached transactions immediately
-    const cacheKey = `transactions_${accountId}`
-    const cached = sessionStorage.getItem(cacheKey)
-    if (cached) {
-      try {
-        const cachedData = JSON.parse(cached)
-        if (Date.now() - cachedData.timestamp < 60000) {
-          // Cache valid for 60 seconds
-          setTransactions(cachedData.transactions)
-          setIsLoadingTransactions(false)
-        }
-      } catch (e) {
-        // Invalid cache, ignore
-      }
+    const loadData = async () => {
+      // Load both account and transactions in parallel
+      const [accountResult, transactionsResult] = await Promise.all([loadAccountData(), loadTransactionsData()])
     }
-  }, [accountId])
 
-  useEffect(() => {
-    const loadAccount = async () => {
+    const loadAccountData = async () => {
       try {
         const accountDetails = await getAccountDetails(accountId)
 
@@ -148,40 +153,26 @@ export default function AccountDetailsPage() {
           }
         }
       } catch (error) {
-        // Removed console.error for performance
+        // Error handled silently
       } finally {
         setIsLoadingAccount(false)
       }
     }
 
-    loadAccount()
-  }, [accountId])
-
-  useEffect(() => {
-    const loadTransactions = async () => {
+    const loadTransactionsData = async () => {
       try {
-        console.log("[v0] Loading transactions for accountId:", accountId)
         const transactionsData = await getTransactions()
-        console.log("[v0] Transactions data received:", transactionsData)
 
         if (transactionsData && transactionsData.data && Array.isArray(transactionsData.data)) {
-          console.log("[v0] Total transactions:", transactionsData.data.length)
-
           const accountTransactions = transactionsData.data
             .filter((txn: any) => {
-              // Check multiple possible field names for account ID
               const txnAccountId = txn.accountId || txn.account_id || txn.accountNumber || txn.account_number
-              const matches =
-                txnAccountId === accountId || txnAccountId === account?.id || txnAccountId === account?.number
-
-              console.log("[v0] Transaction accountId:", txnAccountId, "matches:", matches)
-              return matches
+              return txnAccountId === accountId
             })
-            .slice(0, 100) // Limit to 100 most recent transactions
+            .slice(0, 100)
             .map((txn: any) => {
               const amount = Number.parseFloat(txn.amount || "0")
               const isCredit = txn.txnType === "CREDIT" || txn.type === "CREDIT" || amount > 0
-              const isDebit = txn.txnType === "DEBIT" || txn.type === "DEBIT" || amount < 0
 
               return {
                 id: txn.txnId || txn.id || txn.transactionId,
@@ -189,7 +180,7 @@ export default function AccountDetailsPage() {
                 type: isCredit ? "Virement reçu" : "Virement émis",
                 description: txn.description || txn.label || "Transaction",
                 amount: isCredit ? Math.abs(amount) : -Math.abs(amount),
-                currency: account?.currency || txn.currency || "GNF",
+                currency: txn.currency || "GNF",
                 date: txn.valueDate || txn.date || txn.createdAt || new Date().toISOString(),
                 status: txn.status || "Exécuté",
                 counterparty: txn.beneficiaryId || txn.beneficiary || txn.counterparty || "Système",
@@ -199,7 +190,6 @@ export default function AccountDetailsPage() {
             })
             .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
 
-          console.log("[v0] Filtered transactions for this account:", accountTransactions.length)
           setTransactions(accountTransactions)
 
           const cacheKey = `transactions_${accountId}`
@@ -211,31 +201,28 @@ export default function AccountDetailsPage() {
             }),
           )
         } else {
-          console.log("[v0] No transaction data or invalid format. transactionsData:", transactionsData)
           setTransactions([])
         }
       } catch (error) {
-        console.error("[v0] Error loading transactions:", error)
         setTransactions([])
       } finally {
         setIsLoadingTransactions(false)
       }
     }
 
-    loadTransactions()
-  }, [accountId, account])
+    loadData()
+  }, [accountId]) // Removed account dependency - load immediately
 
   const handleRefreshTransactions = async () => {
     setIsLoadingTransactions(true)
     try {
-      console.log("[v0] Refreshing transactions for accountId:", accountId)
       const transactionsData = await getTransactions()
 
       if (transactionsData && transactionsData.data && Array.isArray(transactionsData.data)) {
         const accountTransactions = transactionsData.data
           .filter((txn: any) => {
             const txnAccountId = txn.accountId || txn.account_id || txn.accountNumber || txn.account_number
-            return txnAccountId === accountId || txnAccountId === account?.id || txnAccountId === account?.number
+            return txnAccountId === accountId
           })
           .slice(0, 100)
           .map((txn: any) => {
@@ -248,7 +235,7 @@ export default function AccountDetailsPage() {
               type: isCredit ? "Virement reçu" : "Virement émis",
               description: txn.description || txn.label || "Transaction",
               amount: isCredit ? Math.abs(amount) : -Math.abs(amount),
-              currency: account?.currency || txn.currency || "GNF",
+              currency: txn.currency || "GNF",
               date: txn.valueDate || txn.date || txn.createdAt || new Date().toISOString(),
               status: txn.status || "Exécuté",
               counterparty: txn.beneficiaryId || txn.beneficiary || txn.counterparty || "Système",
@@ -258,7 +245,6 @@ export default function AccountDetailsPage() {
           })
           .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
 
-        console.log("[v0] Refreshed transactions count:", accountTransactions.length)
         setTransactions(accountTransactions)
 
         const cacheKey = `transactions_${accountId}`
@@ -270,11 +256,9 @@ export default function AccountDetailsPage() {
           }),
         )
       } else {
-        console.log("[v0] No transaction data on refresh")
         setTransactions([])
       }
     } catch (error) {
-      console.error("[v0] Error refreshing transactions:", error)
       setTransactions([])
     } finally {
       setIsLoadingTransactions(false)
