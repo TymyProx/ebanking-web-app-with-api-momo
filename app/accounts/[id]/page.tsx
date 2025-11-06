@@ -1,7 +1,7 @@
 "use client"
 
 import { useParams, useRouter } from "next/navigation"
-import { useState, useEffect, useTransition } from "react"
+import { useState, useEffect, useTransition, useMemo } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -73,6 +73,11 @@ export default function AccountDetailsPage() {
   const [isLoadingTransactions, setIsLoadingTransactions] = useState(true)
   const [isPending, startTransition] = useTransition()
   const { addNotifications } = useNotifications()
+  const [displayLimit, setDisplayLimit] = useState(20) // Only show 20 transactions initially
+
+  const displayedTransactions = useMemo(() => {
+    return transactions.slice(0, displayLimit)
+  }, [transactions, displayLimit])
 
   useEffect(() => {
     // Try to load cached transactions immediately
@@ -160,6 +165,7 @@ export default function AccountDetailsPage() {
         if (transactionsData.data && Array.isArray(transactionsData.data)) {
           const accountTransactions = transactionsData.data
             .filter((txn: any) => txn.accountId === accountId)
+            .slice(0, 100) // Limit to 100 most recent transactions
             .map((txn: any) => {
               const amount = Number.parseFloat(txn.amount || "0")
               const isCredit = txn.txnType === "CREDIT"
@@ -211,6 +217,7 @@ export default function AccountDetailsPage() {
       if (transactionsData.data && Array.isArray(transactionsData.data)) {
         const accountTransactions = transactionsData.data
           .filter((txn: any) => txn.accountId === accountId)
+          .slice(0, 100) // Limit to 100 most recent transactions
           .map((txn: any) => {
             const amount = Number.parseFloat(txn.amount || "0")
             const isCredit = txn.txnType === "CREDIT"
@@ -398,7 +405,7 @@ export default function AccountDetailsPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main balance card */}
         <Card className="lg:col-span-2 relative overflow-hidden border-2 hover:border-primary/50 transition-all duration-300 shadow-lg">
-          <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-secondary/5" />
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent" />
 
           <CardHeader className="relative">
             <CardTitle className="flex items-center justify-between">
@@ -634,59 +641,76 @@ export default function AccountDetailsPage() {
               <p className="text-muted-foreground">Aucune transaction trouvée pour ce compte</p>
             </div>
           ) : (
-            <div className="space-y-3">
-              {transactions.map((transaction) => (
-                <div
-                  key={transaction.id}
-                  className="flex items-center justify-between p-4 border-2 rounded-xl hover:border-primary/50 hover:shadow-md transition-all duration-300 bg-white/50 backdrop-blur-sm group"
-                >
-                  <div className="flex items-center space-x-4">
-                    <div
-                      className={`w-12 h-12 rounded-full flex items-center justify-center ${
-                        transaction.amount > 0
-                          ? "bg-gradient-to-br from-primary/20 to-secondary/20"
-                          : "bg-gradient-to-br from-destructive/20 to-destructive/10"
-                      }`}
-                    >
-                      {transaction.amount > 0 ? (
-                        <ArrowDownRight className="w-5 h-5 text-primary" />
-                      ) : (
-                        <ArrowUpRight className="w-5 h-5 text-destructive" />
-                      )}
+            <>
+              <div className="space-y-3">
+                {displayedTransactions.map((transaction) => (
+                  <div
+                    key={transaction.id}
+                    className="flex items-center justify-between p-4 border-2 rounded-xl hover:border-primary/50 hover:shadow-md transition-all duration-300 bg-white/50 backdrop-blur-sm group"
+                  >
+                    <div className="flex items-center space-x-4">
+                      <div
+                        className={`w-12 h-12 rounded-full flex items-center justify-center ${
+                          transaction.amount > 0
+                            ? "bg-gradient-to-br from-primary/20 to-secondary/20"
+                            : "bg-gradient-to-br from-destructive/20 to-destructive/10"
+                        }`}
+                      >
+                        {transaction.amount > 0 ? (
+                          <ArrowDownRight className="w-5 h-5 text-primary" />
+                        ) : (
+                          <ArrowUpRight className="w-5 h-5 text-destructive" />
+                        )}
+                      </div>
+                      <div>
+                        <p className="font-semibold">{transaction.type}</p>
+                        <p className="text-sm text-muted-foreground">{transaction.description}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {transaction.counterparty} • Réf: {transaction.reference}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="font-semibold">{transaction.type}</p>
-                      <p className="text-sm text-muted-foreground">{transaction.description}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {transaction.counterparty} • Réf: {transaction.reference}
+                    <div className="text-right">
+                      <p
+                        className={`text-lg font-bold ${transaction.amount > 0 ? "text-primary" : "text-destructive"}`}
+                      >
+                        {transaction.amount > 0 ? "+" : "-"}
+                        {formatAmount(Math.abs(transaction.amount), account?.currency || transaction.currency)}{" "}
+                        {account?.currency || transaction.currency}
                       </p>
+                      <p className="text-sm text-muted-foreground">{formatDateTime(transaction.date)}</p>
+                      <Badge
+                        variant={
+                          transaction.status === "Exécuté"
+                            ? "default"
+                            : transaction.status === "En attente"
+                              ? "secondary"
+                              : "destructive"
+                        }
+                        className={
+                          transaction.status === "Exécuté"
+                            ? "bg-gradient-to-r from-primary to-secondary text-white"
+                            : ""
+                        }
+                      >
+                        {transaction.status}
+                      </Badge>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <p className={`text-lg font-bold ${transaction.amount > 0 ? "text-primary" : "text-destructive"}`}>
-                      {transaction.amount > 0 ? "+" : "-"}
-                      {formatAmount(Math.abs(transaction.amount), account?.currency || transaction.currency)}{" "}
-                      {account?.currency || transaction.currency}
-                    </p>
-                    <p className="text-sm text-muted-foreground">{formatDateTime(transaction.date)}</p>
-                    <Badge
-                      variant={
-                        transaction.status === "Exécuté"
-                          ? "default"
-                          : transaction.status === "En attente"
-                            ? "secondary"
-                            : "destructive"
-                      }
-                      className={
-                        transaction.status === "Exécuté" ? "bg-gradient-to-r from-primary to-secondary text-white" : ""
-                      }
-                    >
-                      {transaction.status}
-                    </Badge>
-                  </div>
+                ))}
+              </div>
+              {displayLimit < transactions.length && (
+                <div className="mt-6 text-center">
+                  <Button
+                    variant="outline"
+                    onClick={() => setDisplayLimit((prev) => prev + 20)}
+                    className="bg-gradient-to-r from-primary/10 to-secondary/10 hover:from-primary/20 hover:to-secondary/20"
+                  >
+                    Afficher plus de transactions ({transactions.length - displayLimit} restantes)
+                  </Button>
                 </div>
-              ))}
-            </div>
+              )}
+            </>
           )}
         </CardContent>
       </Card>

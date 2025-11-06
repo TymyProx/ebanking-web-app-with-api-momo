@@ -114,6 +114,7 @@ export default function StatementsPage() {
   const [language, setLanguage] = useState<"fr" | "en">("fr")
   const [emailAddress, setEmailAddress] = useState("")
   const [selectedPeriod, setSelectedPeriod] = useState<string>("")
+  const [displayLimit, setDisplayLimit] = useState(50) // Limit initial display
 
   const [accounts, setAccounts] = useState<Account[]>([])
   const [isLoadingAccounts, setIsLoadingAccounts] = useState(true)
@@ -198,9 +199,9 @@ export default function StatementsPage() {
         const transactionsData = await getTransactions()
 
         if (transactionsData.data && Array.isArray(transactionsData.data)) {
-          const accountTransactions = transactionsData.data.filter(
-            (txn: any) => txn.accountId === selectedAccount || txn.creditAccount === selectedAccount,
-          )
+          const accountTransactions = transactionsData.data
+            .filter((txn: any) => txn.accountId === selectedAccount || txn.creditAccount === selectedAccount)
+            .slice(0, 200) // Limit to 200 most recent transactions
           setTransactions(accountTransactions)
 
           const cacheKey = `transactions_${selectedAccount}`
