@@ -1,6 +1,3 @@
-"use client"
-
-import { useEffect, useState } from "react"
 import Link from "next/link"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -10,48 +7,11 @@ import { getAccounts } from "@/app/accounts/actions"
 import { AccountsCarousel } from "@/components/accounts-carousel"
 import { BankProductsCarousel } from "@/components/bank-products-carousel"
 
-export default function Dashboard() {
-  const [accounts, setAccounts] = useState<any[]>(() => {
-    if (typeof window !== "undefined") {
-      const cached = sessionStorage.getItem("dashboard_accounts")
-      return cached ? JSON.parse(cached) : []
-    }
-    return []
-  })
+export default async function Dashboard() {
+  const transactionsResult = await getTransactions()
+  const transactions = transactionsResult?.data || []
 
-  const [transactions, setTransactions] = useState<any[]>(() => {
-    if (typeof window !== "undefined") {
-      const cached = sessionStorage.getItem("dashboard_transactions")
-      return cached ? JSON.parse(cached) : []
-    }
-    return []
-  })
-
-  const [isLoading, setIsLoading] = useState(false)
-
-  useEffect(() => {
-    const fetchData = async () => {
-      setIsLoading(true)
-      try {
-        const [accountsData, transactionsResult] = await Promise.all([getAccounts(), getTransactions()])
-
-        const transactionsData = transactionsResult?.data || []
-
-        setAccounts(accountsData)
-        setTransactions(transactionsData)
-
-        // Cache for instant display on next visit
-        sessionStorage.setItem("dashboard_accounts", JSON.stringify(accountsData))
-        sessionStorage.setItem("dashboard_transactions", JSON.stringify(transactionsData))
-      } catch (error) {
-        console.error("Error fetching dashboard data:", error)
-      } finally {
-        setIsLoading(false)
-      }
-    }
-
-    fetchData()
-  }, [])
+  const accounts = await getAccounts()
 
   const formatAmount = (amount: number | string, currency = "GNF") => {
     const numAmount = typeof amount === "string" ? Number.parseFloat(amount) : amount
@@ -68,6 +28,7 @@ export default function Dashboard() {
     const amount = Number.parseFloat(transaction.amount)
     const isCredit = transaction.txnType === "CREDIT"
 
+    // Find the account to get its currency
     const account = accounts.find((acc) => acc.id === transaction.accountId || acc.accountId === transaction.accountId)
     const currency = account?.currency || "GNF"
 
