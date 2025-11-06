@@ -28,8 +28,6 @@ export async function completeSignup(token: string, password: string, emailFallb
         address: "",
         codeClient: `CLI-${Date.now()}`,
         verificationToken: token,
-        isExistingClient: false,
-        clientId: null,
       }
     } else {
       pendingData = JSON.parse(pendingDataCookie.value)
@@ -42,6 +40,137 @@ export async function completeSignup(token: string, password: string, emailFallb
     }
 
     console.log("[v0] Token verified successfully")
+
+    const isExistingClient = pendingData.isExistingClient === true
+
+    if (isExistingClient) {
+      console.log("[v0] Processing existing client signup...")
+
+      // Step 1: Delete the temporary user
+      if (pendingData.tempUserId && pendingData.tempToken) {
+        console.log("[v0] Deleting temporary user...")
+        try {
+          await fetch(`${API_BASE_URL}/auth/users/${pendingData.tempUserId}`, {
+            method: "DELETE",
+            headers: {
+              Authorization: `Bearer ${pendingData.tempToken}`,
+            },
+          })
+          console.log("[v0] Temporary user deleted successfully")
+        } catch (deleteError) {
+          console.error("[v0] Failed to delete temp user:", deleteError)
+        }
+      }
+
+      // Step 2: Create real auth account with the client's email
+      console.log("[v0] Creating real auth account for existing client...")
+
+      const signupPayload = {
+        email: String(pendingData.email),
+        password: String(password),
+        tenantId: String(TENANT_ID),
+      }
+
+      const signupResponse = await fetch(`${API_BASE_URL}/auth/sign-up`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(signupPayload),
+      })
+
+      console.log("[v0] Signup response status:", signupResponse.status)
+
+      if (!signupResponse.ok) {
+        const errorText = await signupResponse.text()
+        console.error("[v0] Signup failed:", errorText)
+
+        let errorData: any = {}
+        try {
+          errorData = JSON.parse(errorText)
+        } catch (e) {
+          errorData = { message: errorText }
+        }
+
+        if (errorData.message?.includes("Email is already in use") || errorData.message?.includes("already exists")) {
+          throw new Error("Ce compte existe déjà. Veuillez vous connecter avec vos identifiants.")
+        }
+
+        throw new Error(errorData.message || "Erreur lors de la création du compte")
+      }
+
+      const signupResponseText = await signupResponse.text()
+      const authToken = signupResponseText.startsWith("eyJ") ? signupResponseText : JSON.parse(signupResponseText).token
+
+      if (!authToken) {
+        throw new Error("Aucun token reçu du serveur")
+      }
+
+      console.log("[v0] Auth account created successfully")
+
+      // Step 3: Get user info
+      const meResponse = await fetch(`${API_BASE_URL}/auth/me`, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${authToken}`,
+        },
+      })
+
+      if (!meResponse.ok) {
+        throw new Error("Erreur lors de la récupération des informations utilisateur")
+      }
+
+      const userData = await meResponse.json()
+      const userId = userData.id
+      console.log("[v0] User info retrieved, userId:", userId)
+
+      // Step 4: Update the existing client with the userId
+      console.log("[v0] Linking user to existing client...")
+
+      const updateClientPayload = {
+        data: {
+          userid: String(userId),
+        },
+      }
+
+      const updateResponse = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/client/${pendingData.clientId}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${authToken}`,
+        },
+        body: JSON.stringify(updateClientPayload),
+      })
+
+      if (!updateResponse.ok) {
+        const errorText = await updateResponse.text()
+        console.error("[v0] Failed to link user to client:", errorText)
+        throw new Error("Erreur lors de la liaison du compte")
+      }
+
+      console.log("[v0] User linked to existing client successfully")
+
+      if (pendingData.fullName) {
+        console.log("[v0] Updating user fullName with client's full name...")
+        userData.fullName = pendingData.fullName
+      }
+
+      await setSecureCookie("user", JSON.stringify(userData))
+      console.log("[v0] User info stored in cookie")
+
+      // Clear pending signup data
+      cookieStore.delete("pending_signup_data")
+
+      console.log("[v0] Existing client signup completed successfully!")
+
+      return {
+        success: true,
+        message: "Votre accès en ligne a été activé avec succès !",
+      }
+    }
+
+    // Original flow for new clients
+    console.log("[v0] Processing new client signup...")
 
     // Step 1: Create auth account with password
     console.log("[v0] Step 1: Creating auth account via /auth/sign-up...")
@@ -122,10 +251,10 @@ export async function completeSignup(token: string, password: string, emailFallb
     await setSecureCookie("user", JSON.stringify(userData))
     console.log("[v0] User info stored in cookie")
 
+    // Step 3: Create client profile
     console.log("[v0] Step 3: Creating client profile...")
 
-    if (pendingDataCookie && !pendingData.isExistingClient) {
-      // Only create new client profile if this is a new client
+    if (pendingDataCookie) {
       const clientRequestBody = {
         data: {
           nomComplet: String(pendingData.fullName),
@@ -164,34 +293,6 @@ export async function completeSignup(token: string, password: string, emailFallb
       }
 
       console.log("[v0] Client profile created successfully")
-
-      // Clear pending signup data
-      cookieStore.delete("pending_signup_data")
-    } else if (pendingData.isExistingClient) {
-      console.log("[v0] Linking user account to existing client...")
-
-      // Update the existing client with the new userid
-      const updateClientBody = {
-        data: {
-          userid: String(userId),
-        },
-      }
-
-      const updateResponse = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/client/${pendingData.clientId}`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${authToken}`,
-        },
-        body: JSON.stringify(updateClientBody),
-      })
-
-      if (!updateResponse.ok) {
-        console.error("[v0] Failed to link user to existing client")
-        throw new Error("Erreur lors de la liaison du compte utilisateur")
-      }
-
-      console.log("[v0] User account linked to existing client successfully")
 
       // Clear pending signup data
       cookieStore.delete("pending_signup_data")

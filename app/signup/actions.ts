@@ -27,8 +27,17 @@ interface InitialSignupData {
   address: string
 }
 
-interface ExistingClientSignupData {
-  clientCode: string
+function maskEmail(email: string): string {
+  const [localPart, domain] = email.split("@")
+  if (!localPart || !domain) return email
+
+  if (localPart.length <= 2) {
+    return `${localPart[0]}*@${domain}`
+  }
+
+  const visibleChars = Math.min(2, Math.floor(localPart.length / 3))
+  const maskedPart = "*".repeat(6)
+  return `${localPart.substring(0, visibleChars)}${maskedPart}@${domain}`
 }
 
 export async function initiateSignup(data: InitialSignupData) {
@@ -105,247 +114,6 @@ export async function initiateSignup(data: InitialSignupData) {
     }
   } catch (error: any) {
     console.error("[v0] Initial signup error:", error)
-    return {
-      success: false,
-      message: error.message || "Une erreur est survenue lors de l'inscription",
-    }
-  }
-}
-
-export async function initiateExistingClientSignup(data: ExistingClientSignupData) {
-  let tempUserId: string | null = null
-  let tempToken: string | null = null
-
-  try {
-    console.log("[v0] Starting existing client signup process...")
-    console.log("[v0] Client code:", data.clientCode)
-
-    if (!data.clientCode) {
-      return { success: false, message: "Code client requis" }
-    }
-
-    console.log("[v0] Step 1: Creating temporary user to obtain token...")
-
-    const tempEmail = `temp-${Date.now()}-${Math.random().toString(36).substring(7)}@temp.bngebanking.com`
-    const tempPassword = randomBytes(32).toString("hex")
-
-    const tempUserPayload = {
-      email: tempEmail,
-      password: tempPassword,
-      tenantId: String(TENANT_ID),
-    }
-
-    const tempUserResponse = await fetch(`${API_BASE_URL}/auth/sign-up`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(tempUserPayload),
-    })
-
-    console.log("[v0] Temp user creation response status:", tempUserResponse.status)
-
-    if (!tempUserResponse.ok) {
-      const errorText = await tempUserResponse.text()
-      console.error("[v0] Failed to create temp user:", errorText)
-      throw new Error("Erreur lors de la vérification du code client")
-    }
-
-    const tempUserResponseText = await tempUserResponse.text()
-
-    // Extract token
-    if (tempUserResponseText.startsWith("eyJ")) {
-      tempToken = tempUserResponseText
-    } else {
-      const tempUserData = JSON.parse(tempUserResponseText)
-      tempToken = tempUserData.token || tempUserData.data?.token || tempUserData
-    }
-
-    if (!tempToken) {
-      throw new Error("Impossible d'obtenir le token d'authentification")
-    }
-
-    console.log("[v0] Temporary token obtained successfully")
-
-    // Get temp user ID for cleanup if needed
-    const meResponse = await fetch(`${API_BASE_URL}/auth/me`, {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${tempToken}`,
-      },
-    })
-
-    if (meResponse.ok) {
-      const meData = await meResponse.json()
-      tempUserId = meData.id
-      console.log("[v0] Temp user ID:", tempUserId)
-    }
-
-    console.log("[v0] Step 2: Searching for client with code:", data.clientCode)
-
-    const clientResponse = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/client`, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${tempToken}`,
-      },
-    })
-
-    console.log("[v0] Client API response status:", clientResponse.status)
-
-    if (!clientResponse.ok) {
-      const errorText = await clientResponse.text()
-      console.error("[v0] Client API error:", errorText)
-
-      if (tempUserId && tempToken) {
-        console.log("[v0] Deleting temporary user...")
-        await fetch(`${API_BASE_URL}/auth/user/${tempUserId}`, {
-          method: "DELETE",
-          headers: {
-            Authorization: `Bearer ${tempToken}`,
-          },
-        }).catch((err) => console.error("[v0] Failed to delete temp user:", err))
-      }
-
-      throw new Error("Erreur lors de la recherche du client")
-    }
-
-    const clientData = await clientResponse.json()
-    console.log("[v0] Client API response received")
-
-    // Extract clients array from response
-    let clients: any[] = []
-    if (clientData.rows && Array.isArray(clientData.rows)) {
-      clients = clientData.rows
-    } else if (clientData.data && Array.isArray(clientData.data)) {
-      clients = clientData.data
-    } else if (Array.isArray(clientData)) {
-      clients = clientData
-    }
-
-    console.log("[v0] Found", clients.length, "clients in database")
-
-    const client = clients.find(
-      (c) => c.codeClient === data.clientCode || c.code === data.clientCode || c.clientCode === data.clientCode,
-    )
-
-    if (!client) {
-      console.error("[v0] Client not found with code:", data.clientCode)
-
-      if (tempUserId && tempToken) {
-        console.log("[v0] Deleting temporary user...")
-        await fetch(`${API_BASE_URL}/auth/user/${tempUserId}`, {
-          method: "DELETE",
-          headers: {
-            Authorization: `Bearer ${tempToken}`,
-          },
-        }).catch((err) => console.error("[v0] Failed to delete temp user:", err))
-      }
-
-      return {
-        success: false,
-        message: "Code client invalide. Veuillez vérifier votre code et réessayer.",
-      }
-    }
-
-    console.log("[v0] Client found:", client.id, client.nomComplet || client.email)
-
-    if (!client.email) {
-      if (tempUserId && tempToken) {
-        console.log("[v0] Deleting temporary user...")
-        await fetch(`${API_BASE_URL}/auth/user/${tempUserId}`, {
-          method: "DELETE",
-          headers: {
-            Authorization: `Bearer ${tempToken}`,
-          },
-        }).catch((err) => console.error("[v0] Failed to delete temp user:", err))
-      }
-
-      return {
-        success: false,
-        message: "Aucun email associé à ce code client. Veuillez contacter votre agence.",
-      }
-    }
-
-    const clientEmail = client.email
-    const clientId = client.id
-
-    // Delete temporary user now that we have the client info
-    if (tempUserId && tempToken) {
-      console.log("[v0] Deleting temporary user...")
-      await fetch(`${API_BASE_URL}/auth/user/${tempUserId}`, {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${tempToken}`,
-        },
-      }).catch((err) => console.error("[v0] Failed to delete temp user:", err))
-    }
-
-    // Generate verification token and send email
-    const verificationToken = randomBytes(32).toString("hex")
-
-    // Store signup data with verification token and mark as existing client
-    const cookieStore = await cookies()
-    const cookieConfig = getCookieConfig()
-    cookieStore.set(
-      "pending_signup_data",
-      JSON.stringify({
-        email: clientEmail,
-        codeClient: data.clientCode,
-        clientId: clientId,
-        verificationToken: verificationToken,
-        isExistingClient: true,
-        fullName: client.nomComplet || clientEmail.split("@")[0],
-      }),
-      {
-        ...cookieConfig,
-        maxAge: 60 * 60 * 24, // 24 hours
-      },
-    )
-
-    console.log("[v0] Sending verification email via Resend...")
-
-    const resend = new Resend(process.env.RESEND_API_KEY)
-    const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || "no-reply@bngebanking.com"
-    const verificationUrl = `${APP_URL.replace(/\/$/, "")}/auth/verify-email?token=${verificationToken}&email=${encodeURIComponent(
-      clientEmail,
-    )}`
-
-    const { data: resendData, error: resendError } = await resend.emails.send({
-      from: FROM_EMAIL,
-      to: clientEmail,
-      subject: "Activez votre compte en ligne - BNG E-Banking",
-      react: VerificationEmail({
-        userName: client.nomComplet || clientEmail.split("@")[0],
-        verificationLink: verificationUrl,
-      }),
-    })
-
-    if (resendError) {
-      console.error("[v0] Resend error:", resendError)
-      throw new Error(resendError.message || "Erreur lors de l'envoi de l'email de vérification")
-    }
-
-    console.log("[v0] Email sent successfully:", resendData)
-
-    return {
-      success: true,
-      message: "Un email de vérification a été envoyé à l'adresse associée à votre compte.",
-      email: clientEmail,
-    }
-  } catch (error: any) {
-    console.error("[v0] Existing client signup error:", error)
-
-    if (tempUserId && tempToken) {
-      console.log("[v0] Cleaning up temporary user due to error...")
-      await fetch(`${API_BASE_URL}/auth/user/${tempUserId}`, {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${tempToken}`,
-        },
-      }).catch((err) => console.error("[v0] Failed to delete temp user during cleanup:", err))
-    }
-
     return {
       success: false,
       message: error.message || "Une erreur est survenue lors de l'inscription",
@@ -454,6 +222,220 @@ export async function signupUser(data: SignupData) {
     return {
       success: false,
       message: error.message || "Une erreur est survenue lors de l'inscription",
+    }
+  }
+}
+
+export async function initiateExistingClientSignup(data: { clientCode: string }) {
+  let tempUserId: string | null = null
+  let tempToken: string | null = null
+
+  try {
+    console.log("[v0] Starting existing client signup process...")
+    console.log("[v0] Client code:", data.clientCode)
+
+    if (!data.clientCode) {
+      return { success: false, message: "Code client requis" }
+    }
+
+    // Step 1: Create temporary user to get a token
+    console.log("[v0] Step 1: Creating temporary user to obtain token...")
+
+    const tempEmail = `${data.clientCode}@temp.bng.local`
+    const tempPassword = randomBytes(32).toString("hex")
+
+    const signupPayload = {
+      email: tempEmail,
+      password: tempPassword,
+      tenantId: String(TENANT_ID),
+    }
+
+    const signupResponse = await fetch(`${API_BASE_URL}/auth/sign-up`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(signupPayload),
+    })
+
+    console.log("[v0] Temp user creation response status:", signupResponse.status)
+
+    if (!signupResponse.ok) {
+      const errorText = await signupResponse.text()
+      console.error("[v0] Failed to create temp user:", errorText)
+      throw new Error("Erreur lors de la création du compte temporaire")
+    }
+
+    const signupResponseText = await signupResponse.text()
+    tempToken = signupResponseText.startsWith("eyJ") ? signupResponseText : JSON.parse(signupResponseText).token
+
+    if (!tempToken) {
+      throw new Error("Aucun token reçu")
+    }
+
+    console.log("[v0] Temporary token obtained successfully")
+
+    // Step 2: Get temp user ID
+    const meResponse = await fetch(`${API_BASE_URL}/auth/me`, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${tempToken}`,
+      },
+    })
+
+    if (!meResponse.ok) {
+      throw new Error("Erreur lors de la récupération des informations utilisateur")
+    }
+
+    const userData = await meResponse.json()
+    tempUserId = userData.id
+    console.log("[v0] Temp user ID:", tempUserId)
+
+    // Step 3: Search for client by code
+    console.log("[v0] Step 2: Searching for client with code...")
+
+    const clientResponse = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/client`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${tempToken}`,
+      },
+    })
+
+    console.log("[v0] Client search response status:", clientResponse.status)
+
+    if (!clientResponse.ok) {
+      throw new Error("Erreur lors de la recherche du client")
+    }
+
+    const clientData = await clientResponse.json()
+    console.log("[v0] Client data received, searching for matching code...")
+
+    // Handle different response formats
+    let clients = []
+    if (Array.isArray(clientData)) {
+      clients = clientData
+    } else if (clientData.rows && Array.isArray(clientData.rows)) {
+      clients = clientData.rows
+    } else if (clientData.data && Array.isArray(clientData.data)) {
+      clients = clientData.data
+    }
+
+    // Find client with matching code
+    const matchingClient = clients.find(
+      (client: any) =>
+        client.codeClient === data.clientCode ||
+        client.code === data.clientCode ||
+        client.clientCode === data.clientCode,
+    )
+
+    if (!matchingClient) {
+      console.log("[v0] No matching client found, deleting temp user...")
+
+      // Delete temp user
+      await fetch(`${API_BASE_URL}/auth/users/${tempUserId}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${tempToken}`,
+        },
+      })
+
+      return {
+        success: false,
+        message: "Code client invalide. Veuillez vérifier votre code et réessayer.",
+      }
+    }
+
+    console.log("[v0] Matching client found!")
+
+    // Extract client info
+    const clientEmail = matchingClient.email
+    const clientFullName = matchingClient.nomComplet || matchingClient.fullName || matchingClient.name
+    const clientId = matchingClient.id
+
+    if (!clientEmail) {
+      throw new Error("Email du client non trouvé")
+    }
+
+    console.log("[v0] Client email:", clientEmail)
+    console.log("[v0] Client full name:", clientFullName)
+
+    // Step 4: Generate verification token and send email
+    const verificationToken = randomBytes(32).toString("hex")
+
+    // Store data in cookie
+    const cookieStore = await cookies()
+    const cookieConfig = getCookieConfig()
+    cookieStore.set(
+      "pending_signup_data",
+      JSON.stringify({
+        email: clientEmail,
+        fullName: clientFullName,
+        clientCode: data.clientCode,
+        clientId: clientId,
+        tempUserId: tempUserId,
+        tempToken: tempToken,
+        verificationToken: verificationToken,
+        isExistingClient: true,
+      }),
+      {
+        ...cookieConfig,
+        maxAge: 60 * 60 * 24, // 24 hours
+      },
+    )
+
+    console.log("[v0] Sending verification email via Resend...")
+
+    const resend = new Resend(process.env.RESEND_API_KEY)
+    const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || "no-reply@bngebanking.com"
+    const verificationUrl = `${APP_URL.replace(/\/$/, "")}/auth/verify-email?token=${verificationToken}&email=${encodeURIComponent(
+      clientEmail,
+    )}`
+
+    const { data: resendData, error: resendError } = await resend.emails.send({
+      from: FROM_EMAIL,
+      to: clientEmail,
+      subject: "Activez votre accès en ligne - BNG E-Banking",
+      react: VerificationEmail({
+        userName: clientFullName || clientEmail.split("@")[0],
+        verificationLink: verificationUrl,
+      }),
+    })
+
+    if (resendError) {
+      console.error("[v0] Resend error:", resendError)
+      throw new Error("Erreur lors de l'envoi de l'email de vérification")
+    }
+
+    console.log("[v0] Verification email sent successfully:", resendData)
+
+    return {
+      success: true,
+      message: "Email de vérification envoyé",
+      maskedEmail: maskEmail(clientEmail),
+    }
+  } catch (error: any) {
+    console.error("[v0] Existing client signup error:", error)
+
+    // Clean up temp user if it was created
+    if (tempUserId && tempToken) {
+      try {
+        console.log("[v0] Cleaning up temp user due to error...")
+        await fetch(`${API_BASE_URL}/auth/users/${tempUserId}`, {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${tempToken}`,
+          },
+        })
+        console.log("[v0] Temp user deleted successfully")
+      } catch (deleteError) {
+        console.error("[v0] Failed to delete temp user:", deleteError)
+      }
+    }
+
+    return {
+      success: false,
+      message: error.message || "Une erreur est survenue",
     }
   }
 }
