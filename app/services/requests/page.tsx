@@ -301,14 +301,30 @@ export default function ServiceRequestsPage() {
 
       if (request.type === "credit") {
         details = await getDemandeCreditById(TENANT_ID, request.id)
+        console.log("[v0] Détails crédit bruts:", details)
+        if (details && !details.applicant_name) {
+          details = {
+            ...details,
+            ...request.details,
+            reference: request.reference,
+            numcompte: request.account,
+          }
+        }
       } else if (request.type === "checkbook") {
         details = await getCommandeById(TENANT_ID, request.id)
+        console.log("[v0] Détails chéquier bruts:", details)
       }
 
-      console.log("[v0] Détails récupérés:", details)
+      console.log("[v0] Détails récupérés après traitement:", details)
       setSelectedRequestDetails(details)
     } catch (error) {
       console.error("[v0] Erreur lors du chargement des détails:", error)
+      setSelectedRequestDetails({
+        ...request.details,
+        reference: request.reference,
+        numcompte: request.account,
+        id: request.id,
+      })
     } finally {
       setIsLoadingDetails(false)
     }
@@ -324,6 +340,8 @@ export default function ServiceRequestsPage() {
   const formatRequestDetails = (details: any, type: string) => {
     if (!details) return []
 
+    console.log("[v0] Formatage des détails pour type:", type, "données:", details)
+
     const commonFields = [
       {
         label: "Référence",
@@ -337,11 +355,21 @@ export default function ServiceRequestsPage() {
     if (type === "credit") {
       return [
         ...commonFields,
-        { label: "Nom du demandeur", value: details.applicant_name || "Non spécifié" },
-        { label: "Type de crédit", value: details.credit_type || "Non spécifié" },
-        { label: "Montant du crédit", value: details.loan_amount ? `${details.loan_amount} GNF` : "Non spécifié" },
-        { label: "Durée (mois)", value: details.loan_duration || "Non spécifié" },
-        { label: "Objet du crédit", value: details.loan_purpose || "Non spécifié" },
+        { label: "Nom du demandeur", value: details.applicant_name || details.applicantName || "Non spécifié" },
+        { label: "Type de crédit", value: details.credit_type || details.creditType || "Non spécifié" },
+        {
+          label: "Montant du crédit",
+          value:
+            details.loan_amount || details.creditAmount
+              ? `${new Intl.NumberFormat("fr-FR", {
+                  style: "currency",
+                  currency: "GNF",
+                  minimumFractionDigits: 0,
+                }).format(Number(details.loan_amount || details.creditAmount))}`
+              : "Non spécifié",
+        },
+        { label: "Durée (mois)", value: details.loan_duration || details.durationMonths || "Non spécifié" },
+        { label: "Objet du crédit", value: details.loan_purpose || details.purpose || "Non spécifié" },
         { label: "Téléphone", value: details.contact_phone || "Non spécifié" },
         { label: "Commentaire", value: details.commentaire || "Aucun commentaire" },
       ]
