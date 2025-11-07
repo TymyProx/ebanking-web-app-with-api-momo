@@ -144,16 +144,10 @@ const navigationData = {
     },
   ],
   services: [
-    {
+     {
       title: "E-Services",
-      icon: Settings,
-      items: [
-        {
-          title: "Demandes",
-          url: "/services/requests",
-          icon: FileText,
-        },
-      ],
+      url: "/services/request",
+      icon: FileText,
     },
   ],
   support: [
