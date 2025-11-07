@@ -25,6 +25,7 @@ import {
   AlertCircle,
   Loader2,
   PlusCircle,
+  FileCheck,
 } from "lucide-react"
 import Image from "next/image"
 import { cn } from "@/lib/utils"
@@ -95,7 +96,7 @@ const navigationData = {
           url: "/accounts/new",
           icon: PlusCircle,
         },
-         {
+        {
           title: "Relevé de coordonnées bancaires",
           url: "/services/rib",
           icon: FileText,
@@ -126,10 +127,20 @@ const navigationData = {
       ],
     },
     {
-      title: "Cartes",
-      url: "/cartes",
+      title: "Gestion des cartes",
       icon: CreditCard,
-      badge: "Nouveau",
+      items: [
+        {
+          title: "Mes cartes",
+          url: "/cartes",
+          icon: CreditCard,
+        },
+        {
+          title: "Demande de carte",
+          url: "/cartes/demande",
+          icon: FileCheck,
+        },
+      ],
     },
   ],
   services: [
@@ -142,7 +153,6 @@ const navigationData = {
           url: "/services/requests",
           icon: FileText,
         },
-       
       ],
     },
   ],
