@@ -151,7 +151,7 @@ export default async function Dashboard() {
         <h1 className="text-2xl font-heading font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
           Tableau de bord
         </h1>
-        <p className="text-muted-foreground text-sm">Bienvenue sur votre espace Astra eBanking</p>
+        {/* <p className="text-muted-foreground text-sm">Bienvenue sur votre espace Astra eBanking</p> */}
       </div>
 
       <Suspense fallback={<AccountsLoading />}>
@@ -173,14 +173,14 @@ export default async function Dashboard() {
                 <span className="text-xs font-medium">Nouveau virement</span>
               </Button>
             </Link>
-            <Link href="/payments/bills">
+            <Link href="/transfers/beneficiaries">
               <Button
                 size="sm"
                 variant="outline"
                 className="h-14 flex flex-col space-y-1 w-full hover:bg-secondary/10 hover:border-secondary group bg-transparent"
               >
                 <Receipt className="h-4 w-4 group-hover:scale-110 transition-transform" />
-                <span className="text-xs font-medium">Payer une facture</span>
+                <span className="text-xs font-medium">Mes bénéficiaires</span>
               </Button>
             </Link>
             <Link href="/accounts/balance">
