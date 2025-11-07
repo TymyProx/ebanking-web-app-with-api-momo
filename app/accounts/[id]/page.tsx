@@ -134,10 +134,10 @@ export default function AccountDetailsPage() {
 
               const adaptedAccount: Account = {
                 id: foundAccount.id || foundAccount.accountId,
-                name: foundAccount.accountName || foundAccount.name || `Compte ${foundAccount.accountNumber}`,
+                name: foundAccount.accountName || `Compte ${foundAccount.accountNumber}`,
                 number: foundAccount.accountNumber,
-                balance: Number.parseFloat(foundAccount.bookBalance || foundAccount.balance || "0"),
-                availableBalance: Number.parseFloat(foundAccount.availableBalance || foundAccount.balance || "0"),
+                balance: Number.parseFloat(foundAccount.bookBalance || "0"),
+                availableBalance: Number.parseFloat(foundAccount.availableBalance || "0"),
                 currency: foundAccount.currency || "GNF",
                 type: foundAccount.type,
                 status: foundAccount.status,

@@ -81,7 +81,7 @@ const navigationData = {
       icon: Wallet,
       items: [
         {
-          title: "Mes comptes",
+          title: "Consultation de solde",
           url: "/accounts/balance",
           icon: BarChart3,
         },
@@ -94,6 +94,11 @@ const navigationData = {
           title: "Ouverture compte",
           url: "/accounts/new",
           icon: PlusCircle,
+        },
+         {
+          title: "Relevé de coordonnées bancaires",
+          url: "/services/rib",
+          icon: FileText,
         },
       ],
     },
@@ -137,11 +142,7 @@ const navigationData = {
           url: "/services/requests",
           icon: FileText,
         },
-        {
-          title: "RIB",
-          url: "/services/rib",
-          icon: FileText,
-        },
+       
       ],
     },
   ],
