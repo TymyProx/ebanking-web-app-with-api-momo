@@ -146,66 +146,66 @@ function AccountsLoading() {
 
 export default async function Dashboard() {
   return (
-    <div className="space-y-8 fade-in">
-      <div className="space-y-2">
-        <h1 className="text-3xl font-heading font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+    <div className="space-y-4 fade-in">
+      <div className="space-y-1">
+        <h1 className="text-2xl font-heading font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
           Tableau de bord
         </h1>
-        <p className="text-muted-foreground text-lg">Bienvenue sur votre espace Astra eBanking</p>
+        <p className="text-muted-foreground text-sm">Bienvenue sur votre espace Astra eBanking</p>
       </div>
 
       <Suspense fallback={<AccountsLoading />}>
         <AccountsSection />
       </Suspense>
 
-      <Card className="border-0 shadow-lg bg-gradient-to-r from-primary/5 to-secondary/5">
-        <CardHeader>
-          <CardTitle className="flex items-center font-heading text-xl">
-            <div className="p-2 rounded-lg bg-primary/10 mr-3">
-              <Plus className="h-5 w-5 text-primary" />
-            </div>
+      <Card className="border-0 shadow-sm bg-muted/30">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center font-heading text-base">
+            <Plus className="h-4 w-4 text-primary mr-2" />
             Actions rapides
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <CardContent className="pt-0">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             <Link href="/transfers/new">
-              <Button className="h-20 flex flex-col space-y-3 w-full btn-primary group">
-                <Send className="h-6 w-6 group-hover:scale-110 transition-transform" />
-                <span className="font-medium">Nouveau virement</span>
+              <Button size="sm" className="h-14 flex flex-col space-y-1 w-full btn-primary group">
+                <Send className="h-4 w-4 group-hover:scale-110 transition-transform" />
+                <span className="text-xs font-medium">Nouveau virement</span>
               </Button>
             </Link>
             <Link href="/payments/bills">
               <Button
+                size="sm"
                 variant="outline"
-                className="h-20 flex flex-col space-y-3 w-full border-2 hover:bg-secondary/10 hover:border-secondary group bg-transparent"
+                className="h-14 flex flex-col space-y-1 w-full hover:bg-secondary/10 hover:border-secondary group bg-transparent"
               >
-                <Receipt className="h-6 w-6 group-hover:scale-110 transition-transform" />
-                <span className="font-medium">Payer une facture</span>
+                <Receipt className="h-4 w-4 group-hover:scale-110 transition-transform" />
+                <span className="text-xs font-medium">Payer une facture</span>
               </Button>
             </Link>
             <Link href="/accounts/balance">
               <Button
+                size="sm"
                 variant="outline"
-                className="h-20 flex flex-col space-y-3 w-full border-2 hover:bg-accent/10 hover:border-accent group bg-transparent"
+                className="h-14 flex flex-col space-y-1 w-full hover:bg-accent/10 hover:border-accent group bg-transparent"
               >
-                <Eye className="h-6 w-6 group-hover:scale-110 transition-transform" />
-                <span className="font-medium">Consulter soldes</span>
+                <Eye className="h-4 w-4 group-hover:scale-110 transition-transform" />
+                <span className="text-xs font-medium">Consulter soldes</span>
               </Button>
             </Link>
           </div>
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <Suspense fallback={<TransactionsLoading />}>
           <RecentTransactions />
         </Suspense>
 
         <div>
-          <div className="mb-4">
-            <h2 className="text-xl font-heading font-semibold">Nos Produits</h2>
-            <p className="text-sm text-muted-foreground">Découvrez nos offres exclusives</p>
+          <div className="mb-2">
+            <h2 className="text-lg font-heading font-semibold">Nos Produits</h2>
+            <p className="text-xs text-muted-foreground">Découvrez nos offres exclusives</p>
           </div>
           <BankProductsCarousel />
         </div>
