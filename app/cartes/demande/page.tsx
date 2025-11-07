@@ -61,7 +61,16 @@ export default function DemandeCartePage() {
       try {
         setLoadingAccounts(true)
         const accountsData = await getAccounts()
-        const activeAccounts = accountsData.filter((acc: any) => acc.status === "ACTIF")
+        const activeAccounts = accountsData
+          .filter((acc: any) => acc.status === "ACTIF")
+          .map((acc: any) => ({
+            id: acc.id || acc.accountId,
+            name: acc.accountName || acc.name || `Compte ${acc.accountNumber}`,
+            accountNumber: acc.accountNumber || acc.number,
+            balance: acc.bookBalance || acc.balance || 0,
+            currency: acc.currency || "GNF",
+            status: acc.status,
+          }))
         setAccounts(activeAccounts)
       } catch (err) {
         console.error("Error loading accounts:", err)
@@ -87,7 +96,7 @@ export default function DemandeCartePage() {
 
     try {
       await createCardRequest({
-        accountId: formData.accountId,
+        account_id: formData.accountId,
         cardType: formData.cardType,
         deliveryAddress: formData.deliveryAddress,
         reason: formData.reason,
@@ -288,7 +297,8 @@ export default function DemandeCartePage() {
                     <SelectContent>
                       {accounts.map((account) => (
                         <SelectItem key={account.id} value={account.id}>
-                          {account.accountName} - {account.accountNumber} {" "}{account.currency}
+                          {account.name} - {account.accountNumber} ({(account.balance ?? 0).toLocaleString()}{" "}
+                          {account.currency})
                         </SelectItem>
                       ))}
                     </SelectContent>

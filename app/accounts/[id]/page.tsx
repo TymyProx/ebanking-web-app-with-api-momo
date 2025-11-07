@@ -631,7 +631,7 @@ export default function AccountDetailsPage() {
                       variant="outline"
                       size="sm"
                       className="w-full justify-start bg-white/50 hover:bg-primary/10 hover:border-primary/50 transition-all"
-                      onClick={() => router.push(`/services/rib?accountId=${accountId}`)}
+                      onClick={() => router.push(`/accounts/rib?accountId=${accountId}`)}
                     >
                       <FileText className="w-4 h-4 mr-2" />
                       Obtenir RIB

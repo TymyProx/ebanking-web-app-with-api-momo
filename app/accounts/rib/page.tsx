@@ -5,7 +5,6 @@ import { useSearchParams } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Label } from "@/components/ui/label"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -19,10 +18,10 @@ import {
   Building,
   MapPin,
   Phone,
-  CheckCircle,
   Wallet,
   PiggyBank,
   DollarSign,
+  ArrowRight,
 } from "lucide-react"
 import { getAccounts } from "../../accounts/actions"
 import { getUserProfile, getAccountForRib, sendRibEmail } from "./actions"
@@ -202,10 +201,10 @@ const generatePDF = async (account: Account) => {
     `Code Agence: ${account.branchCode}`,
     `Agence: ${account.branchName}`,
     "Banque Nationale de Guinée",
-    "CONAKRY - RÉPUBLIQUE DE GUINÉE"
+    "CONAKRY - RÉPUBLIQUE DE GUINÉE",
   ]
 
-  domicilationLines.forEach(line => {
+  domicilationLines.forEach((line) => {
     doc.text(line, 15, yPos)
     yPos += 5
   })
@@ -278,10 +277,10 @@ const generatePDF = async (account: Account) => {
     "Ce relevé d'identité bancaire est un document officiel nécessaire pour recevoir des virements.",
     "Il est valable pour les virements nationaux et internationaux, les prélèvements automatiques",
     "et la domiciliation de votre salaire. Ne le communiquez qu'à des organismes de confiance.",
-    "Conservez-le précieusement. Toute utilisation frauduleuse est pénalement sanctionnée."
+    "Conservez-le précieusement. Toute utilisation frauduleuse est pénalement sanctionnée.",
   ]
 
-  importantText.forEach(line => {
+  importantText.forEach((line) => {
     doc.text(line, 18, yPos, { maxWidth: pageWidth - 36 })
     yPos += 4
   })
@@ -294,7 +293,7 @@ const generatePDF = async (account: Account) => {
   const formattedDate = generatedDate.toLocaleDateString("fr-FR", {
     year: "numeric",
     month: "long",
-    day: "numeric"
+    day: "numeric",
   })
   const formattedTime = generatedDate.toLocaleTimeString("fr-FR")
 
@@ -332,6 +331,7 @@ export default function RIBPage() {
   const [userProfile, setUserProfile] = useState<any>(null)
   const [isEmailDialogOpen, setIsEmailDialogOpen] = useState(false)
   const [isSendingEmail, setIsSendingEmail] = useState(false)
+  const [showRib, setShowRib] = useState(false)
 
   useEffect(() => {
     const loadData = async () => {
@@ -359,15 +359,18 @@ export default function RIBPage() {
                 currency: acc.currency || "GNF",
                 type: acc.type === "SAVINGS" ? ("Épargne" as const) : ("Courant" as const),
                 status: (acc.status === "ACTIF" ? "Actif" : acc.status) as "Actif" | "Bloqué" | "Fermé",
-                iban: ribData?.iban || `GN82 ${acc.codeBanque || "BNG"} ${acc.codeAgence || "001"} ${acc.accountNumber}`,
-                accountHolder: ribData?.accountHolder || (profile ? `${profile.firstName || ""} ${profile.lastName || ""}`.trim() : "TITULAIRE"),
+                iban:
+                  ribData?.iban || `GN82 ${acc.codeBanque || "BNG"} ${acc.codeAgence || "001"} ${acc.accountNumber}`,
+                accountHolder:
+                  ribData?.accountHolder ||
+                  (profile ? `${profile.firstName || ""} ${profile.lastName || ""}`.trim() : "TITULAIRE"),
                 bankName: ribData?.bankName || "Banque Nationale de Guinée",
                 bankCode: ribData?.bankCode || acc.codeBanque || "BNG",
                 branchCode: ribData?.branchCode || acc.codeAgence || "001",
                 branchName: ribData?.branchName || "Agence Kaloum",
                 swiftCode: ribData?.swiftCode || "BNGNGNCX",
               }
-            })
+            }),
           )
 
           const activeAccounts = adaptedAccounts.filter(
@@ -390,7 +393,9 @@ export default function RIBPage() {
             type: "Courant",
             status: "Actif",
             iban: "GN82 BNG 001 0001234567 89",
-            accountHolder: userProfile ? `${userProfile.firstName || ""} ${userProfile.lastName || ""}`.trim() : "DIALLO Mamadou",
+            accountHolder: userProfile
+              ? `${userProfile.firstName || ""} ${userProfile.lastName || ""}`.trim()
+              : "DIALLO Mamadou",
             bankName: "Banque Nationale de Guinée",
             bankCode: "BNG",
             branchCode: "001",
@@ -409,13 +414,13 @@ export default function RIBPage() {
   useEffect(() => {
     if (preSelectedAccountId && accounts.find((acc) => acc.id === preSelectedAccountId)) {
       setSelectedAccountId(preSelectedAccountId)
+      setShowRib(true)
     } else if (accounts.length > 0) {
       setSelectedAccountId(accounts[0].id)
     }
   }, [preSelectedAccountId, accounts])
 
   const selectedAccount = accounts.find((acc) => acc.id === selectedAccountId) || accounts[0]
-  const preSelectedAccount = preSelectedAccountId ? accounts.find((acc) => acc.id === preSelectedAccountId) : null
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text)
@@ -813,6 +818,89 @@ export default function RIBPage() {
     )
   }
 
+  if (!showRib) {
+    return (
+      <div className="space-y-6">
+        <div className="space-y-2">
+          <h1 className="text-3xl font-heading font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+            Relevé de Coordonnées Bancaire (RIB)
+          </h1>
+          <p className="text-muted-foreground text-lg">
+            Sélectionnez le compte pour lequel vous souhaitez obtenir le RIB
+          </p>
+        </div>
+
+        <Card className="max-w-2xl mx-auto">
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <CreditCard className="w-5 h-5 mr-2" />
+              Sélection du compte
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="space-y-4">
+              <Label htmlFor="account-select">Choisir le compte pour le RIB</Label>
+              <Select value={selectedAccountId} onValueChange={setSelectedAccountId}>
+                <SelectTrigger id="account-select">
+                  <SelectValue placeholder="Sélectionner un compte" />
+                </SelectTrigger>
+                <SelectContent>
+                  {accounts.map((account) => (
+                    <SelectItem key={account.id} value={account.id}>
+                      <div className="flex items-center justify-between w-full">
+                        <div className="flex items-center space-x-2">
+                          {getAccountIcon(account.type)}
+                          <div>
+                            <p className="font-medium">{account.name}</p>
+                            <p className="text-sm text-muted-foreground">{account.number}</p>
+                          </div>
+                        </div>
+                        <p className="text-sm font-medium ml-4">
+                          {formatAmount(account.balance ?? 0, account.currency)} {account.currency}
+                        </p>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {selectedAccount && (
+              <div className="p-4 bg-gray-50 rounded-lg border">
+                <h3 className="font-medium mb-3">Aperçu du compte sélectionné</h3>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Nom du compte</span>
+                    <span className="font-medium">{selectedAccount.name}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Numéro</span>
+                    <span className="font-mono">{selectedAccount.number}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Type</span>
+                    <span>{selectedAccount.type}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Solde</span>
+                    <span className="font-semibold text-green-600">
+                      {formatAmount(selectedAccount.balance, selectedAccount.currency)} {selectedAccount.currency}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <Button className="w-full" size="lg" onClick={() => setShowRib(true)} disabled={!selectedAccountId}>
+              Afficher le RIB
+              <ArrowRight className="w-4 h-4 ml-2" />
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-6">
       <div className="space-y-2">
@@ -820,55 +908,12 @@ export default function RIBPage() {
           Relevé de Coordonnées Bancaire (RIB)
         </h1>
         <p className="text-muted-foreground text-lg">Consultez et téléchargez votre RIB</p>
-        {preSelectedAccount && (
-          <div className="mt-2">
-            <Alert className="border-emerald-200 bg-emerald-50">
-              <CheckCircle className="h-4 w-4 text-emerald-600" />
-              <AlertDescription className="text-emerald-700">
-                Compte pré-sélectionné : {preSelectedAccount.name} ({preSelectedAccount.number})
-              </AlertDescription>
-            </Alert>
-          </div>
-        )}
+        <div className="mt-2">
+          <Button variant="outline" size="sm" onClick={() => setShowRib(false)}>
+            ← Changer de compte
+          </Button>
+        </div>
       </div>
-
-      {accounts.length > 1 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <CreditCard className="w-5 h-5 mr-2" />
-              Sélection du compte
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <Label htmlFor="account-select">Choisir le compte pour le RIB</Label>
-              <Select value={selectedAccountId} onValueChange={setSelectedAccountId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Sélectionner un compte" />
-                </SelectTrigger>
-                <SelectContent>
-                  {accounts.map((account) => (
-                    <SelectItem key={account.id} value={account.id}>
-                      <div className="flex items-center space-x-2">
-                        {getAccountIcon(account.type)}
-                        <span>
-                          {account.name} - {account.number}
-                        </span>
-                        {preSelectedAccountId === account.id && (
-                          <Badge variant="outline" className="text-xs bg-emerald-50 text-emerald-700 ml-2">
-                            Suggéré
-                          </Badge>
-                        )}
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </CardContent>
-        </Card>
-      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2">
@@ -958,20 +1003,23 @@ export default function RIBPage() {
                   <Printer className="w-4 h-4 mr-2" />
                   Imprimer
                 </Button>
-                <Button variant="outline" onClick={() => {
-                   if (userProfile?.email) {
-                     setIsEmailDialogOpen(true)
-                   } else {
-                     toast({
-                       variant: "destructive",
-                       title: "Email requis",
-                       description: "Ajoutez un email à votre profil utilisateur pour recevoir votre RIB.",
-                     })
-                   }
-                 }}>
-                    <Mail className="w-4 h-4 mr-2" />
-                    Envoyer par email
-                 </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    if (userProfile?.email) {
+                      setIsEmailDialogOpen(true)
+                    } else {
+                      toast({
+                        variant: "destructive",
+                        title: "Email requis",
+                        description: "Ajoutez un email à votre profil utilisateur pour recevoir votre RIB.",
+                      })
+                    }
+                  }}
+                >
+                  <Mail className="w-4 h-4 mr-2" />
+                  Envoyer par email
+                </Button>
                 <Button variant="outline" onClick={() => copyToClipboard(selectedAccount.iban)}>
                   <Copy className="w-4 h-4 mr-2" />
                   {copied ? "Copié !" : "Copier IBAN"}
@@ -1078,9 +1126,7 @@ export default function RIBPage() {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Envoyer le RIB par email</AlertDialogTitle>
-            <AlertDialogDescription>
-              Vous recevrez un email contenant votre RIB.
-            </AlertDialogDescription>
+            <AlertDialogDescription>Vous recevrez un email contenant votre RIB.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => setIsEmailDialogOpen(false)}>Annuler</AlertDialogCancel>

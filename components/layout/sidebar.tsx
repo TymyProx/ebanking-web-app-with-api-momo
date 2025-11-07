@@ -98,7 +98,7 @@ const navigationData = {
         },
         {
           title: "Relevé de coordonnées bancaires",
-          url: "/services/rib",
+          url: "/accounts/rib",
           icon: FileText,
         },
       ],
@@ -144,7 +144,7 @@ const navigationData = {
     },
   ],
   services: [
-     {
+    {
       title: "E-Services",
       url: "/services/request",
       icon: FileText,
@@ -452,7 +452,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>): 
                 <SidebarMenu>
                   {navigationData.services.map((item) => (
                     <SidebarMenuItem key={item.title}>
-                      <MenuItemWithSubmenu item={item} />
+                      {item.url ? (
+                        <SidebarMenuButton asChild isActive={pathname === item.url}>
+                          <Link href={item.url}>
+                            <item.icon />
+                            <span>{item.title}</span>
+                          </Link>
+                        </SidebarMenuButton>
+                      ) : null}
                     </SidebarMenuItem>
                   ))}
                 </SidebarMenu>
@@ -468,16 +475,16 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>): 
                 <SidebarMenu>
                   {navigationData.support.map((item) => (
                     <SidebarMenuItem key={item.title}>
-                      {item.items ? (
+                      {"items" in item ? (
                         <MenuItemWithSubmenu item={item} />
-                      ) : (
+                      ) : "url" in item ? (
                         <SidebarMenuButton asChild isActive={pathname === item.url}>
-                          <Link href={item.url!}>
+                          <Link href={item.url}>
                             <item.icon />
                             <span>{item.title}</span>
                           </Link>
                         </SidebarMenuButton>
-                      )}
+                      ) : null}
                     </SidebarMenuItem>
                   ))}
                 </SidebarMenu>

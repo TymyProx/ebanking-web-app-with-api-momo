@@ -30,7 +30,7 @@ import {
   Headphones,
   Camera,
   Banknote,
-  CreditCardIcon as CardIcon,
+  CarIcon as CardIcon,
   ArrowUpRight,
   Calendar,
   Target,
@@ -392,7 +392,7 @@ const fonctionnalites = [
         name: "RIB Électronique",
         description: "Téléchargez votre RIB instantanément",
         icon: Download,
-        href: "/services/rib",
+        href: "/accounts/rib",
         status: "Disponible",
         details: [
           "Génération instantanée du RIB",
