@@ -81,7 +81,7 @@ export function Header() {
       {!isCheckingAccounts && hasActiveAccount && userData && (
       <div className="flex flex-col gap-[2px]">
       <span className="text-sm text-muted-foreground">Bonjour,</span>
-      <span className="text-sm font-semibold text-primary">{displayName}</span>
+      <span className="text-xl font-bold text-primary">{displayName}</span>
       </div>
 
       )}
