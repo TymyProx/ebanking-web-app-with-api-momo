@@ -149,27 +149,6 @@ async function AccountsSection() {
   return <AccountsCarousel accounts={accounts} />
 }
 
-async function UserGreeting() {
-  const user = await getCurrentUser()
-
-  if (!user) return null
-
-  const displayName =
-    user.fullName?.trim() ||
-    [user.firstName, user.lastName].filter(Boolean).join(" ").trim() ||
-    user.email?.split("@")[0] ||
-    "Utilisateur"
-
-  return (
-    <div className="mb-3">
-      <h1 className="text-2xl font-heading font-semibold text-foreground">
-      Bonjour,
-      <div className="text-primary">{displayName}</div>
-      </h1>
-    </div>
-  )
-}
-
 function TransactionsLoading() {
   return (
     <Card className="border-0 shadow-lg">
@@ -200,10 +179,6 @@ function AccountsLoading() {
 export default async function Dashboard() {
   return (
     <div className="space-y-4 fade-in">
-      <Suspense fallback={<div className="h-8 w-64 bg-muted rounded-lg animate-pulse mb-3" />}>
-        <UserGreeting />
-      </Suspense>
-
       <Suspense fallback={<AccountsLoading />}>
         <AccountsSection />
       </Suspense>

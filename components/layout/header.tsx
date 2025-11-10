@@ -2,14 +2,6 @@
 
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { Separator } from "@/components/ui/separator"
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -90,28 +82,22 @@ export function Header() {
 
   const breadcrumbItems = generateBreadcrumb()
 
+  const displayName =
+    userData?.fullName?.trim() ||
+    [userData?.firstName, userData?.lastName].filter(Boolean).join(" ").trim() ||
+    userData?.email?.split("@")[0] ||
+    "Utilisateur"
+
   return (
     <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
       <SidebarTrigger className="-ml-1" />
       <Separator orientation="vertical" className="mr-2 h-4" />
 
       {!isCheckingAccounts && hasActiveAccount && (
-        <Breadcrumb>
-          <BreadcrumbList>
-            {breadcrumbItems.map((item, index) => (
-              <div key={item.href} className="flex items-center">
-                {index > 0 && <BreadcrumbSeparator className="hidden md:block" />}
-                <BreadcrumbItem className="hidden md:block">
-                  {index === breadcrumbItems.length - 1 ? (
-                    <BreadcrumbPage>{item.label}</BreadcrumbPage>
-                  ) : (
-                    <BreadcrumbLink href={item.href}>{item.label}</BreadcrumbLink>
-                  )}
-                </BreadcrumbItem>
-              </div>
-            ))}
-          </BreadcrumbList>
-        </Breadcrumb>
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-muted-foreground">Bonjour,</span>
+          <span className="text-sm font-semibold text-primary">{displayName}</span>
+        </div>
       )}
 
       {/* Spacer */}
