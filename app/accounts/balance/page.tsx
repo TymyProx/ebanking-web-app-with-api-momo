@@ -536,7 +536,7 @@ export default function BalancesPage() {
           </Card>
         </div>
       ) : (
-        <div className="max-w-4xl mx-auto px-4">
+        <div className="w-full px-4">
           <Carousel
             setApi={setApi}
             className="w-full"
@@ -547,7 +547,7 @@ export default function BalancesPage() {
               dragFree: false,
             }}
           >
-            <CarouselContent className="-ml-4">
+            <CarouselContent className="w-full">
               {(filteredAccounts || []).map((account) => (
                 <CarouselItem key={account.id} className="pl-4 basis-full">
                   <Link href={`/accounts/${account.id}`} className="block">
