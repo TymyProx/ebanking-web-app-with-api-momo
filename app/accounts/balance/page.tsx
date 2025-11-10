@@ -524,7 +524,14 @@ export default function BalancesPage() {
         </div>
       ) : (
         <div className="max-w-4xl mx-auto">
-          <Carousel setApi={setApi} className="w-full">
+          <Carousel
+            setApi={setApi}
+            className="w-full"
+            opts={{
+              align: "center",
+              loop: true,
+            }}
+          >
             <CarouselContent>
               {(filteredAccounts || []).map((account) => (
                 <CarouselItem key={account.id}>
@@ -607,8 +614,9 @@ export default function BalancesPage() {
               {Array.from({ length: count }).map((_, index) => (
                 <button
                   key={index}
-                  className={`h-2 rounded-full transition-all ${
-                    index === current ? "w-8 bg-primary" : "w-2 bg-muted-foreground/30"
+                  type="button"
+                  className={`h-2.5 rounded-full transition-all duration-300 cursor-pointer hover:opacity-80 ${
+                    index === current ? "w-8 bg-primary" : "w-2.5 bg-muted-foreground/40 hover:bg-muted-foreground/60"
                   }`}
                   onClick={() => api?.scrollTo(index)}
                   aria-label={`Aller au compte ${index + 1}`}
