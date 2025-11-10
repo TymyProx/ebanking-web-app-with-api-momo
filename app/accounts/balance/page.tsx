@@ -180,6 +180,18 @@ export default function BalancesPage() {
     })
   }, [api])
 
+  useEffect(() => {
+    if (!api || !filteredAccounts || filteredAccounts.length <= 1) {
+      return
+    }
+
+    const autoScroll = setInterval(() => {
+      api.scrollNext()
+    }, 5000) // Défilement automatique toutes les 5 secondes
+
+    return () => clearInterval(autoScroll)
+  }, [api, filteredAccounts])
+
   const handleRefresh = () => {
     startTransition(async () => {
       try {
@@ -626,7 +638,6 @@ export default function BalancesPage() {
                       : "w-3 bg-muted-foreground/30 hover:bg-muted-foreground/50",
                   )}
                   onClick={() => {
-                    console.log("[v0] Clicking dot", index, "current:", current)
                     api?.scrollTo(index)
                   }}
                   aria-label={`Aller au compte ${index + 1}`}
