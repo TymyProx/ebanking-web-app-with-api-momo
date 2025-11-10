@@ -147,12 +147,12 @@ function AccountsLoading() {
 export default async function Dashboard() {
   return (
     <div className="space-y-4 fade-in">
-      <div className="space-y-1">
+      {/* <div className="space-y-1">
         <h1 className="text-2xl font-heading font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
           Tableau de bord
         </h1>
-        {/* <p className="text-muted-foreground text-sm">Bienvenue sur votre espace Astra eBanking</p> */}
-      </div>
+     
+      </div> */}
 
       <Suspense fallback={<AccountsLoading />}>
         <AccountsSection />

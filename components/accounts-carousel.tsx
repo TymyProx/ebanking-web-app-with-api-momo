@@ -170,11 +170,11 @@ export function AccountsCarousel({ accounts }: AccountsCarouselProps) {
                             </p>
                           </div>
 
-                          <div className="flex items-center gap-2 pt-2">
+                          {/* <div className="flex items-center gap-2 pt-2">
                             <TrendingUp className="h-4 w-4 text-secondary" />
                             <span className="text-sm text-secondary font-medium">{getAccountTrend()}</span>
                             <span className="text-xs text-muted-foreground">ce mois</span>
-                          </div>
+                          </div> */}
                         </div>
 
                         {/* Right section: Balances */}
