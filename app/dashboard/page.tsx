@@ -163,7 +163,8 @@ async function UserGreeting() {
   return (
     <div className="mb-3">
       <h1 className="text-2xl font-heading font-semibold text-foreground">
-        Bonjour, <span className="text-primary">{displayName}</span>
+      Bonjour,
+      <div className="text-primary">{displayName}</div>
       </h1>
     </div>
   )
