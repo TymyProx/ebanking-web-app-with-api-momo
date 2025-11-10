@@ -33,7 +33,6 @@ import {
   AlertCircle,
   CheckCircle,
   Plus,
-  Sparkles,
 } from "lucide-react"
 import { createAccount, getAccounts } from "../actions"
 import { Carousel, CarouselContent, CarouselItem, type CarouselApi } from "@/components/ui/carousel"
@@ -536,7 +535,7 @@ export default function BalancesPage() {
           </Card>
         </div>
       ) : (
-        <div className="max-w-4xl mx-auto px-4">
+        <div>
           <Carousel
             setApi={setApi}
             className="w-full"
@@ -549,7 +548,7 @@ export default function BalancesPage() {
           >
             <CarouselContent className="-ml-4">
               {(filteredAccounts || []).map((account) => (
-                <CarouselItem key={account.id} className="pl-4 basis-full">
+                <CarouselItem key={account.id} className="pl-4 basis-full md:basis-1/2 lg:basis-1/3">
                   <Link href={`/accounts/${account.id}`} className="block">
                     <Card className="group relative overflow-hidden border-2 hover:border-primary/50 transition-all duration-300 hover:shadow-2xl hover:-translate-y-1 bg-gradient-to-br from-white to-gray-50/50">
                       <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-secondary/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
