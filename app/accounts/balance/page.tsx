@@ -667,44 +667,6 @@ export default function BalancesPage() {
           </CardContent>
         </Card>
       )}
-
-      {isLoaded && filteredAccounts && filteredAccounts.length > 0 && (
-        <Card className="relative overflow-hidden border-2 border-primary/20 shadow-xl">
-          <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-secondary/5 to-primary/10" />
-          <CardHeader className="relative">
-            <CardTitle className="flex items-center text-foreground">
-              <div className="p-2 rounded-lg bg-gradient-to-br from-primary to-secondary mr-3">
-                <Sparkles className="h-5 w-5 text-white" />
-              </div>
-              Résumé Global - {getStatusDisplayText(statusFilter)}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="relative">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="text-center p-4 rounded-xl bg-white/50 backdrop-blur-sm">
-                <div className="text-3xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-                  {filteredAccounts.length}
-                </div>
-                <div className="text-sm text-muted-foreground mt-1">
-                  Comptes {getStatusDisplayText(statusFilter).toLowerCase()}
-                </div>
-              </div>
-              <div className="text-center p-4 rounded-xl bg-white/50 backdrop-blur-sm">
-                <div className="text-3xl font-bold text-foreground">
-                  {showBalance ? `${formatAmount(getTotalBalance("GNF"))}` : "••••••••"}
-                </div>
-                <div className="text-sm text-muted-foreground mt-1">Total GNF</div>
-              </div>
-              <div className="text-center p-4 rounded-xl bg-white/50 backdrop-blur-sm">
-                <div className="text-3xl font-bold text-foreground">
-                  {showBalance ? formatAmount(getTotalBalance("USD"), "USD") : "••••••••"}
-                </div>
-                <div className="text-sm text-muted-foreground mt-1">Total USD</div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
     </div>
   )
 }
