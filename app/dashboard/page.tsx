@@ -1,12 +1,45 @@
+"use client"
 import Link from "next/link"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Eye, Send, Receipt, ArrowUpRight, ArrowDownRight, Plus } from "lucide-react"
+import { Eye, Send, Receipt, ArrowUpRight, ArrowDownRight, Plus, Users } from "lucide-react"
 import { getTransactions } from "@/app/transfers/new/actions"
 import { getAccounts } from "@/app/accounts/actions"
 import { AccountsCarousel } from "@/components/accounts-carousel"
 import { BankProductsCarousel } from "@/components/bank-products-carousel"
 import { Suspense } from "react"
+
+async function getCurrentUser() {
+  try {
+    const cookieModule = await import("next/headers")
+    const cookies = cookieModule.cookies
+    const cookieStore = await cookies()
+    const token = cookieStore.get("token")?.value
+
+    if (!token) return null
+
+    const { config } = await import("@/lib/config")
+    const normalize = (u?: string) => (u ? u.replace(/\/$/, "") : "")
+    const API_BASE_URL = `${normalize(config.API_BASE_URL)}/api`
+
+    const response = await fetch(`${API_BASE_URL}/auth/me`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      cache: "no-store",
+    })
+
+    if (!response.ok) return null
+
+    const userData = await response.json()
+    return userData
+  } catch (error) {
+    console.error("Error fetching user:", error)
+    return null
+  }
+}
 
 async function RecentTransactions() {
   const transactionsResult = await getTransactions()
@@ -117,6 +150,26 @@ async function AccountsSection() {
   return <AccountsCarousel accounts={accounts} />
 }
 
+async function UserGreeting() {
+  const user = await getCurrentUser()
+
+  if (!user) return null
+
+  const displayName =
+    user.fullName?.trim() ||
+    [user.firstName, user.lastName].filter(Boolean).join(" ").trim() ||
+    user.email?.split("@")[0] ||
+    "Utilisateur"
+
+  return (
+    <div className="mb-3">
+      <h1 className="text-2xl font-heading font-semibold text-foreground">
+        Bonjour, <span className="text-primary">{displayName}</span>
+      </h1>
+    </div>
+  )
+}
+
 function TransactionsLoading() {
   return (
     <Card className="border-0 shadow-lg">
@@ -147,12 +200,9 @@ function AccountsLoading() {
 export default async function Dashboard() {
   return (
     <div className="space-y-4 fade-in">
-      {/* <div className="space-y-1">
-        <h1 className="text-2xl font-heading font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-          Tableau de bord
-        </h1>
-     
-      </div> */}
+      <Suspense fallback={<div className="h-8 w-64 bg-muted rounded-lg animate-pulse mb-3" />}>
+        <UserGreeting />
+      </Suspense>
 
       <Suspense fallback={<AccountsLoading />}>
         <AccountsSection />
@@ -160,10 +210,10 @@ export default async function Dashboard() {
 
       <Card className="border-0 shadow-sm bg-muted/30">
         <CardHeader className="pb-3">
-          {/* <CardTitle className="flex items-center font-heading text-base">
+          <CardTitle className="flex items-center font-heading text-base">
             <Plus className="h-4 w-4 text-primary mr-2" />
             Actions rapides
-          </CardTitle> */}
+          </CardTitle>
         </CardHeader>
         <CardContent className="pt-0">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -179,7 +229,7 @@ export default async function Dashboard() {
                 variant="outline"
                 className="h-14 flex flex-col space-y-1 w-full hover:bg-secondary/10 hover:border-secondary group bg-transparent"
               >
-                <Receipt className="h-4 w-4 group-hover:scale-110 transition-transform" />
+                <Users className="h-4 w-4 group-hover:scale-110 transition-transform" />
                 <span className="text-xs font-medium">Mes bénéficiaires</span>
               </Button>
             </Link>
