@@ -4,14 +4,7 @@ import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import {
   Pagination,
   PaginationContent,
@@ -23,25 +16,13 @@ import {
 } from "@/components/ui/pagination"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import {
-  MapPin,
-  Phone,
-  Search,
-  Filter,
-  Navigation,
-  ExternalLink,
-  List,
-  Map,
-  AlertCircle,
-  Loader2,
-  Settings,
-} from "lucide-react"
-import { useAgences, Agence } from "@/hooks/use-agences"
+import { MapPin, Search, Filter, ExternalLink, List, Map, AlertCircle, Loader2, Settings } from "lucide-react"
+import { useAgences, type Agence } from "@/hooks/use-agences"
 import { AgenceCard } from "@/components/agence-card"
 import { AgenceMap } from "@/components/agence-map"
 import { toast } from "@/hooks/use-toast"
 import { config } from "@/lib/config"
-import AuthService, { User } from "@/lib/auth-service"
+import AuthService, { type User } from "@/lib/auth-service"
 
 export default function AgencesPage() {
   // État de l'utilisateur et des rôles
@@ -60,7 +41,15 @@ export default function AgencesPage() {
   const [currentPage, setCurrentPage] = useState(1)
 
   // Hook personnalisé pour les agences
-  const { agences, loading, error, totalCount, totalPages, currentPage: page, setQuery } = useAgences({
+  const {
+    agences,
+    loading,
+    error,
+    totalCount,
+    totalPages,
+    currentPage: page,
+    setQuery,
+  } = useAgences({
     search: searchTerm,
     city: selectedCity,
     country: selectedCountry,
@@ -82,7 +71,7 @@ export default function AgencesPage() {
       if (tenant && tenant.roles) {
         const roles = tenant.roles
         setUserRole(roles[0] || "Client")
-        
+
         // Vérifier si l'utilisateur est Responsable réseau
         setIsNetworkManager(roles.includes("Responsable réseau") || roles.includes("network_manager"))
       } else {
@@ -157,11 +146,11 @@ export default function AgencesPage() {
     <div className="container mx-auto p-4 md:p-6 space-y-6" lang="fr">
       {/* En-tête */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Localisation des agences</h1>
-          <p className="text-muted-foreground mt-1">
-            Trouvez l'agence BNG la plus proche de vous
-          </p>
+        <div className="space-y-2">
+          <h1 className="text-3xl font-heading font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+            Localisation des agences
+          </h1>
+          <p className="text-muted-foreground text-lg">Trouvez l'agence BNG la plus proche de vous</p>
         </div>
 
         {/* Bouton pour le Responsable réseau */}
@@ -194,9 +183,7 @@ export default function AgencesPage() {
             <Filter className="w-5 h-5 mr-2" aria-hidden="true" />
             Filtres de recherche
           </CardTitle>
-          <CardDescription>
-            Affinez votre recherche d'agence selon vos besoins
-          </CardDescription>
+          <CardDescription>Affinez votre recherche d'agence selon vos besoins</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
@@ -266,7 +253,7 @@ export default function AgencesPage() {
               <Button
                 variant="outline"
                 onClick={resetFilters}
-                className="w-full"
+                className="w-full bg-transparent"
                 aria-label="Réinitialiser les filtres"
               >
                 Réinitialiser
@@ -321,9 +308,7 @@ export default function AgencesPage() {
               <CardContent className="text-center py-12">
                 <MapPin className="w-12 h-12 mx-auto text-muted-foreground mb-4" aria-hidden="true" />
                 <h3 className="text-lg font-medium text-foreground mb-2">Aucune agence trouvée</h3>
-                <p className="text-muted-foreground mb-4">
-                  Aucune agence ne correspond à vos critères de recherche.
-                </p>
+                <p className="text-muted-foreground mb-4">Aucune agence ne correspond à vos critères de recherche.</p>
                 <Button variant="outline" onClick={resetFilters}>
                   Réinitialiser les filtres
                 </Button>
@@ -334,11 +319,7 @@ export default function AgencesPage() {
               {/* Grille des agences */}
               <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                 {agences.map((agence) => (
-                  <AgenceCard
-                    key={agence.id}
-                    agence={agence}
-                    onGetDirections={handleGetDirections}
-                  />
+                  <AgenceCard key={agence.id} agence={agence} onGetDirections={handleGetDirections} />
                 ))}
               </div>
 
@@ -392,9 +373,7 @@ export default function AgencesPage() {
                       <PaginationNext
                         onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
                         aria-disabled={currentPage === totalPages}
-                        className={
-                          currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"
-                        }
+                        className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
                       />
                     </PaginationItem>
                   </PaginationContent>

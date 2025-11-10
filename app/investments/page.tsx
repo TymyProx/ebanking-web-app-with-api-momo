@@ -65,9 +65,11 @@ export default function InvestmentsPage() {
   return (
     <div className="container mx-auto py-6 space-y-6">
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Mes Placements</h1>
-          <p className="text-gray-600 mt-2">Gérez vos investissements financiers</p>
+        <div className="space-y-2">
+          <h1 className="text-3xl font-heading font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+            Mes Placements
+          </h1>
+          <p className="text-muted-foreground text-lg">Gérez vos investissements financiers</p>
         </div>
         <Link href="/investments/new">
           <Button className="flex items-center gap-2">

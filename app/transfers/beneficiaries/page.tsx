@@ -13,7 +13,6 @@ import {
   Users,
   Plus,
   Search,
-  Edit,
   UserX,
   Building,
   User,
@@ -462,11 +461,11 @@ export default function BeneficiariesPage() {
         const ribValidation = validateRibLocally(bankCodeForRib, agencyCode, accountNumber, cleRib)
         if (!ribValidation.valid) {
           setRibError(ribValidation.error)
-            toast({
-              title: "RIB invalide",
-              description: ribValidation.error,
-              variant: "destructive",
-            })
+          toast({
+            title: "RIB invalide",
+            description: ribValidation.error,
+            variant: "destructive",
+          })
           return
         }
         setRibError(null)
@@ -518,11 +517,11 @@ export default function BeneficiariesPage() {
         const ribValidation = validateRibLocally(bankCodeForRib, agencyCode, accountNumber, cleRib)
         if (!ribValidation.valid) {
           setRibError(ribValidation.error)
-            toast({
-              title: "RIB invalide",
-              description: ribValidation.error,
-              variant: "destructive",
-            })
+          toast({
+            title: "RIB invalide",
+            description: ribValidation.error,
+            variant: "destructive",
+          })
           return
         }
         setRibError(null)
@@ -621,11 +620,23 @@ export default function BeneficiariesPage() {
   const getWorkflowBadge = (status: WorkflowStatus) => {
     switch (status) {
       case WORKFLOW_STATUS.CREATED:
-        return <Badge variant="outline" className="border-blue-200 text-blue-600">Créé</Badge>
+        return (
+          <Badge variant="outline" className="border-blue-200 text-blue-600">
+            Créé
+          </Badge>
+        )
       case WORKFLOW_STATUS.VERIFIED:
-        return <Badge variant="outline" className="border-blue-400 text-blue-700">Vérifié</Badge>
+        return (
+          <Badge variant="outline" className="border-blue-400 text-blue-700">
+            Vérifié
+          </Badge>
+        )
       case WORKFLOW_STATUS.VALIDATED:
-        return <Badge variant="outline" className="border-amber-400 text-amber-600">Validé</Badge>
+        return (
+          <Badge variant="outline" className="border-amber-400 text-amber-600">
+            Validé
+          </Badge>
+        )
       case WORKFLOW_STATUS.SUSPENDED:
         return <Badge variant="destructive">Suspendu</Badge>
       case WORKFLOW_STATUS.AVAILABLE:
@@ -673,6 +684,7 @@ export default function BeneficiariesPage() {
           </h1>
           <p className="text-muted-foreground text-lg">Gérez vos destinataires de virements</p>
         </div>
+        {/* </CHANGE> */}
 
         <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
           <DialogTrigger asChild>
@@ -690,7 +702,9 @@ export default function BeneficiariesPage() {
               {addState?.success && (
                 <Alert variant="default" className="border-green-200 bg-green-50">
                   <CheckCircle className="h-4 w-4 text-green-600" />
-                  <AlertDescription className="text-green-800">Bénéficiaire créé. Vérification en cours.</AlertDescription>
+                  <AlertDescription className="text-green-800">
+                    Bénéficiaire créé. Vérification en cours.
+                  </AlertDescription>
                 </Alert>
               )}
 
@@ -847,10 +861,10 @@ export default function BeneficiariesPage() {
                 </Button>
                 <Button
                   type="submit"
-                disabled={
-                  isAddPending ||
-                  ((accountNumberError !== null || ribError !== null) && selectedType !== "BNG-INTERNATIONAL")
-                }
+                  disabled={
+                    isAddPending ||
+                    ((accountNumberError !== null || ribError !== null) && selectedType !== "BNG-INTERNATIONAL")
+                  }
                 >
                   {isAddPending ? "Traitement..." : "Ajouter"}
                 </Button>
@@ -863,14 +877,17 @@ export default function BeneficiariesPage() {
       {showAddSuccess && (
         <Alert className="border-green-200 bg-green-50">
           <CheckCircle className="h-4 w-4 text-green-600" />
-          <AlertDescription className="text-green-800">✅ Bénéficiaire créé. Vérification en cours avant validation.</AlertDescription>
+          <AlertDescription className="text-green-800">
+            ✅ Bénéficiaire créé. Vérification en cours avant validation.
+          </AlertDescription>
         </Alert>
       )}
 
       <Alert className="border-blue-200 bg-blue-50">
         <AlertCircle className="h-4 w-4 text-blue-600" />
         <AlertDescription className="text-blue-800">
-          Les nouveaux bénéficiaires doivent être vérifiés puis validés par nos équipes avant d'être disponibles pour vos virements.
+          Les nouveaux bénéficiaires doivent être vérifiés puis validés par nos équipes avant d'être disponibles pour
+          vos virements.
         </AlertDescription>
       </Alert>
 
@@ -1035,7 +1052,8 @@ export default function BeneficiariesPage() {
                         <p className="font-medium">{beneficiary.bank}</p>
                         {beneficiary.workflowStatus !== WORKFLOW_STATUS.AVAILABLE && (
                           <p className="text-xs text-amber-600">
-                            Statut workflow : {WORKFLOW_LABELS[beneficiary.workflowStatus] || beneficiary.workflowStatus}
+                            Statut workflow :{" "}
+                            {WORKFLOW_LABELS[beneficiary.workflowStatus] || beneficiary.workflowStatus}
                           </p>
                         )}
                         {beneficiary.country && <p className="text-xs text-gray-500">{beneficiary.country}</p>}
@@ -1069,12 +1087,12 @@ export default function BeneficiariesPage() {
                       <DropdownMenuContent align="end">
                         {beneficiary.status === 0 ? (
                           <>
-                              <DropdownMenuItem disabled={beneficiary.workflowStatus !== WORKFLOW_STATUS.AVAILABLE}>
-                                <Users className="w-4 h-4 mr-2" />
-                                {beneficiary.workflowStatus === WORKFLOW_STATUS.AVAILABLE
-                                  ? "Faire un virement"
-                                  : "En attente de disponibilité"}
-                              </DropdownMenuItem>
+                            <DropdownMenuItem disabled={beneficiary.workflowStatus !== WORKFLOW_STATUS.AVAILABLE}>
+                              <Users className="w-4 h-4 mr-2" />
+                              {beneficiary.workflowStatus === WORKFLOW_STATUS.AVAILABLE
+                                ? "Faire un virement"
+                                : "En attente de disponibilité"}
+                            </DropdownMenuItem>
                             <DropdownMenuItem
                               className="text-orange-600"
                               onClick={() => handleDeactivateBeneficiary(beneficiary.id)}

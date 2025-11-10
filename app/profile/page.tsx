@@ -191,9 +191,11 @@ export default function ProfilePage() {
   return (
     <div className="container mx-auto p-6 max-w-6xl">
       <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-3xl font-bold">Mon Profil</h1>
-          <p className="text-gray-600 mt-1">Gérez vos informations personnelles</p>
+        <div className="space-y-2">
+          <h1 className="text-3xl font-heading font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+            Mon Profil
+          </h1>
+          <p className="text-muted-foreground text-lg">Gérez vos informations personnelles</p>
         </div>
         {!isEditing && (
           <Button onClick={() => setIsEditing(true)} className="flex items-center gap-2">
