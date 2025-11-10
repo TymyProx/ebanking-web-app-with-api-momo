@@ -871,6 +871,7 @@ export default function ServiceRequestsPage() {
                   value={formData.dateorder || new Date().toISOString().split("T")[0]}
                   onChange={(e) => handleInputChange("dateorder", e.target.value)}
                   required
+                  className="w-40"  
                 />
               </div>
 
@@ -891,6 +892,7 @@ export default function ServiceRequestsPage() {
                   }}
                   placeholder="Ex: 2"
                   required
+                  className="w-40" 
                 />
               </div>
             </div>
