@@ -112,9 +112,9 @@ export function AccountsCarousel({ accounts }: AccountsCarouselProps) {
   return (
     <Card className="border-0 shadow-none bg-transparent">
       <CardHeader>
-        <div className="flex items-center justify-between">
+        {/* <div className="flex items-center justify-between">
           <CardTitle className="font-heading text-xl">Mes Comptes</CardTitle>
-        </div>
+        </div> */}
       </CardHeader>
       <CardContent>
         <Carousel setApi={setApi} className="w-full">

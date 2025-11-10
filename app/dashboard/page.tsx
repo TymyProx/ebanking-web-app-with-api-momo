@@ -160,10 +160,10 @@ export default async function Dashboard() {
 
       <Card className="border-0 shadow-sm bg-muted/30">
         <CardHeader className="pb-3">
-          <CardTitle className="flex items-center font-heading text-base">
+          {/* <CardTitle className="flex items-center font-heading text-base">
             <Plus className="h-4 w-4 text-primary mr-2" />
             Actions rapides
-          </CardTitle>
+          </CardTitle> */}
         </CardHeader>
         <CardContent className="pt-0">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
