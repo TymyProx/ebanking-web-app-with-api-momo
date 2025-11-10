@@ -79,10 +79,11 @@ export function Header() {
       <Separator orientation="vertical" className="mr-2 h-4" />
 
       {!isCheckingAccounts && hasActiveAccount && userData && (
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-muted-foreground">Bonjour,</span>
-          <span className="text-sm font-semibold text-primary">{displayName}</span>
-        </div>
+      <div className="flex flex-col gap-[2px]">
+      <span className="text-sm text-muted-foreground">Bonjour,</span>
+      <span className="text-sm font-semibold text-primary">{displayName}</span>
+      </div>
+
       )}
 
       <div className="ml-auto flex items-center gap-2">
