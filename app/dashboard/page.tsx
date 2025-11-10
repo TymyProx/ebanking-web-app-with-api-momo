@@ -1,7 +1,7 @@
 import Link from "next/link"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Eye, Send, Receipt, ArrowUpRight, ArrowDownRight, Plus, Users } from "lucide-react"
+import { Eye, Send, Receipt, ArrowUpRight, ArrowDownRight, Users } from "lucide-react"
 import { getTransactions } from "@/app/transfers/new/actions"
 import { getAccounts } from "@/app/accounts/actions"
 import { AccountsCarousel } from "@/components/accounts-carousel"
@@ -184,7 +184,7 @@ export default async function Dashboard() {
       </Suspense>
 
       <Card className="border-0 shadow-sm bg-muted/30">
-        <CardContent className="pt-0">
+        <CardContent className="pt-4 p-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             <Link href="/transfers/new">
               <Button size="sm" className="h-14 flex flex-col space-y-1 w-full btn-primary group">
