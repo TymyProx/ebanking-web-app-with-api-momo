@@ -37,6 +37,7 @@ import {
 } from "lucide-react"
 import { createAccount, getAccounts } from "../actions"
 import { Carousel, CarouselContent, CarouselItem, type CarouselApi } from "@/components/ui/carousel"
+import { cn } from "@/lib/utils"
 
 interface Account {
   id: string
@@ -523,103 +524,113 @@ export default function BalancesPage() {
           </Card>
         </div>
       ) : (
-        <div className="max-w-4xl mx-auto">
+        <div className="w-full px-4">
           <Carousel
             setApi={setApi}
-            className="w-full"
+            className="w-full max-w-4xl mx-auto"
             opts={{
               align: "center",
-              loop: true,
+              loop: filteredAccounts.length > 1,
             }}
           >
-            <CarouselContent>
+            <CarouselContent className="-ml-2 md:-ml-4">
               {(filteredAccounts || []).map((account) => (
-                <CarouselItem key={account.id}>
-                  <Link href={`/accounts/${account.id}`}>
-                    <Card className="group relative overflow-hidden border-2 hover:border-primary/50 transition-all duration-300 hover:shadow-2xl hover:-translate-y-1 bg-gradient-to-br from-white to-gray-50/50">
-                      <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-secondary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                <CarouselItem key={account.id} className="pl-2 md:pl-4 md:basis-1/2 lg:basis-1/3">
+                  <div className="p-1">
+                    <Link href={`/accounts/${account.id}`}>
+                      <Card className="group relative overflow-hidden border-2 hover:border-primary/50 transition-all duration-300 hover:shadow-2xl hover:-translate-y-1 bg-gradient-to-br from-white to-gray-50/50">
+                        <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-secondary/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
-                      <CardHeader className="relative flex flex-row items-center justify-between space-y-0 pb-3">
-                        <div className="flex items-center space-x-3">
-                          <div className="p-2 rounded-xl bg-gradient-to-br from-primary/10 to-secondary/10 group-hover:from-primary/20 group-hover:to-secondary/20 transition-colors">
-                            {getAccountIcon(account.type)}
+                        <CardHeader className="relative flex flex-row items-center justify-between space-y-0 pb-3">
+                          <div className="flex items-center space-x-3">
+                            <div className="p-2 rounded-xl bg-gradient-to-br from-primary/10 to-secondary/10 group-hover:from-primary/20 group-hover:to-secondary/20 transition-colors">
+                              {getAccountIcon(account.type)}
+                            </div>
+                            <CardTitle className="text-sm font-semibold">{account.name}</CardTitle>
                           </div>
-                          <CardTitle className="text-sm font-semibold">{account.name}</CardTitle>
-                        </div>
-                        <Badge
-                          variant={account.status === "Actif" ? "default" : "secondary"}
-                          className={
-                            account.status === "Actif" ? "bg-gradient-to-r from-primary to-secondary text-white" : ""
-                          }
-                        >
-                          {account.status}
-                        </Badge>
-                      </CardHeader>
+                          <Badge
+                            variant={account.status === "Actif" ? "default" : "secondary"}
+                            className={
+                              account.status === "Actif" ? "bg-gradient-to-r from-primary to-secondary text-white" : ""
+                            }
+                          >
+                            {account.status}
+                          </Badge>
+                        </CardHeader>
 
-                      <CardContent className="relative space-y-4">
-                        <div className="space-y-2">
-                          <div className="text-2xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">
-                            {showBalance
-                              ? `${formatAmount(account.availableBalance, account.currency)} ${account.currency}`
-                              : "••••••••"}
+                        <CardContent className="relative space-y-4">
+                          <div className="space-y-2">
+                            <div className="text-2xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">
+                              {showBalance
+                                ? `${formatAmount(account.availableBalance, account.currency)} ${account.currency}`
+                                : "••••••••"}
+                            </div>
+                            <p className="text-xs text-muted-foreground">
+                              Solde comptable:{" "}
+                              {showBalance
+                                ? `${formatAmount(account.balance, account.currency)} ${account.currency}`
+                                : "••••••••"}
+                            </p>
+                            <p className="text-xl text-muted-foreground font-mono font-semibold">{account.number}</p>
                           </div>
-                          <p className="text-xs text-muted-foreground">
-                            Solde comptable:{" "}
-                            {showBalance
-                              ? `${formatAmount(account.balance, account.currency)} ${account.currency}`
-                              : "••••••••"}
-                          </p>
-                          <p className="text-xl text-muted-foreground font-mono font-semibold">{account.number}</p>
-                        </div>
 
-                        <div className="flex items-center justify-between pt-3 border-t border-border/50">
-                          <div className="flex items-center space-x-1">
-                            {getTrendIcon(account.trend, account.trendPercentage)}
-                            <span className={`text-xs font-medium ${getTrendColor(account.trend)}`}>
-                              {account.trendPercentage !== 0 && (
-                                <>
-                                  {account.trend === "up" ? "+" : account.trend === "down" ? "-" : ""}
-                                  {account.trendPercentage}% ce mois
-                                </>
-                              )}
-                              {account.trendPercentage === 0 && "Stable"}
-                            </span>
+                          <div className="flex items-center justify-between pt-3 border-t border-border/50">
+                            <div className="flex items-center space-x-1">
+                              {getTrendIcon(account.trend, account.trendPercentage)}
+                              <span className={`text-xs font-medium ${getTrendColor(account.trend)}`}>
+                                {account.trendPercentage !== 0 && (
+                                  <>
+                                    {account.trend === "up" ? "+" : account.trend === "down" ? "-" : ""}
+                                    {account.trendPercentage}% ce mois
+                                  </>
+                                )}
+                                {account.trendPercentage === 0 && "Stable"}
+                              </span>
+                            </div>
+                            <div className="flex items-center text-xs font-medium text-primary group-hover:text-secondary transition-colors">
+                              Détails
+                              <ArrowUpRight className="h-3 w-3 ml-1 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+                            </div>
                           </div>
-                          <div className="flex items-center text-xs font-medium text-primary group-hover:text-secondary transition-colors">
-                            Détails
-                            <ArrowUpRight className="h-3 w-3 ml-1 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
-                          </div>
-                        </div>
 
-                        <div className="grid grid-cols-2 gap-3 text-xs pt-2">
-                          <div className="space-y-1">
-                            <span className="text-muted-foreground">Type</span>
-                            <div className="font-medium">{account.type}</div>
+                          <div className="grid grid-cols-2 gap-3 text-xs pt-2">
+                            <div className="space-y-1">
+                              <span className="text-muted-foreground">Type</span>
+                              <div className="font-medium">{account.type}</div>
+                            </div>
+                            <div className="space-y-1">
+                              <span className="text-muted-foreground">Dernière MAJ</span>
+                              <div className="font-medium">{account.lastUpdate}</div>
+                            </div>
                           </div>
-                          <div className="space-y-1">
-                            <span className="text-muted-foreground">Dernière MAJ</span>
-                            <div className="font-medium">{account.lastUpdate}</div>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </Link>
+                        </CardContent>
+                      </Card>
+                    </Link>
+                  </div>
                 </CarouselItem>
               ))}
             </CarouselContent>
           </Carousel>
 
-          {count > 1 && (
-            <div className="flex justify-center gap-2 mt-6">
-              {Array.from({ length: count }).map((_, index) => (
+          {filteredAccounts.length > 1 && (
+            <div className="flex justify-center gap-2 mt-8">
+              {filteredAccounts.map((_, index) => (
                 <button
                   key={index}
                   type="button"
-                  className={`h-2.5 rounded-full transition-all duration-300 cursor-pointer hover:opacity-80 ${
-                    index === current ? "w-8 bg-primary" : "w-2.5 bg-muted-foreground/40 hover:bg-muted-foreground/60"
-                  }`}
-                  onClick={() => api?.scrollTo(index)}
+                  className={cn(
+                    "h-3 rounded-full transition-all duration-300 cursor-pointer",
+                    "hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2",
+                    index === current
+                      ? "w-10 bg-gradient-to-r from-primary to-secondary shadow-lg"
+                      : "w-3 bg-gray-300 hover:bg-gray-400",
+                  )}
+                  onClick={() => {
+                    console.log("[v0] Clicking dot", index)
+                    api?.scrollTo(index)
+                  }}
                   aria-label={`Aller au compte ${index + 1}`}
+                  aria-current={index === current}
                 />
               ))}
             </div>
