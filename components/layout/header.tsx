@@ -18,6 +18,7 @@ import { NotificationDropdown } from "@/components/notifications/notification-dr
 import { usePathname } from "next/navigation"
 import { useState, useEffect } from "react"
 import { getAccounts } from "@/app/accounts/actions"
+import { getCurrentUser } from "@/app/user/actions"
 
 export function Header() {
   const pathname = usePathname()
@@ -27,43 +28,20 @@ export function Header() {
 
   useEffect(() => {
     const fetchUserData = async () => {
-      console.log("[v0] Fetching user data...")
+      const user = await getCurrentUser()
+      console.log("[v0] User data from action:", user)
 
-      // First try localStorage
-      const storedUserData = localStorage.getItem("userData")
-      const token = localStorage.getItem("token")
-
-      console.log("[v0] localStorage userData:", storedUserData)
-      console.log("[v0] token exists:", !!token)
-
-      if (storedUserData) {
-        const parsedData = JSON.parse(storedUserData)
-        console.log("[v0] Parsed userData:", parsedData)
-        setUserData(parsedData)
-      }
-
-      // Then fetch fresh data from API
-      if (token) {
-        try {
-          const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/me`, {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-          })
-
-          if (response.ok) {
-            const data = await response.json()
-            console.log("[v0] API user data:", data)
-            setUserData(data)
-            // Update localStorage with fresh data
-            localStorage.setItem("userData", JSON.stringify(data))
-          } else {
-            console.log("[v0] API response not ok:", response.status)
-          }
-        } catch (error) {
-          console.error("[v0] Error fetching user data from API:", error)
+      if (user) {
+        setUserData(user)
+        // Update localStorage with fresh data
+        localStorage.setItem("userData", JSON.stringify(user))
+      } else {
+        // Fallback to localStorage if API fails
+        const storedUserData = localStorage.getItem("userData")
+        if (storedUserData) {
+          const parsedData = JSON.parse(storedUserData)
+          console.log("[v0] Using localStorage userData:", parsedData)
+          setUserData(parsedData)
         }
       }
     }
