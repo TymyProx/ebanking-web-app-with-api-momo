@@ -18,7 +18,7 @@ import { NotificationDropdown } from "@/components/notifications/notification-dr
 import { usePathname } from "next/navigation"
 import { useState, useEffect } from "react"
 import { getAccounts } from "@/app/accounts/actions"
-import { AuthService } from "@/lib/auth-service"
+import { getCurrentUser } from "@/app/user/actions"
 
 export function Header() {
   const pathname = usePathname()
@@ -27,12 +27,15 @@ export function Header() {
   const [isCheckingAccounts, setIsCheckingAccounts] = useState<boolean>(true)
 
   useEffect(() => {
-    const user = AuthService.getCurrentUser()
-    console.log("[v0] User data from AuthService:", user)
-
-    if (user) {
-      setUserData(user)
+    const fetchUser = async () => {
+      const user = await getCurrentUser()
+      console.log("[v0] User data received in header:", user)
+      if (user) {
+        setUserData(user)
+      }
     }
+
+    fetchUser()
   }, [])
 
   useEffect(() => {
@@ -63,20 +66,19 @@ export function Header() {
   }
 
   const displayName =
-    userData?.fullName?.trim() ||
-    [userData?.firstName, userData?.lastName].filter(Boolean).join(" ").trim() ||
-    (userData?.first_name && userData?.last_name)
-      ? `${userData.first_name} ${userData.last_name}`.trim()
-      : userData?.firstName || userData?.lastName || userData?.email?.split("@")[0] || "Utilisateur"
+    userData?.fullName ||
+    (userData?.firstName && userData?.lastName
+      ? `${userData.firstName} ${userData.lastName}`
+      : userData?.firstName || userData?.lastName || userData?.email?.split("@")[0] || "Utilisateur")
 
-  console.log("[v0] Final displayName:", displayName)
+  console.log("[v0] Display name in header:", displayName)
 
   return (
     <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
       <SidebarTrigger className="-ml-1" />
       <Separator orientation="vertical" className="mr-2 h-4" />
 
-      {!isCheckingAccounts && hasActiveAccount && (
+      {!isCheckingAccounts && hasActiveAccount && userData && (
         <div className="flex items-center gap-2">
           <span className="text-sm text-muted-foreground">Bonjour,</span>
           <span className="text-sm font-semibold text-primary">{displayName}</span>
