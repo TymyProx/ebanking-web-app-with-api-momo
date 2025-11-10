@@ -427,10 +427,8 @@ export default function AccountDetailsPage() {
 
   return (
     <div className="space-y-8">
-      <div className="relative">
         <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-secondary/10 to-primary/10 rounded-2xl blur-3xl -z-10" />
-        <div className="flex items-center justify-between p-6 bg-white/80 backdrop-blur-sm rounded-2xl border border-border/50 shadow-sm">
-          <div className="flex items-center space-x-4">
+        <div className="flex items-center gap-3">        
             <Button
               variant="outline"
               size="icon"
@@ -440,18 +438,17 @@ export default function AccountDetailsPage() {
               <ArrowLeft className="w-4 h-4" />
             </Button>
             <div>
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-primary via-secondary to-primary bg-clip-text text-transparent">
+              <h1 className="text-2xl font-bold text-primary">
                 Détails du Compte
               </h1>
               <p className="text-muted-foreground">
                 {account.name} • {account.number}
               </p>
             </div>
-          </div>
         </div>
-      </div>
+     
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
         {/* Main balance card */}
         <Card className="lg:col-span-2 relative overflow-hidden border-2 hover:border-primary/50 transition-all duration-300 shadow-lg">
           <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent" />
@@ -520,7 +517,7 @@ export default function AccountDetailsPage() {
             <Separator />
 
             {/* Account details grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div className="space-y-4">
                 <div className="flex items-start space-x-3 p-3 rounded-lg bg-muted/30">
                   <Building className="h-5 w-5 text-primary mt-0.5" />
@@ -575,7 +572,7 @@ export default function AccountDetailsPage() {
 
           <CardHeader className="relative">
             <CardTitle className="flex items-center">
-              <div className="p-2 rounded-lg bg-gradient-to-br from-primary to-secondary mr-2">
+              <div className="p-2 rounded-lg bg-primary mr-2">
                 <Info className="w-5 h-5 text-white" />
               </div>
               Informations
@@ -595,7 +592,7 @@ export default function AccountDetailsPage() {
                 <p className="text-xs text-muted-foreground uppercase font-medium mb-1">Statut</p>
                 <Badge
                   variant={account.status === "ACTIF" ? "default" : "secondary"}
-                  className={account.status === "ACTIF" ? "bg-gradient-to-r from-primary to-secondary text-white" : ""}
+                  className={account.status === "ACTIF" ? "bg-primary text-white" : ""}
                 >
                   {account.status}
                 </Badge>
@@ -650,9 +647,6 @@ export default function AccountDetailsPage() {
         <CardHeader className="relative">
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center">
-              <div className="p-2 rounded-lg bg-gradient-to-br from-primary to-secondary mr-3">
-                <Sparkles className="h-5 w-5 text-white" />
-              </div>
               Transactions du compte
             </CardTitle>
             <Button onClick={handleRefreshTransactions} disabled={isLoadingTransactions} variant="outline" size="sm">

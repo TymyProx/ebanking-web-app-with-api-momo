@@ -340,21 +340,6 @@ export default function StatementsPage() {
           </div>
         )}
       </div>
-
-      <div className="flex items-center justify-between">
-        <div></div>
-        <div className="flex items-center space-x-2">
-          <Button variant="outline">
-            <History className="w-4 h-4 mr-2" />
-            Historique
-          </Button>
-          <Button variant="outline">
-            <Settings className="w-4 h-4 mr-2" />
-            Paramètres
-          </Button>
-        </div>
-      </div>
-
       {/* Messages de feedback */}
       {generateState?.success && (
         <Alert className="border-green-200 bg-green-50">
@@ -462,7 +447,7 @@ export default function StatementsPage() {
             <CardHeader>
               <CardTitle className="flex items-center">
                 <Calendar className="w-5 h-5 mr-2" />
-                Configuration du relevé
+                Détails du relevé
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
