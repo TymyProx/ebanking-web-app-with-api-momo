@@ -173,7 +173,7 @@ export function AgenceCard({ agence, onGetDirections }: AgenceCardProps) {
             <p className="text-sm font-medium text-orange-600">Fermetures à venir:</p>
             <div className="space-y-1">
               {agence.exceptionalClosures.slice(0, 3).map((closure, index) => (
-                <div key={index} className="text-xs text-muted-foreground">
+                <div key={index} className="text-sm text-muted-foreground">
                   <Badge variant="outline" className="text-xs bg-orange-50 text-orange-700 border-orange-300">
                     {new Date(closure.date).toLocaleDateString("fr-FR")} - {closure.reason}
                   </Badge>

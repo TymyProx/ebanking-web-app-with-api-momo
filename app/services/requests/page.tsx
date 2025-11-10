@@ -1288,12 +1288,12 @@ export default function ServiceRequestsPage() {
   }
 
   return (
-    <div className="space-y-6">
+   <div className="mt-6 space-y-6">
       <div className="space-y-2">
-        <h1 className="text-3xl font-heading font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+        <h1 className="text-3xl font-bold text-primary">
           E-Services
         </h1>
-        <p className="text-muted-foreground text-lg">Faites vos demandes de services en ligne</p>
+        <p className="text-sm text-muted-foreground">Faites vos demandes de services en ligne</p>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>

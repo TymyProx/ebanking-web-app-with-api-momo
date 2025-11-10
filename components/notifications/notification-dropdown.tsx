@@ -102,7 +102,7 @@ export function NotificationDropdown() {
                     </div>
                     <p className="text-xs text-muted-foreground line-clamp-2 mt-1">{notification.message}</p>
                     <div className="flex items-center justify-between mt-2">
-                      <span className="text-xs text-muted-foreground">{formatDate(notification.date)}</span>
+                      <span className="text-sm text-muted-foreground">{formatDate(notification.date)}</span>
                       {notification.amount && (
                         <span
                           className={`text-xs font-medium ${

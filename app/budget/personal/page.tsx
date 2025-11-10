@@ -565,7 +565,7 @@ export default function PersonalBudgetPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-green-600">{formatAmount(budgetData.monthlyIncome)} GNF</div>
-            <p className="text-xs text-muted-foreground">Revenus du mois en cours</p>
+            <p className="text-sm text-muted-foreground">Revenus du mois en cours</p>
           </CardContent>
         </Card>
 
@@ -576,7 +576,7 @@ export default function PersonalBudgetPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{formatAmount(budgetData.monthlyBudget)} GNF</div>
-            <p className="text-xs text-muted-foreground">Objectif de dépense fixé</p>
+            <p className="text-sm text-muted-foreground">Objectif de dépense fixé</p>
           </CardContent>
         </Card>
 
@@ -589,7 +589,7 @@ export default function PersonalBudgetPage() {
             <div className={`text-2xl font-bold ${getBudgetStatusColor(budgetData.budgetUsagePercent)}`}>
               {formatAmount(budgetData.totalExpenses)} GNF
             </div>
-            <p className="text-xs text-muted-foreground">{budgetData.budgetUsagePercent}% du budget utilisé</p>
+            <p className="text-sm text-muted-foreground">{budgetData.budgetUsagePercent}% du budget utilisé</p>
           </CardContent>
         </Card>
 
@@ -600,7 +600,7 @@ export default function PersonalBudgetPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-blue-600">{formatAmount(budgetData.totalSavings)} GNF</div>
-            <p className="text-xs text-muted-foreground">{budgetData.savingsPercent}% de l'objectif atteint</p>
+            <p className="text-sm text-muted-foreground">{budgetData.savingsPercent}% de l'objectif atteint</p>
           </CardContent>
         </Card>
       </div>
@@ -896,7 +896,7 @@ export default function PersonalBudgetPage() {
                     </div>
                     <div className="text-right">
                       <p className="font-semibold text-red-600">-{formatAmount(expense.amount)} GNF</p>
-                      <p className="text-xs text-muted-foreground">{expense.account}</p>
+                      <p className="text-sm text-muted-foreground">{expense.account}</p>
                     </div>
                   </div>
                 ))}

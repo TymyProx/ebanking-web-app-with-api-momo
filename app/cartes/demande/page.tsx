@@ -146,41 +146,22 @@ export default function DemandeCartePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50">
-      <div className="max-w-5xl mx-auto p-4 space-y-4">
-        {/* Progress Header */}
-        <div className="relative">
-          <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-secondary/10 to-primary/10 rounded-xl blur-3xl -z-10" />
-          <Card className="border-2 border-primary/20 shadow-xl bg-white/80 backdrop-blur-sm">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between mb-3">
-                <Button variant="ghost" size="sm" onClick={() => router.back()} className="hover:bg-primary/10 h-8">
-                  <ArrowLeft className="w-3 h-3 mr-1" />
-                  Retour
-                </Button>
-                <Badge
-                  variant="outline"
-                  className="bg-gradient-to-r from-primary to-secondary text-white border-0 text-xs"
-                >
-                  Étape {step}/3
-                </Badge>
-              </div>
+    <div className="mt-6 space-y-6">
               <div className="flex items-center space-x-2">
                 <div>
-                  <h1 className="text-xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+                   <h1 className="text-3xl font-bold text-primary">
                     Demande de Carte Bancaire
                   </h1>
-                  <p className="text-xs text-muted-foreground">Remplissez le formulaire en 3 étapes simples</p>
+                  <p className="text-sm text-muted-foreground">Remplissez le formulaire en 3 étapes simples</p>
                 </div>
-              </div>
-
+                </div>
               <div className="mt-3 flex items-center justify-between">
                 {[1, 2, 3].map((s) => (
                   <div key={s} className="flex items-center flex-1">
                     <div
                       className={`flex items-center justify-center w-7 h-7 rounded-full text-xs font-semibold transition-all ${
                         s <= step
-                          ? "bg-gradient-to-r from-primary to-secondary text-white shadow-lg"
+                          ? "bg-primary text-white"
                           : "bg-gray-200 text-gray-500"
                       }`}
                     >
@@ -189,16 +170,14 @@ export default function DemandeCartePage() {
                     {s < 3 && (
                       <div
                         className={`flex-1 h-0.5 mx-1 rounded-full transition-all ${
-                          s < step ? "bg-gradient-to-r from-primary to-secondary" : "bg-gray-200"
+                          s < step ? "bg-primary text-white" : "bg-gray-200"
                         }`}
                       />
                     )}
                   </div>
                 ))}
               </div>
-            </CardContent>
-          </Card>
-        </div>
+           
 
         {error && (
           <Alert variant="destructive">
@@ -251,7 +230,6 @@ export default function DemandeCartePage() {
                 <Button
                   onClick={() => setStep(2)}
                   disabled={!canProceedToStep2}
-                  className="bg-gradient-to-r from-primary to-secondary hover:opacity-90 transition-opacity h-9"
                 >
                   Continuer
                   <ChevronRight className="w-4 h-4 ml-1" />
@@ -314,8 +292,6 @@ export default function DemandeCartePage() {
                 <Button
                   onClick={() => setStep(3)}
                   disabled={!canProceedToStep3 || loadingAccounts}
-                  className="bg-gradient-to-r from-primary to-secondary hover:opacity-90 transition-opacity"
-                  size="sm"
                 >
                   Continuer
                   <ChevronRight className="w-3 h-3 ml-1" />
@@ -347,7 +323,7 @@ export default function DemandeCartePage() {
                     rows={2}
                     className="border-2 focus:border-primary text-sm"
                   />
-                  <p className="text-xs text-muted-foreground">Si vide, nous utiliserons votre adresse enregistrée</p>
+                  <p className="text-sm text-muted-foreground">Si vide, nous utiliserons votre adresse enregistrée</p>
                 </div>
 
                 <div className="space-y-2">
@@ -371,7 +347,6 @@ export default function DemandeCartePage() {
                   </Button>
                   <Button
                     type="submit"
-                    className="bg-gradient-to-r from-primary to-secondary hover:opacity-90"
                     size="sm"
                     disabled={loading}
                   >
@@ -392,7 +367,6 @@ export default function DemandeCartePage() {
             </CardContent>
           </Card>
         )}
-      </div>
     </div>
   )
 }

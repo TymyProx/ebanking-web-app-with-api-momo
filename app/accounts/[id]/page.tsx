@@ -714,7 +714,7 @@ export default function AccountDetailsPage() {
                       <div>
                         <p className="font-semibold">{transaction.type}</p>
                         <p className="text-sm text-muted-foreground">{transaction.description}</p>
-                        <p className="text-xs text-muted-foreground">
+                        <p className="text-sm text-muted-foreground">
                           {transaction.counterparty} • Réf: {transaction.reference}
                         </p>
                       </div>

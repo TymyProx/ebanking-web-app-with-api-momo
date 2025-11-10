@@ -146,7 +146,7 @@ const navigationData = {
   services: [
     {
       title: "E-Services",
-      url: "/services/request",
+      url: "/services/requests",
       icon: FileText,
     },
   ],
@@ -159,7 +159,6 @@ const navigationData = {
           title: "Chat en direct",
           url: "/support/chat",
           icon: MessageSquare,
-          badge: "En ligne",
         },
         {
           title: "Historique des chats",

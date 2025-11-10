@@ -333,20 +333,17 @@ export default function BalancesPage() {
   }
 
   return (
-    <div className="space-y-8">
-      <div className="relative">
-        <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-secondary/10 to-primary/10 rounded-2xl blur-3xl -z-10" />
-        <div className="flex items-center justify-between p-6 bg-white/80 backdrop-blur-sm rounded-2xl border border-border/50 shadow-sm">
-          <div className="space-y-1">
-            <h1 className="text-3xl font-heading font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+   <div className="mt-6 space-y-6">
+          <div className="space-y-2">
+            <h1 className="text-3xl font-bold text-primary">
               Mes Soldes
             </h1>
-            <p className="text-muted-foreground text-lg">Gérez tous vos comptes en un seul endroit</p>
+            <p className="text-sm text-muted-foreground">Gérez tous vos comptes en un seul endroit</p>
           </div>
-          <div className="flex items-center gap-3">
+        <div className="flex items-center justify-end gap-3">
             <Dialog open={isNewAccountDialogOpen} onOpenChange={setIsNewAccountDialogOpen}>
               <DialogTrigger asChild>
-                <Button className="bg-gradient-to-r from-primary to-secondary hover:opacity-90 transition-opacity shadow-lg">
+                <Button>
                   <Plus className="h-4 w-4 mr-2" />
                   Nouveau Compte
                 </Button>
@@ -482,8 +479,6 @@ export default function BalancesPage() {
               {showBalance ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
             </Button>
           </div>
-        </div>
-      </div>
 
       {balanceState?.success && (
         <Alert className="border-primary/20 bg-gradient-to-r from-primary/5 to-secondary/5 backdrop-blur-sm">
@@ -578,7 +573,7 @@ export default function BalancesPage() {
                               ? `${formatAmount(account.availableBalance, account.currency)} ${account.currency}`
                               : "••••••••"}
                           </div>
-                          <p className="text-xs text-muted-foreground">
+                          <p className="text-sm text-muted-foreground">
                             Solde comptable:{" "}
                             {showBalance
                               ? `${formatAmount(account.balance, account.currency)} ${account.currency}`

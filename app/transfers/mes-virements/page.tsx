@@ -173,22 +173,22 @@ export default function MesVirementsPage() {
     return (
       <div className="space-y-6 fade-in">
         <div className="space-y-2">
-          <h1 className="text-3xl font-heading font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+          <h1 className="text-3xl font-bold text-primary">
             Mes virements
           </h1>
-          <p className="text-muted-foreground text-lg">Chargement...</p>
+          <p className="text-sm text-muted-foreground">Chargement...</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="space-y-6 fade-in">
+   <div className="mt-6 space-y-6">
       <div className="space-y-2">
-        <h1 className="text-3xl font-heading font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+        <h1 className="text-3xl font-bold text-primary">
           Mes virements
         </h1>
-        <p className="text-muted-foreground text-lg">Historique complet de vos transactions</p>
+        <p className="text-sm text-muted-foreground">Historique complet de vos transactions</p>
       </div>
 
       <Card className="border-0 shadow-lg">
@@ -232,7 +232,7 @@ export default function MesVirementsPage() {
                           <p className="font-medium text-sm">{formattedTransaction.type}</p>
                           <p className="text-xs text-muted-foreground truncate">{formattedTransaction.from}</p>
                           <div className="flex items-center gap-2 mt-1">
-                            <p className="text-xs text-muted-foreground">
+                            <p className="text-sm text-muted-foreground">
                               {formattedTransaction.date} à {formattedTransaction.time}
                             </p>
                             {getStatusBadge(formattedTransaction.status)}
@@ -299,7 +299,7 @@ export default function MesVirementsPage() {
                         )}
                       </div>
                       <div className="text-left">
-                        <p className="text-xs text-muted-foreground">{formatted.type}</p>
+                        <p className="text-sm text-muted-foreground">{formatted.type}</p>
                         <p
                           className={`text-2xl font-bold ${formatted.isCredit ? "text-secondary" : "text-destructive"}`}
                         >

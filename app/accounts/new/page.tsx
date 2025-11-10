@@ -79,32 +79,13 @@ export default function NewAccountPage() {
   const canSubmit = formData.terms && formData.dataProcessing
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50">
-      <div className="max-w-6xl mx-auto p-4 space-y-4">
-        <div className="relative">
-          <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-secondary/10 to-primary/10 rounded-xl blur-3xl -z-10" />
-          <Card className="border-2 border-primary/20 shadow-xl bg-white/80 backdrop-blur-sm">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between mb-3">
-                <Button variant="ghost" size="sm" asChild className="hover:bg-primary/10 h-8">
-                  <Link href="/accounts/balance">
-                    <ArrowLeft className="w-3 h-3 mr-1" />
-                    Retour
-                  </Link>
-                </Button>
-                <Badge
-                  variant="outline"
-                  className="bg-gradient-to-r from-primary to-secondary text-white border-0 text-xs"
-                >
-                  Étape {step}/3
-                </Badge>
-              </div>
+   <div className="mt-6 space-y-6">
               <div className="flex items-center space-x-2">
                 <div>
-                  <h1 className="text-xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+                <h1 className="text-3xl font-bold text-primary">
                     Demande d'Ouverture de Compte
                   </h1>
-                  <p className="text-xs text-muted-foreground">Choisissez le compte qui correspond à vos besoins</p>
+                  <p className="text-sm text-muted-foreground">Choisissez le compte qui correspond à vos besoins</p>
                 </div>
               </div>
 
@@ -114,7 +95,7 @@ export default function NewAccountPage() {
                     <div
                       className={`flex items-center justify-center w-7 h-7 rounded-full text-xs font-semibold transition-all ${
                         s <= step
-                          ? "bg-gradient-to-r from-primary to-secondary text-white shadow-lg"
+                          ? "bg-primary text-white shadow-lg"
                           : "bg-gray-200 text-gray-500"
                       }`}
                     >
@@ -123,16 +104,13 @@ export default function NewAccountPage() {
                     {s < 3 && (
                       <div
                         className={`flex-1 h-0.5 mx-1 rounded-full transition-all ${
-                          s < step ? "bg-gradient-to-r from-primary to-secondary" : "bg-gray-200"
+                          s < step ? "bg-primary" : "bg-gray-200"
                         }`}
                       />
                     )}
                   </div>
                 ))}
               </div>
-            </CardContent>
-          </Card>
-        </div>
 
         {step === 1 && (
           <Card className="border-2 border-primary/20 shadow-lg">
@@ -187,7 +165,7 @@ export default function NewAccountPage() {
                 <Button
                   onClick={() => setStep(2)}
                   disabled={!canProceedToStep2}
-                  className="bg-gradient-to-r from-primary to-secondary hover:opacity-90 transition-opacity h-9"
+                  className="bg-primary hover:opacity-90 transition-opacity h-9"
                 >
                   Continuer
                   <ChevronRight className="w-4 h-4 ml-1" />
@@ -265,7 +243,7 @@ export default function NewAccountPage() {
                 <Button
                   onClick={() => setStep(3)}
                   disabled={!canProceedToStep3}
-                  className="bg-gradient-to-r from-primary to-secondary hover:opacity-90 transition-opacity"
+                  className="bg-primary hover:opacity-90 transition-opacity"
                   size="sm"
                 >
                   Continuer
@@ -287,15 +265,15 @@ export default function NewAccountPage() {
             <CardContent className="space-y-4">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                 <div className="p-2 rounded bg-gradient-to-br from-primary/5 to-secondary/5">
-                  <p className="text-xs text-muted-foreground">Type</p>
+                  <p className="text-sm text-muted-foreground">Type</p>
                   <p className="text-sm font-semibold">{selectedAccountType.name}</p>
                 </div>
                 <div className="p-2 rounded bg-gradient-to-br from-primary/5 to-secondary/5">
-                  <p className="text-xs text-muted-foreground">Nom</p>
+                  <p className="text-sm text-muted-foreground">Nom</p>
                   <p className="text-sm font-semibold">{formData.accountName}</p>
                 </div>
                 <div className="p-2 rounded bg-gradient-to-br from-primary/5 to-secondary/5">
-                  <p className="text-xs text-muted-foreground">Dévise</p>
+                  <p className="text-sm text-muted-foreground">Dévise</p>
                   <p className="text-sm font-semibold">{formData.currency}</p>
                 </div>
               </div>
@@ -351,7 +329,7 @@ export default function NewAccountPage() {
                   <Button
                     type="submit"
                     disabled={isCreating || !canSubmit}
-                    className="bg-gradient-to-r from-primary to-secondary hover:opacity-90 transition-opacity"
+                    className="bg-primary hover:opacity-90 transition-opacity"
                     size="sm"
                   >
                     {isCreating ? (
@@ -385,7 +363,7 @@ export default function NewAccountPage() {
             </CardContent>
           </Card>
         )}
-      </div>
     </div>
+   
   )
 }

@@ -195,7 +195,7 @@ export default function ProfilePage() {
           <h1 className="text-3xl font-heading font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
             Mon Profil
           </h1>
-          <p className="text-muted-foreground text-lg">Gérez vos informations personnelles</p>
+          <p className="text-sm text-muted-foreground">Gérez vos informations personnelles</p>
         </div>
         {!isEditing && (
           <Button onClick={() => setIsEditing(true)} className="flex items-center gap-2">

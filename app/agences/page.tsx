@@ -143,14 +143,14 @@ export default function AgencesPage() {
   }
 
   return (
-    <div className="container mx-auto p-4 md:p-6 space-y-6" lang="fr">
+   <div className="mt-6 space-y-6" lang="fr">
       {/* En-tête */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div className="space-y-2">
-          <h1 className="text-3xl font-heading font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+          <h1 className="text-3xl font-bold text-primary">
             Localisation des agences
           </h1>
-          <p className="text-muted-foreground text-lg">Trouvez l'agence BNG la plus proche de vous</p>
+          <p className="text-xs text-muted-foreground">Trouvez l'agence BNG la plus proche de vous</p>
         </div>
 
         {/* Bouton pour le Responsable réseau */}

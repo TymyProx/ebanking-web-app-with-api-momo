@@ -332,17 +332,16 @@ export default function CardsPage() {
   }, [])
 
   return (
-    <div className="space-y-6">
+   <div className="mt-6 space-y-6">
       <div className="space-y-2">
-        <h1 className="text-3xl font-heading font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+        <h1 className="text-3xl font-bold text-primary">
           Mes Cartes
         </h1>
-        <p className="text-muted-foreground text-lg">Gérez vos cartes bancaires et leurs paramètres</p>
+        <p className="text-sm text-muted-foreground">Gérez vos cartes bancaires et leurs paramètres</p>
       </div>
 
       {/* Buttons */}
-      <div className="flex items-center justify-between">
-        <div></div>
+    <div className="flex items-center justify-end gap-3">
         <div className="flex gap-2">
           <Button onClick={() => setShowNewCardForm(true)}>
             <Plus className="w-4 h-4 mr-2" />

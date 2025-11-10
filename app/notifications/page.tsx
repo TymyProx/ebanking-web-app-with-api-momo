@@ -231,7 +231,7 @@ export default function NotificationsPage() {
           <h1 className="text-3xl font-heading font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
             Notifications
           </h1>
-          <p className="text-muted-foreground text-lg">Gérez vos notifications de débit et crédit automatiques</p>
+          <p className="text-sm text-muted-foreground">Gérez vos notifications de débit et crédit automatiques</p>
         </div>
         <div className="flex items-center space-x-2">
           <Badge variant="secondary">{unreadCount} non lues</Badge>

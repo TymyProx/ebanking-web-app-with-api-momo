@@ -69,7 +69,7 @@ export default function InvestmentsPage() {
           <h1 className="text-3xl font-heading font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
             Mes Placements
           </h1>
-          <p className="text-muted-foreground text-lg">Gérez vos investissements financiers</p>
+          <p className="text-sm text-muted-foreground">Gérez vos investissements financiers</p>
         </div>
         <Link href="/investments/new">
           <Button className="flex items-center gap-2">

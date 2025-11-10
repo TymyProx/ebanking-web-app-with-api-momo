@@ -290,7 +290,7 @@ export default function BudgetPage() {
           <h1 className="text-3xl font-heading font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
             Gestion budgétaire
           </h1>
-          <p className="text-muted-foreground text-lg">Suivez vos revenus, dépenses et objectifs budgétaires</p>
+          <p className="text-sm text-muted-foreground">Suivez vos revenus, dépenses et objectifs budgétaires</p>
         </div>
         <div className="flex space-x-2">
           <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
@@ -492,7 +492,7 @@ export default function BudgetPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-green-600">{formatAmount(budgetData.monthlyIncome)} GNF</div>
-            <p className="text-xs text-muted-foreground">Revenus du mois</p>
+            <p className="text-sm text-muted-foreground">Revenus du mois</p>
           </CardContent>
         </Card>
 
@@ -503,7 +503,7 @@ export default function BudgetPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{formatAmount(budgetData.monthlyBudget)} GNF</div>
-            <p className="text-xs text-muted-foreground">Objectif fixé</p>
+            <p className="text-sm text-muted-foreground">Objectif fixé</p>
           </CardContent>
         </Card>
 
@@ -516,7 +516,7 @@ export default function BudgetPage() {
             <div className={`text-2xl font-bold ${getBudgetStatusColor()}`}>
               {formatAmount(budgetData.totalExpenses)} GNF
             </div>
-            <p className="text-xs text-muted-foreground">{budgetData.budgetUsagePercent}% du budget utilisé</p>
+            <p className="text-sm text-muted-foreground">{budgetData.budgetUsagePercent}% du budget utilisé</p>
           </CardContent>
         </Card>
 
@@ -531,7 +531,7 @@ export default function BudgetPage() {
             <div className={`text-2xl font-bold ${budgetData.isOverBudget ? "text-red-600" : "text-green-600"}`}>
               {formatAmount(Math.abs(budgetData.remainingBudget))} GNF
             </div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-sm text-muted-foreground">
               {budgetData.isOverBudget ? "Au-dessus du budget" : "Disponible ce mois"}
             </p>
           </CardContent>
@@ -777,7 +777,7 @@ export default function BudgetPage() {
                     </div>
                     <div className="text-right">
                       <p className="font-semibold text-red-600">-{formatAmount(expense.amount)} GNF</p>
-                      <p className="text-xs text-muted-foreground">{expense.account}</p>
+                      <p className="text-sm text-muted-foreground">{expense.account}</p>
                     </div>
                   </div>
                 ))}

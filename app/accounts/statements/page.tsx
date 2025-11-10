@@ -322,12 +322,12 @@ export default function StatementsPage() {
   const preSelectedAccount = preSelectedAccountId ? accounts.find((acc) => acc.id === preSelectedAccountId) : null
 
   return (
-    <div className="space-y-6">
+    <div className="mt-6 space-y-6">
       <div className="space-y-2">
-        <h1 className="text-3xl font-heading font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+        <h1 className="text-3xl font-bold text-primary">
           Télécharger relevé
         </h1>
-        <p className="text-muted-foreground text-lg">Générez et téléchargez vos relevés de compte</p>
+        <p className="text-sm text-muted-foreground">Générez et téléchargez vos relevés de compte</p>
         {preSelectedAccountId && accounts.find((acc) => acc.id === preSelectedAccountId) && (
           <div className="mt-2">
             <Alert className="border-blue-200 bg-blue-50">

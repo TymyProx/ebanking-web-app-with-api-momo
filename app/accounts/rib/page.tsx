@@ -820,12 +820,12 @@ export default function RIBPage() {
 
   if (!showRib) {
     return (
-      <div className="space-y-6">
+    <div className="mt-6 space-y-6">
         <div className="space-y-2">
-          <h1 className="text-3xl font-heading font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+          <h1 className="text-3xl font-bold text-primary">
             Relevé de Coordonnées Bancaire (RIB)
           </h1>
-          <p className="text-muted-foreground text-lg">
+          <p className="text-sm text-muted-foreground">
             Sélectionnez le compte pour lequel vous souhaitez obtenir le RIB
           </p>
         </div>
@@ -902,12 +902,12 @@ export default function RIBPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="mt-6 space-y-6">
       <div className="space-y-2">
-        <h1 className="text-3xl font-heading font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+        <h1 className="text-3xl font-bold text-primary">
           Relevé de Coordonnées Bancaire (RIB)
         </h1>
-        <p className="text-muted-foreground text-lg">Consultez et téléchargez votre RIB</p>
+        <p className="text-sm text-muted-foreground">Consultez et téléchargez votre RIB</p>
         <div className="mt-2">
           <Button variant="outline" size="sm" onClick={() => setShowRib(false)}>
             ← Changer de compte

@@ -114,7 +114,7 @@ async function RecentTransactions() {
                     </div>
                     <div>
                       <p className="font-medium text-sm">{formattedTransaction.type}</p>
-                      <p className="text-xs text-muted-foreground">{formattedTransaction.from}</p>
+                      <p className="text-sm text-muted-foreground">{formattedTransaction.from}</p>
                     </div>
                   </div>
                   <div className="text-right">
@@ -125,7 +125,7 @@ async function RecentTransactions() {
                     >
                       {formattedTransaction.amount}
                     </p>
-                    <p className="text-xs text-muted-foreground">{formattedTransaction.date}</p>
+                    <p className="text-sm text-muted-foreground">{formattedTransaction.date}</p>
                   </div>
                 </div>
               )
@@ -224,7 +224,7 @@ export default async function Dashboard() {
         <div>
           <div className="mb-2">
             <h2 className="text-lg font-heading font-semibold">Nos Produits</h2>
-            <p className="text-xs text-muted-foreground">Découvrez nos offres exclusives</p>
+            <p className="text-sm text-muted-foreground">Découvrez nos offres exclusives</p>
           </div>
           <BankProductsCarousel />
         </div>

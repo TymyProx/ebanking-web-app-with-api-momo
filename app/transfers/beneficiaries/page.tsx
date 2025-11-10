@@ -676,13 +676,13 @@ export default function BeneficiariesPage() {
   }
 
   return (
-    <div className="space-y-6">
+   <div className="mt-6 space-y-6">
       <div className="flex items-center justify-between">
         <div className="space-y-2">
-          <h1 className="text-3xl font-heading font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+           <h1 className="text-3xl font-bold text-primary">
             Gestion des bénéficiaires
           </h1>
-          <p className="text-muted-foreground text-lg">Gérez vos destinataires de virements</p>
+          <p className="text-sm text-muted-foreground">Gérez vos destinataires de virements</p>
         </div>
         {/* </CHANGE> */}
 
@@ -830,7 +830,7 @@ export default function BeneficiariesPage() {
                       required
                     />
                     {accountNumberError && <p className="text-sm text-red-600">{accountNumberError}</p>}
-                    <p className="text-xs text-muted-foreground">10 chiffres uniquement</p>
+                    <p className="text-sm text-muted-foreground">10 chiffres uniquement</p>
                   </div>
 
                   <div className="space-y-2">
