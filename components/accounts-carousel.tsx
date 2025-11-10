@@ -4,9 +4,8 @@ import { useEffect, useState } from "react"
 import Link from "next/link"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
 import { Carousel, CarouselContent, CarouselItem } from "@/components/ui/carousel"
-import { Wallet, PiggyBank, DollarSign, Eye, TrendingUp, ChevronLeft, ChevronRight } from "lucide-react"
+import { Wallet, PiggyBank, DollarSign, Eye } from "lucide-react"
 import type { CarouselApi } from "@/components/ui/carousel"
 
 interface Account {
@@ -115,26 +114,6 @@ export function AccountsCarousel({ accounts }: AccountsCarouselProps) {
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle className="font-heading text-xl">Mes Comptes</CardTitle>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="icon"
-              className="h-8 w-8 bg-transparent"
-              onClick={() => api?.scrollPrev()}
-              disabled={!api?.canScrollPrev()}
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="outline"
-              size="icon"
-              className="h-8 w-8 bg-transparent"
-              onClick={() => api?.scrollNext()}
-              disabled={!api?.canScrollNext()}
-            >
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          </div>
         </div>
       </CardHeader>
       <CardContent>
