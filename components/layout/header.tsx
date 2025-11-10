@@ -18,7 +18,7 @@ import { NotificationDropdown } from "@/components/notifications/notification-dr
 import { usePathname } from "next/navigation"
 import { useState, useEffect } from "react"
 import { getAccounts } from "@/app/accounts/actions"
-import { getCurrentUser } from "@/app/user/actions"
+import { AuthService } from "@/lib/auth-service"
 
 export function Header() {
   const pathname = usePathname()
@@ -27,26 +27,12 @@ export function Header() {
   const [isCheckingAccounts, setIsCheckingAccounts] = useState<boolean>(true)
 
   useEffect(() => {
-    const fetchUserData = async () => {
-      const user = await getCurrentUser()
-      console.log("[v0] User data from action:", user)
+    const user = AuthService.getCurrentUser()
+    console.log("[v0] User data from AuthService:", user)
 
-      if (user) {
-        setUserData(user)
-        // Update localStorage with fresh data
-        localStorage.setItem("userData", JSON.stringify(user))
-      } else {
-        // Fallback to localStorage if API fails
-        const storedUserData = localStorage.getItem("userData")
-        if (storedUserData) {
-          const parsedData = JSON.parse(storedUserData)
-          console.log("[v0] Using localStorage userData:", parsedData)
-          setUserData(parsedData)
-        }
-      }
+    if (user) {
+      setUserData(user)
     }
-
-    fetchUserData()
   }, [])
 
   useEffect(() => {
@@ -81,7 +67,7 @@ export function Header() {
     [userData?.firstName, userData?.lastName].filter(Boolean).join(" ").trim() ||
     (userData?.first_name && userData?.last_name)
       ? `${userData.first_name} ${userData.last_name}`.trim()
-      : userData?.email?.split("@")[0] || "Utilisateur"
+      : userData?.firstName || userData?.lastName || userData?.email?.split("@")[0] || "Utilisateur"
 
   console.log("[v0] Final displayName:", displayName)
 
