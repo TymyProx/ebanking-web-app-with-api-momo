@@ -254,22 +254,22 @@ export default function ServiceRequestsPage() {
       const checkbookRequests = allTransformedRequests
         .filter((req) => req.type === "checkbook")
         .sort((a, b) => {
-          const refA = a.reference || ""
-          const refB = b.reference || ""
-          return refB.localeCompare(refA)
+          const dateA = new Date(a.submittedAt).getTime()
+          const dateB = new Date(b.submittedAt).getTime()
+          return dateB - dateA // Plus récent en premier
         })
 
       const creditRequests = allTransformedRequests
         .filter((req) => req.type === "credit")
         .sort((a, b) => {
-          const refA = a.reference || ""
-          const refB = b.reference || ""
-          return refB.localeCompare(refA)
+          const dateA = new Date(a.submittedAt).getTime()
+          const dateB = new Date(b.submittedAt).getTime()
+          return dateB - dateA // Plus récent en premier
         })
 
       // Concaténer : chéquier d'abord, crédit ensuite
       allTransformedRequests = [...checkbookRequests, ...creditRequests]
-      console.log("[v0] Demandes triées par type puis par référence (décroissant):", allTransformedRequests)
+      console.log("[v0] Demandes triées par type puis par date (décroissant):", allTransformedRequests)
 
       setAllRequests(allTransformedRequests)
 
