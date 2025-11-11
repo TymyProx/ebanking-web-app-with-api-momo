@@ -186,12 +186,12 @@ const generatePDF = async (account: Account) => {
   yPos += 10
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // TABLEAU 1: COMPTE EURO (DYNAMIQUE)
+  // TABLEAU 1: COMPTE (DYNAMIQUE - NOM DU COMPTE)
   // ═══════════════════════════════════════════════════════════════════════════
 
   doc.setFontSize(9)
   doc.setFont("helvetica", "bold")
-  doc.text("Compte EURO", 15, yPos)
+  doc.text(account.name, 15, yPos)
 
   yPos += 6
 
@@ -248,11 +248,10 @@ const generatePDF = async (account: Account) => {
 
   yPos += rowHeight
 
-  // Ligne IBAN
   doc.rect(tableStartX, yPos, col1Width + col2Width + col3Width + col4Width, rowHeight)
   doc.text("IBAN", tableStartX + 2, yPos + 5)
 
-  // Construire l'IBAN complet avec le code SWIFT
+  // Construire l'IBAN complet sans séparation
   const ibanComplete = `${account.iban} / CODE SWIFT: ${account.swiftCode}`
   doc.setFontSize(7)
   doc.text(ibanComplete, tableStartX + col1Width + 2, yPos + 5)
@@ -276,6 +275,7 @@ const generatePDF = async (account: Account) => {
   const table2Col3 = 25
   const table2Col4 = 50
   const table2Col5 = 30
+  const table2RowHeight = 12
 
   doc.setFontSize(8)
   doc.setFont("helvetica", "bold")
@@ -291,42 +291,45 @@ const generatePDF = async (account: Account) => {
   doc.text("SWIFT", table2StartX + table2Col1 + table2Col2 + table2Col3 + table2Col4 + 2, yPos + 4)
   doc.text("CODE", table2StartX + table2Col1 + table2Col2 + table2Col3 + table2Col4 + 2, yPos + 7)
 
-  // Lignes verticales
-  doc.line(table2StartX + table2Col1, yPos, table2StartX + table2Col1, yPos + rowHeight * 2)
-  doc.line(table2StartX + table2Col1 + table2Col2, yPos, table2StartX + table2Col1 + table2Col2, yPos + rowHeight * 2)
+  // Lignes verticales avec nouvelle hauteur
+  doc.line(table2StartX + table2Col1, yPos, table2StartX + table2Col1, yPos + rowHeight + table2RowHeight)
+  doc.line(
+    table2StartX + table2Col1 + table2Col2,
+    yPos,
+    table2StartX + table2Col1 + table2Col2,
+    yPos + rowHeight + table2RowHeight,
+  )
   doc.line(
     table2StartX + table2Col1 + table2Col2 + table2Col3,
     yPos,
     table2StartX + table2Col1 + table2Col2 + table2Col3,
-    yPos + rowHeight * 2,
+    yPos + rowHeight + table2RowHeight,
   )
   doc.line(
     table2StartX + table2Col1 + table2Col2 + table2Col3 + table2Col4,
     yPos,
     table2StartX + table2Col1 + table2Col2 + table2Col3 + table2Col4,
-    yPos + rowHeight * 2,
+    yPos + rowHeight + table2RowHeight,
   )
 
   yPos += rowHeight
 
-  // Données statiques
-  doc.rect(table2StartX, yPos, table2Col1 + table2Col2 + table2Col3 + table2Col4 + table2Col5, rowHeight)
+  doc.rect(table2StartX, yPos, table2Col1 + table2Col2 + table2Col3 + table2Col4 + table2Col5, table2RowHeight)
   doc.setFont("helvetica", "normal")
   doc.setFontSize(7)
-  doc.text("BRITISH ARAB COMMERCIAL BANK", table2StartX + 2, yPos + 5)
-  doc.text("BACMGB2L", table2StartX + table2Col1 + 2, yPos + 5)
-  doc.text("0100975", table2StartX + table2Col1 + table2Col2 + 2, yPos + 5)
-  doc.text("BANCO POPULAR DI SANDRO", table2StartX + table2Col1 + table2Col2 + table2Col3 + 2, yPos + 4)
+  doc.text("BRITISH ARAB COMMERCIAL BANK", table2StartX + 2, yPos + 6)
+  doc.text("BACMGB2L", table2StartX + table2Col1 + 2, yPos + 6)
+  doc.text("0100975", table2StartX + table2Col1 + table2Col2 + 2, yPos + 6)
+  doc.text("BANCO POPULAR DI SANDRO", table2StartX + table2Col1 + table2Col2 + table2Col3 + 2, yPos + 6)
 
   const swiftLines = ["POGRITZ2/VD", "JP MORGAN-", "CHASE NEW YORK-", "CHASUS33", "POGRITZ3"]
-
   let swiftY = yPos + 3
   swiftLines.forEach((line) => {
     doc.text(line, table2StartX + table2Col1 + table2Col2 + table2Col3 + table2Col4 + 2, swiftY)
     swiftY += 2
   })
 
-  yPos += rowHeight + 10
+  yPos += table2RowHeight + 10
 
   // ═══════════════════════════════════════════════════════════════════════════
   // TABLEAU 3: NOTRE CORRESPONDANT EURO (STATIQUE)
@@ -376,7 +379,7 @@ const generatePDF = async (account: Account) => {
   doc.setFontSize(7)
   doc.text("BRITISH ARAB COMMERCIAL BANK", table2StartX + 2, yPos + 5)
   doc.text("BACMGB2L", table2StartX + table2Col1 + 2, yPos + 5)
-  doc.text("0100974", table2StartX + table2Col1 + table2Col2 + 2, yPos + 5)
+  doc.text("0100974", table2StartX + col1Width + col2Width + 2, yPos + 5)
   doc.text("BANCO POPULAR DI SANDRO", table2StartX + table2Col1 + table2Col2 + table2Col3 + 2, yPos + 5)
   doc.text("POGRITZ2", table2StartX + table2Col1 + table2Col2 + table2Col3 + table2Col4 + 2, yPos + 5)
 
