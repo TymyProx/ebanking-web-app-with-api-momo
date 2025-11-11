@@ -515,6 +515,8 @@ export default function RIBPage() {
   }
 
   const handlePrint = () => {
+    if (!selectedAccount) return
+
     // Créer un contenu HTML pour l'impression
     const printContent = `
       <html>
