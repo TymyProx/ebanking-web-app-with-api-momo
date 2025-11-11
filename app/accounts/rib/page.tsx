@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Label } from "@/components/ui/label"
-import { Skeleton } from "@/components/ui/skeleton"
 import { useToast } from "@/hooks/use-toast"
 import {
   Download,
@@ -25,7 +24,6 @@ import {
 } from "lucide-react"
 import { getAccounts } from "../../accounts/actions"
 import { getUserProfile, getAccountForRib, sendRibEmail } from "./actions"
-import { generateRibData } from "./rib-utils"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -196,7 +194,7 @@ const generatePDF = async (account: Account) => {
   doc.setFontSize(9)
   doc.setFont("helvetica", "normal")
 
-  const domicilationLines = [
+  const domiciliationLines = [
     `Code Banque: ${account.bankCode}`,
     `Code Agence: ${account.branchCode}`,
     `Agence: ${account.branchName}`,
@@ -204,7 +202,7 @@ const generatePDF = async (account: Account) => {
     "CONAKRY - RÉPUBLIQUE DE GUINÉE",
   ]
 
-  domicilationLines.forEach((line) => {
+  domiciliationLines.forEach((line) => {
     doc.text(line, 15, yPos)
     yPos += 5
   })
@@ -327,7 +325,7 @@ export default function RIBPage() {
   const [copied, setCopied] = useState(false)
   const [selectedAccountId, setSelectedAccountId] = useState<string>("")
   const [accounts, setAccounts] = useState<Account[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+  const [isLoadingAccounts, setIsLoadingAccounts] = useState(true)
   const [userProfile, setUserProfile] = useState<any>(null)
   const [isEmailDialogOpen, setIsEmailDialogOpen] = useState(false)
   const [isSendingEmail, setIsSendingEmail] = useState(false)
@@ -395,7 +393,7 @@ export default function RIBPage() {
           },
         ])
       } finally {
-        setIsLoading(false)
+        setIsLoadingAccounts(false)
       }
     }
 
@@ -780,69 +778,20 @@ export default function RIBPage() {
     }).format(amount)
   }
 
-  if (isLoading) {
-    return (
-      <div className="space-y-6">
-        <div>
-          <Skeleton className="h-8 w-96" />
-          <Skeleton className="h-4 w-64 mt-2" />
-        </div>
-        <Card>
-          <CardHeader>
-            <Skeleton className="h-6 w-48" />
-          </CardHeader>
-          <CardContent>
-            <Skeleton className="h-32 w-full" />
-          </CardContent>
-        </Card>
-      </div>
-    )
-  }
-
-  // Modifier la condition pour la non-disponibilité des comptes
-  if (!accounts || accounts.length === 0) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <p className="text-gray-500">Aucun compte disponible</p>
-      </div>
-    )
-  }
-
   const loadFullRibData = async () => {
     if (!selectedAccountId) return
 
-    setIsLoadingRib(true)
     try {
-      const ribInfo = await getAccountForRib(selectedAccountId)
-      const ribData = ribInfo ? generateRibData(ribInfo, userProfile) : null
-
-      if (ribData) {
-        // Mettre à jour le compte sélectionné avec les données complètes du RIB
-        setAccounts((prevAccounts) =>
-          prevAccounts.map((acc) =>
-            acc.id === selectedAccountId
-              ? {
-                  ...acc,
-                  iban: ribData.iban,
-                  accountHolder: ribData.accountHolder,
-                  bankName: ribData.bankName,
-                  bankCode: ribData.bankCode,
-                  branchCode: ribData.branchCode,
-                  branchName: ribData.branchName,
-                  swiftCode: ribData.swiftCode,
-                }
-              : acc,
-          ),
-        )
-      }
-
+      setIsLoadingRib(true)
+      const ribData = await getAccountForRib(selectedAccountId)
+      console.log("[RIB] Données du RIB récupérées:", ribData)
       setShowRib(true)
     } catch (error) {
-      console.error("Erreur lors du chargement du RIB:", error)
+      console.error("Erreur lors du chargement des données du RIB:", error)
       toast({
         variant: "destructive",
-        title: "Erreur de chargement",
-        description: "Impossible de charger les données du RIB. Veuillez réessayer.",
+        title: "Erreur",
+        description: "Erreur lors du chargement des données du RIB. Veuillez réessayer.",
       })
     } finally {
       setIsLoadingRib(false)
@@ -869,9 +818,11 @@ export default function RIBPage() {
           <CardContent className="space-y-6">
             <div className="space-y-4">
               <Label htmlFor="account-select">Choisir le compte pour le RIB</Label>
-              <Select value={selectedAccountId} onValueChange={setSelectedAccountId}>
+              <Select value={selectedAccountId} onValueChange={setSelectedAccountId} disabled={isLoadingAccounts}>
                 <SelectTrigger id="account-select">
-                  <SelectValue placeholder="Sélectionner un compte" />
+                  <SelectValue
+                    placeholder={isLoadingAccounts ? "Chargement des comptes..." : "Sélectionner un compte"}
+                  />
                 </SelectTrigger>
                 <SelectContent>
                   {accounts.map((account) => (
@@ -881,7 +832,7 @@ export default function RIBPage() {
                           {getAccountIcon(account.type)}
                           <div>
                             <p className="font-medium">{account.name}</p>
-                            <p className="text-sm text-muted-foreground">{account.number}</p>
+                            <p className="text-sm text-muted-muted-foreground">{account.number}</p>
                           </div>
                         </div>
                         <p className="text-sm font-medium ml-4">
@@ -924,7 +875,7 @@ export default function RIBPage() {
               className="w-full"
               size="lg"
               onClick={loadFullRibData}
-              disabled={!selectedAccountId || isLoadingRib}
+              disabled={!selectedAccountId || isLoadingRib || isLoadingAccounts}
             >
               {isLoadingRib ? "Chargement..." : "Afficher le RIB"}
               {!isLoadingRib && <ArrowRight className="w-4 h-4 ml-2" />}
@@ -935,6 +886,7 @@ export default function RIBPage() {
     )
   }
 
+  // Le reste du code reste inchangé
   return (
     <div className="mt-6 space-y-6">
       <div className="space-y-2">
