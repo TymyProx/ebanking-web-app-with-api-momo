@@ -250,14 +250,14 @@ const generatePDF = async (account: Account) => {
   doc.rect(tableStartX, yPos, col1Width + col2Width + col3Width + col4Width, rowHeight)
   doc.text("IBAN", tableStartX + 2, yPos + 5)
 
-  // Construire l'IBAN complet: GN82 + Code Banque + Code Agence + Numero Compte (sans espaces)
+  // Construire l'IBAN complet sans séparateurs de colonnes
   const ibanValue = `${account.iban}`
   const swiftCode = `CODE SWIFT: ${account.swiftCode}`
   const ibanComplete = `${ibanValue} / ${swiftCode}`
 
   doc.setFontSize(7)
-  // L'IBAN commence après la colonne "Code Banque" et s'étend sur tout le reste
-  doc.text(ibanComplete, tableStartX + col1Width + 2, yPos + 5)
+  // L'IBAN s'affiche dans une seule cellule sans divisions verticales
+  doc.text(ibanComplete, tableStartX + 2, yPos + 5)
 
   yPos += rowHeight + 10
 
@@ -286,12 +286,12 @@ const generatePDF = async (account: Account) => {
   doc.rect(table2StartX, yPos, table2Col1 + table2Col2 + table2Col3 + table2Col4 + table2Col5, rowHeight)
   doc.text("Banque Correspondante", table2StartX + 2, yPos + 5)
   doc.text("SWIFT", table2StartX + table2Col1 + 2, yPos + 4)
-  doc.text("Code", table2StartX + table2Col1 + 2, yPos + 7)
-  doc.text("Notre", table2StartX + table2Col1 + table2Col2 + 2, yPos + 4)
-  doc.text("Compte USD", table2StartX + table2Col1 + table2Col2 + 2, yPos + 7)
-  doc.text("Banque Intermédiaire", table2StartX + table2Col1 + table2Col2 + table2Col3 + 2, yPos + 5)
-  doc.text("SWIFT", table2StartX + table2Col1 + table2Col2 + table2Col3 + table2Col4 + 2, yPos + 4)
-  doc.text("CODE", table2StartX + table2Col1 + table2Col2 + table2Col3 + table2Col4 + 2, yPos + 7)
+  doc.text("Code", table2StartX + table2Col1 + table2Col2 + 2, yPos + 7)
+  doc.text("Notre", table2StartX + table2Col1 + table2Col2 + table2Col3 + 2, yPos + 4)
+  doc.text("Compte USD", table2StartX + table2Col1 + table2Col2 + table2Col3 + 2, yPos + 7)
+  doc.text("Banque Intermédiaire", table2StartX + table2Col1 + table2Col2 + table2Col3 + table2Col4 + 2, yPos + 5)
+  doc.text("SWIFT", table2StartX + table2Col1 + table2Col2 + table2Col3 + table2Col4 + table2Col5 + 2, yPos + 4)
+  doc.text("CODE", table2StartX + table2Col1 + table2Col2 + table2Col3 + table2Col4 + table2Col5 + 2, yPos + 7)
 
   // Lignes verticales avec nouvelle hauteur
   doc.line(table2StartX + table2Col1, yPos, table2StartX + table2Col1, yPos + rowHeight + table2RowHeight)
@@ -327,7 +327,7 @@ const generatePDF = async (account: Account) => {
   const swiftLines = ["POGRITZ2/VD", "JP MORGAN-", "CHASE NEW YORK-", "CHASUS33", "POGRITZ3"]
   let swiftY = yPos + 3
   swiftLines.forEach((line) => {
-    doc.text(line, table2StartX + table2Col1 + table2Col2 + table2Col3 + table2Col4 + 2, swiftY)
+    doc.text(line, table2StartX + table2Col1 + table2Col2 + table2Col3 + table2Col4 + table2Col5 + 2, swiftY)
     swiftY += 2.5
   })
 
@@ -350,12 +350,12 @@ const generatePDF = async (account: Account) => {
   doc.rect(table2StartX, yPos, table2Col1 + table2Col2 + table2Col3 + table2Col4 + table2Col5, rowHeight)
   doc.text("Banque Correspondante", table2StartX + 2, yPos + 5)
   doc.text("SWIFT", table2StartX + table2Col1 + 2, yPos + 4)
-  doc.text("Code", table2StartX + table2Col1 + 2, yPos + 7)
-  doc.text("Notre", table2StartX + table2Col1 + table2Col2 + 2, yPos + 4)
-  doc.text("Compte Euro", table2StartX + table2Col1 + table2Col2 + 2, yPos + 7)
-  doc.text("Banque Intermédiaire", table2StartX + table2Col1 + table2Col2 + table2Col3 + 2, yPos + 5)
-  doc.text("SWIFT", table2StartX + table2Col1 + table2Col2 + table2Col3 + table2Col4 + 2, yPos + 4)
-  doc.text("CODE", table2StartX + table2Col1 + table2Col2 + table2Col3 + table2Col4 + 2, yPos + 7)
+  doc.text("Code", table2StartX + table2Col1 + table2Col2 + 2, yPos + 7)
+  doc.text("Notre", table2StartX + table2Col1 + table2Col2 + table2Col3 + 2, yPos + 4)
+  doc.text("Compte Euro", table2StartX + table2Col1 + table2Col2 + table2Col3 + 2, yPos + 7)
+  doc.text("Banque Intermédiaire", table2StartX + table2Col1 + table2Col2 + table2Col3 + table2Col4 + 2, yPos + 5)
+  doc.text("SWIFT", table2StartX + table2Col1 + table2Col2 + table2Col3 + table2Col4 + table2Col5 + 2, yPos + 4)
+  doc.text("CODE", table2StartX + table2Col1 + table2Col2 + table2Col3 + table2Col4 + table2Col5 + 2, yPos + 7)
 
   // Lignes verticales
   doc.line(table2StartX + table2Col1, yPos, table2StartX + table2Col1, yPos + rowHeight * 2)
