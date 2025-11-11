@@ -307,8 +307,7 @@ export default function NewAccountPage() {
               </div>
 
               <Alert className="border-primary/20 bg-gradient-to-r from-primary/5 to-secondary/5 py-2">
-                <Clock className="h-3 w-3 text-primary" />
-                <AlertDescription className="text-xs">Délai de traitement : 3-5 jours ouvrables</AlertDescription>
+                <AlertDescription className="text-xs">Délai de traitement : 3-5 jours ouvrables</AlertDescription>     
               </Alert>
 
               <form action={createAction}>
