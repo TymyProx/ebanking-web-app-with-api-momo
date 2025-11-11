@@ -341,7 +341,7 @@ export default function BalancesPage() {
             <p className="text-sm text-muted-foreground">Gérez tous vos comptes en un seul endroit</p>
           </div>
         <div className="flex items-center justify-end gap-3">
-            <Dialog open={isNewAccountDialogOpen} onOpenChange={setIsNewAccountDialogOpen}>
+            {/* <Dialog open={isNewAccountDialogOpen} onOpenChange={setIsNewAccountDialogOpen}>
               <DialogTrigger asChild>
                 <Button>
                   <Plus className="h-4 w-4 mr-2" />
@@ -349,7 +349,7 @@ export default function BalancesPage() {
                 </Button>
               </DialogTrigger>
               <DialogContent className="sm:max-w-[500px]">
-                {/* ... existing dialog content ... */}
+                
                 <DialogHeader>
                   <DialogTitle>Demande d'ouverture de compte</DialogTitle>
                   <DialogDescription>
@@ -448,7 +448,7 @@ export default function BalancesPage() {
                   </div>
                 </form>
               </DialogContent>
-            </Dialog>
+            </Dialog> */}
 
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-40 bg-white/80 backdrop-blur-sm">
