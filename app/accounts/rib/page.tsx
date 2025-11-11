@@ -406,12 +406,10 @@ export default function RIBPage() {
     if (preSelectedAccountId && accounts.find((acc) => acc.id === preSelectedAccountId)) {
       setSelectedAccountId(preSelectedAccountId)
       setShowRib(true)
-    } else if (accounts.length > 0) {
-      setSelectedAccountId(accounts[0].id)
     }
   }, [preSelectedAccountId, accounts])
 
-  const selectedAccount = accounts.find((acc) => acc.id === selectedAccountId) || accounts[0]
+  const selectedAccount = accounts.find((acc) => acc.id === selectedAccountId)
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text)
@@ -801,7 +799,8 @@ export default function RIBPage() {
     )
   }
 
-  if (!selectedAccount) {
+  // Modifier la condition pour la non-disponibilité des comptes
+  if (!accounts || accounts.length === 0) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <p className="text-gray-500">Aucun compte disponible</p>
@@ -958,217 +957,229 @@ export default function RIBPage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="border-2 border-dashed border-gray-300 p-6 rounded-lg bg-gray-50">
-                <div className="text-center mb-4">
-                  <h2 className="text-lg font-bold text-emerald-700">{selectedAccount.bankName.toUpperCase()}</h2>
-                  <p className="text-sm text-gray-600">RELEVÉ D'IDENTITÉ BANCAIRE</p>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-xs text-gray-500 uppercase">Titulaire du compte</p>
-                    <p className="font-semibold">{selectedAccount.accountHolder}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-500 uppercase">Numéro de compte</p>
-                    <p className="font-mono font-semibold">{selectedAccount.number}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-500 uppercase">Code banque</p>
-                    <p className="font-mono">{selectedAccount.bankCode}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-500 uppercase">Code agence</p>
-                    <p className="font-mono">{selectedAccount.branchCode}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-500 uppercase">RIB</p>
-                    <p className="font-mono font-semibold">
-                      {selectedAccount?.bankCode ?? ""} {selectedAccount?.branchCode ?? ""}{" "}
-                      {(selectedAccount?.number ?? "").replace(/-/g, "")}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-500 uppercase">IBAN</p>
-                    <p className="font-mono font-semibold">{selectedAccount.iban}</p>
-                  </div>
-                </div>
-
-                <div className="mt-4 pt-4 border-t">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-xs text-gray-500 uppercase">Code SWIFT</p>
-                      <p className="font-mono font-semibold">{selectedAccount.swiftCode}</p>
+              {selectedAccount && (
+                <>
+                  <div className="border-2 border-dashed border-gray-300 p-6 rounded-lg bg-gray-50">
+                    <div className="text-center mb-4">
+                      <h2 className="text-lg font-bold text-emerald-700">{selectedAccount.bankName.toUpperCase()}</h2>
+                      <p className="text-sm text-gray-600">RELEVÉ D'IDENTITÉ BANCAIRE</p>
                     </div>
-                    <div className="text-right">
-                      <Badge
-                        variant="outline"
-                        className={
-                          selectedAccount.status === "Actif" ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-xs text-gray-500 uppercase">Titulaire du compte</p>
+                        <p className="font-semibold">{selectedAccount.accountHolder}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500 uppercase">Numéro de compte</p>
+                        <p className="font-mono font-semibold">{selectedAccount.number}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500 uppercase">Code banque</p>
+                        <p className="font-mono">{selectedAccount.bankCode}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500 uppercase">Code agence</p>
+                        <p className="font-mono">{selectedAccount.branchCode}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500 uppercase">RIB</p>
+                        <p className="font-mono font-semibold">
+                          {selectedAccount?.bankCode ?? ""} {selectedAccount?.branchCode ?? ""}{" "}
+                          {(selectedAccount?.number ?? "").replace(/-/g, "")}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500 uppercase">IBAN</p>
+                        <p className="font-mono font-semibold">{selectedAccount.iban}</p>
+                      </div>
+                    </div>
+
+                    <div className="mt-4 pt-4 border-t">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-xs text-gray-500 uppercase">Code SWIFT</p>
+                          <p className="font-mono font-semibold">{selectedAccount.swiftCode}</p>
+                        </div>
+                        <div className="text-right">
+                          <Badge
+                            variant="outline"
+                            className={
+                              selectedAccount.status === "Actif"
+                                ? "bg-green-50 text-green-700"
+                                : "bg-red-50 text-red-700"
+                            }
+                          >
+                            Compte {selectedAccount.status}
+                          </Badge>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="mt-4 pt-4 border-t">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <p className="text-xs text-gray-500 uppercase">Type de compte</p>
+                          <p className="font-medium">{selectedAccount.type}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-500 uppercase">Devise</p>
+                          <p className="font-medium">{selectedAccount.currency}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap gap-3">
+                    <Button onClick={downloadPDF}>
+                      <Download className="w-4 h-4 mr-2" />
+                      Télécharger PDF
+                    </Button>
+                    <Button variant="outline" onClick={handlePrint}>
+                      <Printer className="w-4 h-4 mr-2" />
+                      Imprimer
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        if (userProfile?.email) {
+                          setIsEmailDialogOpen(true)
+                        } else {
+                          toast({
+                            variant: "destructive",
+                            title: "Email requis",
+                            description: "Ajoutez un email à votre profil utilisateur pour recevoir votre RIB.",
+                          })
                         }
-                      >
-                        Compte {selectedAccount.status}
-                      </Badge>
-                    </div>
+                      }}
+                    >
+                      <Mail className="w-4 h-4 mr-2" />
+                      Envoyer par email
+                    </Button>
+                    <Button variant="outline" onClick={() => copyToClipboard(selectedAccount.iban)}>
+                      <Copy className="w-4 h-4 mr-2" />
+                      {copied ? "Copié !" : "Copier IBAN"}
+                    </Button>
                   </div>
-                </div>
-
-                <div className="mt-4 pt-4 border-t">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <p className="text-xs text-gray-500 uppercase">Type de compte</p>
-                      <p className="font-medium">{selectedAccount.type}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-500 uppercase">Devise</p>
-                      <p className="font-medium">{selectedAccount.currency}</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex flex-wrap gap-3">
-                <Button onClick={downloadPDF}>
-                  <Download className="w-4 h-4 mr-2" />
-                  Télécharger PDF
-                </Button>
-                <Button variant="outline" onClick={handlePrint}>
-                  <Printer className="w-4 h-4 mr-2" />
-                  Imprimer
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    if (userProfile?.email) {
-                      setIsEmailDialogOpen(true)
-                    } else {
-                      toast({
-                        variant: "destructive",
-                        title: "Email requis",
-                        description: "Ajoutez un email à votre profil utilisateur pour recevoir votre RIB.",
-                      })
-                    }
-                  }}
-                >
-                  <Mail className="w-4 h-4 mr-2" />
-                  Envoyer par email
-                </Button>
-                <Button variant="outline" onClick={() => copyToClipboard(selectedAccount.iban)}>
-                  <Copy className="w-4 h-4 mr-2" />
-                  {copied ? "Copié !" : "Copier IBAN"}
-                </Button>
-              </div>
+                </>
+              )}
             </CardContent>
           </Card>
         </div>
 
         <div>
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <Building className="w-5 h-5 mr-2" />
-                Informations agence
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <p className="font-semibold">{selectedAccount.branchName}</p>
-                <p className="text-sm text-gray-600">{selectedAccount.bankName}</p>
-              </div>
-
-              <div className="space-y-2">
-                <div className="flex items-start space-x-2">
-                  <MapPin className="w-4 h-4 text-gray-400 mt-0.5" />
+          {selectedAccount && (
+            <>
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <Building className="w-5 h-5 mr-2" />
+                    Informations agence
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
                   <div>
-                    <p className="text-sm">Avenue de la République</p>
-                    <p className="text-sm">Kaloum, Conakry</p>
-                    <p className="text-sm">République de Guinée</p>
+                    <p className="font-semibold">{selectedAccount.branchName}</p>
+                    <p className="text-sm text-gray-600">{selectedAccount.bankName}</p>
                   </div>
-                </div>
 
-                <div className="flex items-center space-x-2">
-                  <Phone className="w-4 h-4 text-gray-400" />
-                  <p className="text-sm">+224 622 123 456</p>
-                </div>
-              </div>
+                  <div className="space-y-2">
+                    <div className="flex items-start space-x-2">
+                      <MapPin className="w-4 h-4 text-gray-400 mt-0.5" />
+                      <div>
+                        <p className="text-sm">Avenue de la République</p>
+                        <p className="text-sm">Kaloum, Conakry</p>
+                        <p className="text-sm">République de Guinée</p>
+                      </div>
+                    </div>
 
-              <div className="pt-4 border-t">
-                <p className="text-xs text-gray-500">Horaires d'ouverture</p>
-                <p className="text-sm">Lun - Ven: 8h00 - 16h00</p>
-                <p className="text-sm">Sam: 8h00 - 12h00</p>
-              </div>
-            </CardContent>
-          </Card>
+                    <div className="flex items-center space-x-2">
+                      <Phone className="w-4 h-4 text-gray-400" />
+                      <p className="text-sm">+224 622 123 456</p>
+                    </div>
+                  </div>
 
-          <Card className="mt-6">
-            <CardHeader>
-              <CardTitle>Utilisation du RIB</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3 text-sm">
-                <div className="flex items-start space-x-2">
-                  <div className="w-2 h-2 bg-emerald-500 rounded-full mt-2"></div>
-                  <p>Recevoir des virements</p>
-                </div>
-                <div className="flex items-start space-x-2">
-                  <div className="w-2 h-2 bg-emerald-500 rounded-full mt-2"></div>
-                  <p>Domicilier votre salaire</p>
-                </div>
-                <div className="flex items-start space-x-2">
-                  <div className="w-2 h-2 bg-emerald-500 rounded-full mt-2"></div>
-                  <p>Prélèvements automatiques</p>
-                </div>
-                <div className="flex items-start space-x-2">
-                  <div className="w-2 h-2 bg-emerald-500 rounded-full mt-2"></div>
-                  <p>Virements internationaux</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+                  <div className="pt-4 border-t">
+                    <p className="text-xs text-gray-500">Horaires d'ouverture</p>
+                    <p className="text-sm">Lun - Ven: 8h00 - 16h00</p>
+                    <p className="text-sm">Sam: 8h00 - 12h00</p>
+                  </div>
+                </CardContent>
+              </Card>
 
-          <Card className="mt-6">
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                {getAccountIcon(selectedAccount.type)}
-                <span className="ml-2">Compte sélectionné</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                <div>
-                  <p className="text-xs text-gray-500">Nom du compte</p>
-                  <p className="font-medium">{selectedAccount.name}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-gray-500">Numéro</p>
-                  <p className="font-mono text-sm">{selectedAccount.number}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-gray-500">Solde actuel</p>
-                  <p className="font-semibold text-green-600">
-                    {formatAmount(selectedAccount.balance, selectedAccount.currency)} {selectedAccount.currency}
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+              <Card className="mt-6">
+                <CardHeader>
+                  <CardTitle>Utilisation du RIB</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3 text-sm">
+                    <div className="flex items-start space-x-2">
+                      <div className="w-2 h-2 bg-emerald-500 rounded-full mt-2"></div>
+                      <p>Recevoir des virements</p>
+                    </div>
+                    <div className="flex items-start space-x-2">
+                      <div className="w-2 h-2 bg-emerald-500 rounded-full mt-2"></div>
+                      <p>Domicilier votre salaire</p>
+                    </div>
+                    <div className="flex items-start space-x-2">
+                      <div className="w-2 h-2 bg-emerald-500 rounded-full mt-2"></div>
+                      <p>Prélèvements automatiques</p>
+                    </div>
+                    <div className="flex items-start space-x-2">
+                      <div className="w-2 h-2 bg-emerald-500 rounded-full mt-2"></div>
+                      <p>Virements internationaux</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="mt-6">
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    {getAccountIcon(selectedAccount.type)}
+                    <span className="ml-2">Compte sélectionné</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    <div>
+                      <p className="text-xs text-gray-500">Nom du compte</p>
+                      <p className="font-medium">{selectedAccount.name}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500">Numéro</p>
+                      <p className="font-mono text-sm">{selectedAccount.number}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500">Solde actuel</p>
+                      <p className="font-semibold text-green-600">
+                        {formatAmount(selectedAccount.balance, selectedAccount.currency)} {selectedAccount.currency}
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </>
+          )}
         </div>
       </div>
 
-      <AlertDialog open={isEmailDialogOpen} onOpenChange={setIsEmailDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Envoyer le RIB par email</AlertDialogTitle>
-            <AlertDialogDescription>Vous recevrez un email contenant votre RIB.</AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setIsEmailDialogOpen(false)}>Annuler</AlertDialogCancel>
-            <AlertDialogAction onClick={handleEmailSend} disabled={isSendingEmail}>
-              {isSendingEmail ? "Envoi..." : "Confirmer"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      {selectedAccount && (
+        <AlertDialog open={isEmailDialogOpen} onOpenChange={setIsEmailDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Envoyer le RIB par email</AlertDialogTitle>
+              <AlertDialogDescription>Vous recevrez un email contenant votre RIB.</AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={() => setIsEmailDialogOpen(false)}>Annuler</AlertDialogCancel>
+              <AlertDialogAction onClick={handleEmailSend} disabled={isSendingEmail}>
+                {isSendingEmail ? "Envoi..." : "Confirmer"}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      )}
     </div>
   )
 }
