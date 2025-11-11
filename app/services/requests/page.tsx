@@ -234,7 +234,7 @@ export default function ServiceRequestsPage() {
           submittedAt: item.createdAt ? item.createdAt.split("T")[0] : new Date().toISOString().split("T")[0],
           expectedResponse: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
           account: item.numcompte || item.accountNumber || "Compte non spécifié",
-          reference: item.reference || "Référence non disponible",
+          reference: item.referenceDemande || "Référence non disponible",
           details: {
             applicantName: item.applicantName || "",
             creditAmount: item.creditAmount || "",
@@ -346,7 +346,9 @@ export default function ServiceRequestsPage() {
       {
         label: "Référence",
         value:
-          type === "checkbook" ? details.referenceCommande || "Non attribuée" : details.reference || "Non attribuée",
+          type === "checkbook"
+            ? details.referenceCommande || "Non attribuée"
+            : details.referenceDemande || "Non attribuée",
       },
       { label: "Numéro de compte", value: details.numcompte || details.numcompteId || "Non spécifié" },
       { label: "Intitulé du compte", value: details.intitulecompte || "Non spécifié" },
@@ -535,7 +537,7 @@ export default function ServiceRequestsPage() {
                   submittedAt: item.createdAt ? item.createdAt.split("T")[0] : new Date().toISOString().split("T")[0],
                   expectedResponse: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
                   account: item.numcompte || item.accountNumber || "Compte non spécifié",
-                  reference: item.reference || "Référence non disponible",
+                  reference: item.referenceDemande || "Référence non disponible",
                   details: {
                     applicantName: item.applicantName || "",
                     creditAmount: item.creditAmount || "",

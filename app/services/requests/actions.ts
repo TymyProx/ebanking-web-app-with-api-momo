@@ -53,7 +53,7 @@ interface DemandeCredit {
   numcompte?: string
   typedemande?: string
   accountNumber?: string
-  reference: string
+  referenceDemande: string
   clientId: string
 }
 
@@ -146,7 +146,7 @@ export async function submitCreditRequest(formData: {
           numcompte: formData.numcompte, // Ajout du numéro de compte dans l'API
           typedemande: formData.typedemande,
           accountNumber: formData.accountNumber,
-          reference: reference, // Ajout de la référence
+          referenceDemande: reference, // Changed from 'reference' to 'referenceDemande' to match API
           clientId: clientId, // Added clientId from logged-in user
         },
       }),
@@ -165,7 +165,7 @@ export async function submitCreditRequest(formData: {
     // Retourner la référence avec la réponse
     return {
       ...data,
-      reference: reference,
+      referenceDemande: reference, // Changed from 'reference' to 'referenceDemande' to match API
     }
   } catch (error: any) {
     // Gestion d'erreur (propagation du message d'erreur)
@@ -425,7 +425,7 @@ export async function getCreditRequest(id?: string): Promise<GetDemandesCreditRe
             creditAmount: "50000",
             durationMonths: "24",
             purpose: "Achat véhicule",
-            reference: "CRD-2024-001",
+            referenceDemande: "CRD-2024-001", // Changed from 'reference' to 'referenceDemande'
             clientId: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
           },
           {
@@ -441,7 +441,7 @@ export async function getCreditRequest(id?: string): Promise<GetDemandesCreditRe
             creditAmount: "25000",
             durationMonths: "12",
             purpose: "Travaux maison",
-            reference: "CRD-2024-002",
+            referenceDemande: "CRD-2024-002", // Changed from 'reference' to 'referenceDemande'
             clientId: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
           },
         ],
@@ -523,7 +523,7 @@ export async function getCreditRequest(id?: string): Promise<GetDemandesCreditRe
           creditAmount: "50000",
           durationMonths: "24",
           purpose: "Achat véhicule",
-          reference: "CRD-2024-001",
+          referenceDemande: "CRD-2024-001", // Changed from 'reference' to 'referenceDemande'
           clientId: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
         },
       ],
@@ -561,7 +561,7 @@ export async function getDemandeCreditById(TENANT_ID: string, id: string): Promi
         creditAmount: "50000",
         durationMonths: "24",
         purpose: "Achat véhicule",
-        reference: "CRD-2024-001",
+        referenceDemande: "CRD-2024-001", // Changed from 'reference' to 'referenceDemande'
         clientId: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
       }
 
@@ -600,7 +600,7 @@ export async function getDemandeCreditById(TENANT_ID: string, id: string): Promi
       creditAmount: "50000",
       durationMonths: "24",
       purpose: "Achat véhicule",
-      reference: "CRD-2024-001",
+      referenceDemande: "CRD-2024-001", // Changed from 'reference' to 'referenceDemande'
       clientId: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
     }
 
