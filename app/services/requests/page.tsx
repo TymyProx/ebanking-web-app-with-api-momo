@@ -205,7 +205,7 @@ export default function ServiceRequestsPage() {
           expectedResponse: item.dateorder
             ? new Date(new Date(item.dateorder).getTime() + 3 * 24 * 60 * 60 * 1000).toISOString().split("T")[0]
             : new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
-          account: item.intitulecompte || "Compte non spécifié",
+          account: item.numcompteId || "Compte non spécifié",
           reference: item.referenceCommande || `CHQ-${new Date().getFullYear()}-${String(index + 1).padStart(3, "0")}`,
           details: {
             nbrechequier: item.nbrechequier || 0,
@@ -233,7 +233,7 @@ export default function ServiceRequestsPage() {
           status: item.status || "En attente",
           submittedAt: item.createdAt ? item.createdAt.split("T")[0] : new Date().toISOString().split("T")[0],
           expectedResponse: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
-          account: "Compte courant",
+          account: item.numcompte || item.accountNumber || "Compte non spécifié",
           reference: item.reference || `CRD-${new Date().getFullYear()}-${String(index + 1).padStart(3, "0")}`,
           details: {
             applicantName: item.applicantName || "",
@@ -508,7 +508,7 @@ export default function ServiceRequestsPage() {
                         : item.stepflow === 2
                           ? "En cours de traitement"
                           : item.stepflow === 3
-                            ? "Disponible à l’agence"
+                            ? "Disponible à l'agence"
                             : item.stepflow === 4
                               ? "Disponible"
                               : item.stepflow === 5
@@ -518,7 +518,7 @@ export default function ServiceRequestsPage() {
                   expectedResponse: item.dateorder
                     ? new Date(new Date(item.dateorder).getTime() + 3 * 24 * 60 * 60 * 1000).toISOString().split("T")[0]
                     : new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
-                  account: item.intitulecompte || "Compte non spécifié",
+                  account: item.numcompteId || "Compte non spécifié",
                   reference: item.referenceCommande || "Référence non disponible",
                   details: {
                     nbrechequier: item.nbrechequier || 0,
@@ -534,7 +534,7 @@ export default function ServiceRequestsPage() {
                   status: "En cours",
                   submittedAt: item.createdAt ? item.createdAt.split("T")[0] : new Date().toISOString().split("T")[0],
                   expectedResponse: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
-                  account: "Compte courant",
+                  account: item.numcompte || item.accountNumber || "Compte non spécifié",
                   reference: item.reference || "Référence non disponible",
                   details: {
                     applicantName: item.applicantName || "",
@@ -871,7 +871,7 @@ export default function ServiceRequestsPage() {
                   value={formData.dateorder || new Date().toISOString().split("T")[0]}
                   onChange={(e) => handleInputChange("dateorder", e.target.value)}
                   required
-                  className="w-40"  
+                  className="w-40"
                 />
               </div>
 
@@ -892,7 +892,7 @@ export default function ServiceRequestsPage() {
                   }}
                   placeholder="Ex: 2"
                   required
-                  className="w-40" 
+                  className="w-40"
                 />
               </div>
             </div>
