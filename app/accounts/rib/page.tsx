@@ -352,8 +352,7 @@ export default function RIBPage() {
             currency: acc.currency || "GNF",
             type: acc.type === "SAVINGS" ? ("Épargne" as const) : ("Courant" as const),
             status: (acc.status === "ACTIF" ? "Actif" : acc.status) as "Actif" | "Bloqué" | "Fermé",
-            // Données temporaires - seront chargées à la demande
-            iban: `GN82 ${acc.codeBanque || "BNG"} ${acc.codeAgence || "001"} ${acc.accountNumber}`,
+            iban: `GN82${acc.codeBanque || "BNG"}${acc.codeAgence || "001"}${acc.accountNumber}`,
             accountHolder: profile ? `${profile.firstName || ""} ${profile.lastName || ""}`.trim() : "TITULAIRE",
             bankName: "Banque Nationale de Guinée",
             bankCode: acc.codeBanque || "BNG",
@@ -381,7 +380,7 @@ export default function RIBPage() {
             currency: "GNF",
             type: "Courant",
             status: "Actif",
-            iban: "GN82 BNG 001 0001234567 89",
+            iban: "GN82BNG0010001234567",
             accountHolder: userProfile
               ? `${userProfile.firstName || ""} ${userProfile.lastName || ""}`.trim()
               : "DIALLO Mamadou",

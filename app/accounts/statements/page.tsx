@@ -139,7 +139,7 @@ export default function StatementsPage() {
             currency: acc.currency || "GNF",
             type: acc.type,
             status: acc.status,
-            iban: `GN82 BNG 001 ${acc.accountNumber}`,
+            iban: `GN82BNG001${acc.accountNumber}`,
           }))
 
           const activeAccounts = adaptedAccounts.filter(
@@ -159,7 +159,7 @@ export default function StatementsPage() {
             currency: "GNF",
             type: "Courant",
             status: "Actif",
-            iban: "GN82 BNG 001 0001234567 89",
+            iban: "GN82BNG0010001234567",
           },
         ])
       } finally {

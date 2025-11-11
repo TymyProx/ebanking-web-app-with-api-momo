@@ -38,7 +38,7 @@ export function generateRibData(account: RibInfo, userProfile: UserProfile | nul
   // Construire l'IBAN si non disponible
   let iban = account.accountNumber || ""
   if (iban && !iban.startsWith("GN")) {
-    iban = `GN82 ${account.codeBanque || "BNG"} ${account.codeAgence || "001"} ${iban}`
+    iban = `GN82${account.codeBanque || "BNG"}${account.codeAgence || "001"}${iban}`
   }
 
   const ribRaw = `${account.codeBanque || "BNG"}${account.codeAgence || "001"}${(account.accountNumber || "").replace(/-/g, "")}${account.cleRib || ""}`
