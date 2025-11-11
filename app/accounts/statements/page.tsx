@@ -427,12 +427,6 @@ export default function StatementsPage() {
                                 {formatAmount(selectedAccountData.balance, selectedAccountData.currency)}{" "}
                                 {selectedAccountData.currency}
                               </div>
-                              <Badge
-                                variant={selectedAccountData.status === "Actif" ? "default" : "secondary"}
-                                className="text-xs"
-                              >
-                                {selectedAccountData.status}
-                              </Badge>
                             </div>
                           </div>
                         )}
@@ -459,13 +453,7 @@ export default function StatementsPage() {
                             <div className="text-right">
                               <div className="font-bold text-sm">
                                 {formatAmount(account.balance, account.currency)} {account.currency}
-                              </div>
-                              <Badge
-                                variant={account.status === "Actif" ? "default" : "secondary"}
-                                className="text-xs mt-1"
-                              >
-                                {account.status}
-                              </Badge>
+                              </div>  
                             </div>
                           </div>
                         </SelectItem>
