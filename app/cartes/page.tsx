@@ -273,7 +273,11 @@ export default function CardsPage() {
   }
 
   function getCardTypeColor(type: string) {
-    switch (type?.toUpperCase()) {
+    if (!type || typeof type !== "string") {
+      return "bg-gradient-to-r from-gray-500 to-gray-700"
+    }
+
+    switch (type.toUpperCase()) {
       case "GOLD":
         return "bg-gradient-to-r from-yellow-400 to-yellow-600"
       case "PLATINUM":
@@ -288,7 +292,11 @@ export default function CardsPage() {
   }
 
   function getStatusBadge(status: string) {
-    switch (status?.toUpperCase()) {
+    if (!status || typeof status !== "string") {
+      return <Badge variant="secondary">Inconnu</Badge>
+    }
+
+    switch (status.toUpperCase()) {
       case "ACTIF":
       case "ACTIF":
         return <Badge className="bg-green-100 text-green-800">Actif</Badge>
@@ -332,16 +340,14 @@ export default function CardsPage() {
   }, [])
 
   return (
-   <div className="mt-6 space-y-6">
+    <div className="mt-6 space-y-6">
       <div className="space-y-2">
-        <h1 className="text-3xl font-bold text-primary">
-          Mes Cartes
-        </h1>
+        <h1 className="text-3xl font-bold text-primary">Mes Cartes</h1>
         <p className="text-sm text-muted-foreground">Gérez vos cartes bancaires et leurs paramètres</p>
       </div>
 
       {/* Buttons */}
-    <div className="flex items-center justify-end gap-3">
+      <div className="flex items-center justify-end gap-3">
         <div className="flex gap-2">
           <Button onClick={() => setShowNewCardForm(true)}>
             <Plus className="w-4 h-4 mr-2" />
