@@ -78,12 +78,11 @@ export function Header() {
       <SidebarTrigger className="-ml-1" />
       <Separator orientation="vertical" className="mr-2 h-4" />
 
-      {!isCheckingAccounts && hasActiveAccount && userData && (
-      <div className="flex flex-col gap-[2px]">
-      <span className="text-sm text-muted-foreground">Bonjour,</span>
-      <span className="text-xl font-bold text-primary">{displayName}</span>
-      </div>
-
+      {!isCheckingAccounts && userData && (
+        <div className="flex flex-col gap-[2px]">
+          <span className="text-sm text-muted-foreground">Bonjour,</span>
+          <span className="text-xl font-bold text-primary">{displayName}</span>
+        </div>
       )}
 
       <div className="ml-auto flex items-center gap-2">

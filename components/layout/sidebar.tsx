@@ -364,6 +364,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>): 
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton asChild isActive={pathname === "/accounts/new"}>
+                      <Link href="/accounts/new">
+                        <PlusCircle />
+                        <span>Ouverture compte</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
                 </SidebarMenu>
               </SidebarGroupContent>
             </SidebarGroup>

@@ -19,7 +19,7 @@ export function middleware(request: NextRequest) {
   }
 
   if (token && (pathname === "/" || pathname === "/login" || pathname === "/signup")) {
-    return NextResponse.redirect(new URL("/dashboard", request.url))
+    return NextResponse.redirect(new URL("/accounts/balance", request.url))
   }
 
   return NextResponse.next()

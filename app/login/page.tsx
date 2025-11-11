@@ -44,7 +44,7 @@ export default function LoginPage() {
           localStorage.setItem("rememberMe", "true")
         }
 
-        router.push("/dashboard")
+        router.push("/accounts/balance")
       }
     } catch (err: any) {
       setError(err.message)
