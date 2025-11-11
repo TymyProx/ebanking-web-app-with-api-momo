@@ -323,12 +323,12 @@ export default function StatementsPage() {
   const selectedAccountData = accounts.find((acc) => acc.id === selectedAccount)
 
   return (
-    <div className="mt-6 space-y-6">
-      <div className="space-y-2">
-        <h1 className="text-3xl font-bold text-primary">Télécharger relevé</h1>
+    <div className="mt-3 space-y-3">
+      <div className="space-y-1">
+        <h1 className="text-2xl font-bold text-primary">Télécharger relevé</h1>
         <p className="text-sm text-muted-foreground">Générez et téléchargez vos relevés de compte</p>
         {preSelectedAccountId && accounts.find((acc) => acc.id === preSelectedAccountId) && (
-          <div className="mt-2">
+          <div>
             <Alert className="border-blue-200 bg-blue-50">
               <CheckCircle className="h-4 w-4 text-blue-600" />
               <AlertDescription className="text-blue-800">
@@ -385,45 +385,45 @@ export default function StatementsPage() {
         </Alert>
       )}
 
-      <Tabs defaultValue="generate" className="space-y-4">
+      <Tabs defaultValue="generate" className="space-y-3">
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="generate">Générer un relevé</TabsTrigger>
           <TabsTrigger value="history">Historique des relevés</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="generate" className="space-y-6">
+        <TabsContent value="generate" className="space-y-3">
           {/* Sélection du compte */}
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <CreditCard className="w-5 h-5 mr-2" />
+            <CardHeader className="py-2">
+              <CardTitle className="flex items-center text-base">
+                <CreditCard className="w-4 h-4 mr-2" />
                 Sélection du compte
               </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="pt-2 pb-3">
               {isLoadingAccounts ? (
-                <div className="text-center py-4">
+                <div className="text-center py-2">
                   <Clock className="w-6 h-6 animate-spin mx-auto mb-2" />
                   <p className="text-gray-500">Chargement des comptes...</p>
                 </div>
               ) : (
-                <div className="space-y-3">
+                <div className="space-y-2">
                   <Select value={selectedAccount} onValueChange={setSelectedAccount}>
-                    <SelectTrigger className="w-full h-auto py-3">
+                    <SelectTrigger className="w-full h-auto py-2">
                       <SelectValue placeholder="Sélectionnez un compte">
                         {selectedAccountData && (
                           <div className="flex items-center justify-between w-full">
-                            <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-2">
                               {getAccountIcon(selectedAccountData.type)}
                               <div className="text-left">
-                                <div className="font-medium">{selectedAccountData.name}</div>
+                                <div className="font-medium text-sm">{selectedAccountData.name}</div>
                                 <div className="text-xs text-muted-foreground font-mono">
                                   {selectedAccountData.number}
                                 </div>
                               </div>
                             </div>
                             <div className="text-right ml-4">
-                              <div className="font-bold">
+                              <div className="font-bold text-sm">
                                 {formatAmount(selectedAccountData.balance, selectedAccountData.currency)}{" "}
                                 {selectedAccountData.currency}
                               </div>
@@ -434,12 +434,12 @@ export default function StatementsPage() {
                     </SelectTrigger>
                     <SelectContent className="max-h-[400px]">
                       {accounts.map((account) => (
-                        <SelectItem key={account.id} value={account.id} className="h-auto py-3">
+                        <SelectItem key={account.id} value={account.id} className="h-auto py-2">
                           <div className="flex items-center justify-between w-full gap-4">
-                            <div className="flex items-center gap-3 flex-1">
+                            <div className="flex items-center gap-2 flex-1">
                               {getAccountIcon(account.type)}
                               <div className="text-left">
-                                <div className="font-medium flex items-center gap-2">
+                                <div className="font-medium flex items-center gap-1.5 text-sm">
                                   {account.name}
                                   {preSelectedAccountId === account.id && (
                                     <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700">
@@ -460,11 +460,6 @@ export default function StatementsPage() {
                       ))}
                     </SelectContent>
                   </Select>
-
-                  {/* Display account count info */}
-                  <p className="text-xs text-muted-foreground">
-                    {accounts.length} compte{accounts.length > 1 ? "s" : ""} disponible{accounts.length > 1 ? "s" : ""}
-                  </p>
                 </div>
               )}
             </CardContent>
@@ -472,18 +467,18 @@ export default function StatementsPage() {
 
           {/* Configuration du relevé */}
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <Calendar className="w-5 h-5 mr-2" />
+            <CardHeader className="py-2">
+              <CardTitle className="flex items-center text-base">
+                <Calendar className="w-4 h-4 mr-2" />
                 Détails du relevé
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-6">
+            <CardContent className="space-y-3 pt-2 pb-3">
               {/* Sélection de période */}
-              <div className="space-y-4">
-                <Label>Période du relevé</Label>
+              <div className="space-y-2">
+                <Label className="text-sm">Période du relevé</Label>
                 <Select value={selectedPeriod} onValueChange={handlePeriodChange}>
-                  <SelectTrigger>
+                  <SelectTrigger className="h-9">
                     <SelectValue placeholder="Choisir une période" />
                   </SelectTrigger>
                   <SelectContent>
@@ -496,19 +491,24 @@ export default function StatementsPage() {
                 </Select>
 
                 {selectedPeriod === "custom" && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                     <div>
-                      <Label htmlFor="startDate">Date de début</Label>
+                      <Label htmlFor="startDate" className="text-sm">
+                        Date de début
+                      </Label>
                       <Input
                         id="startDate"
                         type="date"
                         value={startDate}
                         onChange={(e) => setStartDate(e.target.value)}
                         max={endDate || undefined}
+                        className="h-9"
                       />
                     </div>
                     <div>
-                      <Label htmlFor="endDate">Date de fin</Label>
+                      <Label htmlFor="endDate" className="text-sm">
+                        Date de fin
+                      </Label>
                       <Input
                         id="endDate"
                         type="date"
@@ -516,13 +516,14 @@ export default function StatementsPage() {
                         onChange={(e) => setEndDate(e.target.value)}
                         min={startDate || undefined}
                         max={new Date().toISOString().split("T")[0]}
+                        className="h-9"
                       />
                     </div>
                   </div>
                 )}
 
                 {startDate && endDate && (
-                  <div className="p-3 bg-blue-50 rounded-lg">
+                  <div className="p-2 bg-blue-50 rounded-lg">
                     <p className="text-sm text-blue-800">
                       <Calendar className="w-4 h-4 inline mr-1" />
                       Période sélectionnée : du {new Date(startDate).toLocaleDateString("fr-FR")} au{" "}
@@ -533,70 +534,41 @@ export default function StatementsPage() {
               </div>
 
               {/* Options de format */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-4">
-                  <Label>Format du fichier</Label>
-                  <div className="space-y-3">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label className="text-sm">Format du fichier</Label>
+                  <div className="space-y-2">
                     <div
-                      className={`p-4 border rounded-lg cursor-pointer transition-all ${
+                      className={`p-2 border rounded-lg cursor-pointer transition-all ${
                         format === "pdf"
                           ? "border-red-500 bg-red-50 ring-2 ring-red-200"
                           : "border-gray-200 hover:border-gray-300"
                       }`}
                       onClick={() => setFormat("pdf")}
                     >
-                      <div className="flex items-center space-x-3">
-                        <FileText className="w-6 h-6 text-red-600" />
+                      <div className="flex items-center space-x-2">
+                        <FileText className="w-5 h-5 text-red-600" />
                         <div>
-                          <p className="font-medium">PDF</p>
-                          <p className="text-sm text-gray-500">Format standard, idéal pour l'impression</p>
+                          <p className="font-medium text-sm">PDF</p>
+                          <p className="text-xs text-gray-500">Format standard, idéal pour l'impression</p>
                         </div>
                       </div>
                     </div>
                     <div
-                      className={`p-4 border rounded-lg cursor-pointer transition-all ${
+                      className={`p-2 border rounded-lg cursor-pointer transition-all ${
                         format === "excel"
                           ? "border-green-500 bg-green-50 ring-2 ring-green-200"
                           : "border-gray-200 hover:border-gray-300"
                       }`}
                       onClick={() => setFormat("excel")}
                     >
-                      <div className="flex items-center space-x-3">
-                        <FileSpreadsheet className="w-6 h-6 text-green-600" />
+                      <div className="flex items-center space-x-2">
+                        <FileSpreadsheet className="w-5 h-5 text-green-600" />
                         <div>
-                          <p className="font-medium">Excel</p>
-                          <p className="text-sm text-gray-500">Format tableur, idéal pour l'analyse</p>
+                          <p className="font-medium text-sm">Excel</p>
+                          <p className="text-xs text-gray-500">Format tableur, idéal pour l'analyse</p>
                         </div>
                       </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  <Label>Options avancées</Label>
-                  <div className="space-y-4">
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="includeImages"
-                        checked={includeImages}
-                        onCheckedChange={(checked) => setIncludeImages(checked as boolean)}
-                      />
-                      <Label htmlFor="includeImages" className="text-sm">
-                        Inclure les images des chèques
-                      </Label>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="language">Langue du relevé</Label>
-                      <Select value={language} onValueChange={(value: "fr" | "en") => setLanguage(value)}>
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="fr">Français</SelectItem>
-                          <SelectItem value="en">English</SelectItem>
-                        </SelectContent>
-                      </Select>
                     </div>
                   </div>
                 </div>
@@ -606,18 +578,18 @@ export default function StatementsPage() {
 
           {/* Actions */}
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <Download className="w-5 h-5 mr-2" />
+            <CardHeader className="py-2">
+              <CardTitle className="flex items-center text-base">
+                <Download className="w-4 h-4 mr-2" />
                 Téléchargement
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex flex-col sm:flex-row gap-4">
+            <CardContent className="space-y-3 pt-2 pb-3">
+              <div className="flex flex-col sm:flex-row gap-2">
                 <Button
                   onClick={handleGenerateStatement}
                   disabled={!isFormValid || isGenerating || isPending}
-                  className="flex-1"
+                  className="flex-1 h-9"
                 >
                   {isGenerating || isPending ? (
                     <>
@@ -631,22 +603,14 @@ export default function StatementsPage() {
                     </>
                   )}
                 </Button>
-
-                {/* <Button variant="outline" disabled={!isFormValid}>
-                  <Eye className="w-4 h-4 mr-2" />
-                  Aperçu
-                </Button>
-
-                <Button variant="outline" disabled={!isFormValid}>
-                  <Printer className="w-4 h-4 mr-2" />
-                  Imprimer
-                </Button> */}
               </div>
 
               {/* Envoi par email */}
               {generateState?.success && (
-                <div className="border-t pt-4 space-y-3">
-                  <Label htmlFor="email">Envoyer par email (optionnel)</Label>
+                <div className="border-t pt-3 space-y-2">
+                  <Label htmlFor="email" className="text-sm">
+                    Envoyer par email (optionnel)
+                  </Label>
                   <div className="flex gap-2">
                     <Input
                       id="email"
@@ -654,12 +618,13 @@ export default function StatementsPage() {
                       placeholder="votre@email.com"
                       value={emailAddress}
                       onChange={(e) => setEmailAddress(e.target.value)}
-                      className="flex-1"
+                      className="flex-1 h-9"
                     />
                     <Button
                       onClick={handleSendByEmail}
                       disabled={!emailAddress || isSending || isPending}
                       variant="outline"
+                      className="h-9 bg-transparent"
                     >
                       {isSending || isPending ? (
                         <Clock className="w-4 h-4 animate-spin" />
@@ -674,7 +639,7 @@ export default function StatementsPage() {
               {!isFormValid && (
                 <Alert>
                   <AlertCircle className="h-4 w-4" />
-                  <AlertDescription>
+                  <AlertDescription className="text-sm">
                     Veuillez sélectionner un compte et une période valide pour continuer.
                   </AlertDescription>
                 </Alert>
@@ -683,44 +648,44 @@ export default function StatementsPage() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="history" className="space-y-4">
+        <TabsContent value="history" className="space-y-3">
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <History className="w-5 h-5 mr-2" />
+            <CardHeader className="py-2">
+              <CardTitle className="flex items-center text-base">
+                <History className="w-4 h-4 mr-2" />
                 Historique des relevés générés
               </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="pt-2 pb-3">
               {statementHistory.length === 0 ? (
-                <div className="text-center py-8">
-                  <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                  <p className="text-gray-500">Aucun relevé généré récemment</p>
+                <div className="text-center py-4">
+                  <FileText className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                  <p className="text-gray-500 text-sm">Aucun relevé généré récemment</p>
                 </div>
               ) : (
-                <div className="space-y-4">
+                <div className="space-y-2">
                   {statementHistory.map((statement) => (
                     <div
                       key={statement.id}
-                      className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50"
+                      className="flex items-center justify-between p-2 border rounded-lg hover:bg-gray-50"
                     >
-                      <div className="flex items-center space-x-4">
-                        <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                      <div className="flex items-center space-x-2">
+                        <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
                           {statement.format === "PDF" ? (
-                            <FileText className="w-5 h-5 text-red-600" />
+                            <FileText className="w-4 h-4 text-red-600" />
                           ) : (
-                            <FileSpreadsheet className="w-5 h-5 text-green-600" />
+                            <FileSpreadsheet className="w-4 h-4 text-green-600" />
                           )}
                         </div>
                         <div>
-                          <p className="font-medium">{statement.accountName}</p>
-                          <p className="text-sm text-gray-500">{statement.period}</p>
+                          <p className="font-medium text-sm">{statement.accountName}</p>
+                          <p className="text-xs text-gray-500">{statement.period}</p>
                           <p className="text-xs text-gray-400">
                             Généré le {statement.generatedAt} • {statement.fileSize}
                           </p>
                         </div>
                       </div>
-                      <div className="flex items-center space-x-3">
+                      <div className="flex items-center space-x-2">
                         <Badge
                           variant={
                             statement.status === "Généré"
@@ -729,15 +694,16 @@ export default function StatementsPage() {
                                 ? "destructive"
                                 : "secondary"
                           }
+                          className="text-xs"
                         >
                           {statement.status}
                         </Badge>
-                        <div className="text-right text-sm">
+                        <div className="text-right text-xs">
                           <p className="text-gray-600">{statement.downloadCount} téléchargements</p>
                         </div>
                         {statement.status === "Généré" && (
-                          <Button size="sm" variant="outline">
-                            <Download className="w-4 h-4" />
+                          <Button size="sm" variant="outline" className="h-7 w-7 p-0 bg-transparent">
+                            <Download className="w-3 h-3" />
                           </Button>
                         )}
                       </div>
