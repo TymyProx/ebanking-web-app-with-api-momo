@@ -101,217 +101,312 @@ const generatePDF = async (account: Account) => {
   const pageWidth = 210
   const pageHeight = 297
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // COULEURS BNG
-  // ═══════════════════════════════════════════════════════════════════════════
-  const primaryGreen: [number, number, number] = [0, 149, 65] // Vert BNG principal (#009541)
-  const deepGreen: [number, number, number] = [0, 107, 63] // Vert foncé pour les accents (#006B3F)
-  const lightGreen: [number, number, number] = [233, 246, 239] // Vert très clair pour fonds (#E9F6EF)
-  const blackText: [number, number, number] = [20, 30, 30] // Texte principal
-  const grayBorder: [number, number, number] = [170, 180, 170] // Bordures neutres
+  // Couleurs
+  const blackText: [number, number, number] = [0, 0, 0]
+  const grayText: [number, number, number] = [100, 100, 100]
 
+  // Charger le logo BNG
   const logoDataUrl = await getBngLogoDataUrl()
-  const headerHeight = 36
 
-  // Fond de l'en-tête bleu
-  doc.setFillColor(...primaryGreen)
-  doc.rect(0, 0, pageWidth, headerHeight, "F")
+  let yPos = 15
 
-  // Ligne dorée
-  doc.setFillColor(...deepGreen)
-  doc.rect(0, headerHeight, pageWidth, 2, "F")
+  // ═══════════════════════════════════════════════════════════════════════════
+  // EN-TÊTE AVEC LOGO
+  // ═══════════════════════════════════════════════════════════════════════════
 
   if (logoDataUrl) {
-    doc.addImage(logoDataUrl, "PNG", 15, 6, 24, 24)
+    doc.addImage(logoDataUrl, "PNG", 15, yPos, 35, 12)
   }
 
-  const headerTextX = logoDataUrl ? 45 : 15
-
-  doc.setTextColor(255, 255, 255)
-  doc.setFontSize(16)
-  doc.setFont("helvetica", "bold")
-  doc.text("BANQUE NATIONALE DE GUINÉE", headerTextX, 16)
-
-  doc.setFontSize(11)
-  doc.setFont("helvetica", "normal")
-  doc.text("RELEVÉ D'IDENTITÉ BANCAIRE", headerTextX, 24)
-
-  doc.setDrawColor(...deepGreen)
-  doc.setLineWidth(0.6)
-  doc.line(15, headerHeight + 6, pageWidth - 15, headerHeight + 6)
+  yPos += 25
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // SECTION 1: IDENTIFIANT INTERNATIONAL
+  // TITRE DE LA BANQUE
   // ═══════════════════════════════════════════════════════════════════════════
 
-  let yPos = headerHeight + 16
-
-  doc.setTextColor(...primaryGreen)
-  doc.setFontSize(9)
-  doc.setFont("helvetica", "bold")
-  doc.text("Identifiant international de compte bancaire", 15, yPos)
-
-  doc.setDrawColor(...deepGreen)
-  doc.setLineWidth(0.2)
-  doc.line(15, yPos + 3, pageWidth - 15, yPos + 3)
-
-  yPos += 9
   doc.setTextColor(...blackText)
-  doc.setFontSize(8)
-  doc.setFont("helvetica", "normal")
-  doc.text("IBAN (International Bank Account Number)", 15, yPos)
-  doc.text("BIC (Bank Identifier Code)", 120, yPos)
+  doc.setFontSize(14)
+  doc.setFont("helvetica", "bold")
+  doc.text("BANQUE NATIONALE DE GUINÉE", 15, yPos)
 
   yPos += 5
-  doc.setFontSize(11)
+  doc.setFontSize(8)
+  doc.setFont("helvetica", "normal")
+  doc.text("6ème Avenue Boulevard DIALLO Telly BP: 1781 Conakry", 15, yPos)
+
+  yPos += 10
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // DÉPARTEMENT
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  doc.setFontSize(9)
   doc.setFont("helvetica", "bold")
-  const ibanDisplay = account.iban
-  doc.text(ibanDisplay, 15, yPos)
-  doc.text(account.swiftCode, 120, yPos)
+  doc.text("DEPARTEMENT DES OPERATIONS", 15, yPos)
 
   yPos += 12
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // SECTION 2: DOMICILIATION
+  // TITRE DU DOCUMENT
   // ═══════════════════════════════════════════════════════════════════════════
-
-  doc.setTextColor(...primaryGreen)
-  doc.setFontSize(9)
-  doc.setFont("helvetica", "bold")
-  doc.text("Domiciliation", 15, yPos)
-
-  yPos += 5
-
-  // Ligne de séparation
-  doc.setDrawColor(...deepGreen)
-  doc.setLineWidth(0.2)
-  doc.line(15, yPos, pageWidth - 15, yPos)
-
-  yPos += 6
-
-  // Détails de domiciliation
-  doc.setTextColor(...blackText)
-  doc.setFontSize(9)
-  doc.setFont("helvetica", "normal")
-
-  const domiciliationLines = [
-    `Code Banque: ${account.bankCode}`,
-    `Code Agence: ${account.branchCode}`,
-    `Agence: ${account.branchName}`,
-    "Banque Nationale de Guinée",
-    "CONAKRY - RÉPUBLIQUE DE GUINÉE",
-  ]
-
-  domiciliationLines.forEach((line) => {
-    doc.text(line, 15, yPos)
-    yPos += 5
-  })
-
-  yPos += 5
-
-  // ═══════════════════════════════════════════════════════════════════════════
-  // SECTION 3: NUMÉRO DE COMPTE
-  // ═══════════════════════════════════════════════════════════════════════════
-
-  doc.setTextColor(...primaryGreen)
-  doc.setFontSize(9)
-  doc.setFont("helvetica", "bold")
-  doc.text("Numéro de compte", 15, yPos)
-
-  yPos += 5
-
-  // Ligne de séparation
-  doc.setDrawColor(...deepGreen)
-  doc.setLineWidth(0.2)
-  doc.line(15, yPos, pageWidth - 15, yPos)
-
-  yPos += 6
-
-  doc.setTextColor(...blackText)
-  doc.setFontSize(11)
-  doc.setFont("helvetica", "bold")
-  doc.text(account.number, 15, yPos)
-
-  // Code RIB à droite
-  doc.setFontSize(8)
-  doc.setFont("helvetica", "normal")
-  doc.setTextColor(...blackText)
-  doc.text("RIB (Relevé d'Identité Bancaire):", 120, yPos - 3)
 
   doc.setFontSize(10)
   doc.setFont("helvetica", "bold")
-  const ribCode = `${account.bankCode}${account.branchCode}${account.number.replace(/-/g, "")}`
-  doc.text(ribCode, 120, yPos + 2)
+  doc.text("RELEVE DE COORDONNEES BANCAIRES", 15, yPos)
 
-  yPos += 15
+  yPos += 8
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // ENCADRÉ D'INFORMATION IMPORTANTE
+  // DESCRIPTION
   // ═══════════════════════════════════════════════════════════════════════════
 
-  yPos = pageHeight - 60
-
-  doc.setDrawColor(...primaryGreen)
-  doc.setLineWidth(0.5)
-  doc.rect(15, yPos, pageWidth - 30, 30)
-
-  // Fond léger
-  doc.setFillColor(...lightGreen)
-  doc.rect(15, yPos, pageWidth - 30, 30, "F")
-
-  // Texte important
-  yPos += 4
-  doc.setTextColor(...primaryGreen)
   doc.setFontSize(8)
-  doc.setFont("helvetica", "bold")
-  doc.text("IMPORTANT - À CONSERVER PRÉCIEUSEMENT", 18, yPos)
-
-  yPos += 5
-  doc.setTextColor(...blackText)
-  doc.setFontSize(7)
   doc.setFont("helvetica", "normal")
-
-  const importantText = [
-    "Ce relevé d'identité bancaire est un document officiel nécessaire pour recevoir des virements.",
-    "Il est valable pour les virements nationaux et internationaux, les prélèvements automatiques",
-    "et la domiciliation de votre salaire. Ne le communiquez qu'à des organismes de confiance.",
-    "Conservez-le précieusement. Toute utilisation frauduleuse est pénalement sanctionnée.",
+  const descriptionLines = [
+    "Pour les virements initiés et en provenance de l'étranger.",
+    "Ci-dessous, les références nationales et internationales du client.",
+    "Ce relevé est remis au client à sa demande et destiné à ses partenaires.",
   ]
 
-  importantText.forEach((line) => {
-    doc.text(line, 18, yPos, { maxWidth: pageWidth - 36 })
+  descriptionLines.forEach((line) => {
+    doc.text(line, 15, yPos)
     yPos += 4
   })
 
+  yPos += 3
+
   // ═══════════════════════════════════════════════════════════════════════════
-  // PIED DE PAGE
+  // CLIENT (DYNAMIQUE)
   // ═══════════════════════════════════════════════════════════════════════════
 
-  const generatedDate = new Date()
-  const formattedDate = generatedDate.toLocaleDateString("fr-FR", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  })
-  const formattedTime = generatedDate.toLocaleTimeString("fr-FR")
+  doc.setFontSize(9)
+  doc.setFont("helvetica", "bold")
+  doc.text(`CLIENT: ${account.accountHolder.toUpperCase()}`, 15, yPos)
 
-  // Ligne de séparation finale
-  doc.setDrawColor(...grayBorder)
+  yPos += 10
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // TABLEAU 1: COMPTE EURO (DYNAMIQUE)
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  doc.setFontSize(9)
+  doc.setFont("helvetica", "bold")
+  doc.text("Compte EURO", 15, yPos)
+
+  yPos += 6
+
+  // En-têtes du tableau
+  const tableStartX = 15
+  const col1Width = 35
+  const col2Width = 35
+  const col3Width = 80
+  const col4Width = 25
+  const rowHeight = 8
+
+  // Dessiner les bordures et en-têtes
+  doc.setDrawColor(0, 0, 0)
   doc.setLineWidth(0.3)
-  doc.line(15, pageHeight - 10, pageWidth - 15, pageHeight - 10)
 
-  doc.setTextColor(...grayBorder)
+  // Ligne supérieure
+  doc.rect(tableStartX, yPos, col1Width + col2Width + col3Width + col4Width, rowHeight)
+
+  // Lignes verticales
+  doc.line(tableStartX + col1Width, yPos, tableStartX + col1Width, yPos + rowHeight * 3)
+  doc.line(tableStartX + col1Width + col2Width, yPos, tableStartX + col1Width + col2Width, yPos + rowHeight * 3)
+  doc.line(
+    tableStartX + col1Width + col2Width + col3Width,
+    yPos,
+    tableStartX + col1Width + col2Width + col3Width,
+    yPos + rowHeight * 3,
+  )
+
+  // Texte des en-têtes
+  doc.setFontSize(8)
+  doc.setFont("helvetica", "bold")
+  doc.text("Code", tableStartX + 2, yPos + 5)
+  doc.text("Banque", tableStartX + 2, yPos + 5 + 3)
+  doc.text("Code Agence", tableStartX + col1Width + 2, yPos + 5)
+  doc.text("N° Compte", tableStartX + col1Width + col2Width + 2, yPos + 5)
+  doc.text("Clé RIB", tableStartX + col1Width + col2Width + col3Width + 2, yPos + 5)
+
+  yPos += rowHeight
+
+  // Ligne RIB
+  doc.rect(tableStartX, yPos, col1Width + col2Width + col3Width + col4Width, rowHeight)
+  doc.setFont("helvetica", "normal")
+  doc.text("RIB", tableStartX + 2, yPos + 5)
+  doc.text(account.bankCode, tableStartX + col1Width + 2, yPos + 5)
+  doc.text(account.branchCode, tableStartX + col1Width + col2Width + 2, yPos + 5)
+
+  // Extraire la clé RIB (2 derniers chiffres du numéro de compte)
+  const accountNumberClean = account.number.replace(/-/g, "")
+  const cleRib = accountNumberClean.slice(-2)
+  const numeroCompteSansCle = accountNumberClean.slice(0, -2)
+
+  doc.text(numeroCompteSansCle, tableStartX + col1Width + col2Width + 2, yPos + 5)
+  doc.text(cleRib, tableStartX + col1Width + col2Width + col3Width + 2, yPos + 5)
+
+  yPos += rowHeight
+
+  // Ligne IBAN
+  doc.rect(tableStartX, yPos, col1Width + col2Width + col3Width + col4Width, rowHeight)
+  doc.text("IBAN", tableStartX + 2, yPos + 5)
+
+  // Construire l'IBAN complet avec le code SWIFT
+  const ibanComplete = `${account.iban} / CODE SWIFT: ${account.swiftCode}`
+  doc.setFontSize(7)
+  doc.text(ibanComplete, tableStartX + col1Width + 2, yPos + 5)
+
+  yPos += rowHeight + 10
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // TABLEAU 2: NOTRE CORRESPONDANT USD (STATIQUE)
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  doc.setFontSize(9)
+  doc.setFont("helvetica", "bold")
+  doc.text("Notre Correspondant USD :", 15, yPos)
+
+  yPos += 6
+
+  // En-têtes
+  const table2StartX = 15
+  const table2Col1 = 50
+  const table2Col2 = 30
+  const table2Col3 = 25
+  const table2Col4 = 50
+  const table2Col5 = 30
+
+  doc.setFontSize(8)
+  doc.setFont("helvetica", "bold")
+
+  // Ligne d'en-tête
+  doc.rect(table2StartX, yPos, table2Col1 + table2Col2 + table2Col3 + table2Col4 + table2Col5, rowHeight)
+  doc.text("Banque Correspondante", table2StartX + 2, yPos + 5)
+  doc.text("SWIFT", table2StartX + table2Col1 + 2, yPos + 4)
+  doc.text("Code", table2StartX + table2Col1 + 2, yPos + 7)
+  doc.text("Notre", table2StartX + table2Col1 + table2Col2 + 2, yPos + 4)
+  doc.text("Compte USD", table2StartX + table2Col1 + table2Col2 + 2, yPos + 7)
+  doc.text("Banque Intermédiaire", table2StartX + table2Col1 + table2Col2 + table2Col3 + 2, yPos + 5)
+  doc.text("SWIFT", table2StartX + table2Col1 + table2Col2 + table2Col3 + table2Col4 + 2, yPos + 4)
+  doc.text("CODE", table2StartX + table2Col1 + table2Col2 + table2Col3 + table2Col4 + 2, yPos + 7)
+
+  // Lignes verticales
+  doc.line(table2StartX + table2Col1, yPos, table2StartX + table2Col1, yPos + rowHeight * 2)
+  doc.line(table2StartX + table2Col1 + table2Col2, yPos, table2StartX + table2Col1 + table2Col2, yPos + rowHeight * 2)
+  doc.line(
+    table2StartX + table2Col1 + table2Col2 + table2Col3,
+    yPos,
+    table2StartX + table2Col1 + table2Col2 + table2Col3,
+    yPos + rowHeight * 2,
+  )
+  doc.line(
+    table2StartX + table2Col1 + table2Col2 + table2Col3 + table2Col4,
+    yPos,
+    table2StartX + table2Col1 + table2Col2 + table2Col3 + table2Col4,
+    yPos + rowHeight * 2,
+  )
+
+  yPos += rowHeight
+
+  // Données statiques
+  doc.rect(table2StartX, yPos, table2Col1 + table2Col2 + table2Col3 + table2Col4 + table2Col5, rowHeight)
+  doc.setFont("helvetica", "normal")
+  doc.setFontSize(7)
+  doc.text("BRITISH ARAB COMMERCIAL BANK", table2StartX + 2, yPos + 5)
+  doc.text("BACMGB2L", table2StartX + table2Col1 + 2, yPos + 5)
+  doc.text("0100975", table2StartX + table2Col1 + table2Col2 + 2, yPos + 5)
+  doc.text("BANCO POPULAR DI SANDRO", table2StartX + table2Col1 + table2Col2 + table2Col3 + 2, yPos + 4)
+
+  const swiftLines = ["POGRITZ2/VD", "JP MORGAN-", "CHASE NEW YORK-", "CHASUS33", "POGRITZ3"]
+
+  let swiftY = yPos + 3
+  swiftLines.forEach((line) => {
+    doc.text(line, table2StartX + table2Col1 + table2Col2 + table2Col3 + table2Col4 + 2, swiftY)
+    swiftY += 2
+  })
+
+  yPos += rowHeight + 10
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // TABLEAU 3: NOTRE CORRESPONDANT EURO (STATIQUE)
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  doc.setFontSize(9)
+  doc.setFont("helvetica", "bold")
+  doc.text("Notre Correspondant EURO :", 15, yPos)
+
+  yPos += 6
+
+  // En-têtes (même structure que USD)
+  doc.setFontSize(8)
+  doc.setFont("helvetica", "bold")
+
+  doc.rect(table2StartX, yPos, table2Col1 + table2Col2 + table2Col3 + table2Col4 + table2Col5, rowHeight)
+  doc.text("Banque Correspondante", table2StartX + 2, yPos + 5)
+  doc.text("SWIFT", table2StartX + table2Col1 + 2, yPos + 4)
+  doc.text("Code", table2StartX + table2Col1 + 2, yPos + 7)
+  doc.text("Notre", table2StartX + table2Col1 + table2Col2 + 2, yPos + 4)
+  doc.text("Compte Euro", table2StartX + table2Col1 + table2Col2 + 2, yPos + 7)
+  doc.text("Banque Intermédiaire", table2StartX + table2Col1 + table2Col2 + table2Col3 + 2, yPos + 5)
+  doc.text("SWIFT", table2StartX + table2Col1 + table2Col2 + table2Col3 + table2Col4 + 2, yPos + 4)
+  doc.text("CODE", table2StartX + table2Col1 + table2Col2 + table2Col3 + table2Col4 + 2, yPos + 7)
+
+  // Lignes verticales
+  doc.line(table2StartX + table2Col1, yPos, table2StartX + table2Col1, yPos + rowHeight * 2)
+  doc.line(table2StartX + table2Col1 + table2Col2, yPos, table2StartX + table2Col1 + table2Col2, yPos + rowHeight * 2)
+  doc.line(
+    table2StartX + table2Col1 + table2Col2 + table2Col3,
+    yPos,
+    table2StartX + table2Col1 + table2Col2 + table2Col3,
+    yPos + rowHeight * 2,
+  )
+  doc.line(
+    table2StartX + table2Col1 + table2Col2 + table2Col3 + table2Col4,
+    yPos,
+    table2StartX + table2Col1 + table2Col2 + table2Col3 + table2Col4,
+    yPos + rowHeight * 2,
+  )
+
+  yPos += rowHeight
+
+  // Données statiques EURO
+  doc.rect(table2StartX, yPos, table2Col1 + table2Col2 + table2Col3 + table2Col4 + table2Col5, rowHeight)
+  doc.setFont("helvetica", "normal")
+  doc.setFontSize(7)
+  doc.text("BRITISH ARAB COMMERCIAL BANK", table2StartX + 2, yPos + 5)
+  doc.text("BACMGB2L", table2StartX + table2Col1 + 2, yPos + 5)
+  doc.text("0100974", table2StartX + table2Col1 + table2Col2 + 2, yPos + 5)
+  doc.text("BANCO POPULAR DI SANDRO", table2StartX + table2Col1 + table2Col2 + table2Col3 + 2, yPos + 5)
+  doc.text("POGRITZ2", table2StartX + table2Col1 + table2Col2 + table2Col3 + table2Col4 + 2, yPos + 5)
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // PIED DE PAGE STATIQUE
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  yPos = pageHeight - 20
+
+  doc.setDrawColor(150, 150, 150)
+  doc.setLineWidth(0.3)
+  doc.line(15, yPos, pageWidth - 15, yPos)
+
+  yPos += 5
+
+  doc.setTextColor(...grayText)
   doc.setFontSize(7)
   doc.setFont("helvetica", "normal")
-  doc.text(`Généré le ${formattedDate} à ${formattedTime}`, 15, pageHeight - 5)
-  doc.text(`Réf: RIB-${account.number.replace(/-/g, "")}-${generatedDate.getTime()}`, 90, pageHeight - 5)
-  doc.text("Page 1/1", pageWidth - 25, pageHeight - 5)
 
-  // Numéro de sécurité en haut à droite
-  doc.setTextColor(...primaryGreen)
-  doc.setFont("helvetica", "bold")
-  doc.setFontSize(7)
-  doc.text("DOCUMENT OFFICIEL", pageWidth - 45, 8)
+  const footerLines = [
+    "Banque Nationale de Guinée SA - Agrément par décision N° 06/019/93/CAB/PE 06/06/1993",
+    "Capital : 60.000.000.000 GNF",
+    "Boulevard Tidiani Kaba - Quartier Boulbinet/Almamya, Kaloum, Conakry, Guinée",
+    "Tél: +224 - 622 454 049 - B.P 1781 - mail: contact@bng.gn",
+  ]
+
+  footerLines.forEach((line) => {
+    doc.text(line, 15, yPos)
+    yPos += 3
+  })
 
   const fileName = `RIB_${account.number.replace(/-/g, "_")}_${new Date().toISOString().split("T")[0]}.pdf`
   return doc.output("blob")
