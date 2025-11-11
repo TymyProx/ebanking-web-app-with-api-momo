@@ -422,7 +422,7 @@ export default function StatementsPage() {
                                 </div>
                               </div>
                             </div>
-                            <div className="text-right">
+                            <div className="text-right ml-4">
                               <div className="font-bold">
                                 {formatAmount(selectedAccountData.balance, selectedAccountData.currency)}{" "}
                                 {selectedAccountData.currency}
@@ -450,10 +450,10 @@ export default function StatementsPage() {
                                 <div className="text-xs text-muted-foreground font-mono">{account.number}</div>
                               </div>
                             </div>
-                            <div className="text-right">
+                            <div className="text-right ml-4">
                               <div className="font-bold text-sm">
                                 {formatAmount(account.balance, account.currency)} {account.currency}
-                              </div>  
+                              </div>
                             </div>
                           </div>
                         </SelectItem>
