@@ -222,9 +222,10 @@ export default function StatementsPage() {
 
   // Pré-sélectionner le compte si fourni dans l'URL
   useEffect(() => {
-    if (preSelectedAccountId && accounts.find((acc) => acc.id === preSelectedAccountId)) {
-      setSelectedAccount(preSelectedAccountId)
-    }
+    // User must now manually select an account before generating statements
+    // if (preSelectedAccountId && accounts.find((acc) => acc.id === preSelectedAccountId)) {
+    //   setSelectedAccount(preSelectedAccountId)
+    // }
   }, [preSelectedAccountId, accounts])
 
   const handlePeriodChange = (value: string) => {
