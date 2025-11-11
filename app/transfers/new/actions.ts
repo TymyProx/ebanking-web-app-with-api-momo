@@ -758,7 +758,7 @@ export async function executeTransfer(prevState: any, formData: FormData) {
     }
 
     const transactionUrl = `${API_BASE_URL}/tenant/${TENANT_ID}/epayments`
-    const secureMode = false//(process.env.NEXT_PUBLIC_PORTAL_SECURE_MODE || "false").toLowerCase() === "true"
+    const secureMode = (process.env.NEXT_PUBLIC_PORTAL_SECURE_MODE || "false").toLowerCase() === "true"
     const keyB64 = process.env.NEXT_PUBLIC_PORTAL_KEY_B64 || ""
     const keyId = process.env.NEXT_PUBLIC_PORTAL_KEY_ID || "k1-mobile-v1"
 
