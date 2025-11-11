@@ -332,6 +332,7 @@ export default function RIBPage() {
   const [isEmailDialogOpen, setIsEmailDialogOpen] = useState(false)
   const [isSendingEmail, setIsSendingEmail] = useState(false)
   const [showRib, setShowRib] = useState(false)
+  const [isLoadingRib, setIsLoadingRib] = useState(false)
 
   useEffect(() => {
     const loadData = async () => {
@@ -345,33 +346,23 @@ export default function RIBPage() {
         console.log("[RIB] Comptes récupérés:", accountsData)
 
         if (Array.isArray(accountsData)) {
-          const adaptedAccounts: Account[] = await Promise.all(
-            accountsData.map(async (acc: any) => {
-              // Récupérer les infos détaillées du compte
-              const ribInfo = await getAccountForRib(acc.id)
-              const ribData = ribInfo ? generateRibData(ribInfo, profile) : null
-
-              return {
-                id: acc.id || acc.accountId,
-                name: acc.accountName || acc.name || `Compte ${acc.accountNumber}`,
-                number: acc.accountNumber,
-                balance: Number.parseFloat(acc.bookBalance || acc.balance || "0"),
-                currency: acc.currency || "GNF",
-                type: acc.type === "SAVINGS" ? ("Épargne" as const) : ("Courant" as const),
-                status: (acc.status === "ACTIF" ? "Actif" : acc.status) as "Actif" | "Bloqué" | "Fermé",
-                iban:
-                  ribData?.iban || `GN82 ${acc.codeBanque || "BNG"} ${acc.codeAgence || "001"} ${acc.accountNumber}`,
-                accountHolder:
-                  ribData?.accountHolder ||
-                  (profile ? `${profile.firstName || ""} ${profile.lastName || ""}`.trim() : "TITULAIRE"),
-                bankName: ribData?.bankName || "Banque Nationale de Guinée",
-                bankCode: ribData?.bankCode || acc.codeBanque || "BNG",
-                branchCode: ribData?.branchCode || acc.codeAgence || "001",
-                branchName: ribData?.branchName || "Agence Kaloum",
-                swiftCode: ribData?.swiftCode || "BNGNGNCX",
-              }
-            }),
-          )
+          const adaptedAccounts: Account[] = accountsData.map((acc: any) => ({
+            id: acc.id || acc.accountId,
+            name: acc.accountName || acc.name || `Compte ${acc.accountNumber}`,
+            number: acc.accountNumber,
+            balance: Number.parseFloat(acc.bookBalance || acc.balance || "0"),
+            currency: acc.currency || "GNF",
+            type: acc.type === "SAVINGS" ? ("Épargne" as const) : ("Courant" as const),
+            status: (acc.status === "ACTIF" ? "Actif" : acc.status) as "Actif" | "Bloqué" | "Fermé",
+            // Données temporaires - seront chargées à la demande
+            iban: `GN82 ${acc.codeBanque || "BNG"} ${acc.codeAgence || "001"} ${acc.accountNumber}`,
+            accountHolder: profile ? `${profile.firstName || ""} ${profile.lastName || ""}`.trim() : "TITULAIRE",
+            bankName: "Banque Nationale de Guinée",
+            bankCode: acc.codeBanque || "BNG",
+            branchCode: acc.codeAgence || "001",
+            branchName: "Agence Kaloum",
+            swiftCode: "BNGNGNCX",
+          }))
 
           const activeAccounts = adaptedAccounts.filter(
             (account: Account) => account.status === "Actif" && account.number && String(account.number).trim() !== "",
@@ -818,13 +809,52 @@ export default function RIBPage() {
     )
   }
 
+  const loadFullRibData = async () => {
+    if (!selectedAccountId) return
+
+    setIsLoadingRib(true)
+    try {
+      const ribInfo = await getAccountForRib(selectedAccountId)
+      const ribData = ribInfo ? generateRibData(ribInfo, userProfile) : null
+
+      if (ribData) {
+        // Mettre à jour le compte sélectionné avec les données complètes du RIB
+        setAccounts((prevAccounts) =>
+          prevAccounts.map((acc) =>
+            acc.id === selectedAccountId
+              ? {
+                  ...acc,
+                  iban: ribData.iban,
+                  accountHolder: ribData.accountHolder,
+                  bankName: ribData.bankName,
+                  bankCode: ribData.bankCode,
+                  branchCode: ribData.branchCode,
+                  branchName: ribData.branchName,
+                  swiftCode: ribData.swiftCode,
+                }
+              : acc,
+          ),
+        )
+      }
+
+      setShowRib(true)
+    } catch (error) {
+      console.error("Erreur lors du chargement du RIB:", error)
+      toast({
+        variant: "destructive",
+        title: "Erreur de chargement",
+        description: "Impossible de charger les données du RIB. Veuillez réessayer.",
+      })
+    } finally {
+      setIsLoadingRib(false)
+    }
+  }
+
   if (!showRib) {
     return (
-    <div className="mt-6 space-y-6">
+      <div className="mt-6 space-y-6">
         <div className="space-y-2">
-          <h1 className="text-3xl font-bold text-primary">
-            Relevé de Coordonnées Bancaire (RIB)
-          </h1>
+          <h1 className="text-3xl font-bold text-primary">Relevé de Coordonnées Bancaire (RIB)</h1>
           <p className="text-sm text-muted-foreground">
             Sélectionnez le compte pour lequel vous souhaitez obtenir le RIB
           </p>
@@ -891,9 +921,14 @@ export default function RIBPage() {
               </div>
             )}
 
-            <Button className="w-full" size="lg" onClick={() => setShowRib(true)} disabled={!selectedAccountId}>
-              Afficher le RIB
-              <ArrowRight className="w-4 h-4 ml-2" />
+            <Button
+              className="w-full"
+              size="lg"
+              onClick={loadFullRibData}
+              disabled={!selectedAccountId || isLoadingRib}
+            >
+              {isLoadingRib ? "Chargement..." : "Afficher le RIB"}
+              {!isLoadingRib && <ArrowRight className="w-4 h-4 ml-2" />}
             </Button>
           </CardContent>
         </Card>
@@ -904,9 +939,7 @@ export default function RIBPage() {
   return (
     <div className="mt-6 space-y-6">
       <div className="space-y-2">
-        <h1 className="text-3xl font-bold text-primary">
-          Relevé de Coordonnées Bancaire (RIB)
-        </h1>
+        <h1 className="text-3xl font-bold text-primary">Relevé de Coordonnées Bancaire (RIB)</h1>
         <p className="text-sm text-muted-foreground">Consultez et téléchargez votre RIB</p>
         <div className="mt-2">
           <Button variant="outline" size="sm" onClick={() => setShowRib(false)}>
