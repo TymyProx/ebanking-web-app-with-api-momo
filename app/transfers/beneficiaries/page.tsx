@@ -119,6 +119,8 @@ export default function BeneficiariesPage() {
   const [loadingBanks, setLoadingBanks] = useState(false)
   const [accountNumberError, setAccountNumberError] = useState<string | null>(null)
   const [ribError, setRibError] = useState<string | null>(null)
+  const [formDirty, setFormDirty] = useState(false)
+  // </CHANGE>
   const formRef = useRef<HTMLFormElement>(null)
   const editFormRef = useRef<HTMLFormElement>(null)
 
@@ -419,7 +421,6 @@ export default function BeneficiariesPage() {
       console.log("[v0] Code Banque:", sanitizedBank)
       console.log("[v0] Code Agence:", sanitizedAgency)
       console.log("[v0] Numéro de compte:", sanitizedAccount)
-      // </CHANGE>
       return { valid: false, error: "Clé RIB invalide" }
     }
 
@@ -445,7 +446,15 @@ export default function BeneficiariesPage() {
     setSelectedSwiftCode("")
     setAccountNumberError(null)
     setRibError(null)
+    setFormDirty(false)
+    // </CHANGE>
   }
+
+  const handleRibFieldChange = () => {
+    setRibError(null)
+    setFormDirty(true)
+  }
+  // </CHANGE>
 
   const handleAddBeneficiary = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -820,7 +829,14 @@ export default function BeneficiariesPage() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="codeAgence">Code agence *</Label>
-                    <Input id="codeAgence" name="codeAgence" placeholder="Ex: 0001" required />
+                    <Input
+                      id="codeAgence"
+                      name="codeAgence"
+                      placeholder="Ex: 0001"
+                      onChange={handleRibFieldChange}
+                      // </CHANGE>
+                      required
+                    />
                   </div>
 
                   <div className="space-y-2">
@@ -828,7 +844,11 @@ export default function BeneficiariesPage() {
                     <Input
                       id="account"
                       name="account"
-                      onChange={(e) => validateAccountNumber(e.target.value)}
+                      onChange={(e) => {
+                        validateAccountNumber(e.target.value)
+                        handleRibFieldChange()
+                        // </CHANGE>
+                      }}
                       placeholder="1234567890"
                       maxLength={10}
                       pattern="[0-9]{10}"
@@ -840,7 +860,15 @@ export default function BeneficiariesPage() {
 
                   <div className="space-y-2">
                     <Label htmlFor="cleRib">Clé RIB *</Label>
-                    <Input id="cleRib" name="cleRib" placeholder="Ex: 89" maxLength={2} required />
+                    <Input
+                      id="cleRib"
+                      name="cleRib"
+                      placeholder="Ex: 89"
+                      maxLength={2}
+                      onChange={handleRibFieldChange}
+                      // </CHANGE>
+                      required
+                    />
                     {ribError && selectedType !== "BNG-INTERNATIONAL" && (
                       <p className="text-sm text-red-600">{ribError}</p>
                     )}
@@ -1259,6 +1287,8 @@ export default function BeneficiariesPage() {
                     name="codeAgence"
                     defaultValue={editingBeneficiary?.codagence || ""}
                     placeholder="Ex: 0001"
+                    onChange={handleRibFieldChange}
+                    // </CHANGE>
                     required
                   />
                 </div>
@@ -1269,7 +1299,11 @@ export default function BeneficiariesPage() {
                     id="edit-account"
                     name="account"
                     defaultValue={editingBeneficiary?.account || ""}
-                    onChange={(e) => validateAccountNumber(e.target.value)}
+                    onChange={(e) => {
+                      validateAccountNumber(e.target.value)
+                      handleRibFieldChange()
+                      // </CHANGE>
+                    }}
                     placeholder="1234567890"
                     maxLength={10}
                     pattern="[0-9]{10}"
@@ -1286,6 +1320,8 @@ export default function BeneficiariesPage() {
                     defaultValue={editingBeneficiary?.clerib || ""}
                     placeholder="Ex: 89"
                     maxLength={2}
+                    onChange={handleRibFieldChange}
+                    // </CHANGE>
                     required
                   />
                   {ribError && selectedType !== "BNG-INTERNATIONAL" && (
