@@ -205,8 +205,8 @@ export default function ServiceRequestsPage() {
           expectedResponse: item.dateorder
             ? new Date(new Date(item.dateorder).getTime() + 3 * 24 * 60 * 60 * 1000).toISOString().split("T")[0]
             : new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
-          account: item.numcompteId || "Numéro de compte non spécifié",
-          reference: item.referenceCommande,
+          account: item.intitulecompte || "Compte non spécifié",
+          reference: item.referenceCommande || `CHQ-${new Date().getFullYear()}-${String(index + 1).padStart(3, "0")}`,
           details: {
             nbrechequier: item.nbrechequier || 0,
             nbrefeuille: item.nbrefeuille || 0,
@@ -233,8 +233,8 @@ export default function ServiceRequestsPage() {
           status: item.status || "En attente",
           submittedAt: item.createdAt ? item.createdAt.split("T")[0] : new Date().toISOString().split("T")[0],
           expectedResponse: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
-          account: item.numcompte || item.accountNumber || "Numéro de compte non spécifié",
-          reference: item.reference,
+          account: "Compte courant",
+          reference: item.reference || `CRD-${new Date().getFullYear()}-${String(index + 1).padStart(3, "0")}`,
           details: {
             applicantName: item.applicantName || "",
             creditAmount: item.creditAmount || "",
@@ -518,8 +518,8 @@ export default function ServiceRequestsPage() {
                   expectedResponse: item.dateorder
                     ? new Date(new Date(item.dateorder).getTime() + 3 * 24 * 60 * 60 * 1000).toISOString().split("T")[0]
                     : new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
-                  account: item.numcompteId || "Numéro de compte non spécifié",
-                  reference: item.referenceCommande,
+                  account: item.intitulecompte || "Compte non spécifié",
+                  reference: item.referenceCommande || "Référence non disponible",
                   details: {
                     nbrechequier: item.nbrechequier || 0,
                     nbrefeuille: item.nbrefeuille || 0,
@@ -534,8 +534,8 @@ export default function ServiceRequestsPage() {
                   status: "En cours",
                   submittedAt: item.createdAt ? item.createdAt.split("T")[0] : new Date().toISOString().split("T")[0],
                   expectedResponse: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
-                  account: item.numcompte || item.accountNumber || "Numéro de compte non spécifié",
-                  reference: item.reference,
+                  account: "Compte courant",
+                  reference: item.reference || "Référence non disponible",
                   details: {
                     applicantName: item.applicantName || "",
                     creditAmount: item.creditAmount || "",
@@ -871,7 +871,7 @@ export default function ServiceRequestsPage() {
                   value={formData.dateorder || new Date().toISOString().split("T")[0]}
                   onChange={(e) => handleInputChange("dateorder", e.target.value)}
                   required
-                  className="w-40"
+                  className="w-40"  
                 />
               </div>
 
@@ -892,7 +892,7 @@ export default function ServiceRequestsPage() {
                   }}
                   placeholder="Ex: 2"
                   required
-                  className="w-40"
+                  className="w-40" 
                 />
               </div>
             </div>
@@ -1199,7 +1199,7 @@ export default function ServiceRequestsPage() {
                 <CheckCircle className="h-4 w-4 text-green-600" />
                 <AlertDescription className="text-green-800">
                   ✅ Votre demande de crédit a été envoyée avec succès. Référence: {creditSubmitState.reference}.{" "}
-                  {/* Response under {selectedServiceData?.processingTime}. */}
+                  {/* Réponse sous {selectedServiceData?.processingTime}. */}
                 </AlertDescription>
               </Alert>
             )}
@@ -1318,7 +1318,7 @@ export default function ServiceRequestsPage() {
                 <CheckCircle className="h-4 w-4 text-green-600" />
                 <AlertDescription className="text-green-800">
                   ✅ Votre e-demande a été envoyée avec succès. Référence: {eDemandeSubmitState.reference}.{" "}
-                  {/* Response under {selectedServiceData?.processingTime}. */}
+                  {/* Réponse sous {selectedServiceData?.processingTime}. */}
                 </AlertDescription>
               </Alert>
             )}
