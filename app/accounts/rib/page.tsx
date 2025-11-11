@@ -808,7 +808,7 @@ export default function RIBPage() {
           </p>
         </div>
 
-        <Card className="max-w-2xl mx-auto">
+       <Card className="w-full">
           <CardHeader>
             <CardTitle className="flex items-center">
               <CreditCard className="w-5 h-5 mr-2" />
