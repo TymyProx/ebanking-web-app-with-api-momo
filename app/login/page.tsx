@@ -12,6 +12,7 @@ import { Eye, EyeOff, User } from "lucide-react"
 import AuthService from "@/lib/auth-service"
 import { config } from "@/lib/config"
 import { storeAuthToken } from "./actions"
+import { getAccounts } from "@/app/accounts/actions"
 
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false)
@@ -44,13 +45,13 @@ export default function LoginPage() {
           localStorage.setItem("rememberMe", "true")
         }
 
-        console.log("[v0] User data:", userData)
-        console.log("[v0] Accounts:", userData.accounts)
+        const accounts = await getAccounts()
 
-        const hasActiveAccounts =
-          userData.accounts?.some(
-            (acc: any) => acc.status?.toUpperCase() === "ACTIF" || acc.status?.toUpperCase() === "ACTIVE",
-          ) ?? false
+        console.log("[v0] Fetched accounts:", accounts)
+
+        const hasActiveAccounts = accounts.some(
+          (acc) => acc.status?.toUpperCase() === "ACTIF" || acc.status?.toUpperCase() === "ACTIVE",
+        )
 
         console.log("[v0] Has active accounts:", hasActiveAccounts)
 
