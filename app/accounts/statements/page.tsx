@@ -10,7 +10,6 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Checkbox } from "@/components/ui/checkbox"
 import {
   Download,
   FileText,
@@ -534,40 +533,38 @@ export default function StatementsPage() {
               </div>
 
               {/* Options de format */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <div className="space-y-2">
-                  <Label className="text-sm">Format du fichier</Label>
-                  <div className="space-y-2">
-                    <div
-                      className={`p-2 border rounded-lg cursor-pointer transition-all ${
-                        format === "pdf"
-                          ? "border-red-500 bg-red-50 ring-2 ring-red-200"
-                          : "border-gray-200 hover:border-gray-300"
-                      }`}
-                      onClick={() => setFormat("pdf")}
-                    >
-                      <div className="flex items-center space-x-2">
-                        <FileText className="w-5 h-5 text-red-600" />
-                        <div>
-                          <p className="font-medium text-sm">PDF</p>
-                          <p className="text-xs text-gray-500">Format standard, idéal pour l'impression</p>
-                        </div>
+              <div className="space-y-2">
+                <Label className="text-sm">Format du fichier</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  <div
+                    className={`p-2 border rounded-lg cursor-pointer transition-all ${
+                      format === "pdf"
+                        ? "border-red-500 bg-red-50 ring-2 ring-red-200"
+                        : "border-gray-200 hover:border-gray-300"
+                    }`}
+                    onClick={() => setFormat("pdf")}
+                  >
+                    <div className="flex items-center space-x-2">
+                      <FileText className="w-5 h-5 text-red-600" />
+                      <div>
+                        <p className="font-medium text-sm">PDF</p>
+                        <p className="text-xs text-gray-500">Format standard</p>
                       </div>
                     </div>
-                    <div
-                      className={`p-2 border rounded-lg cursor-pointer transition-all ${
-                        format === "excel"
-                          ? "border-green-500 bg-green-50 ring-2 ring-green-200"
-                          : "border-gray-200 hover:border-gray-300"
-                      }`}
-                      onClick={() => setFormat("excel")}
-                    >
-                      <div className="flex items-center space-x-2">
-                        <FileSpreadsheet className="w-5 h-5 text-green-600" />
-                        <div>
-                          <p className="font-medium text-sm">Excel</p>
-                          <p className="text-xs text-gray-500">Format tableur, idéal pour l'analyse</p>
-                        </div>
+                  </div>
+                  <div
+                    className={`p-2 border rounded-lg cursor-pointer transition-all ${
+                      format === "excel"
+                        ? "border-green-500 bg-green-50 ring-2 ring-green-200"
+                        : "border-gray-200 hover:border-gray-300"
+                    }`}
+                    onClick={() => setFormat("excel")}
+                  >
+                    <div className="flex items-center space-x-2">
+                      <FileSpreadsheet className="w-5 h-5 text-green-600" />
+                      <div>
+                        <p className="font-medium text-sm">Excel</p>
+                        <p className="text-xs text-gray-500">Format tableur</p>
                       </div>
                     </div>
                   </div>
