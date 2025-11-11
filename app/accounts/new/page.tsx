@@ -11,6 +11,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Building2, CheckCircle, AlertCircle, ArrowLeft, FileText, Clock, ChevronRight } from "lucide-react"
 import { createAccount } from "../actions"
 import { useActionState } from "react"
+import { useRouter } from "next/navigation"
 
 const accountTypes = [
   {
@@ -61,6 +62,7 @@ export default function NewAccountPage() {
   const [formData, setFormData] = useState<Record<string, any>>({})
   const [createState, createAction, isCreating] = useActionState(createAccount, null)
   const [success, setSuccess] = useState(false)
+  const router = useRouter()
 
   const selectedAccountType = accountTypes.find((type) => type.id === selectedType)
 
@@ -81,10 +83,11 @@ export default function NewAccountPage() {
     if (createState?.success) {
       setSuccess(true)
       setTimeout(() => {
-        window.location.href = "/accounts/balance"
+        router.refresh()
+        router.push("/accounts/balance")
       }, 2000)
     }
-  }, [createState])
+  }, [createState, router])
 
   if (success) {
     return (
@@ -104,7 +107,13 @@ export default function NewAccountPage() {
             </CardHeader>
             <CardContent>
               <p className="text-green-800 mb-4">Vous serez redirigé vers vos comptes dans quelques instants...</p>
-              <Button onClick={() => (window.location.href = "/accounts/balance")} className="w-full">
+              <Button
+                onClick={() => {
+                  router.refresh()
+                  router.push("/accounts/balance")
+                }}
+                className="w-full"
+              >
                 Voir mes comptes
               </Button>
             </CardContent>
@@ -333,7 +342,7 @@ export default function NewAccountPage() {
               </div>
             </div>
 
-            <Alert className="border-primary/20 bg-gradient-to-r from-primary/5 to-secondary/5 py-2">
+            <Alert className="border-primary/20 bg-gradient-to-br from-primary/5 to-secondary/5 py-2">
               <AlertDescription className="text-xs">Délai de traitement : 3-5 jours ouvrables</AlertDescription>
             </Alert>
 
