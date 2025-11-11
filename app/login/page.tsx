@@ -44,7 +44,13 @@ export default function LoginPage() {
           localStorage.setItem("rememberMe", "true")
         }
 
-        router.push("/accounts/balance")
+        const hasActiveAccounts = userData.accounts?.some((acc: any) => acc.status === "ACTIF") ?? false
+
+        if (hasActiveAccounts) {
+          router.push("/dashboard")
+        } else {
+          router.push("/accounts/balance")
+        }
       }
     } catch (err: any) {
       setError(err.message)
