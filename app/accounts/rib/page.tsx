@@ -195,12 +195,11 @@ const generatePDF = async (account: Account) => {
 
   yPos += 6
 
-  // En-têtes du tableau
   const tableStartX = 15
-  const col1Width = 35
-  const col2Width = 35
-  const col3Width = 80
-  const col4Width = 25
+  const col1Width = 35 // Code Banque
+  const col2Width = 35 // Code Agence
+  const col3Width = 80 // N° Compte
+  const col4Width = 25 // Clé RIB
   const rowHeight = 8
 
   // Dessiner les bordures et en-têtes
@@ -235,8 +234,8 @@ const generatePDF = async (account: Account) => {
   doc.rect(tableStartX, yPos, col1Width + col2Width + col3Width + col4Width, rowHeight)
   doc.setFont("helvetica", "normal")
   doc.text("RIB", tableStartX + 2, yPos + 5)
-  doc.text(account.bankCode, tableStartX + col1Width + 2, yPos + 5)
-  doc.text(account.branchCode, tableStartX + col1Width + col2Width + 2, yPos + 5)
+  doc.text(account.bankCode || "GN004", tableStartX + col1Width + 2, yPos + 5)
+  doc.text(account.branchCode || "001", tableStartX + col1Width + col2Width + 2, yPos + 5)
 
   // Extraire la clé RIB (2 derniers chiffres du numéro de compte)
   const accountNumberClean = account.number.replace(/-/g, "")
@@ -251,9 +250,13 @@ const generatePDF = async (account: Account) => {
   doc.rect(tableStartX, yPos, col1Width + col2Width + col3Width + col4Width, rowHeight)
   doc.text("IBAN", tableStartX + 2, yPos + 5)
 
-  // Construire l'IBAN complet sans séparation
-  const ibanComplete = `${account.iban} / CODE SWIFT: ${account.swiftCode}`
+  // Construire l'IBAN complet: GN82 + Code Banque + Code Agence + Numero Compte (sans espaces)
+  const ibanValue = `${account.iban}`
+  const swiftCode = `CODE SWIFT: ${account.swiftCode}`
+  const ibanComplete = `${ibanValue} / ${swiftCode}`
+
   doc.setFontSize(7)
+  // L'IBAN commence après la colonne "Code Banque" et s'étend sur tout le reste
   doc.text(ibanComplete, tableStartX + col1Width + 2, yPos + 5)
 
   yPos += rowHeight + 10
@@ -268,14 +271,13 @@ const generatePDF = async (account: Account) => {
 
   yPos += 6
 
-  // En-têtes
   const table2StartX = 15
   const table2Col1 = 50
   const table2Col2 = 30
   const table2Col3 = 25
   const table2Col4 = 50
   const table2Col5 = 30
-  const table2RowHeight = 12
+  const table2RowHeight = 15 // Augmenté de 12 à 15
 
   doc.setFontSize(8)
   doc.setFont("helvetica", "bold")
@@ -317,16 +319,16 @@ const generatePDF = async (account: Account) => {
   doc.rect(table2StartX, yPos, table2Col1 + table2Col2 + table2Col3 + table2Col4 + table2Col5, table2RowHeight)
   doc.setFont("helvetica", "normal")
   doc.setFontSize(7)
-  doc.text("BRITISH ARAB COMMERCIAL BANK", table2StartX + 2, yPos + 6)
-  doc.text("BACMGB2L", table2StartX + table2Col1 + 2, yPos + 6)
-  doc.text("0100975", table2StartX + table2Col1 + table2Col2 + 2, yPos + 6)
-  doc.text("BANCO POPULAR DI SANDRO", table2StartX + table2Col1 + table2Col2 + table2Col3 + 2, yPos + 6)
+  doc.text("BRITISH ARAB COMMERCIAL BANK", table2StartX + 2, yPos + 7)
+  doc.text("BACMGB2L", table2StartX + table2Col1 + 2, yPos + 7)
+  doc.text("0100975", table2StartX + table2Col1 + table2Col2 + 2, yPos + 7)
+  doc.text("BANCO POPULAR DI SANDRO", table2StartX + table2Col1 + table2Col2 + table2Col3 + 2, yPos + 7)
 
   const swiftLines = ["POGRITZ2/VD", "JP MORGAN-", "CHASE NEW YORK-", "CHASUS33", "POGRITZ3"]
   let swiftY = yPos + 3
   swiftLines.forEach((line) => {
     doc.text(line, table2StartX + table2Col1 + table2Col2 + table2Col3 + table2Col4 + 2, swiftY)
-    swiftY += 2
+    swiftY += 2.5
   })
 
   yPos += table2RowHeight + 10
@@ -373,13 +375,13 @@ const generatePDF = async (account: Account) => {
 
   yPos += rowHeight
 
-  // Données statiques EURO
   doc.rect(table2StartX, yPos, table2Col1 + table2Col2 + table2Col3 + table2Col4 + table2Col5, rowHeight)
   doc.setFont("helvetica", "normal")
   doc.setFontSize(7)
   doc.text("BRITISH ARAB COMMERCIAL BANK", table2StartX + 2, yPos + 5)
   doc.text("BACMGB2L", table2StartX + table2Col1 + 2, yPos + 5)
-  doc.text("0100974", table2StartX + col1Width + col2Width + 2, yPos + 5)
+  // Le compte Euro doit être dans la colonne Notre Compte Euro
+  doc.text("0100974", table2StartX + table2Col1 + table2Col2 + 2, yPos + 5)
   doc.text("BANCO POPULAR DI SANDRO", table2StartX + table2Col1 + table2Col2 + table2Col3 + 2, yPos + 5)
   doc.text("POGRITZ2", table2StartX + table2Col1 + table2Col2 + table2Col3 + table2Col4 + 2, yPos + 5)
 
@@ -983,7 +985,6 @@ export default function RIBPage() {
     )
   }
 
-  // Le reste du code reste inchangé
   return (
     <div className="mt-6 space-y-6">
       <div className="space-y-2">
