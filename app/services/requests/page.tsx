@@ -359,7 +359,7 @@ export default function ServiceRequestsPage() {
       return [
         ...commonFields,
         { label: "Nom du demandeur", value: details.applicant_name || details.applicantName || "Non spécifié" },
-        { label: "Type de crédit", value: details.credit_type || details.creditType || "Non spécifié" },
+        { label: "Type de crédit", value: details.credit_type || details.typedemande || "Non spécifié" },
         {
           label: "Montant du crédit",
           value:
@@ -373,8 +373,8 @@ export default function ServiceRequestsPage() {
         },
         { label: "Durée (mois)", value: details.loan_duration || details.durationMonths || "Non spécifié" },
         { label: "Objet du crédit", value: details.loan_purpose || details.purpose || "Non spécifié" },
-        { label: "Téléphone", value: details.contact_phone || "Non spécifié" },
-        { label: "Commentaire", value: details.commentaire || "Aucun commentaire" },
+      //  { label: "Téléphone", value: details.contact_phone || "Non spécifié" },
+       // { label: "Commentaire", value: details.commentaire || "Aucun commentaire" },
       ]
     }
 
