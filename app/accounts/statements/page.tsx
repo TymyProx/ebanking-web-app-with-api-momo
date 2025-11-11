@@ -322,9 +322,9 @@ export default function StatementsPage() {
   const selectedAccountData = accounts.find((acc) => acc.id === selectedAccount)
 
   return (
-    <div className="mt-3 space-y-3">
+    <div className="mt-6 space-y-6">
       <div className="space-y-1">
-        <h1 className="text-2xl font-bold text-primary">Télécharger relevé</h1>
+        <h1 className="text-3xl font-bold text-primary">Relevé de comptes</h1>
         <p className="text-sm text-muted-foreground">Générez et téléchargez vos relevés de compte</p>
         {preSelectedAccountId && accounts.find((acc) => acc.id === preSelectedAccountId) && (
           <div>
