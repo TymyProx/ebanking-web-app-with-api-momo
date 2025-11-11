@@ -240,7 +240,7 @@ const generatePDF = async (account: Account) => {
 
   doc.setFontSize(10)
   doc.setFont("helvetica", "bold")
-  const ribCode = `${account.bankCode} ${account.branchCode} ${account.number.replace(/-/g, "")}`
+  const ribCode = `${account.bankCode}${account.branchCode}${account.number.replace(/-/g, "")}`
   doc.text(ribCode, 120, yPos + 2)
 
   yPos += 15
@@ -606,7 +606,7 @@ export default function RIBPage() {
                   </div>
                   <div>
                     <div class="label">RIB (Relevé d'Identité Bancaire)</div>
-                    <div class="value" style="font-size: 10px;">${selectedAccount.bankCode} ${selectedAccount.branchCode} ${selectedAccount.number.replace(/-/g, "")}</div>
+                    <div class="value" style="font-size: 10px;">${selectedAccount.bankCode}${selectedAccount.branchCode}${selectedAccount.number.replace(/-/g, "")}</div>
                   </div>
                 </div>
               </div>
@@ -808,7 +808,7 @@ export default function RIBPage() {
           </p>
         </div>
 
-       <Card className="w-full">
+        <Card className="w-full">
           <CardHeader>
             <CardTitle className="flex items-center">
               <CreditCard className="w-5 h-5 mr-2" />
@@ -937,7 +937,8 @@ export default function RIBPage() {
                       <div>
                         <p className="text-xs text-gray-500 uppercase">RIB</p>
                         <p className="font-mono font-semibold">
-                          {selectedAccount?.bankCode ?? ""} {selectedAccount?.branchCode ?? ""}{" "}
+                          {selectedAccount?.bankCode ?? ""}
+                          {selectedAccount?.branchCode ?? ""}
                           {(selectedAccount?.number ?? "").replace(/-/g, "")}
                         </p>
                       </div>

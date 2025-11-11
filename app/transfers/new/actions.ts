@@ -566,7 +566,6 @@ export async function executeTransfer(prevState: any, formData: FormData) {
         }
       }
 
-      // Construire le RIB client (concaténation de codeBanque, codeAgence, accountNumber, cleRib)
       ribClient = `${sourceAccountData.codeBanque || ""}${sourceAccountData.codeAgence || ""}${sourceAccountData.accountNumber || ""}${sourceAccountData.cleRib || ""}`
       console.log("[v0] Source account RIB constructed:", ribClient)
     } catch (error) {

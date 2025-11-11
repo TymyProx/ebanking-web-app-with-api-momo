@@ -25,7 +25,6 @@ import {
   Shield,
   Info,
   RefreshCw,
-  Sparkles,
 } from "lucide-react"
 import { getAccounts } from "../actions"
 import { getTransactions } from "../../transfers/new/actions"
@@ -427,26 +426,18 @@ export default function AccountDetailsPage() {
 
   return (
     <div className="space-y-8">
-        <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-secondary/10 to-primary/10 rounded-2xl blur-3xl -z-10" />
-        <div className="flex items-center gap-3">        
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={() => router.back()}
-              className="bg-white/80 backdrop-blur-sm"
-            >
-              <ArrowLeft className="w-4 h-4" />
-            </Button>
-            <div>
-              <h1 className="text-2xl font-bold text-primary">
-                Détails du Compte
-              </h1>
-              <p className="text-muted-foreground">
-                {account.name} • {account.number}
-              </p>
-            </div>
+      <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-secondary/10 to-primary/10 rounded-2xl blur-3xl -z-10" />
+      <div className="flex items-center gap-3">
+        <Button variant="outline" size="icon" onClick={() => router.back()} className="bg-white/80 backdrop-blur-sm">
+          <ArrowLeft className="w-4 h-4" />
+        </Button>
+        <div>
+          <h1 className="text-2xl font-bold text-primary">Détails du Compte</h1>
+          <p className="text-muted-foreground">
+            {account.name} • {account.number}
+          </p>
         </div>
-     
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
         {/* Main balance card */}
@@ -646,9 +637,7 @@ export default function AccountDetailsPage() {
 
         <CardHeader className="relative">
           <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center">
-              Transactions du compte
-            </CardTitle>
+            <CardTitle className="flex items-center">Transactions du compte</CardTitle>
             <Button onClick={handleRefreshTransactions} disabled={isLoadingTransactions} variant="outline" size="sm">
               <RefreshCw className={`h-4 w-4 mr-2 ${isLoadingTransactions ? "animate-spin" : ""}`} />
               {isLoadingTransactions ? "Actualisation..." : "Actualiser"}

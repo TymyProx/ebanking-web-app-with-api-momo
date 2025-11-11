@@ -41,7 +41,6 @@ export function generateRibData(account: RibInfo, userProfile: UserProfile | nul
     iban = `GN82 ${account.codeBanque || "BNG"} ${account.codeAgence || "001"} ${iban}`
   }
 
-  // Construire le RIB brut
   const ribRaw = `${account.codeBanque || "BNG"}${account.codeAgence || "001"}${(account.accountNumber || "").replace(/-/g, "")}${account.cleRib || ""}`
 
   return {
