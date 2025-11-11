@@ -206,7 +206,7 @@ export default function ServiceRequestsPage() {
             ? new Date(new Date(item.dateorder).getTime() + 3 * 24 * 60 * 60 * 1000).toISOString().split("T")[0]
             : new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
           account: item.numcompteId || "Compte non spécifié",
-          reference: item.referenceCommande || `CHQ-${new Date().getFullYear()}-${String(index + 1).padStart(3, "0")}`,
+          reference: item.referenceCommande || "Référence non disponible",
           details: {
             nbrechequier: item.nbrechequier || 0,
             nbrefeuille: item.nbrefeuille || 0,
@@ -234,7 +234,7 @@ export default function ServiceRequestsPage() {
           submittedAt: item.createdAt ? item.createdAt.split("T")[0] : new Date().toISOString().split("T")[0],
           expectedResponse: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
           account: item.numcompte || item.accountNumber || "Compte non spécifié",
-          reference: item.reference || `CRD-${new Date().getFullYear()}-${String(index + 1).padStart(3, "0")}`,
+          reference: item.reference || "Référence non disponible",
           details: {
             applicantName: item.applicantName || "",
             creditAmount: item.creditAmount || "",
@@ -272,15 +272,6 @@ export default function ServiceRequestsPage() {
       console.log("[v0] Demandes triées par type puis par référence (décroissant):", allTransformedRequests)
 
       setAllRequests(allTransformedRequests)
-
-      const stats = {
-        total: allTransformedRequests.length,
-        checkbook: allTransformedRequests.filter((req) => req.type === "checkbook").length,
-        credit: allTransformedRequests.filter((req) => req.type === "credit").length,
-        card: allTransformedRequests.filter((req) => req.type === "card").length,
-        account: allTransformedRequests.filter((req) => req.type === "account").length,
-      }
-      console.log("[v0] Statistiques calculées:", stats)
     } catch (error) {
       console.error("[v0] Erreur lors du chargement des demandes:", error)
       setAllRequests([])
