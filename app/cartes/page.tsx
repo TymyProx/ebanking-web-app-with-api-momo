@@ -311,10 +311,11 @@ export default function CardsPage() {
     }
   }
 
-  function formatCardNumber(number: string, isVisible: boolean) {
+  function formatCardNumber(number: string | number, isVisible: boolean) {
     if (!number) return "****"
-    if (isVisible) return number
-    return number
+    const numStr = String(number)
+    if (isVisible) return numStr
+    return numStr
       .replace(/(.{4})/g, "$1 ")
       .replace(/\d(?=\d{4})/g, "*")
       .trim()
