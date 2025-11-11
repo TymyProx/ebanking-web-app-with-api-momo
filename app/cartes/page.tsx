@@ -763,7 +763,7 @@ export default function CardsPage() {
               <div>
                 <div className="text-sm text-gray-500">Cartes actives</div>
                 <div className="text-2xl font-bold text-green-600">
-                  {cards.filter((c) => c.status?.toUpperCase() === "ACTIF").length}
+                  {cards.filter((c) => typeof c.status === "string" && c.status.toUpperCase() === "ACTIF").length}
                 </div>
               </div>
               <Shield className="w-8 h-8 text-green-500" />
@@ -776,7 +776,7 @@ export default function CardsPage() {
               <div>
                 <div className="text-sm text-gray-500">Cartes bloquées</div>
                 <div className="text-2xl font-bold text-red-600">
-                  {cards.filter((c) => c.status?.toUpperCase() === "BLOCKED").length}
+                  {cards.filter((c) => typeof c.status === "string" && c.status.toUpperCase() === "BLOCKED").length}
                 </div>
               </div>
               <ShieldOff className="w-8 h-8 text-red-500" />
