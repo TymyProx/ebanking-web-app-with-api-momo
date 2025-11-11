@@ -116,6 +116,7 @@ export default function ServiceRequestsPage() {
     success?: boolean
     error?: string
     reference?: string
+    referenceDemande?: string // Ajouté pour stocker la référence spécifique du crédit
   } | null>(null)
   const [isCreditSubmitting, setIsCreditSubmitting] = useState(false)
   const [checkbookSubmitState, setCheckbookSubmitState] = useState<{
@@ -676,7 +677,8 @@ export default function ServiceRequestsPage() {
       const result = await submitCreditRequest(creditData)
       setCreditSubmitState({
         success: true,
-        reference: result.reference || "CRD-" + new Date().getFullYear() + "-" + String(Date.now()).slice(-3),
+        referenceDemande:
+          result.referenceDemande || "CRD-" + new Date().getFullYear() + "-" + String(Date.now()).slice(-3), // Utilisation de referenceDemande
       })
       // Réinitialiser le formulaire après succès
       setFormData({})
@@ -1200,7 +1202,7 @@ export default function ServiceRequestsPage() {
               <Alert className="border-green-200 bg-green-50">
                 <CheckCircle className="h-4 w-4 text-green-600" />
                 <AlertDescription className="text-green-800">
-                  ✅ Votre demande de crédit a été envoyée avec succès. Référence: {creditSubmitState.reference}.{" "}
+                  ✅ Votre demande de crédit a été envoyée avec succès. Référence: {creditSubmitState.referenceDemande}.{" "}
                   {/* Réponse sous {selectedServiceData?.processingTime}. */}
                 </AlertDescription>
               </Alert>
