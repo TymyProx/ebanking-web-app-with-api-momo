@@ -205,8 +205,8 @@ export default function ServiceRequestsPage() {
           expectedResponse: item.dateorder
             ? new Date(new Date(item.dateorder).getTime() + 3 * 24 * 60 * 60 * 1000).toISOString().split("T")[0]
             : new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
-          account: item.numcompteId || "Compte non spécifié",
-          reference: item.referenceCommande || "Référence non disponible",
+          account: item.intitulecompte || "Compte non spécifié",
+          reference: item.referenceCommande || `CHQ-${new Date().getFullYear()}-${String(index + 1).padStart(3, "0")}`,
           details: {
             nbrechequier: item.nbrechequier || 0,
             nbrefeuille: item.nbrefeuille || 0,
@@ -233,8 +233,8 @@ export default function ServiceRequestsPage() {
           status: item.status || "En attente",
           submittedAt: item.createdAt ? item.createdAt.split("T")[0] : new Date().toISOString().split("T")[0],
           expectedResponse: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
-          account: item.numcompte || item.accountNumber || "Compte non spécifié",
-          reference: item.reference || "Référence non disponible",
+          account: "Compte courant",
+          reference: item.reference || `CRD-${new Date().getFullYear()}-${String(index + 1).padStart(3, "0")}`,
           details: {
             applicantName: item.applicantName || "",
             creditAmount: item.creditAmount || "",
@@ -272,6 +272,15 @@ export default function ServiceRequestsPage() {
       console.log("[v0] Demandes triées par type puis par référence (décroissant):", allTransformedRequests)
 
       setAllRequests(allTransformedRequests)
+
+      const stats = {
+        total: allTransformedRequests.length,
+        checkbook: allTransformedRequests.filter((req) => req.type === "checkbook").length,
+        credit: allTransformedRequests.filter((req) => req.type === "credit").length,
+        card: allTransformedRequests.filter((req) => req.type === "card").length,
+        account: allTransformedRequests.filter((req) => req.type === "account").length,
+      }
+      console.log("[v0] Statistiques calculées:", stats)
     } catch (error) {
       console.error("[v0] Erreur lors du chargement des demandes:", error)
       setAllRequests([])
@@ -509,7 +518,7 @@ export default function ServiceRequestsPage() {
                   expectedResponse: item.dateorder
                     ? new Date(new Date(item.dateorder).getTime() + 3 * 24 * 60 * 60 * 1000).toISOString().split("T")[0]
                     : new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
-                  account: item.numcompteId || "Compte non spécifié",
+                  account: item.intitulecompte || "Compte non spécifié",
                   reference: item.referenceCommande || "Référence non disponible",
                   details: {
                     nbrechequier: item.nbrechequier || 0,
@@ -525,7 +534,7 @@ export default function ServiceRequestsPage() {
                   status: "En cours",
                   submittedAt: item.createdAt ? item.createdAt.split("T")[0] : new Date().toISOString().split("T")[0],
                   expectedResponse: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
-                  account: item.numcompte || item.accountNumber || "Compte non spécifié",
+                  account: "Compte courant",
                   reference: item.reference || "Référence non disponible",
                   details: {
                     applicantName: item.applicantName || "",
@@ -862,7 +871,7 @@ export default function ServiceRequestsPage() {
                   value={formData.dateorder || new Date().toISOString().split("T")[0]}
                   onChange={(e) => handleInputChange("dateorder", e.target.value)}
                   required
-                  className="w-40"
+                  className="w-40"  
                 />
               </div>
 
@@ -883,7 +892,7 @@ export default function ServiceRequestsPage() {
                   }}
                   placeholder="Ex: 2"
                   required
-                  className="w-40"
+                  className="w-40" 
                 />
               </div>
             </div>
