@@ -413,6 +413,13 @@ export default function BeneficiariesPage() {
     }
 
     if (expectedKey !== sanitizedKey) {
+      console.log("[v0] Clé RIB incorrecte !")
+      console.log("[v0] Clé RIB saisie:", sanitizedKey)
+      console.log("[v0] Clé RIB attendue:", expectedKey)
+      console.log("[v0] Code Banque:", sanitizedBank)
+      console.log("[v0] Code Agence:", sanitizedAgency)
+      console.log("[v0] Numéro de compte:", sanitizedAccount)
+      // </CHANGE>
       return { valid: false, error: "Clé RIB invalide" }
     }
 
@@ -676,12 +683,10 @@ export default function BeneficiariesPage() {
   }
 
   return (
-   <div className="mt-6 space-y-6">
+    <div className="mt-6 space-y-6">
       <div className="flex items-center justify-between">
         <div className="space-y-2">
-           <h1 className="text-3xl font-bold text-primary">
-            Gestion des bénéficiaires
-          </h1>
+          <h1 className="text-3xl font-bold text-primary">Gestion des bénéficiaires</h1>
           <p className="text-sm text-muted-foreground">Gérez vos destinataires de virements</p>
         </div>
         {/* </CHANGE> */}
