@@ -44,7 +44,15 @@ export default function LoginPage() {
           localStorage.setItem("rememberMe", "true")
         }
 
-        const hasActiveAccounts = userData.accounts?.some((acc: any) => acc.status === "ACTIF") ?? false
+        console.log("[v0] User data:", userData)
+        console.log("[v0] Accounts:", userData.accounts)
+
+        const hasActiveAccounts =
+          userData.accounts?.some(
+            (acc: any) => acc.status?.toUpperCase() === "ACTIF" || acc.status?.toUpperCase() === "ACTIVE",
+          ) ?? false
+
+        console.log("[v0] Has active accounts:", hasActiveAccounts)
 
         if (hasActiveAccounts) {
           router.push("/dashboard")
