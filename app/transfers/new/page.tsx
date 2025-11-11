@@ -18,6 +18,7 @@ import { ArrowRight, Plus, User, Building, Check, AlertCircle } from "lucide-rea
 import { useActionState } from "react"
 import Link from "next/link"
 import { importAesGcmKeyFromBase64, decryptAesGcmFromJson, isEncryptedJson } from "@/lib/crypto"
+import { OtpModal } from "@/components/otp-modal"
 
 // Types
 interface Beneficiary {
@@ -95,6 +96,11 @@ export default function NewTransferPage() {
   // États pour la validation en temps réel du montant
   const [amountError, setAmountError] = useState<string>("")
   const [isAmountValid, setIsAmountValid] = useState(true)
+
+  // États pour l'OTP
+  const [showOtpModal, setShowOtpModal] = useState(false)
+  const [otpReferenceId, setOtpReferenceId] = useState<string | null>(null)
+  const [pendingTransferData, setPendingTransferData] = useState<FormData | null>(null)
 
   // Fonctions utilitaires
   const toText = (val: any): string => (typeof val === "string" ? val : val ? JSON.stringify(val) : "")
@@ -209,9 +215,24 @@ export default function NewTransferPage() {
     formData.append("purpose", motif)
     formData.append("transferDate", transferDate)
 
-    startTransition(() => {
-      transferAction(formData)
-    })
+    // Au lieu d'exécuter directement le virement, on ouvre le modal OTP
+    // Générer un référence unique pour ce virement
+    const referenceId = `TRANSFER-${Date.now()}-${selectedAccount.substring(0, 8)}`
+    setOtpReferenceId(referenceId)
+    setPendingTransferData(formData)
+    setShowOtpModal(true)
+  }
+
+  // Fonction appelée après validation OTP
+  const handleOtpVerified = () => {
+    if (pendingTransferData) {
+      startTransition(() => {
+        transferAction(pendingTransferData)
+      })
+      // Réinitialiser les données en attente
+      setPendingTransferData(null)
+      setOtpReferenceId(null)
+    }
   }
 
   const handleDialogClose = (open: boolean) => {
@@ -940,6 +961,19 @@ export default function NewTransferPage() {
           </Card>
         </div>
       </form>
+
+      {/* Modal OTP */}
+      <OtpModal
+        open={showOtpModal}
+        onOpenChange={setShowOtpModal}
+        onVerified={handleOtpVerified}
+        purpose="TRANSFER"
+        referenceId={otpReferenceId || undefined}
+        title="Confirmer le virement"
+        description={`Entrez le code OTP pour confirmer le virement de ${amount ? formatCurrency(Number.parseFloat(amount), selectedAccountData?.currency || "GNF") : "0 GNF"}`}
+        deliveryMethod="EMAIL"
+        autoGenerate={true}
+      />
     </div>
   )
 }

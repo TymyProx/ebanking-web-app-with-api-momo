@@ -765,28 +765,28 @@ export async function executeTransfer(prevState: any, formData: FormData) {
     let bodyToSend: any = apiData
     if (secureMode && keyB64) {
       try {
-        const enc = (val: any) => stringifyEncrypted({ ...encryptAesGcmNode(val, keyB64), key_id: keyId })
+        const enc = (val: any) => ({ ...encryptAesGcmNode(val, keyB64), key_id: keyId })
         const d = apiData.data
         bodyToSend = {
           data: {
             affiliateid: d.affiliateid,
             stepflow: d.stepflow,
-            montantOperation: enc(d.montantOperation),
+            montantOperation_json: enc(d.montantOperation),
             requestID: d.requestID,
-            ribClient: enc(d.ribClient),
+            ribClient_json: enc(d.ribClient),
             dateOrdre: d.dateOrdre,
-            nomClient: enc(d.nomClient),
+            nomClient_json: enc(d.nomClient),
             status: d.status,
             referenceOperation: d.referenceOperation,
             dateReception: d.dateReception,
             dateExecution: d.dateExecution,
             dateNotification: d.dateNotification,
             referencePaiement: d.referencePaiement,
-            nomBeneficiaire: enc(d.nomBeneficiaire),
-            ribBeneficiaire: enc(d.ribBeneficiaire),
-            commentnotes: enc(d.commentnotes),
+            nomBeneficiaire_json: enc(d.nomBeneficiaire),
+            ribBeneficiaire_json: enc(d.ribBeneficiaire),
+            commentnotes_json: enc(d.commentnotes),
             productCode: d.productCode,
-            description: enc(d.description),
+            description_json: enc(d.description),
             clientId: d.clientId,
             key_id: keyId,
           },

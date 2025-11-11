@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug OTP - Vérification Authentification</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #1e1e1e;
+            color: #00ff00;
+        }
+        .container {
+            background: #000;
+            border: 2px solid #00ff00;
+            border-radius: 10px;
+            padding: 30px;
+        }
+        h1 {
+            color: #00ff00;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .status {
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        .success {
+            background: #004400;
+            border: 2px solid #00ff00;
+        }
+        .error {
+            background: #440000;
+            border: 2px solid #ff0000;
+            color: #ff0000;
+        }
+        .warning {
+            background: #444400;
+            border: 2px solid #ffff00;
+            color: #ffff00;
+        }
+        .info {
+            background: #003344;
+            border: 2px solid #00ffff;
+            color: #00ffff;
+        }
+        button {
+            background: #00ff00;
+            color: #000;
+            border: none;
+            padding: 15px 30px;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px 5px;
+            font-family: 'Courier New', monospace;
+        }
+        button:hover {
+            background: #00cc00;
+        }
+        .code {
+            background: #222;
+            padding: 10px;
+            border-left: 3px solid #00ff00;
+            overflow-x: auto;
+            margin: 10px 0;
+        }
+        .buttons {
+            text-align: center;
+            margin-top: 30px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 DEBUG OTP - Vérification Authentification</h1>
+        
+        <div id="results"></div>
+        
+        <div class="buttons">
+            <button onclick="checkAuth()">🔍 Vérifier Authentification</button>
+            <button onclick="testAPI()">🧪 Tester API /auth/me</button>
+            <button onclick="clearStorage()">🗑️ Effacer Storage</button>
+            <button onclick="location.href='/login'">🔐 Aller sur Login</button>
+        </div>
+    </div>
+
+    <script>
+        function checkAuth() {
+            const results = document.getElementById('results');
+            results.innerHTML = '<h2>📊 Résultats de Vérification</h2>';
+            
+            // Vérifier le token
+            const token = localStorage.getItem('token');
+            if (token) {
+                results.innerHTML += `
+                    <div class="status success">
+                        ✅ TOKEN PRÉSENT<br>
+                        <div class="code">
+                            Token (premiers 30 caractères):<br>
+                            ${token.substring(0, 30)}...
+                        </div>
+                    </div>
+                `;
+            } else {
+                results.innerHTML += `
+                    <div class="status error">
+                        ❌ TOKEN ABSENT<br>
+                        Vous n'êtes pas connecté!<br>
+                        👉 Cliquez sur "Aller sur Login" ci-dessous
+                    </div>
+                `;
+            }
+            
+            // Vérifier l'utilisateur
+            const user = localStorage.getItem('user');
+            if (user) {
+                try {
+                    const userData = JSON.parse(user);
+                    results.innerHTML += `
+                        <div class="status success">
+                            ✅ USER DATA PRÉSENT<br>
+                            <div class="code">
+                                Email: ${userData.email || 'N/A'}<br>
+                                ID: ${userData.id || 'N/A'}<br>
+                                Nom: ${userData.fullName || userData.firstName || 'N/A'}
+                            </div>
+                        </div>
+                    `;
+                } catch (e) {
+                    results.innerHTML += `
+                        <div class="status error">
+                            ❌ USER DATA CORROMPU<br>
+                            Erreur: ${e.message}
+                        </div>
+                    `;
+                }
+            } else {
+                results.innerHTML += `
+                    <div class="status error">
+                        ❌ USER DATA ABSENT<br>
+                        Pas d'informations utilisateur
+                    </div>
+                `;
+            }
+            
+            // Résumé
+            if (token && user) {
+                results.innerHTML += `
+                    <div class="status success">
+                        <h3>✅ RÉSUMÉ: AUTHENTIFICATION OK</h3>
+                        Vous êtes connecté!<br>
+                        L'OTP devrait fonctionner.<br><br>
+                        Si vous avez toujours une erreur 403:<br>
+                        • Le token est peut-être expiré<br>
+                        • Reconnectez-vous<br>
+                        • Ou testez l'API ci-dessous
+                    </div>
+                `;
+            } else {
+                results.innerHTML += `
+                    <div class="status error">
+                        <h3>❌ RÉSUMÉ: PAS AUTHENTIFIÉ</h3>
+                        Vous devez vous connecter!<br><br>
+                        Actions:<br>
+                        1. Cliquez sur "Aller sur Login"<br>
+                        2. Connectez-vous<br>
+                        3. Revenez ici et vérifiez à nouveau
+                    </div>
+                `;
+            }
+        }
+        
+        async function testAPI() {
+            const results = document.getElementById('results');
+            results.innerHTML = '<h2>🧪 Test API en cours...</h2>';
+            
+            const token = localStorage.getItem('token');
+            if (!token) {
+                results.innerHTML += `
+                    <div class="status error">
+                        ❌ Pas de token - Impossible de tester l'API<br>
+                        Connectez-vous d'abord!
+                    </div>
+                `;
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/auth/me', {
+                    headers: {
+                        'Authorization': 'Bearer ' + token
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    results.innerHTML += `
+                        <div class="status success">
+                            ✅ API /auth/me : SUCCÈS<br>
+                            <div class="code">
+                                Status: ${response.status}<br>
+                                Email: ${data.email}<br>
+                                ID: ${data.id}<br>
+                            </div>
+                            <br>
+                            🎉 Votre token est VALIDE!<br>
+                            L'OTP devrait fonctionner.
+                        </div>
+                    `;
+                } else {
+                    const errorText = await response.text();
+                    results.innerHTML += `
+                        <div class="status error">
+                            ❌ API /auth/me : ÉCHEC<br>
+                            Status: ${response.status}<br>
+                            Erreur: ${errorText}<br><br>
+                            ${response.status === 403 ? '👉 Token invalide - Reconnectez-vous!' : ''}
+                            ${response.status === 401 ? '👉 Token expiré - Reconnectez-vous!' : ''}
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                results.innerHTML += `
+                    <div class="status error">
+                        ❌ ERREUR RÉSEAU<br>
+                        ${error.message}<br><br>
+                        Le backend est-il démarré?
+                    </div>
+                `;
+            }
+        }
+        
+        function clearStorage() {
+            if (confirm('Êtes-vous sûr de vouloir effacer le localStorage?\nVous serez déconnecté.')) {
+                localStorage.removeItem('token');
+                localStorage.removeItem('user');
+                const results = document.getElementById('results');
+                results.innerHTML = `
+                    <div class="status warning">
+                        ⚠️ STORAGE EFFACÉ<br>
+                        Token et user data supprimés.<br><br>
+                        👉 Cliquez sur "Aller sur Login" pour vous reconnecter
+                    </div>
+                `;
+            }
+        }
+        
+        // Vérification automatique au chargement
+        window.onload = function() {
+            checkAuth();
+        };
+    </script>
+</body>
+</html>
+
