@@ -58,7 +58,7 @@ export default function LoginPage() {
         if (hasActiveAccounts) {
           router.push("/dashboard")
         } else {
-          router.push("/accounts/balance")
+          router.push("/accounts/new")
         }
       }
     } catch (err: any) {

@@ -82,10 +82,17 @@ export default function NewAccountPage() {
   useEffect(() => {
     if (createState?.success) {
       setSuccess(true)
-      setTimeout(() => {
+      // Hide success message after 5 seconds
+      const timer = setTimeout(() => {
+        setSuccess(false)
+        // Reset form to initial state
+        setStep(1)
+        setSelectedType("")
+        setFormData({})
         router.refresh()
-        router.push("/accounts/balance")
-      }, 2000)
+      }, 10000)
+
+      return () => clearTimeout(timer)
     }
   }, [createState, router])
 
@@ -106,16 +113,7 @@ export default function NewAccountPage() {
               </div>
             </CardHeader>
             <CardContent>
-              <p className="text-green-800 mb-4">Vous serez redirigé vers vos comptes dans quelques instants...</p>
-              <Button
-                onClick={() => {
-                  router.refresh()
-                  router.push("/accounts/balance")
-                }}
-                className="w-full"
-              >
-                Voir mes comptes
-              </Button>
+              <p className="text-green-800 text-sm">Vous recevrez un e-mail dès que le statut de votre compte sera mis à jour.</p>
             </CardContent>
           </Card>
         </div>
@@ -127,7 +125,7 @@ export default function NewAccountPage() {
     <div className="mt-6 space-y-6">
       <div className="flex items-center space-x-2">
         <div>
-          <h1 className="text-3xl font-bold text-primary">Demande d'Ouverture de Compte</h1>
+          <h1 className="text-3xl font-bold text-primary">Demande d'Ouverture de Compte Bancaire</h1>
           <p className="text-sm text-muted-foreground">Choisissez le compte qui correspond à vos besoins</p>
         </div>
       </div>
@@ -226,7 +224,7 @@ export default function NewAccountPage() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               <div className="space-y-1">
                 <Label htmlFor="accountName" className="text-sm">
-                  Nom du Compte *
+                  Intitulé du Compte *
                 </Label>
                 <Input
                   id="accountName"
@@ -341,11 +339,6 @@ export default function NewAccountPage() {
                 </Label>
               </div>
             </div>
-
-            <Alert className="border-primary/20 bg-gradient-to-br from-primary/5 to-secondary/5 py-2">
-              <AlertDescription className="text-xs">Délai de traitement : 3-5 jours ouvrables</AlertDescription>
-            </Alert>
-
             <form action={createAction}>
               <input type="hidden" name="accountId" value={`ACC_${Date.now()}`} />
               <input type="hidden" name="customerId" value="CUSTOMER_ID_PLACEHOLDER" />
@@ -355,7 +348,6 @@ export default function NewAccountPage() {
               <input type="hidden" name="bookBalance" value={formData.initialDeposit || "0"} />
               <input type="hidden" name="availableBalance" value={formData.initialDeposit || "0"} />
               <input type="hidden" name="accountType" value={selectedType} />
-
               <div className="flex justify-between pt-2">
                 <Button onClick={() => setStep(2)} variant="outline" size="sm" type="button">
                   <ArrowLeft className="w-3 h-3 mr-1" />

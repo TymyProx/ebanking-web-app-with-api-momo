@@ -31,11 +31,11 @@ export function AuthGuard({ children }: AuthGuardProps) {
             if (hasActiveAccount) {
               router.push("/dashboard")
             } else {
-              router.push("/accounts/balance")
+              router.push("/accounts/new")
             }
           } catch (error) {
             console.error("Error checking accounts:", error)
-            router.push("/accounts/balance")
+            router.push("/accounts/new")
           }
           return
         }

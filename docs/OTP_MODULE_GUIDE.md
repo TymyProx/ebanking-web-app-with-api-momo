@@ -39,9 +39,9 @@ The OTP module provides secure two-factor authentication for sensitive operation
 
 ### Flow Diagram
 
-```
+\`\`\`
 User Action → Generate OTP → Send SMS/Email → User Enters Code → Verify OTP → Execute Action
-```
+\`\`\`
 
 ### Components
 
@@ -84,7 +84,7 @@ Location: `/backendebanking/src/services/otpService.ts`
 
 **Key Methods:**
 
-```typescript
+\`\`\`typescript
 // Generate and send OTP
 async generate(options: OtpGenerateOptions): Promise<{
   success: boolean;
@@ -105,7 +105,7 @@ async resend(purpose: string, referenceId?: string): Promise<{
   otpId: string;
   expiresAt: Date;
 }>
-```
+\`\`\`
 
 ### 3. API Endpoints
 
@@ -128,7 +128,7 @@ Location: `/ebanking-web-app-with-api-momo/lib/otp-service.ts`
 
 **Usage:**
 
-```typescript
+\`\`\`typescript
 import { OtpService } from '@/lib/otp-service'
 
 // Generate OTP
@@ -147,7 +147,7 @@ const verifyResult = await OtpService.verify({
 
 // Resend OTP
 const resendResult = await OtpService.resend('TRANSFER', 'TXN-12345')
-```
+\`\`\`
 
 ### 2. OTP Input Component
 
@@ -163,7 +163,7 @@ Location: `/ebanking-web-app-with-api-momo/components/ui/otp-input.tsx`
 
 **Usage:**
 
-```tsx
+\`\`\`tsx
 import { OtpInput } from '@/components/ui/otp-input'
 
 <OtpInput
@@ -173,7 +173,7 @@ import { OtpInput } from '@/components/ui/otp-input'
   onComplete={(code) => handleVerify(code)}
   autoFocus
 />
-```
+\`\`\`
 
 ### 3. OTP Modal Component
 
@@ -189,7 +189,7 @@ Location: `/ebanking-web-app-with-api-momo/components/otp-modal.tsx`
 
 **Usage:**
 
-```tsx
+\`\`\`tsx
 import { OtpModal } from '@/components/otp-modal'
 
 <OtpModal
@@ -203,7 +203,7 @@ import { OtpModal } from '@/components/otp-modal'
   deliveryMethod="SMS"
   autoGenerate={true}
 />
-```
+\`\`\`
 
 ---
 
@@ -211,7 +211,7 @@ import { OtpModal } from '@/components/otp-modal'
 
 ### Example 1: Transfer with OTP
 
-```tsx
+\`\`\`tsx
 "use client"
 
 import { useState } from 'react'
@@ -252,11 +252,11 @@ export default function TransferPage() {
     </>
   )
 }
-```
+\`\`\`
 
 ### Example 2: Payment Confirmation
 
-```tsx
+\`\`\`tsx
 const handlePayment = async (paymentData: any) => {
   // Generate OTP
   const otpResult = await OtpService.generate({
@@ -284,11 +284,11 @@ const handleVerifyAndPay = async (code: string) => {
     console.error('OTP verification failed:', error)
   }
 }
-```
+\`\`\`
 
 ### Example 3: Add Beneficiary
 
-```tsx
+\`\`\`tsx
 const handleAddBeneficiary = async (beneficiaryData: any) => {
   setCurrentBeneficiary(beneficiaryData)
   setShowOtpModal(true)
@@ -309,7 +309,7 @@ const handleOtpVerified = async () => {
   title="Confirmer l'ajout"
   description="Entrez le code OTP pour ajouter ce bénéficiaire"
 />
-```
+\`\`\`
 
 ---
 
@@ -320,7 +320,7 @@ const handleOtpVerified = async () => {
 **Endpoint:** `POST /api/otp/generate`
 
 **Request Body:**
-```json
+\`\`\`json
 {
   "purpose": "TRANSFER",
   "referenceId": "TXN-12345",
@@ -331,59 +331,59 @@ const handleOtpVerified = async () => {
   "maxAttempts": 3,
   "metadata": {}
 }
-```
+\`\`\`
 
 **Response:**
-```json
+\`\`\`json
 {
   "success": true,
   "otpId": "uuid",
   "expiresAt": "2024-01-01T12:05:00Z"
 }
-```
+\`\`\`
 
 ### Verify OTP
 
 **Endpoint:** `POST /api/otp/verify`
 
 **Request Body:**
-```json
+\`\`\`json
 {
   "code": "123456",
   "purpose": "TRANSFER",
   "referenceId": "TXN-12345"
 }
-```
+\`\`\`
 
 **Response:**
-```json
+\`\`\`json
 {
   "success": true,
   "verified": true,
   "message": "OTP verified successfully"
 }
-```
+\`\`\`
 
 ### Resend OTP
 
 **Endpoint:** `POST /api/otp/resend`
 
 **Request Body:**
-```json
+\`\`\`json
 {
   "purpose": "TRANSFER",
   "referenceId": "TXN-12345"
 }
-```
+\`\`\`
 
 **Response:**
-```json
+\`\`\`json
 {
   "success": true,
   "otpId": "new-uuid",
   "expiresAt": "2024-01-01T12:10:00Z"
 }
-```
+\`\`\`
 
 ---
 
@@ -454,22 +454,22 @@ const handleOtpVerified = async () => {
 ### Integration Issues
 
 **CORS Errors:**
-```typescript
+\`\`\`typescript
 // Ensure API_BASE_URL is configured correctly
 // In /lib/config.ts
-```
+\`\`\`
 
 **Authentication Errors:**
-```typescript
+\`\`\`typescript
 // Ensure user token is valid
 // Check localStorage.getItem("token")
-```
+\`\`\`
 
 **TypeScript Errors:**
-```bash
+\`\`\`bash
 # Install missing types
 npm install --save-dev @types/react
-```
+\`\`\`
 
 ---
 
@@ -494,13 +494,13 @@ npm install --save-dev @types/react
 ### Check Backend Logs
 
 In development, OTP codes are logged to console:
-```
+\`\`\`
 [OTP SMS] Sending OTP 123456 to +224621234567 for purpose: TRANSFER
-```
+\`\`\`
 
 ### Database Verification
 
-```sql
+\`\`\`sql
 -- Check OTP records
 SELECT * FROM otps WHERE "userId" = 'user-id' ORDER BY "createdAt" DESC LIMIT 10;
 
@@ -509,7 +509,7 @@ SELECT * FROM otps WHERE "expiresAt" < NOW();
 
 -- Check blocked OTPs
 SELECT * FROM otps WHERE blocked = true;
-```
+\`\`\`
 
 ---
 
@@ -518,14 +518,14 @@ SELECT * FROM otps WHERE blocked = true;
 If you have an existing transfer/payment system, here's how to add OTP:
 
 ### Before (Without OTP):
-```tsx
+\`\`\`tsx
 const handleSubmit = async (data) => {
   await executeTransfer(data)
 }
-```
+\`\`\`
 
 ### After (With OTP):
-```tsx
+\`\`\`tsx
 const [showOtp, setShowOtp] = useState(false)
 
 const handleSubmit = async (data) => {
@@ -545,7 +545,7 @@ const handleOtpVerified = async () => {
   onVerified={handleOtpVerified}
   purpose="TRANSFER"
 />
-```
+\`\`\`
 
 ---
 
@@ -562,4 +562,3 @@ For issues or questions:
 ## License
 
 This OTP module is part of the BNG E-Banking system.
-

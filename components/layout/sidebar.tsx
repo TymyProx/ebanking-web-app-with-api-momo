@@ -60,6 +60,7 @@ import { Badge } from "@/components/ui/badge"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import { LogoutButton } from "@/components/auth/logout-button"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { getAccounts } from "@/app/accounts/actions"
 
 const navigationData = {
@@ -327,9 +328,33 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>): 
     <Sidebar collapsible="icon" variant="inset" {...props}>
       <SidebarHeader>
         <div className="flex items-center gap-2 px-4 py-2">
-          <div className="flex h-120 w-120 items-center justify-center">
-            <Image src="/images/logo-bng.png" alt="BNG Logo" width={120} height={120} className="object-contain" />
-          </div>
+          {state === "collapsed" ? (
+            <div className="flex min-h-[64px] w-full items-center justify-center">
+              <div className="h-14 w-14 flex-shrink-0">
+                <Image
+                  src="/images/portrait-logo.png"
+                  alt="BNG Logo"
+                  width={56}
+                  height={56}
+                  className="h-full w-full object-contain"
+                  priority
+                />
+              </div>
+            </div>
+          ) : (
+            <div className="flex min-h-[120px] w-full items-center justify-center">
+              <div className="h-[120px] w-[120px] flex-shrink-0">
+                <Image
+                  src="/images/logo-bng.png"
+                  alt="BNG Logo"
+                  width={120}
+                  height={120}
+                  className="h-full w-full object-contain"
+                  priority
+                />
+              </div>
+            </div>
+          )}
         </div>
       </SidebarHeader>
 
@@ -342,12 +367,29 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>): 
         ) : !hasActiveAccount ? (
           <>
             <div className="px-3 py-2">
-              <Alert className="border-amber-500/50 bg-amber-50 dark:bg-amber-950/20">
-                <AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-500" />
-                <AlertDescription className="text-xs text-amber-800 dark:text-amber-300">
-                  Ouvrez un compte pour accéder à toutes les fonctionnalités
-                </AlertDescription>
-              </Alert>
+              {state === "collapsed" ? (
+                <TooltipProvider>
+                  <Tooltip delayDuration={0}>
+                    <TooltipTrigger asChild>
+                      <div className="flex items-center justify-center rounded-md border border-amber-500/50 bg-amber-50 p-2 dark:bg-amber-950/20 cursor-help">
+                        <AlertCircle className="h-5 w-5 text-amber-600 dark:text-amber-500" />
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent side="right" className="max-w-xs">
+                      <p className="text-sm">
+                        Veuillez initier la demande d'ouverture de compte pour accéder à toutes les fonctionnalités
+                      </p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              ) : (
+                <Alert className="border-amber-500/50 bg-amber-50 dark:bg-amber-950/20">
+                  <AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-500" />
+                  <AlertDescription className="text-xs text-amber-800 dark:text-amber-300">
+                    Veuillez initier la demande d'ouverture de compte pour accéder à toutes les fonctionnalités
+                  </AlertDescription>
+                </Alert>
+              )}
             </div>
 
             <SidebarGroup>
@@ -356,14 +398,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>): 
               </SidebarGroupLabel>
               <SidebarGroupContent>
                 <SidebarMenu>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton asChild isActive={pathname === "/accounts/balance"}>
-                      <Link href="/accounts/balance">
-                        <BarChart3 />
-                        <span>Mes comptes</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
                   <SidebarMenuItem>
                     <SidebarMenuButton asChild isActive={pathname === "/accounts/new"}>
                       <Link href="/accounts/new">

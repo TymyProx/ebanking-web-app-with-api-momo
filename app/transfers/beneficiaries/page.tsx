@@ -39,6 +39,7 @@ import type React from "react"
 import { useRef } from "react"
 import { importAesGcmKeyFromBase64, decryptAesGcmFromJson, isEncryptedJson } from "@/lib/crypto"
 import { toast } from "@/hooks/use-toast"
+import { OtpModal } from "@/components/otp-modal"
 
 interface Beneficiary {
   id: string
@@ -139,6 +140,11 @@ export default function BeneficiariesPage() {
   const [showReactivateSuccess, setShowReactivateSuccess] = useState(false)
   const [showAddSuccess, setShowAddSuccess] = useState(false)
   const [showUpdateSuccess, setShowUpdateSuccess] = useState(false)
+
+  const [showOtpModal, setShowOtpModal] = useState(false)
+  const [otpReferenceId, setOtpReferenceId] = useState<string | null>(null)
+  const [pendingBeneficiaryData, setPendingBeneficiaryData] = useState<FormData | null>(null)
+  // </CHANGE>
 
   const loadBeneficiaries = async () => {
     setIsLoading(true)
@@ -505,10 +511,26 @@ export default function BeneficiariesPage() {
       formData.set("bankCode", selectedBankCode)
     }
 
-    startTransition(() => {
-      addAction(formData)
-    })
+    const beneficiaryName = formData.get("name") as string
+    const referenceId = `BEN-${Date.now()}-${beneficiaryName.substring(0, 10).replace(/\s/g, "")}`
+    setOtpReferenceId(referenceId)
+    setPendingBeneficiaryData(formData)
+    setShowOtpModal(true)
+    // </CHANGE>
   }
+
+  const handleOtpVerified = () => {
+    if (pendingBeneficiaryData) {
+      startTransition(() => {
+        addAction(pendingBeneficiaryData)
+      })
+      // Reset pending data
+      setPendingBeneficiaryData(null)
+      setOtpReferenceId(null)
+      setIsAddDialogOpen(false)
+    }
+  }
+  // </CHANGE>
 
   const handleEditBeneficiary = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -1369,6 +1391,19 @@ export default function BeneficiariesPage() {
           </form>
         </DialogContent>
       </Dialog>
+
+      <OtpModal
+        open={showOtpModal}
+        onOpenChange={setShowOtpModal}
+        onVerified={handleOtpVerified}
+        purpose="ADD_BENEFICIARY"
+        referenceId={otpReferenceId || undefined}
+        title="Confirmer l'ajout du bénéficiaire"
+        description={`Entrez le code OTP pour confirmer l'ajout de ${pendingBeneficiaryData?.get("name") || "ce bénéficiaire"}`}
+        deliveryMethod="EMAIL"
+        autoGenerate={true}
+      />
+      {/* </CHANGE> */}
     </div>
   )
 }

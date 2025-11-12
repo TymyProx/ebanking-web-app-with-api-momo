@@ -276,4 +276,3 @@ export default function TransferWithOtpExample() {
     </div>
   )
 }
-
