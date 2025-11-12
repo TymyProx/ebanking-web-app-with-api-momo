@@ -327,9 +327,15 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>): 
     <Sidebar collapsible="icon" variant="inset" {...props}>
       <SidebarHeader>
         <div className="flex items-center gap-2 px-4 py-2">
-          <div className="flex h-120 w-120 items-center justify-center">
-            <Image src="/images/logo-bng.png" alt="BNG Logo" width={120} height={120} className="object-contain" />
-          </div>
+          {state === "collapsed" ? (
+            <div className="flex h-12 w-12 items-center justify-center">
+              <Image src="/images/portrait-logo.png" alt="BNG Logo" width={48} height={48} className="object-contain" />
+            </div>
+          ) : (
+            <div className="flex h-120 w-120 items-center justify-center">
+              <Image src="/images/logo-bng.png" alt="BNG Logo" width={120} height={120} className="object-contain" />
+            </div>
+          )}
         </div>
       </SidebarHeader>
 
