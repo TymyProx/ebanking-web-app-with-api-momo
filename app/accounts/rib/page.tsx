@@ -134,7 +134,7 @@ const generatePDF = async (account: Account) => {
   doc.setFont("helvetica", "normal")
   doc.text("6ème Avenue Boulevard DIALLO Telly BP: 1781 Conakry", 15, yPos)
 
-  yPos += 10
+  yPos += 12
 
   // ═══════════════════════════════════════════════════════════════════════════
   // DÉPARTEMENT
@@ -208,7 +208,6 @@ const generatePDF = async (account: Account) => {
 
   // Ligne supérieure
   doc.rect(tableStartX, yPos, col1Width + col2Width + col3Width + col4Width, rowHeight)
-
   // Lignes verticales
   doc.line(tableStartX + col1Width, yPos, tableStartX + col1Width, yPos + rowHeight * 3)
   doc.line(tableStartX + col1Width + col2Width, yPos, tableStartX + col1Width + col2Width, yPos + rowHeight * 3)
@@ -999,44 +998,44 @@ export default function RIBPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
         <div className="lg:col-span-2">
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center text-base">
                 <CreditCard className="w-5 h-5 mr-2" />
                 Informations bancaires
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-6">
+            <CardContent className="space-y-3 pt-0">
               {selectedAccount && (
                 <>
-                  <div className="border-2 border-dashed border-gray-300 p-6 rounded-lg bg-gray-50">
-                    <div className="text-center mb-4">
-                      <h2 className="text-lg font-bold text-emerald-700">{selectedAccount.bankName.toUpperCase()}</h2>
-                      <p className="text-sm text-gray-600">RELEVÉ D'IDENTITÉ BANCAIRE</p>
+                  <div className="border-2 border-dashed border-gray-300 p-4 rounded-lg bg-gray-50">
+                    <div className="text-center mb-3">
+                      <h2 className="text-base font-bold text-emerald-700">{selectedAccount.bankName.toUpperCase()}</h2>
+                      <p className="text-xs text-gray-600">RELEVÉ D'IDENTITÉ BANCAIRE</p>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                       <div>
                         <p className="text-xs text-gray-500 uppercase">Titulaire du compte</p>
-                        <p className="font-semibold">{selectedAccount.accountHolder}</p>
+                        <p className="font-semibold text-sm">{selectedAccount.accountHolder}</p>
                       </div>
                       <div>
                         <p className="text-xs text-gray-500 uppercase">Numéro de compte</p>
-                        <p className="font-mono font-semibold">{selectedAccount.number}</p>
+                        <p className="font-mono font-semibold text-sm">{selectedAccount.number}</p>
                       </div>
                       <div>
                         <p className="text-xs text-gray-500 uppercase">Code banque</p>
-                        <p className="font-mono">{selectedAccount.bankCode}</p>
+                        <p className="font-mono text-sm">{selectedAccount.bankCode}</p>
                       </div>
                       <div>
                         <p className="text-xs text-gray-500 uppercase">Code agence</p>
-                        <p className="font-mono">{selectedAccount.branchCode}</p>
+                        <p className="font-mono text-sm">{selectedAccount.branchCode}</p>
                       </div>
                       <div>
                         <p className="text-xs text-gray-500 uppercase">RIB</p>
-                        <p className="font-mono font-semibold">
+                        <p className="font-mono font-semibold text-sm">
                           {selectedAccount?.bankCode ?? ""}
                           {selectedAccount?.branchCode ?? ""}
                           {(selectedAccount?.number ?? "").replace(/-/g, "")}
@@ -1044,15 +1043,15 @@ export default function RIBPage() {
                       </div>
                       <div>
                         <p className="text-xs text-gray-500 uppercase">IBAN</p>
-                        <p className="font-mono font-semibold">{selectedAccount.iban}</p>
+                        <p className="font-mono font-semibold text-sm">{selectedAccount.iban}</p>
                       </div>
                     </div>
 
-                    <div className="mt-4 pt-4 border-t">
+                    <div className="mt-3 pt-3 border-t">
                       <div className="flex items-center justify-between">
                         <div>
                           <p className="text-xs text-gray-500 uppercase">Code SWIFT</p>
-                          <p className="font-mono font-semibold">{selectedAccount.swiftCode}</p>
+                          <p className="font-mono font-semibold text-sm">{selectedAccount.swiftCode}</p>
                         </div>
                         <div className="text-right">
                           <Badge
@@ -1069,31 +1068,32 @@ export default function RIBPage() {
                       </div>
                     </div>
 
-                    <div className="mt-4 pt-4 border-t">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="mt-3 pt-3 border-t">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                         <div>
                           <p className="text-xs text-gray-500 uppercase">Type de compte</p>
-                          <p className="font-medium">{selectedAccount.type}</p>
+                          <p className="font-medium text-sm">{selectedAccount.type}</p>
                         </div>
                         <div>
                           <p className="text-xs text-gray-500 uppercase">Devise</p>
-                          <p className="font-medium">{selectedAccount.currency}</p>
+                          <p className="font-medium text-sm">{selectedAccount.currency}</p>
                         </div>
                       </div>
                     </div>
                   </div>
 
-                  <div className="flex flex-wrap gap-3">
-                    <Button onClick={downloadPDF}>
+                  <div className="flex flex-wrap gap-2">
+                    <Button onClick={downloadPDF} size="sm">
                       <Download className="w-4 h-4 mr-2" />
                       Télécharger PDF
                     </Button>
-                    <Button variant="outline" onClick={handlePrint}>
+                    <Button variant="outline" onClick={handlePrint} size="sm">
                       <Printer className="w-4 h-4 mr-2" />
                       Imprimer
                     </Button>
                     <Button
                       variant="outline"
+                      size="sm"
                       onClick={() => {
                         if (userProfile?.email) {
                           setIsEmailDialogOpen(true)
@@ -1109,7 +1109,7 @@ export default function RIBPage() {
                       <Mail className="w-4 h-4 mr-2" />
                       Envoyer par email
                     </Button>
-                    <Button variant="outline" onClick={() => copyToClipboard(selectedAccount.iban)}>
+                    <Button variant="outline" onClick={() => copyToClipboard(selectedAccount.iban)} size="sm">
                       <Copy className="w-4 h-4 mr-2" />
                       {copied ? "Copié !" : "Copier IBAN"}
                     </Button>
@@ -1120,66 +1120,66 @@ export default function RIBPage() {
           </Card>
         </div>
 
-        <div>
+        <div className="space-y-3">
           {selectedAccount && (
             <>
               <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center">
+                <CardHeader className="pb-3">
+                  <CardTitle className="flex items-center text-base">
                     <Building className="w-5 h-5 mr-2" />
                     Informations agence
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-3 pt-0">
                   <div>
-                    <p className="font-semibold">{selectedAccount.branchName}</p>
-                    <p className="text-sm text-gray-600">{selectedAccount.bankName}</p>
+                    <p className="font-semibold text-sm">{selectedAccount.branchName}</p>
+                    <p className="text-xs text-gray-600">{selectedAccount.bankName}</p>
                   </div>
 
                   <div className="space-y-2">
                     <div className="flex items-start space-x-2">
                       <MapPin className="w-4 h-4 text-gray-400 mt-0.5" />
                       <div>
-                        <p className="text-sm">Avenue de la République</p>
-                        <p className="text-sm">Kaloum, Conakry</p>
-                        <p className="text-sm">République de Guinée</p>
+                        <p className="text-xs">Avenue de la République</p>
+                        <p className="text-xs">Kaloum, Conakry</p>
+                        <p className="text-xs">République de Guinée</p>
                       </div>
                     </div>
 
                     <div className="flex items-center space-x-2">
                       <Phone className="w-4 h-4 text-gray-400" />
-                      <p className="text-sm">+224 622 123 456</p>
+                      <p className="text-xs">+224 622 123 456</p>
                     </div>
                   </div>
 
-                  <div className="pt-4 border-t">
+                  <div className="pt-3 border-t">
                     <p className="text-xs text-gray-500">Horaires d'ouverture</p>
-                    <p className="text-sm">Lun - Ven: 8h00 - 16h00</p>
-                    <p className="text-sm">Sam: 8h00 - 12h00</p>
+                    <p className="text-xs">Lun - Ven: 8h00 - 16h00</p>
+                    <p className="text-xs">Sam: 8h00 - 12h00</p>
                   </div>
                 </CardContent>
               </Card>
 
-              <Card className="mt-6">
-                <CardHeader>
-                  <CardTitle>Utilisation du RIB</CardTitle>
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base">Utilisation du RIB</CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <div className="space-y-3 text-sm">
+                <CardContent className="pt-0">
+                  <div className="space-y-2 text-xs">
                     <div className="flex items-start space-x-2">
-                      <div className="w-2 h-2 bg-emerald-500 rounded-full mt-2"></div>
+                      <div className="w-2 h-2 bg-emerald-500 rounded-full mt-1"></div>
                       <p>Recevoir des virements</p>
                     </div>
                     <div className="flex items-start space-x-2">
-                      <div className="w-2 h-2 bg-emerald-500 rounded-full mt-2"></div>
+                      <div className="w-2 h-2 bg-emerald-500 rounded-full mt-1"></div>
                       <p>Domicilier votre salaire</p>
                     </div>
                     <div className="flex items-start space-x-2">
-                      <div className="w-2 h-2 bg-emerald-500 rounded-full mt-2"></div>
+                      <div className="w-2 h-2 bg-emerald-500 rounded-full mt-1"></div>
                       <p>Prélèvements automatiques</p>
                     </div>
                     <div className="flex items-start space-x-2">
-                      <div className="w-2 h-2 bg-emerald-500 rounded-full mt-2"></div>
+                      <div className="w-2 h-2 bg-emerald-500 rounded-full mt-1"></div>
                       <p>Virements internationaux</p>
                     </div>
                   </div>
