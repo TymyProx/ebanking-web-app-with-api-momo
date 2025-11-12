@@ -47,6 +47,8 @@ export function OtpModal({
   const [expiresAt, setExpiresAt] = React.useState<Date | null>(null)
   const [timeRemaining, setTimeRemaining] = React.useState<number | null>(null)
   const [canResend, setCanResend] = React.useState(false)
+  const [attemptCount, setAttemptCount] = React.useState(0)
+  const maxAttempts = 3
 
   // Generate OTP when modal opens
   React.useEffect(() => {
@@ -110,9 +112,33 @@ export function OtpModal({
     }
   }
 
+  // Map backend error messages to user-friendly French messages
+  const getErrorMessage = (errorMsg: string): string => {
+    const errorMap: Record<string, string> = {
+      'otp.invalid': '❌ Code incorrect. Veuillez vérifier et réessayer.',
+      'otp.expired': '⏰ Ce code a expiré. Demandez-en un nouveau.',
+      'otp.blocked': '🔒 Trop de tentatives échouées. Demandez un nouveau code.',
+      'otp.maxAttemptsReached': '🔒 Nombre maximum de tentatives atteint. Un nouveau code a été demandé.',
+      'otp.alreadyVerified': '✓ Ce code a déjà été utilisé.',
+      'otp.notFound': '🔍 Code introuvable. Demandez un nouveau code.',
+      'Forbidden': '🔐 Session expirée. Veuillez vous reconnecter.',
+      'An error occurred': '❌ Code incorrect. Veuillez vérifier et réessayer.',
+    }
+
+    // Check for exact match
+    for (const [key, message] of Object.entries(errorMap)) {
+      if (errorMsg.includes(key) || errorMsg === key) {
+        return message
+      }
+    }
+
+    // Default message with more context
+    return `❌ Code invalide. Vérifiez le code reçu par email.`
+  }
+
   const handleVerifyOtp = async () => {
     if (otpValue.length !== 6) {
-      setError("Veuillez entrer le code complet à 6 chiffres")
+      setError("⚠️ Veuillez entrer le code complet à 6 chiffres")
       return
     }
 
@@ -140,8 +166,36 @@ export function OtpModal({
         }, 1000)
       }
     } catch (err: any) {
-      setError(err.message || "Code OTP invalide")
-      setOtpValue("") // Clear the input
+      const errorMsg = err.message || ""
+      setAttemptCount(prev => prev + 1)
+      
+      // Get friendly message
+      let friendlyMessage = getErrorMessage(errorMsg)
+      
+      // Add attempt counter for invalid codes
+      if (errorMsg.includes('invalid') && attemptCount < maxAttempts - 1) {
+        const remaining = maxAttempts - attemptCount - 1
+        friendlyMessage += ` (${remaining} tentative${remaining > 1 ? 's' : ''} restante${remaining > 1 ? 's' : ''})`
+      }
+      
+      setError(friendlyMessage)
+      
+      // Clear input for certain errors
+      if (errorMsg.includes('invalid') || errorMsg.includes('blocked') || errorMsg.includes('maxAttempts')) {
+        setOtpValue("")
+      }
+
+      // Auto-resend for expired or blocked codes
+      if (errorMsg.includes('expired') || errorMsg.includes('blocked') || errorMsg.includes('maxAttempts')) {
+        setTimeout(() => {
+          if (errorMsg.includes('maxAttempts') || errorMsg.includes('blocked')) {
+            // Auto-resend after showing error
+            setTimeout(() => {
+              handleResendOtp()
+            }, 2000)
+          }
+        }, 100)
+      }
     } finally {
       setIsVerifying(false)
     }
@@ -151,6 +205,7 @@ export function OtpModal({
     setOtpValue("")
     setError("")
     setCanResend(false)
+    setAttemptCount(0) // Reset attempt counter on resend
     await handleGenerateOtp()
   }
 
@@ -162,6 +217,7 @@ export function OtpModal({
     setExpiresAt(null)
     setTimeRemaining(null)
     setCanResend(false)
+    setAttemptCount(0)
     onOpenChange(false)
   }
 
@@ -233,8 +289,36 @@ export function OtpModal({
               )}
 
               {error && (
-                <Alert variant="destructive" className="w-full">
-                  <AlertDescription>{error}</AlertDescription>
+                <Alert 
+                  variant={
+                    error.includes('⏰') || error.includes('🔍') ? 'default' :
+                    error.includes('✓') ? 'default' :
+                    'destructive'
+                  } 
+                  className={`w-full ${
+                    error.includes('⏰') || error.includes('🔍') ? 'bg-amber-50 border-amber-200 text-amber-800' :
+                    error.includes('✓') ? 'bg-blue-50 border-blue-200 text-blue-800' :
+                    ''
+                  }`}
+                >
+                  <AlertDescription className="text-sm leading-relaxed">
+                    {error}
+                    {error.includes('⏰') && (
+                      <div className="mt-2 text-xs opacity-80">
+                        💡 Conseil : Vérifiez l'heure de réception du code dans votre email.
+                      </div>
+                    )}
+                    {error.includes('❌') && !error.includes('tentatives') && (
+                      <div className="mt-2 text-xs opacity-80">
+                        💡 Conseil : Assurez-vous de bien recopier les 6 chiffres.
+                      </div>
+                    )}
+                    {error.includes('🔒') && (
+                      <div className="mt-2 text-xs opacity-80">
+                        ℹ️ Un nouveau code est en cours d'envoi...
+                      </div>
+                    )}
+                  </AlertDescription>
                 </Alert>
               )}
 

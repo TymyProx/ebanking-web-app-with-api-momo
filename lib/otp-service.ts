@@ -126,19 +126,27 @@ export class OtpService {
       return response.data;
     } catch (error: any) {
       console.error("Erreur lors de la vérification de l'OTP:", error);
-      let errorMessage = "Code OTP invalide";
+      console.error("Response data:", error.response?.data);
+      console.error("Response status:", error.response?.status);
+      
+      let errorMessage = "otp.invalid"; // Default with backend format
 
       if (error.response?.data) {
-        errorMessage =
-          error.response.data.message ||
-          error.response.data.error ||
-          error.response.data.msg ||
-          (typeof error.response.data === "string" ? error.response.data : null) ||
-          errorMessage;
+        // Backend can send error in multiple formats
+        if (typeof error.response.data === "string") {
+          errorMessage = error.response.data;
+        } else if (error.response.data.error) {
+          errorMessage = error.response.data.error;
+        } else if (error.response.data.message) {
+          errorMessage = error.response.data.message;
+        } else if (error.response.data.msg) {
+          errorMessage = error.response.data.msg;
+        }
       } else if (error.message) {
         errorMessage = error.message;
       }
 
+      console.log("Final error message:", errorMessage);
       throw new Error(errorMessage);
     }
   }
