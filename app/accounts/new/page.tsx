@@ -82,10 +82,17 @@ export default function NewAccountPage() {
   useEffect(() => {
     if (createState?.success) {
       setSuccess(true)
-      setTimeout(() => {
+      // Hide success message after 5 seconds
+      const timer = setTimeout(() => {
+        setSuccess(false)
+        // Reset form to initial state
+        setStep(1)
+        setSelectedType("")
+        setFormData({})
         router.refresh()
-        router.push("/accounts/balance")
-      }, 2000)
+      }, 5000)
+
+      return () => clearTimeout(timer)
     }
   }, [createState, router])
 
@@ -106,16 +113,7 @@ export default function NewAccountPage() {
               </div>
             </CardHeader>
             <CardContent>
-              <p className="text-green-800 mb-4">Vous serez redirigé vers vos comptes dans quelques instants...</p>
-              <Button
-                onClick={() => {
-                  router.refresh()
-                  router.push("/accounts/balance")
-                }}
-                className="w-full"
-              >
-                Voir mes comptes
-              </Button>
+              <p className="text-green-800 text-sm">Ce message disparaîtra automatiquement dans quelques secondes...</p>
             </CardContent>
           </Card>
         </div>
