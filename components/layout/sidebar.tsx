@@ -328,26 +328,30 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>): 
       <SidebarHeader>
         <div className="flex items-center gap-2 px-4 py-2">
           {state === "collapsed" ? (
-            <div className="flex h-14 w-full items-center justify-center">
-              <Image
-                src="/images/portrait-logo.png"
-                alt="BNG Logo"
-                width={56}
-                height={56}
-                className="object-contain"
-                priority
-              />
+            <div className="flex min-h-[64px] w-full items-center justify-center">
+              <div className="h-14 w-14 flex-shrink-0">
+                <Image
+                  src="/images/portrait-logo.png"
+                  alt="BNG Logo"
+                  width={56}
+                  height={56}
+                  className="h-full w-full object-contain"
+                  priority
+                />
+              </div>
             </div>
           ) : (
-            <div className="flex h-30 w-full items-center justify-center">
-              <Image
-                src="/images/logo-bng.png"
-                alt="BNG Logo"
-                width={120}
-                height={120}
-                className="object-contain"
-                priority
-              />
+            <div className="flex min-h-[120px] w-full items-center justify-center">
+              <div className="h-[120px] w-[120px] flex-shrink-0">
+                <Image
+                  src="/images/logo-bng.png"
+                  alt="BNG Logo"
+                  width={120}
+                  height={120}
+                  className="h-full w-full object-contain"
+                  priority
+                />
+              </div>
             </div>
           )}
         </div>
