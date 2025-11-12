@@ -116,6 +116,11 @@ export function OtpModal({
       return
     }
 
+    // Prevent multiple calls
+    if (isVerifying || success) {
+      return
+    }
+
     setIsVerifying(true)
     setError("")
 

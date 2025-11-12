@@ -36,12 +36,23 @@ export function OtpInput({
     }
   }, [autoFocus])
 
+  // Track if onComplete has been called for this value
+  const completedValueRef = React.useRef<string>("")
+
   // Check if OTP is complete
   React.useEffect(() => {
-    if (value.length === length && onComplete) {
+    if (value.length === length && onComplete && value !== completedValueRef.current) {
+      completedValueRef.current = value
       onComplete(value)
     }
   }, [value, length, onComplete])
+
+  // Reset completed value when value is cleared
+  React.useEffect(() => {
+    if (value.length === 0) {
+      completedValueRef.current = ""
+    }
+  }, [value])
 
   const handleChange = (index: number, digit: string) => {
     if (disabled) return
