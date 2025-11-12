@@ -19,6 +19,7 @@ export interface OtpModalProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   onVerified: () => void
+  onCancel?: () => void
   purpose: string
   referenceId?: string
   title?: string
@@ -31,6 +32,7 @@ export function OtpModal({
   open,
   onOpenChange,
   onVerified,
+  onCancel,
   purpose,
   referenceId,
   title = "Vérification OTP",
@@ -43,11 +45,13 @@ export function OtpModal({
   const [isVerifying, setIsVerifying] = React.useState(false)
   const [error, setError] = React.useState("")
   const [success, setSuccess] = React.useState(false)
+  const [isCancelled, setIsCancelled] = React.useState(false)
   const [otpId, setOtpId] = React.useState<string | null>(null)
   const [expiresAt, setExpiresAt] = React.useState<Date | null>(null)
   const [timeRemaining, setTimeRemaining] = React.useState<number | null>(null)
   const [canResend, setCanResend] = React.useState(false)
   const [attemptCount, setAttemptCount] = React.useState(0)
+  const [cancelCountdown, setCancelCountdown] = React.useState<number | null>(null)
   const maxAttempts = 3
 
   // Generate OTP when modal opens
@@ -115,14 +119,14 @@ export function OtpModal({
   // Map backend error messages to user-friendly French messages
   const getErrorMessage = (errorMsg: string): string => {
     const errorMap: Record<string, string> = {
-      'otp.invalid': '❌ Code incorrect. Veuillez vérifier et réessayer.',
-      'otp.expired': '⏰ Ce code a expiré. Demandez-en un nouveau.',
-      'otp.blocked': '🔒 Trop de tentatives échouées. Demandez un nouveau code.',
-      'otp.maxAttemptsReached': '🔒 Nombre maximum de tentatives atteint. Un nouveau code a été demandé.',
+      'otp.invalid': '❌ Code incorrect.',
+      'otp.expired': '⏰ Ce code a expiré. Un nouveau code va être envoyé.',
+      'otp.blocked': '🔒 Code bloqué après 3 tentatives échouées. Le virement est annulé.',
+      'otp.maxAttemptsReached': '🔒 3 tentatives échouées. Le virement est annulé par sécurité.',
       'otp.alreadyVerified': '✓ Ce code a déjà été utilisé.',
       'otp.notFound': '🔍 Code introuvable. Demandez un nouveau code.',
       'Forbidden': '🔐 Session expirée. Veuillez vous reconnecter.',
-      'An error occurred': '❌ Code incorrect. Veuillez vérifier et réessayer.',
+      'An error occurred': '❌ Code incorrect.',
     }
 
     // Check for exact match
@@ -142,8 +146,8 @@ export function OtpModal({
       return
     }
 
-    // Prevent multiple calls
-    if (isVerifying || success) {
+    // Prevent multiple calls or attempts after max reached
+    if (isVerifying || success || attemptCount >= maxAttempts) {
       return
     }
 
@@ -167,34 +171,87 @@ export function OtpModal({
       }
     } catch (err: any) {
       const errorMsg = err.message || ""
-      setAttemptCount(prev => prev + 1)
+      const errorData = err.response?.data || {}
+      
+      // Debug logs
+      console.log('🔍 [OTP Error Debug]', {
+        errorMsg,
+        errorData,
+        attempts: errorData.attempts,
+        maxAttempts,
+      })
+      
+      // Update attempt count from backend if available (but cap at maxAttempts)
+      let currentAttempts = attemptCount
+      if (errorData.attempts !== undefined) {
+        currentAttempts = Math.min(errorData.attempts, maxAttempts)
+        setAttemptCount(currentAttempts)
+      } else {
+        currentAttempts = Math.min(attemptCount + 1, maxAttempts)
+        setAttemptCount(currentAttempts)
+      }
+      
+      // Check if max attempts reached AFTER updating counter
+      const hasReachedMax = currentAttempts >= maxAttempts ||
+                            errorMsg.includes('maxAttempts') || 
+                            errorMsg.includes('blocked') ||
+                            errorData.message?.includes('maxAttempts') ||
+                            errorData.message?.includes('blocked')
+      
+      console.log('🔍 [OTP Check]', { currentAttempts, hasReachedMax })
       
       // Get friendly message
       let friendlyMessage = getErrorMessage(errorMsg)
       
-      // Add attempt counter for invalid codes
-      if (errorMsg.includes('invalid') && attemptCount < maxAttempts - 1) {
-        const remaining = maxAttempts - attemptCount - 1
-        friendlyMessage += ` (${remaining} tentative${remaining > 1 ? 's' : ''} restante${remaining > 1 ? 's' : ''})`
+      // Add attempt counter for invalid codes using backend data
+      if (errorMsg.includes('invalid') && !hasReachedMax) {
+        const remaining = errorData.remainingAttempts !== undefined 
+          ? errorData.remainingAttempts 
+          : maxAttempts - (errorData.attempts || attemptCount + 1)
+          
+        if (remaining > 0) {
+          friendlyMessage += ` (${remaining} tentative${remaining > 1 ? 's' : ''} restante${remaining > 1 ? 's' : ''})`
+        }
       }
       
       setError(friendlyMessage)
       
-      // Clear input for certain errors
-      if (errorMsg.includes('invalid') || errorMsg.includes('blocked') || errorMsg.includes('maxAttempts')) {
-        setOtpValue("")
+      // ✅ Vider les champs OTP après CHAQUE erreur
+      setOtpValue("")
+
+      if (hasReachedMax) {
+        // Max attempts reached - show cancellation state
+        console.log('🚫 [OTP] Max attempts reached - showing cancellation message')
+        setIsCancelled(true)
+        setError('') // Clear error to show only cancellation message
+        setCancelCountdown(3) // Start countdown
+        
+        // Countdown timer
+        let secondsLeft = 3
+        const countdownInterval = setInterval(() => {
+          secondsLeft--
+          setCancelCountdown(secondsLeft)
+          if (secondsLeft <= 0) {
+            clearInterval(countdownInterval)
+          }
+        }, 1000)
+        
+        // Cancel the operation after showing feedback
+        setTimeout(() => {
+          console.log('🚫 [OTP] Closing modal and calling onCancel')
+          if (onCancel) {
+            onCancel()
+          }
+          handleClose()
+        }, 3000) // 3 seconds to read the message
+        return
       }
 
-      // Auto-resend for expired or blocked codes
-      if (errorMsg.includes('expired') || errorMsg.includes('blocked') || errorMsg.includes('maxAttempts')) {
+      // Auto-resend for expired codes only
+      if (errorMsg.includes('expired')) {
         setTimeout(() => {
-          if (errorMsg.includes('maxAttempts') || errorMsg.includes('blocked')) {
-            // Auto-resend after showing error
-            setTimeout(() => {
-              handleResendOtp()
-            }, 2000)
-          }
-        }, 100)
+          handleResendOtp()
+        }, 2000)
       }
     } finally {
       setIsVerifying(false)
@@ -213,6 +270,8 @@ export function OtpModal({
     setOtpValue("")
     setError("")
     setSuccess(false)
+    setIsCancelled(false)
+    setCancelCountdown(null)
     setOtpId(null)
     setExpiresAt(null)
     setTimeRemaining(null)
@@ -275,16 +334,21 @@ export function OtpModal({
                     length={6}
                     value={otpValue}
                     onChange={setOtpValue}
-                    disabled={isVerifying || success}
+                    disabled={isVerifying || success || isCancelled}
                     autoFocus={true}
                     onComplete={handleVerifyOtp}
                   />
                   
-                  {timeRemaining !== null && timeRemaining > 0 && (
-                    <div className="text-sm text-muted-foreground">
-                      Code valide pendant: <span className="font-semibold">{formatTime(timeRemaining)}</span>
+                  <div className="flex items-center justify-between w-full text-xs text-muted-foreground">
+                    {timeRemaining !== null && timeRemaining > 0 && (
+                      <div>
+                        ⏱️ Expire dans: <span className="font-semibold">{formatTime(timeRemaining)}</span>
+                      </div>
+                    )}
+                    <div>
+                      🔢 Tentatives: <span className="font-semibold">{attemptCount}/{maxAttempts}</span>
                     </div>
-                  )}
+                  </div>
                 </>
               )}
 
@@ -330,6 +394,30 @@ export function OtpModal({
                   </AlertDescription>
                 </Alert>
               )}
+
+              {isCancelled && (
+                <Alert className="w-full border-red-600 bg-red-50 text-red-900 animate-pulse">
+                  <AlertDescription className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2 font-semibold text-base">
+                        🚫 Opération annulée
+                      </div>
+                      {cancelCountdown !== null && cancelCountdown > 0 && (
+                        <div className="text-xs bg-red-100 px-2 py-1 rounded">
+                          Fermeture dans {cancelCountdown}s
+                        </div>
+                      )}
+                    </div>
+                    <div className="text-sm font-medium">
+                      Vous avez atteint le nombre maximum de tentatives (3/3).
+                      Le virement a été annulé par mesure de sécurité.
+                    </div>
+                    <div className="text-xs opacity-90 pt-2 border-t border-red-200">
+                      💡 Vous pouvez réessayer en créant un nouveau virement.
+                    </div>
+                  </AlertDescription>
+                </Alert>
+              )}
             </>
           )}
         </div>
@@ -337,7 +425,7 @@ export function OtpModal({
         <DialogFooter className="flex-col sm:flex-col gap-2">
           <Button
             onClick={handleVerifyOtp}
-            disabled={otpValue.length !== 6 || isVerifying || success || isGenerating}
+            disabled={otpValue.length !== 6 || isVerifying || success || isGenerating || isCancelled}
             className="w-full"
           >
             {isVerifying ? (
@@ -353,21 +441,33 @@ export function OtpModal({
           <Button
             variant="outline"
             onClick={handleResendOtp}
-            disabled={!canResend || isGenerating || isVerifying}
+            disabled={!canResend || isGenerating || isVerifying || isCancelled}
             className="w-full"
           >
             <RefreshCw className={`w-4 h-4 mr-2 ${isGenerating ? 'animate-spin' : ''}`} />
             {canResend ? "Renvoyer le code" : "Renvoyer (disponible dans 30s)"}
           </Button>
 
-          <Button
-            variant="ghost"
-            onClick={handleClose}
-            disabled={isVerifying}
-            className="w-full"
-          >
-            Annuler
-          </Button>
+          {!isCancelled && (
+            <Button
+              variant="ghost"
+              onClick={handleClose}
+              disabled={isVerifying}
+              className="w-full"
+            >
+              Annuler
+            </Button>
+          )}
+          
+          {isCancelled && (
+            <Button
+              variant="ghost"
+              onClick={handleClose}
+              className="w-full"
+            >
+              Fermer
+            </Button>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>
