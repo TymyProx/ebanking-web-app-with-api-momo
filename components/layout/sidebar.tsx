@@ -74,7 +74,6 @@ const navigationData = {
       title: "Fonctionnalités",
       url: "/fonctionnalites",
       icon: Sparkles,
-      badge: "Nouveau",
     },
   ],
   accounts: [
