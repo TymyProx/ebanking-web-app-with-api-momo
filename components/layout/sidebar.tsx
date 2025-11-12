@@ -357,14 +357,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>): 
               <SidebarGroupContent>
                 <SidebarMenu>
                   <SidebarMenuItem>
-                    <SidebarMenuButton asChild isActive={pathname === "/accounts/balance"}>
-                      <Link href="/accounts/balance">
-                        <BarChart3 />
-                        <span>Mes comptes</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                  <SidebarMenuItem>
                     <SidebarMenuButton asChild isActive={pathname === "/accounts/new"}>
                       <Link href="/accounts/new">
                         <PlusCircle />
@@ -375,6 +367,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>): 
                 </SidebarMenu>
               </SidebarGroupContent>
             </SidebarGroup>
+            {/* </CHANGE> */}
           </>
         ) : (
           <>

@@ -19,8 +19,9 @@ export function middleware(request: NextRequest) {
   }
 
   if (token && (pathname === "/" || pathname === "/login" || pathname === "/signup")) {
-    return NextResponse.redirect(new URL("/accounts/balance", request.url))
+    return NextResponse.redirect(new URL("/accounts/new", request.url))
   }
+  // </CHANGE>
 
   return NextResponse.next()
 }
