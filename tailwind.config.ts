@@ -15,11 +15,11 @@ const config: Config = {
         foreground: "hsl(140, 25%, 20%)", // vert profond pour contraste
 
         primary: {
-          DEFAULT: "hsl(140, 40%, 40%)", // vert doux
+          DEFAULT: "#0B8338", // vert doux
           foreground: "hsl(50, 40%, 98%)", // texte clair
         },
         secondary: {
-          DEFAULT: "hsl(50, 80%, 65%)", // jaune pastel
+          DEFAULT: "#FFEB00", // jaune pastel
           foreground: "hsl(140, 25%, 20%)",
         },
         accent: {
