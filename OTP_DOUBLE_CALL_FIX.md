@@ -2,14 +2,14 @@
 
 ## Problème Signalé
 
-```
+\`\`\`
 AxiosError: Request failed with status code 400
     at async OtpService.verify
     at async handleVerifyOtp
 
 LORS DE LA VALIDATION DE L'OTP, LA CONFIRMATION PASSE ET 
 IMMEDIATEMENT APRES UNE ERREUR A APPARAIT
-```
+\`\`\`
 
 ## Cause Racine
 
@@ -31,17 +31,17 @@ Le code de vérification OTP était appelé **deux fois successivement** :
 ### Pourquoi Ça Se Produisait :
 
 #### Dans `otp-input.tsx` :
-```typescript
+\`\`\`typescript
 // AVANT (PROBLÉMATIQUE)
 React.useEffect(() => {
   if (value.length === length && onComplete) {
     onComplete(value)  // ← Appelé à chaque re-render si value === 6
   }
 }, [value, length, onComplete])  // ← onComplete change à chaque render
-```
+\`\`\`
 
 #### Dans `otp-modal.tsx` :
-```typescript
+\`\`\`typescript
 // AVANT (PAS DE PROTECTION)
 const handleVerifyOtp = async () => {
   if (otpValue.length !== 6) return
@@ -51,7 +51,7 @@ const handleVerifyOtp = async () => {
   const result = await OtpService.verify({...})
   // ...
 }
-```
+\`\`\`
 
 ## Solution Implémentée
 
@@ -59,7 +59,7 @@ const handleVerifyOtp = async () => {
 
 **Fichier :** `/components/otp-modal.tsx`
 
-```typescript
+\`\`\`typescript
 const handleVerifyOtp = async () => {
   if (otpValue.length !== 6) {
     setError("Veuillez entrer le code complet à 6 chiffres")
@@ -95,7 +95,7 @@ const handleVerifyOtp = async () => {
     setIsVerifying(false)
   }
 }
-```
+\`\`\`
 
 **Avantages :**
 - ✅ Si une vérification est déjà en cours (`isVerifying === true`), ignore les nouveaux appels
@@ -106,7 +106,7 @@ const handleVerifyOtp = async () => {
 
 **Fichier :** `/components/ui/otp-input.tsx`
 
-```typescript
+\`\`\`typescript
 // ✅ NOUVEAU : Track if onComplete has been called for this value
 const completedValueRef = React.useRef<string>("")
 
@@ -124,7 +124,7 @@ React.useEffect(() => {
     completedValueRef.current = ""  // ← Réinitialise quand l'input est vidé
   }
 }, [value])
-```
+\`\`\`
 
 **Avantages :**
 - ✅ `onComplete` n'est appelé qu'**une seule fois** par valeur complète unique
@@ -216,18 +216,18 @@ React.useEffect(() => {
 Après déploiement, vous devriez voir dans les logs backend :
 
 **Avant (2 appels) :**
-```
+\`\`\`
 POST /api/tenant/.../otp/verify ← Premier appel
 ✅ OTP verified successfully
 POST /api/tenant/.../otp/verify ← Deuxième appel
 ❌ Error 400: otp.alreadyVerified
-```
+\`\`\`
 
 **Après (1 seul appel) :**
-```
+\`\`\`
 POST /api/tenant/.../otp/verify ← Un seul appel
 ✅ OTP verified successfully
-```
+\`\`\`
 
 ## Résultat
 
@@ -246,4 +246,3 @@ Cette erreur était un cas classique de "race condition" dans React :
 - La solution nécessite une combinaison de refs et de guards de state
 
 La double protection (ref + state check) assure une robustesse maximale.
-
