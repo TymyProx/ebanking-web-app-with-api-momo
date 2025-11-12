@@ -1185,33 +1185,6 @@ export default function RIBPage() {
                   </div>
                 </CardContent>
               </Card>
-
-              <Card className="mt-6">
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    {getAccountIcon(selectedAccount.type)}
-                    <span className="ml-2">Compte sélectionné</span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    <div>
-                      <p className="text-xs text-gray-500">Nom du compte</p>
-                      <p className="font-medium">{selectedAccount.name}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-500">Numéro</p>
-                      <p className="font-mono text-sm">{selectedAccount.number}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-500">Solde actuel</p>
-                      <p className="font-semibold text-green-600">
-                        {formatAmount(selectedAccount.balance, selectedAccount.currency)} {selectedAccount.currency}
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
             </>
           )}
         </div>

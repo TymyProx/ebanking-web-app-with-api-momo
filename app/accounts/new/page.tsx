@@ -90,7 +90,7 @@ export default function NewAccountPage() {
         setSelectedType("")
         setFormData({})
         router.refresh()
-      }, 5000)
+      }, 10000)
 
       return () => clearTimeout(timer)
     }
@@ -113,7 +113,7 @@ export default function NewAccountPage() {
               </div>
             </CardHeader>
             <CardContent>
-              <p className="text-green-800 text-sm">Ce message disparaîtra automatiquement dans quelques secondes...</p>
+              <p className="text-green-800 text-sm">Vous recevrez un e-mail dès que le statut de votre compte sera mis à jour.</p>
             </CardContent>
           </Card>
         </div>
