@@ -26,6 +26,7 @@ import {
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import {
   addBeneficiary,
+  addBeneficiaryAndActivate,
   updateBeneficiary,
   deactivateBeneficiary,
   reactivateBeneficiary,
@@ -126,6 +127,11 @@ export default function BeneficiariesPage() {
   const editFormRef = useRef<HTMLFormElement>(null)
 
   const [addState, addAction, isAddPending] = useActionState<any, any>(addBeneficiary as any, null as any)
+  // ✅ NEW: Streamlined action for OTP-verified beneficiary creation
+  const [addAndActivateState, addAndActivateAction, isAddAndActivatePending] = useActionState<any, any>(
+    addBeneficiaryAndActivate as any,
+    null as any,
+  )
   const [updateState, updateAction, isUpdatePending] = useActionState<any, any>(updateBeneficiary as any, null as any)
   const [deactivateState, deactivateAction, isDeactivatePending] = useActionState<any, any>(
     deactivateBeneficiary as any,
@@ -253,20 +259,20 @@ export default function BeneficiariesPage() {
   }, [])
 
   useEffect(() => {
-    if (addState?.success || updateState?.success || deactivateState?.success || reactivateState?.success) {
+    if (addState?.success || addAndActivateState?.success || updateState?.success || deactivateState?.success || reactivateState?.success) {
       loadBeneficiaries()
     }
-  }, [addState?.success, updateState?.success, deactivateState?.success, reactivateState?.success])
+  }, [addState?.success, addAndActivateState?.success, updateState?.success, deactivateState?.success, reactivateState?.success])
 
   useEffect(() => {
-    if (addState?.success) {
+    if (addState?.success || addAndActivateState?.success) {
       setShowAddSuccess(true)
       const timer = setTimeout(() => {
         setShowAddSuccess(false)
       }, 5000)
       return () => clearTimeout(timer)
     }
-  }, [addState?.success])
+  }, [addState?.success, addAndActivateState?.success])
 
   useEffect(() => {
     if (updateState?.success) {
@@ -522,7 +528,8 @@ export default function BeneficiariesPage() {
   const handleOtpVerified = () => {
     if (pendingBeneficiaryData) {
       startTransition(() => {
-        addAction(pendingBeneficiaryData)
+        // ✅ Use streamlined action that creates AND activates
+        addAndActivateAction(pendingBeneficiaryData)
       })
       // Reset pending data
       setPendingBeneficiaryData(null)
@@ -933,16 +940,16 @@ export default function BeneficiariesPage() {
         <Alert className="border-green-200 bg-green-50">
           <CheckCircle className="h-4 w-4 text-green-600" />
           <AlertDescription className="text-green-800">
-            ✅ Bénéficiaire créé. Vérification en cours avant validation.
+            ✅ Bénéficiaire ajouté et activé avec succès! Vous pouvez maintenant effectuer des virements.
           </AlertDescription>
         </Alert>
       )}
 
+      {/* ✅ NEW: OTP verification info */}
       <Alert className="border-blue-200 bg-blue-50">
         <AlertCircle className="h-4 w-4 text-blue-600" />
         <AlertDescription className="text-blue-800">
-          Les nouveaux bénéficiaires doivent être vérifiés puis validés par nos équipes avant d'être disponibles pour
-          vos virements.
+          <strong>📧 Vérification par OTP</strong>: Un code de vérification sera envoyé par email pour confirmer l'ajout de chaque nouveau bénéficiaire.
         </AlertDescription>
       </Alert>
 
