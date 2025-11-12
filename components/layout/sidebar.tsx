@@ -345,7 +345,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>): 
               <Alert className="border-amber-500/50 bg-amber-50 dark:bg-amber-950/20">
                 <AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-500" />
                 <AlertDescription className="text-xs text-amber-800 dark:text-amber-300">
-                  Ouvrez un compte pour accéder à toutes les fonctionnalités
+                  Veuillez initier la demande d'ouverture de compte pour accéder à toutes les fonctionnalités
                 </AlertDescription>
               </Alert>
             </div>
