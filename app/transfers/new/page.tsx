@@ -223,20 +223,6 @@ export default function NewTransferPage() {
     setShowOtpModal(true)
   }
 
-  const handleOtpCancel = () => {
-    // Annuler le virement après 3 tentatives échouées
-    setPendingTransferData(null)
-    setOtpReferenceId(null)
-    setTransferValidationError(
-      "❌ Vérification OTP échouée après 3 tentatives. Le virement a été annulé par sécurité. Veuillez réessayer."
-    )
-    // Reset form
-    setAmount("")
-    setMotif("")
-    setSelectedBeneficiary("")
-    setSelectedCreditAccount("")
-  }
-
   // Fonction appelée après validation OTP
   const handleOtpVerified = () => {
     if (pendingTransferData) {
@@ -981,7 +967,6 @@ export default function NewTransferPage() {
         open={showOtpModal}
         onOpenChange={setShowOtpModal}
         onVerified={handleOtpVerified}
-        onCancel={handleOtpCancel}
         purpose="TRANSFER"
         referenceId={otpReferenceId || undefined}
         title="Confirmer le virement"
