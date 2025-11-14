@@ -125,7 +125,7 @@ export default function LoginPage() {
                     id="email"
                     name="email"
                     type="email"
-                    placeholder="Nom d'utilisateur"
+                    placeholder="Email"
                     className="h-12 pr-10 bg-white border-gray-300 focus:border-[hsl(123,38%,57%)] focus:ring-[hsl(123,38%,57%)]"
                     required
                     disabled={isLoading}
