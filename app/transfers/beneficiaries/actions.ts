@@ -9,6 +9,7 @@ interface ActionResult {
   success?: boolean
   error?: string
   message?: string
+  details?: any
 }
 
 interface ApiBeneficiary {
@@ -273,6 +274,16 @@ export async function addBeneficiaryAndActivate(prevState: ActionResult | null, 
     const keyB64 = process.env.NEXT_PUBLIC_PORTAL_KEY_B64 || ""
     const keyId = process.env.NEXT_PUBLIC_PORTAL_KEY_ID || "k1-mobile-v1"
 
+    console.log("[addBeneficiaryAndActivate] Form values", {
+      name,
+      account,
+      type,
+      codeBanque,
+      bankname,
+      codeAgence,
+      cleRib,
+    });
+
     const base = {
       beneficiaryId: `BEN_${Date.now()}`,
       clientId: clientId,
@@ -283,11 +294,21 @@ export async function addBeneficiaryAndActivate(prevState: ActionResult | null, 
     }
 
     let apiData: any
+    const plainFields = {
+      name,
+      accountNumber: account,
+      bankCode: codeBanque || "",
+      bankName: bankname || "",
+      codagence: type === "BNG-INTERNATIONAL" ? "N/A" : codeAgence || "N/A",
+      clerib: type === "BNG-INTERNATIONAL" ? "N/A" : cleRib || "N/A",
+    }
+
     if (secureMode && keyB64) {
       const enc = (v: any) => ({ ...encryptAesGcmNode(v, keyB64), key_id: keyId })
       apiData = {
         data: {
           ...base,
+          ...plainFields,
           name_json: enc(name),
           accountNumber_json: enc(account),
           bankCode_json: enc(codeBanque || ""),
@@ -301,15 +322,15 @@ export async function addBeneficiaryAndActivate(prevState: ActionResult | null, 
       apiData = {
         data: {
           ...base,
-          name: name,
-          accountNumber: account,
-          bankCode: codeBanque || "",
-          bankName: bankname || "",
-          codagence: type === "BNG-INTERNATIONAL" ? "N/A" : codeAgence || "N/A",
-          clerib: type === "BNG-INTERNATIONAL" ? "N/A" : cleRib || "N/A",
+          ...plainFields,
         },
       }
     }
+
+    const payloadToSend = apiData.data ?? apiData
+
+    console.log("[addBeneficiaryAndActivate] API payload (secureMode:", secureMode, ")", apiData)
+    console.log("[addBeneficiaryAndActivate] Payload sent to API", payloadToSend)
 
     const cookieToken = (await cookies()).get("token")?.value
     const usertoken = cookieToken
@@ -321,14 +342,24 @@ export async function addBeneficiaryAndActivate(prevState: ActionResult | null, 
         "Content-Type": "application/json",
         Authorization: `Bearer ${usertoken}`,
       },
-      body: JSON.stringify(apiData),
+      body: JSON.stringify(payloadToSend),
     })
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}))
+      let errorMessage = `Erreur API: ${response.status} ${response.statusText}`
+      let errorDetails: any = null
+      try {
+        errorDetails = await response.json()
+        if (errorDetails && typeof errorDetails === 'object') {
+          errorMessage = errorDetails.message || errorDetails.error || errorMessage
+        }
+      } catch (parseError) {
+        // ignore JSON parse errors
+      }
       return {
         success: false,
-        error: errorData.message || `Erreur API: ${response.status} ${response.statusText}`,
+        error: errorMessage,
+        details: errorDetails,
       }
     }
 

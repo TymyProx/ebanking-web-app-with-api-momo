@@ -265,14 +265,6 @@ export default function BeneficiariesPage() {
   useEffect(() => {
     if (addState?.success || addAndActivateState?.success) {
       setShowAddSuccess(true)
-
-      if (addAndActivateState?.success) {
-        setIsAddDialogOpen(false)
-        resetForm()
-        setPendingBeneficiaryData(null)
-        setOtpReferenceId(null)
-      }
-
       const timer = setTimeout(() => {
         setShowAddSuccess(false)
       }, 5000)
@@ -507,24 +499,18 @@ export default function BeneficiariesPage() {
     formData.set("type", selectedType)
 
     if (selectedType === "BNG-BNG") {
-      const internalBankCode = selectedBankCode || "022"
       formData.set("bank", "GNXXX")
       formData.set("bankname", "Banque Nationale de Guinée")
-      formData.set("bankCode", internalBankCode)
-      formData.set("codeBanque", internalBankCode)
     } else if (selectedType === "BNG-CONFRERE") {
       formData.set("bank", selectedBankCode)
       formData.set("bankname", selectedBank)
-      if (selectedBankCode) {
-        formData.set("bankCode", selectedBankCode)
-        formData.set("codeBanque", selectedBankCode)
-      }
     } else {
       const bankValue = selectedBank
       formData.set("bank", bankValue)
-      if (bankValue) {
-        formData.set("bankname", bankValue)
-      }
+    }
+
+    if (selectedType === "BNG-CONFRERE" && selectedBankCode) {
+      formData.set("bankCode", selectedBankCode)
     }
 
     const beneficiaryName = formData.get("name") as string
@@ -534,23 +520,17 @@ export default function BeneficiariesPage() {
     setShowOtpModal(true)
   }
 
-  const handleOtpVerified = ({ otpId, referenceId }: { otpId?: string | null; referenceId?: string | null }) => {
-    if (!pendingBeneficiaryData) {
-      return
+  const handleOtpVerified = () => {
+    if (pendingBeneficiaryData) {
+      startTransition(() => {
+        // ✅ Use streamlined action that creates AND activates
+        addAndActivateAction(pendingBeneficiaryData)
+      })
+      // Reset pending data
+      setPendingBeneficiaryData(null)
+      setOtpReferenceId(null)
+      setIsAddDialogOpen(false)
     }
-
-    if (otpId) {
-      pendingBeneficiaryData.set("otpId", otpId)
-    }
-
-    const ref = referenceId || otpReferenceId
-    if (ref) {
-      pendingBeneficiaryData.set("otpReferenceId", ref)
-    }
-
-    startTransition(() => {
-      addAndActivateAction(pendingBeneficiaryData)
-    })
   }
 
   const handleEditBeneficiary = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -1178,11 +1158,7 @@ export default function BeneficiariesPage() {
                           <>
                             <DropdownMenuItem 
                               disabled={beneficiary.workflowStatus !== WORKFLOW_STATUS.AVAILABLE}
-                              onClick={() => {
-                                if (beneficiary.workflowStatus === WORKFLOW_STATUS.AVAILABLE) {
-                                  window.location.href = "/transfers/new"
-                                }
-                              }}
+                              onClick={() => beneficiary.workflowStatus === WORKFLOW_STATUS.AVAILABLE && window.location.href = '/transfers/new'}
                             >
                               <Users className="w-4 h-4 mr-2" />
                               {beneficiary.workflowStatus === WORKFLOW_STATUS.AVAILABLE

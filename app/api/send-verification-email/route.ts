@@ -4,7 +4,7 @@ import { VerificationEmail } from "@/emails/verification-email"
 
 const resend = new Resend(process.env.RESEND_API_KEY || "re_NdcxUQii_54sRnXtfjKgHcXdr2XZf5FzP")
 const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || "bng@astratechnologie.com"
-const APP_URL = process.env.NEXT_PUBLIC_EBANKING_URL || "http://localhost:3000"
+const APP_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000"
 
 export async function POST(request: NextRequest) {
   try {

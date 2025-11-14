@@ -15,10 +15,15 @@ import { OtpService, type OtpGenerateOptions } from "@/lib/otp-service"
 import { Loader2, Mail, MessageSquare, RefreshCw, ShieldCheck } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 
+export interface OtpVerificationPayload {
+  otpId?: string | null
+  referenceId?: string
+}
+
 export interface OtpModalProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  onVerified: () => void
+  onVerified: (payload: OtpVerificationPayload) => void
   onCancel?: () => void
   purpose: string
   referenceId?: string
@@ -165,7 +170,7 @@ export function OtpModal({
         setSuccess(true)
         // Wait a bit to show success state
         setTimeout(() => {
-          onVerified()
+          onVerified({ otpId, referenceId })
           handleClose()
         }, 1000)
       }
