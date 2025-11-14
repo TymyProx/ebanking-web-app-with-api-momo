@@ -118,7 +118,7 @@ export default function LoginPage() {
               {/* Username/Email Field */}
               <div className="space-y-2">
                 <Label htmlFor="email" className="text-sm font-medium text-[hsl(220,13%,13%)]">
-                  Nom d'utilisateur
+                  Email
                 </Label>
                 <div className="relative">
                   <Input
