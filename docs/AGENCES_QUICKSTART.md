@@ -8,7 +8,7 @@ Créer ou modifier le fichier `.env.local` :
 
 \`\`\`env
 # URL du backend API (obligatoire)
-NEXT_PUBLIC_API_URL=https://35.184.98.9:4000
+NEXT_PUBLIC_API_URL=https://astra-apps.net:4000/
 
 # ID du tenant (obligatoire)
 NEXT_PUBLIC_TENANT_ID=aa1287f6-06af-45b7-a905-8c57363565c2
