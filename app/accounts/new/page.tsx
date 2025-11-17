@@ -155,7 +155,7 @@ export default function NewAccountPage() {
     }
   }, [createState, router])
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     
     if (!hasExistingAccounts) {
@@ -196,8 +196,7 @@ export default function NewAccountPage() {
       }
     }
 
-    // Submit the form via createAction
-    const formElement = e.target as HTMLFormElement
+    const formElement = e.currentTarget
     const formDataObj = new FormData(formElement)
     createAction(formDataObj)
   }
@@ -657,7 +656,7 @@ export default function NewAccountPage() {
                 </Label>
               </div>
             </div>
-            <form action={createAction}>
+            <form onSubmit={handleSubmit}>
               <input type="hidden" name="accountId" value={`ACC_${Date.now()}`} />
               <input type="hidden" name="customerId" value="CUSTOMER_ID_PLACEHOLDER" />
               <input type="hidden" name="accountNumber" value={`000${Date.now().toString().slice(-7)}`} />
@@ -676,7 +675,6 @@ export default function NewAccountPage() {
                   disabled={isCreating || !canSubmit}
                   className="bg-primary hover:opacity-90 transition-opacity"
                   size="sm"
-                  onClick={handleSubmit}
                 >
                   {isCreating ? (
                     <>
