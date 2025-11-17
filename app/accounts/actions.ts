@@ -36,18 +36,42 @@ interface AccountsResponse {
   count: number
 }
 
+async function fetchWithTimeout(url: string, options: RequestInit, timeoutMs = 8000) {
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs)
+
+  try {
+    const response = await fetch(url, {
+      ...options,
+      signal: controller.signal,
+    })
+    clearTimeout(timeoutId)
+    return response
+  } catch (error: any) {
+    clearTimeout(timeoutId)
+    if (error.name === 'AbortError') {
+      console.error(`[v0] Fetch timeout after ${timeoutMs}ms for ${url}`)
+      throw new Error('REQUEST_TIMEOUT')
+    }
+    console.error(`[v0] Fetch failed for ${url}:`, error.message)
+    throw error
+  }
+}
+
 export async function getAccounts(): Promise<Account[]> {
   const cookieToken = (await cookies()).get("token")?.value
   const usertoken = cookieToken
 
   try {
     if (!usertoken) {
+      console.log("[v0] No token found, returning empty accounts")
       return []
     }
 
     let currentUserId: string | null = null
     try {
-      const userResponse = await fetch(`${API_BASE_URL}/auth/me`, {
+      console.log("[v0] Fetching user ID from /auth/me")
+      const userResponse = await fetchWithTimeout(`${API_BASE_URL}/auth/me`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -59,12 +83,17 @@ export async function getAccounts(): Promise<Account[]> {
       if (userResponse.ok) {
         const userData = await userResponse.json()
         currentUserId = userData.id
+        console.log("[v0] Successfully retrieved user ID:", currentUserId)
+      } else {
+        console.log("[v0] Failed to get user ID, status:", userResponse.status)
       }
-    } catch (error) {
-      console.error("Error fetching user ID:", error)
+    } catch (error: any) {
+      console.error("[v0] Error fetching user ID:", error.message)
+      // Continue without user ID - don't fail the whole request
     }
 
-    const response = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/compte`, {
+    console.log("[v0] Fetching accounts from API")
+    const response = await fetchWithTimeout(`${API_BASE_URL}/tenant/${TENANT_ID}/compte`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -152,13 +181,16 @@ export async function getAccounts(): Promise<Account[]> {
       accounts = responseData
     }
 
+    console.log(`[v0] Retrieved ${accounts.length} total accounts`)
+
     if (currentUserId) {
       accounts = accounts.filter((account) => account.clientId === currentUserId)
+      console.log(`[v0] Filtered to ${accounts.length} accounts for user ${currentUserId}`)
     }
 
     return accounts
-  } catch (error) {
-    console.error("Error in getAccounts:", error)
+  } catch (error: any) {
+    console.error("[v0] Error in getAccounts:", error.message)
     return []
   }
 }
