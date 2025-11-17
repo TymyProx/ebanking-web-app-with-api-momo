@@ -187,16 +187,17 @@ export default function NewAccountPage() {
           alert(result.error || "Erreur lors de l'enregistrement des informations")
           return
         }
+        
+        console.log("[v0] Client additional info saved successfully")
       } catch (error) {
-        console.error("Error saving client info:", error)
+        console.error("[v0] Error saving client info:", error)
         alert("Erreur lors de l'enregistrement des informations")
         return
       }
     }
 
     const form = e.target as HTMLFormElement
-    const formDataObj = new FormData(form)
-    createAction(formDataObj)
+    form.requestSubmit()
   }
 
   if (success) {
@@ -654,7 +655,7 @@ export default function NewAccountPage() {
                 </Label>
               </div>
             </div>
-            <form onSubmit={handleSubmit}>
+            <form action={createAction}>
               <input type="hidden" name="accountId" value={`ACC_${Date.now()}`} />
               <input type="hidden" name="customerId" value="CUSTOMER_ID_PLACEHOLDER" />
               <input type="hidden" name="accountNumber" value={`000${Date.now().toString().slice(-7)}`} />
@@ -673,6 +674,7 @@ export default function NewAccountPage() {
                   disabled={isCreating || !canSubmit}
                   className="bg-primary hover:opacity-90 transition-opacity"
                   size="sm"
+                  onClick={handleSubmit}
                 >
                   {isCreating ? (
                     <>
