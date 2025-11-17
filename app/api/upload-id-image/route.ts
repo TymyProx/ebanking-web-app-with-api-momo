@@ -10,13 +10,19 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "No file provided" }, { status: 400 })
     }
 
+    const token = process.env.BLOB_READ_WRITE_TOKEN
+    if (!token) {
+      console.error("[v0] BLOB_READ_WRITE_TOKEN not found in environment variables")
+      return NextResponse.json({ error: "Storage not configured" }, { status: 500 })
+    }
+
     // Generate unique filename with timestamp
     const timestamp = Date.now()
     const fileName = `id-documents/${timestamp}-${file.name}`
 
-    // Upload to Vercel Blob
     const blob = await put(fileName, file, {
       access: "public",
+      token,
     })
 
     return NextResponse.json({
