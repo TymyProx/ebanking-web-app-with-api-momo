@@ -196,8 +196,10 @@ export default function NewAccountPage() {
       }
     }
 
-    const form = e.target as HTMLFormElement
-    form.requestSubmit()
+    // Submit the form via createAction
+    const formElement = e.target as HTMLFormElement
+    const formDataObj = new FormData(formElement)
+    createAction(formDataObj)
   }
 
   if (success) {
