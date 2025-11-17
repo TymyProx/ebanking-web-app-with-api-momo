@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, startTransition } from "react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -196,7 +196,10 @@ export default function NewAccountPage() {
 
     const form = e.target as HTMLFormElement
     const formDataObj = new FormData(form)
-    createAction(formDataObj)
+    startTransition(async () => {
+  await createAction(formDataObj)
+})
+    // createAction(formDataObj)
   }
 
   if (success) {
