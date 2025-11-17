@@ -62,12 +62,38 @@ export default function NewAccountPage() {
   const [step, setStep] = useState(1)
   const [selectedType, setSelectedType] = useState("")
   const [formData, setFormData] = useState<Record<string, any>>({})
-  const [hasExistingAccounts, setHasExistingAccounts] = useState(true)
+  const [hasExistingAccounts, setHasExistingAccounts] = useState<boolean | null>(null)
   const [createState, createAction, isCreating] = useActionState(createAccount, null)
   const [success, setSuccess] = useState(false)
   const router = useRouter()
 
   const selectedAccountType = accountTypes.find((type) => type.id === selectedType)
+
+  useEffect(() => {
+    async function checkExistingAccounts() {
+      try {
+        const user = AuthService.getCurrentUser()
+        if (!user) {
+          setHasExistingAccounts(false)
+          return
+        }
+
+        const response = await fetch(`/api/accounts/check-existing`)
+        if (response.ok) {
+          const data = await response.json()
+          setHasExistingAccounts(data.hasActiveAccounts)
+          console.log("[v0] Has existing accounts:", data.hasActiveAccounts)
+        } else {
+          setHasExistingAccounts(false)
+        }
+      } catch (error) {
+        console.error("[v0] Error checking accounts:", error)
+        setHasExistingAccounts(false)
+      }
+    }
+
+    checkExistingAccounts()
+  }, [])
 
   const handleInputChange = (field: string, value: any) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
@@ -87,12 +113,14 @@ export default function NewAccountPage() {
   }
 
   const canProceedToStep2 = selectedType !== ""
-  const canProceedToStep3 = hasExistingAccounts 
-    ? (formData.accountName && formData.currency && formData.accountPurpose)
-    : (formData.accountName && formData.currency && formData.accountPurpose &&
-       formData.country && formData.city && formData.addressLine1 && 
-       formData.idType && formData.idNumber && formData.idIssuingCountry &&
-       formData.idIssueDate && formData.idExpiryDate)
+  const canProceedToStep3 = hasExistingAccounts !== null 
+    ? (hasExistingAccounts 
+      ? (formData.accountName && formData.currency && formData.accountPurpose)
+      : (formData.accountName && formData.currency && formData.accountPurpose &&
+         formData.country && formData.city && formData.addressLine1 && 
+         formData.idType && formData.idNumber && formData.idIssuingCountry &&
+         formData.idIssueDate && formData.idExpiryDate))
+    : false
   const canSubmit = formData.terms && formData.dataProcessing
 
   useEffect(() => {
