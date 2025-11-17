@@ -155,7 +155,7 @@ export default function NewAccountPage() {
     }
   }, [createState, router])
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
     if (!hasExistingAccounts) {
@@ -187,17 +187,15 @@ export default function NewAccountPage() {
           alert(result.error || "Erreur lors de l'enregistrement des informations")
           return
         }
-        
-        console.log("[v0] Client additional info saved successfully")
       } catch (error) {
-        console.error("[v0] Error saving client info:", error)
+        console.error("Error saving client info:", error)
         alert("Erreur lors de l'enregistrement des informations")
         return
       }
     }
 
-    const formElement = e.currentTarget
-    const formDataObj = new FormData(formElement)
+    const form = e.target as HTMLFormElement
+    const formDataObj = new FormData(form)
     createAction(formDataObj)
   }
 
