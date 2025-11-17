@@ -3,12 +3,12 @@
 import type React from "react"
 import Image from "next/image"
 import { useState } from "react"
-import { useRouter } from 'next/navigation'
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Eye, EyeOff, User } from 'lucide-react'
+import { Eye, EyeOff, User } from "lucide-react"
 import AuthService from "@/lib/auth-service"
 import { config } from "@/lib/config"
 import { storeAuthToken } from "./actions"
@@ -45,35 +45,20 @@ export default function LoginPage() {
           localStorage.setItem("rememberMe", "true")
         }
 
-        try {
-          const accounts = await getAccounts()
+        const accounts = await getAccounts()
 
-          console.log("[v0] Login - Fetched accounts:", accounts)
-          console.log("[v0] Login - Accounts count:", accounts.length)
+        console.log("[v0] Fetched accounts:", accounts)
 
-          if (accounts && accounts.length > 0) {
-            const hasActiveAccounts = accounts.some(
-              (acc) => {
-                const status = acc.status?.toUpperCase()
-                console.log("[v0] Login - Account status:", status)
-                return status === "ACTIF" || status === "ACTIVE"
-              }
-            )
+        const hasActiveAccounts = accounts.some(
+          (acc) => acc.status?.toUpperCase() === "ACTIF" || acc.status?.toUpperCase() === "ACTIVE",
+        )
 
-            console.log("[v0] Login - Has active accounts:", hasActiveAccounts)
+        console.log("[v0] Has active accounts:", hasActiveAccounts)
 
-            if (hasActiveAccounts) {
-              router.push("/")
-            } else {
-              router.push("/accounts/new")
-            }
-          } else {
-            console.log("[v0] Login - No accounts data, redirecting to dashboard")
-            router.push("/")
-          }
-        } catch (accountError) {
-          console.error("[v0] Login - Error fetching accounts:", accountError)
-          router.push("/")
+        if (hasActiveAccounts) {
+          router.push("/dashboard")
+        } else {
+          router.push("/accounts/new")
         }
       }
     } catch (err: any) {

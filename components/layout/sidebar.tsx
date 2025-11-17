@@ -3,10 +3,30 @@
 import React from "react"
 
 import type { ReactElement } from "react"
-import { usePathname } from 'next/navigation'
+import { usePathname } from "next/navigation"
 import Link from "next/link"
 import { useState, useEffect } from "react"
-import { Home, CreditCard, ArrowLeftRight, Settings, FileText, MessageSquare, Bell, User, Building2, ChevronRight, HelpCircle, Wallet, BarChart3, Clock, Sparkles, AlertCircle, Loader2, PlusCircle, FileCheck } from 'lucide-react'
+import {
+  Home,
+  CreditCard,
+  ArrowLeftRight,
+  Settings,
+  FileText,
+  MessageSquare,
+  Bell,
+  User,
+  Building2,
+  ChevronRight,
+  HelpCircle,
+  Wallet,
+  BarChart3,
+  Clock,
+  Sparkles,
+  AlertCircle,
+  Loader2,
+  PlusCircle,
+  FileCheck,
+} from "lucide-react"
 import Image from "next/image"
 import { cn } from "@/lib/utils"
 import { Slot } from "@radix-ui/react-slot"
@@ -196,7 +216,7 @@ const SidebarGroupLabel = React.forwardRef<HTMLDivElement, React.ComponentProps<
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>): ReactElement {
   const pathname = usePathname()
   const [userData, setUserData] = useState<any>(null)
-  const [hasActiveAccount, setHasActiveAccount] = useState<boolean>(true)
+  const [hasActiveAccount, setHasActiveAccount] = useState<boolean>(false)
   const [isCheckingAccounts, setIsCheckingAccounts] = useState<boolean>(true)
   const { state } = useSidebar()
 
@@ -212,24 +232,13 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>): 
       try {
         setIsCheckingAccounts(true)
         const accounts = await getAccounts()
-        
-        console.log("[v0] Sidebar - Checking accounts:", accounts)
-        console.log("[v0] Sidebar - Accounts count:", accounts.length)
-        
-        if (accounts && accounts.length > 0) {
-          const hasActive = accounts.some((account) => {
-            const status = account.status?.toUpperCase()
-            console.log("[v0] Sidebar - Account status:", status)
-            return status === "ACTIF" || status === "ACTIVE"
-          })
-          
-          console.log("[v0] Sidebar - Has active accounts:", hasActive)
-          setHasActiveAccount(hasActive)
-        } else {
-          console.log("[v0] Sidebar - No accounts data, keeping default navigation visible")
-        }
+
+        const hasActive = accounts.some((account) => account.status === "ACTIF")
+
+        setHasActiveAccount(hasActive)
       } catch (error) {
-        console.error("[v0] Sidebar - Error checking accounts:", error)
+        console.error("Error checking accounts:", error)
+        setHasActiveAccount(false)
       } finally {
         setIsCheckingAccounts(false)
       }
