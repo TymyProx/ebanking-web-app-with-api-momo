@@ -12,7 +12,7 @@
 #### A. Action `addAndActivateAction`
 
 **Avant**:
-```typescript
+\`\`\`typescript
 // Utilisait addAction (créait avec statut "CRÉÉ")
 const handleOtpVerified = () => {
   if (pendingBeneficiaryData) {
@@ -21,10 +21,10 @@ const handleOtpVerified = () => {
     })
   }
 }
-```
+\`\`\`
 
 **Maintenant**:
-```typescript
+\`\`\`typescript
 // ✅ Utilise addAndActivateAction (créé ET active immédiatement)
 const handleOtpVerified = () => {
   if (pendingBeneficiaryData) {
@@ -33,7 +33,7 @@ const handleOtpVerified = () => {
     })
   }
 }
-```
+\`\`\`
 
 ---
 
@@ -42,16 +42,16 @@ const handleOtpVerified = () => {
 #### A. Dans le Formulaire Modal
 
 **Avant**:
-```jsx
+\`\`\`jsx
 {addState?.success && (
   <Alert>
     Bénéficiaire créé. Vérification en cours.
   </Alert>
 )}
-```
+\`\`\`
 
 **Maintenant**:
-```jsx
+\`\`\`jsx
 {addAndActivateState?.success && (
   <Alert className="border-green-200 bg-green-50">
     <CheckCircle className="h-4 w-4 text-green-600" />
@@ -61,20 +61,20 @@ const handleOtpVerified = () => {
     </AlertDescription>
   </Alert>
 )}
-```
+\`\`\`
 
 #### B. Sur la Page Principale
 
 **Avant**:
-```jsx
+\`\`\`jsx
 <Alert>
   Les nouveaux bénéficiaires doivent être vérifiés puis validés 
   par nos équipes avant d'être disponibles pour vos virements.
 </Alert>
-```
+\`\`\`
 
 **Maintenant**:
-```jsx
+\`\`\`jsx
 <Alert className="border-blue-200 bg-blue-50">
   <AlertCircle className="h-4 w-4 text-blue-600" />
   <AlertDescription className="text-blue-800">
@@ -88,7 +88,7 @@ const handleOtpVerified = () => {
     </div>
   </AlertDescription>
 </Alert>
-```
+\`\`\`
 
 ---
 
@@ -102,7 +102,7 @@ const handleOtpVerified = () => {
 - `Suspendu` → Badge rouge basique
 
 **Maintenant**:
-```typescript
+\`\`\`typescript
 const getWorkflowBadge = (status: WorkflowStatus) => {
   switch (status) {
     case WORKFLOW_STATUS.CREATED:
@@ -137,7 +137,7 @@ const getWorkflowBadge = (status: WorkflowStatus) => {
       )
   }
 }
-```
+\`\`\`
 
 **Amélioration visuelle**:
 - ✅ Emojis pour reconnaissance rapide
@@ -150,22 +150,22 @@ const getWorkflowBadge = (status: WorkflowStatus) => {
 ### 4. **Messages d'État dans la Liste**
 
 **Avant**:
-```jsx
+\`\`\`jsx
 {beneficiary.workflowStatus !== WORKFLOW_STATUS.AVAILABLE && (
   <p className="text-xs text-amber-600">
     Statut workflow: {WORKFLOW_LABELS[beneficiary.workflowStatus]}
   </p>
 )}
-```
+\`\`\`
 
 **Maintenant**:
-```jsx
+\`\`\`jsx
 {beneficiary.workflowStatus !== WORKFLOW_STATUS.AVAILABLE && (
   <p className="text-xs text-amber-700 bg-amber-50 px-2 py-1 rounded inline-block">
     ⏳ En attente de validation manuelle
   </p>
 )}
-```
+\`\`\`
 
 **Avantages**:
 - ✅ Message plus clair
@@ -177,17 +177,17 @@ const getWorkflowBadge = (status: WorkflowStatus) => {
 ### 5. **Menu Dropdown Amélioré**
 
 **Avant**:
-```jsx
+\`\`\`jsx
 <DropdownMenuItem disabled={...}>
   <Users className="w-4 h-4 mr-2" />
   {status === WORKFLOW_STATUS.AVAILABLE
     ? "Faire un virement"
     : "En attente de disponibilité"}
 </DropdownMenuItem>
-```
+\`\`\`
 
 **Maintenant**:
-```jsx
+\`\`\`jsx
 <DropdownMenuItem 
   disabled={beneficiary.workflowStatus !== WORKFLOW_STATUS.AVAILABLE}
   onClick={() => beneficiary.workflowStatus === WORKFLOW_STATUS.AVAILABLE && 
@@ -198,7 +198,7 @@ const getWorkflowBadge = (status: WorkflowStatus) => {
     ? "Faire un virement"
     : "⏳ En attente de validation"}
 </DropdownMenuItem>
-```
+\`\`\`
 
 **Amélioration**:
 - ✅ Emoji pour clarté
@@ -210,23 +210,23 @@ const getWorkflowBadge = (status: WorkflowStatus) => {
 ### 6. **Modal OTP Amélioré**
 
 **Avant**:
-```jsx
+\`\`\`jsx
 <OtpModal
   title="Confirmer l'ajout du bénéficiaire"
   description={`Entrez le code OTP pour confirmer l'ajout de ${name}`}
   ...
 />
-```
+\`\`\`
 
 **Maintenant**:
-```jsx
+\`\`\`jsx
 <OtpModal
   title="🔐 Confirmer l'ajout du bénéficiaire"
   description={`Pour confirmer l'ajout de "${name}", entrez le code OTP envoyé par email. 
     Le bénéficiaire sera immédiatement actif après validation.`}
   ...
 />
-```
+\`\`\`
 
 **Avantages**:
 - ✅ Emoji de sécurité
@@ -238,13 +238,13 @@ const getWorkflowBadge = (status: WorkflowStatus) => {
 ### 7. **Gestion des États**
 
 **Nouvelle Action State**:
-```typescript
+\`\`\`typescript
 const [addAndActivateState, addAndActivateAction, isAddAndActivatePending] = 
   useActionState<any, any>(addBeneficiaryAndActivate as any, null as any)
-```
+\`\`\`
 
 **useEffects Mis à Jour**:
-```typescript
+\`\`\`typescript
 // Reload beneficiaries on success
 useEffect(() => {
   if (addState?.success || addAndActivateState?.success || 
@@ -264,10 +264,10 @@ useEffect(() => {
     return () => clearTimeout(timer)
   }
 }, [addState?.success, addAndActivateState?.success])
-```
+\`\`\`
 
 **Bouton de Soumission**:
-```typescript
+\`\`\`typescript
 <Button
   type="submit"
   disabled={
@@ -278,7 +278,7 @@ useEffect(() => {
 >
   {isAddAndActivatePending ? "Traitement..." : "Ajouter"}
 </Button>
-```
+\`\`\`
 
 ---
 
@@ -286,7 +286,7 @@ useEffect(() => {
 
 ### Badge de Statut
 
-```
+\`\`\`
 ┌────────────────────────────────────────────┐
 │ Jean Dupont                                │
 │ ⭐ Interne ✅ Actif                        │
@@ -294,11 +294,11 @@ useEffect(() => {
 │ Banque Nationale de Guinée                │
 │ Ajouté le 12/11/2025                      │
 └────────────────────────────────────────────┘
-```
+\`\`\`
 
 ### Message d'Information
 
-```
+\`\`\`
 ┌─────────────────────────────────────────────────┐
 │ ℹ️  Nouveau: Activation instantanée avec OTP    │
 │                                                  │
@@ -308,11 +308,11 @@ useEffect(() => {
 │ • Vous pouvez effectuer des virements sans      │
 │   attendre                                      │
 └─────────────────────────────────────────────────┘
-```
+\`\`\`
 
 ### Bénéficiaire en Attente (Ancien Flux)
 
-```
+\`\`\`
 ┌────────────────────────────────────────────┐
 │ Marie Martin                               │
 │ 🏦 Confrère ⏳ En attente                   │
@@ -320,7 +320,7 @@ useEffect(() => {
 │ BICIGUI                                    │
 │ ⏳ En attente de validation manuelle        │
 └────────────────────────────────────────────┘
-```
+\`\`\`
 
 ---
 
@@ -328,7 +328,7 @@ useEffect(() => {
 
 ### Ancien Flux
 
-```
+\`\`\`
 1. Client ajoute bénéficiaire
 2. Validation OTP
 3. Statut: "CRÉÉ" ⏳
@@ -336,18 +336,18 @@ useEffect(() => {
 5. Attente activation (Admin)
 6. Statut: "DISPONIBLE" ✅
 7. Client peut faire virement
-```
+\`\`\`
 
 **Temps d'attente**: Plusieurs heures à plusieurs jours
 
 ### Nouveau Flux
 
-```
+\`\`\`
 1. Client ajoute bénéficiaire
 2. Validation OTP
 3. Statut: "DISPONIBLE" ✅
 4. Client peut IMMÉDIATEMENT faire virement
-```
+\`\`\`
 
 **Temps d'attente**: 0 seconde (instantané)
 
@@ -457,4 +457,3 @@ La page des bénéficiaires est maintenant:
 
 **Date de mise à jour**: 12 Novembre 2025  
 **Status**: ✅ Prêt pour production
-

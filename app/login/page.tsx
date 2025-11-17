@@ -118,14 +118,14 @@ export default function LoginPage() {
               {/* Username/Email Field */}
               <div className="space-y-2">
                 <Label htmlFor="email" className="text-sm font-medium text-[hsl(220,13%,13%)]">
-                  Nom d'utilisateur
+                  Email
                 </Label>
                 <div className="relative">
                   <Input
                     id="email"
                     name="email"
                     type="email"
-                    placeholder="Nom d'utilisateur"
+                    placeholder="Email"
                     className="h-12 pr-10 bg-white border-gray-300 focus:border-[hsl(123,38%,57%)] focus:ring-[hsl(123,38%,57%)]"
                     required
                     disabled={isLoading}
