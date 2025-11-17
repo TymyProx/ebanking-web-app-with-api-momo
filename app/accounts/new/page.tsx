@@ -100,11 +100,28 @@ export default function NewAccountPage() {
   }
 
   const handleFileUpload = async (field: string, file: File) => {
-    const reader = new FileReader()
-    reader.onloadend = () => {
-      handleInputChange(field, reader.result as string)
+    try {
+      const formData = new FormData()
+      formData.append("file", file)
+
+      const response = await fetch("/api/upload-id-image", {
+        method: "POST",
+        body: formData,
+      })
+
+      if (!response.ok) {
+        throw new Error("Upload failed")
+      }
+
+      const data = await response.json()
+      console.log("[v0] Image uploaded successfully:", data.url)
+      
+      // Store the Blob URL in form data
+      handleInputChange(field, data.url)
+    } catch (error) {
+      console.error("[v0] Error uploading image:", error)
+      alert("Erreur lors du téléchargement de l'image")
     }
-    reader.readAsDataURL(file)
   }
 
   const formatAmount = (amount: string, currency: string) => {
@@ -525,6 +542,15 @@ export default function NewAccountPage() {
                         />
                         <Upload className="w-4 h-4 text-muted-foreground" />
                       </div>
+                      {formData.idFrontImageUrl && (
+                        <div className="mt-2">
+                          <img 
+                            src={formData.idFrontImageUrl || "/placeholder.svg"} 
+                            alt="Recto ID" 
+                            className="w-32 h-20 object-cover rounded border"
+                          />
+                        </div>
+                      )}
                     </div>
                     <div className="space-y-1">
                       <Label htmlFor="idBackImage" className="text-sm">
@@ -543,6 +569,15 @@ export default function NewAccountPage() {
                         />
                         <Upload className="w-4 h-4 text-muted-foreground" />
                       </div>
+                      {formData.idBackImageUrl && (
+                        <div className="mt-2">
+                          <img 
+                            src={formData.idBackImageUrl || "/placeholder.svg"} 
+                            alt="Verso ID" 
+                            className="w-32 h-20 object-cover rounded border"
+                          />
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
