@@ -196,7 +196,7 @@ const SidebarGroupLabel = React.forwardRef<HTMLDivElement, React.ComponentProps<
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>): ReactElement {
   const pathname = usePathname()
   const [userData, setUserData] = useState<any>(null)
-  const [hasActiveAccount, setHasActiveAccount] = useState<boolean>(false)
+  const [hasActiveAccount, setHasActiveAccount] = useState<boolean>(true)
   const [isCheckingAccounts, setIsCheckingAccounts] = useState<boolean>(true)
   const { state } = useSidebar()
 
@@ -216,18 +216,20 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>): 
         console.log("[v0] Sidebar - Checking accounts:", accounts)
         console.log("[v0] Sidebar - Accounts count:", accounts.length)
         
-        // Check if user has any active accounts
-        const hasActive = accounts.length > 0 && accounts.some((account) => {
-          const status = account.status?.toUpperCase()
-          console.log("[v0] Sidebar - Account status:", status)
-          return status === "ACTIF" || status === "ACTIVE"
-        })
-        
-        console.log("[v0] Sidebar - Has active accounts:", hasActive)
-        setHasActiveAccount(hasActive)
+        if (accounts && accounts.length > 0) {
+          const hasActive = accounts.some((account) => {
+            const status = account.status?.toUpperCase()
+            console.log("[v0] Sidebar - Account status:", status)
+            return status === "ACTIF" || status === "ACTIVE"
+          })
+          
+          console.log("[v0] Sidebar - Has active accounts:", hasActive)
+          setHasActiveAccount(hasActive)
+        } else {
+          console.log("[v0] Sidebar - No accounts data, keeping default navigation visible")
+        }
       } catch (error) {
         console.error("[v0] Sidebar - Error checking accounts:", error)
-        setHasActiveAccount(true)
       } finally {
         setIsCheckingAccounts(false)
       }

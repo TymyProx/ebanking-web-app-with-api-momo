@@ -3,7 +3,7 @@
 import type React from "react"
 
 import { useEffect, useState } from "react"
-import { useRouter, usePathname } from "next/navigation"
+import { useRouter, usePathname } from 'next/navigation'
 import AuthService from "@/lib/auth-service"
 import { getAccounts } from "@/app/accounts/actions"
 
@@ -26,16 +26,25 @@ export function AuthGuard({ children }: AuthGuardProps) {
         if (AuthService.isAuthenticated() && pathname === "/") {
           try {
             const accounts = await getAccounts()
-            const hasActiveAccount = accounts.some((account) => account.status === "ACTIF")
+            
+            if (accounts && accounts.length > 0) {
+              const hasActiveAccount = accounts.some(
+                (account) => {
+                  const status = account.status?.toUpperCase()
+                  return status === "ACTIF" || status === "ACTIVE"
+                }
+              )
 
-            if (hasActiveAccount) {
-              router.push("/dashboard")
+              if (hasActiveAccount) {
+                router.push("/accounts/balance")
+              } else {
+                router.push("/accounts/new")
+              }
             } else {
-              router.push("/accounts/new")
+              console.log("[v0] AuthGuard - No accounts data, staying on current page")
             }
           } catch (error) {
-            console.error("Error checking accounts:", error)
-            router.push("/accounts/new")
+            console.error("[v0] AuthGuard - Error checking accounts:", error)
           }
           return
         }
@@ -44,7 +53,6 @@ export function AuthGuard({ children }: AuthGuardProps) {
         return
       }
 
-      // Pour les pages protégées, vérifier le token et les infos utilisateur
       if (!AuthService.isAuthenticated()) {
         setIsAuthenticated(false)
         setIsLoading(false)
@@ -63,18 +71,15 @@ export function AuthGuard({ children }: AuthGuardProps) {
         }
       }
 
-      // Utilisateur authentifié avec informations complètes
       setIsAuthenticated(true)
       setIsLoading(false)
     }
 
-    // Délai pour éviter les problèmes d'hydratation
     const timer = setTimeout(checkAuth, 100)
 
     return () => clearTimeout(timer)
   }, [pathname, router])
 
-  // Afficher un loader pendant la vérification
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">

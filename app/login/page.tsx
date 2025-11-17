@@ -45,25 +45,35 @@ export default function LoginPage() {
           localStorage.setItem("rememberMe", "true")
         }
 
-        const accounts = await getAccounts()
+        try {
+          const accounts = await getAccounts()
 
-        console.log("[v0] Login - Fetched accounts:", accounts)
-        console.log("[v0] Login - Accounts count:", accounts.length)
+          console.log("[v0] Login - Fetched accounts:", accounts)
+          console.log("[v0] Login - Accounts count:", accounts.length)
 
-        const hasActiveAccounts = accounts.length > 0 && accounts.some(
-          (acc) => {
-            const status = acc.status?.toUpperCase()
-            console.log("[v0] Login - Account status:", status)
-            return status === "ACTIF" || status === "ACTIVE"
+          if (accounts && accounts.length > 0) {
+            const hasActiveAccounts = accounts.some(
+              (acc) => {
+                const status = acc.status?.toUpperCase()
+                console.log("[v0] Login - Account status:", status)
+                return status === "ACTIF" || status === "ACTIVE"
+              }
+            )
+
+            console.log("[v0] Login - Has active accounts:", hasActiveAccounts)
+
+            if (hasActiveAccounts) {
+              router.push("/")
+            } else {
+              router.push("/accounts/new")
+            }
+          } else {
+            console.log("[v0] Login - No accounts data, redirecting to dashboard")
+            router.push("/")
           }
-        )
-
-        console.log("[v0] Login - Has active accounts:", hasActiveAccounts)
-
-        if (hasActiveAccounts) {
-          router.push("/dashboard")
-        } else {
-          router.push("/accounts/new")
+        } catch (accountError) {
+          console.error("[v0] Login - Error fetching accounts:", accountError)
+          router.push("/")
         }
       }
     } catch (err: any) {
