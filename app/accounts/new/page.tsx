@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, startTransition } from "react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -8,11 +8,12 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Building2, CheckCircle, AlertCircle, ArrowLeft, FileText, Clock, ChevronRight } from 'lucide-react'
-import { createAccount, getAccounts } from "../actions"
+import { Building2, CheckCircle, AlertCircle, ArrowLeft, FileText, Clock, ChevronRight, Upload, User } from 'lucide-react'
+import { createAccount } from "../actions"
+import { saveClientAdditionalInfo } from "./actions"
 import { useActionState } from "react"
 import { useRouter } from 'next/navigation'
-import { config } from "@/lib/config"
+import AuthService from "@/lib/auth-service"
 
 const accountTypes = [
   {
@@ -61,17 +62,88 @@ export default function NewAccountPage() {
   const [step, setStep] = useState(1)
   const [selectedType, setSelectedType] = useState("")
   const [formData, setFormData] = useState<Record<string, any>>({})
+  const [hasExistingAccounts, setHasExistingAccounts] = useState<boolean | null>(null)
+  const [hasClientInfo, setHasClientInfo] = useState<boolean | null>(null)
   const [createState, createAction, isCreating] = useActionState(createAccount, null)
   const [success, setSuccess] = useState(false)
-  const [hasActiveAccount, setHasActiveAccount] = useState<boolean>(false)
-  const [hasAdditionalInfo, setHasAdditionalInfo] = useState<boolean>(false)
-  const [isLoadingCheck, setIsLoadingCheck] = useState<boolean>(true)
   const router = useRouter()
 
   const selectedAccountType = accountTypes.find((type) => type.id === selectedType)
 
+  useEffect(() => {
+    async function checkExistingAccounts() {
+      try {
+        const user = AuthService.getCurrentUser()
+        if (!user) {
+          console.log("[v0] No user found")
+          setHasExistingAccounts(false)
+          return
+        }
+
+        const response = await fetch(`/api/accounts/check-existing`)
+        if (response.ok) {
+          const data = await response.json()
+          setHasExistingAccounts(data.hasActiveAccounts)
+          console.log("[v0] Has existing accounts:", data.hasActiveAccounts)
+        } else {
+          console.log("[v0] Error response from check-existing")
+          setHasExistingAccounts(false)
+        }
+      } catch (error) {
+        console.error("[v0] Error checking accounts:", error)
+        setHasExistingAccounts(false)
+      }
+    }
+
+    async function checkClientInfo() {
+      try {
+        const response = await fetch(`/api/client-info/check`)
+        if (response.ok) {
+          const data = await response.json()
+          setHasClientInfo(data.hasClientInfo)
+          console.log("[v0] Has client info:", data.hasClientInfo)
+          console.log("[v0] Full response data:", data)
+        } else {
+          console.log("[v0] Error response from client-info/check:", response.status)
+          setHasClientInfo(false)
+        }
+      } catch (error) {
+        console.error("[v0] Error checking client info:", error)
+        setHasClientInfo(false)
+      }
+    }
+
+    checkExistingAccounts()
+    checkClientInfo()
+  }, [])
+
   const handleInputChange = (field: string, value: any) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
+  }
+
+  const handleFileUpload = async (field: string, file: File) => {
+    try {
+      const formData = new FormData()
+      formData.append("file", file)
+
+      const response = await fetch("/api/upload-id-image", {
+        method: "POST",
+        body: formData,
+      })
+
+      if (!response.ok) {
+        throw new Error("Upload failed")
+      }
+
+      const data = await response.json()
+      console.log("[v0] Image uploaded successfully:", data.url)
+      
+      // Store the Blob URL in form data
+      handleInputChange(field, data.url)
+    } catch (error) {
+      console.error("[v0] Error uploading image:", error)
+      alert("Erreur lors du téléchargement de l'image")
+    }
   }
 
   const formatAmount = (amount: string, currency: string) => {
@@ -80,24 +152,14 @@ export default function NewAccountPage() {
   }
 
   const canProceedToStep2 = selectedType !== ""
-  const canProceedToStep3 = () => {
-    const baseFields = formData.accountName && formData.currency && formData.accountPurpose
-    
-    const shouldShowAdditionalFields = !hasActiveAccount && !hasAdditionalInfo
-    
-    if (!shouldShowAdditionalFields) {
-      return baseFields
-    }
-    
-    return (
-      baseFields &&
-      formData.profession &&
-      formData.nationality &&
-      formData.placeOfBirth &&
-      formData.phoneNumber
-    )
-  }
-
+  const canProceedToStep3 = hasExistingAccounts !== null && hasClientInfo !== null
+    ? (hasExistingAccounts || hasClientInfo
+      ? (formData.accountName && formData.currency && formData.accountPurpose)
+      : (formData.accountName && formData.currency && formData.accountPurpose &&
+         formData.country && formData.city && formData.addressLine1 && 
+         formData.idType && formData.idNumber && formData.idIssuingCountry &&
+         formData.idIssueDate && formData.idExpiryDate))
+    : false
   const canSubmit = formData.terms && formData.dataProcessing
 
   useEffect(() => {
@@ -115,31 +177,61 @@ export default function NewAccountPage() {
     }
   }, [createState, router])
 
+  const shouldShowAdditionalFields = !hasExistingAccounts && !hasClientInfo
+
+  // Log for debugging
   useEffect(() => {
-    async function checkAccountStatus() {
+    console.log("[v0] Should show additional fields:", shouldShowAdditionalFields, {
+      hasExistingAccounts,
+      hasClientInfo
+    })
+  }, [shouldShowAdditionalFields, hasExistingAccounts, hasClientInfo])
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    
+    if (!hasExistingAccounts && !hasClientInfo) {
       try {
-        setIsLoadingCheck(true)
+        const user = AuthService.getCurrentUser()
+        if (!user) {
+          throw new Error("User not found")
+        }
 
-        const accounts = await getAccounts()
-        const activeAccount = accounts.some((acc) => acc.status === "ACTIF")
-        setHasActiveAccount(activeAccount)
+        const additionalInfoData = {
+          clientId: user.id,
+          country: formData.country,
+          city: formData.city,
+          addressLine1: formData.addressLine1,
+          addressLine2: formData.addressLine2 || "",
+          postalCode: formData.postalCode || "",
+          idType: formData.idType,
+          idNumber: formData.idNumber,
+          idIssuingCountry: formData.idIssuingCountry,
+          idIssueDate: formData.idIssueDate,
+          idExpiryDate: formData.idExpiryDate,
+          idFrontImageUrl: formData.idFrontImageUrl || "",
+          idBackImageUrl: formData.idBackImageUrl || "",
+        }
 
-        const response = await fetch(`/api/tenant/${config.TENANT_ID}/client-additional-info/check`)
-        if (response.ok) {
-          const data = await response.json()
-          setHasAdditionalInfo(data.hasAdditionalInfo || false)
+        const result = await saveClientAdditionalInfo(additionalInfoData)
+        
+        if (!result.success) {
+          alert(result.error || "Erreur lors de l'enregistrement des informations")
+          return
         }
       } catch (error) {
-        console.error("Error checking account status:", error)
-        setHasActiveAccount(false)
-        setHasAdditionalInfo(false)
-      } finally {
-        setIsLoadingCheck(false)
+        console.error("Error saving client info:", error)
+        alert("Erreur lors de l'enregistrement des informations")
+        return
       }
     }
 
-    checkAccountStatus()
-  }, [])
+    const form = e.target as HTMLFormElement
+    const formDataObj = new FormData(form)
+    startTransition(async () => {
+      await createAction(formDataObj)
+    })
+  }
 
   if (success) {
     return (
@@ -262,7 +354,7 @@ export default function NewAccountPage() {
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center space-x-2 text-lg">
               <FileText className="w-5 h-5 text-primary" />
-              <span>Détails du compte</span>
+              <span>Détails du compte {!hasExistingAccounts && !hasClientInfo && "et informations personnelles"}</span>
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -315,59 +407,212 @@ export default function NewAccountPage() {
               </div>
             </div>
 
-            {!hasActiveAccount && !hasAdditionalInfo && (
+            {/* Added debug logging for conditional rendering */}
+            {shouldShowAdditionalFields && (
               <>
-                <div className="pt-2 border-t border-gray-200">
-                  <p className="text-sm font-semibold text-primary mb-3">Informations complémentaires requises</p>
+                <div className="pt-4 border-t border-gray-200">
+                  <h3 className="text-sm font-semibold text-primary mb-3 flex items-center">
+                    <User className="w-4 h-4 mr-2" />
+                    Informations Personnelles
+                  </h3>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
+                    <div className="space-y-1">
+                      <Label htmlFor="country" className="text-sm">
+                        Pays *
+                      </Label>
+                      <Input
+                        id="country"
+                        placeholder="Ex: Guinée"
+                        value={formData.country || ""}
+                        onChange={(e) => handleInputChange("country", e.target.value)}
+                        className="border-2 focus:border-primary h-9 text-sm"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label htmlFor="city" className="text-sm">
+                        Ville *
+                      </Label>
+                      <Input
+                        id="city"
+                        placeholder="Ex: Conakry"
+                        value={formData.city || ""}
+                        onChange={(e) => handleInputChange("city", e.target.value)}
+                        className="border-2 focus:border-primary h-9 text-sm"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label htmlFor="postalCode" className="text-sm">
+                        Code Postal
+                      </Label>
+                      <Input
+                        id="postalCode"
+                        placeholder="Ex: BP 123"
+                        value={formData.postalCode || ""}
+                        onChange={(e) => handleInputChange("postalCode", e.target.value)}
+                        className="border-2 focus:border-primary h-9 text-sm"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+                    <div className="space-y-1">
+                      <Label htmlFor="addressLine1" className="text-sm">
+                        Adresse ligne 1 *
+                      </Label>
+                      <Input
+                        id="addressLine1"
+                        placeholder="Ex: 123 Avenue de la République"
+                        value={formData.addressLine1 || ""}
+                        onChange={(e) => handleInputChange("addressLine1", e.target.value)}
+                        className="border-2 focus:border-primary h-9 text-sm"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label htmlFor="addressLine2" className="text-sm">
+                        Adresse ligne 2
+                      </Label>
+                      <Input
+                        id="addressLine2"
+                        placeholder="Ex: Quartier Kaloum"
+                        value={formData.addressLine2 || ""}
+                        onChange={(e) => handleInputChange("addressLine2", e.target.value)}
+                        className="border-2 focus:border-primary h-9 text-sm"
+                      />
+                    </div>
+                  </div>
+
+                  <h4 className="text-sm font-semibold text-primary mb-3 mt-4">
+                    Pièce d'Identité
+                  </h4>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
+                    <div className="space-y-1">
+                      <Label htmlFor="idType" className="text-sm">
+                        Type de Pièce *
+                      </Label>
+                      <Select
+                        value={formData.idType || ""}
+                        onValueChange={(value) => handleInputChange("idType", value)}
+                      >
+                        <SelectTrigger className="border-2 focus:border-primary h-9 text-sm">
+                          <SelectValue placeholder="Type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="CNI">Carte Nationale d'Identité</SelectItem>
+                          <SelectItem value="PASSPORT">Passeport</SelectItem>
+                          <SelectItem value="DRIVER_LICENSE">Permis de Conduire</SelectItem>
+                          <SelectItem value="RESIDENCE_PERMIT">Titre de Séjour</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-1">
+                      <Label htmlFor="idNumber" className="text-sm">
+                        Numéro de Pièce *
+                      </Label>
+                      <Input
+                        id="idNumber"
+                        placeholder="Ex: CNI123456789"
+                        value={formData.idNumber || ""}
+                        onChange={(e) => handleInputChange("idNumber", e.target.value)}
+                        className="border-2 focus:border-primary h-9 text-sm"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label htmlFor="idIssuingCountry" className="text-sm">
+                        Pays d'Émission *
+                      </Label>
+                      <Input
+                        id="idIssuingCountry"
+                        placeholder="Ex: Guinée"
+                        value={formData.idIssuingCountry || ""}
+                        onChange={(e) => handleInputChange("idIssuingCountry", e.target.value)}
+                        className="border-2 focus:border-primary h-9 text-sm"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+                    <div className="space-y-1">
+                      <Label htmlFor="idIssueDate" className="text-sm">
+                        Date d'Émission *
+                      </Label>
+                      <Input
+                        id="idIssueDate"
+                        type="date"
+                        value={formData.idIssueDate || ""}
+                        onChange={(e) => handleInputChange("idIssueDate", e.target.value)}
+                        className="border-2 focus:border-primary h-9 text-sm"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label htmlFor="idExpiryDate" className="text-sm">
+                        Date d'Expiration *
+                      </Label>
+                      <Input
+                        id="idExpiryDate"
+                        type="date"
+                        value={formData.idExpiryDate || ""}
+                        onChange={(e) => handleInputChange("idExpiryDate", e.target.value)}
+                        className="border-2 focus:border-primary h-9 text-sm"
+                      />
+                    </div>
+                  </div>
+
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <div className="space-y-1">
-                      <Label htmlFor="profession" className="text-sm">
-                        Profession *
+                      <Label htmlFor="idFrontImage" className="text-sm">
+                        Photo Recto de la Pièce
                       </Label>
-                      <Input
-                        id="profession"
-                        placeholder="Ex: Ingénieur"
-                        value={formData.profession || ""}
-                        onChange={(e) => handleInputChange("profession", e.target.value)}
-                        className="border-2 focus:border-primary h-9 text-sm"
-                      />
+                      <div className="flex items-center gap-2">
+                        <Input
+                          id="idFrontImage"
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0]
+                            if (file) handleFileUpload("idFrontImageUrl", file)
+                          }}
+                          className="border-2 focus:border-primary h-9 text-sm"
+                        />
+                        <Upload className="w-4 h-4 text-muted-foreground" />
+                      </div>
+                      {formData.idFrontImageUrl && (
+                        <div className="mt-2">
+                          <img 
+                            src={formData.idFrontImageUrl || "/placeholder.svg"} 
+                            alt="Recto ID" 
+                            className="w-32 h-20 object-cover rounded border"
+                          />
+                        </div>
+                      )}
                     </div>
                     <div className="space-y-1">
-                      <Label htmlFor="nationality" className="text-sm">
-                        Nationalité *
+                      <Label htmlFor="idBackImage" className="text-sm">
+                        Photo Verso de la Pièce
                       </Label>
-                      <Input
-                        id="nationality"
-                        placeholder="Ex: Guinéenne"
-                        value={formData.nationality || ""}
-                        onChange={(e) => handleInputChange("nationality", e.target.value)}
-                        className="border-2 focus:border-primary h-9 text-sm"
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <Label htmlFor="placeOfBirth" className="text-sm">
-                        Lieu de naissance *
-                      </Label>
-                      <Input
-                        id="placeOfBirth"
-                        placeholder="Ex: Conakry"
-                        value={formData.placeOfBirth || ""}
-                        onChange={(e) => handleInputChange("placeOfBirth", e.target.value)}
-                        className="border-2 focus:border-primary h-9 text-sm"
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <Label htmlFor="phoneNumber" className="text-sm">
-                        Numéro de téléphone *
-                      </Label>
-                      <Input
-                        id="phoneNumber"
-                        type="tel"
-                        placeholder="Ex: +224 XXX XX XX XX"
-                        value={formData.phoneNumber || ""}
-                        onChange={(e) => handleInputChange("phoneNumber", e.target.value)}
-                        className="border-2 focus:border-primary h-9 text-sm"
-                      />
+                      <div className="flex items-center gap-2">
+                        <Input
+                          id="idBackImage"
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0]
+                            if (file) handleFileUpload("idBackImageUrl", file)
+                          }}
+                          className="border-2 focus:border-primary h-9 text-sm"
+                        />
+                        <Upload className="w-4 h-4 text-muted-foreground" />
+                      </div>
+                      {formData.idBackImageUrl && (
+                        <div className="mt-2">
+                          <img 
+                            src={formData.idBackImageUrl || "/placeholder.svg"} 
+                            alt="Verso ID" 
+                            className="w-32 h-20 object-cover rounded border"
+                          />
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -381,12 +626,12 @@ export default function NewAccountPage() {
               </Button>
               <Button
                 onClick={() => setStep(3)}
-                disabled={!canProceedToStep3()}
+                disabled={!canProceedToStep3}
                 className="bg-primary hover:opacity-90 transition-opacity"
                 size="sm"
               >
                 Continuer
-                <ChevronRight className="w-3 h-3 ml-1" />
+                <ChevronRight className="w-4 h-4 ml-1" />
               </Button>
             </div>
           </CardContent>
@@ -444,7 +689,7 @@ export default function NewAccountPage() {
                 </Label>
               </div>
             </div>
-            <form action={createAction}>
+            <form onSubmit={handleSubmit}>
               <input type="hidden" name="accountId" value={`ACC_${Date.now()}`} />
               <input type="hidden" name="customerId" value="CUSTOMER_ID_PLACEHOLDER" />
               <input type="hidden" name="accountNumber" value={`000${Date.now().toString().slice(-7)}`} />

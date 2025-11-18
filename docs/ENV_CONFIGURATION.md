@@ -6,7 +6,7 @@ Créer un fichier `.env.local` à la racine du projet avec les variables suivant
 
 \`\`\`env
 # URL du backend API (obligatoire)
-NEXT_PUBLIC_API_URL=https://astra-apps.net:4000/
+NEXT_PUBLIC_API_URL=https://35.184.98.9:4000
 
 # ID du tenant (obligatoire)
 NEXT_PUBLIC_TENANT_ID=aa1287f6-06af-45b7-a905-8c57363565c2
@@ -33,7 +33,7 @@ GET {NEXT_PUBLIC_API_URL}/api/portal/{NEXT_PUBLIC_TENANT_ID}/agences
 
 **Exemple:**
 \`\`\`env
-NEXT_PUBLIC_API_URL=https://astra-apps.net:4000/
+NEXT_PUBLIC_API_URL=https://35.184.98.9:4000
 \`\`\`
 
 ### NEXT_PUBLIC_TENANT_ID
@@ -141,6 +141,6 @@ Selon la plateforme de déploiement, configurer les variables via:
 - Vérifier `NEXT_PUBLIC_API_URL` et `NEXT_PUBLIC_TENANT_ID`
 - Tester l'endpoint manuellement:
   \`\`\`bash
-  curl https://astra-apps.net:4000//api/portal/aa1287f6-06af-45b7-a905-8c57363565c2/agences
+  curl https://35.184.98.9:4000/api/portal/aa1287f6-06af-45b7-a905-8c57363565c2/agences
   \`\`\`
 - Vérifier que le fichier backup existe: `/public/data/agences-backup.json`

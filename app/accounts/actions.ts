@@ -201,51 +201,16 @@ export async function createAccount(prevState: any, formData: FormData) {
       availableBalance: (formData.get("availableBalance") as string) || "0",
       status: "EN ATTENTE",
       type: (formData.get("accountType") as string) || "CURRENT",
-      codeAgence: "N/A",
-      clientId: clientId,
-      codeBanque: "N/A",
-      cleRib: "N/A",
+      codeAgence: "N/A", // Valeur par défaut
+      clientId: clientId, // ID du client connecté
+      codeBanque: "N/A", // Valeur par défaut
+      cleRib: "N/A", // Valeur par défaut
     }
 
     if (!accountData.accountName || !accountData.currency) {
       return {
         success: false,
         error: "Le nom du compte et la devise sont requis",
-      }
-    }
-
-    const profession = formData.get("profession") as string
-    const nationality = formData.get("nationality") as string
-    const placeOfBirth = formData.get("placeOfBirth") as string
-    const phoneNumber = formData.get("phoneNumber") as string
-
-    if (profession && nationality && placeOfBirth && phoneNumber) {
-      try {
-        const additionalInfoData = {
-          clientId: clientId,
-          profession: profession,
-          nationality: nationality,
-          placeOfBirth: placeOfBirth,
-          phoneNumber: phoneNumber,
-        }
-
-        const additionalInfoResponse = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/client-additional-info`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${usertoken}`,
-          },
-          body: JSON.stringify({
-            data: additionalInfoData,
-          }),
-        })
-
-        if (!additionalInfoResponse.ok) {
-          console.error("Failed to save additional client info, but continuing with account creation")
-        }
-      } catch (error) {
-        console.error("Error saving additional client info:", error)
-        // Continue with account creation even if additional info fails
       }
     }
 

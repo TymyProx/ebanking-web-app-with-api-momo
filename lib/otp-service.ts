@@ -6,7 +6,7 @@ const normalizeBase = (url: string) => url.replace(/\/api\/?$/, "").replace(/\/$
 
 const tenantId = config.TENANT_ID
 const isBrowser = typeof window !== "undefined"
-const DEFAULT_API_BASE_URL = "https://astra-apps.net:4000/"
+const DEFAULT_API_BASE_URL = "https://35.184.98.9:4000"
 const resolvedApiBase = (() => {
   const cleaned = normalizeBase(config.API_BASE_URL || "")
   if (!cleaned) {
