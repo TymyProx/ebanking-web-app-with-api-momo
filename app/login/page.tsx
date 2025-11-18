@@ -99,7 +99,7 @@ export default function LoginPage() {
           {/* Welcome Text */}
           <div className="space-y-2">
             <h1 className="text-5xl font-bold text-[hsl(45,93%,47%)]">Bienvenue</h1>
-            <p className="text-3xl font-semibold text-[hsl(123,38%,57%)]">
+            <p className="text-3xl font-semibold text-primary">
               sur <span className="font-bold">MyBNG Bank</span>
             </p>
           </div>
@@ -186,7 +186,7 @@ export default function LoginPage() {
               {/* Submit Button */}
               <Button
                 type="submit"
-                className="w-full h-12 bg-gradient-to-r from-[hsl(45,93%,47%)] to-[hsl(123,38%,57%)] hover:opacity-90 text-white font-semibold text-base shadow-lg"
+                className="w-full h-12 bg-primary hover:opacity-90 text-white font-semibold text-base shadow-lg"
                 disabled={isLoading}
               >
                 {isLoading ? (
