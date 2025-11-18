@@ -8,10 +8,11 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Building2, CheckCircle, AlertCircle, ArrowLeft, FileText, Clock, ChevronRight } from "lucide-react"
-import { createAccount } from "../actions"
+import { Building2, CheckCircle, AlertCircle, ArrowLeft, FileText, Clock, ChevronRight } from 'lucide-react'
+import { createAccount, getAccounts } from "../actions"
 import { useActionState } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter } from 'next/navigation'
+import { config } from "@/lib/config"
 
 const accountTypes = [
   {
@@ -62,6 +63,9 @@ export default function NewAccountPage() {
   const [formData, setFormData] = useState<Record<string, any>>({})
   const [createState, createAction, isCreating] = useActionState(createAccount, null)
   const [success, setSuccess] = useState(false)
+  const [hasActiveAccount, setHasActiveAccount] = useState<boolean>(false)
+  const [hasAdditionalInfo, setHasAdditionalInfo] = useState<boolean>(false)
+  const [isLoadingCheck, setIsLoadingCheck] = useState<boolean>(true)
   const router = useRouter()
 
   const selectedAccountType = accountTypes.find((type) => type.id === selectedType)
@@ -76,16 +80,31 @@ export default function NewAccountPage() {
   }
 
   const canProceedToStep2 = selectedType !== ""
-  const canProceedToStep3 = formData.accountName && formData.currency && formData.accountPurpose
+  const canProceedToStep3 = () => {
+    const baseFields = formData.accountName && formData.currency && formData.accountPurpose
+    
+    const shouldShowAdditionalFields = !hasActiveAccount && !hasAdditionalInfo
+    
+    if (!shouldShowAdditionalFields) {
+      return baseFields
+    }
+    
+    return (
+      baseFields &&
+      formData.profession &&
+      formData.nationality &&
+      formData.placeOfBirth &&
+      formData.phoneNumber
+    )
+  }
+
   const canSubmit = formData.terms && formData.dataProcessing
 
   useEffect(() => {
     if (createState?.success) {
       setSuccess(true)
-      // Hide success message after 5 seconds
       const timer = setTimeout(() => {
         setSuccess(false)
-        // Reset form to initial state
         setStep(1)
         setSelectedType("")
         setFormData({})
@@ -95,6 +114,32 @@ export default function NewAccountPage() {
       return () => clearTimeout(timer)
     }
   }, [createState, router])
+
+  useEffect(() => {
+    async function checkAccountStatus() {
+      try {
+        setIsLoadingCheck(true)
+
+        const accounts = await getAccounts()
+        const activeAccount = accounts.some((acc) => acc.status === "ACTIF")
+        setHasActiveAccount(activeAccount)
+
+        const response = await fetch(`/api/tenant/${config.TENANT_ID}/client-additional-info/check`)
+        if (response.ok) {
+          const data = await response.json()
+          setHasAdditionalInfo(data.hasAdditionalInfo || false)
+        }
+      } catch (error) {
+        console.error("Error checking account status:", error)
+        setHasActiveAccount(false)
+        setHasAdditionalInfo(false)
+      } finally {
+        setIsLoadingCheck(false)
+      }
+    }
+
+    checkAccountStatus()
+  }, [])
 
   if (success) {
     return (
@@ -269,6 +314,66 @@ export default function NewAccountPage() {
                 </Select>
               </div>
             </div>
+
+            {!hasActiveAccount && !hasAdditionalInfo && (
+              <>
+                <div className="pt-2 border-t border-gray-200">
+                  <p className="text-sm font-semibold text-primary mb-3">Informations complémentaires requises</p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <Label htmlFor="profession" className="text-sm">
+                        Profession *
+                      </Label>
+                      <Input
+                        id="profession"
+                        placeholder="Ex: Ingénieur"
+                        value={formData.profession || ""}
+                        onChange={(e) => handleInputChange("profession", e.target.value)}
+                        className="border-2 focus:border-primary h-9 text-sm"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label htmlFor="nationality" className="text-sm">
+                        Nationalité *
+                      </Label>
+                      <Input
+                        id="nationality"
+                        placeholder="Ex: Guinéenne"
+                        value={formData.nationality || ""}
+                        onChange={(e) => handleInputChange("nationality", e.target.value)}
+                        className="border-2 focus:border-primary h-9 text-sm"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label htmlFor="placeOfBirth" className="text-sm">
+                        Lieu de naissance *
+                      </Label>
+                      <Input
+                        id="placeOfBirth"
+                        placeholder="Ex: Conakry"
+                        value={formData.placeOfBirth || ""}
+                        onChange={(e) => handleInputChange("placeOfBirth", e.target.value)}
+                        className="border-2 focus:border-primary h-9 text-sm"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label htmlFor="phoneNumber" className="text-sm">
+                        Numéro de téléphone *
+                      </Label>
+                      <Input
+                        id="phoneNumber"
+                        type="tel"
+                        placeholder="Ex: +224 XXX XX XX XX"
+                        value={formData.phoneNumber || ""}
+                        onChange={(e) => handleInputChange("phoneNumber", e.target.value)}
+                        className="border-2 focus:border-primary h-9 text-sm"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
+
             <div className="flex justify-between pt-2">
               <Button onClick={() => setStep(1)} variant="outline" size="sm">
                 <ArrowLeft className="w-3 h-3 mr-1" />
@@ -276,7 +381,7 @@ export default function NewAccountPage() {
               </Button>
               <Button
                 onClick={() => setStep(3)}
-                disabled={!canProceedToStep3}
+                disabled={!canProceedToStep3()}
                 className="bg-primary hover:opacity-90 transition-opacity"
                 size="sm"
               >
