@@ -152,14 +152,18 @@ export default function NewAccountPage() {
   }
 
   const canProceedToStep2 = selectedType !== ""
+  
   const canProceedToStep3 = hasExistingAccounts !== null && hasClientInfo !== null
     ? (hasExistingAccounts || hasClientInfo
+      // User has either active account OR client info already → only basic fields required
       ? (formData.accountName && formData.currency && formData.accountPurpose)
+      // User has NO active account AND NO client info → all fields required
       : (formData.accountName && formData.currency && formData.accountPurpose &&
          formData.country && formData.city && formData.addressLine1 && 
          formData.idType && formData.idNumber && formData.idIssuingCountry &&
          formData.idIssueDate && formData.idExpiryDate))
     : false
+    
   const canSubmit = formData.terms && formData.dataProcessing
 
   useEffect(() => {
@@ -177,7 +181,7 @@ export default function NewAccountPage() {
     }
   }, [createState, router])
 
-  const shouldShowAdditionalFields = !hasExistingAccounts && !hasClientInfo
+  const shouldShowAdditionalFields = hasExistingAccounts === false && hasClientInfo === false
 
   // Log for debugging
   useEffect(() => {
@@ -190,7 +194,7 @@ export default function NewAccountPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    if (!hasExistingAccounts && !hasClientInfo) {
+    if (hasExistingAccounts === false && hasClientInfo === false) {
       try {
         const user = AuthService.getCurrentUser()
         if (!user) {
@@ -354,7 +358,7 @@ export default function NewAccountPage() {
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center space-x-2 text-lg">
               <FileText className="w-5 h-5 text-primary" />
-              <span>Détails du compte {!hasExistingAccounts && !hasClientInfo && "et informations personnelles"}</span>
+              <span>Détails du compte {shouldShowAdditionalFields && "et informations personnelles"}</span>
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -407,7 +411,6 @@ export default function NewAccountPage() {
               </div>
             </div>
 
-            {/* Added debug logging for conditional rendering */}
             {shouldShowAdditionalFields && (
               <>
                 <div className="pt-4 border-t border-gray-200">
