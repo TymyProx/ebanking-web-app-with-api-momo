@@ -63,6 +63,7 @@ export default function NewAccountPage() {
   const [selectedType, setSelectedType] = useState("")
   const [formData, setFormData] = useState<Record<string, any>>({})
   const [hasExistingAccounts, setHasExistingAccounts] = useState<boolean | null>(null)
+  const [hasClientInfo, setHasClientInfo] = useState<boolean | null>(null)
   const [createState, createAction, isCreating] = useActionState(createAccount, null)
   const [success, setSuccess] = useState(false)
   const router = useRouter()
@@ -92,7 +93,24 @@ export default function NewAccountPage() {
       }
     }
 
+    async function checkClientInfo() {
+      try {
+        const response = await fetch(`/api/client-info/check`)
+        if (response.ok) {
+          const data = await response.json()
+          setHasClientInfo(data.hasClientInfo)
+          console.log("[v0] Has client info:", data.hasClientInfo)
+        } else {
+          setHasClientInfo(false)
+        }
+      } catch (error) {
+        console.error("[v0] Error checking client info:", error)
+        setHasClientInfo(false)
+      }
+    }
+
     checkExistingAccounts()
+    checkClientInfo()
   }, [])
 
   const handleInputChange = (field: string, value: any) => {
@@ -130,8 +148,8 @@ export default function NewAccountPage() {
   }
 
   const canProceedToStep2 = selectedType !== ""
-  const canProceedToStep3 = hasExistingAccounts !== null 
-    ? (hasExistingAccounts 
+  const canProceedToStep3 = hasExistingAccounts !== null && hasClientInfo !== null
+    ? (hasExistingAccounts || hasClientInfo
       ? (formData.accountName && formData.currency && formData.accountPurpose)
       : (formData.accountName && formData.currency && formData.accountPurpose &&
          formData.country && formData.city && formData.addressLine1 && 
@@ -158,7 +176,7 @@ export default function NewAccountPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    if (!hasExistingAccounts) {
+    if (!hasExistingAccounts && !hasClientInfo) {
       try {
         const user = AuthService.getCurrentUser()
         if (!user) {
@@ -197,9 +215,8 @@ export default function NewAccountPage() {
     const form = e.target as HTMLFormElement
     const formDataObj = new FormData(form)
     startTransition(async () => {
-  await createAction(formDataObj)
-})
-    // createAction(formDataObj)
+      await createAction(formDataObj)
+    })
   }
 
   if (success) {
@@ -323,7 +340,7 @@ export default function NewAccountPage() {
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center space-x-2 text-lg">
               <FileText className="w-5 h-5 text-primary" />
-              <span>Détails du compte {!hasExistingAccounts && "et informations personnelles"}</span>
+              <span>Détails du compte {!hasExistingAccounts && !hasClientInfo && "et informations personnelles"}</span>
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -376,7 +393,7 @@ export default function NewAccountPage() {
               </div>
             </div>
 
-            {!hasExistingAccounts && (
+            {!hasExistingAccounts && !hasClientInfo && (
               <>
                 <div className="pt-4 border-t border-gray-200">
                   <h3 className="text-sm font-semibold text-primary mb-3 flex items-center">
