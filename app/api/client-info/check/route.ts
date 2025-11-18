@@ -11,10 +11,11 @@ export async function GET() {
     const cookieToken = (await cookies()).get("token")?.value
 
     if (!cookieToken) {
+      console.log("[v0] No token found in cookies")
       return NextResponse.json({ hasClientInfo: false }, { status: 200 })
     }
 
-    // First get the current user
+    console.log("[v0] Fetching user from auth/me...")
     const userResponse = await fetch(`${API_BASE_URL}/auth/me`, {
       method: "GET",
       headers: {
@@ -24,40 +25,46 @@ export async function GET() {
     })
 
     if (!userResponse.ok) {
+      console.log("[v0] Failed to fetch user:", userResponse.status)
       return NextResponse.json({ hasClientInfo: false }, { status: 200 })
     }
 
     const userData = await userResponse.json()
-    const clientId = userData.data?.id
+    console.log("[v0] User data received:", JSON.stringify(userData, null, 2))
+    
+    const userId = userData.id || userData.data?.id
+    
+    console.log("[v0] Extracted user ID:", userId)
 
-    if (!clientId) {
+    if (!userId) {
+      console.log("[v0] No user ID found in response")
       return NextResponse.json({ hasClientInfo: false }, { status: 200 })
     }
 
-    // Check if client has additional info
-    const response = await fetch(
-      `${API_BASE_URL}/tenant/${TENANT_ID}/ClientAdditionalInfo?filter=clientId eq '${clientId}'`,
-      {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${cookieToken}`,
-        },
-      }
-    )
+    const checkUrl = `${API_BASE_URL}/tenant/${TENANT_ID}/ClientAdditionalInfo?filter=clientId eq '${userId}'`
+    console.log("[v0] Checking ClientAdditionalInfo with URL:", checkUrl)
+    
+    const response = await fetch(checkUrl, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${cookieToken}`,
+      },
+    })
 
     if (!response.ok) {
+      console.log("[v0] ClientAdditionalInfo API failed:", response.status)
       return NextResponse.json({ hasClientInfo: false }, { status: 200 })
     }
 
     const data = await response.json()
     const hasClientInfo = data.data && data.data.length > 0
 
-    console.log("[v0] ClientAdditionalInfo API response:", {
-      clientId,
+    console.log("[v0] ClientAdditionalInfo check result:", {
+      userId,
       recordCount: data.data?.length || 0,
       hasClientInfo,
-      fullData: data.data
+      records: data.data
     })
 
     return NextResponse.json({ hasClientInfo }, { status: 200 })
