@@ -169,13 +169,14 @@ export default function NewAccountPage() {
   useEffect(() => {
     if (createState?.success) {
       setSuccess(true)
+      router.refresh()
+      
       const timer = setTimeout(() => {
         setSuccess(false)
-        window.location.reload()
         setStep(1)
         setSelectedType("")
         setFormData({})
-        router.refresh()
+        window.location.reload()
       }, 10000)
 
       return () => clearTimeout(timer)
