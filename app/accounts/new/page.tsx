@@ -177,6 +177,16 @@ export default function NewAccountPage() {
     }
   }, [createState, router])
 
+  const shouldShowAdditionalFields = !hasExistingAccounts && !hasClientInfo
+
+  // Log for debugging
+  useEffect(() => {
+    console.log("[v0] Should show additional fields:", shouldShowAdditionalFields, {
+      hasExistingAccounts,
+      hasClientInfo
+    })
+  }, [shouldShowAdditionalFields, hasExistingAccounts, hasClientInfo])
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
@@ -398,12 +408,6 @@ export default function NewAccountPage() {
             </div>
 
             {/* Added debug logging for conditional rendering */}
-            const shouldShowAdditionalFields = !hasExistingAccounts && !hasClientInfo
-            console.log("[v0] Should show additional fields:", shouldShowAdditionalFields, {
-              hasExistingAccounts,
-              hasClientInfo
-            })
-
             {shouldShowAdditionalFields && (
               <>
                 <div className="pt-4 border-t border-gray-200">
