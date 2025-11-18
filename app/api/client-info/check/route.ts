@@ -53,7 +53,12 @@ export async function GET() {
     const data = await response.json()
     const hasClientInfo = data.data && data.data.length > 0
 
-    console.log("[v0] Client has additional info:", hasClientInfo)
+    console.log("[v0] ClientAdditionalInfo API response:", {
+      clientId,
+      recordCount: data.data?.length || 0,
+      hasClientInfo,
+      fullData: data.data
+    })
 
     return NextResponse.json({ hasClientInfo }, { status: 200 })
   } catch (error) {

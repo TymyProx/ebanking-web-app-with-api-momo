@@ -75,6 +75,7 @@ export default function NewAccountPage() {
       try {
         const user = AuthService.getCurrentUser()
         if (!user) {
+          console.log("[v0] No user found")
           setHasExistingAccounts(false)
           return
         }
@@ -85,6 +86,7 @@ export default function NewAccountPage() {
           setHasExistingAccounts(data.hasActiveAccounts)
           console.log("[v0] Has existing accounts:", data.hasActiveAccounts)
         } else {
+          console.log("[v0] Error response from check-existing")
           setHasExistingAccounts(false)
         }
       } catch (error) {
@@ -100,7 +102,9 @@ export default function NewAccountPage() {
           const data = await response.json()
           setHasClientInfo(data.hasClientInfo)
           console.log("[v0] Has client info:", data.hasClientInfo)
+          console.log("[v0] Full response data:", data)
         } else {
+          console.log("[v0] Error response from client-info/check:", response.status)
           setHasClientInfo(false)
         }
       } catch (error) {
@@ -393,7 +397,14 @@ export default function NewAccountPage() {
               </div>
             </div>
 
-            {!hasExistingAccounts && !hasClientInfo && (
+            {/* Added debug logging for conditional rendering */}
+            const shouldShowAdditionalFields = !hasExistingAccounts && !hasClientInfo
+            console.log("[v0] Should show additional fields:", shouldShowAdditionalFields, {
+              hasExistingAccounts,
+              hasClientInfo
+            })
+
+            {shouldShowAdditionalFields && (
               <>
                 <div className="pt-4 border-t border-gray-200">
                   <h3 className="text-sm font-semibold text-primary mb-3 flex items-center">
