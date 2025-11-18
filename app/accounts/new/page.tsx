@@ -171,6 +171,7 @@ export default function NewAccountPage() {
       setSuccess(true)
       const timer = setTimeout(() => {
         setSuccess(false)
+        window.location.reload()
         setStep(1)
         setSelectedType("")
         setFormData({})
