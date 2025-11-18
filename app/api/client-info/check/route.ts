@@ -58,13 +58,27 @@ export async function GET() {
     }
 
     const data = await response.json()
-    const hasClientInfo = data.data && data.data.length > 0
+    console.log("[v0] ClientAdditionalInfo raw response:", JSON.stringify(data, null, 2))
+    
+    let records = []
+    if (Array.isArray(data)) {
+      records = data
+    } else if (data.rows && Array.isArray(data.rows)) {
+      records = data.rows
+    } else if (data.data && Array.isArray(data.data)) {
+      records = data.data
+    } else if (data.value && Array.isArray(data.value)) {
+      // OData format
+      records = data.value
+    }
+    
+    const hasClientInfo = records.length > 0
 
     console.log("[v0] ClientAdditionalInfo check result:", {
       userId,
-      recordCount: data.data?.length || 0,
+      recordCount: records.length,
       hasClientInfo,
-      records: data.data
+      records: records.length > 0 ? records : undefined
     })
 
     return NextResponse.json({ hasClientInfo }, { status: 200 })
