@@ -72,13 +72,16 @@ export async function GET() {
       records = data.value
     }
     
-    const hasClientInfo = records.length > 0
+    const userRecords = records.filter((record: any) => record.clientId === userId)
+    
+    const hasClientInfo = userRecords.length > 0
 
     console.log("[v0] ClientAdditionalInfo check result:", {
       userId,
-      recordCount: records.length,
+      totalRecords: records.length,
+      userRecords: userRecords.length,
       hasClientInfo,
-      records: records.length > 0 ? records : undefined
+      records: userRecords.length > 0 ? userRecords : undefined
     })
 
     return NextResponse.json({ hasClientInfo }, { status: 200 })
