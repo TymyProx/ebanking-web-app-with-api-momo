@@ -23,7 +23,7 @@ const accountTypes = [
     currency: "GNF",
     minBalance: "50000",
     features: ["Carte bancaire incluse", "Chéquier inclus", "Virements illimités", "Découvert autorisé"],
-    fees: "Gratuit les 6 premiers mois",
+   // fees: "Gratuit les 6 premiers mois",
     icon: "💳",
   },
   {
@@ -33,7 +33,7 @@ const accountTypes = [
     currency: "GNF",
     minBalance: "100000",
     features: ["Taux d'intérêt attractif", "Pas de frais de tenue", "Épargne programmée", "Objectifs d'épargne"],
-    fees: "Gratuit",
+    //fees: "Gratuit",
     icon: "🏦",
   },
   {
@@ -43,8 +43,8 @@ const accountTypes = [
     currency: "GNF",
     minBalance: "25000",
     features: ["Carte prépayée", "Suivi parental", "Épargne sécurisée", "Éducation financière"],
-    fees: "Gratuit",
-    icon: "👶",
+    //fees: "Gratuit",
+    icon: "🪙",
   },
 ]
 
@@ -321,12 +321,12 @@ export default function NewAccountPage() {
                       </div>
                     ))}
                   </div>
-                  <div className="pt-2 border-t border-gray-200 space-y-1">
+                  {/* <div className="pt-2 border-t border-gray-200 space-y-1">
                     <div className="text-xs">
                       <span className="text-muted-foreground">Frais: </span>
                       <span className="font-semibold text-primary">{type.fees}</span>
                     </div>
-                  </div>
+                  </div> */}
                 </div>
               ))}
             </div>
