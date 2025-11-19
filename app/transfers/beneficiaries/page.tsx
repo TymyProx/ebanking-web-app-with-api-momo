@@ -100,6 +100,10 @@ export default function BeneficiariesPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [isPending, startTransition] = useTransition()
 
+  // ✅ NEW: Ajout état pour la modale de détails
+  const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false)
+  const [selectedBeneficiary, setSelectedBeneficiary] = useState<Beneficiary | null>(null)
+
   const [selectedType, setSelectedType] = useState("")
   const [selectedBank, setSelectedBank] = useState("")
   const [banks, setBanks] = useState<Bank[]>([])
@@ -729,6 +733,12 @@ export default function BeneficiariesPage() {
     }
   }
 
+  // ✅ NEW: Fonction pour ouvrir la modale de détails
+  const openDetailsDialog = (beneficiary: Beneficiary) => {
+    setSelectedBeneficiary(beneficiary)
+    setIsDetailsDialogOpen(true)
+  }
+
   return (
     <div className="mt-6 space-y-6">
       <div className="flex items-center justify-between">
@@ -1123,7 +1133,9 @@ export default function BeneficiariesPage() {
               {filteredBeneficiaries.map((beneficiary) => (
                 <div
                   key={beneficiary.id}
-                  className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors"
+                  // ✅ NEW: Ajout du onClick sur la carte pour ouvrir la modale
+                  onClick={() => openDetailsDialog(beneficiary)}
+                  className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
                 >
                   <div className="flex items-center space-x-4">
                     <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center">
@@ -1159,7 +1171,15 @@ export default function BeneficiariesPage() {
 
                   <div className="flex items-center space-x-2">
                     {beneficiary.status === 0 && beneficiary.workflowStatus === WORKFLOW_STATUS.AVAILABLE && (
-                      <Button variant="ghost" size="sm" onClick={() => toggleFavorite(beneficiary.id)}>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        // ✅ NEW: Empêche l'ouverture de la modale de détails lors du clic sur l'icône favori
+                        onClick={(e) => {
+                          e.stopPropagation() 
+                          toggleFavorite(beneficiary.id)
+                        }}
+                      >
                         {beneficiary.favorite ? (
                           <Star className="w-4 h-4 text-yellow-500 fill-current" />
                         ) : (
@@ -1170,7 +1190,12 @@ export default function BeneficiariesPage() {
 
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="sm">
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          // ✅ NEW: Empêche l'ouverture de la modale de détails lors du clic sur le menu
+                          onClick={(e) => e.stopPropagation()} 
+                        >
                           <MoreVertical className="w-4 h-4" />
                         </Button>
                       </DropdownMenuTrigger>
@@ -1218,6 +1243,134 @@ export default function BeneficiariesPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* ✅ NEW: Nouvelle modale pour afficher les détails du bénéficiaire */}
+      <Dialog open={isDetailsDialogOpen} onOpenChange={setIsDetailsDialogOpen}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center space-x-2">
+              <Users className="w-5 h-5" />
+              <span>Détails du bénéficiaire</span>
+            </DialogTitle>
+          </DialogHeader>
+
+          {selectedBeneficiary && (
+            <div className="space-y-6">
+              {/* Statut et badges */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  {getTypeBadge(selectedBeneficiary.type)}
+                  {getWorkflowBadge(selectedBeneficiary.workflowStatus)}
+                </div>
+                {selectedBeneficiary.favorite && (
+                  <div className="flex items-center space-x-1 text-yellow-600">
+                    <Star className="w-4 h-4 fill-current" />
+                    <span className="text-sm font-medium">Favori</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Informations principales */}
+              <div className="space-y-4">
+                <div>
+                  <Label className="text-xs text-muted-foreground">Nom complet</Label>
+                  <p className="text-lg font-semibold">{selectedBeneficiary.name}</p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Type</Label>
+                    <p className="font-medium">
+                      {selectedBeneficiary.type === "BNG-BNG"
+                        ? "Interne"
+                        : selectedBeneficiary.type === "BNG-CONFRERE"
+                          ? "Confrère (Guinée)"
+                          : "International"}
+                    </p>
+                  </div>
+
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Banque</Label>
+                    <p className="font-medium">{selectedBeneficiary.bank}</p>
+                  </div>
+                </div>
+
+                {/* Compte */}
+                <div>
+                  <Label className="text-xs text-muted-foreground">
+                    {selectedBeneficiary.type === "BNG-INTERNATIONAL" ? "IBAN" : "Numéro de compte"}
+                  </Label>
+                  <p className="font-mono text-base font-semibold bg-gray-50 p-3 rounded border">
+                    {selectedBeneficiary.account}
+                  </p>
+                </div>
+
+                {/* RIB pour types non-internationaux */}
+                {selectedBeneficiary.type !== "BNG-INTERNATIONAL" && (
+                  <div className="grid grid-cols-2 gap-4">
+                    {selectedBeneficiary.codagence && (
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Code agence</Label>
+                        <p className="font-mono font-medium">{selectedBeneficiary.codagence}</p>
+                      </div>
+                    )}
+                    {selectedBeneficiary.clerib && (
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Clé RIB</Label>
+                        <p className="font-mono font-medium">{selectedBeneficiary.clerib}</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Informations supplémentaires */}
+                <div className="grid grid-cols-2 gap-4 pt-4 border-t">
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Ajouté le</Label>
+                    <p className="text-sm">{selectedBeneficiary.addedDate}</p>
+                  </div>
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Dernier virement</Label>
+                    <p className="text-sm">{selectedBeneficiary.lastUsed}</p>
+                  </div>
+                </div>
+
+                {/* Message pour les bénéficiaires en attente */}
+                {selectedBeneficiary.workflowStatus !== WORKFLOW_STATUS.AVAILABLE && (
+                  <Alert className="border-amber-200 bg-amber-50">
+                    <AlertCircle className="h-4 w-4 text-amber-600" />
+                    <AlertDescription className="text-amber-800 text-sm">
+                      Ce bénéficiaire est en attente de validation manuelle. Vous ne pouvez pas encore effectuer de
+                      virements.
+                    </AlertDescription>
+                  </Alert>
+                )}
+              </div>
+
+              {/* Actions */}
+              <div className="flex justify-end space-x-2 pt-4 border-t">
+                <Button
+                  variant="outline"
+                  onClick={() => setIsDetailsDialogOpen(false)}
+                >
+                  Fermer
+                </Button>
+                {selectedBeneficiary.status === 0 && 
+                 selectedBeneficiary.workflowStatus === WORKFLOW_STATUS.AVAILABLE && (
+                  <Button
+                    onClick={() => {
+                      setIsDetailsDialogOpen(false)
+                      window.location.href = "/transfers/new"
+                    }}
+                  >
+                    Faire un virement
+                  </Button>
+                )}
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent className="sm:max-w-[700px]">
