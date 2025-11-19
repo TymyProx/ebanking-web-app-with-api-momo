@@ -484,7 +484,7 @@ export default function BalancesPage() {
         <Alert className="border-primary/20 bg-gradient-to-r from-primary/5 to-secondary/5 backdrop-blur-sm">
           <CheckCircle className="h-4 w-4 text-primary" />
           <AlertDescription className="text-foreground">
-            Soldes mis à jour • {lastRefresh.toLocaleTimeString("fr-FR")}
+           Dernière mise à jour • {lastRefresh.toLocaleTimeString("fr-FR")}
           </AlertDescription>
         </Alert>
       )}
@@ -569,12 +569,12 @@ export default function BalancesPage() {
                       <CardContent className="relative space-y-4">
                         <div className="space-y-2">
                           <div className="text-xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">
-                            Solde disponible:{" "}{showBalance
+                            Solde disponible :{" "}{showBalance
                               ? `${formatAmount(account.availableBalance, account.currency)} ${account.currency}`
                               : "••••••••"}
                           </div>
                           <p className="text-sm text-muted-foreground">
-                            Solde comptable:{" "}
+                            Solde comptable :{" "}
                             {showBalance
                               ? `${formatAmount(account.balance, account.currency)} ${account.currency}`
                               : "••••••••"}
