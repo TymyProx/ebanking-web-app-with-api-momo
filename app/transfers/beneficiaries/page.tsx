@@ -670,7 +670,7 @@ export default function BeneficiariesPage() {
       default:
         return (
           <Badge variant="outline" className="border-green-500 text-green-800 bg-green-100 font-semibold">
-            ✅ Actif
+            Actif
           </Badge>
         )
     }
