@@ -758,9 +758,9 @@ export async function executeTransfer(prevState: any, formData: FormData) {
     }
 
     const transactionUrl = `${API_BASE_URL}/tenant/${TENANT_ID}/epayments`
-    const secureMode = (process.env.NEXT_PUBLIC_PORTAL_SECURE_MODE || "false").toLowerCase() === "true"
-    const keyB64 = process.env.NEXT_PUBLIC_PORTAL_KEY_B64 || ""
-    const keyId = process.env.NEXT_PUBLIC_PORTAL_KEY_ID || "k1-mobile-v1"
+    const secureMode = (process.env.PORTAL_SECURE_MODE || "false").toLowerCase() === "true"
+    const keyB64 = process.env.PORTAL_KEY_B64 || ""
+    const keyId = process.env.PORTAL_KEY_ID || "k1-mobile-v1"
 
     let bodyToSend: any = apiData
     if (secureMode && keyB64) {
@@ -802,7 +802,7 @@ export async function executeTransfer(prevState: any, formData: FormData) {
       delete bodyToSend.data.montantOperation
     }
 
-    if ((process.env.NEXT_PUBLIC_LOG_LEVEL || "error").toLowerCase() === "debug") {
+    if ((process.env.LOG_LEVEL || "error").toLowerCase() === "debug") {
       console.log("[v0] ===== EPAYMENT CREATION DEBUG =====")
       console.log("[v0] Transaction URL:", transactionUrl)
       console.log("[v0] API_BASE_URL:", API_BASE_URL)
@@ -835,18 +835,18 @@ export async function executeTransfer(prevState: any, formData: FormData) {
       body: JSON.stringify(bodyToSend),
     })
 
-    if ((process.env.NEXT_PUBLIC_LOG_LEVEL || "error").toLowerCase() === "debug") {
+    if ((process.env.LOG_LEVEL || "error").toLowerCase() === "debug") {
       console.log("[v0] Epayment response status:", response.status)
       console.log("[v0] Epayment response status text:", response.statusText)
     }
 
     if (!response.ok) {
-      if ((process.env.NEXT_PUBLIC_LOG_LEVEL || "error").toLowerCase() === "debug") {
+      if ((process.env.LOG_LEVEL || "error").toLowerCase() === "debug") {
         console.log("[v0] Erreur API, restauration du solde disponible")
       }
 
       const responseText = await response.text()
-      if ((process.env.NEXT_PUBLIC_LOG_LEVEL || "error").toLowerCase() === "debug") {
+      if ((process.env.LOG_LEVEL || "error").toLowerCase() === "debug") {
         console.log("[v0] Error response body:", responseText)
       }
 
@@ -882,7 +882,7 @@ export async function executeTransfer(prevState: any, formData: FormData) {
     }
 
     const result = await response.json()
-    if ((process.env.NEXT_PUBLIC_LOG_LEVEL || "error").toLowerCase() === "debug") {
+    if ((process.env.LOG_LEVEL || "error").toLowerCase() === "debug") {
       console.log("[v0] Epayment created successfully")
     }
 
@@ -894,7 +894,7 @@ export async function executeTransfer(prevState: any, formData: FormData) {
       successMessage += " Compte source débité, virement vers bénéficiaire en cours."
     }
 
-    if ((process.env.NEXT_PUBLIC_LOG_LEVEL || "error").toLowerCase() === "debug") {
+    if ((process.env.LOG_LEVEL || "error").toLowerCase() === "debug") {
       console.log(
         `[AUDIT] Virement exécuté - RequestID: ${requestID}, Type: ${validatedData.transferType}, Nouveau solde disponible: ${debitResult.newBalance} à ${new Date().toISOString()}`,
       )
@@ -1042,13 +1042,22 @@ export async function getTransactions(): Promise<{ data: any[] }> {
       }
     } catch (_) {}
 
+    const userAccounts = await fetchAccounts()
+    const allowedAccountIds = new Set<string>()
+    
+    // Construire un set avec tous les IDs de comptes de l'utilisateur
+    for (const account of userAccounts) {
+      if (account.id) allowedAccountIds.add(String(account.id))
+      if (account.accountId) allowedAccountIds.add(String(account.accountId))
+    }
+
     const response = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/transactions`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${usertoken}`,
       },
-      next: { revalidate: 60 }, // Cache for 60 seconds instead of no-store
+      next: { revalidate: 60 },
     })
 
     if (!response.ok) {
@@ -1087,9 +1096,21 @@ export async function getTransactions(): Promise<{ data: any[] }> {
       transactions = Array.isArray(data.data) ? data.data : [data.data]
     }
 
-    if (clientId) {
-      transactions = transactions.filter((txn: any) => txn.clientId === clientId)
-    }
+    transactions = transactions.filter((txn: any) => {
+      // Vérifier si la transaction appartient à un des comptes de l'utilisateur
+      const belongsToUserAccount = allowedAccountIds.has(String(txn.accountId))
+      
+      // Vérifier aussi le clientId pour une sécurité supplémentaire
+      const belongsToUser = clientId ? txn.clientId === clientId : true
+      
+      return belongsToUserAccount && belongsToUser
+    })
+
+    transactions.sort((a: any, b: any) => {
+      const dateA = new Date(a.valueDate || a.createdAt || 0).getTime()
+      const dateB = new Date(b.valueDate || b.createdAt || 0).getTime()
+      return dateB - dateA
+    })
 
     return { data: transactions }
   } catch (_) {

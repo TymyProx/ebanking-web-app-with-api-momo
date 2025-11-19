@@ -183,9 +183,9 @@ export async function createCardRequest(cardData: NewCardRequest): Promise<Card>
   expirationDate.setFullYear(expirationDate.getFullYear() + 4)
   const dateExpiration = expirationDate.toISOString().split("T")[0]
 
-  const secure = (process.env.NEXT_PUBLIC_PORTAL_SECURE_MODE || "false").toLowerCase() === "true"
-  const keyB64 = process.env.PORTAL_KEY_B64 || process.env.NEXT_PUBLIC_PORTAL_KEY_B64 || ""
-  const keyId = process.env.PORTAL_KEY_ID || process.env.NEXT_PUBLIC_PORTAL_KEY_ID || "k1-mobile-v1"
+  const secure = (process.env.PORTAL_SECURE_MODE || "false").toLowerCase() === "true"
+  const keyB64 = process.env.PORTAL_KEY_B64 || ""
+  const keyId = process.env.PORTAL_KEY_ID || "k1-mobile-v1"
   
   let requestBody: any
   if (secure && keyB64) {

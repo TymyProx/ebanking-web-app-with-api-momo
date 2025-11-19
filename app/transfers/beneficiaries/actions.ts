@@ -271,9 +271,9 @@ export async function addBeneficiaryAndActivate(prevState: ActionResult | null, 
 
     const clientId = await getCurrentClientId()
 
-    const secureMode = (process.env.NEXT_PUBLIC_PORTAL_SECURE_MODE || "false").toLowerCase() === "true"
-    const keyB64 = process.env.PORTAL_KEY_B64 || process.env.NEXT_PUBLIC_PORTAL_KEY_B64 || ""
-    const keyId = process.env.PORTAL_KEY_ID || process.env.NEXT_PUBLIC_PORTAL_KEY_ID || "k1-mobile-v1"
+    const secureMode = (process.env.PORTAL_SECURE_MODE || "false").toLowerCase() === "true"
+    const keyB64 = process.env.PORTAL_KEY_B64 || ""
+    const keyId = process.env.PORTAL_KEY_ID || "k1-mobile-v1"
 
     console.log("[addBeneficiaryAndActivate] Form values", {
       name,
@@ -448,9 +448,9 @@ export async function addBeneficiary(prevState: ActionResult | null, formData: F
 
     const clientId = await getCurrentClientId()
 
-    const secureMode = (process.env.NEXT_PUBLIC_PORTAL_SECURE_MODE || "false").toLowerCase() === "true"
-    const keyB64 = process.env.PORTAL_KEY_B64 || process.env.NEXT_PUBLIC_PORTAL_KEY_B64 || ""
-    const keyId = process.env.PORTAL_KEY_ID || process.env.NEXT_PUBLIC_PORTAL_KEY_ID || "k1-mobile-v1"
+    const secureMode = (process.env.PORTAL_SECURE_MODE || "false").toLowerCase() === "true"
+    const keyB64 = process.env.PORTAL_KEY_B64 || ""
+    const keyId = process.env.PORTAL_KEY_ID || "k1-mobile-v1"
 
     const base = {
       beneficiaryId: `BEN_${Date.now()}`,

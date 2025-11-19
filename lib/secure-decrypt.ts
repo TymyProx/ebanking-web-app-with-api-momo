@@ -52,15 +52,15 @@ export async function decryptField(encryptedValue: any): Promise<string> {
   
   if (!encryptedValue) return ""
   
-  const secureMode = (process.env.NEXT_PUBLIC_PORTAL_SECURE_MODE || "false").toLowerCase() === "true"
+  const secureMode = (process.env.PORTAL_SECURE_MODE || "false").toLowerCase() === "true"
   if (!secureMode) {
     // If not in secure mode, return as string
     return typeof encryptedValue === "string" ? encryptedValue : JSON.stringify(encryptedValue)
   }
 
-  // Use non-public key (server-side only)
-  const keyB64 = process.env.PORTAL_KEY_B64 || process.env.NEXT_PUBLIC_PORTAL_KEY_B64 || ""
+  const keyB64 = process.env.PORTAL_KEY_B64 || ""
   if (!keyB64) {
+    console.warn("[secure-decrypt] PORTAL_KEY_B64 environment variable not set")
     return typeof encryptedValue === "string" ? encryptedValue : "[encrypted]"
   }
 
@@ -94,11 +94,14 @@ export async function decryptField(encryptedValue: any): Promise<string> {
 export async function decryptCards(encryptedCards: any[]): Promise<any[]> {
   "use server"
   
-  const secureMode = (process.env.NEXT_PUBLIC_PORTAL_SECURE_MODE || "false").toLowerCase() === "true"
+  const secureMode = (process.env.PORTAL_SECURE_MODE || "false").toLowerCase() === "true"
   if (!secureMode) return encryptedCards
 
-  const keyB64 = process.env.PORTAL_KEY_B64 || process.env.NEXT_PUBLIC_PORTAL_KEY_B64 || ""
-  if (!keyB64) return encryptedCards
+  const keyB64 = process.env.PORTAL_KEY_B64 || ""
+  if (!keyB64) {
+    console.warn("[secure-decrypt] PORTAL_KEY_B64 environment variable not set")
+    return encryptedCards
+  }
 
   try {
     const keyBuffer = importAesGcmKeyFromBase64Node(keyB64)
@@ -139,11 +142,14 @@ export async function decryptCards(encryptedCards: any[]): Promise<any[]> {
 export async function decryptBeneficiaries(encryptedBeneficiaries: any[]): Promise<any[]> {
   "use server"
   
-  const secureMode = (process.env.NEXT_PUBLIC_PORTAL_SECURE_MODE || "false").toLowerCase() === "true"
+  const secureMode = (process.env.PORTAL_SECURE_MODE || "false").toLowerCase() === "true"
   if (!secureMode) return encryptedBeneficiaries
 
-  const keyB64 = process.env.PORTAL_KEY_B64 || process.env.NEXT_PUBLIC_PORTAL_KEY_B64 || ""
-  if (!keyB64) return encryptedBeneficiaries
+  const keyB64 = process.env.PORTAL_KEY_B64 || ""
+  if (!keyB64) {
+    console.warn("[secure-decrypt] PORTAL_KEY_B64 environment variable not set")
+    return encryptedBeneficiaries
+  }
 
   try {
     const keyBuffer = importAesGcmKeyFromBase64Node(keyB64)
