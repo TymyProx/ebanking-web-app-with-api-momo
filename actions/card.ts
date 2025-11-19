@@ -184,11 +184,13 @@ export async function createCardRequest(cardData: NewCardRequest): Promise<Card>
   const dateExpiration = expirationDate.toISOString().split("T")[0]
 
   const secure = (process.env.NEXT_PUBLIC_PORTAL_SECURE_MODE || "false").toLowerCase() === "true"
-  const keyB64 = process.env.NEXT_PUBLIC_PORTAL_KEY_B64 || ""
+  const keyB64 = process.env.PORTAL_KEY_B64 || process.env.NEXT_PUBLIC_PORTAL_KEY_B64 || ""
+  const keyId = process.env.PORTAL_KEY_ID || process.env.NEXT_PUBLIC_PORTAL_KEY_ID || "k1-mobile-v1"
+  
   let requestBody: any
   if (secure && keyB64) {
     const { encryptAesGcmNode } = await import("../app/transfers/new/secure")
-    const enc = (v: any) => ({ ...encryptAesGcmNode(v, keyB64), key_id: "k1-mobile-v1" })
+    const enc = (v: any) => ({ ...encryptAesGcmNode(v, keyB64), key_id: keyId })
     requestBody = {
       data: {
         numCard_json: enc("AUTO"),
@@ -200,7 +202,7 @@ export async function createCardRequest(cardData: NewCardRequest): Promise<Card>
         // keep plaintext clientId for server-side filtering and client list
         clientId: clientId,
         accountNumber_json: enc(cardData.accountNumber || ""),
-        key_id: "k1-mobile-v1",
+        key_id: keyId,
       },
     }
   } else {

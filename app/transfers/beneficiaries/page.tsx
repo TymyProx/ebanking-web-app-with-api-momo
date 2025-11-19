@@ -9,20 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import {
-  Users,
-  Plus,
-  Search,
-  UserX,
-  Building,
-  User,
-  Globe,
-  MoreVertical,
-  Star,
-  StarOff,
-  CheckCircle,
-  AlertCircle,
-} from "lucide-react"
+import { Users, Plus, Search, UserX, Building, User, Globe, MoreVertical, Star, StarOff, CheckCircle, AlertCircle } from 'lucide-react'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import {
   addBeneficiary,
@@ -153,59 +140,36 @@ export default function BeneficiariesPage() {
   const loadBeneficiaries = async () => {
     setIsLoading(true)
     try {
+      // Server action already decrypts sensitive fields
       const apiBeneficiaries = await getBeneficiaries()
-      const secureMode = (process.env.NEXT_PUBLIC_PORTAL_SECURE_MODE || "false").toLowerCase() === "true"
-      const keyB64 = process.env.NEXT_PUBLIC_PORTAL_KEY_B64 || ""
-      const key = secureMode && keyB64 ? await importAesGcmKeyFromBase64(keyB64) : null
 
-      async function resolveField(value: any): Promise<string> {
-        if (!value) return ""
-        if (secureMode && key && (isEncryptedJson(value) || typeof value === "string")) {
+      const transformedBeneficiaries: Beneficiary[] = apiBeneficiaries.map((apiB: any) => {
+        let workflowMetadata = apiB.workflowMetadata || null
+        if (workflowMetadata && typeof workflowMetadata === "string") {
           try {
-            return await decryptAesGcmFromJson(value, key)
+            workflowMetadata = JSON.parse(workflowMetadata)
           } catch {
-            // Fallback to string if decrypt fails
+            workflowMetadata = null
           }
         }
-        return typeof value === "string" ? value : JSON.stringify(value)
-      }
 
-      const transformedBeneficiaries: Beneficiary[] = await Promise.all(
-        apiBeneficiaries.map(async (apiB: any) => {
-          const name = await resolveField(apiB.name ?? apiB.name_json)
-          const accountNumber = await resolveField(apiB.accountNumber ?? apiB.accountNumber_json)
-          const bankNamePlain = await resolveField(apiB.bankName ?? apiB.bankName_json)
-          const bankCodePlain = await resolveField(apiB.bankCode ?? apiB.bankCode_json)
-          const bankResolved = bankNamePlain || getBankNameFromCode(bankCodePlain)
-          const codagence = await resolveField(apiB.codagence ?? apiB.codagence_json)
-          const clerib = await resolveField(apiB.clerib ?? apiB.clerib_json)
-          const workflowStatus = toWorkflowStatus(apiB.workflowStatus)
-          let workflowMetadata = apiB.workflowMetadata || null
-          if (workflowMetadata && typeof workflowMetadata === "string") {
-            try {
-              workflowMetadata = JSON.parse(workflowMetadata)
-            } catch {
-              workflowMetadata = null
-            }
-          }
+        return {
+          id: apiB.id,
+          name: apiB.name || "",
+          account: apiB.accountNumber || "",
+          bank: apiB.bankName || getBankNameFromCode(apiB.bankCode || ""),
+          type: apiB.typeBeneficiary,
+          favorite: Boolean(apiB.favoris),
+          lastUsed: "Jamais",
+          addedDate: new Date(apiB.createdAt).toLocaleDateString("fr-FR"),
+          status: apiB.status,
+          codagence: apiB.codagence || "",
+          clerib: apiB.clerib || "",
+          workflowStatus: toWorkflowStatus(apiB.workflowStatus),
+          workflowMetadata,
+        } as Beneficiary
+      })
 
-          return {
-            id: apiB.id,
-            name,
-            account: accountNumber,
-            bank: bankResolved,
-            type: apiB.typeBeneficiary,
-            favorite: Boolean(apiB.favoris),
-            lastUsed: "Jamais",
-            addedDate: new Date(apiB.createdAt).toLocaleDateString("fr-FR"),
-            status: apiB.status,
-            codagence,
-            clerib,
-            workflowStatus,
-            workflowMetadata,
-          } as Beneficiary
-        }),
-      )
       setBeneficiaries(transformedBeneficiaries)
     } catch (error) {
       console.error("Erreur lors du chargement des bénéficiaires:", error)

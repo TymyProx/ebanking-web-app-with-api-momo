@@ -4,11 +4,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { ArrowUpRight, ArrowDownRight, Receipt, Calendar, Clock, Hash, FileText, CreditCard } from "lucide-react"
+import { ArrowUpRight, ArrowDownRight, Receipt, Calendar, Clock, Hash, FileText, CreditCard } from 'lucide-react'
 import { useState, useEffect, useMemo } from "react"
 import { getEpayments } from "@/app/transfers/new/actions"
 import { getAccounts } from "@/app/accounts/actions"
-import { importAesGcmKeyFromBase64, isEncryptedJson, decryptAesGcmFromJson } from "@/lib/crypto"
 
 export default function MesVirementsPage() {
   const [transactions, setTransactions] = useState<any[]>([])
@@ -34,60 +33,13 @@ export default function MesVirementsPage() {
       try {
         const [ep, accountsData] = await Promise.all([getEpayments(), getAccounts()])
 
-        const secureMode = (process.env.NEXT_PUBLIC_PORTAL_SECURE_MODE || "false").toLowerCase() === "true"
-        const keyB64 = process.env.NEXT_PUBLIC_PORTAL_KEY_B64 || ""
-        let key: CryptoKey | null = null
-        try {
-          if (secureMode && keyB64) key = await importAesGcmKeyFromBase64(keyB64)
-        } catch (_) {
-          key = null
-        }
-
         const rows = ep?.rows || []
-        const decrypted = key
-          ? await Promise.all(
-              rows.map(async (t: any) => {
-                const out = { ...t }
-                const asEnc = (v: any) => {
-                  if (!v) return null
-                  if (isEncryptedJson(v)) return v
-                  if (typeof v === "string") {
-                    try {
-                      const p = JSON.parse(v)
-                      return isEncryptedJson(p) ? p : null
-                    } catch {
-                      return null
-                    }
-                  }
-                  return null
-                }
-                try {
-                  const dEnc = asEnc(out.description) || asEnc(out.description_json)
-                  if (dEnc) out.description = await decryptAesGcmFromJson(dEnc, key as CryptoKey)
-                  const cEnc = asEnc(out.commentnotes) || asEnc(out.commentnotes_json)
-                  if (cEnc) out.commentnotes = await decryptAesGcmFromJson(cEnc, key as CryptoKey)
-                  const ncEnc = asEnc(out.nomClient) || asEnc(out.nomClient_json)
-                  if (ncEnc) out.nomClient = await decryptAesGcmFromJson(ncEnc, key as CryptoKey)
-                  const nbEnc = asEnc(out.nomBeneficiaire) || asEnc(out.nomBeneficiaire_json)
-                  if (nbEnc) out.nomBeneficiaire = await decryptAesGcmFromJson(nbEnc, key as CryptoKey)
-                  const rcEnc = asEnc(out.ribClient) || asEnc(out.ribClient_json)
-                  if (rcEnc) out.ribClient = await decryptAesGcmFromJson(rcEnc, key as CryptoKey)
-                  const rbEnc = asEnc(out.ribBeneficiaire) || asEnc(out.ribBeneficiaire_json)
-                  if (rbEnc) out.ribBeneficiaire = await decryptAesGcmFromJson(rbEnc, key as CryptoKey)
-                  const moEnc = asEnc(out.montantOperation_json)
-                  if (moEnc) out.montantOperation = await decryptAesGcmFromJson(moEnc, key as CryptoKey)
-                } catch (_) {}
-                out.description = typeof out.description === "string" ? out.description : ""
-                return out
-              }),
-            )
-          : rows
-
-        setTransactions(decrypted)
+        // Data is already decrypted by server actions
+        setTransactions(rows)
         setAccounts(accountsData || [])
 
         try {
-          sessionStorage.setItem("mes-virements-transactions", JSON.stringify(decrypted))
+          sessionStorage.setItem("mes-virements-transactions", JSON.stringify(rows))
           sessionStorage.setItem("mes-virements-accounts", JSON.stringify(accountsData || []))
         } catch (e) {}
       } catch (error) {

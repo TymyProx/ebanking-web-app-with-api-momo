@@ -12,20 +12,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import {
-  BookOpen,
-  CreditCard,
-  FileText,
-  Clock,
-  CheckCircle,
-  AlertCircle,
-  Send,
-  Eye,
-  Banknote,
-  Shield,
-  Plus,
-  Search,
-} from "lucide-react"
+import { BookOpen, CreditCard, FileText, Clock, CheckCircle, AlertCircle, Send, Eye, Banknote, Shield, Plus, Search } from 'lucide-react'
 import {
   submitCreditRequest,
   submitCheckbookRequest,
@@ -187,63 +174,42 @@ export default function ServiceRequestsPage() {
         const checkbookData = checkbookResult.rows
         console.log("[v0] Données chéquier à traiter:", checkbookData)
 
-        const secureMode = (process.env.NEXT_PUBLIC_PORTAL_SECURE_MODE || "false").toLowerCase() === "true"
-        const keyB64 = process.env.NEXT_PUBLIC_PORTAL_KEY_B64 || ""
-        const key = secureMode && keyB64 ? await importAesGcmKeyFromBase64(keyB64) : null
-
-        const checkbookRequests = await Promise.all(
-          checkbookData.map(async (item: any, index: number) => {
-            let account = item.intitulecompte || "Compte non spécifié"
-            let numcompteId = item.numcompteId || ""
-            let commentaire = item.commentaire || ""
-
-            try {
-              if (secureMode && key && isEncryptedJson(item.intitulecompte_json)) {
-                account = await decryptAesGcmFromJson(item.intitulecompte_json, key)
-              }
-              if (secureMode && key && isEncryptedJson(item.numcompteId_json)) {
-                numcompteId = await decryptAesGcmFromJson(item.numcompteId_json, key)
-              }
-              if (secureMode && key && isEncryptedJson(item.commentaire_json)) {
-                commentaire = await decryptAesGcmFromJson(item.commentaire_json, key)
-              }
-            } catch (_) {}
-
-            return {
-              id: item.id || `CHQ${String(index + 1).padStart(3, "0")}`,
-              type: "checkbook",
-              typeName: "Demande de chéquier",
-              status:
-                item.stepflow === 0
-                  ? "En attente"
-                  : item.stepflow === 1
+        const checkbookRequests = checkbookData.map((item: any, index: number) => {
+          return {
+            id: item.id || `CHQ${String(index + 1).padStart(3, "0")}`,
+            type: "checkbook",
+            typeName: "Demande de chéquier",
+            status:
+              item.stepflow === 0
+                ? "En attente"
+                : item.stepflow === 1
+                  ? "En cours de traitement"
+                  : item.stepflow === 2
                     ? "En cours de traitement"
-                    : item.stepflow === 2
-                      ? "En cours de traitement"
-                      : item.stepflow === 3
-                        ? "Disponible à l’agence"
-                        : item.stepflow === 4
-                          ? "Disponible"
-                          : item.stepflow === 5
-                            ? "Retiré"
-                            : "En attente",
-              submittedAt: item.dateorder || item.createdAt?.split("T")[0] || new Date().toISOString().split("T")[0],
-              expectedResponse: item.dateorder
-                ? new Date(new Date(item.dateorder).getTime() + 3 * 24 * 60 * 60 * 1000).toISOString().split("T")[0]
-                : new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
-              account,
-              reference: item.reference || `CHQ-${new Date().getFullYear()}-${String(index + 1).padStart(3, "0")}`,
-              details: {
-                nbrechequier: item.nbrechequier || 0,
-                nbrefeuille: item.nbrefeuille || 0,
-                commentaire,
-                numcompteId,
-                typeCheque: item.typeCheque,
-                talonCheque: item.talonCheque,
-              },
-            }
-          }),
-        )
+                    : item.stepflow === 3
+                      ? "Disponible à l'agence"
+                      : item.stepflow === 4
+                        ? "Disponible"
+                        : item.stepflow === 5
+                          ? "Retiré"
+                          : "En attente",
+            submittedAt: item.dateorder || item.createdAt?.split("T")[0] || new Date().toISOString().split("T")[0],
+            expectedResponse: item.dateorder
+              ? new Date(new Date(item.dateorder).getTime() + 3 * 24 * 60 * 60 * 1000).toISOString().split("T")[0]
+              : new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+            account: item.intitulecompte || "Compte non spécifié",
+            reference: item.reference || `CHQ-${new Date().getFullYear()}-${String(index + 1).padStart(3, "0")}`,
+            details: {
+              nbrechequier: item.nbrechequier || 0,
+              nbrefeuille: item.nbrefeuille || 0,
+              commentaire: item.commentaire || "",
+              numcompteId: item.numcompteId || "",
+              typeCheque: item.typeCheque,
+              talonCheque: item.talonCheque,
+            },
+          }
+        })
+
         allTransformedRequests = [...allTransformedRequests, ...checkbookRequests]
         console.log("[v0] Demandes de chéquier transformées:", checkbookRequests)
       } else {
@@ -673,8 +639,6 @@ export default function ServiceRequestsPage() {
     setCheckbookSubmitState(null)
 
     try {
-      const secureMode = (process.env.NEXT_PUBLIC_PORTAL_SECURE_MODE || "false").toLowerCase() === "true"
-
       const basePayload = {
         dateorder: formData.dateorder || new Date().toISOString().split("T")[0],
         nbrefeuille: Number.parseInt(formData.nbrefeuille) || 0,
@@ -684,23 +648,12 @@ export default function ServiceRequestsPage() {
         commentaire: formData.commentaire || "",
         typeCheque: formData.typeCheque || "Standard",
         talonCheque: formData.talonCheque === true,
+        stepflow: 0,
       }
 
-      let result: any
-      if (secureMode) {
-        const keyB64 = process.env.NEXT_PUBLIC_PORTAL_KEY_B64 || ""
-        const keyId = process.env.NEXT_PUBLIC_PORTAL_KEY_ID || "k1-mobile-v1"
-        const reference = `CHQ-${new Date().getFullYear()}-${String(Date.now()).slice(-3)}`
-        const secureData = await buildCommandeSecurePayload(
-          { ...basePayload, referenceCommande: reference },
-          keyB64,
-          keyId,
-        )
-        result = await submitCheckbookRequestSecure(secureData)
-      } else {
-        const nonSecure = { ...basePayload, stepflow: 0 }
-        result = await submitCheckbookRequest(nonSecure as any)
-      }
+      // Server action handles encryption if secure mode is enabled
+      const result = await submitCheckbookRequest(basePayload as any)
+      
       setCheckbookSubmitState({
         success: true,
         reference: result.reference || "CHQ-" + new Date().getFullYear() + "-" + String(Date.now()).slice(-3),
