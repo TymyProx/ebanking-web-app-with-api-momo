@@ -3,7 +3,7 @@ process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0"
 import { z } from "zod"
 import { cookies } from "next/headers"
 import { revalidatePath } from "next/cache"
-import { encryptAesGcmNode, stringifyEncrypted } from "./secure"
+import { encryptAesGcmNode, stringifyEncrypted, decryptAesGcmNode, isEncryptedObject } from "./secure"
 import { config } from "@/lib/config"
 import { getAccounts as fetchAccounts } from "../../accounts/actions"
 import { getBeneficiaries as fetchBeneficiaries } from "../beneficiaries/actions"
@@ -728,9 +728,7 @@ export async function executeTransfer(prevState: any, formData: FormData) {
         clientId = userData.id || ""
         nomClient = userData.fullName || userData.name || ""
       }
-    } catch (error) {
-      console.error("[v0] Erreur lors de la récupération du clientId:", error)
-    }
+    } catch (_) {}
 
     const currentDate = new Date().toISOString()
     const apiData = {
@@ -1160,6 +1158,9 @@ export async function getEpayments(): Promise<{ rows: any[] }> {
   const parsed = contentType.includes("application/json") && bodyText ? JSON.parse(bodyText) : { rows: [] }
   let rows: any[] = parsed.rows || []
   if (currentUserId) rows = rows.filter((r: any) => r.clientId === currentUserId || r.createdById === currentUserId)
+  
+  rows = rows.map(decryptEpaymentFields)
+  
   return { rows }
 }
 
@@ -1216,4 +1217,51 @@ async function getBeneficiaryById(beneficiaryId: string, context: BeneficiarySec
     console.error("[v0] Erreur lors de la récupération du bénéficiaire:", error)
     return null
   }
+}
+
+// Helper function to decrypt fields in epayment objects
+function decryptEpaymentFields(epayment: any): any {
+  if (!epayment || typeof epayment !== "object") return epayment
+  
+  const key = process.env.PORTAL_KEY_B64
+  if (!key) return epayment
+  
+  const decrypted = { ...epayment }
+  
+  // List of fields that might be encrypted (with _json suffix)
+  const fieldsToDecrypt = [
+    "montantOperation",
+    "description",
+    "nomClient",
+    "creditAccount",
+    "referenceOperation",
+    "codeDevise",
+    "codeOperation",
+    "ribClient",
+    "nomBeneficiaire",
+    "ribBeneficiaire",
+    "commentnotes"
+  ]
+  
+  for (const field of fieldsToDecrypt) {
+    // Check both the field and field_json variant
+    const jsonField = `${field}_json`
+    const value = decrypted[jsonField] || decrypted[field]
+    
+    if (isEncryptedObject(value)) {
+      try {
+        const decryptedValue = decryptAesGcmNode(value, key)
+        // Store the decrypted value in the original field name
+        decrypted[field] = decryptedValue
+        // Remove the _json field if it exists
+        if (decrypted[jsonField]) {
+          delete decrypted[jsonField]
+        }
+      } catch (error) {
+        console.error(`Failed to decrypt field ${field}:`, error)
+      }
+    }
+  }
+  
+  return decrypted
 }
