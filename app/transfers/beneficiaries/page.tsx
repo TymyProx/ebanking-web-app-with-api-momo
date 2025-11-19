@@ -9,20 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import {
-  Users,
-  Plus,
-  Search,
-  UserX,
-  Building,
-  User,
-  Globe,
-  MoreVertical,
-  Star,
-  StarOff,
-  CheckCircle,
-  AlertCircle,
-} from "lucide-react"
+import { Users, Plus, Search, UserX, Building, User, Globe, MoreVertical, Star, StarOff, CheckCircle, AlertCircle } from 'lucide-react'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import {
   addBeneficiary,
@@ -534,7 +521,7 @@ export default function BeneficiariesPage() {
     setShowOtpModal(true)
   }
 
-  const handleOtpVerified = ({ otpId, referenceId }: { otpId?: string | null; referenceId?: string | null }) => {
+  const handleOtpVerified = ({otpId, referenceId }: { otpId?: string | null; referenceId?: string | null }) => {
     if (!pendingBeneficiaryData) {
       return
     }
@@ -1091,6 +1078,20 @@ export default function BeneficiariesPage() {
                 <p className="text-sm font-medium text-gray-600">International</p>
                 <p className="text-2xl font-bold">
                   {beneficiaries.filter((b) => b.type === "BNG-INTERNATIONAL").length}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center">
+              <User className="h-8 w-8 text-green-600" />
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Confrères</p>
+                <p className="text-2xl font-bold">
+                  {beneficiaries.filter((b) => b.type === "BNG-CONFRERE").length}
                 </p>
               </div>
             </div>
