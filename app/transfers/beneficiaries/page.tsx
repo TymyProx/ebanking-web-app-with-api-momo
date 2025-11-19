@@ -1033,14 +1033,14 @@ export default function BeneficiariesPage() {
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center">
-              <Users className="h-8 w-8 text-blue-600" />
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Total</p>
-                <p className="text-2xl font-bold">{beneficiaries.length}</p>
+              <Users className="h-6 w-6 text-blue-600" />
+              <div className="ml-3">
+                <p className="text-xs font-medium text-gray-600">Total</p>
+                <p className="text-xl font-bold">{beneficiaries.length}</p>
               </div>
             </div>
           </CardContent>
@@ -1049,10 +1049,10 @@ export default function BeneficiariesPage() {
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center">
-              <Star className="h-8 w-8 text-yellow-600" />
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Favoris</p>
-                <p className="text-2xl font-bold">{beneficiaries.filter((b) => b.favorite).length}</p>
+              <Star className="h-6 w-6 text-yellow-600" />
+              <div className="ml-3">
+                <p className="text-xs font-medium text-gray-600">Favoris</p>
+                <p className="text-xl font-bold">{beneficiaries.filter((b) => b.favorite).length}</p>
               </div>
             </div>
           </CardContent>
@@ -1061,10 +1061,10 @@ export default function BeneficiariesPage() {
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center">
-              <Building className="h-8 w-8 text-green-600" />
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">BNG</p>
-                <p className="text-2xl font-bold">{beneficiaries.filter((b) => b.type === "BNG-BNG").length}</p>
+              <Building className="h-6 w-6 text-green-600" />
+              <div className="ml-3">
+                <p className="text-xs font-medium text-gray-600">BNG</p>
+                <p className="text-xl font-bold">{beneficiaries.filter((b) => b.type === "BNG-BNG").length}</p>
               </div>
             </div>
           </CardContent>
@@ -1073,11 +1073,11 @@ export default function BeneficiariesPage() {
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center">
-              <Globe className="h-8 w-8 text-purple-600" />
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">International</p>
-                <p className="text-2xl font-bold">
-                  {beneficiaries.filter((b) => b.type === "BNG-INTERNATIONAL").length}
+              <User className="h-6 w-6 text-green-600" />
+              <div className="ml-3">
+                <p className="text-xs font-medium text-gray-600">Confrères</p>
+                <p className="text-xl font-bold">
+                  {beneficiaries.filter((b) => b.type === "BNG-CONFRERE").length}
                 </p>
               </div>
             </div>
@@ -1087,11 +1087,11 @@ export default function BeneficiariesPage() {
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center">
-              <User className="h-8 w-8 text-green-600" />
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Confrères</p>
-                <p className="text-2xl font-bold">
-                  {beneficiaries.filter((b) => b.type === "BNG-CONFRERE").length}
+              <Globe className="h-6 w-6 text-purple-600" />
+              <div className="ml-3">
+                <p className="text-xs font-medium text-gray-600">International</p>
+                <p className="text-xl font-bold">
+                  {beneficiaries.filter((b) => b.type === "BNG-INTERNATIONAL").length}
                 </p>
               </div>
             </div>
