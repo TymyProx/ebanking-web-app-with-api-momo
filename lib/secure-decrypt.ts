@@ -1,5 +1,3 @@
-"use server"
-
 import { cookies } from "next/headers"
 import { config } from "@/lib/config"
 
@@ -50,6 +48,8 @@ export function isEncryptedJson(v: any): v is { iv: string; ct: string } {
  * Decrypt a single field value (server-side only)
  */
 export async function decryptField(encryptedValue: any): Promise<string> {
+  "use server"
+  
   if (!encryptedValue) return ""
   
   const secureMode = (process.env.NEXT_PUBLIC_PORTAL_SECURE_MODE || "false").toLowerCase() === "true"
@@ -92,6 +92,8 @@ export async function decryptField(encryptedValue: any): Promise<string> {
  * Decrypt card data on server-side
  */
 export async function decryptCards(encryptedCards: any[]): Promise<any[]> {
+  "use server"
+  
   const secureMode = (process.env.NEXT_PUBLIC_PORTAL_SECURE_MODE || "false").toLowerCase() === "true"
   if (!secureMode) return encryptedCards
 
@@ -135,6 +137,8 @@ export async function decryptCards(encryptedCards: any[]): Promise<any[]> {
  * Decrypt beneficiary data on server-side
  */
 export async function decryptBeneficiaries(encryptedBeneficiaries: any[]): Promise<any[]> {
+  "use server"
+  
   const secureMode = (process.env.NEXT_PUBLIC_PORTAL_SECURE_MODE || "false").toLowerCase() === "true"
   if (!secureMode) return encryptedBeneficiaries
 
