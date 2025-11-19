@@ -7,7 +7,6 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { ArrowUpRight, ArrowDownRight, Receipt, Calendar, Clock, Hash, FileText, CreditCard } from 'lucide-react'
 import { useState, useEffect, useMemo } from "react"
 import { getEpayments } from "@/app/transfers/new/actions"
-import { getTransactions } from "../../transfers/new/actions"
 import { getAccounts } from "@/app/accounts/actions"
 
 export default function MesVirementsPage() {
