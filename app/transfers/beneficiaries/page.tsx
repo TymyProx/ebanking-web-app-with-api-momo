@@ -963,7 +963,7 @@ export default function BeneficiariesPage() {
       )}
 
       {/* ✅ NEW: OTP verification info */}
-      <Alert className="border-blue-200 bg-blue-50">
+      {/* <Alert className="border-blue-200 bg-blue-50">
         <AlertCircle className="h-4 w-4 text-blue-600" />
         <AlertDescription className="text-blue-800">
           <div className="space-y-2">
@@ -975,7 +975,7 @@ export default function BeneficiariesPage() {
             </p>
           </div>
         </AlertDescription>
-      </Alert>
+      </Alert> */}
 
       {/* Show errors from streamlined flow */}
       {addAndActivateState?.error && (
