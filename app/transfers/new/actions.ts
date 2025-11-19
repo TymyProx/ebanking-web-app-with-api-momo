@@ -3,7 +3,7 @@ process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0"
 import { z } from "zod"
 import { cookies } from "next/headers"
 import { revalidatePath } from "next/cache"
-import { encryptAesGcmNode, stringifyEncrypted } from "./secure"
+import { encryptAesGcmNode, stringifyEncrypted, decryptAesGcmNode, isEncryptedObject } from "./secure"
 import { config } from "@/lib/config"
 import { getAccounts as fetchAccounts } from "../../accounts/actions"
 import { getBeneficiaries as fetchBeneficiaries } from "../beneficiaries/actions"
@@ -728,9 +728,7 @@ export async function executeTransfer(prevState: any, formData: FormData) {
         clientId = userData.id || ""
         nomClient = userData.fullName || userData.name || ""
       }
-    } catch (error) {
-      console.error("[v0] Erreur lors de la récupération du clientId:", error)
-    }
+    } catch (_) {}
 
     const currentDate = new Date().toISOString()
     const apiData = {
@@ -1160,6 +1158,9 @@ export async function getEpayments(): Promise<{ rows: any[] }> {
   const parsed = contentType.includes("application/json") && bodyText ? JSON.parse(bodyText) : { rows: [] }
   let rows: any[] = parsed.rows || []
   if (currentUserId) rows = rows.filter((r: any) => r.clientId === currentUserId || r.createdById === currentUserId)
+  
+  rows = rows.map(decryptEpaymentFields)
+  
   return { rows }
 }
 
@@ -1216,4 +1217,41 @@ async function getBeneficiaryById(beneficiaryId: string, context: BeneficiarySec
     console.error("[v0] Erreur lors de la récupération du bénéficiaire:", error)
     return null
   }
+}
+
+function decryptEpaymentFields(epayment: any): any {
+  const secureMode = (process.env.PORTAL_SECURE_MODE || "false").toLowerCase() === "true"
+  const keyB64 = process.env.PORTAL_KEY_B64 || ""
+  
+  if (!secureMode || !keyB64) {
+    return epayment
+  }
+  
+  const decrypted = { ...epayment }
+  
+  // List of fields that might be encrypted (with _json suffix)
+  const encryptedFields = [
+    'montantOperation_json',
+    'ribClient_json',
+    'nomClient_json',
+    'nomBeneficiaire_json',
+    'ribBeneficiaire_json',
+    'commentnotes_json',
+    'description_json'
+  ]
+  
+  for (const field of encryptedFields) {
+    if (decrypted[field] && isEncryptedObject(decrypted[field])) {
+      try {
+        const plainField = field.replace('_json', '')
+        decrypted[plainField] = decryptAesGcmNode(decrypted[field], keyB64)
+        // Keep the encrypted version if needed, or delete it
+        // delete decrypted[field]
+      } catch (error) {
+        console.error(`[v0] Failed to decrypt field ${field}:`, error)
+      }
+    }
+  }
+  
+  return decrypted
 }
