@@ -3,7 +3,7 @@ process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0"
 import { z } from "zod"
 import { cookies } from "next/headers"
 import { revalidatePath } from "next/cache"
-import { encryptAesGcmNode, stringifyEncrypted, decryptAesGcmNode } from "./secure"
+import { encryptAesGcmNode, stringifyEncrypted } from "./secure"
 import { config } from "@/lib/config"
 import { getAccounts as fetchAccounts } from "../../accounts/actions"
 import { getBeneficiaries as fetchBeneficiaries } from "../beneficiaries/actions"
@@ -728,7 +728,9 @@ export async function executeTransfer(prevState: any, formData: FormData) {
         clientId = userData.id || ""
         nomClient = userData.fullName || userData.name || ""
       }
-    } catch (_) {}
+    } catch (error) {
+      console.error("[v0] Erreur lors de la récupération du clientId:", error)
+    }
 
     const currentDate = new Date().toISOString()
     const apiData = {
@@ -1158,12 +1160,6 @@ export async function getEpayments(): Promise<{ rows: any[] }> {
   const parsed = contentType.includes("application/json") && bodyText ? JSON.parse(bodyText) : { rows: [] }
   let rows: any[] = parsed.rows || []
   if (currentUserId) rows = rows.filter((r: any) => r.clientId === currentUserId || r.createdById === currentUserId)
-  
-  const keyB64 = process.env.PORTAL_KEY_B64 || ""
-  if (keyB64) {
-    rows = rows.map(row => decryptEpaymentFields(row, keyB64))
-  }
-  
   return { rows }
 }
 
@@ -1220,52 +1216,4 @@ async function getBeneficiaryById(beneficiaryId: string, context: BeneficiarySec
     console.error("[v0] Erreur lors de la récupération du bénéficiaire:", error)
     return null
   }
-}
-
-// Helper function to check if value is encrypted
-function isEncryptedValue(value: any): value is { iv: string; ct: string; tag: string; key_id?: string } {
-  return (
-    value &&
-    typeof value === "object" &&
-    typeof value.iv === "string" &&
-    typeof value.ct === "string" &&
-    typeof value.tag === "string"
-  )
-}
-
-// Helper function to decrypt encrypted fields in epayment data
-function decryptEpaymentFields(epayment: any, keyB64: string): any {
-  if (!keyB64) return epayment
-  
-  const decrypted = { ...epayment }
-  
-  // List of fields that might be encrypted
-  const encryptedFields = [
-    'montantOperation',
-    'ribClient',
-    'nomClient',
-    'nomBeneficiaire',
-    'ribBeneficiaire',
-    'commentnotes',
-    'description'
-  ]
-  
-  for (const field of encryptedFields) {
-    const jsonField = `${field}_json`
-    
-    // If the _json field exists and is encrypted, decrypt it
-    if (decrypted[jsonField] && isEncryptedValue(decrypted[jsonField])) {
-      try {
-        const decryptedValue = decryptAesGcmNode(decrypted[jsonField], keyB64)
-        decrypted[field] = decryptedValue
-        // Remove the _json field after decryption
-        delete decrypted[jsonField]
-      } catch (error) {
-        console.error(`[v0] Failed to decrypt ${field}:`, error)
-        // Keep original field if decryption fails
-      }
-    }
-  }
-  
-  return decrypted
 }
