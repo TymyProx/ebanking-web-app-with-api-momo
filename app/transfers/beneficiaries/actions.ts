@@ -700,21 +700,54 @@ export async function toggleBeneficiaryFavorite(
       }
     }
 
-    const apiData = {
-      data: {
-        beneficiaryId: currentBeneficiary.beneficiaryId,
-        clientId: currentBeneficiary.clientId,
-        name: currentBeneficiary.name,
-        accountNumber: currentBeneficiary.accountNumber,
-        bankCode: currentBeneficiary.bankCode,
-        bankName: currentBeneficiary.bankName,
-        status: currentBeneficiary.status,
-        typeBeneficiary: currentBeneficiary.typeBeneficiary,
-        favoris: !currentFavoriteStatus,
-        codagence: currentBeneficiary.codagence,
-        clerib: currentBeneficiary.clerib,
-        workflowStatus: currentBeneficiary.workflowStatus || WORKFLOW_STATUS.AVAILABLE,
-      },
+    const secureMode = (process.env.NEXT_PUBLIC_PORTAL_SECURE_MODE || "false").toLowerCase() === "true"
+    const keyB64 = process.env.NEXT_PUBLIC_PORTAL_KEY_B64 || ""
+    const keyId = process.env.NEXT_PUBLIC_PORTAL_KEY_ID || "k1-mobile-v1"
+
+    let apiData: any
+    
+    if (secureMode && keyB64) {
+      const enc = (v: any) => ({ ...encryptAesGcmNode(v, keyB64), key_id: keyId })
+      apiData = {
+        data: {
+          beneficiaryId: currentBeneficiary.beneficiaryId,
+          clientId: currentBeneficiary.clientId,
+          name: currentBeneficiary.name,
+          accountNumber: currentBeneficiary.accountNumber,
+          bankCode: currentBeneficiary.bankCode,
+          bankName: currentBeneficiary.bankName,
+          status: currentBeneficiary.status,
+          typeBeneficiary: currentBeneficiary.typeBeneficiary,
+          favoris: !currentFavoriteStatus,
+          codagence: currentBeneficiary.codagence,
+          clerib: currentBeneficiary.clerib,
+          workflowStatus: currentBeneficiary.workflowStatus || WORKFLOW_STATUS.AVAILABLE,
+          name_json: enc(currentBeneficiary.name),
+          accountNumber_json: enc(currentBeneficiary.accountNumber),
+          bankCode_json: enc(currentBeneficiary.bankCode),
+          bankName_json: enc(currentBeneficiary.bankName),
+          codagence_json: enc(currentBeneficiary.codagence),
+          clerib_json: enc(currentBeneficiary.clerib),
+          key_id: keyId,
+        },
+      }
+    } else {
+      apiData = {
+        data: {
+          beneficiaryId: currentBeneficiary.beneficiaryId,
+          clientId: currentBeneficiary.clientId,
+          name: currentBeneficiary.name,
+          accountNumber: currentBeneficiary.accountNumber,
+          bankCode: currentBeneficiary.bankCode,
+          bankName: currentBeneficiary.bankName,
+          status: currentBeneficiary.status,
+          typeBeneficiary: currentBeneficiary.typeBeneficiary,
+          favoris: !currentFavoriteStatus,
+          codagence: currentBeneficiary.codagence,
+          clerib: currentBeneficiary.clerib,
+          workflowStatus: currentBeneficiary.workflowStatus || WORKFLOW_STATUS.AVAILABLE,
+        },
+      }
     }
 
     const response = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/beneficiaire/${beneficiaryId}`, {
@@ -728,6 +761,7 @@ export async function toggleBeneficiaryFavorite(
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}))
+      console.error("[toggleBeneficiaryFavorite] API Error:", errorData)
       return {
         success: false,
         error: errorData.message || `Erreur API: ${response.status} ${response.statusText}`,
