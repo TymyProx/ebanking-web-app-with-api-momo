@@ -450,7 +450,7 @@ export default function BalancesPage() {
               </DialogContent>
             </Dialog> */}
 
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
+            {/* <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-40 bg-white/80 backdrop-blur-sm">
                 <SelectValue placeholder="Filtrer" />
               </SelectTrigger>
@@ -459,7 +459,7 @@ export default function BalancesPage() {
                 <SelectItem value="ACTIF">Actifs</SelectItem>
                 <SelectItem value="PENDING">En attente</SelectItem>
               </SelectContent>
-            </Select>
+            </Select> */}
 
             <Button
               onClick={handleRefresh}
