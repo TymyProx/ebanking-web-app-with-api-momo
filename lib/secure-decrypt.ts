@@ -195,6 +195,8 @@ export async function decryptBeneficiaries(encryptedBeneficiaries: any[]): Promi
         decrypted.accountNumber = await resolveField(decrypted.accountNumber, decrypted.accountNumber_json)
         decrypted.bankName = await resolveField(decrypted.bankName, decrypted.bankName_json)
         decrypted.bankCode = await resolveField(decrypted.bankCode, decrypted.bankCode_json)
+        decrypted.codagence = await resolveField(decrypted.codagence, decrypted.codagence_json)
+        decrypted.clerib = await resolveField(decrypted.clerib, decrypted.clerib_json)
 
         return decrypted
       })
