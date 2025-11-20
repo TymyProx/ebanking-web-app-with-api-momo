@@ -299,8 +299,8 @@ export default function StatementsPage() {
       console.log("[v0] Transactions après filtre par valueDate:", filteredTxns.length)
 
       if (filteredTxns.length === 0) {
-        alert("❌ Aucune transaction trouvée pour cette période.")
         setIsLoadingTransactions(false)
+        alert("❌ Aucune transaction trouvée pour cette période.")
         return
       }
 
