@@ -25,10 +25,9 @@ import {
   PiggyBank,
   DollarSign,
 } from "lucide-react"
-import { generateStatement, sendStatementByEmail } from "./actions"
+import { generateStatement, sendStatementByEmail, getTransactionsByNumCompte } from "./actions"
 import { useActionState } from "react"
 import { getAccounts } from "../actions"
-import { getTransactions } from "../../transfers/new/actions"
 
 interface Account {
   id: string
@@ -175,26 +174,51 @@ export default function StatementsPage() {
       if (!selectedAccount) return
 
       try {
-        const transactionsData = await getTransactions()
+        const transactionsData = await getTransactionsByNumCompte(selectedAccount)
 
-        if (transactionsData.data && Array.isArray(transactionsData.data)) {
-          const accountTransactions = transactionsData.data
-            .filter((txn: any) => txn.accountId === selectedAccount || txn.creditAccount === selectedAccount)
-            .slice(0, 200) // Limit to 200 most recent transactions
-          setTransactions(accountTransactions)
-
-          const cacheKey = `transactions_${selectedAccount}`
-          sessionStorage.setItem(
-            cacheKey,
-            JSON.stringify({
-              transactions: accountTransactions,
-              timestamp: Date.now(),
-            }),
-          )
+        if (!transactionsData.success) {
+          alert(`❌ ${transactionsData.error || "Impossible de récupérer les transactions"}`)
+          return
         }
+
+        const allTransactions = transactionsData.data
+
+        console.log("[v0] Total transactions reçues:", allTransactions.length)
+
+        // Filter by valueDate
+        const filteredTransactions = allTransactions.filter((txn: any) => {
+          if (!txn.valueDate) return false
+
+          const txnDate = new Date(txn.valueDate)
+          const start = new Date(startDate)
+          const end = new Date(endDate)
+
+          const isInRange = txnDate >= start && txnDate <= end
+
+          return isInRange
+        })
+
+        console.log("[v0] Transactions après filtre par valueDate:", filteredTransactions.length)
+
+        if (filteredTransactions.length === 0) {
+          alert("❌ Aucune transaction trouvée pour cette période.")
+          return
+        }
+
+        // Extract only the 4 required fields
+        const cleanedTransactions = filteredTransactions.map((txn: any) => ({
+          referenceOperation: txn.referenceOperation || "",
+          montantOperation: txn.montantOperation || 0,
+          description: txn.description || "",
+          valueDate: txn.valueDate || "",
+        }))
+
+        console.log("[v0] Transactions nettoyées (4 champs):", cleanedTransactions.length)
+
+        setTransactions(cleanedTransactions)
       } catch (error) {
-        // Removed console.error for performance
-        setTransactions([])
+        console.error("[v0] Erreur lors de la récupération des transactions:", error)
+        alert("❌ Erreur lors de la récupération des transactions")
       }
     }
 
@@ -231,64 +255,33 @@ export default function StatementsPage() {
     const accountNumber = selectedAccountData.number
 
     console.log("[v0] === GÉNÉRATION DU RELEVÉ ===")
-    console.log("[v0] Numéro de compte (numCompte):", accountNumber)
+    console.log("[v0] numCompte utilisé:", accountNumber)
     console.log("[v0] Date début:", startDate)
     console.log("[v0] Date fin:", endDate)
 
-    // Fetch transactions directly from API
     try {
-      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || ""
-      const TENANT_ID = process.env.NEXT_PUBLIC_TENANT_ID || ""
+      const result = await getTransactionsByNumCompte(accountNumber)
 
-      console.log("[v0] Appel API:", `${API_BASE_URL}/tenant/${TENANT_ID}/transactions`)
-
-      const cookieToken = document.cookie
-        .split("; ")
-        .find((row) => row.startsWith("token="))
-        ?.split("=")[1]
-
-      const response = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/transactions`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${cookieToken}`,
-        },
-      })
-
-      if (!response.ok) {
-        console.error("[v0] Erreur API:", response.status, response.statusText)
-        alert(`❌ Erreur API: ${response.status} ${response.statusText}`)
+      if (!result.success) {
+        alert(`❌ ${result.error || "Impossible de récupérer les transactions"}`)
         return
       }
 
-      const data = await response.json()
-      let allTransactions = []
+      const allTransactions = result.data
 
-      if (Array.isArray(data.rows)) {
-        allTransactions = data.rows
-      } else if (Array.isArray(data)) {
-        allTransactions = data
-      } else if (data.data) {
-        allTransactions = Array.isArray(data.data) ? data.data : [data.data]
-      }
-
-      console.log("[v0] Nombre total de transactions reçues:", allTransactions.length)
-      console.log("[v0] Exemple de transaction:", allTransactions[0])
-
-      // Filter by numCompte only
-      const transactionsByAccount = allTransactions.filter((txn: any) => {
-        return txn.numCompte === accountNumber
-      })
-
-      console.log("[v0] Transactions filtrées par numCompte:", transactionsByAccount.length)
+      console.log("[v0] Total transactions reçues:", allTransactions.length)
 
       // Filter by valueDate
-      const filteredTransactions = transactionsByAccount.filter((txn: any) => {
+      const filteredTransactions = allTransactions.filter((txn: any) => {
         if (!txn.valueDate) return false
+
         const txnDate = new Date(txn.valueDate)
         const start = new Date(startDate)
         const end = new Date(endDate)
-        return txnDate >= start && txnDate <= end
+
+        const isInRange = txnDate >= start && txnDate <= end
+
+        return isInRange
       })
 
       console.log("[v0] Transactions après filtre par valueDate:", filteredTransactions.length)
@@ -306,15 +299,13 @@ export default function StatementsPage() {
         valueDate: txn.valueDate || "",
       }))
 
-      console.log("[v0] Transactions nettoyées (4 champs uniquement):", cleanedTransactions.length)
+      console.log("[v0] Transactions nettoyées (4 champs):", cleanedTransactions.length)
 
       // Generate PDF/Excel/TXT directly
       if (format === "pdf") {
         generateAndDownloadPDFWithTransactions(selectedAccountData, cleanedTransactions)
       } else if (format === "excel") {
         generateAndDownloadExcelWithTransactions(selectedAccountData, cleanedTransactions)
-      } else {
-        generateAndDownloadTextWithTransactions(selectedAccountData, cleanedTransactions)
       }
     } catch (error) {
       console.error("[v0] Erreur lors de la récupération des transactions:", error)

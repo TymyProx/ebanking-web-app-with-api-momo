@@ -1,6 +1,9 @@
 "use server"
-process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0"
 import { z } from "zod"
+
+const API_BASE_URL = process.env.API_BASE_URL
+const TENANT_ID = process.env.TENANT_ID
 
 // Schéma de validation pour la génération de relevé
 const generateStatementSchema = z.object({
@@ -33,16 +36,16 @@ export async function generateStatement(prevState: any, formData: FormData) {
 
     const { accountId, startDate, endDate, format, includeImages, language } = validatedData
 
-    const transactionsJson = formData.get("transactions") as string
-    let realTransactions = []
-
-    try {
-      if (transactionsJson) {
-        realTransactions = JSON.parse(transactionsJson)
+    // Fetch transactions by accountId
+    const transactionsResponse = await getTransactionsByNumCompte(accountId)
+    if (!transactionsResponse.success) {
+      return {
+        success: false,
+        error: transactionsResponse.error,
       }
-    } catch (error) {
-      console.error("Erreur parsing transactions:", error)
     }
+
+    const realTransactions = transactionsResponse.data
 
     // Vérification de la période
     const start = new Date(startDate)
@@ -384,5 +387,63 @@ async function getStatementMetadata(statementId: string) {
     fileSize: "245 KB",
     period: "Décembre 2023",
     format: "PDF",
+  }
+}
+
+export async function getTransactionsByNumCompte(numCompte: string) {
+  try {
+    const url = `${API_BASE_URL}/tenant/${TENANT_ID}/transactions`
+
+    console.log("[v0] Fetching from:", url)
+    console.log("[v0] Looking for numCompte:", numCompte)
+
+    const response = await fetch(url, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      cache: "no-store",
+    })
+
+    if (!response.ok) {
+      console.error("[v0] Erreur API:", response.status, response.statusText)
+      return { success: false, data: [], error: `Erreur API: ${response.status}` }
+    }
+
+    const data = await response.json()
+
+    // Handle different response formats
+    let allTransactions = []
+    if (Array.isArray(data.content)) {
+      allTransactions = data.content
+    } else if (Array.isArray(data.rows)) {
+      allTransactions = data.rows
+    } else if (Array.isArray(data)) {
+      allTransactions = data
+    } else if (data.data) {
+      allTransactions = Array.isArray(data.data) ? data.data : [data.data]
+    }
+
+    console.log("[v0] Total transactions récupérées:", allTransactions.length)
+    if (allTransactions.length > 0) {
+      console.log("[v0] Exemple de transaction:", allTransactions[0])
+    }
+
+    // Filter transactions by numCompte
+    const filteredTransactions = allTransactions.filter((txn: any) => txn.numCompte === numCompte)
+
+    console.log("[v0] Transactions filtrées par numCompte", numCompte, ":", filteredTransactions.length)
+
+    return {
+      success: true,
+      data: filteredTransactions,
+    }
+  } catch (error) {
+    console.error("[v0] Erreur lors de la récupération des transactions:", error)
+    return {
+      success: false,
+      data: [],
+      error: error instanceof Error ? error.message : "Erreur inconnue",
+    }
   }
 }
