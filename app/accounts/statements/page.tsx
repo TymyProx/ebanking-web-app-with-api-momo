@@ -197,8 +197,16 @@ export default function StatementsPage() {
         const transactionsData = await getTransactions()
 
         if (transactionsData.data && Array.isArray(transactionsData.data)) {
+          const selectedAccountData = accounts.find((acc) => acc.id === selectedAccount)
+          const accountNumber = selectedAccountData?.number
+
           const accountTransactions = transactionsData.data
-            .filter((txn: any) => txn.accountId === selectedAccount || txn.creditAccount === selectedAccount)
+            .filter(
+              (txn: any) =>
+                txn.numCompte === accountNumber ||
+                txn.creditAccount === accountNumber ||
+                txn.debitAccount === accountNumber,
+            )
             .slice(0, 200) // Limit to 200 most recent transactions
           setTransactions(accountTransactions)
 
@@ -218,7 +226,7 @@ export default function StatementsPage() {
     }
 
     loadTransactions()
-  }, [selectedAccount])
+  }, [selectedAccount, accounts])
 
   // Pré-sélectionner le compte si fourni dans l'URL
   useEffect(() => {
