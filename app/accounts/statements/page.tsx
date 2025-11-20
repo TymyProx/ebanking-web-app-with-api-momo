@@ -28,7 +28,6 @@ import {
 import { generateStatement, sendStatementByEmail, getTransactionsByNumCompte } from "./actions"
 import { useActionState } from "react"
 import { getAccounts } from "../actions"
-import { useActionActionState } from "react" // Declare the variable here
 
 interface Account {
   id: string
@@ -125,7 +124,7 @@ export default function StatementsPage() {
 
   // États pour les actions serveur
   const [generateState, generateAction, isGenerating] = useActionState(generateStatement, null)
-  const [emailState, emailAction, isSending] = useActionActionState(sendStatementByEmail, null)
+  const [emailState, emailAction, isSending] = useActionState(sendStatementByEmail, null)
 
   const [isPending, startTransition] = useTransition()
 
