@@ -448,7 +448,7 @@ export default function BalancesPage() {
                   </div>
                 </form>
               </DialogContent>
-            </Dialog> */}
+            </Dialog>
 
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-40 bg-white/80 backdrop-blur-sm">
@@ -459,7 +459,7 @@ export default function BalancesPage() {
                 <SelectItem value="ACTIF">Actifs</SelectItem>
                 <SelectItem value="PENDING">En attente</SelectItem>
               </SelectContent>
-            </Select>
+            </Select> */}
 
             <Button
               onClick={handleRefresh}
@@ -582,7 +582,7 @@ export default function BalancesPage() {
                           <p className="text-xl text-muted-foreground font-mono font-semibold">{account.number}</p>
                         </div>
 
-                        <div className="flex items-center justify-between pt-3 border-t border-border/50">
+                        {/* <div className="flex items-center justify-between pt-3 border-t border-border/50">
                           <div className="flex items-center space-x-1">
                             {getTrendIcon(account.trend, account.trendPercentage)}
                             <span className={`text-xs font-medium ${getTrendColor(account.trend)}`}>
@@ -595,13 +595,10 @@ export default function BalancesPage() {
                               {account.trendPercentage === 0 && "Stable"}
                             </span>
                           </div>
-                          <div className="flex items-center text-xs font-medium text-primary group-hover:text-secondary transition-colors">
-                            Détails
-                            <ArrowUpRight className="h-3 w-3 ml-1 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
-                          </div>
-                        </div>
+                         
+                        </div> */}
 
-                        <div className="grid grid-cols-2 gap-3 text-xs pt-2">
+                        <div className="grid grid-cols-3 gap-3 text-xs pt-2">
                           <div className="space-y-1">
                             <span className="text-muted-foreground">Type</span>
                             <div className="font-medium">{account.type}</div>
@@ -609,6 +606,11 @@ export default function BalancesPage() {
                           <div className="space-y-1">
                             <span className="text-muted-foreground">Dernière MAJ</span>
                             <div className="font-medium">{account.lastUpdate}</div>
+                          </div>
+                          <div className="ml-auto pr-1 flex items-center text-xs font-medium text-primary group-hover:text-secondary transition-colors">
+
+                            Détails
+                            <ArrowUpRight className="h-3 w-3 ml-1 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
                           </div>
                         </div>
                       </CardContent>

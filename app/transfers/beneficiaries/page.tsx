@@ -54,7 +54,7 @@ interface Beneficiary {
   iban?: string
   swiftCode?: string
   country?: string
-  status: number
+  status: StatusBeneficiaire
   codagence?: string
   clerib?: string
   workflowStatus: WorkflowStatus
@@ -82,7 +82,13 @@ const WORKFLOW_STATUS = {
   SUSPENDED: "suspendu",
 } as const
 
+const STATUS_BENEFICIAIRE = {
+ ACTIVE: 0,
+ INACTIVE: 1,
+} as const
+
 type WorkflowStatus = (typeof WORKFLOW_STATUS)[keyof typeof WORKFLOW_STATUS]
+type StatusBeneficiaire = (typeof STATUS_BENEFICIAIRE)[keyof typeof STATUS_BENEFICIAIRE]
 
 const PENDING_WORKFLOW_STATUSES: WorkflowStatus[] = [
   WORKFLOW_STATUS.CREATED,
@@ -673,33 +679,16 @@ export default function BeneficiariesPage() {
     }
   }
 
-  const getWorkflowBadge = (status: WorkflowStatus) => {
+  const getstatutBadge = (status: StatusBeneficiaire) => {
     switch (status) {
-      case WORKFLOW_STATUS.CREATED:
+
+      case STATUS_BENEFICIAIRE.INACTIVE:
         return (
-          <Badge variant="outline" className="border-amber-300 text-amber-700 bg-amber-50">
-            ⏳ En attente
+          <Badge variant="outline" className="border-red-500 text-red-800 bg-red-100 font-semibold">
+            Inactif
           </Badge>
         )
-      case WORKFLOW_STATUS.VERIFIED:
-        return (
-          <Badge variant="outline" className="border-blue-300 text-blue-700 bg-blue-50">
-            🔍 Vérification
-          </Badge>
-        )
-      case WORKFLOW_STATUS.VALIDATED:
-        return (
-          <Badge variant="outline" className="border-green-300 text-green-700 bg-green-50">
-            ✓ Validé
-          </Badge>
-        )
-      case WORKFLOW_STATUS.SUSPENDED:
-        return (
-          <Badge variant="outline" className="border-red-400 text-red-700 bg-red-50">
-            🚫 Suspendu
-          </Badge>
-        )
-      case WORKFLOW_STATUS.AVAILABLE:
+      case STATUS_BENEFICIAIRE.ACTIVE:
       default:
         return (
           <Badge variant="outline" className="border-green-500 text-green-800 bg-green-100 font-semibold">
@@ -1067,9 +1056,8 @@ export default function BeneficiariesPage() {
               <SelectContent>
                 <SelectItem value="all">Tous les bénéficiaires</SelectItem>
                 <SelectItem value="BNG-CONFRERE">Confrère(Guinée)</SelectItem>
+                <SelectItem value="inactive">Désactivé</SelectItem>
                 <SelectItem value="favorites">Favoris</SelectItem>
-                <SelectItem value="pending">En validation</SelectItem>
-                <SelectItem value="inactive">Inactifs</SelectItem>
                 <SelectItem value="BNG-BNG">Interne</SelectItem>
                 <SelectItem value="BNG-INTERNATIONAL">International</SelectItem>
               </SelectContent>
@@ -1180,7 +1168,7 @@ export default function BeneficiariesPage() {
                         <h3 className="font-semibold text-gray-900">{beneficiary.name}</h3>
                         {beneficiary.favorite && <Star className="w-4 h-4 text-yellow-500 fill-current" />}
                         {getTypeBadge(beneficiary.type)}
-                        {getWorkflowBadge(beneficiary.workflowStatus)}
+                        {getstatutBadge(beneficiary.status)}
                       </div>
 
                       <div className="text-sm text-gray-600 space-y-1">
