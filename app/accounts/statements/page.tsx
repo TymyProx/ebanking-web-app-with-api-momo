@@ -268,6 +268,7 @@ export default function StatementsPage() {
       if (!result.success) {
         alert(`❌ ${result.error || "Impossible de récupérer les transactions"}`)
         setShowDownloadLink(false)
+        setFilteredTransactions([])
         setTransactionCount(0)
         return
       }
@@ -293,6 +294,7 @@ export default function StatementsPage() {
       if (filteredTxns.length === 0) {
         alert("❌ Aucune transaction trouvée pour cette période.")
         setShowDownloadLink(false)
+        setFilteredTransactions([])
         setTransactionCount(0)
         return
       }
@@ -313,6 +315,7 @@ export default function StatementsPage() {
       console.error("[v0] Erreur lors de la récupération des transactions:", error)
       alert("❌ Erreur lors de la récupération des transactions")
       setShowDownloadLink(false)
+      setFilteredTransactions([])
       setTransactionCount(0)
     }
   }
