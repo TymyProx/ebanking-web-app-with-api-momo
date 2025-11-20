@@ -9,7 +9,20 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Users, Plus, Search, UserX, Building, User, Globe, MoreVertical, Star, StarOff, CheckCircle, AlertCircle } from 'lucide-react'
+import {
+  Users,
+  Plus,
+  Search,
+  UserX,
+  Building,
+  User,
+  Globe,
+  MoreVertical,
+  Star,
+  StarOff,
+  CheckCircle,
+  AlertCircle,
+} from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import {
   addBeneficiary,
@@ -248,10 +261,22 @@ export default function BeneficiariesPage() {
   }, [])
 
   useEffect(() => {
-    if (addState?.success || addAndActivateState?.success || updateState?.success || deactivateState?.success || reactivateState?.success) {
+    if (
+      addState?.success ||
+      addAndActivateState?.success ||
+      updateState?.success ||
+      deactivateState?.success ||
+      reactivateState?.success
+    ) {
       loadBeneficiaries()
     }
-  }, [addState?.success, addAndActivateState?.success, updateState?.success, deactivateState?.success, reactivateState?.success])
+  }, [
+    addState?.success,
+    addAndActivateState?.success,
+    updateState?.success,
+    deactivateState?.success,
+    reactivateState?.success,
+  ])
 
   useEffect(() => {
     if (addState?.success || addAndActivateState?.success) {
@@ -525,25 +550,6 @@ export default function BeneficiariesPage() {
     setShowOtpModal(true)
   }
 
-  const handleOtpVerified = ({otpId, referenceId }: { otpId?: string | null; referenceId?: string | null }) => {
-    if (!pendingBeneficiaryData) {
-      return
-    }
-
-    if (otpId) {
-      pendingBeneficiaryData.set("otpId", otpId)
-    }
-
-    const ref = referenceId || otpReferenceId
-    if (ref) {
-      pendingBeneficiaryData.set("otpReferenceId", ref)
-    }
-
-    startTransition(() => {
-      addAndActivateAction(pendingBeneficiaryData)
-    })
-  }
-
   const handleEditBeneficiary = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     if (!editingBeneficiary) return
@@ -707,11 +713,14 @@ export default function BeneficiariesPage() {
     await loadBeneficiaries()
   }
 
-  const handleDeactivateBeneficiary = async (id: string) => {
+  const handleDeactivateBeneficiary = async (id: string, e: React.MouseEvent) => {
+    e.stopPropagation()
     try {
       const fd = new FormData()
       fd.set("id", id)
-      deactivateAction(fd)
+      startTransition(() => {
+        deactivateAction(fd)
+      })
       setBeneficiaries((prev) => prev.map((b) => (b.id === id ? { ...b, status: 1 } : b)))
       setShowDeactivateSuccess(true)
       setTimeout(() => setShowDeactivateSuccess(false), 5000)
@@ -720,11 +729,14 @@ export default function BeneficiariesPage() {
     }
   }
 
-  const handleReactivateBeneficiary = async (id: string) => {
+  const handleReactivateBeneficiary = async (id: string, e: React.MouseEvent) => {
+    e.stopPropagation()
     try {
       const fd = new FormData()
       fd.set("id", id)
-      reactivateAction(fd)
+      startTransition(() => {
+        reactivateAction(fd)
+      })
       setBeneficiaries((prev) => prev.map((b) => (b.id === id ? { ...b, status: 0 } : b)))
       setShowReactivateSuccess(true)
       setTimeout(() => setShowReactivateSuccess(false), 5000)
@@ -737,6 +749,27 @@ export default function BeneficiariesPage() {
   const openDetailsDialog = (beneficiary: Beneficiary) => {
     setSelectedBeneficiary(beneficiary)
     setIsDetailsDialogOpen(true)
+  }
+
+  const handleOtpVerified = async (success: boolean, message?: string) => {
+    setShowOtpModal(false)
+    if (success) {
+      toast({
+        title: "Succès",
+        description: "Le bénéficiaire a été ajouté et activé avec succès.",
+        variant: "success",
+      })
+      await loadBeneficiaries()
+      resetForm()
+      setPendingBeneficiaryData(null)
+      setOtpReferenceId(null)
+    } else {
+      toast({
+        title: "Erreur OTP",
+        description: message || "La validation OTP a échoué. Veuillez réessayer.",
+        variant: "destructive",
+      })
+    }
   }
 
   return (
@@ -938,15 +971,15 @@ export default function BeneficiariesPage() {
                 >
                   Annuler
                 </Button>
-              <Button
-                type="submit"
-                disabled={
-                  isAddAndActivatePending ||
-                  ((accountNumberError !== null || ribError !== null) && selectedType !== "BNG-INTERNATIONAL")
-                }
-              >
-                {isAddAndActivatePending ? "Traitement..." : "Ajouter"}
-              </Button>
+                <Button
+                  type="submit"
+                  disabled={
+                    isAddAndActivatePending ||
+                    ((accountNumberError !== null || ribError !== null) && selectedType !== "BNG-INTERNATIONAL")
+                  }
+                >
+                  {isAddAndActivatePending ? "Traitement..." : "Ajouter"}
+                </Button>
               </div>
             </form>
           </DialogContent>
@@ -1086,9 +1119,7 @@ export default function BeneficiariesPage() {
               <User className="h-6 w-6 text-green-600" />
               <div className="ml-3">
                 <p className="text-xs font-medium text-gray-600">Confrères</p>
-                <p className="text-xl font-bold">
-                  {beneficiaries.filter((b) => b.type === "BNG-CONFRERE").length}
-                </p>
+                <p className="text-xl font-bold">{beneficiaries.filter((b) => b.type === "BNG-CONFRERE").length}</p>
               </div>
             </div>
           </CardContent>
@@ -1171,12 +1202,12 @@ export default function BeneficiariesPage() {
 
                   <div className="flex items-center space-x-2">
                     {beneficiary.status === 0 && beneficiary.workflowStatus === WORKFLOW_STATUS.AVAILABLE && (
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
+                      <Button
+                        variant="ghost"
+                        size="sm"
                         // ✅ NEW: Empêche l'ouverture de la modale de détails lors du clic sur l'icône favori
                         onClick={(e) => {
-                          e.stopPropagation() 
+                          e.stopPropagation()
                           toggleFavorite(beneficiary.id)
                         }}
                       >
@@ -1190,11 +1221,11 @@ export default function BeneficiariesPage() {
 
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button 
-                          variant="ghost" 
+                        <Button
+                          variant="ghost"
                           size="sm"
                           // ✅ NEW: Empêche l'ouverture de la modale de détails lors du clic sur le menu
-                          onClick={(e) => e.stopPropagation()} 
+                          onClick={(e) => e.stopPropagation()}
                         >
                           <MoreVertical className="w-4 h-4" />
                         </Button>
@@ -1202,9 +1233,10 @@ export default function BeneficiariesPage() {
                       <DropdownMenuContent align="end">
                         {beneficiary.status === 0 ? (
                           <>
-                            <DropdownMenuItem 
+                            <DropdownMenuItem
                               disabled={beneficiary.workflowStatus !== WORKFLOW_STATUS.AVAILABLE}
-                              onClick={() => {
+                              onClick={(e) => {
+                                e.stopPropagation()
                                 if (beneficiary.workflowStatus === WORKFLOW_STATUS.AVAILABLE) {
                                   window.location.href = "/transfers/new"
                                 }
@@ -1217,7 +1249,7 @@ export default function BeneficiariesPage() {
                             </DropdownMenuItem>
                             <DropdownMenuItem
                               className="text-orange-600"
-                              onClick={() => handleDeactivateBeneficiary(beneficiary.id)}
+                              onClick={(e) => handleDeactivateBeneficiary(beneficiary.id, e)}
                               disabled={isDeactivatePending}
                             >
                               <UserX className="w-4 h-4 mr-2" />
@@ -1227,7 +1259,7 @@ export default function BeneficiariesPage() {
                         ) : (
                           <DropdownMenuItem
                             className="text-green-600"
-                            onClick={() => handleReactivateBeneficiary(beneficiary.id)}
+                            onClick={(e) => handleReactivateBeneficiary(beneficiary.id, e)}
                             disabled={isReactivatePending}
                           >
                             <CheckCircle className="w-4 h-4 mr-2" />
@@ -1349,23 +1381,20 @@ export default function BeneficiariesPage() {
 
               {/* Actions */}
               <div className="flex justify-end space-x-2 pt-4 border-t">
-                <Button
-                  variant="outline"
-                  onClick={() => setIsDetailsDialogOpen(false)}
-                >
+                <Button variant="outline" onClick={() => setIsDetailsDialogOpen(false)}>
                   Fermer
                 </Button>
-                {selectedBeneficiary.status === 0 && 
-                 selectedBeneficiary.workflowStatus === WORKFLOW_STATUS.AVAILABLE && (
-                  <Button
-                    onClick={() => {
-                      setIsDetailsDialogOpen(false)
-                      window.location.href = "/transfers/new"
-                    }}
-                  >
-                    Faire un virement
-                  </Button>
-                )}
+                {selectedBeneficiary.status === 0 &&
+                  selectedBeneficiary.workflowStatus === WORKFLOW_STATUS.AVAILABLE && (
+                    <Button
+                      onClick={() => {
+                        setIsDetailsDialogOpen(false)
+                        window.location.href = "/transfers/new"
+                      }}
+                    >
+                      Faire un virement
+                    </Button>
+                  )}
               </div>
             </div>
           )}
