@@ -204,10 +204,10 @@ export default function StatementsPage() {
 
         console.log("[v0] Transactions après filtre par valueDate:", filteredTransactions.length)
 
-        if (filteredTransactions.length === 0) {
-          alert("❌ Aucune transaction trouvée pour cette période.")
-          return
-        }
+        // if (filteredTransactions.length === 0) {
+        //   alert("❌ Aucune transaction trouvée pour cette période.")
+        //   return
+        // }
 
         // Extract only the 4 required fields
         const cleanedTransactions = filteredTransactions.map((txn: any) => ({
@@ -298,11 +298,11 @@ export default function StatementsPage() {
 
       console.log("[v0] Transactions après filtre par valueDate:", filteredTxns.length)
 
-      if (filteredTxns.length === 0) {
-        setIsLoadingTransactions(false)
-        alert("❌ Aucune transaction trouvée pour cette période.")
-        return
-      }
+      // if (filteredTxns.length === 0) {
+      //   setIsLoadingTransactions(false)
+      //   alert("❌ Aucune transaction trouvée pour cette période.")
+      //   return
+      // }
 
       const cleanedTransactions = filteredTxns.map((txn: any) => ({
         referenceOperation: txn.referenceOperation || "",
@@ -402,7 +402,7 @@ export default function StatementsPage() {
         <Alert className="border-green-200 bg-green-50">
           <CheckCircle className="h-4 w-4 text-green-600" />
           <AlertDescription className="text-green-800 flex items-center justify-between">
-            <span>✅ {transactionCount} transaction(s) trouvée(s) pour cette période.</span>
+            <span>{transactionCount} transaction(s) trouvée(s) pour cette période.</span>
             <Button
               variant="link"
               className="p-0 h-auto text-green-700 underline font-semibold"

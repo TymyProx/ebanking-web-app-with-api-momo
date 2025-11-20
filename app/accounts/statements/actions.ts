@@ -86,7 +86,7 @@ export async function generateStatement(prevState: any, formData: FormData) {
     if (realTransactions.length === 0) {
       return {
         success: false,
-        error: "❌ Aucune transaction trouvée pour cette période.",
+        error: "Aucune transaction trouvée pour cette période.",
       }
     }
 
