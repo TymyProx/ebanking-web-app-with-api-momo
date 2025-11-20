@@ -393,8 +393,8 @@ async function getStatementMetadata(statementId: string) {
 }
 
 export async function getTransactionsByNumCompte(numCompte: string) {
-   const cookieToken = (await cookies()).get("token")?.value
-    const usertoken = cookieToken
+  const cookieToken = (await cookies()).get("token")?.value
+  const usertoken = cookieToken
   try {
     const url = `${API_BASE_URL}/tenant/${TENANT_ID}/transactions`
 
@@ -405,7 +405,7 @@ export async function getTransactionsByNumCompte(numCompte: string) {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
-         Authorization: `Bearer ${usertoken}`,
+        Authorization: `Bearer ${usertoken}`,
       },
       cache: "no-store",
     })
@@ -434,8 +434,9 @@ export async function getTransactionsByNumCompte(numCompte: string) {
       console.log("[v0] Exemple de transaction:", allTransactions[0])
     }
 
-    // Filter transactions by numCompte
-    const filteredTransactions = allTransactions.filter((txn: any) => txn.numCompte === numCompte)
+    const filteredTransactions = allTransactions.filter(
+      (txn: any) => txn.numCompte === numCompte && txn.balanceOuverture !== undefined,
+    )
 
     console.log("[v0] Transactions filtrées par numCompte", numCompte, ":", filteredTransactions.length)
 

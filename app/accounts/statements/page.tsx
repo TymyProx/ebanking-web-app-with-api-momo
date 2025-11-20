@@ -306,12 +306,31 @@ export default function StatementsPage() {
         return
       }
 
+      // Calculate balanceOuverture for the first transaction if available
+      const firstTxnDate = filteredTxns[0]?.valueDate
+      let balanceOuverture = selectedAccountData.balance // Default to current balance
+
+      if (firstTxnDate) {
+        const balanceBeforeFirstTxn = allTransactions.reduce((sum, txn) => {
+          if (new Date(txn.valueDate) < new Date(firstTxnDate)) {
+            return sum + (txn.montantOperation || 0)
+          }
+          return sum
+        }, 0)
+        balanceOuverture = selectedAccountData.balance - balanceBeforeFirstTxn
+      } else {
+        // If no transactions or no first transaction date, use the account's current balance
+        balanceOuverture = selectedAccountData.balance
+      }
+
       const cleanedTransactions = filteredTxns.map((txn: any) => ({
         referenceOperation: txn.referenceOperation || "",
         montantOperation: txn.montantOperation || 0,
         description: txn.description || "",
         valueDate: txn.valueDate || "",
         dateEcriture: txn.dateEcriture || "",
+        // Adding balanceOuverture to the first transaction object for reference in PDF generation
+        ...(txn === filteredTxns[0] && { balanceOuverture: balanceOuverture }),
       }))
 
       console.log("[v0] Transactions nettoyées (4 champs):", cleanedTransactions.length)
@@ -331,7 +350,9 @@ export default function StatementsPage() {
     const selectedAccountData = accounts.find((acc) => acc.id === selectedAccount)
     if (!selectedAccountData || filteredTransactions.length === 0) return
 
-    generateAndDownloadPDFWithTransactions(selectedAccountData, filteredTransactions)
+    const balanceOuverture = filteredTransactions[0]?.balanceOuverture || selectedAccountData.balance // Default to current balance if not found
+
+    generateAndDownloadPDFWithTransactions(selectedAccountData, filteredTransactions, balanceOuverture)
   }
 
   const handleSendByEmail = async () => {
@@ -797,7 +818,7 @@ export default function StatementsPage() {
     </div>
   )
 
-  function generateAndDownloadPDFWithTransactions(account: Account, transactions: any[]) {
+  function generateAndDownloadPDFWithTransactions(account: Account, transactions: any[], balanceOuverture: number) {
     try {
       const { jsPDF } = require("jspdf")
       const doc = new jsPDF()
@@ -886,14 +907,9 @@ export default function StatementsPage() {
 
         yPos += 10
 
-        // SOLDE D'OUVERTURE
         doc.setFontSize(9)
         doc.setFont("helvetica", "bold")
         doc.text("SOLDE D'OUVERTURE:", 15, yPos)
-
-        // Calculer la balance d'ouverture (solde actuel moins la somme des transactions)
-        const totalTransactions = transactions.reduce((sum, txn) => sum + (txn.montantOperation || 0), 0)
-        const balanceOuverture = account.balance - totalTransactions
 
         doc.setFont("helvetica", "normal")
         doc.text(`${formatAmount(balanceOuverture)} ${account.currency}`, 70, yPos)
@@ -913,10 +929,10 @@ export default function StatementsPage() {
         const col3Width = 35 // Reference
         const col4Width = 30 // Date Operation (dateEcriture)
         const col5Width = 30 // Montant
-        const rowHeight = 9 // un peu plus grand pour laisser respirer
+        const rowHeight = 9
 
         // EN-TÊTES SANS CADRE
-        doc.setFontSize(9) // entêtes plus grandes
+        doc.setFontSize(9)
         doc.setFont("helvetica", "bold")
         doc.text("Date Valeur", tableStartX + 2, yPos + 6)
         doc.text("Description", tableStartX + col1Width + 2, yPos + 6)
@@ -927,14 +943,14 @@ export default function StatementsPage() {
         yPos += rowHeight
 
         doc.setFont("helvetica", "normal")
-        doc.setFontSize(8) // données plus grandes aussi
+        doc.setFontSize(8)
 
         transactions.forEach((txn) => {
           if (yPos > 260) {
             doc.addPage()
             yPos = 30
 
-            // Réécrire les entêtes sur la nouvelle page (toujours sans grilles)
+            // Réécrire les entêtes sur la nouvelle page
             doc.setFontSize(9)
             doc.setFont("helvetica", "bold")
             doc.text("Date Valeur", tableStartX + 2, yPos + 6)
@@ -985,7 +1001,7 @@ export default function StatementsPage() {
 
         yPos += 10
 
-        // PIED DE PAGE STATIQUE (inchangé)
+        // PIED DE PAGE
         const addFooter = (pageNum: number, totalPages: number) => {
           const footerY = pageHeight - 20
 
