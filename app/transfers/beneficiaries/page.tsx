@@ -1292,13 +1292,14 @@ export default function BeneficiariesPage() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
                   {getTypeBadge(selectedBeneficiary.type)}
-                  {selectedBeneficiary.status === 1 ||
-                  selectedBeneficiary.workflowStatus === WORKFLOW_STATUS.SUSPENDED ? (
+                  {selectedBeneficiary.status === 1 ? (
                     <Badge variant="outline" className="border-red-400 text-red-700 bg-red-50">
                       Désactivé
                     </Badge>
                   ) : (
-                    getWorkflowBadge(selectedBeneficiary.workflowStatus)
+                    <Badge variant="outline" className="border-green-500 text-green-800 bg-green-100 font-semibold">
+                      Actif
+                    </Badge>
                   )}
                 </div>
                 {selectedBeneficiary.favorite && (
