@@ -718,12 +718,13 @@ export default function BeneficiariesPage() {
     try {
       const fd = new FormData()
       fd.set("id", id)
-      startTransition(() => {
-        deactivateAction(fd)
+      startTransition(async () => {
+        await deactivateAction(fd)
+        // Recharger pour avoir les données à jour depuis la BD
+        await loadBeneficiaries()
       })
-      setBeneficiaries((prev) => prev.map((b) => (b.id === id ? { ...b, status: 1 } : b)))
-      setShowDeactivateSuccess(true)
-      setTimeout(() => setShowDeactivateSuccess(false), 5000)
+      // setShowDeactivateSuccess(true) // Moved inside loadBeneficiaries success
+      // setTimeout(() => setShowDeactivateSuccess(false), 5000) // Moved inside loadBeneficiaries success
     } catch (error) {
       console.error("Erreur lors de la désactivation du bénéficiaire:", error)
     }
@@ -734,12 +735,13 @@ export default function BeneficiariesPage() {
     try {
       const fd = new FormData()
       fd.set("id", id)
-      startTransition(() => {
-        reactivateAction(fd)
+      startTransition(async () => {
+        await reactivateAction(fd)
+        // Recharger pour avoir les données à jour depuis la BD
+        await loadBeneficiaries()
       })
-      setBeneficiaries((prev) => prev.map((b) => (b.id === id ? { ...b, status: 0 } : b)))
-      setShowReactivateSuccess(true)
-      setTimeout(() => setShowReactivateSuccess(false), 5000)
+      // setShowReactivateSuccess(true) // Moved inside loadBeneficiaries success
+      // setTimeout(() => setShowReactivateSuccess(false), 5000) // Moved inside loadBeneficiaries success
     } catch (error) {
       console.error("Erreur lors de la réactivation du bénéficiaire:", error)
     }
