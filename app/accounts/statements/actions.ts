@@ -2,7 +2,9 @@
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0"
 import { z } from "zod"
 import { cookies } from "next/headers"
-const API_BASE_URL = process.env.API_BASE_URL
+import { config } from "@/lib/config"
+const normalize = (u?: string) => (u ? u.replace(/\/$/, "") : "")
+const API_BASE_URL = `${normalize(config.API_BASE_URL)}/api`
 const TENANT_ID = process.env.TENANT_ID
 
 // Schéma de validation pour la génération de relevé
