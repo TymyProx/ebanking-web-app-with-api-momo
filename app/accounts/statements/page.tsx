@@ -115,7 +115,7 @@ export default function StatementsPage() {
   const [filteredTransactions, setFilteredTransactions] = useState<any[]>([])
   const [transactionCount, setTransactionCount] = useState(0)
   const [showDownloadLink, setShowDownloadLink] = useState(false)
-  const [statementReady, setStatementReady] = useState(false)
+  const [isLoadingTransactions, setIsLoadingTransactions] = useState(false)
 
   const [accounts, setAccounts] = useState<Account[]>([])
   const [isLoadingAccounts, setIsLoadingAccounts] = useState(true)
@@ -253,13 +253,16 @@ export default function StatementsPage() {
       return
     }
 
-    setStatementReady(false)
+    setIsLoadingTransactions(true)
     setShowDownloadLink(false)
     setFilteredTransactions([])
     setTransactionCount(0)
 
     const selectedAccountData = accounts.find((acc) => acc.id === selectedAccount)
-    if (!selectedAccountData) return
+    if (!selectedAccountData) {
+      setIsLoadingTransactions(false)
+      return
+    }
 
     const accountNumber = selectedAccountData.number
 
@@ -273,6 +276,7 @@ export default function StatementsPage() {
 
       if (!result.success) {
         alert(`❌ ${result.error || "Impossible de récupérer les transactions"}`)
+        setIsLoadingTransactions(false)
         return
       }
 
@@ -296,6 +300,7 @@ export default function StatementsPage() {
 
       if (filteredTxns.length === 0) {
         alert("❌ Aucune transaction trouvée pour cette période.")
+        setIsLoadingTransactions(false)
         return
       }
 
@@ -311,10 +316,11 @@ export default function StatementsPage() {
       setFilteredTransactions(cleanedTransactions)
       setTransactionCount(cleanedTransactions.length)
       setShowDownloadLink(true)
-      setStatementReady(true)
     } catch (error) {
       console.error("[v0] Erreur lors de la récupération des transactions:", error)
       alert("❌ Erreur lors de la récupération des transactions")
+    } finally {
+      setIsLoadingTransactions(false)
     }
   }
 
@@ -392,7 +398,7 @@ export default function StatementsPage() {
         )}
       </div>
 
-      {showDownloadLink && statementReady && transactionCount > 0 && (
+      {showDownloadLink && transactionCount > 0 && (
         <Alert className="border-green-200 bg-green-50">
           <CheckCircle className="h-4 w-4 text-green-600" />
           <AlertDescription className="text-green-800 flex items-center justify-between">
@@ -652,13 +658,13 @@ export default function StatementsPage() {
               <div className="flex flex-col sm:flex-row gap-2">
                 <Button
                   onClick={handleGenerateStatement}
-                  disabled={!isFormValid || isGenerating || isPending}
+                  disabled={!isFormValid || isLoadingTransactions}
                   className="flex-1 h-9"
                 >
-                  {isGenerating || isPending ? (
+                  {isLoadingTransactions ? (
                     <>
                       <Clock className="w-4 h-4 mr-2 animate-spin" />
-                      Génération en cours...
+                      Recherche en cours...
                     </>
                   ) : (
                     <>
@@ -813,6 +819,7 @@ export default function StatementsPage() {
       // Tableau des transactions
       let yPos = 120
       doc.setFontSize(14)
+      doc.setTextColor(40, 40, 40)
       doc.text(`Transactions (${transactions.length})`, 20, yPos)
       yPos += 15
 
