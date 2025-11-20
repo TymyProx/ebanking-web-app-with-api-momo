@@ -684,7 +684,7 @@ export default function BeneficiariesPage() {
       case WORKFLOW_STATUS.VERIFIED:
         return (
           <Badge variant="outline" className="border-blue-300 text-blue-700 bg-blue-50">
-            🔍 Vérifié
+            🔍 Vérification
           </Badge>
         )
       case WORKFLOW_STATUS.VALIDATED:
@@ -1292,7 +1292,14 @@ export default function BeneficiariesPage() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
                   {getTypeBadge(selectedBeneficiary.type)}
-                  {getWorkflowBadge(selectedBeneficiary.workflowStatus)}
+                  {selectedBeneficiary.status === 1 ||
+                  selectedBeneficiary.workflowStatus === WORKFLOW_STATUS.SUSPENDED ? (
+                    <Badge variant="outline" className="border-red-400 text-red-700 bg-red-50">
+                      Désactivé
+                    </Badge>
+                  ) : (
+                    getWorkflowBadge(selectedBeneficiary.workflowStatus)
+                  )}
                 </div>
                 {selectedBeneficiary.favorite && (
                   <div className="flex items-center space-x-1 text-yellow-600">
