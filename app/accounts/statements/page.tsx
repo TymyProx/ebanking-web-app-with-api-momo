@@ -195,14 +195,34 @@ export default function StatementsPage() {
 
       try {
         const transactionsData = await getTransactions()
+        console.log("[v0] Toutes les transactions reçues:", transactionsData.data?.length || 0)
 
         if (transactionsData.data && Array.isArray(transactionsData.data)) {
           const selectedAccountData = accounts.find((acc) => acc.id === selectedAccount)
           const accountNumber = selectedAccountData?.number
 
+          console.log("[v0] Compte sélectionné:", {
+            id: selectedAccount,
+            name: selectedAccountData?.name,
+            number: accountNumber,
+          })
+
           const accountTransactions = transactionsData.data
-            .filter((txn: any) => txn.numCompte === accountNumber)
+            .filter((txn: any) => {
+              const matches = txn.numCompte === accountNumber
+              if (matches) {
+                console.log("[v0] Transaction trouvée:", {
+                  numCompte: txn.numCompte,
+                  reference: txn.referenceOperation,
+                  valueDate: txn.valueDate,
+                  montant: txn.montantOperation,
+                })
+              }
+              return matches
+            })
             .slice(0, 200) // Limit to 200 most recent transactions
+
+          console.log("[v0] Transactions filtrées par numCompte:", accountTransactions.length)
           setTransactions(accountTransactions)
 
           const cacheKey = `transactions_${selectedAccount}`
@@ -215,7 +235,7 @@ export default function StatementsPage() {
           )
         }
       } catch (error) {
-        // Removed console.error for performance
+        console.error("[v0] Erreur chargement transactions:", error)
         setTransactions([])
       }
     }
@@ -247,21 +267,37 @@ export default function StatementsPage() {
       return
     }
 
+    console.log("[v0] Génération relevé - début:", {
+      compte: selectedAccount,
+      startDate,
+      endDate,
+      totalTransactions: transactions.length,
+    })
+
     const filteredTransactions = transactions.filter((txn) => {
-      if (!txn.valueDate) return false
+      if (!txn.valueDate) {
+        console.log("[v0] Transaction sans valueDate ignorée:", txn)
+        return false
+      }
       const txnDate = new Date(txn.valueDate)
       const start = new Date(startDate)
       const end = new Date(endDate)
       end.setHours(23, 59, 59, 999) // Include the entire end date
-      return txnDate >= start && txnDate <= end
+
+      const matches = txnDate >= start && txnDate <= end
+
+      if (matches) {
+        console.log("[v0] Transaction incluse dans relevé:", {
+          reference: txn.referenceOperation,
+          valueDate: txn.valueDate,
+          montant: txn.montantOperation,
+        })
+      }
+
+      return matches
     })
 
-    // console.log("[v0] Génération relevé avec transactions filtrées:", {
-    //   compte: selectedAccount,
-    //   période: `${startDate} à ${endDate}`,
-    //   nombreTransactions: filteredTransactions.length,
-    //   format,
-    // })
+    console.log("[v0] Transactions après filtre de dates:", filteredTransactions.length)
 
     const formData = new FormData()
     formData.append("accountId", selectedAccount)
