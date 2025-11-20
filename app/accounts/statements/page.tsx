@@ -113,6 +113,7 @@ export default function StatementsPage() {
   const [selectedPeriod, setSelectedPeriod] = useState<string>("")
   const [displayLimit, setDisplayLimit] = useState(50) // Limit initial display
   const [filteredTransactions, setFilteredTransactions] = useState<any[]>([])
+  const [transactionCount, setTransactionCount] = useState(0)
   const [showDownloadLink, setShowDownloadLink] = useState(false)
 
   const [accounts, setAccounts] = useState<Account[]>([])
@@ -267,6 +268,7 @@ export default function StatementsPage() {
       if (!result.success) {
         alert(`❌ ${result.error || "Impossible de récupérer les transactions"}`)
         setShowDownloadLink(false)
+        setTransactionCount(0)
         return
       }
 
@@ -291,6 +293,7 @@ export default function StatementsPage() {
       if (filteredTxns.length === 0) {
         alert("❌ Aucune transaction trouvée pour cette période.")
         setShowDownloadLink(false)
+        setTransactionCount(0)
         return
       }
 
@@ -304,11 +307,13 @@ export default function StatementsPage() {
       console.log("[v0] Transactions nettoyées (4 champs):", cleanedTransactions.length)
 
       setFilteredTransactions(cleanedTransactions)
+      setTransactionCount(cleanedTransactions.length)
       setShowDownloadLink(true)
     } catch (error) {
       console.error("[v0] Erreur lors de la récupération des transactions:", error)
       alert("❌ Erreur lors de la récupération des transactions")
       setShowDownloadLink(false)
+      setTransactionCount(0)
     }
   }
 
@@ -386,11 +391,11 @@ export default function StatementsPage() {
         )}
       </div>
 
-      {showDownloadLink && filteredTransactions.length > 0 && (
+      {showDownloadLink && transactionCount > 0 && (
         <Alert className="border-green-200 bg-green-50">
           <CheckCircle className="h-4 w-4 text-green-600" />
           <AlertDescription className="text-green-800 flex items-center justify-between">
-            <span>✅ {filteredTransactions.length} transaction(s) trouvée(s) pour cette période.</span>
+            <span>✅ {transactionCount} transaction(s) trouvée(s) pour cette période.</span>
             <Button
               variant="link"
               className="p-0 h-auto text-green-700 underline font-semibold"
