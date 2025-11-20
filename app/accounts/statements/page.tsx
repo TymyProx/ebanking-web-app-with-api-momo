@@ -632,7 +632,7 @@ export default function StatementsPage() {
               </div>
 
               {/* Options de format */}
-              <div className="space-y-2">
+              {/* <div className="space-y-2">
                 <Label className="text-sm">Format du fichier</Label>
                 <div className="grid grid-cols-2 gap-2">
                   <div
@@ -668,7 +668,7 @@ export default function StatementsPage() {
                     </div>
                   </div>
                 </div>
-              </div>
+              </div> */}
             </CardContent>
           </Card>
 
@@ -695,7 +695,7 @@ export default function StatementsPage() {
                   ) : (
                     <>
                       <Download className="w-4 h-4 mr-2" />
-                      Rechercher les transactions
+                     Demander relevé
                     </>
                   )}
                 </Button>
