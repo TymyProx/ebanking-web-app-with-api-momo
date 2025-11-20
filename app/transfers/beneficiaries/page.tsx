@@ -83,8 +83,8 @@ const WORKFLOW_STATUS = {
 } as const
 
 const STATUS_BENEFICIAIRE = {
- ACTIVE: 0,
- INACTIVE: 1,
+  ACTIVE: 0,
+  INACTIVE: 1,
 } as const
 
 type WorkflowStatus = (typeof WORKFLOW_STATUS)[keyof typeof WORKFLOW_STATUS]
@@ -549,11 +549,7 @@ export default function BeneficiariesPage() {
       }
     }
 
-    const beneficiaryName = formData.get("name") as string
-    const referenceId = `BEN-${Date.now()}-${beneficiaryName.substring(0, 10).replace(/\s/g, "")}`
-    setOtpReferenceId(referenceId)
-    setPendingBeneficiaryData(formData)
-    setShowOtpModal(true)
+    addAndActivateAction(formData)
   }
 
   const handleEditBeneficiary = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -681,7 +677,6 @@ export default function BeneficiariesPage() {
 
   const getstatutBadge = (status: StatusBeneficiaire) => {
     switch (status) {
-
       case STATUS_BENEFICIAIRE.INACTIVE:
         return (
           <Badge variant="outline" className="border-red-500 text-red-800 bg-red-100 font-semibold">
@@ -985,21 +980,6 @@ export default function BeneficiariesPage() {
           </AlertDescription>
         </Alert>
       )}
-
-      {/* ✅ NEW: OTP verification info */}
-      {/* <Alert className="border-blue-200 bg-blue-50">
-        <AlertCircle className="h-4 w-4 text-blue-600" />
-        <AlertDescription className="text-blue-800">
-          <div className="space-y-2">
-            <p className="font-semibold">📧 Nouveau: Activation instantanée avec OTP</p>
-            <p className="text-sm">
-              • Un code de vérification sera envoyé par email<br />
-              • Après validation OTP, votre bénéficiaire est <strong>immédiatement actif</strong><br />
-              • Vous pouvez effectuer des virements sans attendre
-            </p>
-          </div>
-        </AlertDescription>
-      </Alert> */}
 
       {/* Show errors from streamlined flow */}
       {addAndActivateState?.error && (
