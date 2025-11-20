@@ -207,12 +207,31 @@ export default function StatementsPage() {
             number: accountNumber,
           })
 
+          if (transactionsData.data.length > 0) {
+            console.log("[v0] Exemple de transaction (structure):", {
+              transaction: transactionsData.data[0],
+              hasNumCompte: "numCompte" in transactionsData.data[0],
+              numCompteValue: transactionsData.data[0].numCompte,
+              hasCreditAccount: "creditAccount" in transactionsData.data[0],
+              creditAccountValue: transactionsData.data[0].creditAccount,
+              hasDebitAccount: "debitAccount" in transactionsData.data[0],
+              debitAccountValue: transactionsData.data[0].debitAccount,
+            })
+          }
+
           const accountTransactions = transactionsData.data
             .filter((txn: any) => {
-              const matches = txn.numCompte === accountNumber
+              const matchesNumCompte = txn.numCompte === accountNumber
+              const matchesCreditAccount = txn.creditAccount === accountNumber
+              const matchesDebitAccount = txn.debitAccount === accountNumber
+              const matches = matchesNumCompte || matchesCreditAccount || matchesDebitAccount
+
               if (matches) {
                 console.log("[v0] Transaction trouvée:", {
                   numCompte: txn.numCompte,
+                  creditAccount: txn.creditAccount,
+                  debitAccount: txn.debitAccount,
+                  matchField: matchesNumCompte ? "numCompte" : matchesCreditAccount ? "creditAccount" : "debitAccount",
                   reference: txn.referenceOperation,
                   valueDate: txn.valueDate,
                   montant: txn.montantOperation,
@@ -220,7 +239,7 @@ export default function StatementsPage() {
               }
               return matches
             })
-            .slice(0, 200) // Limit to 200 most recent transactions
+            .slice(0, 200)
 
           console.log("[v0] Transactions filtrées par numCompte:", accountTransactions.length)
           setTransactions(accountTransactions)
