@@ -208,7 +208,10 @@ function getBeneficiaryType(bankCode: string): "BNG-BNG" | "BNG-CONFRERE" | "BNG
  * This automatically: creates → verifies RIB → validates → makes available
  * The beneficiary is immediately active and usable
  */
-export async function addBeneficiaryAndActivate(prevState: ActionResult | null, formData: FormData): Promise<ActionResult> {
+export async function addBeneficiaryAndActivate(
+  prevState: ActionResult | null,
+  formData: FormData,
+): Promise<ActionResult> {
   try {
     await new Promise((resolve) => setTimeout(resolve, 1000))
 
@@ -282,7 +285,7 @@ export async function addBeneficiaryAndActivate(prevState: ActionResult | null, 
       bankname,
       codeAgence,
       cleRib,
-    });
+    })
 
     const base = {
       beneficiaryId: `BEN_${Date.now()}`,
@@ -334,7 +337,7 @@ export async function addBeneficiaryAndActivate(prevState: ActionResult | null, 
 
     const cookieToken = (await cookies()).get("token")?.value
     const usertoken = cookieToken
-    
+
     // ✅ Use new streamlined endpoint
     const response = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/beneficiaire/create-and-activate`, {
       method: "POST",
@@ -350,7 +353,7 @@ export async function addBeneficiaryAndActivate(prevState: ActionResult | null, 
       let errorDetails: any = null
       try {
         errorDetails = await response.json()
-        if (errorDetails && typeof errorDetails === 'object') {
+        if (errorDetails && typeof errorDetails === "object") {
           errorMessage = errorDetails.message || errorDetails.error || errorMessage
         }
       } catch (parseError) {
@@ -690,64 +693,10 @@ export async function toggleBeneficiaryFavorite(
     const cookieToken = (await cookies()).get("token")?.value
     const usertoken = cookieToken
 
-    const currentBeneficiaries = await getBeneficiaries()
-    const currentBeneficiary = currentBeneficiaries.find((b) => b.id === beneficiaryId)
-
-    if (!currentBeneficiary) {
-      return {
-        success: false,
-        error: "Bénéficiaire non trouvé",
-      }
-    }
-
-    const secureMode = (process.env.NEXT_PUBLIC_PORTAL_SECURE_MODE || "false").toLowerCase() === "true"
-    const keyB64 = process.env.NEXT_PUBLIC_PORTAL_KEY_B64 || ""
-    const keyId = process.env.NEXT_PUBLIC_PORTAL_KEY_ID || "k1-mobile-v1"
-
-    let apiData: any
-    
-    if (secureMode && keyB64) {
-      const enc = (v: any) => ({ ...encryptAesGcmNode(v, keyB64), key_id: keyId })
-      apiData = {
-        data: {
-          beneficiaryId: currentBeneficiary.beneficiaryId,
-          clientId: currentBeneficiary.clientId,
-          name: currentBeneficiary.name,
-          accountNumber: currentBeneficiary.accountNumber,
-          bankCode: currentBeneficiary.bankCode,
-          bankName: currentBeneficiary.bankName,
-          status: currentBeneficiary.status,
-          typeBeneficiary: currentBeneficiary.typeBeneficiary,
-          favoris: !currentFavoriteStatus,
-          codagence: currentBeneficiary.codagence,
-          clerib: currentBeneficiary.clerib,
-          workflowStatus: currentBeneficiary.workflowStatus || WORKFLOW_STATUS.AVAILABLE,
-          name_json: enc(currentBeneficiary.name),
-          accountNumber_json: enc(currentBeneficiary.accountNumber),
-          bankCode_json: enc(currentBeneficiary.bankCode),
-          bankName_json: enc(currentBeneficiary.bankName),
-          codagence_json: enc(currentBeneficiary.codagence),
-          clerib_json: enc(currentBeneficiary.clerib),
-          key_id: keyId,
-        },
-      }
-    } else {
-      apiData = {
-        data: {
-          beneficiaryId: currentBeneficiary.beneficiaryId,
-          clientId: currentBeneficiary.clientId,
-          name: currentBeneficiary.name,
-          accountNumber: currentBeneficiary.accountNumber,
-          bankCode: currentBeneficiary.bankCode,
-          bankName: currentBeneficiary.bankName,
-          status: currentBeneficiary.status,
-          typeBeneficiary: currentBeneficiary.typeBeneficiary,
-          favoris: !currentFavoriteStatus,
-          codagence: currentBeneficiary.codagence,
-          clerib: currentBeneficiary.clerib,
-          workflowStatus: currentBeneficiary.workflowStatus || WORKFLOW_STATUS.AVAILABLE,
-        },
-      }
+    const apiData = {
+      data: {
+        favoris: !currentFavoriteStatus,
+      },
     }
 
     const response = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/beneficiaire/${beneficiaryId}`, {
@@ -768,7 +717,7 @@ export async function toggleBeneficiaryFavorite(
       }
     }
 
-    const result = await response.json()
+    await response.json()
 
     revalidatePath("/transfers/beneficiaries")
     revalidatePath("/transfers/new")
@@ -802,30 +751,9 @@ export async function deactivateBeneficiary(prevState: ActionResult | null, form
     const cookieToken = (await cookies()).get("token")?.value
     const usertoken = cookieToken
 
-    const currentBeneficiaries = await getBeneficiaries()
-    const currentBeneficiary = currentBeneficiaries.find((b) => b.id === id)
-
-    if (!currentBeneficiary) {
-      return {
-        success: false,
-        error: "Bénéficiaire non trouvé",
-      }
-    }
-
     const apiData = {
       data: {
-        beneficiaryId: currentBeneficiary.beneficiaryId,
-        clientId: currentBeneficiary.clientId,
-        name: currentBeneficiary.name,
-        accountNumber: currentBeneficiary.accountNumber,
-        bankCode: currentBeneficiary.bankCode,
-        bankName: currentBeneficiary.bankName,
         status: 1,
-        typeBeneficiary: currentBeneficiary.typeBeneficiary,
-        favoris: currentBeneficiary.favoris,
-        codagence: currentBeneficiary.codagence,
-        clerib: currentBeneficiary.clerib,
-        workflowStatus: WORKFLOW_STATUS.SUSPENDED,
       },
     }
 
@@ -846,7 +774,7 @@ export async function deactivateBeneficiary(prevState: ActionResult | null, form
       }
     }
 
-    const result = await response.json()
+    await response.json()
 
     revalidatePath("/transfers/beneficiaries")
     revalidatePath("/transfers/new")
@@ -880,30 +808,9 @@ export async function reactivateBeneficiary(prevState: ActionResult | null, form
     const cookieToken = (await cookies()).get("token")?.value
     const usertoken = cookieToken
 
-    const currentBeneficiaries = await getBeneficiaries()
-    const currentBeneficiary = currentBeneficiaries.find((b) => b.id === id)
-
-    if (!currentBeneficiary) {
-      return {
-        success: false,
-        error: "Bénéficiaire non trouvé",
-      }
-    }
-
     const apiData = {
       data: {
-        beneficiaryId: currentBeneficiary.beneficiaryId,
-        clientId: currentBeneficiary.clientId,
-        name: currentBeneficiary.name,
-        accountNumber: currentBeneficiary.accountNumber,
-        bankCode: currentBeneficiary.bankCode,
-        bankName: currentBeneficiary.bankName,
         status: 0,
-        typeBeneficiary: currentBeneficiary.typeBeneficiary,
-        favoris: currentBeneficiary.favoris,
-        codagence: currentBeneficiary.codagence,
-        clerib: currentBeneficiary.clerib,
-        workflowStatus: WORKFLOW_STATUS.AVAILABLE,
       },
     }
 
@@ -924,7 +831,7 @@ export async function reactivateBeneficiary(prevState: ActionResult | null, form
       }
     }
 
-    const result = await response.json()
+    await response.json()
 
     revalidatePath("/transfers/beneficiaries")
     revalidatePath("/transfers/new")
@@ -940,24 +847,6 @@ export async function reactivateBeneficiary(prevState: ActionResult | null, form
       error: error instanceof Error ? error.message : "Une erreur inattendue s'est produite",
     }
   }
-}
-
-function getBankCode(bankName: string, type: string): string {
-  const bankCodes: Record<string, string> = {
-    "Banque Nationale de Guinée": "bng",
-    BICIGUI: "bici",
-    "Société Générale de Banques en Guinée": "sgbg",
-    "United Bank for Africa": "uba",
-    "Ecobank Guinée": "eco",
-    "VISTA BANK": "vista",
-    "BNP Paribas": "bnpp",
-    "Société Générale": "sg",
-    "Crédit Agricole": "ca",
-    HSBC: "hsbc",
-    "Deutsche Bank": "db",
-  }
-
-  return bankCodes[bankName] || bankName.substring(0, 4).toLowerCase()
 }
 
 export async function getBanks() {
@@ -985,4 +874,22 @@ export async function getBanks() {
     console.error("Erreur lors de la récupération des banques:", error)
     return []
   }
+}
+
+function getBankCode(bankName: string, type: string): string {
+  const bankCodes: Record<string, string> = {
+    "Banque Nationale de Guinée": "bng",
+    BICIGUI: "bici",
+    "Société Générale de Banques en Guinée": "sgbg",
+    "United Bank for Africa": "uba",
+    "Ecobank Guinée": "eco",
+    "VISTA BANK": "vista",
+    "BNP Paribas": "bnpp",
+    "Société Générale": "sg",
+    "Crédit Agricole": "ca",
+    HSBC: "hsbc",
+    "Deutsche Bank": "db",
+  }
+
+  return bankCodes[bankName] || bankName.substring(0, 4).toLowerCase()
 }
