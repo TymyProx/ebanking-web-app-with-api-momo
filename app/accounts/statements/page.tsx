@@ -311,6 +311,7 @@ export default function StatementsPage() {
         montantOperation: txn.montantOperation || 0,
         description: txn.description || "",
         valueDate: txn.valueDate || "",
+        dateEcriture: txn.dateEcriture || "",
       }))
 
       console.log("[v0] Transactions nettoyées (4 champs):", cleanedTransactions.length)
@@ -801,83 +802,266 @@ export default function StatementsPage() {
       const { jsPDF } = require("jspdf")
       const doc = new jsPDF()
 
-      // En-tête du relevé
-      doc.setFontSize(20)
-      doc.setTextColor(40, 40, 40)
-      doc.text("RELEVÉ DE COMPTE", 20, 30)
+      const pageWidth = 210
+      const pageHeight = 297
 
-      doc.setFontSize(12)
-      doc.setTextColor(100, 100, 100)
-      doc.text(
-        `Période: ${new Date(startDate).toLocaleDateString("fr-FR")} au ${new Date(endDate).toLocaleDateString("fr-FR")}`,
-        20,
-        45,
-      )
+      // Couleurs
+      const blackText: [number, number, number] = [0, 0, 0]
+      const grayText: [number, number, number] = [100, 100, 100]
 
-      // Informations du compte
-      doc.setFontSize(14)
-      doc.setTextColor(40, 40, 40)
-      doc.text("Informations du compte", 20, 65)
+      // Charger le logo BNG
+      let yPos = 15
 
-      doc.setFontSize(10)
-      doc.text(`Nom: ${account.name}`, 20, 80)
-      doc.text(`Numéro: ${account.number}`, 20, 90)
-      doc.text(`IBAN: ${account.iban}`, 20, 100)
+      // Logo BNG (même position que dans le RIB)
+      const img = new Image()
+      img.src = "/images/logo-bng.png"
+      img.crossOrigin = "anonymous"
 
-      // Tableau des transactions
-      let yPos = 120
-      doc.setFontSize(14)
-      doc.setTextColor(40, 40, 40)
-      doc.text(`Transactions (${transactions.length})`, 20, yPos)
-      yPos += 15
-
-      // En-têtes du tableau
-      doc.setFontSize(9)
-      doc.setTextColor(60, 60, 60)
-      doc.text("Référence", 20, yPos)
-      doc.text("Montant", 70, yPos)
-      doc.text("Description", 110, yPos)
-      doc.text("Date valeur", 160, yPos)
-      yPos += 10
-
-      // Ligne de séparation
-      doc.line(20, yPos - 5, 190, yPos - 5)
-
-      // Transactions
-      transactions.forEach((txn) => {
-        if (yPos > 270) {
-          doc.addPage()
-          yPos = 30
-        }
-
-        doc.setTextColor(40, 40, 40)
-        doc.setFontSize(8)
-        doc.text((txn.referenceOperation || "N/A").substring(0, 15), 20, yPos)
-        doc.text(formatAmount(txn.montantOperation) + " GNF", 70, yPos)
-        doc.text((txn.description || "N/A").substring(0, 20), 110, yPos)
-        doc.text(new Date(txn.valueDate).toLocaleDateString("fr-FR"), 160, yPos)
-        yPos += 8
-      })
-
-      // Pied de page
-      const pageCount = doc.internal.getNumberOfPages()
-      for (let i = 1; i <= pageCount; i++) {
-        doc.setPage(i)
-        doc.setFontSize(8)
-        doc.setTextColor(150, 150, 150)
-        doc.text(`Page ${i} sur ${pageCount}`, 20, 285)
-        doc.text(
-          `Généré le ${new Date().toLocaleDateString("fr-FR")} à ${new Date().toLocaleTimeString("fr-FR")}`,
-          120,
-          285,
-        )
+      img.onload = () => {
+        doc.addImage(img, "PNG", 15, yPos, 35, 12)
+        continueGeneratingPDF()
       }
 
-      // Téléchargement
-      const fileName = `releve_${account.number}_${startDate}_${endDate}.pdf`
-      doc.save(fileName)
+      img.onerror = () => {
+        console.warn("[v0] Logo BNG non trouvé, génération sans logo")
+        continueGeneratingPDF()
+      }
 
-      console.log("[v0] PDF généré et téléchargé:", fileName)
+      const continueGeneratingPDF = () => {
+        yPos = 40
+
+        // TITRE DE LA BANQUE (même style que RIB)
+        doc.setTextColor(...blackText)
+        doc.setFontSize(14)
+        doc.setFont("helvetica", "bold")
+        doc.text("BANQUE NATIONALE DE GUINÉE", 15, yPos)
+
+        yPos += 5
+        doc.setFontSize(8)
+        doc.setFont("helvetica", "normal")
+        doc.text("6ème Avenue Boulevard DIALLO Telly BP: 1781 Conakry", 15, yPos)
+
+        yPos += 12
+
+        // DÉPARTEMENT
+        doc.setFontSize(9)
+        doc.setFont("helvetica", "bold")
+        doc.text("DEPARTEMENT DES OPERATIONS", 15, yPos)
+
+        yPos += 12
+
+        // TITRE DU DOCUMENT
+        doc.setFontSize(10)
+        doc.setFont("helvetica", "bold")
+        doc.text("RELEVÉ DE COMPTE", 15, yPos)
+
+        yPos += 8
+
+        // PÉRIODE
+        doc.setFontSize(8)
+        doc.setFont("helvetica", "normal")
+        doc.text(
+          `Période: ${new Date(startDate).toLocaleDateString("fr-FR")} au ${new Date(endDate).toLocaleDateString("fr-FR")}`,
+          15,
+          yPos,
+        )
+
+        yPos += 10
+
+        // INFORMATIONS DU COMPTE
+        doc.setFontSize(9)
+        doc.setFont("helvetica", "bold")
+        doc.text(`COMPTE: ${account.name.toUpperCase()}`, 15, yPos)
+
+        yPos += 6
+
+        doc.setFontSize(8)
+        doc.setFont("helvetica", "normal")
+        doc.text(`Numéro de compte: ${account.number}`, 15, yPos)
+
+        yPos += 4
+        doc.text(`IBAN: ${account.iban}`, 15, yPos)
+
+        yPos += 10
+
+        // TABLEAU DES TRANSACTIONS
+        doc.setFontSize(9)
+        doc.setFont("helvetica", "bold")
+        doc.text(`TRANSACTIONS (${transactions.length})`, 15, yPos)
+
+        yPos += 8
+
+        const tableStartX = 15
+        const col1Width = 25 // Date Valeur
+        const col2Width = 50 // Description
+        const col3Width = 35 // Reference
+        const col4Width = 25 // Date Operation (dateEcriture)
+        const col5Width = 30 // Montant
+        const rowHeight = 8
+
+        // Dessiner les bordures et en-têtes
+        doc.setDrawColor(0, 0, 0)
+        doc.setLineWidth(0.3)
+
+        // Ligne supérieure
+        doc.rect(tableStartX, yPos, col1Width + col2Width + col3Width + col4Width + col5Width, rowHeight)
+
+        // Lignes verticales
+        doc.line(tableStartX + col1Width, yPos, tableStartX + col1Width, yPos + rowHeight)
+        doc.line(tableStartX + col1Width + col2Width, yPos, tableStartX + col1Width + col2Width, yPos + rowHeight)
+        doc.line(
+          tableStartX + col1Width + col2Width + col3Width,
+          yPos,
+          tableStartX + col1Width + col2Width + col3Width,
+          yPos + rowHeight,
+        )
+        doc.line(
+          tableStartX + col1Width + col2Width + col3Width + col4Width,
+          yPos,
+          tableStartX + col1Width + col2Width + col3Width + col4Width,
+          yPos + rowHeight,
+        )
+
+        // Texte des en-têtes
+        doc.setFontSize(7)
+        doc.setFont("helvetica", "bold")
+        doc.text("Date Valeur", tableStartX + 2, yPos + 5)
+        doc.text("Description", tableStartX + col1Width + 2, yPos + 5)
+        doc.text("Référence", tableStartX + col1Width + col2Width + 2, yPos + 5)
+        doc.text("Date Opération", tableStartX + col1Width + col2Width + col3Width + 2, yPos + 5)
+        doc.text("Montant", tableStartX + col1Width + col2Width + col3Width + col4Width + 2, yPos + 5)
+
+        yPos += rowHeight
+
+        doc.setFont("helvetica", "normal")
+        doc.setFontSize(6)
+
+        transactions.forEach((txn, index) => {
+          if (yPos > 260) {
+            doc.addPage()
+            yPos = 30
+
+            // Redessiner les en-têtes sur la nouvelle page
+            doc.rect(tableStartX, yPos, col1Width + col2Width + col3Width + col4Width + col5Width, rowHeight)
+            doc.line(tableStartX + col1Width, yPos, tableStartX + col1Width, yPos + rowHeight)
+            doc.line(tableStartX + col1Width + col2Width, yPos, tableStartX + col1Width + col2Width, yPos + rowHeight)
+            doc.line(
+              tableStartX + col1Width + col2Width + col3Width,
+              yPos,
+              tableStartX + col1Width + col2Width + col3Width,
+              yPos + rowHeight,
+            )
+            doc.line(
+              tableStartX + col1Width + col2Width + col3Width + col4Width,
+              yPos,
+              tableStartX + col1Width + col2Width + col3Width + col4Width,
+              yPos + rowHeight,
+            )
+
+            doc.setFont("helvetica", "bold")
+            doc.text("Date Valeur", tableStartX + 2, yPos + 5)
+            doc.text("Description", tableStartX + col1Width + 2, yPos + 5)
+            doc.text("Référence", tableStartX + col1Width + col2Width + 2, yPos + 5)
+            doc.text("Date Opération", tableStartX + col1Width + col2Width + col3Width + 2, yPos + 5)
+            doc.text("Montant", tableStartX + col1Width + col2Width + col3Width + col4Width + 2, yPos + 5)
+
+            yPos += rowHeight
+            doc.setFont("helvetica", "normal")
+          }
+
+          // Dessiner les bordures de la ligne
+          doc.rect(tableStartX, yPos, col1Width + col2Width + col3Width + col4Width + col5Width, rowHeight)
+          doc.line(tableStartX + col1Width, yPos, tableStartX + col1Width, yPos + rowHeight)
+          doc.line(tableStartX + col1Width + col2Width, yPos, tableStartX + col1Width + col2Width, yPos + rowHeight)
+          doc.line(
+            tableStartX + col1Width + col2Width + col3Width,
+            yPos,
+            tableStartX + col1Width + col2Width + col3Width,
+            yPos + rowHeight,
+          )
+          doc.line(
+            tableStartX + col1Width + col2Width + col3Width + col4Width,
+            yPos,
+            tableStartX + col1Width + col2Width + col3Width + col4Width,
+            yPos + rowHeight,
+          )
+
+          // Date Valeur
+          const dateValeur = txn.valueDate ? new Date(txn.valueDate).toLocaleDateString("fr-FR") : "N/A"
+          doc.text(dateValeur, tableStartX + 2, yPos + 5)
+
+          // Description (tronquée)
+          const description = (txn.description || "N/A").substring(0, 25)
+          doc.text(description, tableStartX + col1Width + 2, yPos + 5)
+
+          // Reference (tronquée)
+          const reference = (txn.referenceOperation || "N/A").substring(0, 18)
+          doc.text(reference, tableStartX + col1Width + col2Width + 2, yPos + 5)
+
+          // Date Operation (dateEcriture)
+          const dateOperation = txn.dateEcriture ? new Date(txn.dateEcriture).toLocaleDateString("fr-FR") : "N/A"
+          doc.text(dateOperation, tableStartX + col1Width + col2Width + col3Width + 2, yPos + 5)
+
+          // Montant
+          const montant = formatAmount(txn.montantOperation)
+          doc.text(`${montant}`, tableStartX + col1Width + col2Width + col3Width + col4Width + 2, yPos + 5)
+
+          yPos += rowHeight
+        })
+
+        yPos += 10
+
+        // PIED DE PAGE STATIQUE (même style que RIB)
+        const addFooter = (pageNum: number, totalPages: number) => {
+          const footerY = pageHeight - 20
+
+          doc.setDrawColor(150, 150, 150)
+          doc.setLineWidth(0.3)
+          doc.line(15, footerY, pageWidth - 15, footerY)
+
+          let footerTextY = footerY + 5
+
+          doc.setTextColor(...grayText)
+          doc.setFontSize(7)
+          doc.setFont("helvetica", "normal")
+
+          const footerLines = [
+            "Banque Nationale de Guinée SA - Agrément par décision N° 06/019/93/CAB/PE 06/06/1993",
+            "Capital : 60.000.000.000 GNF",
+            "Boulevard Tidiani Kaba - Quartier Boulbinet/Almamya, Kaloum, Conakry, Guinée",
+            "Tél: +224 - 622 454 049 - B.P 1781 - mail: contact@bng.gn",
+          ]
+
+          footerLines.forEach((line) => {
+            doc.text(line, 15, footerTextY)
+            footerTextY += 3
+          })
+
+          // Numéro de page
+          doc.setFontSize(7)
+          doc.text(`Page ${pageNum} sur ${totalPages}`, pageWidth - 35, footerY + 5)
+        }
+
+        // Ajouter les pieds de page sur toutes les pages
+        const pageCount = doc.internal.getNumberOfPages()
+        for (let i = 1; i <= pageCount; i++) {
+          doc.setPage(i)
+          addFooter(i, pageCount)
+        }
+
+        // Téléchargement
+        const fileName = `Releve_Compte_${account.number.replace(/-/g, "_")}_${new Date().toISOString().split("T")[0]}.pdf`
+        doc.save(fileName)
+
+        console.log("[v0] PDF généré et téléchargé:", fileName)
+      }
+
+      // Si l'image ne se charge pas après 2 secondes, générer sans logo
+      setTimeout(() => {
+        if (yPos === 15) {
+          continueGeneratingPDF()
+        }
+      }, 2000)
     } catch (error) {
       console.error("[v0] Erreur génération PDF:", error)
       alert("❌ Erreur lors de la génération du PDF")
