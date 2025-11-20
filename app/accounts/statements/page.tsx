@@ -306,22 +306,11 @@ export default function StatementsPage() {
         return
       }
 
-      // Calculate balanceOuverture for the first transaction if available
-      const firstTxnDate = filteredTxns[0]?.valueDate
-      let balanceOuverture = selectedAccountData.balance // Default to current balance
+      const firstTxn = filteredTxns[0]
+      const lastTxn = filteredTxns[filteredTxns.length - 1]
 
-      if (firstTxnDate) {
-        const balanceBeforeFirstTxn = allTransactions.reduce((sum, txn) => {
-          if (new Date(txn.valueDate) < new Date(firstTxnDate)) {
-            return sum + (txn.montantOperation || 0)
-          }
-          return sum
-        }, 0)
-        balanceOuverture = selectedAccountData.balance - balanceBeforeFirstTxn
-      } else {
-        // If no transactions or no first transaction date, use the account's current balance
-        balanceOuverture = selectedAccountData.balance
-      }
+      const balanceOuverture = firstTxn?.balanceOuverture || selectedAccountData.balance
+      const balanceFermeture = lastTxn?.balanceFermeture || selectedAccountData.balance
 
       const cleanedTransactions = filteredTxns.map((txn: any) => ({
         referenceOperation: txn.referenceOperation || "",
@@ -329,8 +318,8 @@ export default function StatementsPage() {
         description: txn.description || "",
         valueDate: txn.valueDate || "",
         dateEcriture: txn.dateEcriture || "",
-        // Adding balanceOuverture to the first transaction object for reference in PDF generation
-        ...(txn === filteredTxns[0] && { balanceOuverture: balanceOuverture }),
+        ...(txn === firstTxn && { balanceOuverture }),
+        ...(txn === lastTxn && { balanceFermeture }),
       }))
 
       console.log("[v0] Transactions nettoyées (4 champs):", cleanedTransactions.length)
@@ -350,9 +339,16 @@ export default function StatementsPage() {
     const selectedAccountData = accounts.find((acc) => acc.id === selectedAccount)
     if (!selectedAccountData || filteredTransactions.length === 0) return
 
-    const balanceOuverture = filteredTransactions[0]?.balanceOuverture || selectedAccountData.balance // Default to current balance if not found
+    const balanceOuverture = filteredTransactions[0]?.balanceOuverture || selectedAccountData.balance
+    const balanceFermeture =
+      filteredTransactions[filteredTransactions.length - 1]?.balanceFermeture || selectedAccountData.balance
 
-    generateAndDownloadPDFWithTransactions(selectedAccountData, filteredTransactions, balanceOuverture)
+    generateAndDownloadPDFWithTransactions(
+      selectedAccountData,
+      filteredTransactions,
+      balanceOuverture,
+      balanceFermeture,
+    )
   }
 
   const handleSendByEmail = async () => {
@@ -818,7 +814,12 @@ export default function StatementsPage() {
     </div>
   )
 
-  function generateAndDownloadPDFWithTransactions(account: Account, transactions: any[], balanceOuverture: number) {
+  function generateAndDownloadPDFWithTransactions(
+    account: Account,
+    transactions: any[],
+    balanceOuverture: number,
+    balanceFermeture: number,
+  ) {
     try {
       const { jsPDF } = require("jspdf")
       const doc = new jsPDF()
@@ -993,8 +994,6 @@ export default function StatementsPage() {
         doc.setFontSize(9)
         doc.setFont("helvetica", "bold")
         doc.text("SOLDE DE FERMETURE:", 15, yPos)
-
-        const balanceFermeture = account.balance
 
         doc.setFont("helvetica", "normal")
         doc.text(`${formatAmount(balanceFermeture)} ${account.currency}`, 70, yPos)

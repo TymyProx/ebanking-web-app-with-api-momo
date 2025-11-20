@@ -434,9 +434,7 @@ export async function getTransactionsByNumCompte(numCompte: string) {
       console.log("[v0] Exemple de transaction:", allTransactions[0])
     }
 
-    const filteredTransactions = allTransactions.filter(
-      (txn: any) => txn.numCompte === numCompte && txn.balanceOuverture !== undefined,
-    )
+    const filteredTransactions = allTransactions.filter((txn: any) => txn.numCompte === numCompte)
 
     console.log("[v0] Transactions filtrées par numCompte", numCompte, ":", filteredTransactions.length)
 
