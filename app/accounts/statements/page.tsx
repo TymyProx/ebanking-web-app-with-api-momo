@@ -240,17 +240,24 @@ export default function StatementsPage() {
       const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || ""
       const TENANT_ID = process.env.NEXT_PUBLIC_TENANT_ID || ""
 
-      console.log("[v0] Appel API:", `${API_BASE_URL}/api/tenant/${TENANT_ID}/transactions`)
+      console.log("[v0] Appel API:", `${API_BASE_URL}/tenant/${TENANT_ID}/transactions`)
 
-      const response = await fetch(`${API_BASE_URL}/api/tenant/${TENANT_ID}/transactions`, {
+      const cookieToken = document.cookie
+        .split("; ")
+        .find((row) => row.startsWith("token="))
+        ?.split("=")[1]
+
+      const response = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/transactions`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
+          Authorization: `Bearer ${cookieToken}`,
         },
       })
 
       if (!response.ok) {
         console.error("[v0] Erreur API:", response.status, response.statusText)
+        alert(`❌ Erreur API: ${response.status} ${response.statusText}`)
         return
       }
 
@@ -266,6 +273,7 @@ export default function StatementsPage() {
       }
 
       console.log("[v0] Nombre total de transactions reçues:", allTransactions.length)
+      console.log("[v0] Exemple de transaction:", allTransactions[0])
 
       // Filter by numCompte only
       const transactionsByAccount = allTransactions.filter((txn: any) => {
