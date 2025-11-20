@@ -34,7 +34,7 @@ const accountTypes = [
     description: "Pour vos opérations quotidiennes avec chéquier",
     currency: "GNF",
     minBalance: "50000",
-    features: ["Carte bancaire incluse", "Chéquier gratuit", "Virements illimités", "Découvert autorisé"],
+    features: ["Carte bancaire incluse", "Chéquier", "Virements illimités", "Découvert autorisé"],
    // fees: "Gratuit les 6 premiers mois",
     icon: "💳",
   },
