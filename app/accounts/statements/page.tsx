@@ -28,6 +28,7 @@ import {
 import { generateStatement, sendStatementByEmail, getTransactionsByNumCompte } from "./actions"
 import { useActionState } from "react"
 import { getAccounts } from "../actions"
+import { useActionActionState } from "react" // Declare the variable here
 
 interface Account {
   id: string
@@ -124,7 +125,7 @@ export default function StatementsPage() {
 
   // États pour les actions serveur
   const [generateState, generateAction, isGenerating] = useActionState(generateStatement, null)
-  const [emailState, emailAction, isSending] = useActionState(sendStatementByEmail, null)
+  const [emailState, emailAction, isSending] = useActionActionState(sendStatementByEmail, null)
 
   const [isPending, startTransition] = useTransition()
 
@@ -827,7 +828,7 @@ export default function StatementsPage() {
         continueGeneratingPDF()
       }
 
-        const continueGeneratingPDF = () => {
+      const continueGeneratingPDF = () => {
         yPos = 40
 
         // TITRE DE LA BANQUE (même style que RIB)
@@ -861,11 +862,11 @@ export default function StatementsPage() {
         doc.setFontSize(8)
         doc.setFont("helvetica", "normal")
         doc.text(
-        `Période: ${new Date(startDate).toLocaleDateString("fr-FR")} au ${new Date(
-        endDate,
-        ).toLocaleDateString("fr-FR")}`,
-        15,
-        yPos,
+          `Période: ${new Date(startDate).toLocaleDateString("fr-FR")} au ${new Date(endDate).toLocaleDateString(
+            "fr-FR",
+          )}`,
+          15,
+          yPos,
         )
 
         yPos += 10
@@ -886,6 +887,20 @@ export default function StatementsPage() {
 
         yPos += 10
 
+        // SOLDE D'OUVERTURE
+        doc.setFontSize(9)
+        doc.setFont("helvetica", "bold")
+        doc.text("SOLDE D'OUVERTURE:", 15, yPos)
+
+        // Calculer la balance d'ouverture (solde actuel moins la somme des transactions)
+        const totalTransactions = transactions.reduce((sum, txn) => sum + (txn.montantOperation || 0), 0)
+        const balanceOuverture = account.balance - totalTransactions
+
+        doc.setFont("helvetica", "normal")
+        doc.text(`${formatAmount(balanceOuverture)} ${account.currency}`, 70, yPos)
+
+        yPos += 10
+
         // TABLEAU DES TRANSACTIONS (SANS GRILLES)
         doc.setFontSize(10)
         doc.setFont("helvetica", "bold")
@@ -901,9 +916,7 @@ export default function StatementsPage() {
         const col5Width = 30 // Montant
         const rowHeight = 9 // un peu plus grand pour laisser respirer
 
-        // ─────────────────────────────────────────────
         // EN-TÊTES SANS CADRE
-        // ─────────────────────────────────────────────
         doc.setFontSize(9) // entêtes plus grandes
         doc.setFont("helvetica", "bold")
         doc.text("Date Valeur", tableStartX + 2, yPos + 6)
@@ -918,97 +931,105 @@ export default function StatementsPage() {
         doc.setFontSize(8) // données plus grandes aussi
 
         transactions.forEach((txn) => {
-        if (yPos > 260) {
-        doc.addPage()
-        yPos = 30
+          if (yPos > 260) {
+            doc.addPage()
+            yPos = 30
 
-        // Réécrire les entêtes sur la nouvelle page (toujours sans grilles)
+            // Réécrire les entêtes sur la nouvelle page (toujours sans grilles)
+            doc.setFontSize(9)
+            doc.setFont("helvetica", "bold")
+            doc.text("Date Valeur", tableStartX + 2, yPos + 6)
+            doc.text("Description", tableStartX + col1Width + 2, yPos + 6)
+            doc.text("Référence", tableStartX + col1Width + col2Width + 2, yPos + 6)
+            doc.text("Date Opération", tableStartX + col1Width + col2Width + col3Width + 2, yPos + 6)
+            doc.text("Montant", tableStartX + col1Width + col2Width + col3Width + col4Width + 2, yPos + 6)
+
+            yPos += rowHeight
+            doc.setFont("helvetica", "normal")
+            doc.setFontSize(8)
+          }
+
+          // Date Valeur
+          const dateValeur = txn.valueDate ? new Date(txn.valueDate).toLocaleDateString("fr-FR") : "N/A"
+          doc.text(dateValeur, tableStartX + 2, yPos + 6)
+
+          // Description (tronquée)
+          const description = (txn.description || "N/A").substring(0, 30)
+          doc.text(description, tableStartX + col1Width + 2, yPos + 6)
+
+          // Reference (tronquée)
+          const reference = (txn.referenceOperation || "N/A").substring(0, 20)
+          doc.text(reference, tableStartX + col1Width + col2Width + 2, yPos + 6)
+
+          // Date Operation (dateEcriture)
+          const dateOperation = txn.dateEcriture ? new Date(txn.dateEcriture).toLocaleDateString("fr-FR") : "N/A"
+          doc.text(dateOperation, tableStartX + col1Width + col2Width + col3Width + 2, yPos + 6)
+
+          // Montant
+          const montant = formatAmount(txn.montantOperation)
+          doc.text(`${montant}`, tableStartX + col1Width + col2Width + col3Width + col4Width + 2, yPos + 6)
+
+          yPos += rowHeight
+        })
+
+        yPos += 10
+
+        // SOLDE DE FERMETURE
         doc.setFontSize(9)
         doc.setFont("helvetica", "bold")
-        doc.text("Date Valeur", tableStartX + 2, yPos + 6)
-        doc.text("Description", tableStartX + col1Width + 2, yPos + 6)
-        doc.text("Référence", tableStartX + col1Width + col2Width + 2, yPos + 6)
-        doc.text("Date Opération", tableStartX + col1Width + col2Width + col3Width + 2, yPos + 6)
-        doc.text("Montant", tableStartX + col1Width + col2Width + col3Width + col4Width + 2, yPos + 6)
+        doc.text("SOLDE DE FERMETURE:", 15, yPos)
 
-        yPos += rowHeight
+        const balanceFermeture = account.balance
+
         doc.setFont("helvetica", "normal")
-        doc.setFontSize(8)
-        }
-
-        // PLUS AUCUN rect() / line() ICI → plus de grilles
-        // Juste le texte :
-
-        // Date Valeur
-        const dateValeur = txn.valueDate ? new Date(txn.valueDate).toLocaleDateString("fr-FR") : "N/A"
-        doc.text(dateValeur, tableStartX + 2, yPos + 6)
-
-        // Description (tronquée)
-        const description = (txn.description || "N/A").substring(0, 30)
-        doc.text(description, tableStartX + col1Width + 2, yPos + 6)
-
-        // Reference (tronquée)
-        const reference = (txn.referenceOperation || "N/A").substring(0, 20)
-        doc.text(reference, tableStartX + col1Width + col2Width + 2, yPos + 6)
-
-        // Date Operation (dateEcriture)
-        const dateOperation = txn.dateEcriture ? new Date(txn.dateEcriture).toLocaleDateString("fr-FR") : "N/A"
-        doc.text(dateOperation, tableStartX + col1Width + col2Width + col3Width + 2, yPos + 6)
-
-        // Montant
-        const montant = formatAmount(txn.montantOperation)
-        doc.text(`${montant}`, tableStartX + col1Width + col2Width + col3Width + col4Width + 2, yPos + 6)
-
-        yPos += rowHeight
-        })
+        doc.text(`${formatAmount(balanceFermeture)} ${account.currency}`, 70, yPos)
 
         yPos += 10
 
         // PIED DE PAGE STATIQUE (inchangé)
         const addFooter = (pageNum: number, totalPages: number) => {
-        const footerY = pageHeight - 20
+          const footerY = pageHeight - 20
 
-        doc.setDrawColor(150, 150, 150)
-        doc.setLineWidth(0.3)
-        doc.line(15, footerY, pageWidth - 15, footerY)
+          doc.setDrawColor(150, 150, 150)
+          doc.setLineWidth(0.3)
+          doc.line(15, footerY, pageWidth - 15, footerY)
 
-        let footerTextY = footerY + 5
+          let footerTextY = footerY + 5
 
-        doc.setTextColor(...grayText)
-        doc.setFontSize(7)
-        doc.setFont("helvetica", "normal")
+          doc.setTextColor(...grayText)
+          doc.setFontSize(7)
+          doc.setFont("helvetica", "normal")
 
-        const footerLines = [
-        "Banque Nationale de Guinée SA - Agrément par décision N° 06/019/93/CAB/PE 06/06/1993",
-        "Capital : 60.000.000.000 GNF",
-        "Boulevard Tidiani Kaba - Quartier Boulbinet/Almamya, Kaloum, Conakry, Guinée",
-        "Tél: +224 - 622 454 049 - B.P 1781 - mail: contact@bng.gn",
-        ]
+          const footerLines = [
+            "Banque Nationale de Guinée SA - Agrément par décision N° 06/019/93/CAB/PE 06/06/1993",
+            "Capital : 60.000.000.000 GNF",
+            "Boulevard Tidiani Kaba - Quartier Boulbinet/Almamya, Kaloum, Conakry, Guinée",
+            "Tél: +224 - 622 454 049 - B.P 1781 - mail: contact@bng.gn",
+          ]
 
-        footerLines.forEach((line) => {
-        doc.text(line, 15, footerTextY)
-        footerTextY += 3
-        })
+          footerLines.forEach((line) => {
+            doc.text(line, 15, footerTextY)
+            footerTextY += 3
+          })
 
-        // Numéro de page
-        doc.setFontSize(7)
-        doc.text(`Page ${pageNum} sur ${totalPages}`, pageWidth - 35, footerY + 5)
+          // Numéro de page
+          doc.setFontSize(7)
+          doc.text(`Page ${pageNum} sur ${totalPages}`, pageWidth - 35, footerY + 5)
         }
 
         const pageCount = doc.internal.getNumberOfPages()
         for (let i = 1; i <= pageCount; i++) {
-        doc.setPage(i)
-        addFooter(i, pageCount)
+          doc.setPage(i)
+          addFooter(i, pageCount)
         }
 
         const fileName = `Releve_Compte_${account.number.replace(/-/g, "_")}_${
-        new Date().toISOString().split("T")[0]
+          new Date().toISOString().split("T")[0]
         }.pdf`
         doc.save(fileName)
 
         console.log("[v0] PDF généré et téléchargé:", fileName)
-        }
-
+      }
 
       // Si l'image ne se charge pas après 2 secondes, générer sans logo
       setTimeout(() => {
