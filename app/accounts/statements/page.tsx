@@ -112,6 +112,8 @@ export default function StatementsPage() {
   const [emailAddress, setEmailAddress] = useState("")
   const [selectedPeriod, setSelectedPeriod] = useState<string>("")
   const [displayLimit, setDisplayLimit] = useState(50) // Limit initial display
+  const [filteredTransactions, setFilteredTransactions] = useState<any[]>([])
+  const [showDownloadLink, setShowDownloadLink] = useState(false)
 
   const [accounts, setAccounts] = useState<Account[]>([])
   const [isLoadingAccounts, setIsLoadingAccounts] = useState(true)
@@ -264,6 +266,7 @@ export default function StatementsPage() {
 
       if (!result.success) {
         alert(`❌ ${result.error || "Impossible de récupérer les transactions"}`)
+        setShowDownloadLink(false)
         return
       }
 
@@ -271,8 +274,7 @@ export default function StatementsPage() {
 
       console.log("[v0] Total transactions reçues:", allTransactions.length)
 
-      // Filter by valueDate
-      const filteredTransactions = allTransactions.filter((txn: any) => {
+      const filteredTxns = allTransactions.filter((txn: any) => {
         if (!txn.valueDate) return false
 
         const txnDate = new Date(txn.valueDate)
@@ -284,15 +286,15 @@ export default function StatementsPage() {
         return isInRange
       })
 
-      console.log("[v0] Transactions après filtre par valueDate:", filteredTransactions.length)
+      console.log("[v0] Transactions après filtre par valueDate:", filteredTxns.length)
 
-      if (filteredTransactions.length === 0) {
+      if (filteredTxns.length === 0) {
         alert("❌ Aucune transaction trouvée pour cette période.")
+        setShowDownloadLink(false)
         return
       }
 
-      // Extract only the 4 required fields
-      const cleanedTransactions = filteredTransactions.map((txn: any) => ({
+      const cleanedTransactions = filteredTxns.map((txn: any) => ({
         referenceOperation: txn.referenceOperation || "",
         montantOperation: txn.montantOperation || 0,
         description: txn.description || "",
@@ -301,16 +303,20 @@ export default function StatementsPage() {
 
       console.log("[v0] Transactions nettoyées (4 champs):", cleanedTransactions.length)
 
-      // Generate PDF/Excel/TXT directly
-      if (format === "pdf") {
-        generateAndDownloadPDFWithTransactions(selectedAccountData, cleanedTransactions)
-      } else if (format === "excel") {
-        generateAndDownloadExcelWithTransactions(selectedAccountData, cleanedTransactions)
-      }
+      setFilteredTransactions(cleanedTransactions)
+      setShowDownloadLink(true)
     } catch (error) {
       console.error("[v0] Erreur lors de la récupération des transactions:", error)
       alert("❌ Erreur lors de la récupération des transactions")
+      setShowDownloadLink(false)
     }
+  }
+
+  const handleDownloadPDF = () => {
+    const selectedAccountData = accounts.find((acc) => acc.id === selectedAccount)
+    if (!selectedAccountData || filteredTransactions.length === 0) return
+
+    generateAndDownloadPDFWithTransactions(selectedAccountData, filteredTransactions)
   }
 
   const handleSendByEmail = async () => {
@@ -379,6 +385,24 @@ export default function StatementsPage() {
           </div>
         )}
       </div>
+
+      {showDownloadLink && filteredTransactions.length > 0 && (
+        <Alert className="border-green-200 bg-green-50">
+          <CheckCircle className="h-4 w-4 text-green-600" />
+          <AlertDescription className="text-green-800 flex items-center justify-between">
+            <span>✅ {filteredTransactions.length} transaction(s) trouvée(s) pour cette période.</span>
+            <Button
+              variant="link"
+              className="p-0 h-auto text-green-700 underline font-semibold"
+              onClick={handleDownloadPDF}
+            >
+              <Download className="w-4 h-4 mr-1" />
+              Télécharger le relevé
+            </Button>
+          </AlertDescription>
+        </Alert>
+      )}
+
       {/* Messages de feedback */}
       {generateState?.success && (
         <Alert className="border-green-200 bg-green-50">
@@ -633,7 +657,7 @@ export default function StatementsPage() {
                   ) : (
                     <>
                       <Download className="w-4 h-4 mr-2" />
-                      Générer et télécharger
+                      Rechercher les transactions
                     </>
                   )}
                 </Button>
