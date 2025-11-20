@@ -189,7 +189,7 @@ export default async function Dashboard() {
             <Link href="/transfers/new">
               <Button size="sm" className="h-14 flex flex-col space-y-1 w-full btn-primary group">
                 <Send className="h-4 w-4 group-hover:scale-110 transition-transform" />
-                <span className="text-xs font-medium">Nouveau virement</span>
+                <span className="text-xs font-medium">Virement</span>
               </Button>
             </Link>
             <Link href="/transfers/beneficiaries">
@@ -199,7 +199,7 @@ export default async function Dashboard() {
                 className="h-14 flex flex-col space-y-1 w-full hover:bg-secondary/10 hover:border-secondary group bg-transparent"
               >
                 <Users className="h-4 w-4 group-hover:scale-110 transition-transform" />
-                <span className="text-xs font-medium">Mes bénéficiaires</span>
+                <span className="text-xs font-medium">Gestion des bénéficiaires</span>
               </Button>
             </Link>
             <Link href="/accounts/balance">
@@ -209,7 +209,7 @@ export default async function Dashboard() {
                 className="h-14 flex flex-col space-y-1 w-full hover:bg-accent/10 hover:border-accent group bg-transparent"
               >
                 <Eye className="h-4 w-4 group-hover:scale-110 transition-transform" />
-                <span className="text-xs font-medium">Consulter soldes</span>
+                <span className="text-xs font-medium">Consultation de solde</span>
               </Button>
             </Link>
           </div>
