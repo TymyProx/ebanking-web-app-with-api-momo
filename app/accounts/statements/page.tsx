@@ -195,48 +195,38 @@ export default function StatementsPage() {
 
       try {
         const transactionsData = await getTransactions()
-        console.log("[v0] Toutes les transactions reçues:", transactionsData.data?.length || 0)
 
         if (transactionsData.data && Array.isArray(transactionsData.data)) {
           const selectedAccountData = accounts.find((acc) => acc.id === selectedAccount)
           const accountNumber = selectedAccountData?.number
 
-          console.log("[v0] Compte sélectionné:", {
+          console.log("[v0] Compte sélectionné pour filtrage:", {
             id: selectedAccount,
             name: selectedAccountData?.name,
             number: accountNumber,
           })
 
+          console.log("[v0] Total transactions reçues de l'API:", transactionsData.data.length)
+
           if (transactionsData.data.length > 0) {
-            console.log("[v0] Exemple de transaction (structure):", {
-              transaction: transactionsData.data[0],
-              hasNumCompte: "numCompte" in transactionsData.data[0],
-              numCompteValue: transactionsData.data[0].numCompte,
-              hasCreditAccount: "creditAccount" in transactionsData.data[0],
-              creditAccountValue: transactionsData.data[0].creditAccount,
-              hasDebitAccount: "debitAccount" in transactionsData.data[0],
-              debitAccountValue: transactionsData.data[0].debitAccount,
-            })
+            console.log("[v0] Exemple de transaction (première):", transactionsData.data[0])
           }
 
           const accountTransactions = transactionsData.data
             .filter((txn: any) => {
-              const matchesNumCompte = txn.numCompte === accountNumber
-              const matchesCreditAccount = txn.creditAccount === accountNumber
-              const matchesDebitAccount = txn.debitAccount === accountNumber
-              const matches = matchesNumCompte || matchesCreditAccount || matchesDebitAccount
+              // Check if numCompte matches the account number
+              const matches = txn.numCompte === accountNumber
 
               if (matches) {
-                console.log("[v0] Transaction trouvée:", {
+                console.log("[v0] Transaction trouvée pour ce compte:", {
                   numCompte: txn.numCompte,
-                  creditAccount: txn.creditAccount,
-                  debitAccount: txn.debitAccount,
-                  matchField: matchesNumCompte ? "numCompte" : matchesCreditAccount ? "creditAccount" : "debitAccount",
                   reference: txn.referenceOperation,
                   valueDate: txn.valueDate,
                   montant: txn.montantOperation,
+                  description: txn.description,
                 })
               }
+
               return matches
             })
             .slice(0, 200)
