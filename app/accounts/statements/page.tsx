@@ -116,6 +116,7 @@ export default function StatementsPage() {
   const [transactionCount, setTransactionCount] = useState(0)
   const [showDownloadLink, setShowDownloadLink] = useState(false)
   const [isLoadingTransactions, setIsLoadingTransactions] = useState(false)
+  const [errorMessage, setErrorMessage] = useState<string>("")
 
   const [accounts, setAccounts] = useState<Account[]>([])
   const [isLoadingAccounts, setIsLoadingAccounts] = useState(true)
@@ -257,6 +258,7 @@ export default function StatementsPage() {
     setShowDownloadLink(false)
     setFilteredTransactions([])
     setTransactionCount(0)
+    setErrorMessage("")
 
     const selectedAccountData = accounts.find((acc) => acc.id === selectedAccount)
     if (!selectedAccountData) {
@@ -275,7 +277,7 @@ export default function StatementsPage() {
       const result = await getTransactionsByNumCompte(accountNumber)
 
       if (!result.success) {
-        alert(`❌ ${result.error || "Impossible de récupérer les transactions"}`)
+        setErrorMessage(result.error || "Impossible de récupérer les transactions")
         setIsLoadingTransactions(false)
         return
       }
@@ -298,11 +300,11 @@ export default function StatementsPage() {
 
       console.log("[v0] Transactions après filtre par valueDate:", filteredTxns.length)
 
-      // if (filteredTxns.length === 0) {
-      //   setIsLoadingTransactions(false)
-      //   alert("❌ Aucune transaction trouvée pour cette période.")
-      //   return
-      // }
+      if (filteredTxns.length === 0) {
+        setErrorMessage("Aucune transaction trouvée pour cette période.")
+        setIsLoadingTransactions(false)
+        return
+      }
 
       const cleanedTransactions = filteredTxns.map((txn: any) => ({
         referenceOperation: txn.referenceOperation || "",
@@ -318,7 +320,7 @@ export default function StatementsPage() {
       setShowDownloadLink(true)
     } catch (error) {
       console.error("[v0] Erreur lors de la récupération des transactions:", error)
-      alert("❌ Erreur lors de la récupération des transactions")
+      setErrorMessage("Erreur lors de la récupération des transactions")
     } finally {
       setIsLoadingTransactions(false)
     }
@@ -415,7 +417,13 @@ export default function StatementsPage() {
         </Alert>
       )}
 
-      {/* Messages de feedback */}
+      {!isLoadingTransactions && errorMessage && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{errorMessage}</AlertDescription>
+        </Alert>
+      )}
+
       {generateState?.success && (
         <Alert className="border-green-200 bg-green-50">
           <CheckCircle className="h-4 w-4 text-green-600" />
