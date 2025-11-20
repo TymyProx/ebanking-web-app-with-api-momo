@@ -1,5 +1,7 @@
 "use client"
 
+import type React from "react"
+
 import { useState, useEffect, startTransition } from "react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -8,18 +10,28 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Building2, CheckCircle, AlertCircle, ArrowLeft, FileText, Clock, ChevronRight, Upload, User } from 'lucide-react'
+import {
+  Building2,
+  CheckCircle,
+  AlertCircle,
+  ArrowLeft,
+  FileText,
+  Clock,
+  ChevronRight,
+  Upload,
+  User,
+} from "lucide-react"
 import { createAccount } from "../actions"
 import { saveClientAdditionalInfo } from "./actions"
 import { useActionState } from "react"
-import { useRouter } from 'next/navigation'
+import { useRouter } from "next/navigation"
 import AuthService from "@/lib/auth-service"
 
 const accountTypes = [
   {
-    id: "COURANT",
-    name: "Compte Courant",
-    description: "Pour vos opérations quotidiennes",
+    id: "COURANT_CHEQUE",
+    name: "Compte courant chèque",
+    description: "Pour vos opérations quotidiennes avec chéquier",
     currency: "GNF",
     minBalance: "50000",
     features: ["Carte bancaire incluse", "Chéquier gratuit", "Virements illimités", "Découvert autorisé"],
@@ -27,9 +39,9 @@ const accountTypes = [
     icon: "💳",
   },
   {
-    id: "EPARGNE",
-    name: "Compte Épargne",
-    description: "Pour faire fructifier votre argent",
+    id: "EPARGNE_ORDINAIRE",
+    name: "Compte épargne ordinaire",
+    description: "Pour faire fructifier votre argent en toute sécurité",
     currency: "GNF",
     minBalance: "100000",
     features: ["Taux d'intérêt attractif", "Pas de frais de tenue", "Épargne programmée", "Objectifs d'épargne"],
@@ -37,24 +49,24 @@ const accountTypes = [
     icon: "🏦",
   },
   {
-    id: "DEVISE",
-    name: "Compte Devises",
-    description: "Pour vos opérations en devises étrangères",
-    currency: "USD",
-    minBalance: "100",
-    features: ["Multi-devises", "Virements internationaux", "Change avantageux", "Carte internationale"],
-    fees: "25,000 GNF/mois",
-    icon: "💵",
+    id: "MINEUR",
+    name: "Compte mineur",
+    description: "Pour préparer l'avenir de vos enfants",
+    currency: "GNF",
+    minBalance: "25000",
+    features: ["Pas de frais jusqu'à 18 ans", "Taux d'intérêt bonifié", "Épargne sécurisée", "Éducation financière"],
+    fees: "Gratuit",
+    icon: "👶",
   },
   {
-    id: "TERME",
-    name: "Compte à Terme",
-    description: "Pour vos placements à long terme",
+    id: "WALLET",
+    name: "Compte Wallet",
+    description: "Compte mobile pour vos paiements digitaux",
     currency: "GNF",
-    minBalance: "500000",
-    features: ["Taux d'intérêt élevé", "Durée flexible", "Renouvellement automatique", "Garantie capital"],
+    minBalance: "10000",
+    features: ["Paiements mobiles", "Retraits sans carte", "Transactions instantanées", "Application mobile"],
     fees: "Gratuit",
-    icon: "📈",
+    icon: "📱",
   },
 ]
 
@@ -137,7 +149,7 @@ export default function NewAccountPage() {
 
       const data = await response.json()
       console.log("[v0] Image uploaded successfully:", data.url)
-      
+
       // Store the Blob URL in form data
       handleInputChange(field, data.url)
     } catch (error) {
@@ -152,25 +164,33 @@ export default function NewAccountPage() {
   }
 
   const canProceedToStep2 = selectedType !== ""
-  
-  const canProceedToStep3 = hasExistingAccounts !== null && hasClientInfo !== null
-    ? (hasExistingAccounts || hasClientInfo
-      // User has either active account OR client info already → only basic fields required
-      ? (formData.accountName && formData.currency && formData.accountPurpose)
-      // User has NO active account AND NO client info → all fields required
-      : (formData.accountName && formData.currency && formData.accountPurpose &&
-         formData.country && formData.city && formData.addressLine1 && 
-         formData.idType && formData.idNumber && formData.idIssuingCountry &&
-         formData.idIssueDate && formData.idExpiryDate))
-    : false
-    
+
+  const canProceedToStep3 =
+    hasExistingAccounts !== null && hasClientInfo !== null
+      ? hasExistingAccounts || hasClientInfo
+        ? // User has either active account OR client info already → only basic fields required
+          formData.accountName && formData.currency && formData.accountPurpose
+        : // User has NO active account AND NO client info → all fields required
+          formData.accountName &&
+          formData.currency &&
+          formData.accountPurpose &&
+          formData.country &&
+          formData.city &&
+          formData.addressLine1 &&
+          formData.idType &&
+          formData.idNumber &&
+          formData.idIssuingCountry &&
+          formData.idIssueDate &&
+          formData.idExpiryDate
+      : false
+
   const canSubmit = formData.terms && formData.dataProcessing
 
   useEffect(() => {
     if (createState?.success) {
       setSuccess(true)
       router.refresh()
-      
+
       const timer = setTimeout(() => {
         setSuccess(false)
         setStep(1)
@@ -189,13 +209,13 @@ export default function NewAccountPage() {
   useEffect(() => {
     console.log("[v0] Should show additional fields:", shouldShowAdditionalFields, {
       hasExistingAccounts,
-      hasClientInfo
+      hasClientInfo,
     })
   }, [shouldShowAdditionalFields, hasExistingAccounts, hasClientInfo])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     if (hasExistingAccounts === false && hasClientInfo === false) {
       try {
         const user = AuthService.getCurrentUser()
@@ -220,7 +240,7 @@ export default function NewAccountPage() {
         }
 
         const result = await saveClientAdditionalInfo(additionalInfoData)
-        
+
         if (!result.success) {
           alert(result.error || "Erreur lors de l'enregistrement des informations")
           return
@@ -256,7 +276,9 @@ export default function NewAccountPage() {
               </div>
             </CardHeader>
             <CardContent>
-              <p className="text-green-800 text-sm">Vous recevrez un e-mail dès que le statut de votre compte sera mis à jour.</p>
+              <p className="text-green-800 text-sm">
+                Vous recevrez un e-mail dès que le statut de votre compte sera mis à jour.
+              </p>
             </CardContent>
           </Card>
         </div>
@@ -420,7 +442,7 @@ export default function NewAccountPage() {
                     <User className="w-4 h-4 mr-2" />
                     Informations Personnelles
                   </h3>
-                  
+
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
                     <div className="space-y-1">
                       <Label htmlFor="country" className="text-sm">
@@ -487,10 +509,8 @@ export default function NewAccountPage() {
                     </div>
                   </div>
 
-                  <h4 className="text-sm font-semibold text-primary mb-3 mt-4">
-                    Pièce d'Identité
-                  </h4>
-                  
+                  <h4 className="text-sm font-semibold text-primary mb-3 mt-4">Pièce d'Identité</h4>
+
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
                     <div className="space-y-1">
                       <Label htmlFor="idType" className="text-sm">
@@ -584,9 +604,9 @@ export default function NewAccountPage() {
                       </div>
                       {formData.idFrontImageUrl && (
                         <div className="mt-2">
-                          <img 
-                            src={formData.idFrontImageUrl || "/placeholder.svg"} 
-                            alt="Recto ID" 
+                          <img
+                            src={formData.idFrontImageUrl || "/placeholder.svg"}
+                            alt="Recto ID"
                             className="w-32 h-20 object-cover rounded border"
                           />
                         </div>
@@ -611,9 +631,9 @@ export default function NewAccountPage() {
                       </div>
                       {formData.idBackImageUrl && (
                         <div className="mt-2">
-                          <img 
-                            src={formData.idBackImageUrl || "/placeholder.svg"} 
-                            alt="Verso ID" 
+                          <img
+                            src={formData.idBackImageUrl || "/placeholder.svg"}
+                            alt="Verso ID"
                             className="w-32 h-20 object-cover rounded border"
                           />
                         </div>
