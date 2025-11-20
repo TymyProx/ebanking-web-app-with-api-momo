@@ -115,6 +115,7 @@ export default function StatementsPage() {
   const [filteredTransactions, setFilteredTransactions] = useState<any[]>([])
   const [transactionCount, setTransactionCount] = useState(0)
   const [showDownloadLink, setShowDownloadLink] = useState(false)
+  const [statementReady, setStatementReady] = useState(false)
 
   const [accounts, setAccounts] = useState<Account[]>([])
   const [isLoadingAccounts, setIsLoadingAccounts] = useState(true)
@@ -252,6 +253,11 @@ export default function StatementsPage() {
       return
     }
 
+    setStatementReady(false)
+    setShowDownloadLink(false)
+    setFilteredTransactions([])
+    setTransactionCount(0)
+
     const selectedAccountData = accounts.find((acc) => acc.id === selectedAccount)
     if (!selectedAccountData) return
 
@@ -267,9 +273,6 @@ export default function StatementsPage() {
 
       if (!result.success) {
         alert(`❌ ${result.error || "Impossible de récupérer les transactions"}`)
-        setShowDownloadLink(false)
-        setFilteredTransactions([])
-        setTransactionCount(0)
         return
       }
 
@@ -293,9 +296,6 @@ export default function StatementsPage() {
 
       if (filteredTxns.length === 0) {
         alert("❌ Aucune transaction trouvée pour cette période.")
-        setShowDownloadLink(false)
-        setFilteredTransactions([])
-        setTransactionCount(0)
         return
       }
 
@@ -311,12 +311,10 @@ export default function StatementsPage() {
       setFilteredTransactions(cleanedTransactions)
       setTransactionCount(cleanedTransactions.length)
       setShowDownloadLink(true)
+      setStatementReady(true)
     } catch (error) {
       console.error("[v0] Erreur lors de la récupération des transactions:", error)
       alert("❌ Erreur lors de la récupération des transactions")
-      setShowDownloadLink(false)
-      setFilteredTransactions([])
-      setTransactionCount(0)
     }
   }
 
@@ -394,7 +392,7 @@ export default function StatementsPage() {
         )}
       </div>
 
-      {showDownloadLink && transactionCount > 0 && (
+      {showDownloadLink && statementReady && transactionCount > 0 && (
         <Alert className="border-green-200 bg-green-50">
           <CheckCircle className="h-4 w-4 text-green-600" />
           <AlertDescription className="text-green-800 flex items-center justify-between">
