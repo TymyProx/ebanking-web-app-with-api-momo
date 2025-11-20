@@ -135,6 +135,8 @@ export default function BeneficiariesPage() {
   const formRef = useRef<HTMLFormElement>(null)
   const editFormRef = useRef<HTMLFormElement>(null)
 
+  const [addFormSuccess, setAddFormSuccess] = useState(false)
+
   const [addState, addAction, isAddPending] = useActionState<any, any>(addBeneficiary as any, null as any)
   // ✅ NEW: Streamlined action for OTP-verified beneficiary creation
   const [addAndActivateState, addAndActivateAction, isAddAndActivatePending] = useActionState<any, any>(
@@ -289,10 +291,15 @@ export default function BeneficiariesPage() {
       setShowAddSuccess(true)
 
       if (addAndActivateState?.success) {
+        setAddFormSuccess(true)
         setIsAddDialogOpen(false)
         resetForm()
         setPendingBeneficiaryData(null)
         setOtpReferenceId(null)
+
+        setTimeout(() => {
+          setAddFormSuccess(false)
+        }, 10000)
       }
 
       const timer = setTimeout(() => {
@@ -487,6 +494,9 @@ export default function BeneficiariesPage() {
     setAccountNumberError(null)
     setRibError(null)
     setFormDirty(false)
+    if (formRef.current) {
+      formRef.current.reset()
+    }
   }
 
   const handleRibFieldChange = () => {
@@ -549,7 +559,9 @@ export default function BeneficiariesPage() {
       }
     }
 
-    addAndActivateAction(formData)
+    startTransition(() => {
+      addAndActivateAction(formData)
+    })
   }
 
   const handleEditBeneficiary = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -779,8 +791,7 @@ export default function BeneficiariesPage() {
             </DialogHeader>
 
             <form ref={formRef} onSubmit={handleAddBeneficiary} className="space-y-4">
-              {/* ✅ Show success from streamlined flow */}
-              {addAndActivateState?.success && (
+              {addFormSuccess && (
                 <Alert variant="default" className="border-green-200 bg-green-50">
                   <CheckCircle className="h-4 w-4 text-green-600" />
                   <AlertDescription className="text-green-800">
