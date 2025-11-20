@@ -827,7 +827,7 @@ export default function StatementsPage() {
         continueGeneratingPDF()
       }
 
-      const continueGeneratingPDF = () => {
+        const continueGeneratingPDF = () => {
         yPos = 40
 
         // TITRE DE LA BANQUE (même style que RIB)
@@ -861,9 +861,11 @@ export default function StatementsPage() {
         doc.setFontSize(8)
         doc.setFont("helvetica", "normal")
         doc.text(
-          `Période: ${new Date(startDate).toLocaleDateString("fr-FR")} au ${new Date(endDate).toLocaleDateString("fr-FR")}`,
-          15,
-          yPos,
+        `Période: ${new Date(startDate).toLocaleDateString("fr-FR")} au ${new Date(
+        endDate,
+        ).toLocaleDateString("fr-FR")}`,
+        15,
+        yPos,
         )
 
         yPos += 10
@@ -884,8 +886,8 @@ export default function StatementsPage() {
 
         yPos += 10
 
-        // TABLEAU DES TRANSACTIONS
-        doc.setFontSize(9)
+        // TABLEAU DES TRANSACTIONS (SANS GRILLES)
+        doc.setFontSize(10)
         doc.setFont("helvetica", "bold")
         doc.text(`TRANSACTIONS (${transactions.length})`, 15, yPos)
 
@@ -895,166 +897,118 @@ export default function StatementsPage() {
         const col1Width = 25 // Date Valeur
         const col2Width = 50 // Description
         const col3Width = 35 // Reference
-        const col4Width = 25 // Date Operation (dateEcriture)
+        const col4Width = 30 // Date Operation (dateEcriture)
         const col5Width = 30 // Montant
-        const rowHeight = 8
+        const rowHeight = 9 // un peu plus grand pour laisser respirer
 
-        // Dessiner les bordures et en-têtes
-        doc.setDrawColor(0, 0, 0)
-        doc.setLineWidth(0.3)
-
-        // Ligne supérieure
-        doc.rect(tableStartX, yPos, col1Width + col2Width + col3Width + col4Width + col5Width, rowHeight)
-
-        // Lignes verticales
-        doc.line(tableStartX + col1Width, yPos, tableStartX + col1Width, yPos + rowHeight)
-        doc.line(tableStartX + col1Width + col2Width, yPos, tableStartX + col1Width + col2Width, yPos + rowHeight)
-        doc.line(
-          tableStartX + col1Width + col2Width + col3Width,
-          yPos,
-          tableStartX + col1Width + col2Width + col3Width,
-          yPos + rowHeight,
-        )
-        doc.line(
-          tableStartX + col1Width + col2Width + col3Width + col4Width,
-          yPos,
-          tableStartX + col1Width + col2Width + col3Width + col4Width,
-          yPos + rowHeight,
-        )
-
-        // Texte des en-têtes
-        doc.setFontSize(7)
+        // ─────────────────────────────────────────────
+        // EN-TÊTES SANS CADRE
+        // ─────────────────────────────────────────────
+        doc.setFontSize(9) // entêtes plus grandes
         doc.setFont("helvetica", "bold")
-        doc.text("Date Valeur", tableStartX + 2, yPos + 5)
-        doc.text("Description", tableStartX + col1Width + 2, yPos + 5)
-        doc.text("Référence", tableStartX + col1Width + col2Width + 2, yPos + 5)
-        doc.text("Date Opération", tableStartX + col1Width + col2Width + col3Width + 2, yPos + 5)
-        doc.text("Montant", tableStartX + col1Width + col2Width + col3Width + col4Width + 2, yPos + 5)
+        doc.text("Date Valeur", tableStartX + 2, yPos + 6)
+        doc.text("Description", tableStartX + col1Width + 2, yPos + 6)
+        doc.text("Référence", tableStartX + col1Width + col2Width + 2, yPos + 6)
+        doc.text("Date Opération", tableStartX + col1Width + col2Width + col3Width + 2, yPos + 6)
+        doc.text("Montant", tableStartX + col1Width + col2Width + col3Width + col4Width + 2, yPos + 6)
 
         yPos += rowHeight
 
         doc.setFont("helvetica", "normal")
-        doc.setFontSize(6)
+        doc.setFontSize(8) // données plus grandes aussi
 
-        transactions.forEach((txn, index) => {
-          if (yPos > 260) {
-            doc.addPage()
-            yPos = 30
+        transactions.forEach((txn) => {
+        if (yPos > 260) {
+        doc.addPage()
+        yPos = 30
 
-            // Redessiner les en-têtes sur la nouvelle page
-            doc.rect(tableStartX, yPos, col1Width + col2Width + col3Width + col4Width + col5Width, rowHeight)
-            doc.line(tableStartX + col1Width, yPos, tableStartX + col1Width, yPos + rowHeight)
-            doc.line(tableStartX + col1Width + col2Width, yPos, tableStartX + col1Width + col2Width, yPos + rowHeight)
-            doc.line(
-              tableStartX + col1Width + col2Width + col3Width,
-              yPos,
-              tableStartX + col1Width + col2Width + col3Width,
-              yPos + rowHeight,
-            )
-            doc.line(
-              tableStartX + col1Width + col2Width + col3Width + col4Width,
-              yPos,
-              tableStartX + col1Width + col2Width + col3Width + col4Width,
-              yPos + rowHeight,
-            )
+        // Réécrire les entêtes sur la nouvelle page (toujours sans grilles)
+        doc.setFontSize(9)
+        doc.setFont("helvetica", "bold")
+        doc.text("Date Valeur", tableStartX + 2, yPos + 6)
+        doc.text("Description", tableStartX + col1Width + 2, yPos + 6)
+        doc.text("Référence", tableStartX + col1Width + col2Width + 2, yPos + 6)
+        doc.text("Date Opération", tableStartX + col1Width + col2Width + col3Width + 2, yPos + 6)
+        doc.text("Montant", tableStartX + col1Width + col2Width + col3Width + col4Width + 2, yPos + 6)
 
-            doc.setFont("helvetica", "bold")
-            doc.text("Date Valeur", tableStartX + 2, yPos + 5)
-            doc.text("Description", tableStartX + col1Width + 2, yPos + 5)
-            doc.text("Référence", tableStartX + col1Width + col2Width + 2, yPos + 5)
-            doc.text("Date Opération", tableStartX + col1Width + col2Width + col3Width + 2, yPos + 5)
-            doc.text("Montant", tableStartX + col1Width + col2Width + col3Width + col4Width + 2, yPos + 5)
+        yPos += rowHeight
+        doc.setFont("helvetica", "normal")
+        doc.setFontSize(8)
+        }
 
-            yPos += rowHeight
-            doc.setFont("helvetica", "normal")
-          }
+        // PLUS AUCUN rect() / line() ICI → plus de grilles
+        // Juste le texte :
 
-          // Dessiner les bordures de la ligne
-          doc.rect(tableStartX, yPos, col1Width + col2Width + col3Width + col4Width + col5Width, rowHeight)
-          doc.line(tableStartX + col1Width, yPos, tableStartX + col1Width, yPos + rowHeight)
-          doc.line(tableStartX + col1Width + col2Width, yPos, tableStartX + col1Width + col2Width, yPos + rowHeight)
-          doc.line(
-            tableStartX + col1Width + col2Width + col3Width,
-            yPos,
-            tableStartX + col1Width + col2Width + col3Width,
-            yPos + rowHeight,
-          )
-          doc.line(
-            tableStartX + col1Width + col2Width + col3Width + col4Width,
-            yPos,
-            tableStartX + col1Width + col2Width + col3Width + col4Width,
-            yPos + rowHeight,
-          )
+        // Date Valeur
+        const dateValeur = txn.valueDate ? new Date(txn.valueDate).toLocaleDateString("fr-FR") : "N/A"
+        doc.text(dateValeur, tableStartX + 2, yPos + 6)
 
-          // Date Valeur
-          const dateValeur = txn.valueDate ? new Date(txn.valueDate).toLocaleDateString("fr-FR") : "N/A"
-          doc.text(dateValeur, tableStartX + 2, yPos + 5)
+        // Description (tronquée)
+        const description = (txn.description || "N/A").substring(0, 30)
+        doc.text(description, tableStartX + col1Width + 2, yPos + 6)
 
-          // Description (tronquée)
-          const description = (txn.description || "N/A").substring(0, 25)
-          doc.text(description, tableStartX + col1Width + 2, yPos + 5)
+        // Reference (tronquée)
+        const reference = (txn.referenceOperation || "N/A").substring(0, 20)
+        doc.text(reference, tableStartX + col1Width + col2Width + 2, yPos + 6)
 
-          // Reference (tronquée)
-          const reference = (txn.referenceOperation || "N/A").substring(0, 18)
-          doc.text(reference, tableStartX + col1Width + col2Width + 2, yPos + 5)
+        // Date Operation (dateEcriture)
+        const dateOperation = txn.dateEcriture ? new Date(txn.dateEcriture).toLocaleDateString("fr-FR") : "N/A"
+        doc.text(dateOperation, tableStartX + col1Width + col2Width + col3Width + 2, yPos + 6)
 
-          // Date Operation (dateEcriture)
-          const dateOperation = txn.dateEcriture ? new Date(txn.dateEcriture).toLocaleDateString("fr-FR") : "N/A"
-          doc.text(dateOperation, tableStartX + col1Width + col2Width + col3Width + 2, yPos + 5)
+        // Montant
+        const montant = formatAmount(txn.montantOperation)
+        doc.text(`${montant}`, tableStartX + col1Width + col2Width + col3Width + col4Width + 2, yPos + 6)
 
-          // Montant
-          const montant = formatAmount(txn.montantOperation)
-          doc.text(`${montant}`, tableStartX + col1Width + col2Width + col3Width + col4Width + 2, yPos + 5)
-
-          yPos += rowHeight
+        yPos += rowHeight
         })
 
         yPos += 10
 
-        // PIED DE PAGE STATIQUE (même style que RIB)
+        // PIED DE PAGE STATIQUE (inchangé)
         const addFooter = (pageNum: number, totalPages: number) => {
-          const footerY = pageHeight - 20
+        const footerY = pageHeight - 20
 
-          doc.setDrawColor(150, 150, 150)
-          doc.setLineWidth(0.3)
-          doc.line(15, footerY, pageWidth - 15, footerY)
+        doc.setDrawColor(150, 150, 150)
+        doc.setLineWidth(0.3)
+        doc.line(15, footerY, pageWidth - 15, footerY)
 
-          let footerTextY = footerY + 5
+        let footerTextY = footerY + 5
 
-          doc.setTextColor(...grayText)
-          doc.setFontSize(7)
-          doc.setFont("helvetica", "normal")
+        doc.setTextColor(...grayText)
+        doc.setFontSize(7)
+        doc.setFont("helvetica", "normal")
 
-          const footerLines = [
-            "Banque Nationale de Guinée SA - Agrément par décision N° 06/019/93/CAB/PE 06/06/1993",
-            "Capital : 60.000.000.000 GNF",
-            "Boulevard Tidiani Kaba - Quartier Boulbinet/Almamya, Kaloum, Conakry, Guinée",
-            "Tél: +224 - 622 454 049 - B.P 1781 - mail: contact@bng.gn",
-          ]
+        const footerLines = [
+        "Banque Nationale de Guinée SA - Agrément par décision N° 06/019/93/CAB/PE 06/06/1993",
+        "Capital : 60.000.000.000 GNF",
+        "Boulevard Tidiani Kaba - Quartier Boulbinet/Almamya, Kaloum, Conakry, Guinée",
+        "Tél: +224 - 622 454 049 - B.P 1781 - mail: contact@bng.gn",
+        ]
 
-          footerLines.forEach((line) => {
-            doc.text(line, 15, footerTextY)
-            footerTextY += 3
-          })
+        footerLines.forEach((line) => {
+        doc.text(line, 15, footerTextY)
+        footerTextY += 3
+        })
 
-          // Numéro de page
-          doc.setFontSize(7)
-          doc.text(`Page ${pageNum} sur ${totalPages}`, pageWidth - 35, footerY + 5)
+        // Numéro de page
+        doc.setFontSize(7)
+        doc.text(`Page ${pageNum} sur ${totalPages}`, pageWidth - 35, footerY + 5)
         }
 
-        // Ajouter les pieds de page sur toutes les pages
         const pageCount = doc.internal.getNumberOfPages()
         for (let i = 1; i <= pageCount; i++) {
-          doc.setPage(i)
-          addFooter(i, pageCount)
+        doc.setPage(i)
+        addFooter(i, pageCount)
         }
 
-        // Téléchargement
-        const fileName = `Releve_Compte_${account.number.replace(/-/g, "_")}_${new Date().toISOString().split("T")[0]}.pdf`
+        const fileName = `Releve_Compte_${account.number.replace(/-/g, "_")}_${
+        new Date().toISOString().split("T")[0]
+        }.pdf`
         doc.save(fileName)
 
         console.log("[v0] PDF généré et téléchargé:", fileName)
-      }
+        }
+
 
       // Si l'image ne se charge pas après 2 secondes, générer sans logo
       setTimeout(() => {
