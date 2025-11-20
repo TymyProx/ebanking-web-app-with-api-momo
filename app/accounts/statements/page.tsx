@@ -720,7 +720,6 @@ export default function StatementsPage() {
     const selectedAccountData = accounts.find((acc) => acc.id === selectedAccount)
     if (!selectedAccountData) return
 
-    // Filtrer les transactions par période
     const filteredTransactions = transactions.filter((txn) => {
       const txnDate = new Date(txn.valueDate || txn.date)
       const start = new Date(startDate)
@@ -767,19 +766,18 @@ export default function StatementsPage() {
       doc.text("Transactions", 20, yPos)
       yPos += 15
 
-      // En-têtes du tableau
+      // En-têtes du tableau - utiliser les champs demandés
       doc.setFontSize(9)
       doc.setTextColor(60, 60, 60)
       doc.text("Date", 20, yPos)
-      doc.text("Description", 50, yPos)
-      doc.text("Montant", 140, yPos)
-      doc.text("Type", 170, yPos)
+      doc.text("Référence", 45, yPos)
+      doc.text("Description", 85, yPos)
+      doc.text("Montant", 155, yPos)
       yPos += 10
 
       // Ligne de séparation
       doc.line(20, yPos - 5, 190, yPos - 5)
 
-      // Transactions
       filteredTransactions.forEach((txn, index) => {
         if (yPos > 270) {
           doc.addPage()
@@ -791,16 +789,19 @@ export default function StatementsPage() {
         const displayAmount = isCredit ? Math.abs(amount) : -Math.abs(amount)
 
         doc.setTextColor(40, 40, 40)
+        // valueDate
         doc.text(new Date(txn.valueDate || txn.date).toLocaleDateString("fr-FR"), 20, yPos)
-        doc.text((txn.description || "Transaction").substring(0, 25), 50, yPos)
+        // referenceOperation
+        doc.text((txn.reference || txn.txnId || "N/A").substring(0, 12), 45, yPos)
+        // description
+        doc.text((txn.description || "Transaction").substring(0, 30), 85, yPos)
+        // montantOperation
         doc.setTextColor(isCredit ? 0 : 200, isCredit ? 150 : 0, 0)
         doc.text(
-          `${isCredit ? "+" : "-"}${formatAmount(Math.abs(displayAmount), selectedAccountData.currency)} ${selectedAccountData.currency}`,
-          140,
+          `${isCredit ? "+" : "-"}${formatAmount(Math.abs(displayAmount), selectedAccountData.currency)}`,
+          155,
           yPos,
         )
-        doc.setTextColor(40, 40, 40)
-        doc.text(isCredit ? "CRÉDIT" : "DÉBIT", 170, yPos)
         yPos += 8
       })
 
@@ -834,7 +835,6 @@ export default function StatementsPage() {
     const selectedAccountData = accounts.find((acc) => acc.id === selectedAccount)
     if (!selectedAccountData) return
 
-    // Filtrer les transactions par période
     const filteredTransactions = transactions.filter((txn) => {
       const txnDate = new Date(txn.valueDate || txn.date)
       const start = new Date(startDate)
@@ -853,20 +853,21 @@ export default function StatementsPage() {
       csvContent += `Période: ${new Date(startDate).toLocaleDateString("fr-FR")} au ${new Date(endDate).toLocaleDateString("fr-FR")}\n`
       csvContent += `Solde: ${formatAmount(selectedAccountData.balance, selectedAccountData.currency)} ${selectedAccountData.currency}\n\n`
 
-      // En-têtes des colonnes
-      csvContent += "Date,Description,Montant,Type,Référence\n"
+      csvContent += "valueDate,referenceOperation,description,montantOperation\n"
 
-      // Données des transactions
       filteredTransactions.forEach((txn) => {
         const amount = Number.parseFloat(txn.amount || "0")
         const isCredit = txn.creditAccount === selectedAccount
         const displayAmount = isCredit ? Math.abs(amount) : -Math.abs(amount)
 
+        // valueDate
         csvContent += `${new Date(txn.valueDate || txn.date).toLocaleDateString("fr-FR")},`
+        // referenceOperation
+        csvContent += `${txn.reference || txn.txnId || "N/A"},`
+        // description
         csvContent += `"${(txn.description || "Transaction").replace(/"/g, '""')}",`
-        csvContent += `"${isCredit ? "+" : "-"}${formatAmount(Math.abs(displayAmount), selectedAccountData.currency)} ${selectedAccountData.currency}",`
-        csvContent += `${isCredit ? "CRÉDIT" : "DÉBIT"},`
-        csvContent += `${txn.txnId || txn.id}\n`
+        // montantOperation
+        csvContent += `"${isCredit ? "+" : "-"}${formatAmount(Math.abs(displayAmount), selectedAccountData.currency)} ${selectedAccountData.currency}"\n`
       })
 
       // Téléchargement
@@ -891,7 +892,6 @@ export default function StatementsPage() {
     const selectedAccountData = accounts.find((acc) => acc.id === selectedAccount)
     if (!selectedAccountData) return
 
-    // Filtrer les transactions par période
     const filteredTransactions = transactions.filter((txn) => {
       const txnDate = new Date(txn.valueDate || txn.date)
       const start = new Date(startDate)
@@ -914,11 +914,10 @@ export default function StatementsPage() {
       const isCredit = txn.creditAccount === selectedAccount
       const displayAmount = isCredit ? Math.abs(amount) : -Math.abs(amount)
 
-      content += `Date: ${new Date(txn.valueDate || txn.date).toLocaleDateString("fr-FR")}\n`
+      content += `Date (valueDate): ${new Date(txn.valueDate || txn.date).toLocaleDateString("fr-FR")}\n`
+      content += `Référence (referenceOperation): ${txn.reference || txn.txnId || "N/A"}\n`
       content += `Description: ${txn.description || "Transaction"}\n`
-      content += `Montant: ${isCredit ? "+" : "-"}${formatAmount(Math.abs(displayAmount), selectedAccountData.currency)} ${selectedAccountData.currency}\n`
-      content += `Type: ${isCredit ? "CRÉDIT" : "DÉBIT"}\n`
-      content += `Référence: ${txn.txnId || txn.id}\n`
+      content += `Montant (montantOperation): ${isCredit ? "+" : "-"}${formatAmount(Math.abs(displayAmount), selectedAccountData.currency)} ${selectedAccountData.currency}\n`
       content += `---\n\n`
     })
 
