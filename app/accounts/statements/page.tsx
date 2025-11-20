@@ -283,6 +283,15 @@ export default function StatementsPage() {
       totalTransactions: transactions.length,
     })
 
+    const selectedAccountData = accounts.find((acc) => acc.id === selectedAccount)
+    const accountNumber = selectedAccountData?.number
+
+    console.log("[v0] === GÉNÉRATION DU RELEVÉ ===")
+    console.log("[v0] NumCompte utilisé pour filtrer:", accountNumber)
+    console.log("[v0] Date début:", startDate)
+    console.log("[v0] Date fin:", endDate)
+    console.log("[v0] Total transactions disponibles:", transactions.length)
+
     const filteredTransactions = transactions.filter((txn) => {
       if (!txn.valueDate) {
         console.log("[v0] Transaction sans valueDate ignorée:", txn)
@@ -296,10 +305,11 @@ export default function StatementsPage() {
       const matches = txnDate >= start && txnDate <= end
 
       if (matches) {
-        console.log("[v0] Transaction incluse dans relevé:", {
+        console.log("[v0] ✅ Transaction incluse dans le relevé:", {
           reference: txn.referenceOperation,
           valueDate: txn.valueDate,
           montant: txn.montantOperation,
+          description: txn.description,
         })
       }
 
@@ -307,6 +317,7 @@ export default function StatementsPage() {
     })
 
     console.log("[v0] Transactions après filtre de dates:", filteredTransactions.length)
+    console.log("[v0] === FIN DEBUG ===")
 
     const formData = new FormData()
     formData.append("accountId", selectedAccount)
