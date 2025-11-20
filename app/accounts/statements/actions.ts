@@ -1,7 +1,7 @@
 "use server"
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0"
 import { z } from "zod"
-
+import { cookies } from "next/headers"
 const API_BASE_URL = process.env.API_BASE_URL
 const TENANT_ID = process.env.TENANT_ID
 
@@ -391,6 +391,8 @@ async function getStatementMetadata(statementId: string) {
 }
 
 export async function getTransactionsByNumCompte(numCompte: string) {
+   const cookieToken = (await cookies()).get("token")?.value
+    const usertoken = cookieToken
   try {
     const url = `${API_BASE_URL}/tenant/${TENANT_ID}/transactions`
 
@@ -401,6 +403,7 @@ export async function getTransactionsByNumCompte(numCompte: string) {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
+         Authorization: `Bearer ${usertoken}`,
       },
       cache: "no-store",
     })
