@@ -1,4 +1,4 @@
-import type { Config } from "tailwindcss";
+import type { Config } from "tailwindcss"
 
 const config: Config = {
   darkMode: ["class"],
@@ -11,60 +11,55 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        background: "hsl(50, 40%, 98%)", // jaune très clair (presque blanc sable)
-        foreground: "hsl(140, 25%, 20%)", // vert profond pour contraste
-
+        border: "hsl(var(--border))",
+        input: "hsl(var(--input))",
+        ring: "hsl(var(--ring))",
+        background: "hsl(var(--background))",
+        foreground: "hsl(var(--foreground))",
         primary: {
-          DEFAULT: "hsl(140, 40%, 40%)", // vert doux
-          foreground: "hsl(50, 40%, 98%)", // texte clair
+          DEFAULT: "hsl(var(--primary))",
+          foreground: "hsl(var(--primary-foreground))",
         },
         secondary: {
-          DEFAULT: "hsl(50, 80%, 65%)", // jaune pastel
-          foreground: "hsl(140, 25%, 20%)",
-        },
-        accent: {
-          DEFAULT: "hsl(140, 35%, 70%)", // vert menthe clair
-          foreground: "hsl(140, 25%, 15%)",
-        },
-        muted: {
-          DEFAULT: "hsl(50, 25%, 90%)", // jaune grisé
-          foreground: "hsl(140, 10%, 35%)",
+          DEFAULT: "hsl(var(--secondary))",
+          foreground: "hsl(var(--secondary-foreground))",
         },
         destructive: {
-          DEFAULT: "hsl(0, 70%, 50%)", // rouge classique si besoin
-          foreground: "hsl(0, 0%, 98%)",
+          DEFAULT: "hsl(var(--destructive))",
+          foreground: "hsl(var(--destructive-foreground))",
         },
-
-        border: "hsl(140, 20%, 85%)",
-        input: "hsl(50, 25%, 92%)",
-        ring: "hsl(140, 40%, 50%)",
-
-        card: {
-          DEFAULT: "hsl(50, 40%, 97%)",
-          foreground: "hsl(140, 25%, 20%)",
+        muted: {
+          DEFAULT: "hsl(var(--muted))",
+          foreground: "hsl(var(--muted-foreground))",
+        },
+        accent: {
+          DEFAULT: "hsl(var(--accent))",
+          foreground: "hsl(var(--accent-foreground))",
         },
         popover: {
-          DEFAULT: "hsl(50, 40%, 97%)",
-          foreground: "hsl(140, 25%, 20%)",
+          DEFAULT: "hsl(var(--popover))",
+          foreground: "hsl(var(--popover-foreground))",
         },
-
-        chart: {
-          1: "hsl(140, 40%, 40%)", // vert
-          2: "hsl(50, 80%, 55%)", // jaune doré
-          3: "hsl(140, 30%, 55%)", // vert clair
-          4: "hsl(50, 60%, 70%)", // jaune pâle
-          5: "hsl(140, 20%, 25%)", // vert profond
+        card: {
+          DEFAULT: "hsl(var(--card))",
+          foreground: "hsl(var(--card-foreground))",
         },
-
         sidebar: {
-          DEFAULT: "hsl(140, 15%, 95%)",
-          foreground: "hsl(140, 25%, 20%)",
-          primary: "hsl(140, 40%, 40%)",
-          "primary-foreground": "hsl(50, 40%, 98%)",
-          accent: "hsl(50, 80%, 70%)",
-          "accent-foreground": "hsl(140, 25%, 20%)",
-          border: "hsl(140, 20%, 85%)",
-          ring: "hsl(140, 40%, 45%)",
+          DEFAULT: "hsl(var(--sidebar-background))",
+          foreground: "hsl(var(--sidebar-foreground))",
+          primary: "hsl(var(--sidebar-primary))",
+          "primary-foreground": "hsl(var(--sidebar-primary-foreground))",
+          accent: "hsl(var(--sidebar-accent))",
+          "accent-foreground": "hsl(var(--sidebar-accent-foreground))",
+          border: "hsl(var(--sidebar-border))",
+          ring: "hsl(var(--sidebar-ring))",
+        },
+        chart: {
+          "1": "hsl(var(--chart-1))",
+          "2": "hsl(var(--chart-2))",
+          "3": "hsl(var(--chart-3))",
+          "4": "hsl(var(--chart-4))",
+          "5": "hsl(var(--chart-5))",
         },
       },
       borderRadius: {
@@ -89,5 +84,5 @@ const config: Config = {
     },
   },
   plugins: [require("tailwindcss-animate")],
-};
-export default config;
+}
+export default config
