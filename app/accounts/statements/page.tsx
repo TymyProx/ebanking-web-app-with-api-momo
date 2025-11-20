@@ -5,21 +5,18 @@ import { useSearchParams } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Tabs, TabsContent } from "@/components/ui/tabs"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import {
   Download,
-  FileText,
   Calendar,
   CreditCard,
   CheckCircle,
   AlertCircle,
   Clock,
-  FileSpreadsheet,
-  History,
   Mail,
   Wallet,
   PiggyBank,
@@ -49,17 +46,6 @@ interface StatementRequest {
   language: "fr" | "en"
 }
 
-interface StatementHistory {
-  id: string
-  accountName: string
-  period: string
-  format: string
-  generatedAt: string
-  downloadCount: number
-  fileSize: string
-  status: "Généré" | "Expiré" | "En cours"
-}
-
 const predefinedPeriods = [
   {
     value: "lastMonth",
@@ -74,29 +60,6 @@ const predefinedPeriods = [
     endDate: new Date().toISOString().split("T")[0],
   },
   { value: "custom", label: "Personnalisé" },
-]
-
-const statementHistory = [
-  {
-    id: "1",
-    accountName: "Compte Courant",
-    period: "01/01/2023 - 31/01/2023",
-    format: "PDF",
-    generatedAt: "01/02/2023",
-    downloadCount: 5,
-    fileSize: "2MB",
-    status: "Généré",
-  },
-  {
-    id: "2",
-    accountName: "Compte Épargne",
-    period: "01/02/2023 - 28/02/2023",
-    format: "Excel",
-    generatedAt: "01/03/2023",
-    downloadCount: 3,
-    fileSize: "1.5MB",
-    status: "Expiré",
-  },
 ]
 
 export default function StatementsPage() {
@@ -484,11 +447,6 @@ export default function StatementsPage() {
       )}
 
       <Tabs defaultValue="generate" className="space-y-3">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="generate">Générer un relevé</TabsTrigger>
-          <TabsTrigger value="history">Historique des relevés</TabsTrigger>
-        </TabsList>
-
         <TabsContent value="generate" className="space-y-3">
           {/* Sélection du compte */}
           <Card>
@@ -695,7 +653,7 @@ export default function StatementsPage() {
                   ) : (
                     <>
                       <Download className="w-4 h-4 mr-2" />
-                     Demander relevé
+                      Demander relevé
                     </>
                   )}
                 </Button>
@@ -739,73 +697,6 @@ export default function StatementsPage() {
                     Veuillez sélectionner un compte et une période valide pour continuer.
                   </AlertDescription>
                 </Alert>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="history" className="space-y-3">
-          <Card>
-            <CardHeader className="py-2">
-              <CardTitle className="flex items-center text-base">
-                <History className="w-4 h-4 mr-2" />
-                Historique des relevés générés
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pt-2 pb-3">
-              {statementHistory.length === 0 ? (
-                <div className="text-center py-4">
-                  <FileText className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                  <p className="text-gray-500 text-sm">Aucun relevé généré récemment</p>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {statementHistory.map((statement) => (
-                    <div
-                      key={statement.id}
-                      className="flex items-center justify-between p-2 border rounded-lg hover:bg-gray-50"
-                    >
-                      <div className="flex items-center space-x-2">
-                        <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                          {statement.format === "PDF" ? (
-                            <FileText className="w-4 h-4 text-red-600" />
-                          ) : (
-                            <FileSpreadsheet className="w-4 h-4 text-green-600" />
-                          )}
-                        </div>
-                        <div>
-                          <p className="font-medium text-sm">{statement.accountName}</p>
-                          <p className="text-xs text-gray-500">{statement.period}</p>
-                          <p className="text-xs text-gray-400">
-                            Généré le {statement.generatedAt} • {statement.fileSize}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Badge
-                          variant={
-                            statement.status === "Généré"
-                              ? "default"
-                              : statement.status === "Expiré"
-                                ? "destructive"
-                                : "secondary"
-                          }
-                          className="text-xs"
-                        >
-                          {statement.status}
-                        </Badge>
-                        <div className="text-right text-xs">
-                          <p className="text-gray-600">{statement.downloadCount} téléchargements</p>
-                        </div>
-                        {statement.status === "Généré" && (
-                          <Button size="sm" variant="outline" className="h-7 w-7 p-0 bg-transparent">
-                            <Download className="w-3 h-3" />
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
               )}
             </CardContent>
           </Card>
