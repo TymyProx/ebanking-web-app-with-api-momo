@@ -292,7 +292,6 @@ export default function BeneficiariesPage() {
 
       if (addAndActivateState?.success) {
         setAddFormSuccess(true)
-        setIsAddDialogOpen(false)
         resetForm()
         setPendingBeneficiaryData(null)
         setOtpReferenceId(null)
@@ -609,6 +608,9 @@ export default function BeneficiariesPage() {
     } else {
       const bankValue = selectedBank
       formData.set("bank", bankValue)
+      if (bankValue) {
+        formData.set("bankname", bankValue)
+      }
     }
 
     if (selectedType === "BNG-CONFRERE" && selectedBankCode) {
