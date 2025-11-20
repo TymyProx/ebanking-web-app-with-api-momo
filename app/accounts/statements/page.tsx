@@ -201,12 +201,7 @@ export default function StatementsPage() {
           const accountNumber = selectedAccountData?.number
 
           const accountTransactions = transactionsData.data
-            .filter(
-              (txn: any) =>
-                txn.numCompte === accountNumber ||
-                txn.creditAccount === accountNumber ||
-                txn.debitAccount === accountNumber,
-            )
+            .filter((txn: any) => txn.numCompte === accountNumber)
             .slice(0, 200) // Limit to 200 most recent transactions
           setTransactions(accountTransactions)
 
@@ -252,11 +247,12 @@ export default function StatementsPage() {
       return
     }
 
-    // Filtrer les transactions par période
     const filteredTransactions = transactions.filter((txn) => {
-      const txnDate = new Date(txn.valueDate || txn.date)
+      if (!txn.valueDate) return false
+      const txnDate = new Date(txn.valueDate)
       const start = new Date(startDate)
       const end = new Date(endDate)
+      end.setHours(23, 59, 59, 999) // Include the entire end date
       return txnDate >= start && txnDate <= end
     })
 
@@ -729,9 +725,11 @@ export default function StatementsPage() {
     if (!selectedAccountData) return
 
     const filteredTransactions = transactions.filter((txn) => {
-      const txnDate = new Date(txn.valueDate || txn.date)
+      if (!txn.valueDate) return false
+      const txnDate = new Date(txn.valueDate)
       const start = new Date(startDate)
       const end = new Date(endDate)
+      end.setHours(23, 59, 59, 999)
       return txnDate >= start && txnDate <= end
     })
 
@@ -792,24 +790,20 @@ export default function StatementsPage() {
           yPos = 30
         }
 
-        const amount = Number.parseFloat(txn.amount || "0")
-        const isCredit = txn.creditAccount === selectedAccount
-        const displayAmount = isCredit ? Math.abs(amount) : -Math.abs(amount)
+        const amount = Number.parseFloat(txn.montantOperation || txn.amount || "0")
+        const isCredit = amount > 0
+        const displayAmount = Math.abs(amount)
 
         doc.setTextColor(40, 40, 40)
         // valueDate
-        doc.text(new Date(txn.valueDate || txn.date).toLocaleDateString("fr-FR"), 20, yPos)
+        doc.text(new Date(txn.valueDate).toLocaleDateString("fr-FR"), 20, yPos)
         // referenceOperation
-        doc.text((txn.reference || txn.txnId || "N/A").substring(0, 12), 45, yPos)
+        doc.text((txn.referenceOperation || txn.reference || txn.txnId || "N/A").substring(0, 12), 45, yPos)
         // description
         doc.text((txn.description || "Transaction").substring(0, 30), 85, yPos)
         // montantOperation
         doc.setTextColor(isCredit ? 0 : 200, isCredit ? 150 : 0, 0)
-        doc.text(
-          `${isCredit ? "+" : "-"}${formatAmount(Math.abs(displayAmount), selectedAccountData.currency)}`,
-          155,
-          yPos,
-        )
+        doc.text(`${isCredit ? "+" : ""}${formatAmount(displayAmount, selectedAccountData.currency)}`, 155, yPos)
         yPos += 8
       })
 
@@ -844,9 +838,11 @@ export default function StatementsPage() {
     if (!selectedAccountData) return
 
     const filteredTransactions = transactions.filter((txn) => {
-      const txnDate = new Date(txn.valueDate || txn.date)
+      if (!txn.valueDate) return false
+      const txnDate = new Date(txn.valueDate)
       const start = new Date(startDate)
       const end = new Date(endDate)
+      end.setHours(23, 59, 59, 999)
       return txnDate >= start && txnDate <= end
     })
 
@@ -864,18 +860,18 @@ export default function StatementsPage() {
       csvContent += "valueDate,referenceOperation,description,montantOperation\n"
 
       filteredTransactions.forEach((txn) => {
-        const amount = Number.parseFloat(txn.amount || "0")
-        const isCredit = txn.creditAccount === selectedAccount
-        const displayAmount = isCredit ? Math.abs(amount) : -Math.abs(amount)
+        const amount = Number.parseFloat(txn.montantOperation || txn.amount || "0")
+        const isCredit = amount > 0
+        const displayAmount = Math.abs(amount)
 
         // valueDate
-        csvContent += `${new Date(txn.valueDate || txn.date).toLocaleDateString("fr-FR")},`
+        csvContent += `${new Date(txn.valueDate).toLocaleDateString("fr-FR")},`
         // referenceOperation
-        csvContent += `${txn.reference || txn.txnId || "N/A"},`
+        csvContent += `${txn.referenceOperation || txn.reference || txn.txnId || "N/A"},`
         // description
         csvContent += `"${(txn.description || "Transaction").replace(/"/g, '""')}",`
         // montantOperation
-        csvContent += `"${isCredit ? "+" : "-"}${formatAmount(Math.abs(displayAmount), selectedAccountData.currency)} ${selectedAccountData.currency}"\n`
+        csvContent += `"${isCredit ? "+" : ""}${formatAmount(displayAmount, selectedAccountData.currency)} ${selectedAccountData.currency}"\n`
       })
 
       // Téléchargement
@@ -901,9 +897,11 @@ export default function StatementsPage() {
     if (!selectedAccountData) return
 
     const filteredTransactions = transactions.filter((txn) => {
-      const txnDate = new Date(txn.valueDate || txn.date)
+      if (!txn.valueDate) return false
+      const txnDate = new Date(txn.valueDate)
       const start = new Date(startDate)
       const end = new Date(endDate)
+      end.setHours(23, 59, 59, 999)
       return txnDate >= start && txnDate <= end
     })
 
@@ -918,14 +916,14 @@ export default function StatementsPage() {
     content += `=============\n\n`
 
     filteredTransactions.forEach((txn) => {
-      const amount = Number.parseFloat(txn.amount || "0")
-      const isCredit = txn.creditAccount === selectedAccount
-      const displayAmount = isCredit ? Math.abs(amount) : -Math.abs(amount)
+      const amount = Number.parseFloat(txn.montantOperation || txn.amount || "0")
+      const isCredit = amount > 0
+      const displayAmount = Math.abs(amount)
 
-      content += `Date (valueDate): ${new Date(txn.valueDate || txn.date).toLocaleDateString("fr-FR")}\n`
-      content += `Référence (referenceOperation): ${txn.reference || txn.txnId || "N/A"}\n`
+      content += `Date (valueDate): ${new Date(txn.valueDate).toLocaleDateString("fr-FR")}\n`
+      content += `Référence (referenceOperation): ${txn.referenceOperation || txn.reference || txn.txnId || "N/A"}\n`
       content += `Description: ${txn.description || "Transaction"}\n`
-      content += `Montant (montantOperation): ${isCredit ? "+" : "-"}${formatAmount(Math.abs(displayAmount), selectedAccountData.currency)} ${selectedAccountData.currency}\n`
+      content += `Montant (montantOperation): ${isCredit ? "+" : ""}${formatAmount(displayAmount, selectedAccountData.currency)} ${selectedAccountData.currency}\n`
       content += `---\n\n`
     })
 
