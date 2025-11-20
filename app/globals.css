@@ -27,7 +27,8 @@
     --accent-foreground: 142 45% 20%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
-    --border: 140 25% 82%;
+    /* Made borders much more visible with darker, more contrasted green */
+    --border: 140 35% 65%;
     --input: 140 25% 90%;
     --ring: 142 45% 35%;
     --chart-1: 142 45% 35%;
@@ -42,7 +43,8 @@
     --sidebar-primary-foreground: 142 45% 20%;
     --sidebar-accent: 142 45% 35%;
     --sidebar-accent-foreground: 0 0% 100%;
-    --sidebar-border: 140 25% 82%;
+    /* Made sidebar border more visible */
+    --sidebar-border: 140 35% 65%;
     --sidebar-ring: 142 45% 35%;
   }
   .dark {
@@ -63,7 +65,8 @@
     --accent-foreground: 142 45% 20%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
-    --border: 142 28% 25%;
+    /* Made dark mode borders more visible with lighter green */
+    --border: 142 35% 35%;
     --input: 142 28% 22%;
     --ring: 142 45% 35%;
     --chart-1: 142 45% 35%;
@@ -77,18 +80,22 @@
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 142 28% 22%;
     --sidebar-accent-foreground: 140 20% 92%;
-    --sidebar-border: 142 28% 25%;
+    /* Made dark sidebar border more visible */
+    --sidebar-border: 142 35% 35%;
     --sidebar-ring: 142 45% 35%;
   }
 }
 
 @layer base {
   * {
-    @apply border-border;
+    /* Added thicker borders for better visibility */
+    @apply border-border border-2;
   }
   body {
     @apply bg-background text-foreground antialiased;
     font-family: var(--font-body);
+    /* Remove border from body */
+    border: none;
   }
 
   /* Added font configuration for headings using custom variables */
