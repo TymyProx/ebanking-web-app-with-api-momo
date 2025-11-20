@@ -116,7 +116,7 @@ export default function StatementsPage() {
 
   const [accounts, setAccounts] = useState<Account[]>([])
   const [isLoadingAccounts, setIsLoadingAccounts] = useState(true)
-  const [transactions, setTransactions] = useState<any[]>([])
+  const [transactions, setTransactions] = useState<any[]>([]) // Kept for potential future use, but not used in the new generation logic
 
   // États pour les actions serveur
   const [generateState, generateAction, isGenerating] = useActionState(generateStatement, null)
@@ -171,25 +171,6 @@ export default function StatementsPage() {
   }, [])
 
   useEffect(() => {
-    if (!selectedAccount) return
-
-    // Try to load cached transactions immediately
-    const cacheKey = `transactions_${selectedAccount}`
-    const cached = sessionStorage.getItem(cacheKey)
-    if (cached) {
-      try {
-        const cachedData = JSON.parse(cached)
-        if (Date.now() - cachedData.timestamp < 60000) {
-          // Cache valid for 60 seconds
-          setTransactions(cachedData.transactions)
-        }
-      } catch (e) {
-        // Invalid cache, ignore
-      }
-    }
-  }, [selectedAccount])
-
-  useEffect(() => {
     const loadTransactions = async () => {
       if (!selectedAccount) return
 
@@ -197,41 +178,9 @@ export default function StatementsPage() {
         const transactionsData = await getTransactions()
 
         if (transactionsData.data && Array.isArray(transactionsData.data)) {
-          const selectedAccountData = accounts.find((acc) => acc.id === selectedAccount)
-          const accountNumber = selectedAccountData?.number
-
-          console.log("[v0] Compte sélectionné pour filtrage:", {
-            id: selectedAccount,
-            name: selectedAccountData?.name,
-            number: accountNumber,
-          })
-
-          console.log("[v0] Total transactions reçues de l'API:", transactionsData.data.length)
-
-          if (transactionsData.data.length > 0) {
-            console.log("[v0] Exemple de transaction (première):", transactionsData.data[0])
-          }
-
           const accountTransactions = transactionsData.data
-            .filter((txn: any) => {
-              // Check if numCompte matches the account number
-              const matches = txn.numCompte === accountNumber
-
-              if (matches) {
-                console.log("[v0] Transaction trouvée pour ce compte:", {
-                  numCompte: txn.numCompte,
-                  reference: txn.referenceOperation,
-                  valueDate: txn.valueDate,
-                  montant: txn.montantOperation,
-                  description: txn.description,
-                })
-              }
-
-              return matches
-            })
-            .slice(0, 200)
-
-          console.log("[v0] Transactions filtrées par numCompte:", accountTransactions.length)
+            .filter((txn: any) => txn.accountId === selectedAccount || txn.creditAccount === selectedAccount)
+            .slice(0, 200) // Limit to 200 most recent transactions
           setTransactions(accountTransactions)
 
           const cacheKey = `transactions_${selectedAccount}`
@@ -244,13 +193,13 @@ export default function StatementsPage() {
           )
         }
       } catch (error) {
-        console.error("[v0] Erreur chargement transactions:", error)
+        // Removed console.error for performance
         setTransactions([])
       }
     }
 
     loadTransactions()
-  }, [selectedAccount, accounts])
+  }, [selectedAccount])
 
   // Pré-sélectionner le compte si fourni dans l'URL
   useEffect(() => {
@@ -276,61 +225,93 @@ export default function StatementsPage() {
       return
     }
 
-    console.log("[v0] Génération relevé - début:", {
-      compte: selectedAccount,
-      startDate,
-      endDate,
-      totalTransactions: transactions.length,
-    })
-
     const selectedAccountData = accounts.find((acc) => acc.id === selectedAccount)
-    const accountNumber = selectedAccountData?.number
+    if (!selectedAccountData) return
+
+    const accountNumber = selectedAccountData.number
 
     console.log("[v0] === GÉNÉRATION DU RELEVÉ ===")
-    console.log("[v0] NumCompte utilisé pour filtrer:", accountNumber)
+    console.log("[v0] Numéro de compte (numCompte):", accountNumber)
     console.log("[v0] Date début:", startDate)
     console.log("[v0] Date fin:", endDate)
-    console.log("[v0] Total transactions disponibles:", transactions.length)
 
-    const filteredTransactions = transactions.filter((txn) => {
-      if (!txn.valueDate) {
-        console.log("[v0] Transaction sans valueDate ignorée:", txn)
-        return false
-      }
-      const txnDate = new Date(txn.valueDate)
-      const start = new Date(startDate)
-      const end = new Date(endDate)
-      end.setHours(23, 59, 59, 999) // Include the entire end date
+    // Fetch transactions directly from API
+    try {
+      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || ""
+      const TENANT_ID = process.env.NEXT_PUBLIC_TENANT_ID || ""
 
-      const matches = txnDate >= start && txnDate <= end
+      console.log("[v0] Appel API:", `${API_BASE_URL}/api/tenant/${TENANT_ID}/transactions`)
 
-      if (matches) {
-        console.log("[v0] ✅ Transaction incluse dans le relevé:", {
-          reference: txn.referenceOperation,
-          valueDate: txn.valueDate,
-          montant: txn.montantOperation,
-          description: txn.description,
-        })
+      const response = await fetch(`${API_BASE_URL}/api/tenant/${TENANT_ID}/transactions`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      })
+
+      if (!response.ok) {
+        console.error("[v0] Erreur API:", response.status, response.statusText)
+        return
       }
 
-      return matches
-    })
+      const data = await response.json()
+      let allTransactions = []
 
-    console.log("[v0] Transactions après filtre de dates:", filteredTransactions.length)
-    console.log("[v0] === FIN DEBUG ===")
+      if (Array.isArray(data.rows)) {
+        allTransactions = data.rows
+      } else if (Array.isArray(data)) {
+        allTransactions = data
+      } else if (data.data) {
+        allTransactions = Array.isArray(data.data) ? data.data : [data.data]
+      }
 
-    const formData = new FormData()
-    formData.append("accountId", selectedAccount)
-    formData.append("startDate", startDate)
-    formData.append("endDate", endDate)
-    formData.append("format", format)
-    formData.append("includeImages", includeImages.toString())
-    formData.append("language", language)
-    formData.append("transactions", JSON.stringify(filteredTransactions))
+      console.log("[v0] Nombre total de transactions reçues:", allTransactions.length)
 
-    startTransition(() => {
-      generateAction(formData)
-    })
+      // Filter by numCompte only
+      const transactionsByAccount = allTransactions.filter((txn: any) => {
+        return txn.numCompte === accountNumber
+      })
+
+      console.log("[v0] Transactions filtrées par numCompte:", transactionsByAccount.length)
+
+      // Filter by valueDate
+      const filteredTransactions = transactionsByAccount.filter((txn: any) => {
+        if (!txn.valueDate) return false
+        const txnDate = new Date(txn.valueDate)
+        const start = new Date(startDate)
+        const end = new Date(endDate)
+        return txnDate >= start && txnDate <= end
+      })
+
+      console.log("[v0] Transactions après filtre par valueDate:", filteredTransactions.length)
+
+      if (filteredTransactions.length === 0) {
+        alert("❌ Aucune transaction trouvée pour cette période.")
+        return
+      }
+
+      // Extract only the 4 required fields
+      const cleanedTransactions = filteredTransactions.map((txn: any) => ({
+        referenceOperation: txn.referenceOperation || "",
+        montantOperation: txn.montantOperation || 0,
+        description: txn.description || "",
+        valueDate: txn.valueDate || "",
+      }))
+
+      console.log("[v0] Transactions nettoyées (4 champs uniquement):", cleanedTransactions.length)
+
+      // Generate PDF/Excel/TXT directly
+      if (format === "pdf") {
+        generateAndDownloadPDFWithTransactions(selectedAccountData, cleanedTransactions)
+      } else if (format === "excel") {
+        generateAndDownloadExcelWithTransactions(selectedAccountData, cleanedTransactions)
+      } else {
+        generateAndDownloadTextWithTransactions(selectedAccountData, cleanedTransactions)
+      }
+    } catch (error) {
+      console.error("[v0] Erreur lors de la récupération des transactions:", error)
+      alert("❌ Erreur lors de la récupération des transactions")
+    }
   }
 
   const handleSendByEmail = async () => {
@@ -409,11 +390,7 @@ export default function StatementsPage() {
               variant="link"
               className="p-0 h-auto text-green-700 underline ml-2"
               onClick={() => {
-                if (format === "pdf") {
-                  generateAndDownloadPDF()
-                } else {
-                  generateAndDownloadExcel()
-                }
+                // Note: The logic to actually download here is removed as generation happens directly in handleGenerateStatement
               }}
             >
               Télécharger maintenant
@@ -776,21 +753,8 @@ export default function StatementsPage() {
     </div>
   )
 
-  function generateAndDownloadPDF() {
-    const selectedAccountData = accounts.find((acc) => acc.id === selectedAccount)
-    if (!selectedAccountData) return
-
-    const filteredTransactions = transactions.filter((txn) => {
-      if (!txn.valueDate) return false
-      const txnDate = new Date(txn.valueDate)
-      const start = new Date(startDate)
-      const end = new Date(endDate)
-      end.setHours(23, 59, 59, 999)
-      return txnDate >= start && txnDate <= end
-    })
-
+  function generateAndDownloadPDFWithTransactions(account: Account, transactions: any[]) {
     try {
-      // Utilisation de jsPDF pour générer le PDF
       const { jsPDF } = require("jspdf")
       const doc = new jsPDF()
 
@@ -813,53 +777,41 @@ export default function StatementsPage() {
       doc.text("Informations du compte", 20, 65)
 
       doc.setFontSize(10)
-      doc.text(`Nom: ${selectedAccountData.name}`, 20, 80)
-      doc.text(`Numéro: ${selectedAccountData.number}`, 20, 90)
-      doc.text(`IBAN: ${selectedAccountData.iban}`, 20, 100)
-      doc.text(
-        `Solde: ${formatAmount(selectedAccountData.balance, selectedAccountData.currency)} ${selectedAccountData.currency}`,
-        20,
-        110,
-      )
+      doc.text(`Nom: ${account.name}`, 20, 80)
+      doc.text(`Numéro: ${account.number}`, 20, 90)
+      doc.text(`IBAN: ${account.iban}`, 20, 100)
 
       // Tableau des transactions
-      let yPos = 130
+      let yPos = 120
       doc.setFontSize(14)
-      doc.text("Transactions", 20, yPos)
+      doc.text(`Transactions (${transactions.length})`, 20, yPos)
       yPos += 15
 
-      // En-têtes du tableau - utiliser les champs demandés
+      // En-têtes du tableau
       doc.setFontSize(9)
       doc.setTextColor(60, 60, 60)
-      doc.text("Date", 20, yPos)
-      doc.text("Référence", 45, yPos)
-      doc.text("Description", 85, yPos)
-      doc.text("Montant", 155, yPos)
+      doc.text("Référence", 20, yPos)
+      doc.text("Montant", 70, yPos)
+      doc.text("Description", 110, yPos)
+      doc.text("Date valeur", 160, yPos)
       yPos += 10
 
       // Ligne de séparation
       doc.line(20, yPos - 5, 190, yPos - 5)
 
-      filteredTransactions.forEach((txn, index) => {
+      // Transactions
+      transactions.forEach((txn) => {
         if (yPos > 270) {
           doc.addPage()
           yPos = 30
         }
 
-        const amount = Number.parseFloat(txn.montantOperation || txn.amount || "0")
-        const isCredit = amount > 0
-        const displayAmount = Math.abs(amount)
-
         doc.setTextColor(40, 40, 40)
-        // valueDate
-        doc.text(new Date(txn.valueDate).toLocaleDateString("fr-FR"), 20, yPos)
-        // referenceOperation
-        doc.text((txn.referenceOperation || txn.reference || txn.txnId || "N/A").substring(0, 12), 45, yPos)
-        // description
-        doc.text((txn.description || "Transaction").substring(0, 30), 85, yPos)
-        // montantOperation
-        doc.setTextColor(isCredit ? 0 : 200, isCredit ? 150 : 0, 0)
-        doc.text(`${isCredit ? "+" : ""}${formatAmount(displayAmount, selectedAccountData.currency)}`, 155, yPos)
+        doc.setFontSize(8)
+        doc.text((txn.referenceOperation || "N/A").substring(0, 15), 20, yPos)
+        doc.text(formatAmount(txn.montantOperation) + " GNF", 70, yPos)
+        doc.text((txn.description || "N/A").substring(0, 20), 110, yPos)
+        doc.text(new Date(txn.valueDate).toLocaleDateString("fr-FR"), 160, yPos)
         yPos += 8
       })
 
@@ -878,123 +830,82 @@ export default function StatementsPage() {
       }
 
       // Téléchargement
-      const fileName = `releve_${selectedAccountData.number}_${startDate}_${endDate}.pdf`
+      const fileName = `releve_${account.number}_${startDate}_${endDate}.pdf`
       doc.save(fileName)
 
-      //console.log("[v0] PDF généré et téléchargé:", fileName)
+      console.log("[v0] PDF généré et téléchargé:", fileName)
     } catch (error) {
-      //console.error("Erreur lors de la génération PDF:", error)
-      // Fallback vers téléchargement texte
-      generateAndDownloadText()
+      console.error("[v0] Erreur génération PDF:", error)
+      alert("❌ Erreur lors de la génération du PDF")
     }
   }
 
-  function generateAndDownloadExcel() {
-    const selectedAccountData = accounts.find((acc) => acc.id === selectedAccount)
-    if (!selectedAccountData) return
-
-    const filteredTransactions = transactions.filter((txn) => {
-      if (!txn.valueDate) return false
-      const txnDate = new Date(txn.valueDate)
-      const start = new Date(startDate)
-      const end = new Date(endDate)
-      end.setHours(23, 59, 59, 999)
-      return txnDate >= start && txnDate <= end
-    })
-
+  function generateAndDownloadExcelWithTransactions(account: Account, transactions: any[]) {
     try {
-      // Création du contenu CSV (compatible Excel)
       let csvContent = "\uFEFF" // BOM UTF-8 pour Excel
 
-      // En-tête du fichier
       csvContent += `RELEVÉ DE COMPTE\n`
-      csvContent += `Compte: ${selectedAccountData.name}\n`
-      csvContent += `Numéro: ${selectedAccountData.number}\n`
-      csvContent += `Période: ${new Date(startDate).toLocaleDateString("fr-FR")} au ${new Date(endDate).toLocaleDateString("fr-FR")}\n`
-      csvContent += `Solde: ${formatAmount(selectedAccountData.balance, selectedAccountData.currency)} ${selectedAccountData.currency}\n\n`
+      csvContent += `Compte: ${account.name}\n`
+      csvContent += `Numéro: ${account.number}\n`
+      csvContent += `Période: ${new Date(startDate).toLocaleDateString("fr-FR")} au ${new Date(endDate).toLocaleDateString("fr-FR")}\n\n`
 
-      csvContent += "valueDate,referenceOperation,description,montantOperation\n"
+      // En-têtes des colonnes (4 champs uniquement)
+      csvContent += "Référence,Montant,Description,Date valeur\n"
 
-      filteredTransactions.forEach((txn) => {
-        const amount = Number.parseFloat(txn.montantOperation || txn.amount || "0")
-        const isCredit = amount > 0
-        const displayAmount = Math.abs(amount)
-
-        // valueDate
-        csvContent += `${new Date(txn.valueDate).toLocaleDateString("fr-FR")},`
-        // referenceOperation
-        csvContent += `${txn.referenceOperation || txn.reference || txn.txnId || "N/A"},`
-        // description
-        csvContent += `"${(txn.description || "Transaction").replace(/"/g, '""')}",`
-        // montantOperation
-        csvContent += `"${isCredit ? "+" : ""}${formatAmount(displayAmount, selectedAccountData.currency)} ${selectedAccountData.currency}"\n`
+      // Données des transactions
+      transactions.forEach((txn) => {
+        csvContent += `${txn.referenceOperation || "N/A"},`
+        csvContent += `${formatAmount(txn.montantOperation)} GNF,`
+        csvContent += `"${(txn.description || "N/A").replace(/"/g, '""')}",`
+        csvContent += `${new Date(txn.valueDate).toLocaleDateString("fr-FR")}\n`
       })
 
       // Téléchargement
       const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8" })
       const link = document.createElement("a")
       link.href = URL.createObjectURL(blob)
-      link.download = `releve_${selectedAccountData.number}_${startDate}_${endDate}.csv`
+      link.download = `releve_${account.number}_${startDate}_${endDate}.csv`
       document.body.appendChild(link)
       link.click()
       document.body.removeChild(link)
       URL.revokeObjectURL(link.href)
 
-      //console.log("[v0] Excel/CSV généré et téléchargé")
+      console.log("[v0] Excel/CSV généré et téléchargé")
     } catch (error) {
-      //console.error("Erreur lors de la génération Excel:", error)
-      // Fallback vers téléchargement texte
-      generateAndDownloadText()
+      console.error("[v0] Erreur génération Excel:", error)
+      alert("❌ Erreur lors de la génération du fichier Excel")
     }
   }
 
-  function generateAndDownloadText() {
-    const selectedAccountData = accounts.find((acc) => acc.id === selectedAccount)
-    if (!selectedAccountData) return
-
-    const filteredTransactions = transactions.filter((txn) => {
-      if (!txn.valueDate) return false
-      const txnDate = new Date(txn.valueDate)
-      const start = new Date(startDate)
-      const end = new Date(endDate)
-      end.setHours(23, 59, 59, 999)
-      return txnDate >= start && txnDate <= end
-    })
-
+  function generateAndDownloadTextWithTransactions(account: Account, transactions: any[]) {
     let content = `RELEVÉ DE COMPTE\n`
     content += `================\n\n`
-    content += `Compte: ${selectedAccountData.name}\n`
-    content += `Numéro: ${selectedAccountData.number}\n`
-    content += `IBAN: ${selectedAccountData.iban}\n`
-    content += `Période: ${new Date(startDate).toLocaleDateString("fr-FR")} au ${new Date(endDate).toLocaleDateString("fr-FR")}\n`
-    content += `Solde: ${formatAmount(selectedAccountData.balance, selectedAccountData.currency)} ${selectedAccountData.currency}\n\n`
-    content += `TRANSACTIONS (${filteredTransactions.length})\n`
+    content += `Compte: ${account.name}\n`
+    content += `Numéro: ${account.number}\n`
+    content += `IBAN: ${account.iban}\n`
+    content += `Période: ${new Date(startDate).toLocaleDateString("fr-FR")} au ${new Date(endDate).toLocaleDateString("fr-FR")}\n\n`
+    content += `TRANSACTIONS (${transactions.length})\n`
     content += `=============\n\n`
 
-    filteredTransactions.forEach((txn) => {
-      const amount = Number.parseFloat(txn.montantOperation || txn.amount || "0")
-      const isCredit = amount > 0
-      const displayAmount = Math.abs(amount)
-
-      content += `Date (valueDate): ${new Date(txn.valueDate).toLocaleDateString("fr-FR")}\n`
-      content += `Référence (referenceOperation): ${txn.referenceOperation || txn.reference || txn.txnId || "N/A"}\n`
-      content += `Description: ${txn.description || "Transaction"}\n`
-      content += `Montant (montantOperation): ${isCredit ? "+" : ""}${formatAmount(displayAmount, selectedAccountData.currency)} ${selectedAccountData.currency}\n`
+    transactions.forEach((txn) => {
+      content += `Référence: ${txn.referenceOperation || "N/A"}\n`
+      content += `Montant: ${formatAmount(txn.montantOperation)} GNF\n`
+      content += `Description: ${txn.description || "N/A"}\n`
+      content += `Date valeur: ${new Date(txn.valueDate).toLocaleDateString("fr-FR")}\n`
       content += `---\n\n`
     })
 
     content += `\nGénéré le ${new Date().toLocaleDateString("fr-FR")} à ${new Date().toLocaleTimeString("fr-FR")}\n`
 
-    // Téléchargement
     const blob = new Blob([content], { type: "text/plain;charset=utf-8" })
     const link = document.createElement("a")
     link.href = URL.createObjectURL(blob)
-    link.download = `releve_${selectedAccountData.number}_${startDate}_${endDate}.txt`
+    link.download = `releve_${account.number}_${startDate}_${endDate}.txt`
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
     URL.revokeObjectURL(link.href)
 
-    //console.log("[v0] Relevé texte généré et téléchargé")
+    console.log("[v0] Relevé texte généré et téléchargé")
   }
 }
