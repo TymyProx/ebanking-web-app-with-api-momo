@@ -438,9 +438,15 @@ export async function getTransactionsByNumCompte(numCompte: string) {
 
     console.log("[v0] Transactions filtrées par numCompte", numCompte, ":", filteredTransactions.length)
 
+    const sortedTransactions = filteredTransactions.sort((a: any, b: any) => {
+      const dateA = new Date(a.valueDate || 0).getTime()
+      const dateB = new Date(b.valueDate || 0).getTime()
+      return dateA - dateB
+    })
+
     return {
       success: true,
-      data: filteredTransactions,
+      data: sortedTransactions,
     }
   } catch (error) {
     console.error("[v0] Erreur lors de la récupération des transactions:", error)

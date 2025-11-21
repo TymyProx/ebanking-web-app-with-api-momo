@@ -213,18 +213,20 @@ export default function StatementsPage() {
     }
   }
   const handleGenerateStatement = async () => {
+    setIsLoadingTransactions(true)
+    setShowDownloadLink(false)
+    setErrorMessage("")
+
     if (!selectedAccount || !startDate || !endDate) {
+      setErrorMessage("Veuillez remplir tous les champs")
+      setIsLoadingTransactions(false)
       return
     }
 
-    setIsLoadingTransactions(true)
-    setShowDownloadLink(false)
-    setFilteredTransactions([])
-    setTransactionCount(0)
-    setErrorMessage("")
-
     const selectedAccountData = accounts.find((acc) => acc.id === selectedAccount)
+
     if (!selectedAccountData) {
+      setErrorMessage("Compte introuvable")
       setIsLoadingTransactions(false)
       return
     }
@@ -272,20 +274,23 @@ export default function StatementsPage() {
       const firstTxn = filteredTxns[0]
       const lastTxn = filteredTxns[filteredTxns.length - 1]
 
-      const balanceOuverture = firstTxn?.balanceOuverture || selectedAccountData.balance
-      const balanceFermeture = lastTxn?.balanceFermeture || selectedAccountData.balance
+      const balanceOuverture = firstTxn?.balanceOuverture || 0
+      const balanceFermeture = lastTxn?.balanceFermeture || 0
 
-      const cleanedTransactions = filteredTxns.map((txn: any) => ({
+      console.log("[v0] Balance d'ouverture (première txn):", balanceOuverture)
+      console.log("[v0] Balance de fermeture (dernière txn):", balanceFermeture)
+
+      const cleanedTransactions = filteredTxns.map((txn: any, index: number) => ({
         referenceOperation: txn.referenceOperation || "",
         montantOperation: txn.montantOperation || 0,
         description: txn.description || "",
         valueDate: txn.valueDate || "",
         dateEcriture: txn.dateEcriture || "",
-        ...(txn === firstTxn && { balanceOuverture }),
-        ...(txn === lastTxn && { balanceFermeture }),
+        ...(index === 0 && { balanceOuverture }),
+        ...(index === filteredTxns.length - 1 && { balanceFermeture }),
       }))
 
-      console.log("[v0] Transactions nettoyées (4 champs):", cleanedTransactions.length)
+      console.log("[v0] Transactions nettoyées:", cleanedTransactions.length)
 
       setFilteredTransactions(cleanedTransactions)
       setTransactionCount(cleanedTransactions.length)
