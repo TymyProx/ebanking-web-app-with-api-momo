@@ -66,22 +66,22 @@ export default function MesVirementsPage() {
 
   const formatTransaction = (txn: any, accounts: any[]) => {
     const amount = Number.parseFloat(txn.montantOperation || "0")
-    const isCredit = txn.txnType === "CREDIT"
+    const isNegative = amount < 0
     const account = accounts.find((acc) => acc.accountNumber === txn.numCompte || acc.accountId === txn.accountId)
     const currency = account?.currency || "GNF"
     const when = txn.valueDate || txn.createdAt || new Date().toISOString()
     return {
-      type: isCredit ? "Virement reçu" : "Virement émis",
+      type: isNegative ? "Virement émis" : "Virement reçu",
       from: txn.description || txn.referenceOperation || "Transaction",
-      amount: `${formatAmount(amount, currency)} ${currency}`,
+      amount: `${formatAmount(Math.abs(amount), currency)} ${currency}`,
       date: new Date(when).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" }),
       time: new Date(when).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }),
       status: txn.status || "COMPLETED",
-      isCredit,
+      isCredit: !isNegative,
       currency,
       rawAmount: Math.abs(amount),
       account,
-      isNegative: amount < 0,
+      isNegative,
     }
   }
 
