@@ -198,8 +198,8 @@ const generatePDF = async (account: Account) => {
   const tableStartX = 15
   const col1Width = 35 // Code Banque
   const col2Width = 35 // Code Agence
-  const col3Width = 80 // N° Compte
-  const col4Width = 25 // Clé RIB
+  const col3Width = 90 // N° Compte - augmenté de 80 à 90 pour afficher le numéro complet
+  const col4Width = 15 // Clé RIB - réduit de 25 à 15
   const rowHeight = 8
 
   // Dessiner les bordures et en-têtes
@@ -208,21 +208,21 @@ const generatePDF = async (account: Account) => {
 
   // Ligne supérieure
   doc.rect(tableStartX, yPos, col1Width + col2Width + col3Width + col4Width, rowHeight)
-  // Lignes verticales
-  doc.line(tableStartX + col1Width, yPos, tableStartX + col1Width, yPos + rowHeight * 3)
-  doc.line(tableStartX + col1Width + col2Width, yPos, tableStartX + col1Width + col2Width, yPos + rowHeight * 3)
+  // Lignes verticales pour l'en-tête et la ligne RIB
+  doc.line(tableStartX + col1Width, yPos, tableStartX + col1Width, yPos + rowHeight * 2)
+  doc.line(tableStartX + col1Width + col2Width, yPos, tableStartX + col1Width + col2Width, yPos + rowHeight * 2)
   doc.line(
     tableStartX + col1Width + col2Width + col3Width,
     yPos,
     tableStartX + col1Width + col2Width + col3Width,
-    yPos + rowHeight * 3,
+    yPos + rowHeight * 2,
   )
 
   // Texte des en-têtes
   doc.setFontSize(8)
   doc.setFont("helvetica", "bold")
-  doc.text("Code", tableStartX + 2, yPos + 5)
-  doc.text("Banque", tableStartX + 2, yPos + 5 + 3)
+  doc.text("Code", tableStartX + 2, yPos + 3)
+  doc.text("Banque", tableStartX + 2, yPos + 6)
   doc.text("Code Agence", tableStartX + col1Width + 2, yPos + 5)
   doc.text("N° Compte", tableStartX + col1Width + col2Width + 2, yPos + 5)
   doc.text("Clé RIB", tableStartX + col1Width + col2Width + col3Width + 2, yPos + 5)
@@ -247,6 +247,7 @@ const generatePDF = async (account: Account) => {
   yPos += rowHeight
 
   doc.rect(tableStartX, yPos, col1Width + col2Width + col3Width + col4Width, rowHeight)
+  doc.setFont("helvetica", "bold")
   doc.text("IBAN", tableStartX + 2, yPos + 5)
 
   // Construire l'IBAN complet: GN82 + Code Banque + Code Agence + Numero Compte (sans espaces)
@@ -255,7 +256,7 @@ const generatePDF = async (account: Account) => {
   const ibanComplete = `${ibanValue} / ${swiftCode}`
 
   doc.setFontSize(7)
-  // L'IBAN commence après la colonne "Code Banque" et s'étend sur tout le reste
+  doc.setFont("helvetica", "normal")
   doc.text(ibanComplete, tableStartX + col1Width + 2, yPos + 5)
 
   yPos += rowHeight + 10
