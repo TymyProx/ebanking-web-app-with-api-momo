@@ -81,6 +81,7 @@ export default function MesVirementsPage() {
       currency,
       rawAmount: Math.abs(amount),
       account,
+      isNegative: amount < 0,
     }
   }
 
@@ -184,7 +185,7 @@ export default function MesVirementsPage() {
                       <div className="text-right shrink-0 ml-4">
                         <p
                           className={`font-semibold text-sm ${
-                            formatted.isCredit ? "text-secondary" : "text-destructive"
+                            formatted.isNegative ? "text-red-600" : "text-green-600"
                           }`}
                         >
                           {formatted.amount}
@@ -243,9 +244,7 @@ export default function MesVirementsPage() {
                       </div>
                       <div className="text-left">
                         <p className="text-sm text-muted-foreground">{formatted.type}</p>
-                        <p
-                          className={`text-2xl font-bold ${formatted.isCredit ? "text-secondary" : "text-destructive"}`}
-                        >
+                        <p className={`text-2xl font-bold ${formatted.isNegative ? "text-red-600" : "text-green-600"}`}>
                           {formatted.amount}
                         </p>
                       </div>
