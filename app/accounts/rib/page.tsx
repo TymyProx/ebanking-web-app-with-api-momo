@@ -513,7 +513,7 @@ export default function RIBPage() {
 
   const copyRIBToClipboard = () => {
     if (!selectedAccount) return
-    const rib = `${selectedAccount.bankCode} ${selectedAccount.branchCode} ${selectedAccount.accountNumber} ${selectedAccount.ribKey}`
+    const rib = `${selectedAccount.bankCode} ${selectedAccount.branchCode} ${selectedAccount.number} ${selectedAccount.ribKey}`
     navigator.clipboard.writeText(rib)
     setCopiedRIB(true)
     setTimeout(() => setCopiedRIB(false), 2000)
