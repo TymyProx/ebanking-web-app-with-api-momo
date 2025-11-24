@@ -198,7 +198,7 @@ const generatePDF = async (account: Account) => {
   const tableStartX = 15
   const col1Width = 35 // Code Banque
   const col2Width = 35 // Code Agence
-  const col3Width = 120 // N° Compte - augmenté pour afficher le numéro complet
+  const col3Width = 100 // N° Compte - augmenté pour afficher le numéro complet
   const col4Width = 15 // Clé RIB
   const rowHeight = 8
 
@@ -260,10 +260,8 @@ const generatePDF = async (account: Account) => {
 
   doc.setFontSize(7)
   doc.setFont("helvetica", "normal")
-  const ibanColumnWidth = col2Width + col3Width + col4Width
-  const ibanTextWidth = doc.getTextWidth(ibanComplete)
-  const ibanX = tableStartX + col1Width + (ibanColumnWidth - ibanTextWidth) / 2
-  doc.text(ibanComplete, ibanX, yPos + 5)
+  // IBAN value starts after first column and spans the rest
+  doc.text(ibanComplete, tableStartX + col1Width + 2, yPos + 5)
 
   yPos += rowHeight + 10
 
