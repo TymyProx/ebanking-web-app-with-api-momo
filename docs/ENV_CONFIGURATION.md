@@ -78,7 +78,7 @@ NEXT_PUBLIC_BACK_OFFICE_URL=https://staging-backoffice.bng.cm
 
 ### Production
 \`\`\`env
-NEXT_PUBLIC_API_URL=https://api.bng.cm
+NEXT_PUBLIC_API_URL=https:/api.bng.cm
 NEXT_PUBLIC_TENANT_ID=aa1287f6-06af-45b7-a905-8c57363565c2
 NEXT_PUBLIC_BACK_OFFICE_URL=https://back-office.bng.cm
 \`\`\`

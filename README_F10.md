@@ -223,15 +223,15 @@ console.log("Chercher [RIB]")
 \`\`\`bash
 # Profil utilisateur
 curl -H "Authorization: Bearer TOKEN" \
-  https://api.example.com/api/auth/me
+  https:/api.example.com/api/auth/me
 
 # Comptes
 curl -H "Authorization: Bearer TOKEN" \
-  https://api.example.com/api/tenant/TENANT_ID/compte
+  https:/api.example.com/api/tenant/TENANT_ID/compte
 
 # Un compte spécifique
 curl -H "Authorization: Bearer TOKEN" \
-  https://api.example.com/api/tenant/TENANT_ID/compte/ACCOUNT_ID
+  https:/api.example.com/api/tenant/TENANT_ID/compte/ACCOUNT_ID
 \`\`\`
 
 ---

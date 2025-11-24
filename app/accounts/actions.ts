@@ -45,8 +45,9 @@ export async function getAccounts(): Promise<Account[]> {
       return []
     }
 
-    let currentUserId: string | null = null
+    let currentClientId: string | null = null
     try {
+      // Étape 1: Récupérer le userId
       const userResponse = await fetch(`${API_BASE_URL}/auth/me`, {
         method: "GET",
         headers: {
@@ -58,10 +59,31 @@ export async function getAccounts(): Promise<Account[]> {
 
       if (userResponse.ok) {
         const userData = await userResponse.json()
-        currentUserId = userData.id
+        const userId = userData.id
+        
+        // Étape 2: Trouver le client correspondant
+        const clientResponse = await fetch(
+          `${API_BASE_URL}/tenant/${TENANT_ID}/client?filter[userid]=${userId}`,
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${usertoken}`,
+            },
+            next: { revalidate: 60 },
+          }
+        )
+
+        if (clientResponse.ok) {
+          const clientData = await clientResponse.json()
+          if (clientData.rows && clientData.rows.length > 0) {
+            currentClientId = clientData.rows[0].id
+            console.log("[GetAccounts] Client ID for filtering:", currentClientId)
+          }
+        }
       }
     } catch (error) {
-      console.error("Error fetching user ID:", error)
+      console.error("Error fetching client ID:", error)
     }
 
     const response = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/compte`, {
@@ -152,8 +174,8 @@ export async function getAccounts(): Promise<Account[]> {
       accounts = responseData
     }
 
-    if (currentUserId) {
-      accounts = accounts.filter((account) => account.clientId === currentUserId)
+    if (currentClientId) {
+      accounts = accounts.filter((account) => account.clientId === currentClientId)
     }
 
     return accounts
@@ -176,6 +198,7 @@ export async function createAccount(prevState: any, formData: FormData) {
 
     let clientId = "CUSTOMER_ID_PLACEHOLDER"
     try {
+      // Étape 1: Récupérer l'ID du user connecté
       const userResponse = await fetch(`${API_BASE_URL}/auth/me`, {
         method: "GET",
         headers: {
@@ -186,7 +209,42 @@ export async function createAccount(prevState: any, formData: FormData) {
 
       if (userResponse.ok) {
         const userData = await userResponse.json()
-        clientId = userData.id || "CUSTOMER_ID_PLACEHOLDER"
+        const userId = userData.id
+        
+        console.log("[CreateAccount] User ID:", userId)
+
+        // Étape 2: Trouver le client correspondant via le champ userid
+        // Le client a été créé automatiquement lors du signup avec userid = user.id
+        const clientResponse = await fetch(
+          `${API_BASE_URL}/tenant/${TENANT_ID}/client?filter[userid]=${userId}`,
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${usertoken}`,
+            },
+          }
+        )
+
+        if (clientResponse.ok) {
+          const clientData = await clientResponse.json()
+          
+          if (clientData.rows && clientData.rows.length > 0) {
+            // Utiliser le client.id (pas le user.id !)
+            clientId = clientData.rows[0].id
+            console.log("[CreateAccount] Client ID found:", clientId)
+            console.log("[CreateAccount] Client name:", clientData.rows[0].nomComplet)
+          } else {
+            console.error("[CreateAccount] No client found for user:", userId)
+            console.log("[CreateAccount] User may need to complete their profile first")
+            // Fallback: utiliser userId si aucun client n'est trouvé
+            clientId = userId
+          }
+        } else {
+          console.error("[CreateAccount] Error fetching client:", clientResponse.status)
+          // Fallback: utiliser userId
+          clientId = userId
+        }
       }
     } catch (error) {
       console.error("Erreur lors de la récupération du client ID:", error)

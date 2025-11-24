@@ -128,7 +128,7 @@ export async function sendRibEmail(payload: SendRibEmailPayload) {
   }
 
   try {
-    const response = await fetch("https://api.resend.com/emails", {
+    const response = await fetch("https:/api.resend.com/emails", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${resendApiKey}`,

@@ -291,15 +291,15 @@ localStorage.getItem('user'); // Infos utilisateur
 \`\`\`bash
 # Récupérer le profil utilisateur
 curl -H "Authorization: Bearer TOKEN" \
-  https://api.example.com/api/auth/me
+  https:/api.example.com/api/auth/me
 
 # Récupérer les comptes
 curl -H "Authorization: Bearer TOKEN" \
-  https://api.example.com/api/tenant/TENANT_ID/compte
+  https:/api.example.com/api/tenant/TENANT_ID/compte
 
 # Récupérer un compte spécifique
 curl -H "Authorization: Bearer TOKEN" \
-  https://api.example.com/api/tenant/TENANT_ID/compte/ACCOUNT_ID
+  https:/api.example.com/api/tenant/TENANT_ID/compte/ACCOUNT_ID
 \`\`\`
 
 ---
