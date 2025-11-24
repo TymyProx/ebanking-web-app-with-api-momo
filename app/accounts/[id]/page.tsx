@@ -27,8 +27,8 @@ import {
   RefreshCw,
 } from "lucide-react"
 import { getAccounts } from "../actions"
-import { getTransactions } from "../../transfers/new/actions"
 import { toggleAccountStatus, getAccountDetails } from "./actions"
+import { getUserTransactions } from "@/app/transfers/mes-virements/actions"
 
 interface Account {
   id: string
@@ -158,38 +158,26 @@ export default function AccountDetailsPage() {
 
     const loadTransactionsData = async () => {
       try {
-        const transactionsData = await getTransactions()
+        const transactionsData = await getUserTransactions()
 
         console.log("[v0] All transactions data:", transactionsData)
-        console.log("[v0] Looking for accountId:", accountId)
+        console.log("[v0] Looking for account:", account?.number || accountId)
 
-        if (transactionsData && transactionsData.data && Array.isArray(transactionsData.data)) {
+        if (transactionsData.success && transactionsData.data && Array.isArray(transactionsData.data)) {
           console.log("[v0] Total transactions fetched:", transactionsData.data.length)
 
           if (transactionsData.data.length > 0) {
             console.log("[v0] Sample transaction structure:", transactionsData.data[0])
           }
 
+          const accountNumber = account?.number || accountId
           const accountTransactions = transactionsData.data
             .filter((txn: any) => {
-              // Get all possible account identifiers from transaction
-              const txnAccountId = txn.accountId || txn.account_id
-              const txnAccountNumber = txn.accountNumber || txn.account_number
-              const txnDebitAccount = txn.debitAccount || txn.debit_account
-              const txnCreditAccount = txn.creditAccount || txn.credit_account
-
-              // Check if any of these match the accountId from URL
-              const matches =
-                txnAccountId === accountId ||
-                txnAccountNumber === accountId ||
-                txnDebitAccount === accountId ||
-                txnCreditAccount === accountId ||
-                // Also check if accountId is contained in any of these fields
-                (txnAccountNumber && String(txnAccountNumber).includes(accountId)) ||
-                (txnAccountId && String(txnAccountId).includes(accountId))
+              const txnAccountNumber = txn.numCompte || txn.accountNumber || txn.accountId
+              const matches = txnAccountNumber === accountNumber
 
               if (matches) {
-                console.log("[v0] Transaction matched:", txn)
+                console.log("[v0] Transaction matched for account:", txn)
               }
 
               return matches
@@ -197,19 +185,19 @@ export default function AccountDetailsPage() {
             .slice(0, 100)
             .map((txn: any) => {
               const amount = Number.parseFloat(txn.amount || "0")
-              const isCredit = txn.txnType === "CREDIT" || txn.type === "CREDIT" || amount > 0
+              const isCredit = txn.txnType === "CREDIT"
 
               return {
                 id: txn.txnId || txn.id || txn.transactionId,
-                accountId: txn.accountId || txn.account_id || accountId,
+                accountId: txn.accountId || txn.numCompte || accountId,
                 type: isCredit ? "Virement reçu" : "Virement émis",
-                description: txn.description || txn.label || "Transaction",
+                description: txn.description || txn.referenceOperation || "Transaction",
                 amount: isCredit ? Math.abs(amount) : -Math.abs(amount),
-                currency: txn.currency || "GNF",
+                currency: txn.codeDevise || "GNF",
                 date: txn.valueDate || txn.date || txn.createdAt || new Date().toISOString(),
                 status: txn.status || "Exécuté",
-                counterparty: txn.beneficiaryId || txn.beneficiary || txn.counterparty || "Système",
-                reference: txn.txnId || txn.reference || txn.id || "REF-" + Date.now(),
+                counterparty: txn.creditAccount || txn.beneficiaryId || txn.beneficiary || "Système",
+                reference: txn.txnId || txn.referenceOperation || txn.reference || "REF-" + Date.now(),
                 balanceAfter: 0,
               } as Transaction
             })
@@ -244,41 +232,31 @@ export default function AccountDetailsPage() {
   const handleRefreshTransactions = async () => {
     setIsLoadingTransactions(true)
     try {
-      const transactionsData = await getTransactions()
+      const transactionsData = await getUserTransactions()
 
-      if (transactionsData && transactionsData.data && Array.isArray(transactionsData.data)) {
+      if (transactionsData.success && transactionsData.data && Array.isArray(transactionsData.data)) {
+        const accountNumber = account?.number || accountId
         const accountTransactions = transactionsData.data
           .filter((txn: any) => {
-            const txnAccountId = txn.accountId || txn.account_id
-            const txnAccountNumber = txn.accountNumber || txn.account_number
-            const txnDebitAccount = txn.debitAccount || txn.debit_account
-            const txnCreditAccount = txn.creditAccount || txn.credit_account
-
-            return (
-              txnAccountId === accountId ||
-              txnAccountNumber === accountId ||
-              txnDebitAccount === accountId ||
-              txnCreditAccount === accountId ||
-              (txnAccountNumber && String(txnAccountNumber).includes(accountId)) ||
-              (txnAccountId && String(txnAccountId).includes(accountId))
-            )
+            const txnAccountNumber = txn.numCompte || txn.accountNumber || txn.accountId
+            return txnAccountNumber === accountNumber
           })
           .slice(0, 100)
           .map((txn: any) => {
             const amount = Number.parseFloat(txn.amount || "0")
-            const isCredit = txn.txnType === "CREDIT" || txn.type === "CREDIT" || amount > 0
+            const isCredit = txn.txnType === "CREDIT"
 
             return {
               id: txn.txnId || txn.id || txn.transactionId,
-              accountId: txn.accountId || txn.account_id || accountId,
+              accountId: txn.accountId || txn.numCompte || accountId,
               type: isCredit ? "Virement reçu" : "Virement émis",
-              description: txn.description || txn.label || "Transaction",
+              description: txn.description || txn.referenceOperation || "Transaction",
               amount: isCredit ? Math.abs(amount) : -Math.abs(amount),
-              currency: txn.currency || "GNF",
+              currency: txn.codeDevise || "GNF",
               date: txn.valueDate || txn.date || txn.createdAt || new Date().toISOString(),
               status: txn.status || "Exécuté",
-              counterparty: txn.beneficiaryId || txn.beneficiary || txn.counterparty || "Système",
-              reference: txn.txnId || txn.reference || txn.id || "REF-" + Date.now(),
+              counterparty: txn.creditAccount || txn.beneficiaryId || txn.beneficiary || "Système",
+              reference: txn.txnId || txn.referenceOperation || txn.reference || "REF-" + Date.now(),
               balanceAfter: 0,
             } as Transaction
           })
