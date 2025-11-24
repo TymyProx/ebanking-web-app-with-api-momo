@@ -162,7 +162,7 @@ export default function MesVirementsPage() {
                       <div className="flex items-center space-x-4 flex-1">
                         <div
                           className={`w-12 h-12 rounded-full flex items-center justify-center shrink-0 ${
-                            formatted.isCredit ? "bg-secondary/20 text-secondary" : "bg-destructive/20 text-destructive"
+                            formatted.isCredit ? "bg-secondary/20 text-primary" : "bg-destructive/20 text-destructive"
                           }`}
                         >
                           {formatted.isCredit ? (

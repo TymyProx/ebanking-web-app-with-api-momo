@@ -92,7 +92,7 @@ async function RecentTransactions() {
       <CardContent>
         <div className="space-y-4">
           {transactions.length > 0 ? (
-            transactions.slice(0, 4).map((transaction: any, index: number) => {
+            transactions.slice(0, 3).map((transaction: any, index: number) => {
               const formattedTransaction = formatTransaction(transaction, accounts)
               return (
                 <div
