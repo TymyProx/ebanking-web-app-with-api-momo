@@ -196,62 +196,70 @@ const generatePDF = async (account: Account) => {
   yPos += 6
 
   const tableStartX = 15
+  const labelWidth = 25 // Nouvelle colonne pour les labels (RIB, IBAN)
   const col1Width = 35 // Code Banque
   const col2Width = 35 // Code Agence
-  const col3Width = 100 // N° Compte - augmenté pour afficher le numéro complet
-  const col4Width = 15 // Clé RIB
+  const col3Width = 85 // N° Compte
+  const col4Width = 20 // Clé RIB
   const rowHeight = 8
 
   // Dessiner les bordures et en-têtes
   doc.setDrawColor(0, 0, 0)
   doc.setLineWidth(0.3)
 
-  // Ligne supérieure
-  doc.rect(tableStartX, yPos, col1Width + col2Width + col3Width + col4Width, rowHeight)
-  // Lignes verticales pour l'en-tête et la ligne RIB
-  doc.line(tableStartX + col1Width, yPos, tableStartX + col1Width, yPos + rowHeight * 2)
-  doc.line(tableStartX + col1Width + col2Width, yPos, tableStartX + col1Width + col2Width, yPos + rowHeight * 2)
+  // Ligne supérieure (en-têtes)
+  doc.rect(tableStartX, yPos, labelWidth + col1Width + col2Width + col3Width + col4Width, rowHeight)
+
+  // Lignes verticales pour les colonnes
+  doc.line(tableStartX + labelWidth, yPos, tableStartX + labelWidth, yPos + rowHeight * 2)
+  doc.line(tableStartX + labelWidth + col1Width, yPos, tableStartX + labelWidth + col1Width, yPos + rowHeight * 2)
   doc.line(
-    tableStartX + col1Width + col2Width + col3Width,
+    tableStartX + labelWidth + col1Width + col2Width,
     yPos,
-    tableStartX + col1Width + col2Width + col3Width,
+    tableStartX + labelWidth + col1Width + col2Width,
+    yPos + rowHeight * 2,
+  )
+  doc.line(
+    tableStartX + labelWidth + col1Width + col2Width + col3Width,
+    yPos,
+    tableStartX + labelWidth + col1Width + col2Width + col3Width,
     yPos + rowHeight * 2,
   )
 
   // Texte des en-têtes
   doc.setFontSize(8)
   doc.setFont("helvetica", "bold")
-  doc.text("Code", tableStartX + 2, yPos + 3)
-  doc.text("Banque", tableStartX + 2, yPos + 6)
-  doc.text("Code Agence", tableStartX + col1Width + 2, yPos + 5)
-  doc.text("N° Compte", tableStartX + col1Width + col2Width + 2, yPos + 5)
-  doc.text("Clé RIB", tableStartX + col1Width + col2Width + col3Width + 2, yPos + 5)
+  doc.text("Code", tableStartX + labelWidth + 2, yPos + 3)
+  doc.text("Banque", tableStartX + labelWidth + 2, yPos + 6)
+  doc.text("Code Agence", tableStartX + labelWidth + col1Width + 2, yPos + 5)
+  doc.text("N° Compte", tableStartX + labelWidth + col1Width + col2Width + 2, yPos + 5)
+  doc.text("Clé RIB", tableStartX + labelWidth + col1Width + col2Width + col3Width + 2, yPos + 5)
 
   yPos += rowHeight
 
-  // Ligne RIB
-  doc.rect(tableStartX, yPos, col1Width + col2Width + col3Width + col4Width, rowHeight)
+  // Ligne RIB avec 5 colonnes (label + 4 valeurs)
+  doc.rect(tableStartX, yPos, labelWidth + col1Width + col2Width + col3Width + col4Width, rowHeight)
   doc.setFont("helvetica", "normal")
   doc.text("RIB", tableStartX + 2, yPos + 5)
-  doc.text(account.bankCode || "GN004", tableStartX + col1Width + 2, yPos + 5)
-  doc.text(account.branchCode || "001", tableStartX + col1Width + col2Width + 2, yPos + 5)
+  doc.text(account.bankCode || "GN004", tableStartX + labelWidth + 2, yPos + 5)
+  doc.text(account.branchCode || "001", tableStartX + labelWidth + col1Width + 2, yPos + 5)
 
   // Extraire la clé RIB (2 derniers chiffres du numéro de compte)
   const accountNumberClean = account.number.replace(/-/g, "")
   const cleRib = accountNumberClean.slice(-2)
   const numeroCompteSansCle = accountNumberClean.slice(0, -2)
 
-  doc.text(numeroCompteSansCle, tableStartX + col1Width + col2Width + 2, yPos + 5)
-  doc.text(cleRib, tableStartX + col1Width + col2Width + col3Width + 2, yPos + 5)
+  doc.text(numeroCompteSansCle, tableStartX + labelWidth + col1Width + col2Width + 2, yPos + 5)
+  doc.text(cleRib, tableStartX + labelWidth + col1Width + col2Width + col3Width + 2, yPos + 5)
 
   yPos += rowHeight
 
-  doc.rect(tableStartX, yPos, col1Width + col2Width + col3Width + col4Width, rowHeight)
+  // Ligne IBAN (2 colonnes: label + valeur)
+  doc.rect(tableStartX, yPos, labelWidth + col1Width + col2Width + col3Width + col4Width, rowHeight)
   doc.setFont("helvetica", "bold")
   doc.text("IBAN", tableStartX + 2, yPos + 5)
 
-  // Draw only one vertical line after IBAN label
-  doc.line(tableStartX + col1Width, yPos, tableStartX + col1Width, yPos + rowHeight)
+  doc.line(tableStartX + labelWidth, yPos, tableStartX + labelWidth, yPos + rowHeight)
 
   // Construire l'IBAN complet: GN82 + Code Banque + Code Agence + Numero Compte (sans espaces)
   const ibanValue = `${account.iban}`
@@ -261,7 +269,7 @@ const generatePDF = async (account: Account) => {
   doc.setFontSize(7)
   doc.setFont("helvetica", "normal")
   // IBAN value starts after first column and spans the rest
-  doc.text(ibanComplete, tableStartX + col1Width + 2, yPos + 5)
+  doc.text(ibanComplete, tableStartX + labelWidth + 2, yPos + 5)
 
   yPos += rowHeight + 10
 
