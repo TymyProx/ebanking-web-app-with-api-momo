@@ -198,7 +198,7 @@ const generatePDF = async (account: Account) => {
   const tableStartX = 15
   const col1Width = 35 // Code Banque
   const col2Width = 35 // Code Agence
-  const col3Width = 100 // N° Compte - augmenté pour afficher le numéro complet sans coupure
+  const col3Width = 100 // N° Compte - augmenté pour afficher le numéro complet
   const col4Width = 15 // Clé RIB
   const rowHeight = 8
 
@@ -246,19 +246,22 @@ const generatePDF = async (account: Account) => {
 
   yPos += rowHeight
 
-  // Ligne IBAN - une seule cellule fusionnée sur toute la largeur
   doc.rect(tableStartX, yPos, col1Width + col2Width + col3Width + col4Width, rowHeight)
   doc.setFont("helvetica", "bold")
   doc.text("IBAN", tableStartX + 2, yPos + 5)
 
-  // Construire l'IBAN complet
+  // Draw only one vertical line after IBAN label
+  doc.line(tableStartX + col1Width, yPos, tableStartX + col1Width, yPos + rowHeight)
+
+  // Construire l'IBAN complet: GN82 + Code Banque + Code Agence + Numero Compte (sans espaces)
   const ibanValue = `${account.iban}`
   const swiftCode = `CODE SWIFT: ${account.swiftCode}`
   const ibanComplete = `${ibanValue} / ${swiftCode}`
 
   doc.setFontSize(7)
   doc.setFont("helvetica", "normal")
-  doc.text(ibanComplete, tableStartX + 15, yPos + 5)
+  // IBAN value starts after first column and spans the rest
+  doc.text(ibanComplete, tableStartX + col1Width + 2, yPos + 5)
 
   yPos += rowHeight + 10
 
