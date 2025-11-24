@@ -2,7 +2,7 @@ import Link from "next/link"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Eye, Send, Receipt, ArrowUpRight, ArrowDownRight, Users } from "lucide-react"
-import { getTransactions } from "@/app/transfers/new/actions"
+import { getUserTransactions } from "@/app/transfers/mes-virements/actions"
 import { getAccounts } from "@/app/accounts/actions"
 import { AccountsCarousel } from "@/components/accounts-carousel"
 import { BankProductsCarousel } from "@/components/bank-products-carousel"
@@ -41,7 +41,7 @@ async function getCurrentUser() {
 }
 
 async function RecentTransactions() {
-  const transactionsResult = await getTransactions()
+  const transactionsResult = await getUserTransactions()
   const transactions = transactionsResult?.data || []
   const accounts = await getAccounts()
 
@@ -67,6 +67,7 @@ async function RecentTransactions() {
       type: isCredit ? "Virement reçu" : "Virement émis",
       from: transaction.description || "Transaction",
       amount: `${isCredit ? "+" : "-"}${formatAmount(Math.abs(amount), currency)} ${currency}`,
+      rawAmount: isCredit ? amount : -amount,
       date: new Date(transaction.valueDate).toLocaleDateString("fr-FR", {
         day: "numeric",
         month: "short",
@@ -91,7 +92,7 @@ async function RecentTransactions() {
       <CardContent>
         <div className="space-y-4">
           {transactions.length > 0 ? (
-            transactions.slice(0, 3).map((transaction: any, index: number) => {
+            transactions.slice(0, 4).map((transaction: any, index: number) => {
               const formattedTransaction = formatTransaction(transaction, accounts)
               return (
                 <div
@@ -101,12 +102,12 @@ async function RecentTransactions() {
                   <div className="flex items-center space-x-4">
                     <div
                       className={`w-12 h-12 rounded-full flex items-center justify-center ${
-                        formattedTransaction.amount.startsWith("+")
-                          ? "bg-secondary/20 text-secondary"
-                          : "bg-destructive/20 text-destructive"
+                        formattedTransaction.rawAmount >= 0
+                          ? "bg-green-500/20 text-green-600"
+                          : "bg-red-500/20 text-red-600"
                       }`}
                     >
-                      {formattedTransaction.amount.startsWith("+") ? (
+                      {formattedTransaction.rawAmount >= 0 ? (
                         <ArrowDownRight className="w-5 h-5" />
                       ) : (
                         <ArrowUpRight className="w-5 h-5" />
@@ -120,7 +121,7 @@ async function RecentTransactions() {
                   <div className="text-right">
                     <p
                       className={`font-semibold text-sm ${
-                        formattedTransaction.amount.startsWith("+") ? "text-secondary" : "text-destructive"
+                        formattedTransaction.rawAmount >= 0 ? "text-green-600" : "text-red-600"
                       }`}
                     >
                       {formattedTransaction.amount}
