@@ -58,7 +58,7 @@ async function RecentTransactions() {
 
   const formatTransaction = (transaction: any, accounts: any[]) => {
     const amount = Number.parseFloat(transaction.montantOperation)
-    const isCredit = transaction.txnType === "CREDIT"
+    const isCredit = amount >= 0
 
     const account = accounts.find((acc) => acc.id === transaction.accountId || acc.accountId === transaction.accountId)
     const currency = account?.currency || "GNF"
@@ -66,8 +66,8 @@ async function RecentTransactions() {
     return {
       type: isCredit ? "Virement reçu" : "Virement émis",
       from: transaction.description || "Transaction",
-      amount: `${isCredit ? "+" : "-"}${formatAmount(Math.abs(amount), currency)} ${currency}`,
-      rawAmount: isCredit ? amount : -amount,
+      amount: `${isCredit ? "+" : ""}${formatAmount(amount, currency)} ${currency}`,
+      rawAmount: amount,
       date: new Date(transaction.valueDate).toLocaleDateString("fr-FR", {
         day: "numeric",
         month: "short",
@@ -102,15 +102,15 @@ async function RecentTransactions() {
                   <div className="flex items-center space-x-4">
                     <div
                       className={`w-12 h-12 rounded-full flex items-center justify-center ${
-                        formattedTransaction.rawAmount >= 0
-                          ? "bg-green-500/20 text-green-600"
-                          : "bg-red-500/20 text-red-600"
+                        formattedTransaction.rawAmount < 0
+                          ? "bg-red-500/20 text-red-600"
+                          : "bg-green-500/20 text-green-600"
                       }`}
                     >
-                      {formattedTransaction.rawAmount >= 0 ? (
-                        <ArrowDownRight className="w-5 h-5" />
-                      ) : (
+                      {formattedTransaction.rawAmount < 0 ? (
                         <ArrowUpRight className="w-5 h-5" />
+                      ) : (
+                        <ArrowDownRight className="w-5 h-5" />
                       )}
                     </div>
                     <div>
@@ -121,7 +121,7 @@ async function RecentTransactions() {
                   <div className="text-right">
                     <p
                       className={`font-semibold text-sm ${
-                        formattedTransaction.rawAmount >= 0 ? "text-green-600" : "text-red-600"
+                        formattedTransaction.rawAmount < 0 ? "text-red-600" : "text-green-600"
                       }`}
                     >
                       {formattedTransaction.amount}
