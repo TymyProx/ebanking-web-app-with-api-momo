@@ -50,6 +50,7 @@ interface Account {
   branchCode: string
   branchName: string
   swiftCode: string
+  ribKey: string
 }
 
 const arrayBufferToBase64 = (buffer: ArrayBuffer) => {
@@ -280,39 +281,17 @@ const generatePDF = async (account: Account) => {
   doc.setFontSize(8)
   doc.setFont("helvetica", "bold")
 
-  doc.rect(
-    table2StartX,
-    yPos,
-    table2Col1 + table2Col2 + table2Col3 + table2Col4 + table2Col5,
-    rowHeight,
-  )
+  doc.rect(table2StartX, yPos, table2Col1 + table2Col2 + table2Col3 + table2Col4 + table2Col5, rowHeight)
   doc.text("Banque Correspondante", table2StartX + 2, yPos + 5)
   doc.text("SWIFT", table2StartX + table2Col1 + 2, yPos + 4)
   doc.text("Code", table2StartX + table2Col1 + 2, yPos + 7)
   doc.text("Notre", table2StartX + table2Col1 + table2Col2 + 2, yPos + 4)
   doc.text("Compte USD", table2StartX + table2Col1 + table2Col2 + 2, yPos + 7)
-  doc.text(
-    "Banque Intermédiaire",
-    table2StartX + table2Col1 + table2Col2 + table2Col3 + 2,
-    yPos + 5,
-  )
-  doc.text(
-    "SWIFT",
-    table2StartX + table2Col1 + table2Col2 + table2Col3 + table2Col4 + 2,
-    yPos + 4,
-  )
-  doc.text(
-    "CODE",
-    table2StartX + table2Col1 + table2Col2 + table2Col3 + table2Col4 + 2,
-    yPos + 7,
-  )
+  doc.text("Banque Intermédiaire", table2StartX + table2Col1 + table2Col2 + table2Col3 + 2, yPos + 5)
+  doc.text("SWIFT", table2StartX + table2Col1 + table2Col2 + table2Col3 + table2Col4 + 2, yPos + 4)
+  doc.text("CODE", table2StartX + table2Col1 + table2Col2 + table2Col3 + table2Col4 + 2, yPos + 7)
 
-  doc.line(
-    table2StartX + table2Col1,
-    yPos,
-    table2StartX + table2Col1,
-    yPos + rowHeight + table2RowHeight,
-  )
+  doc.line(table2StartX + table2Col1, yPos, table2StartX + table2Col1, yPos + rowHeight + table2RowHeight)
   doc.line(
     table2StartX + table2Col1 + table2Col2,
     yPos,
@@ -334,31 +313,18 @@ const generatePDF = async (account: Account) => {
 
   yPos += rowHeight
 
-  doc.rect(
-    table2StartX,
-    yPos,
-    table2Col1 + table2Col2 + table2Col3 + table2Col4 + table2Col5,
-    table2RowHeight,
-  )
+  doc.rect(table2StartX, yPos, table2Col1 + table2Col2 + table2Col3 + table2Col4 + table2Col5, table2RowHeight)
   doc.setFont("helvetica", "normal")
   doc.setFontSize(7)
   doc.text("BRITISH ARAB COMMERCIAL BANK", table2StartX + 2, yPos + 7)
   doc.text("BACMGB2L", table2StartX + table2Col1 + 2, yPos + 7)
   doc.text("0100975", table2StartX + table2Col1 + table2Col2 + 2, yPos + 7)
-  doc.text(
-    "BANCO POPULAR DI SANDRO",
-    table2StartX + table2Col1 + table2Col2 + table2Col3 + 2,
-    yPos + 7,
-  )
+  doc.text("BANCO POPULAR DI SANDRO", table2StartX + table2Col1 + table2Col2 + table2Col3 + 2, yPos + 7)
 
   const swiftLines = ["POGRITZ2/VD", "JP MORGAN-", "CHASE NEW YORK-", "CHASUS33", "POGRITZ3"]
   let swiftY = yPos + 3
   swiftLines.forEach((line) => {
-    doc.text(
-      line,
-      table2StartX + table2Col1 + table2Col2 + table2Col3 + table2Col4 + 2,
-      swiftY,
-    )
+    doc.text(line, table2StartX + table2Col1 + table2Col2 + table2Col3 + table2Col4 + 2, swiftY)
     swiftY += 2.5
   })
 
@@ -377,40 +343,18 @@ const generatePDF = async (account: Account) => {
   doc.setFontSize(8)
   doc.setFont("helvetica", "bold")
 
-  doc.rect(
-    table2StartX,
-    yPos,
-    table2Col1 + table2Col2 + table2Col3 + table2Col4 + table2Col5,
-    rowHeight,
-  )
+  doc.rect(table2StartX, yPos, table2Col1 + table2Col2 + table2Col3 + table2Col4 + table2Col5, rowHeight)
   doc.text("Banque Correspondante", table2StartX + 2, yPos + 5)
   doc.text("SWIFT", table2StartX + table2Col1 + 2, yPos + 4)
   doc.text("Code", table2StartX + table2Col1 + 2, yPos + 7)
   doc.text("Notre", table2StartX + table2Col1 + table2Col2 + 2, yPos + 4)
   doc.text("Compte Euro", table2StartX + table2Col1 + table2Col2 + 2, yPos + 7)
-  doc.text(
-    "Banque Intermédiaire",
-    table2StartX + table2Col1 + table2Col2 + table2Col3 + 2,
-    yPos + 5,
-  )
-  doc.text(
-    "SWIFT",
-    table2StartX + table2Col1 + table2Col2 + table2Col3 + table2Col4 + 2,
-    yPos + 4,
-  )
-  doc.text(
-    "CODE",
-    table2StartX + table2Col1 + table2Col2 + table2Col3 + table2Col4 + 2,
-    yPos + 7,
-  )
+  doc.text("Banque Intermédiaire", table2StartX + table2Col1 + table2Col2 + table2Col3 + 2, yPos + 5)
+  doc.text("SWIFT", table2StartX + table2Col1 + table2Col2 + table2Col3 + table2Col4 + 2, yPos + 4)
+  doc.text("CODE", table2StartX + table2Col1 + table2Col2 + table2Col3 + table2Col4 + 2, yPos + 7)
 
   doc.line(table2StartX + table2Col1, yPos, table2StartX + table2Col1, yPos + rowHeight * 2)
-  doc.line(
-    table2StartX + table2Col1 + table2Col2,
-    yPos,
-    table2StartX + table2Col1 + table2Col2,
-    yPos + rowHeight * 2,
-  )
+  doc.line(table2StartX + table2Col1 + table2Col2, yPos, table2StartX + table2Col1 + table2Col2, yPos + rowHeight * 2)
   doc.line(
     table2StartX + table2Col1 + table2Col2 + table2Col3,
     yPos,
@@ -426,27 +370,14 @@ const generatePDF = async (account: Account) => {
 
   yPos += rowHeight
 
-  doc.rect(
-    table2StartX,
-    yPos,
-    table2Col1 + table2Col2 + table2Col3 + table2Col4 + table2Col5,
-    rowHeight,
-  )
+  doc.rect(table2StartX, yPos, table2Col1 + table2Col2 + table2Col3 + table2Col4 + table2Col5, rowHeight)
   doc.setFont("helvetica", "normal")
   doc.setFontSize(7)
   doc.text("BRITISH ARAB COMMERCIAL BANK", table2StartX + 2, yPos + 5)
   doc.text("BACMGB2L", table2StartX + table2Col1 + 2, yPos + 5)
   doc.text("0100974", table2StartX + table2Col1 + table2Col2 + 2, yPos + 5)
-  doc.text(
-    "BANCO POPULAR DI SANDRO",
-    table2StartX + table2Col1 + table2Col2 + table2Col3 + 2,
-    yPos + 5,
-  )
-  doc.text(
-    "POGRITZ2",
-    table2StartX + table2Col1 + table2Col2 + table2Col3 + table2Col4 + 2,
-    yPos + 5,
-  )
+  doc.text("BANCO POPULAR DI SANDRO", table2StartX + table2Col1 + table2Col2 + table2Col3 + 2, yPos + 5)
+  doc.text("POGRITZ2", table2StartX + table2Col1 + table2Col2 + table2Col3 + table2Col4 + 2, yPos + 5)
 
   // ──────────────────────────────────────────────
   // PIED DE PAGE
@@ -476,13 +407,9 @@ const generatePDF = async (account: Account) => {
     yPos += 3
   })
 
-  const fileName = `RIB_${account.number.replace(/-/g, "_")}_${new Date()
-    .toISOString()
-    .split("T")[0]}.pdf`
+  const fileName = `RIB_${account.number.replace(/-/g, "_")}_${new Date().toISOString().split("T")[0]}.pdf`
   return doc.output("blob")
 }
-
-
 
 export default function RIBPage() {
   const { toast } = useToast()
@@ -490,6 +417,7 @@ export default function RIBPage() {
   const preSelectedAccountId = searchParams.get("accountId")
 
   const [copied, setCopied] = useState(false)
+  const [copiedRIB, setCopiedRIB] = useState(false)
   const [selectedAccountId, setSelectedAccountId] = useState<string>("")
   const [accounts, setAccounts] = useState<Account[]>([])
   const [isLoadingAccounts, setIsLoadingAccounts] = useState(true)
@@ -526,6 +454,7 @@ export default function RIBPage() {
             branchCode: acc.codeAgence || "001",
             branchName: "Agence Kaloum",
             swiftCode: "BNGNGNCX",
+            ribKey: acc.ribKey || "12345",
           }))
 
           const activeAccounts = adaptedAccounts.filter(
@@ -556,6 +485,7 @@ export default function RIBPage() {
             branchCode: "001",
             branchName: "Agence Kaloum",
             swiftCode: "BNGNGNCX",
+            ribKey: "12345",
           },
         ])
       } finally {
@@ -579,6 +509,14 @@ export default function RIBPage() {
     navigator.clipboard.writeText(text)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
+  }
+
+  const copyRIBToClipboard = () => {
+    if (!selectedAccount) return
+    const rib = `${selectedAccount.bankCode} ${selectedAccount.branchCode} ${selectedAccount.accountNumber} ${selectedAccount.ribKey}`
+    navigator.clipboard.writeText(rib)
+    setCopiedRIB(true)
+    setTimeout(() => setCopiedRIB(false), 2000)
   }
 
   const handlePrint = () => {
@@ -1180,6 +1118,10 @@ export default function RIBPage() {
                     <Button variant="outline" onClick={() => copyToClipboard(selectedAccount.iban)} size="sm">
                       <Copy className="w-4 h-4 mr-2" />
                       {copied ? "Copié !" : "Copier IBAN"}
+                    </Button>
+                    <Button variant="outline" onClick={copyRIBToClipboard} size="sm">
+                      <Copy className="w-4 h-4 mr-2" />
+                      {copiedRIB ? "Copié !" : "Copier RIB"}
                     </Button>
                   </div>
                 </>
