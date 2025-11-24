@@ -133,9 +133,9 @@ export async function getUserTransactions(): Promise<{ success: boolean; data: T
     let userTransactions = allTransactions
 
     // Filtrer par clientId si disponible
-    if (currentUserId) {
-      userTransactions = userTransactions.filter((txn: any) => txn.clientId === currentUserId)
-    }
+    // if (currentUserId) {
+    //   userTransactions = userTransactions.filter((txn: any) => txn.clientId === currentUserId)
+    // }
 
     // Filtrer également par numéro de compte si disponible
     if (userAccountNumbers.length > 0) {
