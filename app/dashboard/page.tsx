@@ -57,7 +57,7 @@ async function RecentTransactions() {
   }
 
   const formatTransaction = (transaction: any, accounts: any[]) => {
-    const amount = Number.parseFloat(transaction.amount)
+    const amount = Number.parseFloat(transaction.montantOperation)
     const isCredit = transaction.txnType === "CREDIT"
 
     const account = accounts.find((acc) => acc.id === transaction.accountId || acc.accountId === transaction.accountId)
