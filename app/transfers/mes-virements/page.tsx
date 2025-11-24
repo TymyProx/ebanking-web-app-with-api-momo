@@ -73,13 +73,13 @@ export default function MesVirementsPage() {
     return {
       type: isNegative ? "Virement émis" : "Virement reçu",
       from: txn.description || txn.referenceOperation || "Transaction",
-      amount: `${formatAmount(Math.abs(amount), currency)} ${currency}`,
+      amount: `${formatAmount(amount, currency)} ${currency}`,
       date: new Date(when).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" }),
       time: new Date(when).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }),
       status: txn.status || "COMPLETED",
       isCredit: !isNegative,
       currency,
-      rawAmount: Math.abs(amount),
+      rawAmount: amount,
       account,
       isNegative,
     }
