@@ -1088,7 +1088,7 @@ export default function RIBPage() {
                     </div>
                   </div>
 
-                  <div className="flex flex-wrap gap-2">
+                  <div className="flex gap-2 overflow-x-auto">
                     <Button onClick={downloadPDF} size="sm">
                       <Download className="w-4 h-4 mr-2" />
                       Télécharger PDF
