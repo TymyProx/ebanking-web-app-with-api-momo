@@ -513,7 +513,7 @@ export default function RIBPage() {
 
   const copyRIBToClipboard = () => {
     if (!selectedAccount) return
-    const rib = `${selectedAccount.bankCode} ${selectedAccount.branchCode} ${selectedAccount.number} ${selectedAccount.ribKey}`
+    const rib = `${selectedAccount.bankCode}${selectedAccount.branchCode}${selectedAccount.number}`
     navigator.clipboard.writeText(rib)
     setCopiedRIB(true)
     setTimeout(() => setCopiedRIB(false), 2000)
@@ -1114,10 +1114,6 @@ export default function RIBPage() {
                     >
                       <Mail className="w-4 h-4 mr-2" />
                       Envoyer par email
-                    </Button>
-                    <Button variant="outline" onClick={() => copyToClipboard(selectedAccount.iban)} size="sm">
-                      <Copy className="w-4 h-4 mr-2" />
-                      {copied ? "Copié !" : "Copier IBAN"}
                     </Button>
                     <Button variant="outline" onClick={copyRIBToClipboard} size="sm">
                       <Copy className="w-4 h-4 mr-2" />
