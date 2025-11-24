@@ -88,11 +88,22 @@ export default function AccountDetailsPage() {
   const [isLoadingAccount, setIsLoadingAccount] = useState(true)
   const [isLoadingTransactions, setIsLoadingTransactions] = useState(true)
   const [isPending, startTransition] = useTransition()
-  const [displayLimit, setDisplayLimit] = useState(20)
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 10
+  const maxTransactions = 100
+
+  const paginatedTransactions = useMemo(() => {
+    const limitedTransactions = transactions.slice(0, maxTransactions)
+    const startIndex = (currentPage - 1) * itemsPerPage
+    const endIndex = startIndex + itemsPerPage
+    return limitedTransactions.slice(startIndex, endIndex)
+  }, [transactions, currentPage])
+
+  const totalPages = Math.ceil(Math.min(transactions.length, maxTransactions) / itemsPerPage)
 
   const displayedTransactions = useMemo(() => {
-    return transactions.slice(0, displayLimit)
-  }, [transactions, displayLimit])
+    return transactions.slice(0, itemsPerPage)
+  }, [transactions])
 
   useEffect(() => {
     const loadData = async () => {
@@ -182,9 +193,8 @@ export default function AccountDetailsPage() {
 
               return matches
             })
-            .slice(0, 100)
             .map((txn: any) => {
-              const amount = Number.parseFloat(txn.amount || "0")
+              const amount = Number.parseFloat(txn.montantOperation || txn.amount || "0")
               const isCredit = txn.txnType === "CREDIT"
 
               return {
@@ -241,9 +251,8 @@ export default function AccountDetailsPage() {
             const txnAccountNumber = txn.numCompte || txn.accountNumber || txn.accountId
             return txnAccountNumber === accountNumber
           })
-          .slice(0, 100)
           .map((txn: any) => {
-            const amount = Number.parseFloat(txn.amount || "0")
+            const amount = Number.parseFloat(txn.montantOperation || txn.amount || "0")
             const isCredit = txn.txnType === "CREDIT"
 
             return {
@@ -653,7 +662,7 @@ export default function AccountDetailsPage() {
           ) : (
             <>
               <div className="space-y-3">
-                {displayedTransactions.map((transaction) => (
+                {paginatedTransactions.map((transaction) => (
                   <div
                     key={transaction.id}
                     className="flex items-center justify-between p-4 border-2 rounded-xl hover:border-primary/50 hover:shadow-md transition-all duration-300 bg-white/50 backdrop-blur-sm group"
@@ -709,14 +718,26 @@ export default function AccountDetailsPage() {
                   </div>
                 ))}
               </div>
-              {displayLimit < transactions.length && (
-                <div className="mt-6 text-center">
+              {totalPages > 1 && (
+                <div className="mt-6 flex items-center justify-center gap-2">
                   <Button
                     variant="outline"
-                    onClick={() => setDisplayLimit((prev) => prev + 20)}
+                    onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                    disabled={currentPage === 1}
                     className="bg-gradient-to-r from-primary/10 to-secondary/10 hover:from-primary/20 hover:to-secondary/20"
                   >
-                    Afficher plus de transactions ({transactions.length - displayLimit} restantes)
+                    Précédent
+                  </Button>
+                  <span className="px-4 py-2 text-sm text-muted-foreground">
+                    Page {currentPage} sur {totalPages}
+                  </span>
+                  <Button
+                    variant="outline"
+                    onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                    disabled={currentPage === totalPages}
+                    className="bg-gradient-to-r from-primary/10 to-secondary/10 hover:from-primary/20 hover:to-secondary/20"
+                  >
+                    Suivant
                   </Button>
                 </div>
               )}
