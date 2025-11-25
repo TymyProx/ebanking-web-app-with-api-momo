@@ -191,22 +191,22 @@ export default function StatementsPage() {
         console.log("[v0] Somme algébrique des transactions:", transactionsSum)
         console.log("[v0] Solde d'ouverture calculé:", openingBalance)
 
-        const cleanedTransactions = filteredTxns
-          .map((txn: any, index: number) => ({
-            referenceOperation: txn.referenceOperation || "",
-            montantOperation: txn.montantOperation || 0,
-            description: txn.description || "",
-            valueDate: txn.valueDate || "",
-            dateEcriture: txn.dateEcriture || "",
-            txnType: txn.txnType || "",
-            ...(index === 0 && { balanceOuverture: openingBalance }),
-            ...(index === filteredTxns.length - 1 && { balanceFermeture: closingBalance }),
-          }))
-          .sort((a: any, b: any) => {
-            const dateA = new Date(a.valueDate || 0).getTime()
-            const dateB = new Date(b.valueDate || 0).getTime()
-            return dateB - dateA
-          })
+        const sortedTransactions = filteredTxns.sort((a: any, b: any) => {
+          const dateA = new Date(a.valueDate || 0).getTime()
+          const dateB = new Date(b.valueDate || 0).getTime()
+          return dateB - dateA
+        })
+
+        const cleanedTransactions = sortedTransactions.map((txn: any, index: number) => ({
+          referenceOperation: txn.referenceOperation || "",
+          montantOperation: txn.montantOperation || 0,
+          description: txn.description || "",
+          valueDate: txn.valueDate || "",
+          dateEcriture: txn.dateEcriture || "",
+          txnType: txn.txnType || "",
+          ...(index === 0 && { balanceOuverture: openingBalance }),
+          ...(index === sortedTransactions.length - 1 && { balanceFermeture: closingBalance }),
+        }))
 
         console.log("[v0] Transactions nettoyées et triées:", cleanedTransactions.length)
 
@@ -304,28 +304,37 @@ export default function StatementsPage() {
       console.log("[v0] Somme algébrique des transactions:", transactionsSum)
       console.log("[v0] Solde d'ouverture calculé:", openingBalance)
 
-      const cleanedTransactions = filteredTxns
-        .map((txn: any, index: number) => ({
-          referenceOperation: txn.referenceOperation || "",
-          montantOperation: txn.montantOperation || 0,
-          description: txn.description || "",
-          valueDate: txn.valueDate || "",
-          dateEcriture: txn.dateEcriture || "",
-          txnType: txn.txnType || "",
-          ...(index === 0 && { balanceOuverture: openingBalance }),
-          ...(index === filteredTxns.length - 1 && { balanceFermeture: closingBalance }),
-        }))
-        .sort((a: any, b: any) => {
-          const dateA = new Date(a.valueDate || 0).getTime()
-          const dateB = new Date(b.valueDate || 0).getTime()
-          return dateB - dateA
-        })
+      const sortedTransactions = filteredTxns.sort((a: any, b: any) => {
+        const dateA = new Date(a.valueDate || 0).getTime()
+        const dateB = new Date(b.valueDate || 0).getTime()
+        return dateB - dateA
+      })
+
+      const cleanedTransactions = sortedTransactions.map((txn: any, index: number) => ({
+        referenceOperation: txn.referenceOperation || "",
+        montantOperation: txn.montantOperation || 0,
+        description: txn.description || "",
+        valueDate: txn.valueDate || "",
+        dateEcriture: txn.dateEcriture || "",
+        txnType: txn.txnType || "",
+        ...(index === 0 && { balanceOuverture: openingBalance }),
+        ...(index === sortedTransactions.length - 1 && { balanceFermeture: closingBalance }),
+      }))
 
       console.log("[v0] Transactions nettoyées et triées:", cleanedTransactions.length)
 
       setFilteredTransactions(cleanedTransactions)
       setTransactionCount(cleanedTransactions.length)
       setShowDownloadLink(true)
+
+      await generatePDFStatement(
+        cleanedTransactions,
+        selectedAccount,
+        startDate,
+        endDate,
+        openingBalance,
+        closingBalance,
+      )
     } catch (error) {
       console.error("[v0] Erreur lors de la récupération des transactions:", error)
       setErrorMessage("Erreur lors de la récupération des transactions")
@@ -341,7 +350,7 @@ export default function StatementsPage() {
     const balanceFermeture =
       filteredTransactions[filteredTransactions.length - 1]?.balanceFermeture || selectedAccount.balance
 
-    generatePDFStatement(filteredTransactions, selectedAccount, startDate, endDate)
+    generatePDFStatement(filteredTransactions, selectedAccount, startDate, endDate, balanceOuverture, balanceFermeture)
   }
 
   const handleSendByEmail = async () => {
@@ -777,7 +786,14 @@ export default function StatementsPage() {
     </div>
   )
 
-  async function generatePDFStatement(transactions: any[], account: Account, startDate: string, endDate: string) {
+  async function generatePDFStatement(
+    transactions: any[],
+    account: Account,
+    startDate: string,
+    endDate: string,
+    openingBalance: number,
+    closingBalance: number,
+  ) {
     try {
       const doc = new jsPDF()
 
@@ -870,7 +886,7 @@ export default function StatementsPage() {
         doc.text("SOLDE D'OUVERTURE:", 15, yPos)
 
         doc.setFont("helvetica", "normal")
-        doc.text(`${formatAmount(transactions[0].balanceOuverture)} ${account.currency}`, 70, yPos)
+        doc.text(`${formatAmount(openingBalance)} ${account.currency}`, 70, yPos)
 
         yPos += 10
 
@@ -953,11 +969,7 @@ export default function StatementsPage() {
         doc.text("SOLDE DE FERMETURE:", 15, yPos)
 
         doc.setFont("helvetica", "normal")
-        doc.text(
-          `${formatAmount(transactions[transactions.length - 1].balanceFermeture)} ${account.currency}`,
-          70,
-          yPos,
-        )
+        doc.text(`${formatAmount(closingBalance)} ${account.currency}`, 70, yPos)
 
         yPos += 10
 
