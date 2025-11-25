@@ -24,7 +24,7 @@ import {
 } from "lucide-react"
 import { generateStatement, sendStatementByEmail, getTransactionsByNumCompte } from "./actions"
 import { useActionState } from "react"
-import { getAccounts } from "../actions"
+import { getAccounts, getAccountById } from "../actions"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import jsPDF from "jspdf"
 
@@ -68,7 +68,7 @@ export default function StatementsPage() {
   const searchParams = useSearchParams()
   const preSelectedAccountId = searchParams.get("accountId")
 
-  const [selectedAccount, setSelectedAccount] = useState<string>("")
+  const [selectedAccount, setSelectedAccount] = useState<Account | null>(null)
   const [startDate, setStartDate] = useState<string>("")
   const [endDate, setEndDate] = useState<string>("")
   const [format, setFormat] = useState<"pdf" | "excel">("pdf")
@@ -140,23 +140,34 @@ export default function StatementsPage() {
   }, [])
 
   useEffect(() => {
-    const loadTransactions = async () => {
-      if (!selectedAccount) return
-
+    const loadTransactionsData = async () => {
       try {
-        const transactionsData = await getTransactionsByNumCompte(selectedAccount)
+        setIsLoadingTransactions(true)
+        setErrorMessage("")
 
-        if (!transactionsData.success) {
-          alert(`❌ ${transactionsData.error || "Impossible de récupérer les transactions"}`)
+        if (!selectedAccount) {
+          setErrorMessage("Veuillez sélectionner un compte")
           return
         }
 
-        const allTransactions = transactionsData.data
+        const accountDetails = await getAccountById(selectedAccount.id)
+        if (!accountDetails.data) {
+          setErrorMessage("Impossible de récupérer les informations du compte")
+          return
+        }
+
+        const transactionsResponse = await getTransactionsByNumCompte(selectedAccount.number)
+
+        if (!transactionsResponse.success) {
+          alert(`❌ ${transactionsResponse.error || "Impossible de récupérer les transactions"}`)
+          return
+        }
+
+        const allTransactions = transactionsResponse.data
 
         console.log("[v0] Total transactions reçues:", allTransactions.length)
 
-        // Filter by valueDate
-        const filteredTransactions = allTransactions.filter((txn: any) => {
+        const filteredTxns = allTransactions.filter((txn: any) => {
           if (!txn.valueDate) return false
 
           const txnDate = new Date(txn.valueDate)
@@ -168,34 +179,51 @@ export default function StatementsPage() {
           return isInRange
         })
 
-        console.log("[v0] Transactions après filtre par valueDate:", filteredTransactions.length)
+        console.log("[v0] Transactions filtrées:", filteredTxns.length)
 
-        // if (filteredTransactions.length === 0) {
-        //   alert("❌ Aucune transaction trouvée pour cette période.")
-        //   return
-        // }
+        const closingBalance = Number.parseFloat(accountDetails.data.bookBalance || "0")
+        const transactionsSum = filteredTxns.reduce((sum: number, txn: any) => {
+          return sum + Number.parseFloat(txn.montantOperation || "0")
+        }, 0)
+        const openingBalance = closingBalance - transactionsSum
 
-        // Extract only the 4 required fields
-        const cleanedTransactions = filteredTransactions.map((txn: any) => ({
-          referenceOperation: txn.referenceOperation || "",
-          montantOperation: txn.montantOperation || 0,
-          description: txn.description || "",
-          valueDate: txn.valueDate || "",
-        }))
+        console.log("[v0] Solde de fermeture (bookBalance):", closingBalance)
+        console.log("[v0] Somme algébrique des transactions:", transactionsSum)
+        console.log("[v0] Solde d'ouverture calculé:", openingBalance)
 
-        console.log("[v0] Transactions nettoyées (4 champs):", cleanedTransactions.length)
+        const cleanedTransactions = filteredTxns
+          .map((txn: any, index: number) => ({
+            referenceOperation: txn.referenceOperation || "",
+            montantOperation: txn.montantOperation || 0,
+            description: txn.description || "",
+            valueDate: txn.valueDate || "",
+            dateEcriture: txn.dateEcriture || "",
+            txnType: txn.txnType || "",
+            ...(index === 0 && { balanceOuverture: openingBalance }),
+            ...(index === filteredTxns.length - 1 && { balanceFermeture: closingBalance }),
+          }))
+          .sort((a: any, b: any) => {
+            const dateA = new Date(a.valueDate || 0).getTime()
+            const dateB = new Date(b.valueDate || 0).getTime()
+            return dateB - dateA
+          })
 
-        setTransactions(cleanedTransactions)
+        console.log("[v0] Transactions nettoyées et triées:", cleanedTransactions.length)
+
+        setFilteredTransactions(cleanedTransactions)
+        setTransactionCount(cleanedTransactions.length)
+        setShowDownloadLink(true)
       } catch (error) {
         console.error("[v0] Erreur lors de la récupération des transactions:", error)
-        alert("❌ Erreur lors de la récupération des transactions")
+        setErrorMessage("Erreur lors de la récupération des transactions")
+      } finally {
+        setIsLoadingTransactions(false)
       }
     }
 
-    loadTransactions()
+    loadTransactionsData()
   }, [selectedAccount])
 
-  // Pré-sélectionner le compte si fourni dans l'URL
   useEffect(() => {
     // User must now manually select an account before generating statements
     // if (preSelectedAccountId && accounts.find((acc) => acc.id === preSelectedAccountId)) {
@@ -214,14 +242,9 @@ export default function StatementsPage() {
       setEndDate("")
     }
   }
+
   const handleGenerateStatement = async () => {
     if (!selectedAccount || !startDate || !endDate) return
-
-    const account = accounts.find((a) => a.id === selectedAccount)
-    if (!account) {
-      alert("❌ Compte introuvable")
-      return
-    }
 
     setIsLoadingTransactions(true)
     setErrorMessage("")
@@ -229,7 +252,7 @@ export default function StatementsPage() {
     setFilteredTransactions([])
     setTransactionCount(0)
 
-    const accountNumber = account.number
+    const accountNumber = selectedAccount.number
 
     try {
       const result = await getTransactionsByNumCompte(accountNumber)
@@ -264,32 +287,41 @@ export default function StatementsPage() {
         return
       }
 
-      filteredTxns.sort((a: any, b: any) => {
-        const dateA = new Date(a.valueDate).getTime()
-        const dateB = new Date(b.valueDate).getTime()
-        return dateB - dateA // Descending order
-      })
+      const accountDetails = await getAccountById(selectedAccount.id)
+      if (!accountDetails.data) {
+        setErrorMessage("Impossible de récupérer les informations du compte")
+        setIsLoadingTransactions(false)
+        return
+      }
 
-      const firstTxn = filteredTxns[0]
-      const lastTxn = filteredTxns[filteredTxns.length - 1]
+      const closingBalance = Number.parseFloat(accountDetails.data.bookBalance || "0")
+      const transactionsSum = filteredTxns.reduce((sum: number, txn: any) => {
+        return sum + Number.parseFloat(txn.montantOperation || "0")
+      }, 0)
+      const openingBalance = closingBalance - transactionsSum
 
-      const balanceOuverture = firstTxn?.balanceOuverture || 0
-      const balanceFermeture = lastTxn?.balanceFermeture || 0
+      console.log("[v0] Solde de fermeture (bookBalance):", closingBalance)
+      console.log("[v0] Somme algébrique des transactions:", transactionsSum)
+      console.log("[v0] Solde d'ouverture calculé:", openingBalance)
 
-      console.log("[v0] Balance d'ouverture (première txn):", balanceOuverture)
-      console.log("[v0] Balance de fermeture (dernière txn):", balanceFermeture)
+      const cleanedTransactions = filteredTxns
+        .map((txn: any, index: number) => ({
+          referenceOperation: txn.referenceOperation || "",
+          montantOperation: txn.montantOperation || 0,
+          description: txn.description || "",
+          valueDate: txn.valueDate || "",
+          dateEcriture: txn.dateEcriture || "",
+          txnType: txn.txnType || "",
+          ...(index === 0 && { balanceOuverture: openingBalance }),
+          ...(index === filteredTxns.length - 1 && { balanceFermeture: closingBalance }),
+        }))
+        .sort((a: any, b: any) => {
+          const dateA = new Date(a.valueDate || 0).getTime()
+          const dateB = new Date(b.valueDate || 0).getTime()
+          return dateB - dateA
+        })
 
-      const cleanedTransactions = filteredTxns.map((txn: any, index: number) => ({
-        referenceOperation: txn.referenceOperation || "",
-        montantOperation: txn.montantOperation || 0,
-        description: txn.description || "",
-        valueDate: txn.valueDate || "",
-        dateEcriture: txn.dateEcriture || "",
-        ...(index === 0 && { balanceOuverture }),
-        ...(index === filteredTxns.length - 1 && { balanceFermeture }),
-      }))
-
-      console.log("[v0] Transactions nettoyées:", cleanedTransactions.length)
+      console.log("[v0] Transactions nettoyées et triées:", cleanedTransactions.length)
 
       setFilteredTransactions(cleanedTransactions)
       setTransactionCount(cleanedTransactions.length)
@@ -303,14 +335,13 @@ export default function StatementsPage() {
   }
 
   const handleDownloadPDF = () => {
-    const selectedAccountData = accounts.find((acc) => acc.id === selectedAccount)
-    if (!selectedAccountData || filteredTransactions.length === 0) return
+    if (!selectedAccount || filteredTransactions.length === 0) return
 
-    const balanceOuverture = filteredTransactions[0]?.balanceOuverture || selectedAccountData.balance
+    const balanceOuverture = filteredTransactions[0]?.balanceOuverture || selectedAccount.balance
     const balanceFermeture =
-      filteredTransactions[filteredTransactions.length - 1]?.balanceFermeture || selectedAccountData.balance
+      filteredTransactions[filteredTransactions.length - 1]?.balanceFermeture || selectedAccount.balance
 
-    generatePDFStatement(filteredTransactions, selectedAccountData, startDate, endDate)
+    generatePDFStatement(filteredTransactions, selectedAccount, startDate, endDate)
   }
 
   const handleSendByEmail = async () => {
@@ -360,8 +391,6 @@ export default function StatementsPage() {
   // Trouver le compte pré-sélectionné pour afficher un message
   const preSelectedAccount = preSelectedAccountId ? accounts.find((acc) => acc.id === preSelectedAccountId) : null
 
-  const selectedAccountData = accounts.find((acc) => acc.id === selectedAccount)
-
   return (
     <div className="mt-6 space-y-6">
       <div className="space-y-1">
@@ -389,9 +418,8 @@ export default function StatementsPage() {
               variant="link"
               className="p-0 h-auto text-green-700 underline"
               onClick={async () => {
-                const account = accounts.find((a) => a.id === selectedAccount)
-                if (!account) return
-                await generatePDFStatement(filteredTransactions, account, startDate, endDate)
+                if (!selectedAccount) return
+                await generatePDFStatement(filteredTransactions, selectedAccount, startDate, endDate)
               }}
             >
               Télécharger le relevé
@@ -466,24 +494,25 @@ export default function StatementsPage() {
                 </div>
               ) : (
                 <div className="space-y-2">
-                  <Select value={selectedAccount} onValueChange={setSelectedAccount}>
+                  <Select
+                    value={selectedAccount?.id || ""}
+                    onValueChange={(id) => setSelectedAccount(accounts.find((acc) => acc.id === id) || null)}
+                  >
                     <SelectTrigger className="w-full h-auto py-2">
                       <SelectValue placeholder="Sélectionnez un compte">
-                        {selectedAccountData && (
+                        {selectedAccount && (
                           <div className="flex items-center justify-between w-full">
                             <div className="flex items-center gap-2">
-                              {getAccountIcon(selectedAccountData.type)}
+                              {getAccountIcon(selectedAccount.type)}
                               <div className="text-left">
-                                <div className="font-medium text-sm">{selectedAccountData.name}</div>
-                                <div className="text-xs text-muted-foreground font-mono">
-                                  {selectedAccountData.number}
-                                </div>
+                                <div className="font-medium text-sm">{selectedAccount.name}</div>
+                                <div className="text-xs text-muted-foreground font-mono">{selectedAccount.number}</div>
                               </div>
                             </div>
                             <div className="text-right ml-4">
                               <div className="font-bold text-sm">
-                                {formatAmount(selectedAccountData.balance, selectedAccountData.currency)}{" "}
-                                {selectedAccountData.currency}
+                                {formatAmount(selectedAccount.balance, selectedAccount.currency)}{" "}
+                                {selectedAccount.currency}
                               </div>
                             </div>
                           </div>
