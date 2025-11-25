@@ -681,7 +681,7 @@ export default function AccountDetailsPage() {
                         {account?.currency || transaction.currency}
                       </p>
                       <p className="text-sm text-muted-foreground">{formatDateTime(transaction.date)}</p>
-                      <Badge
+                      {/* <Badge
                         variant={
                           transaction.status === "Exécuté"
                             ? "default"
@@ -696,7 +696,7 @@ export default function AccountDetailsPage() {
                         }
                       >
                         {transaction.status}
-                      </Badge>
+                      </Badge> */}
                     </div>
                   </div>
                 ))}
