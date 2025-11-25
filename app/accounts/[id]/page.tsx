@@ -107,8 +107,7 @@ export default function AccountDetailsPage() {
 
   useEffect(() => {
     const loadData = async () => {
-      // Load both account and transactions in parallel
-      const [accountResult, transactionsResult] = await Promise.all([loadAccountData(), loadTransactionsData()])
+      await loadAccountData()
     }
 
     const loadAccountData = async () => {
@@ -133,6 +132,7 @@ export default function AccountDetailsPage() {
             overdraftLimit: accountDetails.currency === "GNF" ? 500000 : undefined,
           }
           setAccount(adaptedAccount)
+          await loadTransactionsData(accountDetails.accountNumber)
         } else {
           const accountsData = await getAccounts()
 
@@ -157,41 +157,26 @@ export default function AccountDetailsPage() {
                 overdraftLimit: foundAccount.currency === "GNF" ? 500000 : undefined,
               }
               setAccount(adaptedAccount)
+              await loadTransactionsData(foundAccount.accountNumber)
             }
           }
         }
       } catch (error) {
-        // Error handled silently
+        console.error("[v0] Error loading account:", error)
       } finally {
         setIsLoadingAccount(false)
       }
     }
 
-    const loadTransactionsData = async () => {
+    const loadTransactionsData = async (accountNumber?: string) => {
       try {
         const transactionsData = await getUserTransactions()
 
-        console.log("[v0] All transactions data:", transactionsData)
-        console.log("[v0] Looking for account:", account?.number || accountId)
-
         if (transactionsData.success && transactionsData.data && Array.isArray(transactionsData.data)) {
-          console.log("[v0] Total transactions fetched:", transactionsData.data.length)
-
-          if (transactionsData.data.length > 0) {
-            console.log("[v0] Sample transaction structure:", transactionsData.data[0])
-          }
-
-          const accountNumber = account?.number || accountId
           const accountTransactions = transactionsData.data
             .filter((txn: any) => {
               const txnAccountNumber = txn.numCompte || txn.accountNumber || txn.accountId
-              const matches = txnAccountNumber === accountNumber
-
-              if (matches) {
-                console.log("[v0] Transaction matched for account:", txn)
-              }
-
-              return matches
+              return txnAccountNumber === accountNumber
             })
             .map((txn: any) => {
               const amount = Number.parseFloat(txn.montantOperation || txn.amount || "0")
@@ -213,7 +198,6 @@ export default function AccountDetailsPage() {
             })
             .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
 
-          console.log("[v0] Filtered transactions for this account:", accountTransactions.length)
           setTransactions(accountTransactions)
 
           const cacheKey = `transactions_${accountId}`
@@ -225,11 +209,10 @@ export default function AccountDetailsPage() {
             }),
           )
         } else {
-          console.log("[v0] No transaction data available")
           setTransactions([])
         }
       } catch (error) {
-        console.log("[v0] Error loading transactions:", error)
+        console.error("[v0] Error loading transactions:", error)
         setTransactions([])
       } finally {
         setIsLoadingTransactions(false)
