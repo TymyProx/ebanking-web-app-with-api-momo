@@ -82,16 +82,13 @@ export default function StatementsPage() {
   const [showDownloadLink, setShowDownloadLink] = useState(false)
   const [isLoadingTransactions, setIsLoadingTransactions] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string>("")
-
   const [accounts, setAccounts] = useState<Account[]>([])
   const [isLoadingAccounts, setIsLoadingAccounts] = useState(true)
   const [transactions, setTransactions] = useState<any[]>([]) // Kept for potential future use, but not used in the new generation logic
-
-  // États pour les actions serveur
   const [generateState, generateAction, isGenerating] = useActionState(generateStatement, null)
   const [emailState, emailAction, isSending] = useActionState(sendStatementByEmail, null)
-
   const [isPending, startTransition] = useTransition()
+  const [hasSearched, setHasSearched] = useState(false) // Track if user has initiated a search
 
   useEffect(() => {
     const loadAccounts = async () => {
@@ -246,6 +243,7 @@ export default function StatementsPage() {
   const handleGenerateStatement = async () => {
     if (!selectedAccount || !startDate || !endDate) return
 
+    setHasSearched(true)
     setIsLoadingTransactions(true)
     setErrorMessage("")
     setShowDownloadLink(false)
@@ -327,6 +325,14 @@ export default function StatementsPage() {
       setTransactionCount(cleanedTransactions.length)
       setShowDownloadLink(true)
 
+      console.log("[v0] Generating PDF with opening balance:", openingBalance, "closing balance:", closingBalance)
+      console.log(
+        "[v0] Type of openingBalance:",
+        typeof openingBalance,
+        "Type of closingBalance:",
+        typeof closingBalance,
+      )
+
       await generatePDFStatement(
         cleanedTransactions,
         selectedAccount,
@@ -401,388 +407,400 @@ export default function StatementsPage() {
   const preSelectedAccount = preSelectedAccountId ? accounts.find((acc) => acc.id === preSelectedAccountId) : null
 
   return (
-    <div className="mt-6 space-y-6">
-      <div className="space-y-1">
-        <h1 className="text-3xl font-bold text-primary">Relevé de comptes</h1>
-        <p className="text-sm text-muted-foreground">Générez et téléchargez vos relevés de compte</p>
-        {preSelectedAccountId && accounts.find((acc) => acc.id === preSelectedAccountId) && (
+    <div className="min-h-screen bg-background">
+      <div className="container mx-auto px-4 py-8">
+        <h1 className="mb-6 text-3xl font-bold">Relevé de Compte</h1>
+
+        {!hasSearched && !selectedAccount && (
+          <div className="mb-6 rounded-lg border border-blue-200 bg-blue-50 p-4">
+            <p className="text-blue-800">Veuillez sélectionner un compte et une période pour générer votre relevé.</p>
+          </div>
+        )}
+
+        {hasSearched && isLoadingTransactions && (
+          <div className="flex items-center justify-center py-8">
+            <div className="text-center">
+              <div className="mb-2 h-8 w-8 animate-spin rounded-full border-b-2 border-t-2 border-primary"></div>
+              <p className="text-sm text-muted-foreground">Recherche en cours...</p>
+            </div>
+          </div>
+        )}
+
+        {hasSearched && errorMessage && (
+          <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-4">
+            <p className="text-red-800">{errorMessage}</p>
+          </div>
+        )}
+
+        {showDownloadLink && transactionCount > 0 && (
           <div>
-            <Alert className="border-blue-200 bg-blue-50">
-              <CheckCircle className="h-4 w-4 text-blue-600" />
-              <AlertDescription className="text-blue-800">
-                Compte pré-sélectionné : {accounts.find((acc) => acc.id === preSelectedAccountId)?.name} (
-                {accounts.find((acc) => acc.id === preSelectedAccountId)?.number})
+            <Alert className="border-green-200 bg-green-50">
+              <CheckCircle className="h-4 w-4 text-green-600" />
+              <AlertDescription className="text-green-800 flex items-center justify-between">
+                <span>{transactionCount} transaction(s) trouvée(s) pour cette période.</span>
+                <Button
+                  variant="link"
+                  className="p-0 h-auto text-green-700 underline"
+                  onClick={async () => {
+                    if (!selectedAccount) return
+                    await generatePDFStatement(filteredTransactions, selectedAccount, startDate, endDate)
+                  }}
+                >
+                  Télécharger le relevé
+                </Button>
               </AlertDescription>
             </Alert>
           </div>
         )}
-      </div>
 
-      {showDownloadLink && transactionCount > 0 && (
-        <Alert className="border-green-200 bg-green-50">
-          <CheckCircle className="h-4 w-4 text-green-600" />
-          <AlertDescription className="text-green-800 flex items-center justify-between">
-            <span>{transactionCount} transaction(s) trouvée(s) pour cette période.</span>
-            <Button
-              variant="link"
-              className="p-0 h-auto text-green-700 underline"
-              onClick={async () => {
-                if (!selectedAccount) return
-                await generatePDFStatement(filteredTransactions, selectedAccount, startDate, endDate)
-              }}
-            >
-              Télécharger le relevé
-            </Button>
-          </AlertDescription>
-        </Alert>
-      )}
+        {!isLoadingTransactions && errorMessage && (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>{errorMessage}</AlertDescription>
+          </Alert>
+        )}
 
-      {!isLoadingTransactions && errorMessage && (
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>{errorMessage}</AlertDescription>
-        </Alert>
-      )}
+        {generateState?.success && (
+          <Alert className="border-green-200 bg-green-50">
+            <CheckCircle className="h-4 w-4 text-green-600" />
+            <AlertDescription className="text-green-800">
+              ✅ Relevé généré avec succès ! ({generateState.transactionCount} transactions)
+              <Button
+                variant="link"
+                className="p-0 h-auto text-green-700 underline ml-2"
+                onClick={() => {
+                  // Note: The logic to actually download here is removed as generation happens directly in handleGenerateStatement
+                }}
+              >
+                Télécharger maintenant
+              </Button>
+            </AlertDescription>
+          </Alert>
+        )}
 
-      {generateState?.success && (
-        <Alert className="border-green-200 bg-green-50">
-          <CheckCircle className="h-4 w-4 text-green-600" />
-          <AlertDescription className="text-green-800">
-            ✅ Relevé généré avec succès ! ({generateState.transactionCount} transactions)
-            <Button
-              variant="link"
-              className="p-0 h-auto text-green-700 underline ml-2"
-              onClick={() => {
-                // Note: The logic to actually download here is removed as generation happens directly in handleGenerateStatement
-              }}
-            >
-              Télécharger maintenant
-            </Button>
-          </AlertDescription>
-        </Alert>
-      )}
+        {generateState?.error && (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>❌ {generateState.error}</AlertDescription>
+          </Alert>
+        )}
 
-      {generateState?.error && (
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>❌ {generateState.error}</AlertDescription>
-        </Alert>
-      )}
+        {emailState?.success && (
+          <Alert className="border-blue-200 bg-blue-50">
+            <CheckCircle className="h-4 w-4 text-blue-600" />
+            <AlertDescription className="text-blue-800">✅ Relevé envoyé par email à {emailAddress}</AlertDescription>
+          </Alert>
+        )}
 
-      {emailState?.success && (
-        <Alert className="border-blue-200 bg-blue-50">
-          <CheckCircle className="h-4 w-4 text-blue-600" />
-          <AlertDescription className="text-blue-800">✅ Relevé envoyé par email à {emailAddress}</AlertDescription>
-        </Alert>
-      )}
+        {isGenerating && (
+          <Alert className="border-yellow-200 bg-yellow-50">
+            <Clock className="h-4 w-4 text-yellow-600 animate-pulse" />
+            <AlertDescription className="text-yellow-800">
+              ⏳ Téléchargement du relevé en cours... Veuillez patienter.
+            </AlertDescription>
+          </Alert>
+        )}
 
-      {isGenerating && (
-        <Alert className="border-yellow-200 bg-yellow-50">
-          <Clock className="h-4 w-4 text-yellow-600 animate-pulse" />
-          <AlertDescription className="text-yellow-800">
-            ⏳ Téléchargement du relevé en cours... Veuillez patienter.
-          </AlertDescription>
-        </Alert>
-      )}
-
-      <Tabs defaultValue="generate" className="space-y-3">
-        <TabsContent value="generate" className="space-y-3">
-          {/* Sélection du compte */}
-          <Card>
-            <CardHeader className="py-2">
-              <CardTitle className="flex items-center text-base">
-                <CreditCard className="w-4 h-4 mr-2" />
-                Sélection du compte
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pt-2 pb-3">
-              {isLoadingAccounts ? (
-                <div className="text-center py-2">
-                  <Clock className="w-6 h-6 animate-spin mx-auto mb-2" />
-                  <p className="text-gray-500">Chargement des comptes...</p>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  <Select
-                    value={selectedAccount?.id || ""}
-                    onValueChange={(id) => setSelectedAccount(accounts.find((acc) => acc.id === id) || null)}
-                  >
-                    <SelectTrigger className="w-full h-auto py-2">
-                      <SelectValue placeholder="Sélectionnez un compte">
-                        {selectedAccount && (
-                          <div className="flex items-center justify-between w-full">
-                            <div className="flex items-center gap-2">
-                              {getAccountIcon(selectedAccount.type)}
-                              <div className="text-left">
-                                <div className="font-medium text-sm">{selectedAccount.name}</div>
-                                <div className="text-xs text-muted-foreground font-mono">{selectedAccount.number}</div>
-                              </div>
-                            </div>
-                            <div className="text-right ml-4">
-                              <div className="font-bold text-sm">
-                                {formatAmount(selectedAccount.balance, selectedAccount.currency)}{" "}
-                                {selectedAccount.currency}
-                              </div>
-                            </div>
-                          </div>
-                        )}
-                      </SelectValue>
-                    </SelectTrigger>
-                    <SelectContent className="max-h-[400px]">
-                      {accounts.map((account) => (
-                        <SelectItem key={account.id} value={account.id} className="h-auto py-2">
-                          <div className="flex items-center justify-between w-full gap-4">
-                            <div className="flex items-center gap-2 flex-1">
-                              {getAccountIcon(account.type)}
-                              <div className="text-left">
-                                <div className="font-medium flex items-center gap-1.5 text-sm">
-                                  {account.name}
-                                  {preSelectedAccountId === account.id && (
-                                    <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700">
-                                      Suggéré
-                                    </Badge>
-                                  )}
+        <Tabs defaultValue="generate" className="space-y-3">
+          <TabsContent value="generate" className="space-y-3">
+            {/* Sélection du compte */}
+            <Card>
+              <CardHeader className="py-2">
+                <CardTitle className="flex items-center text-base">
+                  <CreditCard className="w-4 h-4 mr-2" />
+                  Sélection du compte
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-2 pb-3">
+                {isLoadingAccounts ? (
+                  <div className="text-center py-2">
+                    <Clock className="w-6 h-6 animate-spin mx-auto mb-2" />
+                    <p className="text-gray-500">Chargement des comptes...</p>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <Select
+                      value={selectedAccount?.id || ""}
+                      onValueChange={(id) => setSelectedAccount(accounts.find((acc) => acc.id === id) || null)}
+                    >
+                      <SelectTrigger className="w-full h-auto py-2">
+                        <SelectValue placeholder="Sélectionnez un compte">
+                          {selectedAccount && (
+                            <div className="flex items-center justify-between w-full">
+                              <div className="flex items-center gap-2">
+                                {getAccountIcon(selectedAccount.type)}
+                                <div className="text-left">
+                                  <div className="font-medium text-sm">{selectedAccount.name}</div>
+                                  <div className="text-xs text-muted-foreground font-mono">
+                                    {selectedAccount.number}
+                                  </div>
                                 </div>
-                                <div className="text-xs text-muted-foreground font-mono">{account.number}</div>
+                              </div>
+                              <div className="text-right ml-4">
+                                <div className="font-bold text-sm">
+                                  {formatAmount(selectedAccount.balance, selectedAccount.currency)}{" "}
+                                  {selectedAccount.currency}
+                                </div>
                               </div>
                             </div>
-                            <div className="text-right ml-4">
-                              <div className="font-bold text-sm">
-                                {formatAmount(account.balance, account.currency)} {account.currency}
+                          )}
+                        </SelectValue>
+                      </SelectTrigger>
+                      <SelectContent className="max-h-[400px]">
+                        {accounts.map((account) => (
+                          <SelectItem key={account.id} value={account.id} className="h-auto py-2">
+                            <div className="flex items-center justify-between w-full gap-4">
+                              <div className="flex items-center gap-2 flex-1">
+                                {getAccountIcon(account.type)}
+                                <div className="text-left">
+                                  <div className="font-medium flex items-center gap-1.5 text-sm">
+                                    {account.name}
+                                    {preSelectedAccountId === account.id && (
+                                      <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700">
+                                        Suggéré
+                                      </Badge>
+                                    )}
+                                  </div>
+                                  <div className="text-xs text-muted-foreground font-mono">{account.number}</div>
+                                </div>
+                              </div>
+                              <div className="text-right ml-4">
+                                <div className="font-bold text-sm">
+                                  {formatAmount(account.balance, account.currency)} {account.currency}
+                                </div>
                               </div>
                             </div>
-                          </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Configuration du relevé */}
+            <Card>
+              <CardHeader className="py-2">
+                <CardTitle className="flex items-center text-base">
+                  <Calendar className="w-4 h-4 mr-2" />
+                  Détails du relevé
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3 pt-2 pb-3">
+                {/* Sélection de période */}
+                <div className="space-y-2">
+                  <Label className="text-sm">Période du relevé</Label>
+                  <Select value={selectedPeriod} onValueChange={handlePeriodChange}>
+                    <SelectTrigger className="h-9">
+                      <SelectValue placeholder="Choisir une période" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {predefinedPeriods.map((period) => (
+                        <SelectItem key={period.value} value={period.value}>
+                          {period.label}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
-                </div>
-              )}
-            </CardContent>
-          </Card>
 
-          {/* Configuration du relevé */}
-          <Card>
-            <CardHeader className="py-2">
-              <CardTitle className="flex items-center text-base">
-                <Calendar className="w-4 h-4 mr-2" />
-                Détails du relevé
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3 pt-2 pb-3">
-              {/* Sélection de période */}
-              <div className="space-y-2">
-                <Label className="text-sm">Période du relevé</Label>
-                <Select value={selectedPeriod} onValueChange={handlePeriodChange}>
-                  <SelectTrigger className="h-9">
-                    <SelectValue placeholder="Choisir une période" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {predefinedPeriods.map((period) => (
-                      <SelectItem key={period.value} value={period.value}>
-                        {period.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-
-                {selectedPeriod === "custom" && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                    <div>
-                      <Label htmlFor="startDate" className="text-sm">
-                        Date de début
-                      </Label>
-                      <Input
-                        id="startDate"
-                        type="date"
-                        value={startDate}
-                        onChange={(e) => setStartDate(e.target.value)}
-                        max={endDate || undefined}
-                        className="h-9"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="endDate" className="text-sm">
-                        Date de fin
-                      </Label>
-                      <Input
-                        id="endDate"
-                        type="date"
-                        value={endDate}
-                        onChange={(e) => setEndDate(e.target.value)}
-                        min={startDate || undefined}
-                        max={new Date().toISOString().split("T")[0]}
-                        className="h-9"
-                      />
-                    </div>
-                  </div>
-                )}
-
-                {startDate && endDate && (
-                  <div className="p-2 bg-blue-50 rounded-lg">
-                    <p className="text-sm text-blue-800">
-                      <Calendar className="w-4 h-4 inline mr-1" />
-                      Période sélectionnée : du {new Date(startDate).toLocaleDateString("fr-FR")} au{" "}
-                      {new Date(endDate).toLocaleDateString("fr-FR")}
-                    </p>
-                  </div>
-                )}
-              </div>
-
-              {/* Options de format */}
-              {/* <div className="space-y-2">
-                <Label className="text-sm">Format du fichier</Label>
-                <div className="grid grid-cols-2 gap-2">
-                  <div
-                    className={`p-2 border rounded-lg cursor-pointer transition-all ${
-                      format === "pdf"
-                        ? "border-red-500 bg-red-50 ring-2 ring-red-200"
-                        : "border-gray-200 hover:border-gray-300"
-                    }`}
-                    onClick={() => setFormat("pdf")}
-                  >
-                    <div className="flex items-center space-x-2">
-                      <FileText className="w-5 h-5 text-red-600" />
+                  {selectedPeriod === "custom" && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                       <div>
-                        <p className="font-medium text-sm">PDF</p>
-                        <p className="text-xs text-gray-500">Format standard</p>
+                        <Label htmlFor="startDate" className="text-sm">
+                          Date de début
+                        </Label>
+                        <Input
+                          id="startDate"
+                          type="date"
+                          value={startDate}
+                          onChange={(e) => setStartDate(e.target.value)}
+                          max={endDate || undefined}
+                          className="h-9"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="endDate" className="text-sm">
+                          Date de fin
+                        </Label>
+                        <Input
+                          id="endDate"
+                          type="date"
+                          value={endDate}
+                          onChange={(e) => setEndDate(e.target.value)}
+                          min={startDate || undefined}
+                          max={new Date().toISOString().split("T")[0]}
+                          className="h-9"
+                        />
                       </div>
                     </div>
-                  </div>
-                  <div
-                    className={`p-2 border rounded-lg cursor-pointer transition-all ${
-                      format === "excel"
-                        ? "border-green-500 bg-green-50 ring-2 ring-green-200"
-                        : "border-gray-200 hover:border-gray-300"
-                    }`}
-                    onClick={() => setFormat("excel")}
-                  >
-                    <div className="flex items-center space-x-2">
-                      <FileSpreadsheet className="w-5 h-5 text-green-600" />
-                      <div>
-                        <p className="font-medium text-sm">Excel</p>
-                        <p className="text-xs text-gray-500">Format tableur</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div> */}
-            </CardContent>
-          </Card>
-
-          {/* Actions */}
-          <Card>
-            <CardHeader className="py-2">
-              <CardTitle className="flex items-center text-base">
-                <Download className="w-4 h-4 mr-2" />
-                Téléchargement
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3 pt-2 pb-3">
-              <div className="flex flex-col sm:flex-row gap-2">
-                <Button
-                  onClick={handleGenerateStatement}
-                  disabled={!isFormValid || isLoadingTransactions}
-                  className="flex-1 h-9"
-                >
-                  {isLoadingTransactions ? (
-                    <>
-                      <Clock className="w-4 h-4 mr-2 animate-spin" />
-                      Recherche en cours...
-                    </>
-                  ) : (
-                    <>
-                      <Download className="w-4 h-4 mr-2" />
-                      Demander relevé
-                    </>
                   )}
-                </Button>
-              </div>
 
-              {/* Envoi par email */}
-              {generateState?.success && (
-                <div className="border-t pt-3 space-y-2">
-                  <Label htmlFor="email" className="text-sm">
-                    Envoyer par email (optionnel)
-                  </Label>
-                  <div className="flex gap-2">
-                    <Input
-                      id="email"
-                      type="email"
-                      placeholder="votre@email.com"
-                      value={emailAddress}
-                      onChange={(e) => setEmailAddress(e.target.value)}
-                      className="flex-1 h-9"
-                    />
-                    <Button
-                      onClick={handleSendByEmail}
-                      disabled={!emailAddress || isSending || isPending}
-                      variant="outline"
-                      className="h-9 bg-transparent"
-                    >
-                      {isSending || isPending ? (
-                        <Clock className="w-4 h-4 animate-spin" />
-                      ) : (
-                        <Mail className="w-4 h-4" />
-                      )}
-                    </Button>
-                  </div>
+                  {startDate && endDate && (
+                    <div className="p-2 bg-blue-50 rounded-lg">
+                      <p className="text-sm text-blue-800">
+                        <Calendar className="w-4 h-4 inline mr-1" />
+                        Période sélectionnée : du {new Date(startDate).toLocaleDateString("fr-FR")} au{" "}
+                        {new Date(endDate).toLocaleDateString("fr-FR")}
+                      </p>
+                    </div>
+                  )}
                 </div>
-              )}
 
-              {!isFormValid && (
-                <Alert>
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertDescription className="text-sm">
-                    Veuillez sélectionner un compte et une période valide pour continuer.
-                  </AlertDescription>
-                </Alert>
-              )}
+                {/* Options de format */}
+                {/* <div className="space-y-2">
+                  <Label className="text-sm">Format du fichier</Label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div
+                      className={`p-2 border rounded-lg cursor-pointer transition-all ${
+                        format === "pdf"
+                          ? "border-red-500 bg-red-50 ring-2 ring-red-200"
+                          : "border-gray-200 hover:border-gray-300"
+                      }`}
+                      onClick={() => setFormat("pdf")}
+                    >
+                      <div className="flex items-center space-x-2">
+                        <FileText className="w-5 h-5 text-red-600" />
+                        <div>
+                          <p className="font-medium text-sm">PDF</p>
+                          <p className="text-xs text-gray-500">Format standard</p>
+                        </div>
+                      </div>
+                    </div>
+                    <div
+                      className={`p-2 border rounded-lg cursor-pointer transition-all ${
+                        format === "excel"
+                          ? "border-green-500 bg-green-50 ring-2 ring-green-200"
+                          : "border-gray-200 hover:border-gray-300"
+                      }`}
+                      onClick={() => setFormat("excel")}
+                    >
+                      <div className="flex items-center space-x-2">
+                        <FileSpreadsheet className="w-5 h-5 text-green-600" />
+                        <div>
+                          <p className="font-medium text-sm">Excel</p>
+                          <p className="text-xs text-gray-500">Format tableur</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div> */}
+              </CardContent>
+            </Card>
+
+            {/* Actions */}
+            <Card>
+              <CardHeader className="py-2">
+                <CardTitle className="flex items-center text-base">
+                  <Download className="w-4 h-4 mr-2" />
+                  Téléchargement
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3 pt-2 pb-3">
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <Button
+                    onClick={handleGenerateStatement}
+                    disabled={!isFormValid || isLoadingTransactions}
+                    className="flex-1 h-9"
+                  >
+                    {isLoadingTransactions ? (
+                      <>
+                        <Clock className="w-4 h-4 mr-2 animate-spin" />
+                        Recherche en cours...
+                      </>
+                    ) : (
+                      <>
+                        <Download className="w-4 h-4 mr-2" />
+                        Demander relevé
+                      </>
+                    )}
+                  </Button>
+                </div>
+
+                {generateState?.success && (
+                  <div className="border-t pt-3 space-y-2">
+                    <Label htmlFor="email" className="text-sm">
+                      Envoyer par email (optionnel)
+                    </Label>
+                    <div className="flex gap-2">
+                      <Input
+                        id="email"
+                        type="email"
+                        placeholder="votre@email.com"
+                        value={emailAddress}
+                        onChange={(e) => setEmailAddress(e.target.value)}
+                        className="flex-1 h-9"
+                      />
+                      <Button
+                        onClick={handleSendByEmail}
+                        disabled={!emailAddress || isSending || isPending}
+                        variant="outline"
+                        className="h-9 bg-transparent"
+                      >
+                        {isSending || isPending ? (
+                          <Clock className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Mail className="w-4 h-4" />
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                {!isFormValid && (
+                  <Alert>
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription className="text-sm">
+                      Veuillez sélectionner un compte et une période valide pour continuer.
+                    </AlertDescription>
+                  </Alert>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+
+        {showDownloadLink && filteredTransactions.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center text-base">
+                <CreditCard className="w-4 h-4 mr-2" />
+                Aperçu des transactions ({filteredTransactions.length})
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Référence</TableHead>
+                    <TableHead>Description</TableHead>
+                    <TableHead className="text-right">Montant</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredTransactions.map((txn, index) => (
+                    <TableRow key={index}>
+                      <TableCell className="font-mono text-sm">
+                        {txn.valueDate ? new Date(txn.valueDate).toLocaleDateString("fr-FR") : "N/A"}
+                      </TableCell>
+                      <TableCell className="font-mono text-sm">{txn.referenceOperation || "N/A"}</TableCell>
+                      <TableCell className="max-w-[300px] truncate">{txn.description || "N/A"}</TableCell>
+                      <TableCell
+                        className={`text-right font-semibold ${
+                          txn.montantOperation >= 0 ? "text-green-600" : "text-red-600"
+                        }`}
+                      >
+                        {formatAmount(txn.montantOperation)} GNF
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             </CardContent>
           </Card>
-        </TabsContent>
-      </Tabs>
-
-      {showDownloadLink && filteredTransactions.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center text-base">
-              <CreditCard className="w-4 h-4 mr-2" />
-              Aperçu des transactions ({filteredTransactions.length})
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Référence</TableHead>
-                  <TableHead>Description</TableHead>
-                  <TableHead className="text-right">Montant</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredTransactions.map((txn, index) => (
-                  <TableRow key={index}>
-                    <TableCell className="font-mono text-sm">
-                      {txn.valueDate ? new Date(txn.valueDate).toLocaleDateString("fr-FR") : "N/A"}
-                    </TableCell>
-                    <TableCell className="font-mono text-sm">{txn.referenceOperation || "N/A"}</TableCell>
-                    <TableCell className="max-w-[300px] truncate">{txn.description || "N/A"}</TableCell>
-                    <TableCell
-                      className={`text-right font-semibold ${
-                        txn.montantOperation >= 0 ? "text-green-600" : "text-red-600"
-                      }`}
-                    >
-                      {formatAmount(txn.montantOperation)} GNF
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-      )}
+        )}
+      </div>
     </div>
   )
 
@@ -795,6 +813,11 @@ export default function StatementsPage() {
     closingBalance: number,
   ) {
     try {
+      console.log("[v0] PDF generation - openingBalance:", openingBalance, "type:", typeof openingBalance)
+      console.log("[v0] PDF generation - closingBalance:", closingBalance, "type:", typeof closingBalance)
+      console.log("[v0] PDF generation - formatted opening:", formatAmount(openingBalance))
+      console.log("[v0] PDF generation - formatted closing:", formatAmount(closingBalance))
+
       const doc = new jsPDF()
 
       const pageWidth = 210
@@ -886,7 +909,8 @@ export default function StatementsPage() {
         doc.text("SOLDE D'OUVERTURE:", 15, yPos)
 
         doc.setFont("helvetica", "normal")
-        doc.text(`${formatAmount(openingBalance)} ${account.currency}`, 70, yPos)
+        const formattedOpeningBalance = formatAmount(Number(openingBalance))
+        doc.text(`${formattedOpeningBalance} ${account.currency}`, 70, yPos)
 
         yPos += 10
 
@@ -969,7 +993,8 @@ export default function StatementsPage() {
         doc.text("SOLDE DE FERMETURE:", 15, yPos)
 
         doc.setFont("helvetica", "normal")
-        doc.text(`${formatAmount(closingBalance)} ${account.currency}`, 70, yPos)
+        const formattedClosingBalance = formatAmount(Number(closingBalance))
+        doc.text(`${formattedClosingBalance} ${account.currency}`, 70, yPos)
 
         yPos += 10
 
