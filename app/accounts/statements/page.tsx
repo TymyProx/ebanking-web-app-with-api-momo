@@ -143,7 +143,10 @@ export default function StatementsPage() {
         setErrorMessage("")
 
         if (!selectedAccount) {
-          setErrorMessage("Veuillez sélectionner un compte")
+          if (hasSearched) {
+            setErrorMessage("Veuillez sélectionner un compte")
+          }
+          setIsLoadingTransactions(false)
           return
         }
 
