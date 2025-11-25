@@ -420,16 +420,7 @@ export default function StatementsPage() {
           </div>
         )}
 
-        {hasSearched && isLoadingTransactions && (
-          <div className="flex items-center justify-center py-8">
-            <div className="text-center">
-              <div className="mb-2 h-8 w-8 animate-spin rounded-full border-b-2 border-t-2 border-primary"></div>
-              <p className="text-sm text-muted-foreground">Recherche en cours...</p>
-            </div>
-          </div>
-        )}
-
-        {hasSearched && errorMessage && (
+        {hasSearched && errorMessage && !isLoadingTransactions && (
           <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-4">
             <p className="text-red-800">{errorMessage}</p>
           </div>
@@ -454,13 +445,6 @@ export default function StatementsPage() {
               </AlertDescription>
             </Alert>
           </div>
-        )}
-
-        {!isLoadingTransactions && errorMessage && (
-          <Alert variant="destructive">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>{errorMessage}</AlertDescription>
-          </Alert>
         )}
 
         {generateState?.success && (
