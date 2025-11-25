@@ -89,8 +89,8 @@ export default function AccountDetailsPage() {
   const [isLoadingTransactions, setIsLoadingTransactions] = useState(true)
   const [isPending, startTransition] = useTransition()
   const [currentPage, setCurrentPage] = useState(1)
-  const itemsPerPage = 10
-  const maxTransactions = 100
+  const itemsPerPage = 5
+  const maxTransactions = 20
 
   const paginatedTransactions = useMemo(() => {
     const limitedTransactions = transactions.slice(0, maxTransactions)
