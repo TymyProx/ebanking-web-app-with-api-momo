@@ -4,7 +4,18 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { ArrowUpRight, ArrowDownRight, Receipt, Calendar, Clock, Hash, FileText, CreditCard } from "lucide-react"
+import {
+  ArrowUpRight,
+  ArrowDownRight,
+  Receipt,
+  Calendar,
+  Clock,
+  Hash,
+  FileText,
+  CreditCard,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react"
 import { useState, useEffect, useMemo } from "react"
 import { getUserTransactions } from "./actions"
 import { getAccounts } from "@/app/accounts/actions"
@@ -15,7 +26,8 @@ export default function MesVirementsPage() {
   const [selectedTransaction, setSelectedTransaction] = useState<any>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [loading, setLoading] = useState(true)
-  const [displayCount, setDisplayCount] = useState(20)
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 10
 
   useEffect(() => {
     const loadData = async () => {
@@ -50,8 +62,12 @@ export default function MesVirementsPage() {
   }, [])
 
   const displayedItems = useMemo(() => {
-    return transactions.slice(0, displayCount)
-  }, [transactions, displayCount])
+    const startIndex = (currentPage - 1) * itemsPerPage
+    const endIndex = startIndex + itemsPerPage
+    return transactions.slice(startIndex, endIndex)
+  }, [transactions, currentPage])
+
+  const totalPages = Math.ceil(transactions.length / itemsPerPage)
 
   const formatAmount = (amount: number | string, currency = "GNF") => {
     const numAmount = typeof amount === "string" ? Number.parseFloat(amount) : amount
@@ -114,8 +130,12 @@ export default function MesVirementsPage() {
     setIsModalOpen(true)
   }
 
-  const handleLoadMore = () => {
-    setDisplayCount((prev) => Math.min(prev + 20, transactions.length))
+  const handlePreviousPage = () => {
+    setCurrentPage((prev) => Math.max(prev - 1, 1))
+  }
+
+  const handleNextPage = () => {
+    setCurrentPage((prev) => Math.min(prev + 1, totalPages))
   }
 
   if (loading) {
@@ -141,9 +161,7 @@ export default function MesVirementsPage() {
           <CardTitle className="font-heading text-xl">
             Toutes les transactions
             {transactions.length > 0 && (
-              <span className="text-sm font-normal text-muted-foreground ml-2">
-                ({Math.min(displayCount, transactions.length)} sur {transactions.length})
-              </span>
+              <span className="text-sm font-normal text-muted-foreground ml-2">({transactions.length} au total)</span>
             )}
           </CardTitle>
         </CardHeader>
@@ -195,10 +213,30 @@ export default function MesVirementsPage() {
                   )
                 })}
 
-                {displayCount < transactions.length && (
-                  <div className="flex justify-center pt-4">
-                    <Button onClick={handleLoadMore} variant="outline" className="w-full max-w-xs bg-transparent">
-                      Afficher plus ({transactions.length - displayCount} restants)
+                {totalPages > 1 && (
+                  <div className="flex items-center justify-center gap-2 pt-4">
+                    <Button
+                      onClick={handlePreviousPage}
+                      disabled={currentPage === 1}
+                      variant="outline"
+                      size="sm"
+                      className="bg-transparent"
+                    >
+                      <ChevronLeft className="h-4 w-4 mr-1" />
+                      Précédent
+                    </Button>
+                    <span className="text-sm text-muted-foreground px-4">
+                      Page {currentPage} sur {totalPages}
+                    </span>
+                    <Button
+                      onClick={handleNextPage}
+                      disabled={currentPage === totalPages}
+                      variant="outline"
+                      size="sm"
+                      className="bg-transparent"
+                    >
+                      Suivant
+                      <ChevronRight className="h-4 w-4 ml-1" />
                     </Button>
                   </div>
                 )}
