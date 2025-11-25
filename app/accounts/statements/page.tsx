@@ -25,6 +25,8 @@ import {
 import { generateStatement, sendStatementByEmail, getTransactionsByNumCompte } from "./actions"
 import { useActionState } from "react"
 import { getAccounts } from "../actions"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import jsPDF from "jspdf"
 
 interface Account {
   id: string
@@ -213,30 +215,21 @@ export default function StatementsPage() {
     }
   }
   const handleGenerateStatement = async () => {
+    if (!selectedAccount || !startDate || !endDate) return
+
+    const account = accounts.find((a) => a.id === selectedAccount)
+    if (!account) {
+      alert("❌ Compte introuvable")
+      return
+    }
+
     setIsLoadingTransactions(true)
-    setShowDownloadLink(false)
     setErrorMessage("")
+    setShowDownloadLink(false)
+    setFilteredTransactions([])
+    setTransactionCount(0)
 
-    if (!selectedAccount || !startDate || !endDate) {
-      setErrorMessage("Veuillez remplir tous les champs")
-      setIsLoadingTransactions(false)
-      return
-    }
-
-    const selectedAccountData = accounts.find((acc) => acc.id === selectedAccount)
-
-    if (!selectedAccountData) {
-      setErrorMessage("Compte introuvable")
-      setIsLoadingTransactions(false)
-      return
-    }
-
-    const accountNumber = selectedAccountData.number
-
-    console.log("[v0] === GÉNÉRATION DU RELEVÉ ===")
-    console.log("[v0] numCompte utilisé:", accountNumber)
-    console.log("[v0] Date début:", startDate)
-    console.log("[v0] Date fin:", endDate)
+    const accountNumber = account.number
 
     try {
       const result = await getTransactionsByNumCompte(accountNumber)
@@ -270,6 +263,12 @@ export default function StatementsPage() {
         setIsLoadingTransactions(false)
         return
       }
+
+      filteredTxns.sort((a: any, b: any) => {
+        const dateA = new Date(a.valueDate).getTime()
+        const dateB = new Date(b.valueDate).getTime()
+        return dateB - dateA // Descending order
+      })
 
       const firstTxn = filteredTxns[0]
       const lastTxn = filteredTxns[filteredTxns.length - 1]
@@ -311,12 +310,7 @@ export default function StatementsPage() {
     const balanceFermeture =
       filteredTransactions[filteredTransactions.length - 1]?.balanceFermeture || selectedAccountData.balance
 
-    generateAndDownloadPDFWithTransactions(
-      selectedAccountData,
-      filteredTransactions,
-      balanceOuverture,
-      balanceFermeture,
-    )
+    generatePDFStatement(filteredTransactions, selectedAccountData, startDate, endDate)
   }
 
   const handleSendByEmail = async () => {
@@ -393,10 +387,13 @@ export default function StatementsPage() {
             <span>{transactionCount} transaction(s) trouvée(s) pour cette période.</span>
             <Button
               variant="link"
-              className="p-0 h-auto text-green-700 underline font-semibold"
-              onClick={handleDownloadPDF}
+              className="p-0 h-auto text-green-700 underline"
+              onClick={async () => {
+                const account = accounts.find((a) => a.id === selectedAccount)
+                if (!account) return
+                await generatePDFStatement(filteredTransactions, account, startDate, endDate)
+              }}
             >
-              <Download className="w-4 h-4 mr-1" />
               Télécharger le relevé
             </Button>
           </AlertDescription>
@@ -707,17 +704,52 @@ export default function StatementsPage() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {showDownloadLink && filteredTransactions.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center text-base">
+              <CreditCard className="w-4 h-4 mr-2" />
+              Aperçu des transactions ({filteredTransactions.length})
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Référence</TableHead>
+                  <TableHead>Description</TableHead>
+                  <TableHead className="text-right">Montant</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredTransactions.map((txn, index) => (
+                  <TableRow key={index}>
+                    <TableCell className="font-mono text-sm">
+                      {txn.valueDate ? new Date(txn.valueDate).toLocaleDateString("fr-FR") : "N/A"}
+                    </TableCell>
+                    <TableCell className="font-mono text-sm">{txn.referenceOperation || "N/A"}</TableCell>
+                    <TableCell className="max-w-[300px] truncate">{txn.description || "N/A"}</TableCell>
+                    <TableCell
+                      className={`text-right font-semibold ${
+                        txn.montantOperation >= 0 ? "text-green-600" : "text-red-600"
+                      }`}
+                    >
+                      {formatAmount(txn.montantOperation)} GNF
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      )}
     </div>
   )
 
-  function generateAndDownloadPDFWithTransactions(
-    account: Account,
-    transactions: any[],
-    balanceOuverture: number,
-    balanceFermeture: number,
-  ) {
+  async function generatePDFStatement(transactions: any[], account: Account, startDate: string, endDate: string) {
     try {
-      const { jsPDF } = require("jspdf")
       const doc = new jsPDF()
 
       const pageWidth = 210
@@ -809,7 +841,7 @@ export default function StatementsPage() {
         doc.text("SOLDE D'OUVERTURE:", 15, yPos)
 
         doc.setFont("helvetica", "normal")
-        doc.text(`${formatAmount(balanceOuverture)} ${account.currency}`, 70, yPos)
+        doc.text(`${formatAmount(transactions[0].balanceOuverture)} ${account.currency}`, 70, yPos)
 
         yPos += 10
 
@@ -892,7 +924,11 @@ export default function StatementsPage() {
         doc.text("SOLDE DE FERMETURE:", 15, yPos)
 
         doc.setFont("helvetica", "normal")
-        doc.text(`${formatAmount(balanceFermeture)} ${account.currency}`, 70, yPos)
+        doc.text(
+          `${formatAmount(transactions[transactions.length - 1].balanceFermeture)} ${account.currency}`,
+          70,
+          yPos,
+        )
 
         yPos += 10
 
@@ -940,13 +976,6 @@ export default function StatementsPage() {
 
         console.log("[v0] PDF généré et téléchargé:", fileName)
       }
-
-      // Si l'image ne se charge pas après 2 secondes, générer sans logo
-      setTimeout(() => {
-        if (yPos === 15) {
-          continueGeneratingPDF()
-        }
-      }, 2000)
     } catch (error) {
       console.error("[v0] Erreur génération PDF:", error)
       alert("❌ Erreur lors de la génération du PDF")
