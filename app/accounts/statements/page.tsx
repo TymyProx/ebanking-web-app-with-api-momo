@@ -392,15 +392,15 @@ export default function StatementsPage() {
   const formatAmount = (amount: number, currency = "GNF") => {
     if (currency === "GNF") {
       return new Intl.NumberFormat("fr-FR", {
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0,
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
       })
         .format(amount)
         .replace(/\s/g, " ")
     }
     return new Intl.NumberFormat("en-US", {
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
     }).format(amount)
   }
 
@@ -901,7 +901,7 @@ export default function StatementsPage() {
 
         yPos += 10
 
-        // TABLEAU DES TRANSACTIONS (SANS GRILLES)
+        // TABLEAU DES TRANSACTIONS (AVEC GRILLES VISIBLES)
         doc.setFontSize(10)
         doc.setFont("helvetica", "bold")
         doc.text(`TRANSACTIONS (${transactions.length})`, 15, yPos)
@@ -915,10 +915,33 @@ export default function StatementsPage() {
         const col4Width = 30 // Date Operation (dateEcriture)
         const col5Width = 30 // Montant
         const rowHeight = 9
+        const tableWidth = col1Width + col2Width + col3Width + col4Width + col5Width
 
-        // EN-TÊTES SANS CADRE
+        // EN-TÊTES AVEC CADRE
         doc.setFontSize(9)
         doc.setFont("helvetica", "bold")
+
+        // Dessiner le rectangle pour l'en-tête
+        doc.setDrawColor(0)
+        doc.setLineWidth(0.5)
+        doc.rect(tableStartX, yPos, tableWidth, rowHeight)
+
+        // Lignes verticales de l'en-tête
+        doc.line(tableStartX + col1Width, yPos, tableStartX + col1Width, yPos + rowHeight)
+        doc.line(tableStartX + col1Width + col2Width, yPos, tableStartX + col1Width + col2Width, yPos + rowHeight)
+        doc.line(
+          tableStartX + col1Width + col2Width + col3Width,
+          yPos,
+          tableStartX + col1Width + col2Width + col3Width,
+          yPos + rowHeight,
+        )
+        doc.line(
+          tableStartX + col1Width + col2Width + col3Width + col4Width,
+          yPos,
+          tableStartX + col1Width + col2Width + col3Width + col4Width,
+          yPos + rowHeight,
+        )
+
         doc.text("Date Valeur", tableStartX + 2, yPos + 6)
         doc.text("Description", tableStartX + col1Width + 2, yPos + 6)
         doc.text("Référence", tableStartX + col1Width + col2Width + 2, yPos + 6)
@@ -935,9 +958,26 @@ export default function StatementsPage() {
             doc.addPage()
             yPos = 30
 
-            // Réécrire les entêtes sur la nouvelle page
+            // Réécrire les entêtes sur la nouvelle page avec cadre
             doc.setFontSize(9)
             doc.setFont("helvetica", "bold")
+
+            doc.rect(tableStartX, yPos, tableWidth, rowHeight)
+            doc.line(tableStartX + col1Width, yPos, tableStartX + col1Width, yPos + rowHeight)
+            doc.line(tableStartX + col1Width + col2Width, yPos, tableStartX + col1Width + col2Width, yPos + rowHeight)
+            doc.line(
+              tableStartX + col1Width + col2Width + col3Width,
+              yPos,
+              tableStartX + col1Width + col2Width + col3Width,
+              yPos + rowHeight,
+            )
+            doc.line(
+              tableStartX + col1Width + col2Width + col3Width + col4Width,
+              yPos,
+              tableStartX + col1Width + col2Width + col3Width + col4Width,
+              yPos + rowHeight,
+            )
+
             doc.text("Date Valeur", tableStartX + 2, yPos + 6)
             doc.text("Description", tableStartX + col1Width + 2, yPos + 6)
             doc.text("Référence", tableStartX + col1Width + col2Width + 2, yPos + 6)
@@ -948,6 +988,25 @@ export default function StatementsPage() {
             doc.setFont("helvetica", "normal")
             doc.setFontSize(8)
           }
+
+          // Dessiner le rectangle pour la ligne
+          doc.rect(tableStartX, yPos, tableWidth, rowHeight)
+
+          // Lignes verticales pour chaque cellule
+          doc.line(tableStartX + col1Width, yPos, tableStartX + col1Width, yPos + rowHeight)
+          doc.line(tableStartX + col1Width + col2Width, yPos, tableStartX + col1Width + col2Width, yPos + rowHeight)
+          doc.line(
+            tableStartX + col1Width + col2Width + col3Width,
+            yPos,
+            tableStartX + col1Width + col2Width + col3Width,
+            yPos + rowHeight,
+          )
+          doc.line(
+            tableStartX + col1Width + col2Width + col3Width + col4Width,
+            yPos,
+            tableStartX + col1Width + col2Width + col3Width + col4Width,
+            yPos + rowHeight,
+          )
 
           // Date Valeur
           const dateValeur = txn.valueDate ? new Date(txn.valueDate).toLocaleDateString("fr-FR") : "N/A"
