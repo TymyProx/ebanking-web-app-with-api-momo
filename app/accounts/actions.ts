@@ -29,6 +29,9 @@ export interface Account {
   clientId?: string
   codeBanque?: string
   cleRib?: string
+  minorFirstName?: string
+  minorLastName?: string
+  minorDateOfBirth?: string
 }
 
 interface AccountsResponse {
@@ -192,7 +195,8 @@ export async function createAccount(prevState: any, formData: FormData) {
       console.error("Erreur lors de la récupération du client ID:", error)
     }
 
-    const accountData = {
+    const accountType = (formData.get("accountType") as string) || "CURRENT"
+    const accountData: any = {
       accountId: formData.get("accountId") as string,
       accountNumber: formData.get("accountNumber") as string,
       accountName: formData.get("accountName") as string,
@@ -200,11 +204,17 @@ export async function createAccount(prevState: any, formData: FormData) {
       bookBalance: (formData.get("bookBalance") as string) || "0",
       availableBalance: (formData.get("availableBalance") as string) || "0",
       status: "EN ATTENTE",
-      type: (formData.get("accountType") as string) || "CURRENT",
-      codeAgence: "N/A", // Valeur par défaut
-      clientId: clientId, // ID du client connecté
-      codeBanque: "N/A", // Valeur par défaut
-      cleRib: "N/A", // Valeur par défaut
+      type: accountType,
+      codeAgence: "N/A",
+      clientId: clientId,
+      codeBanque: "N/A",
+      cleRib: "N/A",
+    }
+
+    if (accountType === "MINEUR") {
+      accountData.minorFirstName = formData.get("minorFirstName") as string
+      accountData.minorLastName = formData.get("minorLastName") as string
+      accountData.minorDateOfBirth = formData.get("minorDateOfBirth") as string
     }
 
     if (!accountData.accountName || !accountData.currency) {

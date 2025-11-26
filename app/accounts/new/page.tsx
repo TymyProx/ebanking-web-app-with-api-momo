@@ -35,7 +35,7 @@ const accountTypes = [
     currency: "GNF",
     minBalance: "50000",
     features: ["Carte bancaire incluse", "Chéquier", "Virements illimités", "Découvert autorisé"],
-   // fees: "Gratuit les 6 premiers mois",
+    // fees: "Gratuit les 6 premiers mois",
     icon: "💳",
   },
   {
@@ -55,7 +55,7 @@ const accountTypes = [
     currency: "GNF",
     minBalance: "25000",
     features: ["Pas de frais jusqu'à 18 ans", "Taux d'intérêt bonifié", "Épargne sécurisée", "Éducation financière"],
-   // fees: "Gratuit",
+    // fees: "Gratuit",
     icon: "👦🏽",
   },
   {
@@ -65,7 +65,7 @@ const accountTypes = [
     currency: "GNF",
     minBalance: "10000",
     features: ["Paiements mobiles", "Retraits sans carte", "Transactions instantanées", "Application mobile"],
-   // fees: "Gratuit",
+    // fees: "Gratuit",
     icon: "📱",
   },
 ]
@@ -169,19 +169,41 @@ export default function NewAccountPage() {
     hasExistingAccounts !== null && hasClientInfo !== null
       ? hasExistingAccounts || hasClientInfo
         ? // User has either active account OR client info already → only basic fields required
-          formData.accountName && formData.currency && formData.accountPurpose
+          selectedType === "MINEUR"
+          ? formData.accountName &&
+            formData.currency &&
+            formData.accountPurpose &&
+            formData.minorFirstName &&
+            formData.minorLastName &&
+            formData.minorDateOfBirth
+          : formData.accountName && formData.currency && formData.accountPurpose
         : // User has NO active account AND NO client info → all fields required
-          formData.accountName &&
-          formData.currency &&
-          formData.accountPurpose &&
-          formData.country &&
-          formData.city &&
-          formData.addressLine1 &&
-          formData.idType &&
-          formData.idNumber &&
-          formData.idIssuingCountry &&
-          formData.idIssueDate &&
-          formData.idExpiryDate
+          selectedType === "MINEUR"
+          ? formData.accountName &&
+            formData.currency &&
+            formData.accountPurpose &&
+            formData.country &&
+            formData.city &&
+            formData.addressLine1 &&
+            formData.idType &&
+            formData.idNumber &&
+            formData.idIssuingCountry &&
+            formData.idIssueDate &&
+            formData.idExpiryDate &&
+            formData.minorFirstName &&
+            formData.minorLastName &&
+            formData.minorDateOfBirth
+          : formData.accountName &&
+            formData.currency &&
+            formData.accountPurpose &&
+            formData.country &&
+            formData.city &&
+            formData.addressLine1 &&
+            formData.idType &&
+            formData.idNumber &&
+            formData.idIssuingCountry &&
+            formData.idIssueDate &&
+            formData.idExpiryDate
       : false
 
   const canSubmit = formData.terms && formData.dataProcessing
@@ -435,6 +457,54 @@ export default function NewAccountPage() {
               </div>
             </div>
 
+            {(hasExistingAccounts || hasClientInfo) && selectedType === "MINEUR" && (
+              <div className="pt-4 border-t border-gray-200">
+                <h3 className="text-sm font-semibold text-primary mb-3 flex items-center">
+                  <User className="w-4 h-4 mr-2" />
+                  Informations du Mineur
+                </h3>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div className="space-y-1">
+                    <Label htmlFor="minorFirstName" className="text-sm">
+                      Prénom du Mineur *
+                    </Label>
+                    <Input
+                      id="minorFirstName"
+                      placeholder="Ex: Amadou"
+                      value={formData.minorFirstName || ""}
+                      onChange={(e) => handleInputChange("minorFirstName", e.target.value)}
+                      className="border-2 focus:border-primary h-9 text-sm"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="minorLastName" className="text-sm">
+                      Nom du Mineur *
+                    </Label>
+                    <Input
+                      id="minorLastName"
+                      placeholder="Ex: Diallo"
+                      value={formData.minorLastName || ""}
+                      onChange={(e) => handleInputChange("minorLastName", e.target.value)}
+                      className="border-2 focus:border-primary h-9 text-sm"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="minorDateOfBirth" className="text-sm">
+                      Date de Naissance *
+                    </Label>
+                    <Input
+                      id="minorDateOfBirth"
+                      type="date"
+                      value={formData.minorDateOfBirth || ""}
+                      onChange={(e) => handleInputChange("minorDateOfBirth", e.target.value)}
+                      className="border-2 focus:border-primary h-9 text-sm"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
             {shouldShowAdditionalFields && (
               <>
                 <div className="pt-4 border-t border-gray-200">
@@ -644,6 +714,54 @@ export default function NewAccountPage() {
               </>
             )}
 
+            {shouldShowAdditionalFields && selectedType === "MINEUR" && (
+              <div className="pt-4 border-t border-gray-200">
+                <h3 className="text-sm font-semibold text-primary mb-3 flex items-center">
+                  <User className="w-4 h-4 mr-2" />
+                  Informations du Mineur
+                </h3>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div className="space-y-1">
+                    <Label htmlFor="minorFirstName" className="text-sm">
+                      Prénom du Mineur *
+                    </Label>
+                    <Input
+                      id="minorFirstName"
+                      placeholder="Ex: Amadou"
+                      value={formData.minorFirstName || ""}
+                      onChange={(e) => handleInputChange("minorFirstName", e.target.value)}
+                      className="border-2 focus:border-primary h-9 text-sm"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="minorLastName" className="text-sm">
+                      Nom du Mineur *
+                    </Label>
+                    <Input
+                      id="minorLastName"
+                      placeholder="Ex: Diallo"
+                      value={formData.minorLastName || ""}
+                      onChange={(e) => handleInputChange("minorLastName", e.target.value)}
+                      className="border-2 focus:border-primary h-9 text-sm"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="minorDateOfBirth" className="text-sm">
+                      Date de Naissance *
+                    </Label>
+                    <Input
+                      id="minorDateOfBirth"
+                      type="date"
+                      value={formData.minorDateOfBirth || ""}
+                      onChange={(e) => handleInputChange("minorDateOfBirth", e.target.value)}
+                      className="border-2 focus:border-primary h-9 text-sm"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
             <div className="flex justify-between pt-2">
               <Button onClick={() => setStep(1)} variant="outline" size="sm">
                 <ArrowLeft className="w-3 h-3 mr-1" />
@@ -723,6 +841,14 @@ export default function NewAccountPage() {
               <input type="hidden" name="bookBalance" value={formData.initialDeposit || "0"} />
               <input type="hidden" name="availableBalance" value={formData.initialDeposit || "0"} />
               <input type="hidden" name="accountType" value={selectedType} />
+              {selectedType === "MINEUR" && (
+                <>
+                  <input type="hidden" name="minorFirstName" value={formData.minorFirstName || ""} />
+                  <input type="hidden" name="minorLastName" value={formData.minorLastName || ""} />
+                  <input type="hidden" name="minorDateOfBirth" value={formData.minorDateOfBirth || ""} />
+                </>
+              )}
+
               <div className="flex justify-between pt-2">
                 <Button onClick={() => setStep(2)} variant="outline" size="sm" type="button">
                   <ArrowLeft className="w-3 h-3 mr-1" />
