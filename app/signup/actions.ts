@@ -227,8 +227,8 @@ export async function signupUser(data: SignupData) {
 }
 
 export async function initiateExistingClientSignup(data: { clientCode: string }) {
-  let tempUserId: string | null = null
-  let tempToken: string | null = null
+  const tempUserId: string | null = null
+  const tempToken: string | null = null
 
   try {
     console.log("[v0] Starting existing client signup process...")
@@ -238,87 +238,72 @@ export async function initiateExistingClientSignup(data: { clientCode: string })
       return { success: false, message: "Code client requis" }
     }
 
-    // Step 1: Create temporary user to get a token
-    console.log("[v0] Step 1: Creating temporary user to obtain token...")
+    // Use support account credentials instead of creating temporary user
+    console.log("[v0] Step 1: Authenticating with support account...")
 
-    const tempEmail = `${data.clientCode}@temp.bng.local`
-    const tempPassword = randomBytes(32).toString("hex")
+    const SUPPORT_EMAIL = "support@proxyma-technologies.net"
+    const SUPPORT_PASSWORD = "123"
 
-    const signupPayload = {
-      email: tempEmail,
-      password: tempPassword,
+    const loginPayload = {
+      email: SUPPORT_EMAIL,
+      password: SUPPORT_PASSWORD,
       tenantId: String(TENANT_ID),
+      invitationToken: "",
     }
 
-    const signupResponse = await fetch(`${API_BASE_URL}/auth/sign-up`, {
+    const loginResponse = await fetch(`${API_BASE_URL}/auth/sign-in`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(signupPayload),
+      body: JSON.stringify(loginPayload),
     })
 
-    console.log("[v0] Temp user creation response status:", signupResponse.status)
+    console.log("[v0] Support account login response status:", loginResponse.status)
 
-    if (!signupResponse.ok) {
-      const errorText = await signupResponse.text()
-      console.error("[v0] Failed to create temp user:", errorText)
-      throw new Error("Erreur lors de la création du compte temporaire")
+    if (!loginResponse.ok) {
+      const errorText = await loginResponse.text()
+      console.error("[v0] Failed to login with support account:", errorText)
+      throw new Error("Erreur lors de l'authentification du compte support")
     }
 
-    const signupResponseText = await signupResponse.text()
-    tempToken = signupResponseText.startsWith("eyJ") ? signupResponseText : JSON.parse(signupResponseText).token
+    const loginResponseText = await loginResponse.text()
+    const supportToken = loginResponseText.startsWith("eyJ") ? loginResponseText : JSON.parse(loginResponseText).token
 
-    if (!tempToken) {
-      throw new Error("Aucun token reçu")
+    if (!supportToken) {
+      throw new Error("Aucun token reçu du compte support")
     }
 
-    console.log("[v0] Temporary token obtained successfully")
+    console.log("[v0] Support account token obtained successfully")
 
-    // Step 2: Get temp user ID
-    const meResponse = await fetch(`${API_BASE_URL}/auth/me`, {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${tempToken}`,
-      },
-    })
+    // Step 2: Search for client in clientBNG table
+    console.log("[v0] Step 2: Searching for client in clientBNG table...")
 
-    if (!meResponse.ok) {
-      throw new Error("Erreur lors de la récupération des informations utilisateur")
-    }
-
-    const userData = await meResponse.json()
-    tempUserId = userData.id
-    console.log("[v0] Temp user ID:", tempUserId)
-
-    // Step 3: Search for client by code
-    console.log("[v0] Step 2: Searching for client with code...")
-
-    const clientResponse = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/client`, {
+    const clientBNGResponse = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/clientBNG`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${tempToken}`,
+        Authorization: `Bearer ${supportToken}`,
       },
     })
 
-    console.log("[v0] Client search response status:", clientResponse.status)
+    console.log("[v0] ClientBNG search response status:", clientBNGResponse.status)
 
-    if (!clientResponse.ok) {
-      throw new Error("Erreur lors de la recherche du client")
+    if (!clientBNGResponse.ok) {
+      throw new Error("Erreur lors de la recherche du client dans la base BNG")
     }
 
-    const clientData = await clientResponse.json()
-    console.log("[v0] Client data received, searching for matching code...")
+    const clientBNGData = await clientBNGResponse.json()
+    console.log("[v0] ClientBNG data received, searching for matching code...")
 
     // Handle different response formats
     let clients = []
-    if (Array.isArray(clientData)) {
-      clients = clientData
-    } else if (clientData.rows && Array.isArray(clientData.rows)) {
-      clients = clientData.rows
-    } else if (clientData.data && Array.isArray(clientData.data)) {
-      clients = clientData.data
+    if (Array.isArray(clientBNGData)) {
+      clients = clientBNGData
+    } else if (clientBNGData.rows && Array.isArray(clientBNGData.rows)) {
+      clients = clientBNGData.rows
+    } else if (clientBNGData.data && Array.isArray(clientBNGData.data)) {
+      clients = clientBNGData.data
     }
 
     // Find client with matching code
@@ -326,44 +311,38 @@ export async function initiateExistingClientSignup(data: { clientCode: string })
       (client: any) =>
         client.codeClient === data.clientCode ||
         client.code === data.clientCode ||
-        client.clientCode === data.clientCode,
+        client.clientCode === data.clientCode ||
+        client.numeroClient === data.clientCode,
     )
 
     if (!matchingClient) {
-      console.log("[v0] No matching client found, deleting temp user...")
-
-      // Delete temp user
-      await fetch(`${API_BASE_URL}/auth/users/${tempUserId}`, {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${tempToken}`,
-        },
-      })
-
+      console.log("[v0] No matching client found in clientBNG")
       return {
         success: false,
         message: "Code client invalide. Veuillez vérifier votre code et réessayer.",
       }
     }
 
-    console.log("[v0] Matching client found!")
+    console.log("[v0] Matching client found in clientBNG!")
 
-    // Extract client info
+    // Extract client info from clientBNG
     const clientEmail = matchingClient.email
     const clientFullName = matchingClient.nomComplet || matchingClient.fullName || matchingClient.name
     const clientId = matchingClient.id
+    const clientPhone = matchingClient.telephone || matchingClient.phone || ""
+    const clientAddress = matchingClient.adresse || matchingClient.address || ""
 
     if (!clientEmail) {
-      throw new Error("Email du client non trouvé")
+      throw new Error("Email du client non trouvé dans la base BNG")
     }
 
     console.log("[v0] Client email:", clientEmail)
     console.log("[v0] Client full name:", clientFullName)
 
-    // Step 4: Generate verification token and send email
+    // Step 3: Generate verification token and send email
     const verificationToken = randomBytes(32).toString("hex")
 
-    // Store data in cookie
+    // Store data in cookie with clientBNG information
     const cookieStore = await cookies()
     const cookieConfig = getCookieConfig()
     cookieStore.set(
@@ -371,10 +350,10 @@ export async function initiateExistingClientSignup(data: { clientCode: string })
       JSON.stringify({
         email: clientEmail,
         fullName: clientFullName,
+        phone: clientPhone,
+        address: clientAddress,
         clientCode: data.clientCode,
-        clientId: clientId,
-        tempUserId: tempUserId,
-        tempToken: tempToken,
+        clientBNGId: clientId,
         verificationToken: verificationToken,
         isExistingClient: true,
       }),
@@ -416,22 +395,6 @@ export async function initiateExistingClientSignup(data: { clientCode: string })
     }
   } catch (error: any) {
     console.error("[v0] Existing client signup error:", error)
-
-    // Clean up temp user if it was created
-    if (tempUserId && tempToken) {
-      try {
-        console.log("[v0] Cleaning up temp user due to error...")
-        await fetch(`${API_BASE_URL}/auth/users/${tempUserId}`, {
-          method: "DELETE",
-          headers: {
-            Authorization: `Bearer ${tempToken}`,
-          },
-        })
-        console.log("[v0] Temp user deleted successfully")
-      } catch (deleteError) {
-        console.error("[v0] Failed to delete temp user:", deleteError)
-      }
-    }
 
     return {
       success: false,
