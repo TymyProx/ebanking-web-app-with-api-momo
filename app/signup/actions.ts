@@ -279,7 +279,7 @@ export async function initiateExistingClientSignup(data: { clientCode: string })
     // Step 2: Search for client in clientBNG table
     console.log("[v0] Step 2: Searching for client in clientBNG table...")
 
-    const searchUrl = `${API_BASE_URL}/tenant/${TENANT_ID}/clientBNG`
+    const searchUrl = `${API_BASE_URL}/tenant/${TENANT_ID}/client`
     console.log("[v0] Fetching from URL:", searchUrl)
 
     const clientBNGResponse = await fetch(searchUrl, {
@@ -289,7 +289,7 @@ export async function initiateExistingClientSignup(data: { clientCode: string })
         Authorization: `Bearer ${supportToken}`,
       },
     })
-
+    console.log("Token used for clientBNG fetch:", supportToken)
     console.log("[v0] ClientBNG search response status:", clientBNGResponse.status)
 
     if (!clientBNGResponse.ok) {
