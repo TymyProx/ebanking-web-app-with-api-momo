@@ -46,7 +46,6 @@ export async function completeSignup(token: string, password: string, emailFallb
     if (isExistingClient) {
       console.log("[v0] Processing existing client signup...")
 
-      // Step 1: Create real auth account with the client's email
       console.log("[v0] Creating auth account for existing BNG client...")
 
       const signupPayload = {
@@ -92,7 +91,7 @@ export async function completeSignup(token: string, password: string, emailFallb
 
       console.log("[v0] Auth account created successfully")
 
-      // Step 2: Get user info
+      // Get user info and store in cookie
       const meResponse = await fetch(`${API_BASE_URL}/auth/me`, {
         method: "GET",
         headers: {
@@ -105,44 +104,7 @@ export async function completeSignup(token: string, password: string, emailFallb
       }
 
       const userData = await meResponse.json()
-      const userId = userData.id
-      console.log("[v0] User info retrieved, userId:", userId)
-
-      // Step 3: Create entry in client table with data from clientBNG
-      console.log("[v0] Creating client entry with data from clientBNG...")
-
-      const clientRequestBody = {
-        data: {
-          nomComplet: String(pendingData.fullName),
-          email: String(pendingData.email),
-          telephone: String(pendingData.phone || ""),
-          adresse: String(pendingData.address || ""),
-          codeClient: String(pendingData.clientCode),
-          userid: String(userId),
-          clientBNGId: String(pendingData.clientBNGId), // Link to clientBNG
-        },
-      }
-
-      console.log("[v0] Client request body:", JSON.stringify(clientRequestBody))
-
-      const clientResponse = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/client`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${authToken}`,
-        },
-        body: JSON.stringify(clientRequestBody),
-      })
-
-      console.log("[v0] Client response status:", clientResponse.status)
-
-      if (!clientResponse.ok) {
-        const errorText = await clientResponse.text()
-        console.error("[v0] Failed to create client entry:", errorText)
-        throw new Error("Erreur lors de la création du profil client")
-      }
-
-      console.log("[v0] Client entry created successfully")
+      console.log("[v0] User info retrieved, userId:", userData.id)
 
       if (pendingData.fullName) {
         console.log("[v0] Updating user fullName with client's full name...")
