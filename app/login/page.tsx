@@ -4,12 +4,11 @@ import type React from "react"
 import Image from "next/image"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Eye, EyeOff, User, Home, UserPlus } from "lucide-react"
+import { Eye, EyeOff, User } from "lucide-react"
 import AuthService from "@/lib/auth-service"
 import { config } from "@/lib/config"
 import { storeAuthToken } from "./actions"
@@ -92,27 +91,6 @@ export default function LoginPage() {
       {/* Right side - Login Form */}
       <div className="w-full lg:w-1/2 flex items-center justify-center p-8">
         <div className="w-full max-w-md space-y-8">
-          <div className="flex items-center justify-between gap-3">
-            <Link href="/">
-              <Button
-                variant="outline"
-                className="flex items-center gap-2 h-10 px-4 bg-white hover:bg-gray-50 border-gray-300 text-[hsl(220,13%,13%)] font-medium transition-all hover:border-[hsl(123,38%,57%)] hover:text-[hsl(123,38%,57%)]"
-              >
-                <Home className="h-4 w-4" />
-                <span className="hidden sm:inline">Accueil</span>
-              </Button>
-            </Link>
-            <Link href="/signup">
-              <Button
-                variant="outline"
-                className="flex items-center gap-2 h-10 px-4 bg-white hover:bg-gray-50 border-gray-300 text-[hsl(220,13%,13%)] font-medium transition-all hover:border-[hsl(123,38%,57%)] hover:text-[hsl(123,38%,57%)]"
-              >
-                <UserPlus className="h-4 w-4" />
-                <span className="hidden sm:inline">Inscription</span>
-              </Button>
-            </Link>
-          </div>
-
           {/* Mobile Logo */}
           <div className="lg:hidden flex justify-center mb-8">
             <Image src="/images/logo-bng.png" alt="BNG Logo" width={150} height={50} className="object-contain" />
