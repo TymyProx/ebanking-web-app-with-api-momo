@@ -255,14 +255,14 @@ export default function SignupPage() {
 
               <div className="space-y-2">
                 <Label htmlFor="clientCode" className="text-sm font-medium text-[hsl(220,13%,13%)]">
-                  Code Client
+                  Racine du compte
                 </Label>
                 <div className="relative">
                   <Input
                     id="clientCode"
                     name="clientCode"
                     type="text"
-                    placeholder="Entrez votre code client"
+                    placeholder="Entrez votre racine du compte"
                     className="h-12 pr-10 bg-white border-gray-300 focus:border-[hsl(123,38%,57%)] focus:ring-[hsl(123,38%,57%)]"
                     required
                     disabled={isLoading}
@@ -270,7 +270,7 @@ export default function SignupPage() {
                   <CreditCard className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
                 </div>
                 <p className="text-xs text-[hsl(220,13%,46%)]">
-                  Vous trouverez votre code client sur vos documents bancaires
+                  Vous trouverez votre racine du compte sur vos documents bancaires
                 </p>
               </div>
 

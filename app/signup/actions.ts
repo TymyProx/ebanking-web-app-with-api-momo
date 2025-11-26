@@ -235,7 +235,7 @@ export async function initiateExistingClientSignup(data: { clientCode: string })
     console.log("[v0] Client code:", data.clientCode)
 
     if (!data.clientCode) {
-      return { success: false, message: "Code client requis" }
+      return { success: false, message: "Racine du compte requis" }
     }
 
     // Use support account credentials instead of creating temporary user
@@ -343,7 +343,7 @@ export async function initiateExistingClientSignup(data: { clientCode: string })
       console.log("[v0] Searched for:", data.clientCode)
       return {
         success: false,
-        message: "Code client invalide. Veuillez vérifier votre code et réessayer.",
+        message: "Racine du compte invalide. Veuillez vérifier votre racine et réessayer.",
       }
     }
 
