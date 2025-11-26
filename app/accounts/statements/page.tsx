@@ -413,13 +413,6 @@ export default function StatementsPage() {
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8">
         <h1 className="mb-6 text-3xl font-bold">Relevé de Compte</h1>
-
-        {!hasSearched && !selectedAccount && (
-          <div className="mb-6 rounded-lg border border-blue-200 bg-blue-50 p-4">
-            <p className="text-blue-800">Veuillez sélectionner un compte et une période pour générer votre relevé.</p>
-          </div>
-        )}
-
         {hasSearched && errorMessage && !isLoadingTransactions && (
           <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-4">
             <p className="text-red-800">{errorMessage}</p>
