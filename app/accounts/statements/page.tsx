@@ -412,7 +412,13 @@ export default function StatementsPage() {
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8">
-        <h1 className="mb-6 text-3xl font-bold">Relevé de Compte</h1>
+        <div className="space-y-2 mb-6">
+          <h1 className="text-3xl font-bold text-primary">Relevé de Compte</h1>
+          <p className="text-sm text-muted-foreground">
+            Consultez et téléchargez vos relevés de compte pour la période de votre choix
+          </p>
+        </div>
+        {/* </CHANGE> */}
         {hasSearched && errorMessage && !isLoadingTransactions && (
           <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-4">
             <p className="text-red-800">{errorMessage}</p>
