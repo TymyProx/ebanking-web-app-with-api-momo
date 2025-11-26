@@ -78,26 +78,63 @@ export default function SignupPage() {
 
   if (verificationSent && maskedEmail) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-100 p-8">
-        <div className="w-full max-w-md space-y-6 bg-white p-8 rounded-2xl shadow-lg">
-          <div className="text-center space-y-4">
-            <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
-              <Mail className="w-8 h-8 text-green-600" />
+      <div className="min-h-screen flex bg-gray-100">
+        {/* Left side - Hero Image */}
+        <div className="hidden lg:flex lg:w-1/2 relative">
+          <div className="relative w-full h-full p-8">
+            <div className="relative w-full h-full overflow-hidden rounded-2xl shadow-lg border backdrop-blur-sm">
+              <Image src="/images/welcom.png" alt="Welcome" fill className="object-cover rounded-2xl" priority />
+              <div className="absolute top-12 left-6 z-10">
+                <Image
+                  src="/images/logo-bng.png"
+                  alt="BNG Logo"
+                  width={150}
+                  height={50}
+                  className="object-contain drop-shadow-md"
+                />
+              </div>
             </div>
-            <h2 className="text-2xl font-bold text-[hsl(220,13%,13%)]">Email envoyé !</h2>
-            <p className="text-[hsl(220,13%,46%)]">
-              Un email de vérification a été envoyé à <span className="font-semibold">{maskedEmail}</span>
-            </p>
-            <p className="text-sm text-[hsl(220,13%,46%)]">
-              Veuillez cliquer sur le lien dans l'email pour définir votre mot de passe et activer votre compte.
-            </p>
           </div>
-          <Button
-            onClick={() => router.push("/login")}
-            className="w-full bg-gradient-to-r from-[hsl(45,93%,47%)] to-[hsl(123,38%,57%)] hover:opacity-90"
-          >
-            Retour à la connexion
-          </Button>
+        </div>
+
+        {/* Right side - Success Message */}
+        <div className="w-full lg:w-1/2 flex items-center justify-center p-8">
+          <div className="w-full max-w-md space-y-8">
+            {/* Mobile Logo */}
+            <div className="lg:hidden flex justify-center mb-8">
+              <Image src="/images/logo-bng.png" alt="BNG Logo" width={150} height={50} className="object-contain" />
+            </div>
+
+            {/* Success Message Content */}
+            <div className="space-y-6">
+              <div className="mx-auto w-20 h-20 bg-green-100 rounded-full flex items-center justify-center">
+                <Mail className="w-10 h-10 text-green-600" />
+              </div>
+
+              <div className="text-center space-y-4">
+                <h1 className="text-4xl font-bold text-[hsl(45,93%,47%)]">Email envoyé !</h1>
+                <p className="text-lg text-[hsl(220,13%,46%)]">
+                  Un email de vérification a été envoyé à{" "}
+                  <span className="font-semibold text-[hsl(220,13%,13%)]">{maskedEmail}</span>
+                </p>
+                <p className="text-sm text-[hsl(220,13%,46%)] px-4">
+                  Veuillez cliquer sur le lien dans l'email pour définir votre mot de passe et activer votre compte.
+                </p>
+              </div>
+
+              <Button
+                onClick={() => router.push("/login")}
+                className="w-full h-12 bg-primary hover:opacity-90 text-white font-semibold text-base shadow-lg"
+              >
+                Retour à la connexion
+              </Button>
+            </div>
+
+            {/* Footer */}
+            <div className="pt-8 text-center">
+              <p className="text-sm font-semibold text-[hsl(220,13%,46%)]">BNG BANK INTERNATIONAL 2025 ©</p>
+            </div>
+          </div>
         </div>
       </div>
     )
