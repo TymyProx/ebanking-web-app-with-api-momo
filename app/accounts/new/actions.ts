@@ -21,6 +21,9 @@ interface ClientAdditionalInfo {
   idExpiryDate: string
   idFrontImageUrl: string
   idBackImageUrl: string
+  minorFirstName?: string
+  minorLastName?: string
+  minorDateOfBirth?: string
 }
 
 export async function saveClientAdditionalInfo(data: ClientAdditionalInfo) {
@@ -56,7 +59,7 @@ export async function saveClientAdditionalInfo(data: ClientAdditionalInfo) {
         }
       } else {
         const errorText = await response.text()
-        
+
         // Handle test mode
         if (errorText.includes("only public URLs are supported") || errorText.includes("only https is supported")) {
           console.log("[v0] Test mode: Client additional info saved (mock)")

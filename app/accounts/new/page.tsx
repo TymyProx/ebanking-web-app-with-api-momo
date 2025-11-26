@@ -245,7 +245,7 @@ export default function NewAccountPage() {
           throw new Error("User not found")
         }
 
-        const additionalInfoData = {
+        const additionalInfoData: any = {
           clientId: user.id,
           country: formData.country,
           city: formData.city,
@@ -259,6 +259,12 @@ export default function NewAccountPage() {
           idExpiryDate: formData.idExpiryDate,
           idFrontImageUrl: formData.idFrontImageUrl || "",
           idBackImageUrl: formData.idBackImageUrl || "",
+        }
+
+        if (formData.accountType === "MINEUR") {
+          additionalInfoData.minorFirstName = formData.minorFirstName
+          additionalInfoData.minorLastName = formData.minorLastName
+          additionalInfoData.minorDateOfBirth = formData.minorDateOfBirth
         }
 
         const result = await saveClientAdditionalInfo(additionalInfoData)
