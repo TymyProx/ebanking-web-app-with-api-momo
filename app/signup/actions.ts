@@ -279,7 +279,10 @@ export async function initiateExistingClientSignup(data: { clientCode: string })
     // Step 2: Search for client in clientBNG table
     console.log("[v0] Step 2: Searching for client in clientBNG table...")
 
-    const clientBNGResponse = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/clientBNG`, {
+    const searchUrl = `${API_BASE_URL}/tenant/${TENANT_ID}/clientBNG`
+    console.log("[v0] Fetching from URL:", searchUrl)
+
+    const clientBNGResponse = await fetch(searchUrl, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -290,11 +293,18 @@ export async function initiateExistingClientSignup(data: { clientCode: string })
     console.log("[v0] ClientBNG search response status:", clientBNGResponse.status)
 
     if (!clientBNGResponse.ok) {
+      const errorText = await clientBNGResponse.text()
+      console.error("[v0] ClientBNG fetch failed:", errorText)
+
+      if (clientBNGResponse.status === 404) {
+        throw new Error("La table clientBNG n'existe pas ou l'accès est refusé. Veuillez contacter l'administrateur.")
+      }
+
       throw new Error("Erreur lors de la recherche du client dans la base BNG")
     }
 
     const clientBNGData = await clientBNGResponse.json()
-    console.log("[v0] ClientBNG data received, searching for matching code...")
+    console.log("[v0] ClientBNG data received, parsing response...")
 
     // Handle different response formats
     let clients = []
@@ -304,19 +314,33 @@ export async function initiateExistingClientSignup(data: { clientCode: string })
       clients = clientBNGData.rows
     } else if (clientBNGData.data && Array.isArray(clientBNGData.data)) {
       clients = clientBNGData.data
+    } else if (clientBNGData.value && Array.isArray(clientBNGData.value)) {
+      clients = clientBNGData.value
+    }
+
+    console.log("[v0] Total clients found:", clients.length)
+
+    if (clients.length > 0) {
+      const sampleCodes = clients.slice(0, 5).map((c: any) => ({
+        codeClient: c.codeClient,
+        code: c.code,
+        clientCode: c.clientCode,
+        numeroClient: c.numeroClient,
+        id: c.id,
+      }))
+      console.log("[v0] Sample client codes:", JSON.stringify(sampleCodes, null, 2))
     }
 
     // Find client with matching code
-    const matchingClient = clients.find(
-      (client: any) =>
-        client.codeClient === data.clientCode ||
-        client.code === data.clientCode ||
-        client.clientCode === data.clientCode ||
-        client.numeroClient === data.clientCode,
-    )
+    const matchingClient = clients.find((client: any) => {
+      const clientCodeValue = client.codeClient || client.code || client.clientCode || client.numeroClient || client.id
+      console.log("[v0] Comparing:", clientCodeValue, "with:", data.clientCode)
+      return String(clientCodeValue).toLowerCase() === String(data.clientCode).toLowerCase()
+    })
 
     if (!matchingClient) {
       console.log("[v0] No matching client found in clientBNG")
+      console.log("[v0] Searched for:", data.clientCode)
       return {
         success: false,
         message: "Code client invalide. Veuillez vérifier votre code et réessayer.",
@@ -324,6 +348,7 @@ export async function initiateExistingClientSignup(data: { clientCode: string })
     }
 
     console.log("[v0] Matching client found in clientBNG!")
+    console.log("[v0] Matched client data:", JSON.stringify(matchingClient, null, 2))
 
     // Extract client info from clientBNG
     const clientEmail = matchingClient.email
