@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import {
   AlertDialog,
@@ -44,7 +44,6 @@ import {
   Clock,
   ShieldOff,
 } from "lucide-react"
-import Link from "next/link"
 import { useToast } from "@/hooks/use-toast"
 import { toggleCardStatus } from "@/actions/card"
 
@@ -565,19 +564,19 @@ export default function CardsPage() {
 
                     <div className="w-full max-w-md perspective-1000">
                       <div
-                        className={`relative w-full transition-transform duration-700 transform-style-3d cursor-pointer ${
+                        className={`relative w-full transition-all duration-700 transform-style-3d cursor-pointer hover:scale-105 ${
                           isFlipped ? "rotate-y-180" : ""
                         }`}
                         onClick={toggleFlip}
                         style={{
                           transformStyle: "preserve-3d",
-                          transition: "transform 0.7s",
+                          transition: "transform 0.7s, box-shadow 0.3s, scale 0.3s",
                           transform: isFlipped ? "rotateY(180deg)" : "rotateY(0deg)",
                         }}
                       >
                         {/* Front of Card */}
                         <Card
-                          className="overflow-hidden shadow-2xl backface-hidden"
+                          className="overflow-hidden shadow-2xl hover:shadow-[0_25px_50px_-12px_rgba(0,0,0,0.5)] transition-shadow duration-300 backface-hidden"
                           style={{ backfaceVisibility: "hidden" }}
                         >
                           <div
@@ -644,11 +643,14 @@ export default function CardsPage() {
                             {/* Decorative Pattern */}
                             <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-3xl" />
                             <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/5 rounded-full blur-2xl" />
+                            {/* Shine effect on hover */}
+                            <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/0 to-transparent opacity-0 hover:opacity-10 transition-opacity duration-500 pointer-events-none" />
                           </div>
                         </Card>
 
+                        {/* Back of Card */}
                         <Card
-                          className="overflow-hidden shadow-2xl absolute top-0 left-0 w-full backface-hidden"
+                          className="overflow-hidden shadow-2xl hover:shadow-[0_25px_50px_-12px_rgba(0,0,0,0.5)] transition-shadow duration-300 absolute top-0 left-0 w-full backface-hidden"
                           style={{
                             backfaceVisibility: "hidden",
                             transform: "rotateY(180deg)",
@@ -680,6 +682,8 @@ export default function CardsPage() {
 
                             {/* Decorative Pattern */}
                             <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-3xl" />
+                            {/* Shine effect on hover for back side */}
+                            <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/0 to-transparent opacity-0 hover:opacity-10 transition-opacity duration-500 pointer-events-none" />
                           </div>
                         </Card>
                       </div>
@@ -718,70 +722,69 @@ export default function CardsPage() {
                       ))}
                     </div>
                   )}
-                <Card className="max-w-md mx-auto">
-                <CardContent className="space-y-4 pt-6 pb-6">
-                  <div className="flex gap-2">
-                    {currentCard.status?.toUpperCase() === "ACTIF" ? (
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        onClick={() => openConfirmDialog(currentCard.id, currentCard.status)}
-                        disabled={loadingCardId === currentCard.id}
-                        className="flex-1"
-                      >
-                        {loadingCardId === currentCard.id ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <>
-                            <Lock className="mr-2 h-4 w-4" />
-                            Bloquer
-                          </>
-                        )}
-                      </Button>
-                    ) : currentCard.status?.toUpperCase() === "BLOCKED" ||
-                      currentCard.status?.toUpperCase() === "BLOQUE" ? (
-                      <Button
-                        variant="default"
-                        size="sm"
-                        onClick={() => openConfirmDialog(currentCard.id, currentCard.status)}
-                        disabled={loadingCardId === currentCard.id}
-                        className="flex-1"
-                      >
-                        {loadingCardId === currentCard.id ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <>
-                            <Unlock className="mr-2 h-4 w-4" />
-                            Débloquer
-                          </>
-                        )}
-                      </Button>
-                    ) : null}
+                  <Card className="max-w-md mx-auto">
+                    <CardContent className="space-y-4 pt-6 pb-6">
+                      <div className="flex gap-2">
+                        {currentCard.status?.toUpperCase() === "ACTIF" ? (
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => openConfirmDialog(currentCard.id, currentCard.status)}
+                            disabled={loadingCardId === currentCard.id}
+                            className="flex-1"
+                          >
+                            {loadingCardId === currentCard.id ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <>
+                                <Lock className="mr-2 h-4 w-4" />
+                                Bloquer
+                              </>
+                            )}
+                          </Button>
+                        ) : currentCard.status?.toUpperCase() === "BLOCKED" ||
+                          currentCard.status?.toUpperCase() === "BLOQUE" ? (
+                          <Button
+                            variant="default"
+                            size="sm"
+                            onClick={() => openConfirmDialog(currentCard.id, currentCard.status)}
+                            disabled={loadingCardId === currentCard.id}
+                            className="flex-1"
+                          >
+                            {loadingCardId === currentCard.id ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <>
+                                <Unlock className="mr-2 h-4 w-4" />
+                                Débloquer
+                              </>
+                            )}
+                          </Button>
+                        ) : null}
 
-                    <Dialog>
-                      <DialogTrigger asChild>
-                        <Button variant="outline" size="sm" onClick={() => setSelectedCard(currentCard)}>
-                          <Settings className="w-4 h-4" />
-                        </Button>
-                      </DialogTrigger>
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <Button variant="outline" size="sm" onClick={() => setSelectedCard(currentCard)}>
+                              <Settings className="w-4 h-4" />
+                            </Button>
+                          </DialogTrigger>
 
-                      <DialogContent className="max-w-2xl">
-                        <DialogHeader>
-                          <DialogTitle>Gestion de la carte</DialogTitle>
-                          <DialogDescription>
-                            {currentCard.typCard} - {formatCardNumber(currentCard.numCard, false)}
-                          </DialogDescription>
-                        </DialogHeader>
+                          <DialogContent className="max-w-2xl">
+                            <DialogHeader>
+                              <DialogTitle>Gestion de la carte</DialogTitle>
+                              <DialogDescription>
+                                {currentCard.typCard} - {formatCardNumber(currentCard.numCard, false)}
+                              </DialogDescription>
+                            </DialogHeader>
 
-                        <div className="p-4 flex justify-center items-center h-40">
-                          <p className="text-muted-foreground">Options de gestion avancées à venir...</p>
-                        </div>
-                      </DialogContent>
-                    </Dialog>
-                  </div>
-                </CardContent>
-                </Card>
-
+                            <div className="p-4 flex justify-center items-center h-40">
+                              <p className="text-muted-foreground">Options de gestion avancées à venir...</p>
+                            </div>
+                          </DialogContent>
+                        </Dialog>
+                      </div>
+                    </CardContent>
+                  </Card>
                 </div>
               )
             })()}
