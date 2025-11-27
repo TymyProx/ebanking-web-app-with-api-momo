@@ -350,10 +350,6 @@ export default function CardsPage() {
       {/* Buttons */}
       <div className="flex items-center justify-end gap-3">
         <div className="flex gap-2">
-          <Button onClick={() => setShowNewCardForm(true)}>
-            <Plus className="w-4 h-4 mr-2" />
-            Nouvelle carte
-          </Button>
           <Button variant="outline" onClick={loadCards} disabled={loading}>
             <RefreshCw className={`w-4 h-4 mr-2 ${loading ? "animate-spin" : ""}`} />
             Actualiser
