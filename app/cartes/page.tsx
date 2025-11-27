@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import {
   AlertDialog,
@@ -77,10 +77,11 @@ type Account = {
 
 export default function CardsPage() {
   const [cards, setCards] = useState<CardWithUI[]>([])
+  const [filteredCards, setFilteredCards] = useState<CardWithUI[]>([]) // Use the updated type here
   const [total, setTotal] = useState<number>(0)
-  const [loading, setLoading] = useState<boolean>(false)
+  const [loading, setLoading] = useState<boolean>(true) // Set initial loading to true
   const [error, setError] = useState<string | null>(null)
-  const [statusFilter, setStatusFilter] = useState<string>("ACTIF")
+  const [statusFilter, setStatusFilter] = useState<string>("all")
   const [currentCardIndex, setCurrentCardIndex] = useState<number>(0)
 
   const [accounts, setAccounts] = useState<Account[]>([])
@@ -105,6 +106,8 @@ export default function CardsPage() {
 
   const [loadingCardId, setLoadingCardId] = useState<string | null>(null)
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false)
+
+  const [isFlipped, setIsFlipped] = useState(false)
 
   const [confirmDialog, setConfirmDialog] = useState<{
     isOpen: boolean
@@ -195,12 +198,21 @@ export default function CardsPage() {
       if (logDebug) console.log("[CARDS/UI] final rows:", enhancedCards.length)
       setCards(enhancedCards)
       setTotal(response.count)
+
+      // Apply status filter immediately after loading cards
+      const initialFiltered = enhancedCards.filter((card) => {
+        if (statusFilter === "all") return true
+        return card.status?.toUpperCase() === statusFilter.toUpperCase()
+      })
+      setFilteredCards(initialFiltered)
     } catch (e: any) {
       setError(e?.message ?? String(e))
       setCards([])
+      setFilteredCards([]) // Clear filtered cards on error
       setTotal(0)
     } finally {
       setLoading(false)
+      setIsRefreshing(false) // Ensure isRefreshing is false when done
     }
   }
 
@@ -355,6 +367,10 @@ export default function CardsPage() {
     setCards((prev) =>
       prev.map((card) => (card.id === cardId ? { ...card, isNumberVisible: !card.isNumberVisible } : card)),
     )
+    // Update filteredCards as well if it's already populated
+    setFilteredCards((prev) =>
+      prev.map((card) => (card.id === cardId ? { ...card, isNumberVisible: !card.isNumberVisible } : card)),
+    )
   }
 
   function getCardTypeColor(type: string) {
@@ -399,15 +415,31 @@ export default function CardsPage() {
     if (!number) return "****"
     const numStr = String(number)
     if (isVisible) return numStr
-    return numStr
-      .replace(/(.{4})/g, "$1 ")
-      .replace(/\d(?=\d{4})/g, "*")
-      .trim()
+    return "**** **** **** " + numStr.slice(-4)
   }
 
   function formatAmount(amount: number) {
     return new Intl.NumberFormat("fr-FR").format(amount)
   }
+
+  const toggleFlip = () => {
+    setIsFlipped(!isFlipped)
+  }
+
+  // Effect to filter cards when statusFilter changes
+  useEffect(() => {
+    const initialFiltered = cards.filter((card) => {
+      if (statusFilter === "all") return true
+      return card.status?.toUpperCase() === statusFilter.toUpperCase()
+    })
+    setFilteredCards(initialFiltered)
+    // Reset currentCardIndex when filter changes to avoid index out of bounds
+    if (initialFiltered.length > 0) {
+      setCurrentCardIndex(0)
+    } else {
+      setCurrentCardIndex(-1) // Indicate no cards are visible
+    }
+  }, [statusFilter, cards])
 
   useEffect(() => {
     if (submitSuccess) {
@@ -420,9 +452,12 @@ export default function CardsPage() {
   }, [submitSuccess])
 
   useEffect(() => {
-    loadCards()
-    loadAccounts()
-  }, [])
+    // Only load data if not already loading
+    if (!loading) {
+      loadCards()
+      loadAccounts()
+    }
+  }, []) // Empty dependency array ensures this runs only once on mount
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -450,6 +485,11 @@ export default function CardsPage() {
             <RefreshCw className={`w-4 h-4 mr-2 ${loading || isRefreshing ? "animate-spin" : ""}`} />
             Actualiser
           </Button>
+
+          <Button onClick={() => setShowNewCardForm(true)} disabled={loadingAccounts}>
+            <Plus className="w-4 h-4 mr-2" />
+            Nouvelle carte
+          </Button>
         </div>
 
         {/* Success/Error Messages */}
@@ -467,7 +507,7 @@ export default function CardsPage() {
           </Alert>
         )}
 
-        {loading || isRefreshing ? (
+        {loading ? (
           <div className="flex justify-center items-center py-12">
             <Card className="w-full max-w-md h-64 animate-pulse">
               <CardContent className="p-6">
@@ -475,39 +515,23 @@ export default function CardsPage() {
               </CardContent>
             </Card>
           </div>
-        ) : cards.length > 0 ? (
+        ) : filteredCards.length > 0 ? (
           <div className="relative">
             {(() => {
-              const filteredCards = cards.filter((card) => {
-                if (statusFilter === "all") return true
-                return card.status?.toUpperCase() === statusFilter.toUpperCase()
-              })
-
-              if (filteredCards.length === 0) {
-                const statusLabels: Record<string, string> = {
-                  all: "",
-                  ACTIF: "actives",
-                  BLOCKED: "bloquées",
-                  EXPIRED: "expirées",
-                }
-                const statusLabel = statusLabels[statusFilter] || ""
-
+              const currentCard = filteredCards[currentCardIndex]
+              // Ensure a valid card is selected before proceeding
+              if (!currentCard) {
                 return (
                   <div className="flex justify-center py-12">
                     <Card className="w-full max-w-md p-12 text-center">
                       <CreditCard className="w-12 h-12 mx-auto text-gray-400 mb-4" />
-                      <h3 className="text-lg font-medium text-gray-900 mb-2">Aucune carte {statusLabel}</h3>
-                      <p className="text-gray-500">
-                        {statusFilter === "all"
-                          ? "Vous n'avez pas encore de carte."
-                          : "Vous n'avez pas de carte avec ce statut."}
-                      </p>
+                      <h3 className="text-lg font-medium text-gray-900 mb-2">Aucune carte sélectionnée</h3>
+                      <p className="text-gray-500">Veuillez sélectionner une carte.</p>
                     </Card>
                   </div>
                 )
               }
 
-              const currentCard = filteredCards[currentCardIndex]
               const gradients = [
                 "bg-gradient-to-br from-purple-600 via-purple-500 to-pink-500",
                 "bg-gradient-to-br from-blue-600 via-blue-500 to-teal-500",
@@ -526,137 +550,136 @@ export default function CardsPage() {
                       <Button
                         variant="outline"
                         size="icon"
-                        onClick={() =>
+                        onClick={() => {
                           setCurrentCardIndex((prev) => (prev === 0 ? filteredCards.length - 1 : prev - 1))
-                        }
+                          setIsFlipped(false) // Reset flip on navigation
+                        }}
                         className="shrink-0"
                       >
                         <ChevronLeft className="h-5 w-5" />
                       </Button>
                     )}
 
-                    {/* Card Display */}
-                    <div className="w-full max-w-md">
-                      <Card className="overflow-hidden shadow-2xl">
-                        {/* Realistic Card Design with Gradient */}
-                        <div
-                          className={`${cardGradient} p-8 text-white relative min-h-[240px] flex flex-col justify-between`}
+                    <div className="w-full max-w-md perspective-1000">
+                      <div
+                        className={`relative w-full transition-transform duration-700 transform-style-3d cursor-pointer ${
+                          isFlipped ? "rotate-y-180" : ""
+                        }`}
+                        onClick={toggleFlip}
+                        style={{
+                          transformStyle: "preserve-3d",
+                          transition: "transform 0.7s",
+                          transform: isFlipped ? "rotateY(180deg)" : "rotateY(0deg)",
+                        }}
+                      >
+                        {/* Front of Card */}
+                        <Card
+                          className="overflow-hidden shadow-2xl backface-hidden"
+                          style={{ backfaceVisibility: "hidden" }}
                         >
-                          {/* Card Type and Status */}
-                          <div className="flex justify-between items-start">
-                            <div className="text-sm font-medium opacity-90 uppercase tracking-wide">
-                              {currentCard.typCard}
-                            </div>
-                            {getStatusBadge(currentCard.status)}
-                          </div>
-
-                          {/* EMV Chip and Contactless */}
-                          <div className="flex items-center gap-4 my-4">
-                            <div className="w-12 h-10 bg-gradient-to-br from-yellow-300 to-yellow-500 rounded-md shadow-lg flex items-center justify-center">
-                              <div className="grid grid-cols-3 gap-[2px]">
-                                {[...Array(9)].map((_, i) => (
-                                  <div key={i} className="w-1 h-1 bg-yellow-900/30 rounded-full" />
-                                ))}
+                          <div
+                            className={`${cardGradient} p-8 text-white relative min-h-[240px] flex flex-col justify-between`}
+                          >
+                            {/* Card Type and Status */}
+                            <div className="flex justify-between items-start">
+                              <div className="text-sm font-medium opacity-90 uppercase tracking-wide">
+                                {currentCard.typCard}
                               </div>
-                            </div>
-                            <Wifi className="w-6 h-6 rotate-90 opacity-90" />
-                          </div>
-
-                          {/* Card Number */}
-                          <div className="space-y-6">
-                            <div className="flex items-center justify-between">
-                              <div className="font-mono text-xl tracking-[0.3em] font-light">
-                                {formatCardNumber(currentCard.numCard, currentCard.isNumberVisible || false)}
-                              </div>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => toggleCardNumberVisibility(currentCard.id)}
-                                className="text-white hover:bg-white/20 shrink-0"
-                              >
-                                {currentCard.isNumberVisible ? (
-                                  <EyeOff className="w-4 h-4" />
-                                ) : (
-                                  <Eye className="w-4 h-4" />
-                                )}
-                              </Button>
+                              {getStatusBadge(currentCard.status)}
                             </div>
 
-                            {/* Holder and Expiry */}
-                            <div className="flex justify-between items-end">
-                              <div>
-                                <div className="text-[10px] uppercase opacity-75 tracking-wider mb-1">Titulaire</div>
-                                <div className="font-medium uppercase tracking-wide text-sm">{currentCard.holder}</div>
+                            {/* EMV Chip and Contactless */}
+                            <div className="flex items-center gap-4 my-4">
+                              <div className="w-12 h-10 bg-gradient-to-br from-yellow-300 to-yellow-500 rounded-md shadow-lg flex items-center justify-center">
+                                <div className="grid grid-cols-3 gap-[2px]">
+                                  {[...Array(9)].map((_, i) => (
+                                    <div key={i} className="w-1 h-1 bg-yellow-900/30 rounded-full" />
+                                  ))}
+                                </div>
                               </div>
-                              <div className="text-right">
-                                <div className="text-[10px] uppercase opacity-75 tracking-wider mb-1">Expire</div>
-                                <div className="font-medium tracking-wider text-sm">{currentCard.dateExpiration}</div>
-                              </div>
+                              <Wifi className="w-6 h-6 rotate-90 opacity-90" />
                             </div>
-                          </div>
 
-                          {/* Decorative Pattern */}
-                          <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-3xl" />
-                          <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/5 rounded-full blur-2xl" />
-                        </div>
-
-                        {/* Card Actions */}
-                        <CardContent className="p-4 space-y-4 bg-white">
-                          <div className="flex gap-2">
-                            {currentCard.status?.toUpperCase() === "ACTIF" ? (
-                              <Button
-                                variant="destructive"
-                                size="sm"
-                                onClick={() => openConfirmDialog(currentCard.id, currentCard.status)}
-                                disabled={loadingCardId === currentCard.id}
-                                className="flex-1"
-                              >
-                                {loadingCardId === currentCard.id ? (
-                                  <Loader2 className="h-4 w-4 animate-spin" />
-                                ) : (
-                                  <>
-                                    <Lock className="mr-2 h-4 w-4" />
-                                    Bloquer
-                                  </>
-                                )}
-                              </Button>
-                            ) : currentCard.status?.toUpperCase() === "BLOCKED" ||
-                              currentCard.status?.toUpperCase() === "BLOQUE" ? (
-                              <Button
-                                variant="default"
-                                size="sm"
-                                onClick={() => openConfirmDialog(currentCard.id, currentCard.status)}
-                                disabled={loadingCardId === currentCard.id}
-                                className="flex-1"
-                              >
-                                {loadingCardId === currentCard.id ? (
-                                  <Loader2 className="h-4 w-4 animate-spin" />
-                                ) : (
-                                  <>
-                                    <Unlock className="mr-2 h-4 w-4" />
-                                    Débloquer
-                                  </>
-                                )}
-                              </Button>
-                            ) : null}
-                            <Dialog>
-                              <DialogTrigger asChild>
-                                <Button variant="outline" size="sm" onClick={() => setSelectedCard(currentCard)}>
-                                  <Settings className="w-4 h-4" />
+                            {/* Card Number */}
+                            <div className="space-y-6">
+                              <div className="flex items-center justify-between">
+                                <div className="font-mono text-xl tracking-[0.3em] font-light">
+                                  {formatCardNumber(currentCard.numCard, currentCard.isNumberVisible || false)}
+                                </div>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation() // Prevent card flip when clicking visibility toggle
+                                    toggleCardNumberVisibility(currentCard.id)
+                                  }}
+                                  className="text-white hover:bg-white/20 shrink-0"
+                                >
+                                  {currentCard.isNumberVisible ? (
+                                    <EyeOff className="w-4 h-4" />
+                                  ) : (
+                                    <Eye className="w-4 h-4" />
+                                  )}
                                 </Button>
-                              </DialogTrigger>
-                              <DialogContent className="max-w-2xl">
-                                <DialogHeader>
-                                  <DialogTitle>Gestion de la carte</DialogTitle>
-                                  <DialogDescription>
-                                    {currentCard.typCard} - {formatCardNumber(currentCard.numCard, false)}
-                                  </DialogDescription>
-                                </DialogHeader>
-                              </DialogContent>
-                            </Dialog>
+                              </div>
+
+                              {/* Holder and Expiry */}
+                              <div className="flex justify-between items-end">
+                                <div>
+                                  <div className="text-[10px] uppercase opacity-75 tracking-wider mb-1">Titulaire</div>
+                                  <div className="font-medium uppercase tracking-wide text-sm">
+                                    {currentCard.holder}
+                                  </div>
+                                </div>
+                                <div className="text-right">
+                                  <div className="text-[10px] uppercase opacity-75 tracking-wider mb-1">Expire</div>
+                                  <div className="font-medium tracking-wider text-sm">{currentCard.dateExpiration}</div>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Decorative Pattern */}
+                            <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-3xl" />
+                            <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/5 rounded-full blur-2xl" />
                           </div>
-                        </CardContent>
-                      </Card>
+                        </Card>
+
+                        <Card
+                          className="overflow-hidden shadow-2xl absolute top-0 left-0 w-full backface-hidden"
+                          style={{
+                            backfaceVisibility: "hidden",
+                            transform: "rotateY(180deg)",
+                          }}
+                        >
+                          <div
+                            className={`${cardGradient} p-8 text-white relative min-h-[240px] flex flex-col justify-between`}
+                          >
+                            {/* Magnetic Strip */}
+                            <div className="w-full h-12 bg-black/80 -mx-8 mb-6" />
+
+                            {/* CVV Section */}
+                            <div className="bg-white/90 p-4 rounded space-y-2">
+                              <div className="flex justify-between items-center">
+                                <span className="text-xs text-gray-600 uppercase">CVV</span>
+                                <span className="font-mono text-lg text-gray-900">***</span>
+                              </div>
+                              <div className="text-[10px] text-gray-500">
+                                Code de sécurité à 3 chiffres au dos de votre carte
+                              </div>
+                            </div>
+
+                            {/* Card Info */}
+                            <div className="space-y-2 text-xs opacity-90">
+                              <p>Service Client: +226 25 XX XX XX</p>
+                              <p>En cas de perte ou vol, appelez immédiatement</p>
+                              <p className="text-[10px] opacity-75">Cette carte est la propriété de la BNG</p>
+                            </div>
+
+                            {/* Decorative Pattern */}
+                            <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-3xl" />
+                          </div>
+                        </Card>
+                      </div>
                     </div>
 
                     {/* Next Button */}
@@ -664,9 +687,10 @@ export default function CardsPage() {
                       <Button
                         variant="outline"
                         size="icon"
-                        onClick={() =>
+                        onClick={() => {
                           setCurrentCardIndex((prev) => (prev === filteredCards.length - 1 ? 0 : prev + 1))
-                        }
+                          setIsFlipped(false) // Reset flip on navigation
+                        }}
                         className="shrink-0"
                       >
                         <ChevronRight className="h-5 w-5" />
@@ -676,18 +700,89 @@ export default function CardsPage() {
 
                   {/* Pagination Dots */}
                   {filteredCards.length > 1 && (
-                    <div className="flex justify-center gap-2">
+                    <div className="flex justify-center gap-2 mt-4">
                       {filteredCards.map((_, index) => (
                         <button
                           key={index}
-                          onClick={() => setCurrentCardIndex(index)}
+                          onClick={() => {
+                            setCurrentCardIndex(index)
+                            setIsFlipped(false) // Reset flip on dot click
+                          }}
                           className={`w-2 h-2 rounded-full transition-all ${
-                            index === currentCardIndex ? "bg-primary w-8" : "bg-gray-300 hover:bg-gray-400"
+                            index === currentCardIndex ? "bg-primary w-6" : "bg-gray-300 hover:bg-gray-400"
                           }`}
                         />
                       ))}
                     </div>
                   )}
+
+                  <Card className="max-w-md mx-auto">
+                    <CardHeader>
+                      <CardTitle className="text-lg">Actions de la carte</CardTitle>
+                      <CardDescription>
+                        {currentCard.typCard} - {formatCardNumber(currentCard.numCard, false)}
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="flex gap-2">
+                        {currentCard.status?.toUpperCase() === "ACTIF" ? (
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => openConfirmDialog(currentCard.id, currentCard.status)}
+                            disabled={loadingCardId === currentCard.id}
+                            className="flex-1"
+                          >
+                            {loadingCardId === currentCard.id ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <>
+                                <Lock className="mr-2 h-4 w-4" />
+                                Bloquer
+                              </>
+                            )}
+                          </Button>
+                        ) : currentCard.status?.toUpperCase() === "BLOCKED" ||
+                          currentCard.status?.toUpperCase() === "BLOQUE" ? (
+                          <Button
+                            variant="default"
+                            size="sm"
+                            onClick={() => openConfirmDialog(currentCard.id, currentCard.status)}
+                            disabled={loadingCardId === currentCard.id}
+                            className="flex-1"
+                          >
+                            {loadingCardId === currentCard.id ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <>
+                                <Unlock className="mr-2 h-4 w-4" />
+                                Débloquer
+                              </>
+                            )}
+                          </Button>
+                        ) : null}
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <Button variant="outline" size="sm" onClick={() => setSelectedCard(currentCard)}>
+                              <Settings className="w-4 h-4" />
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent className="max-w-2xl">
+                            <DialogHeader>
+                              <DialogTitle>Gestion de la carte</DialogTitle>
+                              <DialogDescription>
+                                {currentCard.typCard} - {formatCardNumber(currentCard.numCard, false)}
+                              </DialogDescription>
+                            </DialogHeader>
+                            {/* Placeholder for additional card management options */}
+                            <div className="p-4 flex justify-center items-center h-40">
+                              <p className="text-muted-foreground">Options de gestion avancées à venir...</p>
+                            </div>
+                          </DialogContent>
+                        </Dialog>
+                      </div>
+                    </CardContent>
+                  </Card>
                 </div>
               )
             })()}
@@ -881,7 +976,13 @@ export default function CardsPage() {
                 <div>
                   <div className="text-sm text-gray-500">Cartes bloquées</div>
                   <div className="text-2xl font-bold text-red-600">
-                    {cards.filter((c) => typeof c.status === "string" && c.status.toUpperCase() === "BLOCKED").length}
+                    {
+                      cards.filter(
+                        (c) =>
+                          typeof c.status === "string" &&
+                          (c.status.toUpperCase() === "BLOCKED" || c.status.toUpperCase() === "BLOQUE"),
+                      ).length
+                    }
                   </div>
                 </div>
                 <ShieldOff className="w-8 h-8 text-red-500" />
