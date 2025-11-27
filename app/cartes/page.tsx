@@ -78,9 +78,9 @@ type Account = {
 export default function CardsPage() {
   const [cards, setCards] = useState<CardWithUI[]>([])
   const [total, setTotal] = useState<number>(0)
-  const [loading, setLoading] = useState<boolean>(false)
+  const [loading, setLoading] = useState<boolean>(true)
   const [error, setError] = useState<string | null>(null)
-  const [statusFilter, setStatusFilter] = useState<string>("ACTIF")
+  const [statusFilter, setStatusFilter] = useState<string>("all")
   const [currentCardIndex, setCurrentCardIndex] = useState<number>(0)
 
   const [accounts, setAccounts] = useState<Account[]>([])
@@ -120,6 +120,37 @@ export default function CardsPage() {
 
   const toast = useToast()
 
+  const logDebug = false
+
+  async function fetchUserInfo() {
+    try {
+      const token = document.cookie
+        .split("; ")
+        .find((row) => row.startsWith("token="))
+        ?.split("=")[1]
+
+      if (!token) {
+        console.warn("[v0] No token found for user info")
+        return
+      }
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/me`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+
+      if (response.ok) {
+        const userData = await response.json()
+        const fullName = userData?.fullName || userData?.name || ""
+        setUserFullName(fullName)
+        console.log("[v0] User full name loaded:", fullName)
+      }
+    } catch (error) {
+      console.error("[v0] Error fetching user info:", error)
+    }
+  }
+
   async function loadAccounts() {
     setLoadingAccounts(true)
     try {
@@ -134,28 +165,24 @@ export default function CardsPage() {
   }
 
   async function loadCards() {
-    console.log("[v0] Chargement des cartes...")
     setLoading(true)
     setError(null)
 
     try {
-      const result = await fetchAllCards()
-      console.log("[v0] Résultat getCards:", result)
-
+      const response = await fetchAllCards()
       const secureMode = (process.env.NEXT_PUBLIC_PORTAL_SECURE_MODE || "false").toLowerCase() === "true"
       const keyB64 = process.env.NEXT_PUBLIC_PORTAL_KEY_B64 || ""
-      const logDebug = (process.env.NEXT_PUBLIC_LOG_LEVEL || "").toLowerCase() === "debug"
       let key: CryptoKey | null = null
       try {
         if (secureMode && keyB64) key = await importAesGcmKeyFromBase64(keyB64)
       } catch (_) {
         key = null
       }
-      if (logDebug) console.log("[CARDS/UI] secure:", secureMode, "key:", !!key, "rows:", result.rows.length)
+      if (logDebug) console.log("[CARDS/UI] secure:", secureMode, "key:", !!key, "rows:", response.rows.length)
 
       const decryptedRows = key
         ? await Promise.all(
-            result.rows.map(async (c: any) => {
+            response.rows.map(async (c: any) => {
               const out: any = { ...c }
               try {
                 if (isEncryptedJson(out.numCard))
@@ -184,11 +211,11 @@ export default function CardsPage() {
               return out
             }),
           )
-        : result.rows
+        : response.rows
 
       const enhancedCards = decryptedRows.map((card) => ({
         ...card,
-        holder: "MAMADOU DIALLO", // Default holder name
+        holder: userFullName || "Titulaire",
         dailyLimit: 500000,
         monthlyLimit: 2000000,
         balance: 1250000,
@@ -197,7 +224,7 @@ export default function CardsPage() {
       }))
       if (logDebug) console.log("[CARDS/UI] final rows:", enhancedCards.length)
       setCards(enhancedCards)
-      setTotal(result.count)
+      setTotal(response.count)
     } catch (e: any) {
       setError(e?.message ?? String(e))
       setCards([])
@@ -422,9 +449,13 @@ export default function CardsPage() {
     }
   }, [submitSuccess])
 
+  // State for user's full name
+  const [userFullName, setUserFullName] = useState<string>("")
+
   useEffect(() => {
-    loadCards()
-    loadAccounts()
+    fetchUserInfo().then(() => {
+      loadCards()
+    })
   }, [])
 
   return (
