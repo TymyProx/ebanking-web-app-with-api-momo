@@ -398,12 +398,37 @@ export default function CardsPage() {
         </div>
       ) : cards.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {cards
-            .filter((card) => {
+          {(() => {
+            const filteredCards = cards.filter((card) => {
               if (statusFilter === "all") return true
               return card.status?.toUpperCase() === statusFilter.toUpperCase()
             })
-            .map((card) => (
+
+            if (filteredCards.length === 0) {
+              const statusLabels: Record<string, string> = {
+                all: "",
+                ACTIF: "actives",
+                BLOCKED: "bloquées",
+                EXPIRED: "expirées",
+              }
+              const statusLabel = statusLabels[statusFilter] || ""
+
+              return (
+                <div className="col-span-full">
+                  <Card className="p-12 text-center">
+                    <CreditCard className="w-12 h-12 mx-auto text-gray-400 mb-4" />
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">Aucune carte {statusLabel}</h3>
+                    <p className="text-gray-500">
+                      {statusFilter === "all"
+                        ? "Vous n'avez pas encore de carte."
+                        : "Vous n'avez pas de carte avec ce statut."}
+                    </p>
+                  </Card>
+                </div>
+              )
+            }
+
+            return filteredCards.map((card) => (
               <Card key={card.id} className="overflow-hidden">
                 {/* Card Visual */}
                 <div className={`${getCardTypeColor(card.typCard)} p-6 text-white relative`}>
@@ -560,7 +585,8 @@ export default function CardsPage() {
                   </div>
                 </CardContent>
               </Card>
-            ))}
+            ))
+          })()}
         </div>
       ) : (
         <Card className="p-12 text-center">
