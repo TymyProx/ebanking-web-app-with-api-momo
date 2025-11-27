@@ -424,15 +424,15 @@ export default function CardsPage() {
   }
 
   const toggleFlip = () => {
-    setIsFlipped(!isFlipped)
+    setIsFading(true)
+    setTimeout(() => {
+      setIsFlipped(!isFlipped)
+      setIsFading(false)
+    }, 300)
   }
 
   const changeCard = (newIndex: number) => {
-    setIsFading(true)
-    setTimeout(() => {
-      setCurrentCardIndex(newIndex)
-      setIsFading(false)
-    }, 300)
+    setCurrentCardIndex(newIndex)
   }
 
   const handleRefresh = async () => {
@@ -576,15 +576,18 @@ export default function CardsPage() {
                         onClick={toggleFlip}
                         style={{
                           transformStyle: "preserve-3d",
-                          transform: isFlipped ? "rotateY(180deg)" : "rotateY(0deg)",
+                          transform: `rotateY(${isFlipped ? 180 : 0}deg)`,
                           transition: "transform 0.6s ease-in-out",
-                          opacity: isFading ? 0 : 1,
                         }}
                       >
                         {/* Front of Card */}
                         <Card
-                          className="overflow-hidden shadow-2xl hover:shadow-[0_25px_50px_-12px_rgba(0,0,0,0.5)] transition-shadow duration-300 backface-hidden"
-                          style={{ backfaceVisibility: "hidden" }}
+                          className="overflow-hidden shadow-2xl hover:shadow-[0_25px_50px_-12px_rgba(0,0,0,0.5)] transition-shadow duration-300"
+                          style={{
+                            opacity: isFading ? 0 : 1,
+                            transition: "opacity 0.3s ease-in-out",
+                            display: isFlipped ? "none" : "flex",
+                          }}
                         >
                           <div
                             className={`${cardGradient} p-8 text-white relative min-h-[240px] flex flex-col justify-between`}
@@ -657,10 +660,11 @@ export default function CardsPage() {
 
                         {/* Back of Card */}
                         <Card
-                          className="overflow-hidden shadow-2xl hover:shadow-[0_25px_50px_-12px_rgba(0,0,0,0.5)] transition-shadow duration-300 absolute top-0 left-0 w-full backface-hidden"
+                          className="overflow-hidden shadow-2xl hover:shadow-[0_25px_50px_-12px_rgba(0,0,0,0.5)] transition-shadow duration-300 absolute top-0 left-0 w-full"
                           style={{
-                            backfaceVisibility: "hidden",
-                            transform: "rotateY(180deg)",
+                            opacity: isFading ? 0 : 1,
+                            transition: "opacity 0.3s ease-in-out",
+                            display: isFlipped ? "block" : "none",
                           }}
                         >
                           <div
