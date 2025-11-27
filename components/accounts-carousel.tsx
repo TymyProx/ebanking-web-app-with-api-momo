@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Carousel, CarouselContent, CarouselItem } from "@/components/ui/carousel"
 import { Wallet, PiggyBank, DollarSign, Eye } from "lucide-react"
@@ -111,31 +111,26 @@ export function AccountsCarousel({ accounts }: AccountsCarouselProps) {
 
   return (
     <Card className="border-0 shadow-none bg-transparent">
-      <CardHeader>
-        {/* <div className="flex items-center justify-between">
-          <CardTitle className="font-heading text-xl">Mes Comptes</CardTitle>
-        </div> */}
-      </CardHeader>
-      <CardContent>
+      <CardContent className="p-0">
         <Carousel setApi={setApi} className="w-full">
           <CarouselContent>
             {activeAccounts.map((account) => (
               <CarouselItem key={account.id}>
                 <Link href={`/accounts/${account.id}`}>
                   <Card className="card-hover border-0 shadow-md bg-gradient-to-br from-primary/10 via-background to-secondary/10 backdrop-blur-sm">
-                    <CardContent className="p-6">
-                      <div className="flex items-center justify-between gap-6">
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between gap-4">
                         {/* Left section: Account info and type */}
-                        <div className="flex-1 space-y-4">
-                          <div className="flex items-center gap-3">
-                            <div className="p-3 rounded-lg bg-primary/10">{getAccountIcon(account.type)}</div>
+                        <div className="flex-1 space-y-2">
+                          <div className="flex items-center gap-2">
+                            <div className="p-2 rounded-lg bg-primary/10">{getAccountIcon(account.type)}</div>
                             <div>
-                              <CardTitle className="text-lg font-heading font-semibold mb-1">
+                              <CardTitle className="text-base font-heading font-semibold mb-0.5">
                                 {account.accountName}
                               </CardTitle>
                               <Badge
                                 variant="secondary"
-                                className="bg-secondary/20 text-secondary-foreground border-secondary/30"
+                                className="bg-secondary/20 text-secondary-foreground border-secondary/30 text-xs"
                               >
                                 {getAccountTypeDisplay(account.type)}
                               </Badge>
@@ -144,7 +139,7 @@ export function AccountsCarousel({ accounts }: AccountsCarouselProps) {
 
                           <div>
                             <p className="text-xs text-muted-foreground mb-1">Numéro de compte</p>
-                            <p className="text-base font-mono font-semibold bg-muted/50 px-4 py-2 rounded-md inline-block">
+                            <p className="text-sm font-mono font-semibold bg-muted/50 px-3 py-1.5 rounded-md inline-block">
                               {account.accountNumber}
                             </p>
                           </div>
@@ -157,18 +152,18 @@ export function AccountsCarousel({ accounts }: AccountsCarouselProps) {
                         </div>
 
                         {/* Right section: Balances */}
-                        <div className="flex-1 space-y-4 text-right">
+                        <div className="flex-1 space-y-2 text-right">
                           <div>
-                            <p className="text-xs text-muted-foreground mb-2">Solde disponible</p>
-                            <div className="text-3xl font-heading font-bold text-foreground">
+                            <p className="text-xs text-muted-foreground mb-1">Solde disponible</p>
+                            <div className="text-2xl font-heading font-bold text-foreground">
                               {formatAmount(account.availableBalance, account.currency)}
                             </div>
                             <div className="text-sm text-muted-foreground mt-1">{account.currency}</div>
                           </div>
 
-                          <div className="pt-2 border-t border-border/50">
+                          <div className="pt-1 border-t border-border/50">
                             <p className="text-xs text-muted-foreground mb-1">Solde comptable</p>
-                            <div className="text-xl font-heading font-semibold text-muted-foreground">
+                            <div className="text-lg font-heading font-semibold text-muted-foreground">
                               {formatAmount(account.bookBalance, account.currency)} {account.currency}
                             </div>
                           </div>
@@ -184,7 +179,7 @@ export function AccountsCarousel({ accounts }: AccountsCarouselProps) {
 
         {/* Dots indicator */}
         {count > 1 && (
-          <div className="flex justify-center gap-2 mt-4">
+          <div className="flex justify-center gap-2 mt-2">
             {Array.from({ length: count }).map((_, index) => (
               <button
                 key={index}

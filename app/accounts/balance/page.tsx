@@ -10,17 +10,6 @@ import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import {
   RefreshCw,
   Wallet,
   PiggyBank,
@@ -32,8 +21,6 @@ import {
   TrendingDown,
   AlertCircle,
   CheckCircle,
-  Plus,
-  Sparkles,
 } from "lucide-react"
 import { createAccount, getAccounts } from "../actions"
 import { Carousel, CarouselContent, CarouselItem, type CarouselApi } from "@/components/ui/carousel"
@@ -333,152 +320,149 @@ export default function BalancesPage() {
   }
 
   return (
-   <div className="mt-6 space-y-6">
-          <div className="space-y-2">
-            <h1 className="text-3xl font-bold text-primary">
-              Mes Soldes
-            </h1>
-            <p className="text-sm text-muted-foreground">Gérez tous vos comptes en un seul endroit</p>
-          </div>
-        <div className="flex items-center justify-end gap-3">
-            {/* <Dialog open={isNewAccountDialogOpen} onOpenChange={setIsNewAccountDialogOpen}>
-              <DialogTrigger asChild>
-                <Button>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Nouveau Compte
+    <div className="mt-4 space-y-3">
+      <div className="space-y-2">
+        <h1 className="text-3xl font-bold text-primary">Mes Soldes</h1>
+        <p className="text-sm text-muted-foreground">Gérez tous vos comptes en un seul endroit</p>
+      </div>
+      <div className="flex items-center justify-end gap-3">
+        {/* <Dialog open={isNewAccountDialogOpen} onOpenChange={setIsNewAccountDialogOpen}>
+          <DialogTrigger asChild>
+            <Button>
+              <Plus className="h-4 w-4 mr-2" />
+              Nouveau Compte
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[500px]">
+            
+            <DialogHeader>
+              <DialogTitle>Demande d'ouverture de compte</DialogTitle>
+              <DialogDescription>
+                Remplissez les informations ci-dessous pour la demande d'ouverture d'un nouveau compte bancaire.
+              </DialogDescription>
+            </DialogHeader>
+
+            <form onSubmit={handleCreateAccount} className="space-y-4">
+              {createAccountState?.success && (
+                <Alert className="border-green-200 bg-green-50">
+                  <CheckCircle className="h-4 w-4 text-green-600" />
+                  <AlertDescription className="text-green-800">
+                    Votre demande d'ouverture de compte a été prise en compte
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              {createAccountState?.error && (
+                <Alert variant="destructive">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>
+                    Erreur lors de la création du compte: {createAccountState.error}
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="accountName">Nom du compte</Label>
+                  <Input id="accountName" name="accountName" placeholder="Ex: Compte Épargne" required />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="accountType">Type de compte</Label>
+                  <Select name="accountType" required>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Sélectionner le type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Courant">Compte Courant</SelectItem>
+                      <SelectItem value="Épargne">Compte Épargne</SelectItem>
+                      <SelectItem value="Devise">Compte Devise</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="currency">Devise</Label>
+                  <Select name="currency" required>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Sélectionner la devise" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="GNF">Franc Guinéen (GNF)</SelectItem>
+                      <SelectItem value="USD">Dollar US (USD)</SelectItem>
+                      <SelectItem value="EUR">Euro (EUR)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="purpose">Objectif du compte</Label>
+                  <Select name="purpose" required>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Sélectionner l'objectif" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="personnel">Usage personnel</SelectItem>
+                      <SelectItem value="professionnel">Usage professionnel</SelectItem>
+                      <SelectItem value="epargne">Épargne</SelectItem>
+                      <SelectItem value="investissement">Investissement</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="flex justify-end space-x-2 pt-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsNewAccountDialogOpen(false)}
+                  disabled={isCreatingAccount}
+                >
+                  Annuler
                 </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-[500px]">
-                
-                <DialogHeader>
-                  <DialogTitle>Demande d'ouverture de compte</DialogTitle>
-                  <DialogDescription>
-                    Remplissez les informations ci-dessous pour la demande d'ouverture d'un nouveau compte bancaire.
-                  </DialogDescription>
-                </DialogHeader>
-
-                <form onSubmit={handleCreateAccount} className="space-y-4">
-                  {createAccountState?.success && (
-                    <Alert className="border-green-200 bg-green-50">
-                      <CheckCircle className="h-4 w-4 text-green-600" />
-                      <AlertDescription className="text-green-800">
-                        Votre demande d'ouverture de compte a été prise en compte
-                      </AlertDescription>
-                    </Alert>
+                <Button type="submit" disabled={isCreatingAccount}>
+                  {isCreatingAccount ? (
+                    <>
+                      <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                      Création...
+                    </>
+                  ) : (
+                    "Envoyer la demande d'ouverture"
                   )}
+                </Button>
+              </div>
+            </form>
+          </DialogContent>
+        </Dialog>
 
-                  {createAccountState?.error && (
-                    <Alert variant="destructive">
-                      <AlertCircle className="h-4 w-4" />
-                      <AlertDescription>
-                        Erreur lors de la création du compte: {createAccountState.error}
-                      </AlertDescription>
-                    </Alert>
-                  )}
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="accountName">Nom du compte</Label>
-                      <Input id="accountName" name="accountName" placeholder="Ex: Compte Épargne" required />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="accountType">Type de compte</Label>
-                      <Select name="accountType" required>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Sélectionner le type" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Courant">Compte Courant</SelectItem>
-                          <SelectItem value="Épargne">Compte Épargne</SelectItem>
-                          <SelectItem value="Devise">Compte Devise</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="currency">Devise</Label>
-                      <Select name="currency" required>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Sélectionner la devise" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="GNF">Franc Guinéen (GNF)</SelectItem>
-                          <SelectItem value="USD">Dollar US (USD)</SelectItem>
-                          <SelectItem value="EUR">Euro (EUR)</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="purpose">Objectif du compte</Label>
-                      <Select name="purpose" required>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Sélectionner l'objectif" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="personnel">Usage personnel</SelectItem>
-                          <SelectItem value="professionnel">Usage professionnel</SelectItem>
-                          <SelectItem value="epargne">Épargne</SelectItem>
-                          <SelectItem value="investissement">Investissement</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-
-                  <div className="flex justify-end space-x-2 pt-4">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => setIsNewAccountDialogOpen(false)}
-                      disabled={isCreatingAccount}
-                    >
-                      Annuler
-                    </Button>
-                    <Button type="submit" disabled={isCreatingAccount}>
-                      {isCreatingAccount ? (
-                        <>
-                          <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                          Création...
-                        </>
-                      ) : (
-                        "Envoyer la demande d'ouverture"
-                      )}
-                    </Button>
-                  </div>
-                </form>
-              </DialogContent>
-            </Dialog>
-
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-40 bg-white/80 backdrop-blur-sm">
-                <SelectValue placeholder="Filtrer" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="ALL">Tous</SelectItem>
-                <SelectItem value="ACTIF">Actifs</SelectItem>
-                <SelectItem value="PENDING">En attente</SelectItem>
-              </SelectContent>
-            </Select> */}
-
-            <Button
-              onClick={handleRefresh}
-              disabled={isPending}
-              variant="outline"
-              size="icon"
-              className="bg-white/80 backdrop-blur-sm"
-            >
-              <RefreshCw className={`h-4 w-4 ${isPending ? "animate-spin" : ""}`} />
-            </Button>
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={() => setShowBalance(!showBalance)}
-              className="bg-white/80 backdrop-blur-sm"
-            >
-              {showBalance ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-            </Button>
-          </div>
+        <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <SelectTrigger className="w-40 bg-white/80 backdrop-blur-sm">
+            <SelectValue placeholder="Filtrer" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="ALL">Tous</SelectItem>
+            <SelectItem value="ACTIF">Actifs</SelectItem>
+            <SelectItem value="PENDING">En attente</SelectItem>
+          </SelectContent>
+        </Select> */}
+        <Button
+          onClick={handleRefresh}
+          disabled={isPending}
+          variant="outline"
+          size="icon"
+          className="bg-white/80 backdrop-blur-sm"
+        >
+          <RefreshCw className={`h-4 w-4 ${isPending ? "animate-spin" : ""}`} />
+        </Button>
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={() => setShowBalance(!showBalance)}
+          className="bg-white/80 backdrop-blur-sm"
+        >
+          {showBalance ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+        </Button>
+      </div>
 
       {balanceState?.success && (
         <Alert className="border-primary/20 bg-gradient-to-r from-primary/5 to-secondary/5 backdrop-blur-sm">
@@ -515,7 +499,7 @@ export default function BalancesPage() {
       {!isLoaded ? (
         <div className="max-w-2xl mx-auto">
           <Card className="overflow-hidden">
-            <CardHeader className="space-y-0 pb-2">
+            <CardHeader className="space-y-0 pb-1">
               <div className="flex items-center justify-between">
                 <Skeleton className="h-4 w-24" />
                 <Skeleton className="h-5 w-16" />
@@ -531,7 +515,7 @@ export default function BalancesPage() {
           </Card>
         </div>
       ) : (
-        <div className="w-full px-4">
+        <div className="w-full px-2">
           <Carousel
             setApi={setApi}
             className="w-full"
@@ -544,12 +528,12 @@ export default function BalancesPage() {
           >
             <CarouselContent className="w-full">
               {(filteredAccounts || []).map((account) => (
-                <CarouselItem key={account.id} className="pl-4 basis-full">
+                <CarouselItem key={account.id} className="pl-2 basis-full">
                   <Link href={`/accounts/${account.id}`} className="block">
                     <Card className="group relative overflow-hidden border-2 hover:border-primary/50 transition-all duration-300 hover:shadow-2xl hover:-translate-y-1 bg-gradient-to-br from-white to-gray-50/50">
                       <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-secondary/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
-                      <CardHeader className="relative flex flex-row items-center justify-between space-y-0 pb-3">
+                      <CardHeader className="relative flex flex-row items-center justify-between space-y-0 pb-2">
                         <div className="flex items-center space-x-3">
                           <div className="p-2 rounded-xl bg-gradient-to-br from-primary/10 to-secondary/10 group-hover:from-primary/20 group-hover:to-secondary/20 transition-colors">
                             {getAccountIcon(account.type)}
@@ -569,8 +553,8 @@ export default function BalancesPage() {
                       <CardContent className="relative space-y-4">
                         <div className="space-y-2">
                           <div className="text-xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">
-                             Solde disponible :{" "}
-                             {showBalance
+                            Solde disponible :{" "}
+                            {showBalance
                               ? `${formatAmount(account.availableBalance, account.currency)} ${account.currency}`
                               : "••••••••"}
                           </div>
@@ -609,7 +593,6 @@ export default function BalancesPage() {
                             <div className="font-medium">{account.lastUpdate}</div>
                           </div>
                           <div className="ml-auto pr-1 flex items-center text-xs font-medium text-primary group-hover:text-secondary transition-colors">
-
                             Détails
                             <ArrowUpRight className="h-3 w-3 ml-1 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
                           </div>
