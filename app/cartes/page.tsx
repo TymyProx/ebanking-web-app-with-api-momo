@@ -77,7 +77,7 @@ export default function CardsPage() {
   const [total, setTotal] = useState<number>(0)
   const [loading, setLoading] = useState<boolean>(false)
   const [error, setError] = useState<string | null>(null)
-  const [statusFilter, setStatusFilter] = useState<string>("all")
+  const [statusFilter, setStatusFilter] = useState<string>("ACTIF")
 
   const [accounts, setAccounts] = useState<Account[]>([])
   const [loadingAccounts, setLoadingAccounts] = useState<boolean>(false)
@@ -434,7 +434,6 @@ export default function CardsPage() {
               <SelectValue placeholder="Filtrer par statut" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Tous les statuts</SelectItem>
               <SelectItem value="ACTIF">Actif</SelectItem>
               <SelectItem value="BLOCKED">Bloqué</SelectItem>
               <SelectItem value="EXPIRED">Expiré</SelectItem>
