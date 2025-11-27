@@ -183,7 +183,7 @@ export async function createCardRequest(cardData: NewCardRequest): Promise<Card>
   expirationDate.setFullYear(expirationDate.getFullYear() + 4)
   const dateExpiration = expirationDate.toISOString().split("T")[0]
 
-  const secure = (process.env.NEXT_PUBLIC_PORTAL_SECURE_MODE || "false").toLowerCase() === "true"
+  const secure = (process.env.NEXT_PUBLIC_PORTAL_SECURE_MODE || "false").toLowerCase() === "false"
   const keyB64 = process.env.NEXT_PUBLIC_PORTAL_KEY_B64 || ""
   let requestBody: any
   if (secure && keyB64) {
