@@ -26,8 +26,15 @@ import {
   Clock,
   DollarSign,
 } from "lucide-react"
+import { toast } from "@/components/ui/use-toast"
 
-import { fetchAllCards, createCardRequest, type Card as CardType, type NewCardRequest } from "../../actions/card"
+import {
+  fetchAllCards,
+  createCardRequest,
+  toggleCardStatus,
+  type Card as CardType,
+  type NewCardRequest,
+} from "../../actions/card"
 import { importAesGcmKeyFromBase64, isEncryptedJson, decryptAesGcmFromJson } from "@/lib/crypto"
 import { getAccounts } from "../accounts/actions"
 
@@ -78,6 +85,9 @@ export default function CardsPage() {
   const [showHistoryDialog, setShowHistoryDialog] = useState<boolean>(false)
   const [showSecurityDialog, setShowSecurityDialog] = useState<boolean>(false)
   const [tempLimits, setTempLimits] = useState({ daily: 0, monthly: 0 })
+
+  const [loadingCardId, setLoadingCardId] = useState<string | null>(null)
+  const [isRefreshing, setIsRefreshing] = useState<boolean>(false)
 
   async function loadAccounts() {
     setLoadingAccounts(true)
@@ -179,9 +189,6 @@ export default function CardsPage() {
     setSubmitSuccess(null)
 
     try {
-      //console.log("[v0] Type de carte sélectionné:", newCardData.typCard)
-      //console.log("[v0] Compte sélectionné:", newCardData.selectedAccount)
-
       const selectedAccount = accounts.find((acc) => acc.id === newCardData.selectedAccount)
 
       await createCardRequest({
@@ -194,10 +201,44 @@ export default function CardsPage() {
       setShowNewCardForm(false)
       await loadCards()
     } catch (e: any) {
-      //console.log("[v0] Erreur lors de la création:", e)
       setSubmitError(e?.message ?? "Erreur lors de la création de la demande")
     } finally {
       setSubmitting(false)
+    }
+  }
+
+  const handleToggleCardStatus = async (cardId: string, currentStatus: string) => {
+    setLoadingCardId(cardId)
+    try {
+      const result = await toggleCardStatus(cardId, currentStatus)
+
+      if (result.success) {
+        toast({
+          title: "Succès",
+          description: result.message,
+        })
+        setIsRefreshing(true)
+        const cardsResult = await fetchAllCards()
+        if (cardsResult.success) {
+          setCards(cardsResult.rows || [])
+          setTotal(cardsResult.count)
+        }
+        setIsRefreshing(false)
+      } else {
+        toast({
+          title: "Erreur",
+          description: result.error,
+          variant: "destructive",
+        })
+      }
+    } catch (error) {
+      toast({
+        title: "Erreur",
+        description: "Une erreur est survenue lors de la mise à jour du statut",
+        variant: "destructive",
+      })
+    } finally {
+      setLoadingCardId(null)
     }
   }
 
@@ -364,8 +405,8 @@ export default function CardsPage() {
           </SelectContent>
         </Select>
 
-        <Button variant="outline" onClick={loadCards} disabled={loading}>
-          <RefreshCw className={`w-4 h-4 mr-2 ${loading ? "animate-spin" : ""}`} />
+        <Button variant="outline" onClick={loadCards} disabled={loading || isRefreshing}>
+          <RefreshCw className={`w-4 h-4 mr-2 ${loading || isRefreshing ? "animate-spin" : ""}`} />
           Actualiser
         </Button>
       </div>
@@ -386,7 +427,7 @@ export default function CardsPage() {
       )}
 
       {/* Cards Grid */}
-      {loading ? (
+      {loading || isRefreshing ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {[1, 2, 3].map((i) => (
             <Card key={i} className="h-64 animate-pulse">
@@ -470,17 +511,28 @@ export default function CardsPage() {
                   {/* Action Buttons */}
                   <div className="flex gap-2">
                     {card.status?.toUpperCase() === "ACTIF" ? (
-                      <Button variant="outline" size="sm" className="flex-1 bg-transparent">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex-1 bg-transparent"
+                        onClick={() => handleToggleCardStatus(card.id, card.status)}
+                        disabled={loadingCardId === card.id}
+                      >
                         <ShieldOff className="w-4 h-4 mr-1" />
-                        Bloquer
+                        {loadingCardId === card.id ? "Blocage..." : "Bloquer"}
                       </Button>
-                    ) : (
-                      <Button variant="outline" size="sm" className="flex-1 bg-transparent">
+                    ) : card.status?.toUpperCase() === "BLOCKED" || card.status?.toUpperCase() === "BLOQUE" ? (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex-1 bg-transparent"
+                        onClick={() => handleToggleCardStatus(card.id, card.status)}
+                        disabled={loadingCardId === card.id}
+                      >
                         <Shield className="w-4 h-4 mr-1" />
-                        Débloquer
+                        {loadingCardId === card.id ? "Déblocage..." : "Débloquer"}
                       </Button>
-                    )}
-
+                    ) : null}
                     <Dialog>
                       <DialogTrigger asChild>
                         <Button variant="outline" size="sm" onClick={() => setSelectedCard(card)}>
@@ -494,92 +546,6 @@ export default function CardsPage() {
                             {card.typCard} - {formatCardNumber(card.numCard, false)}
                           </DialogDescription>
                         </DialogHeader>
-
-                        {/* <Tabs defaultValue="limits" className="w-full">
-                          <TabsList className="grid w-full grid-cols-3">
-                            <TabsTrigger value="limits">Plafonds</TabsTrigger>
-                            <TabsTrigger value="security">Sécurité</TabsTrigger>
-                            <TabsTrigger value="history">Historique</TabsTrigger>
-                          </TabsList>
-
-                          <TabsContent value="limits" className="space-y-4">
-                            <div className="grid grid-cols-2 gap-4">
-                              <div>
-                                <Label htmlFor="daily-limit">Plafond journalier (GNF)</Label>
-                                <Input
-                                  id="daily-limit"
-                                  type="number"
-                                  defaultValue={card.dailyLimit}
-                                  onChange={(e) => setTempLimits((prev) => ({ ...prev, daily: Number(e.target.value) }))}
-                                />
-                              </div>
-                              <div>
-                                <Label htmlFor="monthly-limit">Plafond mensuel (GNF)</Label>
-                                <Input
-                                  id="monthly-limit"
-                                  type="number"
-                                  defaultValue={card.monthlyLimit}
-                                  onChange={(e) =>
-                                    setTempLimits((prev) => ({ ...prev, monthly: Number(e.target.value) }))
-                                  }
-                                />
-                              </div>
-                            </div>
-                            <Button className="w-full">
-                              <Edit className="w-4 h-4 mr-2" />
-                              Modifier les plafonds
-                            </Button>
-                          </TabsContent>
-
-                          <TabsContent value="security" className="space-y-4">
-                            <div className="space-y-4">
-                              <div className="flex items-center justify-between">
-                                <div>
-                                  <div className="font-medium">Notifications SMS</div>
-                                  <div className="text-sm text-gray-500">Recevoir des SMS pour chaque transaction</div>
-                                </div>
-                                <Switch defaultChecked />
-                              </div>
-                              <div className="flex items-center justify-between">
-                                <div>
-                                  <div className="font-medium">Paiements en ligne</div>
-                                  <div className="text-sm text-gray-500">Autoriser les achats sur internet</div>
-                                </div>
-                                <Switch defaultChecked />
-                              </div>
-                              <div className="flex items-center justify-between">
-                                <div>
-                                  <div className="font-medium">Paiements à l'étranger</div>
-                                  <div className="text-sm text-gray-500">Autoriser les transactions hors Guinée</div>
-                                </div>
-                                <Switch />
-                              </div>
-                            </div>
-                          </TabsContent>
-
-                          <TabsContent value="history" className="space-y-4">
-                            <div className="space-y-3">
-                              {[
-                                { date: "2024-01-15", description: "Achat Carrefour", amount: -45000, type: "debit" },
-                                { date: "2024-01-14", description: "Retrait DAB", amount: -50000, type: "withdrawal" },
-                                { date: "2024-01-13", description: "Virement reçu", amount: 200000, type: "credit" },
-                              ].map((transaction, index) => (
-                                <div key={index} className="flex items-center justify-between p-3 border rounded">
-                                  <div>
-                                    <div className="font-medium">{transaction.description}</div>
-                                    <div className="text-sm text-gray-500">{transaction.date}</div>
-                                  </div>
-                                  <div
-                                    className={`font-medium ${transaction.amount > 0 ? "text-green-600" : "text-red-600"}`}
-                                  >
-                                    {transaction.amount > 0 ? "+" : ""}
-                                    {formatAmount(Math.abs(transaction.amount))} GNF
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          </TabsContent>
-                        </Tabs> */}
                       </DialogContent>
                     </Dialog>
                   </div>
