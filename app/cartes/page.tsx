@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
@@ -439,6 +439,10 @@ export default function CardsPage() {
     await loadCards()
   }
 
+  const handleCardClick = () => {
+    setIsFlipped(!isFlipped)
+  }
+
   // Effect to filter cards when statusFilter changes
   useEffect(() => {
     const initialFiltered = cards.filter((card) => {
@@ -481,9 +485,9 @@ export default function CardsPage() {
         case "CREDIT":
           return "bg-gradient-to-br from-blue-600 via-blue-500 to-blue-700"
         case "DEBIT":
-          return "bg-gradient-to-br from-green-600 via-green-500 to-green-700"
+          return "bg-gradient-to-br from-green-600 via-emerald-500 to-teal-500"
         case "PREPAID":
-          return "bg-gradient-to-br from-purple-600 via-purple-500 to-purple-700"
+          return "bg-gradient-to-br from-purple-600 via-purple-500 to-pink-600"
         default:
           return "bg-gradient-to-br from-gray-600 via-gray-500 to-gray-700"
       }
@@ -499,8 +503,13 @@ export default function CardsPage() {
     return gradients[index % gradients.length]
   }
 
+  const cardGradient = useMemo(() => {
+    if (!filteredCards[currentCardIndex]) return "bg-gradient-to-br from-gray-600 via-gray-500 to-gray-700"
+    return getCardGradient(filteredCards[currentCardIndex], currentCardIndex)
+  }, [filteredCards, currentCardIndex])
+
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="container mx-auto p-6 space-y-6">
       <div className="mt-6 space-y-6">
         <div className="space-y-2">
           <h1 className="text-3xl font-bold text-primary">Mes Cartes</h1>
@@ -572,8 +581,6 @@ export default function CardsPage() {
                 )
               }
 
-              const cardGradient = getCardGradient(currentCard, currentCardIndex)
-
               return (
                 <div className="space-y-6">
                   {/* Carousel Container */}
@@ -592,21 +599,20 @@ export default function CardsPage() {
                       </Button>
                     )}
 
-                    <div className="w-full max-w-md perspective-1000 overflow-hidden">
+                    <div className="w-full max-w-md relative">
                       <div
-                        className={`relative w-full transform-style-3d cursor-pointer hover:scale-105 transition-all duration-300`}
-                        onClick={toggleFlip}
-                        style={{
-                          transformStyle: "preserve-3d",
-                          transform: isFlipped ? "rotateY(180deg)" : "rotateY(0deg)",
-                          transition: "transform 0.6s ease-in-out",
-                          opacity: isFading ? 0 : 1,
-                        }}
+                        className={`relative w-full cursor-pointer`}
+                        style={{ perspective: "1000px" }}
+                        onClick={handleCardClick}
                       >
-                        {/* Front of Card */}
-                        <Card
-                          className="overflow-hidden shadow-2xl hover:shadow-[0_25px_50px_-12px_rgba(0,0,0,0.5)] transition-shadow duration-300 backface-hidden"
-                          style={{ backfaceVisibility: "hidden" }}
+                        <div
+                          className={`relative w-full transition-all duration-500 ease-in-out ${
+                            isFlipped ? "opacity-0" : "opacity-100"
+                          }`}
+                          style={{
+                            transformStyle: "preserve-3d",
+                            transform: isFlipped ? "rotateY(180deg)" : "rotateY(0deg)",
+                          }}
                         >
                           <div
                             className={`${cardGradient} p-8 text-white relative min-h-[240px] flex flex-col justify-between`}
@@ -675,46 +681,43 @@ export default function CardsPage() {
                             {/* Shine effect on hover */}
                             <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/0 to-transparent opacity-0 hover:opacity-10 transition-opacity duration-500 pointer-events-none" />
                           </div>
-                        </Card>
+                        </div>
 
                         {/* Back of Card */}
-                        <Card
-                          className="overflow-hidden shadow-2xl hover:shadow-[0_25px_50px_-12px_rgba(0,0,0,0.5)] transition-shadow duration-300 absolute top-0 left-0 w-full backface-hidden"
+                        <div
+                          className={`${cardGradient} p-8 text-white relative min-h-[240px] flex flex-col justify-between absolute top-0 left-0 w-full opacity-0`}
                           style={{
-                            backfaceVisibility: "hidden",
+                            transformStyle: "preserve-3d",
                             transform: "rotateY(180deg)",
+                            backfaceVisibility: "hidden",
+                            transition: "opacity 0.6s ease-in-out",
                           }}
                         >
-                          <div
-                            className={`${cardGradient} p-8 text-white relative min-h-[240px] flex flex-col justify-between`}
-                          >
-                            {/* Magnetic Strip */}
-                            <div className="w-full h-12 bg-black/80 -mx-8 mb-6" />
+                          <div className="w-full h-12 bg-black/80 -mx-8 mb-6" />
 
-                            {/* CVV Section */}
-                            <div className="bg-white/90 p-4 rounded space-y-2">
-                              <div className="flex justify-between items-center">
-                                <span className="text-xs text-gray-600 uppercase">CVV</span>
-                                <span className="font-mono text-lg text-gray-900">***</span>
-                              </div>
-                              <div className="text-[10px] text-gray-500">
-                                Code de sécurité à 3 chiffres au dos de votre carte
-                              </div>
+                          {/* CVV Section */}
+                          <div className="bg-white/90 p-4 rounded space-y-2">
+                            <div className="flex justify-between items-center">
+                              <span className="text-xs text-gray-600 uppercase">CVV</span>
+                              <span className="font-mono text-lg text-gray-900">***</span>
                             </div>
-
-                            {/* Card Info */}
-                            <div className="space-y-2 text-xs opacity-90">
-                              <p>Service Client: +226 25 XX XX XX</p>
-                              <p>En cas de perte ou vol, appelez immédiatement</p>
-                              <p className="text-[10px] opacity-75">Cette carte est la propriété de la BNG</p>
+                            <div className="text-[10px] text-gray-500">
+                              Code de sécurité à 3 chiffres au dos de votre carte
                             </div>
-
-                            {/* Decorative Pattern */}
-                            <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-3xl" />
-                            {/* Shine effect on hover for back side */}
-                            <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/0 to-transparent opacity-0 hover:opacity-10 transition-opacity duration-500 pointer-events-none" />
                           </div>
-                        </Card>
+
+                          {/* Card Info */}
+                          <div className="space-y-2 text-xs opacity-90">
+                            <p>Service Client: +226 25 XX XX XX</p>
+                            <p>En cas de perte ou vol, appelez immédiatement</p>
+                            <p className="text-[10px] opacity-75">Cette carte est la propriété de la BNG</p>
+                          </div>
+
+                          {/* Decorative Pattern */}
+                          <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-3xl" />
+                          {/* Shine effect on hover for back side */}
+                          <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/0 to-transparent opacity-0 hover:opacity-10 transition-opacity duration-500 pointer-events-none" />
+                        </div>
                       </div>
                     </div>
 
