@@ -83,8 +83,7 @@ export default function CardsPage() {
   const [error, setError] = useState<string | null>(null)
   const [statusFilter, setStatusFilter] = useState<string>("ACTIF")
   const [currentCardIndex, setCurrentCardIndex] = useState<number>(0)
-
-  const [transitionDirection, setTransitionDirection] = useState<"left" | "right" | "none">("none")
+  const [isFading, setIsFading] = useState<boolean>(false) // Added fade transition state
 
   const [accounts, setAccounts] = useState<Account[]>([])
   const [loadingAccounts, setLoadingAccounts] = useState<boolean>(false)
@@ -301,45 +300,46 @@ export default function CardsPage() {
     const account = accounts.find((acc) => acc.id === accountId)
     if (!account) return []
 
+    // Define card types based on account type and currency
     const allCardTypes = [
       {
         type: "DEBIT",
         name: "Carte de Débit",
-        color: "bg-gradient-to-r from-emerald-200 to-teal-300",
+        color: "bg-gradient-to-r from-green-500 to-green-700",
         advantages: ["Accès aux DAB", "Paiements en magasin", "Plafond quotidien flexible"],
         icon: <CreditCard className="w-8 h-8" />,
       },
       {
         type: "CREDIT",
         name: "Carte de Crédit",
-        color: "bg-gradient-to-r from-sky-200 to-blue-300",
+        color: "bg-gradient-to-r from-blue-500 to-blue-700",
         advantages: ["Crédit renouvelable", "Paiements différés", "Assurance voyage"],
         icon: <DollarSign className="w-8 h-8" />,
       },
       {
         type: "PREPAID",
         name: "Carte Prépayée",
-        color: "bg-gradient-to-r from-gray-200 to-slate-300",
+        color: "bg-gradient-to-r from-purple-500 to-purple-700",
         advantages: ["Contrôle des dépenses", "Rechargeable", "Idéale pour les jeunes"],
         icon: <Shield className="w-8 h-8" />,
       },
       {
         type: "GOLD",
         name: "Carte Gold",
-        color: "bg-gradient-to-r from-amber-200 to-yellow-300",
+        color: "bg-gradient-to-r from-yellow-400 to-yellow-600",
         advantages: ["Services premium", "Plafonds élevés", "Assistance 24h/7j"],
         icon: <CheckCircle className="w-8 h-8" />,
       },
       {
         type: "PLATINUM",
         name: "Carte Platinum",
-        color: "bg-gradient-to-r from-gray-300 to-slate-400",
+        color: "bg-gradient-to-r from-gray-400 to-gray-600",
         advantages: ["Services VIP", "Plafonds illimités", "Conciergerie privée"],
         icon: <Settings className="w-8 h-8" />,
       },
     ]
 
-    // Filter card types based on account type and currency
+    // Filter card types based on account type and status
     if (account.status !== "ACTIF") {
       return [] // No cards for inactive accounts
     }
@@ -376,20 +376,20 @@ export default function CardsPage() {
 
   function getCardTypeColor(type: string) {
     if (!type || typeof type !== "string") {
-      return "bg-gradient-to-r from-gray-200 to-slate-300"
+      return "bg-gradient-to-r from-gray-500 to-gray-700"
     }
 
     switch (type.toUpperCase()) {
       case "GOLD":
-        return "bg-gradient-to-r from-amber-200 to-yellow-300"
+        return "bg-gradient-to-r from-yellow-400 to-yellow-600"
       case "PLATINUM":
-        return "bg-gradient-to-r from-gray-300 to-slate-400"
+        return "bg-gradient-to-r from-gray-400 to-gray-600"
       case "CREDIT":
-        return "bg-gradient-to-r from-sky-200 to-blue-300"
+        return "bg-gradient-to-r from-blue-500 to-blue-700"
       case "DEBIT":
-        return "bg-gradient-to-r from-emerald-200 to-teal-300"
+        return "bg-gradient-to-r from-green-500 to-green-700"
       default:
-        return "bg-gradient-to-r from-gray-200 to-slate-300"
+        return "bg-gradient-to-r from-gray-500 to-gray-700"
     }
   }
 
@@ -425,6 +425,14 @@ export default function CardsPage() {
 
   const toggleFlip = () => {
     setIsFlipped(!isFlipped)
+  }
+
+  const changeCard = (newIndex: number) => {
+    setIsFading(true)
+    setTimeout(() => {
+      setCurrentCardIndex(newIndex)
+      setIsFading(false)
+    }, 300)
   }
 
   const handleRefresh = async () => {
@@ -536,11 +544,11 @@ export default function CardsPage() {
               }
 
               const gradients = [
-                "bg-gradient-to-br from-emerald-300 via-teal-200 to-cyan-300",
-                "bg-gradient-to-br from-sky-300 via-blue-200 to-indigo-300",
-                "bg-gradient-to-br from-amber-300 via-yellow-200 to-orange-300",
-                "bg-gradient-to-br from-gray-300 via-slate-200 to-zinc-300",
-                "bg-gradient-to-br from-rose-300 via-pink-200 to-fuchsia-300",
+                "bg-gradient-to-br from-green-600 via-green-500 to-green-700",
+                "bg-gradient-to-br from-yellow-600 via-yellow-500 to-yellow-700",
+                "bg-gradient-to-br from-orange-600 via-red-500 to-pink-600",
+                "bg-gradient-to-br from-green-600 via-emerald-500 to-teal-500",
+                "bg-gradient-to-br from-indigo-600 via-purple-500 to-pink-500",
               ]
               const cardGradient = gradients[currentCardIndex % gradients.length]
 
@@ -554,12 +562,7 @@ export default function CardsPage() {
                         variant="outline"
                         size="icon"
                         onClick={() => {
-                          setTransitionDirection("right")
-                          setTimeout(() => {
-                            setCurrentCardIndex((prev) => (prev === 0 ? filteredCards.length - 1 : prev - 1))
-                            setIsFlipped(false)
-                            setTransitionDirection("none")
-                          }, 50)
+                          changeCard(currentCardIndex === 0 ? filteredCards.length - 1 : currentCardIndex - 1)
                         }}
                         className="shrink-0"
                       >
@@ -569,20 +572,13 @@ export default function CardsPage() {
 
                     <div className="w-full max-w-md perspective-1000 overflow-hidden">
                       <div
-                        className={`relative w-full transition-all duration-700 transform-style-3d cursor-pointer hover:scale-105 ${
-                          isFlipped ? "rotate-y-180" : ""
-                        } ${
-                          transitionDirection === "left"
-                            ? "animate-slide-in-left"
-                            : transitionDirection === "right"
-                              ? "animate-slide-in-right"
-                              : ""
-                        }`}
+                        className={`relative w-full transform-style-3d cursor-pointer hover:scale-105 transition-all duration-300`}
                         onClick={toggleFlip}
                         style={{
                           transformStyle: "preserve-3d",
-                          transition: "transform 0.7s, box-shadow 0.3s, scale 0.3s, opacity 0.5s",
                           transform: isFlipped ? "rotateY(180deg)" : "rotateY(0deg)",
+                          transition: "transform 0.6s ease-in-out",
+                          opacity: isFading ? 0 : 1,
                         }}
                       >
                         {/* Front of Card */}
@@ -706,12 +702,7 @@ export default function CardsPage() {
                         variant="outline"
                         size="icon"
                         onClick={() => {
-                          setTransitionDirection("left")
-                          setTimeout(() => {
-                            setCurrentCardIndex((prev) => (prev === filteredCards.length - 1 ? 0 : prev + 1))
-                            setIsFlipped(false)
-                            setTransitionDirection("none")
-                          }, 50)
+                          changeCard(currentCardIndex === filteredCards.length - 1 ? 0 : currentCardIndex + 1)
                         }}
                         className="shrink-0"
                       >
@@ -722,22 +713,17 @@ export default function CardsPage() {
 
                   {/* Pagination Dots */}
                   {filteredCards.length > 1 && (
-                    <div className="flex justify-center gap-2 mt-4">
+                    <div className="flex justify-center gap-2 mt-6">
                       {filteredCards.map((_, index) => (
                         <button
                           key={index}
                           onClick={() => {
-                            const direction = index > currentCardIndex ? "left" : "right"
-                            setTransitionDirection(direction)
-                            setTimeout(() => {
-                              setCurrentCardIndex(index)
-                              setIsFlipped(false)
-                              setTransitionDirection("none")
-                            }, 50)
+                            changeCard(index)
                           }}
-                          className={`w-2 h-2 rounded-full transition-all ${
-                            index === currentCardIndex ? "bg-primary w-6" : "bg-gray-300 hover:bg-gray-400"
+                          className={`h-2 rounded-full transition-all duration-300 ${
+                            index === currentCardIndex ? "w-8 bg-primary" : "w-2 bg-gray-300 hover:bg-gray-400"
                           }`}
+                          aria-label={`Aller à la carte ${index + 1}`}
                         />
                       ))}
                     </div>
@@ -960,53 +946,6 @@ export default function CardsPage() {
             </div>
           </DialogContent>
         </Dialog>
-        {/* Statistics */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="text-sm text-gray-500">Total cartes</div>
-                  <div className="text-2xl font-bold">{total}</div>
-                </div>
-                <CreditCard className="w-8 h-8 text-blue-500" />
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="text-sm text-gray-500">Cartes actives</div>
-                  <div className="text-2xl font-bold text-green-600">
-                    {cards.filter((c) => typeof c.status === "string" && c.status.toUpperCase() === "ACTIF").length}
-                  </div>
-                </div>
-                <Shield className="w-8 h-8 text-green-500" />
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="text-sm text-gray-500">Cartes bloquées</div>
-                  <div className="text-2xl font-bold text-red-600">
-                    {
-                      cards.filter(
-                        (c) =>
-                          typeof c.status === "string" &&
-                          (c.status.toUpperCase() === "BLOCKED" || c.status.toUpperCase() === "BLOQUE"),
-                      ).length
-                    }
-                  </div>
-                </div>
-                <ShieldOff className="w-8 h-8 text-red-500" />
-              </div>
-            </CardContent>
-          </Card>
-          <Card></Card>
-        </div>
       </div>
 
       <AlertDialog
