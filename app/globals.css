@@ -212,34 +212,34 @@
     transform: rotateY(180deg);
   }
 
-  /* Replaced slide animations with stylish fade animations */
-  @keyframes fade-in {
+  /* Added slide animation keyframes and utility classes for carousel transitions */
+  @keyframes slide-in-left {
     from {
       opacity: 0;
-      transform: scale(0.95);
+      transform: translateX(-100%);
     }
     to {
       opacity: 1;
-      transform: scale(1);
+      transform: translateX(0);
     }
   }
 
-  @keyframes fade-out {
+  @keyframes slide-in-right {
     from {
-      opacity: 1;
-      transform: scale(1);
+      opacity: 0;
+      transform: translateX(100%);
     }
     to {
-      opacity: 0;
-      transform: scale(0.95);
+      opacity: 1;
+      transform: translateX(0);
     }
   }
 
-  .animate-fade-in {
-    animation: fade-in 0.4s ease-out forwards;
+  .animate-slide-in-left {
+    animation: slide-in-left 0.5s ease-out;
   }
 
-  .animate-fade-out {
-    animation: fade-out 0.3s ease-in forwards;
+  .animate-slide-in-right {
+    animation: slide-in-right 0.5s ease-out;
   }
 }

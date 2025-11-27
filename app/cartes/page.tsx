@@ -83,7 +83,8 @@ export default function CardsPage() {
   const [error, setError] = useState<string | null>(null)
   const [statusFilter, setStatusFilter] = useState<string>("ACTIF")
   const [currentCardIndex, setCurrentCardIndex] = useState<number>(0)
-  const [isFading, setIsFading] = useState<boolean>(false) // Added fade transition state
+
+  const [transitionDirection, setTransitionDirection] = useState<"left" | "right" | "none">("none")
 
   const [accounts, setAccounts] = useState<Account[]>([])
   const [loadingAccounts, setLoadingAccounts] = useState<boolean>(false)
@@ -305,35 +306,35 @@ export default function CardsPage() {
       {
         type: "DEBIT",
         name: "Carte de Débit",
-        color: "bg-gradient-to-r from-green-500 to-green-700",
+        color: "bg-gradient-to-r from-emerald-300 to-teal-400",
         advantages: ["Accès aux DAB", "Paiements en magasin", "Plafond quotidien flexible"],
         icon: <CreditCard className="w-8 h-8" />,
       },
       {
         type: "CREDIT",
         name: "Carte de Crédit",
-        color: "bg-gradient-to-r from-blue-500 to-blue-700",
+        color: "bg-gradient-to-r from-sky-300 to-blue-400",
         advantages: ["Crédit renouvelable", "Paiements différés", "Assurance voyage"],
         icon: <DollarSign className="w-8 h-8" />,
       },
       {
         type: "PREPAID",
         name: "Carte Prépayée",
-        color: "bg-gradient-to-r from-purple-500 to-purple-700",
+        color: "bg-gradient-to-r from-purple-300 to-pink-400",
         advantages: ["Contrôle des dépenses", "Rechargeable", "Idéale pour les jeunes"],
         icon: <Shield className="w-8 h-8" />,
       },
       {
         type: "GOLD",
         name: "Carte Gold",
-        color: "bg-gradient-to-r from-yellow-400 to-yellow-600",
+        color: "bg-gradient-to-r from-amber-200 to-yellow-400",
         advantages: ["Services premium", "Plafonds élevés", "Assistance 24h/7j"],
         icon: <CheckCircle className="w-8 h-8" />,
       },
       {
         type: "PLATINUM",
         name: "Carte Platinum",
-        color: "bg-gradient-to-r from-gray-400 to-gray-600",
+        color: "bg-gradient-to-r from-slate-300 to-gray-400",
         advantages: ["Services VIP", "Plafonds illimités", "Conciergerie privée"],
         icon: <Settings className="w-8 h-8" />,
       },
@@ -381,13 +382,13 @@ export default function CardsPage() {
 
     switch (type.toUpperCase()) {
       case "GOLD":
-        return "bg-gradient-to-r from-yellow-400 to-yellow-600"
+        return "bg-gradient-to-r from-amber-200 to-yellow-400"
       case "PLATINUM":
-        return "bg-gradient-to-r from-gray-400 to-gray-600"
+        return "bg-gradient-to-r from-slate-300 to-gray-400"
       case "CREDIT":
-        return "bg-gradient-to-r from-blue-500 to-blue-700"
+        return "bg-gradient-to-r from-sky-300 to-blue-400"
       case "DEBIT":
-        return "bg-gradient-to-r from-green-500 to-green-700"
+        return "bg-gradient-to-r from-emerald-300 to-teal-400"
       default:
         return "bg-gradient-to-r from-gray-500 to-gray-700"
     }
@@ -424,15 +425,7 @@ export default function CardsPage() {
   }
 
   const toggleFlip = () => {
-    setIsFading(true)
-    setTimeout(() => {
-      setIsFlipped(!isFlipped)
-      setIsFading(false)
-    }, 300)
-  }
-
-  const changeCard = (newIndex: number) => {
-    setCurrentCardIndex(newIndex)
+    setIsFlipped(!isFlipped)
   }
 
   const handleRefresh = async () => {
@@ -562,7 +555,12 @@ export default function CardsPage() {
                         variant="outline"
                         size="icon"
                         onClick={() => {
-                          changeCard(currentCardIndex === 0 ? filteredCards.length - 1 : currentCardIndex - 1)
+                          setTransitionDirection("right")
+                          setTimeout(() => {
+                            setCurrentCardIndex((prev) => (prev === 0 ? filteredCards.length - 1 : prev - 1))
+                            setIsFlipped(false)
+                            setTransitionDirection("none")
+                          }, 50)
                         }}
                         className="shrink-0"
                       >
@@ -572,22 +570,26 @@ export default function CardsPage() {
 
                     <div className="w-full max-w-md perspective-1000 overflow-hidden">
                       <div
-                        className={`relative w-full transform-style-3d cursor-pointer hover:scale-105 transition-all duration-300`}
+                        className={`relative w-full transition-all duration-700 transform-style-3d cursor-pointer hover:scale-105 ${
+                          isFlipped ? "rotate-y-180" : ""
+                        } ${
+                          transitionDirection === "left"
+                            ? "animate-slide-in-left"
+                            : transitionDirection === "right"
+                              ? "animate-slide-in-right"
+                              : ""
+                        }`}
                         onClick={toggleFlip}
                         style={{
                           transformStyle: "preserve-3d",
-                          transform: `rotateY(${isFlipped ? 180 : 0}deg)`,
-                          transition: "transform 0.6s ease-in-out",
+                          transition: "transform 0.7s, box-shadow 0.3s, scale 0.3s, opacity 0.5s",
+                          transform: isFlipped ? "rotateY(180deg)" : "rotateY(0deg)",
                         }}
                       >
                         {/* Front of Card */}
                         <Card
-                          className="overflow-hidden shadow-2xl hover:shadow-[0_25px_50px_-12px_rgba(0,0,0,0.5)] transition-shadow duration-300"
-                          style={{
-                            opacity: isFading ? 0 : 1,
-                            transition: "opacity 0.3s ease-in-out",
-                            display: isFlipped ? "none" : "flex",
-                          }}
+                          className="overflow-hidden shadow-2xl hover:shadow-[0_25px_50px_-12px_rgba(0,0,0,0.5)] transition-shadow duration-300 backface-hidden"
+                          style={{ backfaceVisibility: "hidden" }}
                         >
                           <div
                             className={`${cardGradient} p-8 text-white relative min-h-[240px] flex flex-col justify-between`}
@@ -660,11 +662,10 @@ export default function CardsPage() {
 
                         {/* Back of Card */}
                         <Card
-                          className="overflow-hidden shadow-2xl hover:shadow-[0_25px_50px_-12px_rgba(0,0,0,0.5)] transition-shadow duration-300 absolute top-0 left-0 w-full"
+                          className="overflow-hidden shadow-2xl hover:shadow-[0_25px_50px_-12px_rgba(0,0,0,0.5)] transition-shadow duration-300 absolute top-0 left-0 w-full backface-hidden"
                           style={{
-                            opacity: isFading ? 0 : 1,
-                            transition: "opacity 0.3s ease-in-out",
-                            display: isFlipped ? "block" : "none",
+                            backfaceVisibility: "hidden",
+                            transform: "rotateY(180deg)",
                           }}
                         >
                           <div
@@ -706,7 +707,12 @@ export default function CardsPage() {
                         variant="outline"
                         size="icon"
                         onClick={() => {
-                          changeCard(currentCardIndex === filteredCards.length - 1 ? 0 : currentCardIndex + 1)
+                          setTransitionDirection("left")
+                          setTimeout(() => {
+                            setCurrentCardIndex((prev) => (prev === filteredCards.length - 1 ? 0 : prev + 1))
+                            setIsFlipped(false)
+                            setTransitionDirection("none")
+                          }, 50)
                         }}
                         className="shrink-0"
                       >
@@ -717,17 +723,22 @@ export default function CardsPage() {
 
                   {/* Pagination Dots */}
                   {filteredCards.length > 1 && (
-                    <div className="flex justify-center gap-2 mt-6">
+                    <div className="flex justify-center gap-2 mt-4">
                       {filteredCards.map((_, index) => (
                         <button
                           key={index}
                           onClick={() => {
-                            changeCard(index)
+                            const direction = index > currentCardIndex ? "left" : "right"
+                            setTransitionDirection(direction)
+                            setTimeout(() => {
+                              setCurrentCardIndex(index)
+                              setIsFlipped(false)
+                              setTransitionDirection("none")
+                            }, 50)
                           }}
-                          className={`h-2 rounded-full transition-all duration-300 ${
-                            index === currentCardIndex ? "w-8 bg-primary" : "w-2 bg-gray-300 hover:bg-gray-400"
+                          className={`w-2 h-2 rounded-full transition-all ${
+                            index === currentCardIndex ? "bg-primary w-6" : "bg-gray-300 hover:bg-gray-400"
                           }`}
-                          aria-label={`Aller à la carte ${index + 1}`}
                         />
                       ))}
                     </div>
