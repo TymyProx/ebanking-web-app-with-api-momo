@@ -82,7 +82,7 @@ export default function CardsPage() {
   const [total, setTotal] = useState<number>(0)
   const [loading, setLoading] = useState<boolean>(true) // Set initial loading to true
   const [error, setError] = useState<string | null>(null)
-  const [statusFilter, setStatusFilter] = useState<string>("all")
+  const [statusFilter, setStatusFilter] = useState<string>("ACTIF")
   const [currentCardIndex, setCurrentCardIndex] = useState<number>(0)
 
   const [accounts, setAccounts] = useState<Account[]>([])
@@ -477,7 +477,6 @@ export default function CardsPage() {
               <SelectValue placeholder="Filtrer par statut" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Tous</SelectItem>
               <SelectItem value="ACTIF">Actif</SelectItem>
               <SelectItem value="BLOCKED">Bloqué</SelectItem>
               <SelectItem value="EXPIRED">Expiré</SelectItem>
@@ -493,11 +492,6 @@ export default function CardsPage() {
           >
             <RefreshCw className={cn("h-4 w-4", isRefreshing && "animate-spin")} />
             Actualiser
-          </Button>
-
-          <Button onClick={() => setShowNewCardForm(true)} disabled={loadingAccounts}>
-            <Plus className="w-4 h-4 mr-2" />
-            Nouvelle carte
           </Button>
         </div>
 
@@ -724,74 +718,70 @@ export default function CardsPage() {
                       ))}
                     </div>
                   )}
+                <Card className="max-w-md mx-auto">
+                <CardContent className="space-y-4 pt-6 pb-6">
+                  <div className="flex gap-2">
+                    {currentCard.status?.toUpperCase() === "ACTIF" ? (
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => openConfirmDialog(currentCard.id, currentCard.status)}
+                        disabled={loadingCardId === currentCard.id}
+                        className="flex-1"
+                      >
+                        {loadingCardId === currentCard.id ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <>
+                            <Lock className="mr-2 h-4 w-4" />
+                            Bloquer
+                          </>
+                        )}
+                      </Button>
+                    ) : currentCard.status?.toUpperCase() === "BLOCKED" ||
+                      currentCard.status?.toUpperCase() === "BLOQUE" ? (
+                      <Button
+                        variant="default"
+                        size="sm"
+                        onClick={() => openConfirmDialog(currentCard.id, currentCard.status)}
+                        disabled={loadingCardId === currentCard.id}
+                        className="flex-1"
+                      >
+                        {loadingCardId === currentCard.id ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <>
+                            <Unlock className="mr-2 h-4 w-4" />
+                            Débloquer
+                          </>
+                        )}
+                      </Button>
+                    ) : null}
 
-                  <Card className="max-w-md mx-auto">
-                    <CardHeader>
-                      <CardTitle className="text-lg">Actions de la carte</CardTitle>
-                      <CardDescription>
-                        {currentCard.typCard} - {formatCardNumber(currentCard.numCard, false)}
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div className="flex gap-2">
-                        {currentCard.status?.toUpperCase() === "ACTIF" ? (
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            onClick={() => openConfirmDialog(currentCard.id, currentCard.status)}
-                            disabled={loadingCardId === currentCard.id}
-                            className="flex-1"
-                          >
-                            {loadingCardId === currentCard.id ? (
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                            ) : (
-                              <>
-                                <Lock className="mr-2 h-4 w-4" />
-                                Bloquer
-                              </>
-                            )}
-                          </Button>
-                        ) : currentCard.status?.toUpperCase() === "BLOCKED" ||
-                          currentCard.status?.toUpperCase() === "BLOQUE" ? (
-                          <Button
-                            variant="default"
-                            size="sm"
-                            onClick={() => openConfirmDialog(currentCard.id, currentCard.status)}
-                            disabled={loadingCardId === currentCard.id}
-                            className="flex-1"
-                          >
-                            {loadingCardId === currentCard.id ? (
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                            ) : (
-                              <>
-                                <Unlock className="mr-2 h-4 w-4" />
-                                Débloquer
-                              </>
-                            )}
-                          </Button>
-                        ) : null}
-                        <Dialog>
-                          <DialogTrigger asChild>
-                            <Button variant="outline" size="sm" onClick={() => setSelectedCard(currentCard)}>
-                              <Settings className="w-4 h-4" />
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent className="max-w-2xl">
-                            <DialogHeader>
-                              <DialogTitle>Gestion de la carte</DialogTitle>
-                              <DialogDescription>
-                                {currentCard.typCard} - {formatCardNumber(currentCard.numCard, false)}
-                              </DialogDescription>
-                            </DialogHeader>
-                            {/* Placeholder for additional card management options */}
-                            <div className="p-4 flex justify-center items-center h-40">
-                              <p className="text-muted-foreground">Options de gestion avancées à venir...</p>
-                            </div>
-                          </DialogContent>
-                        </Dialog>
-                      </div>
-                    </CardContent>
-                  </Card>
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <Button variant="outline" size="sm" onClick={() => setSelectedCard(currentCard)}>
+                          <Settings className="w-4 h-4" />
+                        </Button>
+                      </DialogTrigger>
+
+                      <DialogContent className="max-w-2xl">
+                        <DialogHeader>
+                          <DialogTitle>Gestion de la carte</DialogTitle>
+                          <DialogDescription>
+                            {currentCard.typCard} - {formatCardNumber(currentCard.numCard, false)}
+                          </DialogDescription>
+                        </DialogHeader>
+
+                        <div className="p-4 flex justify-center items-center h-40">
+                          <p className="text-muted-foreground">Options de gestion avancées à venir...</p>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
+                  </div>
+                </CardContent>
+                </Card>
+
                 </div>
               )
             })()}
@@ -801,13 +791,7 @@ export default function CardsPage() {
             <Card className="w-full max-w-md p-12 text-center">
               <CreditCard className="w-12 h-12 mx-auto text-gray-400 mb-4" />
               <h3 className="text-lg font-medium text-gray-900 mb-2">Aucune carte trouvée</h3>
-              <p className="text-gray-500 mb-4">Vous n'avez pas encore de carte bancaire.</p>
-              <Link href="/cartes/demande">
-                <Button>
-                  <Plus className="w-4 h-4 mr-2" />
-                  Demander une carte
-                </Button>
-              </Link>
+              <p className="text-gray-500 mb-4">Vous n'avez pas de carte {statusFilter.toLowerCase()}.</p>
             </Card>
           </div>
         )}
