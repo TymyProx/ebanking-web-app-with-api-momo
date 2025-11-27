@@ -200,10 +200,10 @@ export default function CardsPage() {
                 return out
               }),
             )
-          : response.rows
+          : data.rows || []
 
       const finalHolderName = holderName || userFullName || "Titulaire"
-      const enhancedCards = decryptedRows.map((card) => ({
+      const enhancedCards = decryptedRows.map((card: any) => ({
         ...card,
         holder: finalHolderName,
         dailyLimit: 500000,
@@ -451,6 +451,11 @@ export default function CardsPage() {
     initialize()
   }, [])
 
+  const handleRefresh = async () => {
+    const fullName = userFullName || (await loadUserInfo())
+    await loadCards(fullName)
+  }
+
   return (
     <div className="flex min-h-screen flex-col">
       <div className="mt-6 space-y-6">
@@ -473,7 +478,7 @@ export default function CardsPage() {
             </SelectContent>
           </Select>
 
-          <Button variant="outline" onClick={loadCards} disabled={isLoading || isRefreshing}>
+          <Button variant="outline" onClick={handleRefresh} disabled={isLoading || isRefreshing}>
             <RefreshCw className={`w-4 h-4 mr-2 ${isLoading || isRefreshing ? "animate-spin" : ""}`} />
             Actualiser
           </Button>
