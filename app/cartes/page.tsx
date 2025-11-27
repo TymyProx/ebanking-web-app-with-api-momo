@@ -1,6 +1,4 @@
 "use client"
-
-import { DialogTrigger } from "@/components/ui/dialog"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -11,6 +9,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import { toast } from "@/components/ui/use-toast"
 
 import { useEffect, useState } from "react"
 import { Card, CardContent } from "@/components/ui/card"
@@ -39,7 +38,7 @@ import {
   Unlock,
   Loader2,
 } from "lucide-react"
-import { toast } from "@/components/ui/use-toast"
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel"
 
 import {
   fetchAllCards,
@@ -353,20 +352,22 @@ export default function CardsPage() {
 
   function getCardTypeColor(type: string) {
     if (!type || typeof type !== "string") {
-      return "bg-gradient-to-r from-gray-500 to-gray-700"
+      return "bg-gradient-to-br from-slate-700 via-slate-800 to-slate-900"
     }
 
     switch (type.toUpperCase()) {
       case "GOLD":
-        return "bg-gradient-to-r from-yellow-400 to-yellow-600"
+        return "bg-gradient-to-br from-amber-400 via-yellow-500 to-amber-600"
       case "PLATINUM":
-        return "bg-gradient-to-r from-gray-400 to-gray-600"
+        return "bg-gradient-to-br from-slate-300 via-gray-400 to-slate-500"
       case "CREDIT":
-        return "bg-gradient-to-r from-blue-500 to-blue-700"
+        return "bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-700"
       case "DEBIT":
-        return "bg-gradient-to-r from-green-500 to-green-700"
+        return "bg-gradient-to-br from-emerald-500 via-green-600 to-teal-700"
+      case "PREPAID":
+        return "bg-gradient-to-br from-purple-500 via-violet-600 to-purple-700"
       default:
-        return "bg-gradient-to-r from-gray-500 to-gray-700"
+        return "bg-gradient-to-br from-slate-700 via-slate-800 to-slate-900"
     }
   }
 
@@ -473,133 +474,147 @@ export default function CardsPage() {
             ))}
           </div>
         ) : cards.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {(() => {
-              const filteredCards = cards.filter((card) => {
-                if (statusFilter === "all") return true
-                return card.status?.toUpperCase() === statusFilter.toUpperCase()
-              })
-
-              if (filteredCards.length === 0) {
-                const statusLabels: Record<string, string> = {
-                  all: "",
-                  ACTIF: "actives",
-                  BLOCKED: "bloquées",
-                  EXPIRED: "expirées",
-                }
-                const statusLabel = statusLabels[statusFilter] || ""
-
-                return (
-                  <div className="col-span-full">
-                    <Card className="p-12 text-center">
-                      <CreditCard className="w-12 h-12 mx-auto text-gray-400 mb-4" />
-                      <h3 className="text-lg font-medium text-gray-900 mb-2">Aucune carte {statusLabel}</h3>
-                      <p className="text-gray-500">
-                        {statusFilter === "all"
-                          ? "Vous n'avez pas encore de carte."
-                          : "Vous n'avez pas de carte avec ce statut."}
-                      </p>
-                    </Card>
-                  </div>
-                )
-              }
-
-              return filteredCards.map((card) => (
-                <div key={card.id}>
-                  <Card className="overflow-hidden">
-                    {/* Card Visual */}
-                    <div className={`${getCardTypeColor(card.typCard)} p-6 text-white relative`}>
-                      <div className="flex justify-between items-start mb-4">
-                        <div className="text-sm opacity-90">{card.typCard}</div>
-                        {getStatusBadge(card.status)}
-                      </div>
-
-                      <div className="space-y-4">
-                        <div className="flex items-center justify-between">
-                          <div className="font-mono text-lg tracking-wider">
-                            {formatCardNumber(card.numCard, card.isNumberVisible || false)}
-                          </div>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => toggleCardNumberVisibility(card.id)}
-                            className="text-white hover:bg-white/20"
+          <div className="w-full max-w-5xl mx-auto px-8">
+            <Carousel
+              opts={{
+                align: "start",
+                loop: true,
+              }}
+              className="w-full"
+            >
+              <CarouselContent className="-ml-4">
+                {cards
+                  .filter((card) => {
+                    if (statusFilter === "all") return true
+                    return card.status?.toUpperCase() === statusFilter.toUpperCase()
+                  })
+                  .map((card) => (
+                    <CarouselItem key={card.id} className="pl-4 md:basis-1/2 lg:basis-1/3">
+                      <div className="p-1">
+                        <div className="relative">
+                          {/* Card Front */}
+                          <div
+                            className={`${getCardTypeColor(card.typCard)} rounded-2xl p-6 text-white relative overflow-hidden shadow-2xl aspect-[1.586/1] flex flex-col justify-between`}
+                            style={{
+                              boxShadow: "0 10px 40px rgba(0,0,0,0.3), 0 2px 8px rgba(0,0,0,0.2)",
+                            }}
                           >
-                            {card.isNumberVisible ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                          </Button>
-                        </div>
+                            {/* Decorative background pattern */}
+                            <div className="absolute inset-0 opacity-10">
+                              <div className="absolute top-0 right-0 w-64 h-64 bg-white rounded-full blur-3xl transform translate-x-32 -translate-y-32" />
+                              <div className="absolute bottom-0 left-0 w-48 h-48 bg-white rounded-full blur-3xl transform -translate-x-24 translate-y-24" />
+                            </div>
 
-                        <div className="flex justify-between items-end">
-                          <div>
-                            <div className="text-xs opacity-75">Titulaire</div>
-                            <div className="font-medium">{card.holder}</div>
-                          </div>
-                          <div className="text-right">
-                            <div className="text-xs opacity-75">Expire</div>
-                            <div className="font-medium">{card.dateExpiration}</div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
+                            {/* Card Header */}
+                            <div className="relative z-10 flex justify-between items-start">
+                              <div>
+                                <div className="text-sm font-semibold opacity-90 tracking-wide mb-1">BNG BANK</div>
+                                <div className="text-xs opacity-75">{card.typCard}</div>
+                              </div>
+                              {getStatusBadge(card.status)}
+                            </div>
 
-                    {/* Card Info */}
-                    <CardContent className="p-4 space-y-4">
-                      {/* Action Buttons */}
-                      <div className="flex gap-2">
-                        {card.status?.toUpperCase() === "ACTIF" ? (
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            onClick={() => openConfirmDialog(card.id, card.status)}
-                            disabled={loadingCardId === card.id}
-                          >
-                            {loadingCardId === card.id ? (
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                            ) : (
-                              <>
-                                <Lock className="mr-2 h-4 w-4" />
-                                Bloquer
-                              </>
-                            )}
-                          </Button>
-                        ) : card.status?.toUpperCase() === "BLOCKED" || card.status?.toUpperCase() === "BLOQUE" ? (
-                          <Button
-                            variant="default"
-                            size="sm"
-                            onClick={() => openConfirmDialog(card.id, card.status)}
-                            disabled={loadingCardId === card.id}
-                          >
-                            {loadingCardId === card.id ? (
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                            ) : (
-                              <>
-                                <Unlock className="mr-2 h-4 w-4" />
-                                Débloquer
-                              </>
-                            )}
-                          </Button>
-                        ) : null}
-                        <Dialog>
-                          <DialogTrigger asChild>
-                            <Button variant="outline" size="sm" onClick={() => setSelectedCard(card)}>
-                              <Settings className="w-4 h-4" />
+                            {/* Chip and Contactless */}
+                            <div className="relative z-10 flex items-center gap-4">
+                              <div className="w-12 h-10 bg-gradient-to-br from-yellow-200 to-yellow-400 rounded-md flex items-center justify-center shadow-lg">
+                                <div className="grid grid-cols-3 gap-0.5">
+                                  {[...Array(9)].map((_, i) => (
+                                    <div key={i} className="w-1 h-1 bg-yellow-600 rounded-full" />
+                                  ))}
+                                </div>
+                              </div>
+                              <div className="flex space-x-1">
+                                <div className="w-4 h-4 border-2 border-white rounded-full opacity-60" />
+                                <div className="w-4 h-4 border-2 border-white rounded-full opacity-60 -ml-2" />
+                                <div className="w-4 h-4 border-2 border-white rounded-full opacity-60 -ml-2" />
+                              </div>
+                            </div>
+
+                            {/* Card Number */}
+                            <div className="relative z-10">
+                              <div className="flex items-center justify-between mb-4">
+                                <div className="font-mono text-xl tracking-[0.3em] font-light">
+                                  {formatCardNumber(card.numCard, card.isNumberVisible || false)}
+                                </div>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => toggleCardNumberVisibility(card.id)}
+                                  className="text-white hover:bg-white/20 h-8 w-8 p-0"
+                                >
+                                  {card.isNumberVisible ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                                </Button>
+                              </div>
+
+                              {/* Cardholder and Expiry */}
+                              <div className="flex justify-between items-end">
+                                <div>
+                                  <div className="text-[10px] opacity-60 uppercase tracking-wider mb-1">Titulaire</div>
+                                  <div className="font-semibold text-sm uppercase tracking-wide">{card.holder}</div>
+                                </div>
+                                <div className="text-right">
+                                  <div className="text-[10px] opacity-60 uppercase tracking-wider mb-1">Expire</div>
+                                  <div className="font-semibold text-sm tracking-wider">{card.dateExpiration}</div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Card Actions Below */}
+                          <div className="mt-4 flex gap-2">
+                            {card.status?.toUpperCase() === "ACTIF" ? (
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                onClick={() => openConfirmDialog(card.id, card.status)}
+                                disabled={loadingCardId === card.id}
+                                className="flex-1"
+                              >
+                                {loadingCardId === card.id ? (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <>
+                                    <Lock className="mr-2 h-4 w-4" />
+                                    Bloquer
+                                  </>
+                                )}
+                              </Button>
+                            ) : card.status?.toUpperCase() === "BLOCKED" || card.status?.toUpperCase() === "BLOQUE" ? (
+                              <Button
+                                variant="default"
+                                size="sm"
+                                onClick={() => openConfirmDialog(card.id, card.status)}
+                                disabled={loadingCardId === card.id}
+                                className="flex-1"
+                              >
+                                {loadingCardId === card.id ? (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <>
+                                    <Unlock className="mr-2 h-4 w-4" />
+                                    Débloquer
+                                  </>
+                                )}
+                              </Button>
+                            ) : null}
+
+                            <Button variant="outline" size="sm" className="flex-1 bg-transparent">
+                              <Settings className="mr-2 h-4 w-4" />
+                              Gérer
                             </Button>
-                          </DialogTrigger>
-                          <DialogContent className="max-w-2xl">
-                            <DialogHeader>
-                              <DialogTitle>Gestion de la carte</DialogTitle>
-                              <DialogDescription>
-                                {card.typCard} - {formatCardNumber(card.numCard, false)}
-                              </DialogDescription>
-                            </DialogHeader>
-                          </DialogContent>
-                        </Dialog>
+                          </div>
+                        </div>
                       </div>
-                    </CardContent>
-                  </Card>
-                </div>
-              ))
-            })()}
+                    </CarouselItem>
+                  ))}
+              </CarouselContent>
+              {cards.length > 1 && (
+                <>
+                  <CarouselPrevious className="hidden md:flex" />
+                  <CarouselNext className="hidden md:flex" />
+                </>
+              )}
+            </Carousel>
           </div>
         ) : (
           <Card className="p-12 text-center">
@@ -803,7 +818,7 @@ export default function CardsPage() {
         open={confirmDialog.isOpen}
         onOpenChange={(open) => !open && setConfirmDialog({ ...confirmDialog, isOpen: false })}
       >
-        <AlertDialogContent>
+        <AlertDialogContent onInteractOutside={() => setConfirmDialog({ ...confirmDialog, isOpen: false })}>
           <AlertDialogHeader>
             <AlertDialogTitle>
               {confirmDialog.action === "block" ? "Bloquer la carte" : "Débloquer la carte"}
