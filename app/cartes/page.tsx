@@ -301,46 +301,45 @@ export default function CardsPage() {
     const account = accounts.find((acc) => acc.id === accountId)
     if (!account) return []
 
-    // Define card types based on account type and currency
     const allCardTypes = [
       {
         type: "DEBIT",
         name: "Carte de Débit",
-        color: "bg-gradient-to-r from-emerald-300 to-teal-400",
+        color: "bg-gradient-to-r from-emerald-200 to-teal-300",
         advantages: ["Accès aux DAB", "Paiements en magasin", "Plafond quotidien flexible"],
         icon: <CreditCard className="w-8 h-8" />,
       },
       {
         type: "CREDIT",
         name: "Carte de Crédit",
-        color: "bg-gradient-to-r from-sky-300 to-blue-400",
+        color: "bg-gradient-to-r from-sky-200 to-blue-300",
         advantages: ["Crédit renouvelable", "Paiements différés", "Assurance voyage"],
         icon: <DollarSign className="w-8 h-8" />,
       },
       {
         type: "PREPAID",
         name: "Carte Prépayée",
-        color: "bg-gradient-to-r from-purple-300 to-pink-400",
+        color: "bg-gradient-to-r from-gray-200 to-slate-300",
         advantages: ["Contrôle des dépenses", "Rechargeable", "Idéale pour les jeunes"],
         icon: <Shield className="w-8 h-8" />,
       },
       {
         type: "GOLD",
         name: "Carte Gold",
-        color: "bg-gradient-to-r from-amber-200 to-yellow-400",
+        color: "bg-gradient-to-r from-amber-200 to-yellow-300",
         advantages: ["Services premium", "Plafonds élevés", "Assistance 24h/7j"],
         icon: <CheckCircle className="w-8 h-8" />,
       },
       {
         type: "PLATINUM",
         name: "Carte Platinum",
-        color: "bg-gradient-to-r from-slate-300 to-gray-400",
+        color: "bg-gradient-to-r from-gray-300 to-slate-400",
         advantages: ["Services VIP", "Plafonds illimités", "Conciergerie privée"],
         icon: <Settings className="w-8 h-8" />,
       },
     ]
 
-    // Filter card types based on account type and status
+    // Filter card types based on account type and currency
     if (account.status !== "ACTIF") {
       return [] // No cards for inactive accounts
     }
@@ -377,20 +376,20 @@ export default function CardsPage() {
 
   function getCardTypeColor(type: string) {
     if (!type || typeof type !== "string") {
-      return "bg-gradient-to-r from-gray-500 to-gray-700"
+      return "bg-gradient-to-r from-gray-200 to-slate-300"
     }
 
     switch (type.toUpperCase()) {
       case "GOLD":
-        return "bg-gradient-to-r from-amber-200 to-yellow-400"
+        return "bg-gradient-to-r from-amber-200 to-yellow-300"
       case "PLATINUM":
-        return "bg-gradient-to-r from-slate-300 to-gray-400"
+        return "bg-gradient-to-r from-gray-300 to-slate-400"
       case "CREDIT":
-        return "bg-gradient-to-r from-sky-300 to-blue-400"
+        return "bg-gradient-to-r from-sky-200 to-blue-300"
       case "DEBIT":
-        return "bg-gradient-to-r from-emerald-300 to-teal-400"
+        return "bg-gradient-to-r from-emerald-200 to-teal-300"
       default:
-        return "bg-gradient-to-r from-gray-500 to-gray-700"
+        return "bg-gradient-to-r from-gray-200 to-slate-300"
     }
   }
 
@@ -537,11 +536,11 @@ export default function CardsPage() {
               }
 
               const gradients = [
-                "bg-gradient-to-br from-purple-600 via-purple-500 to-pink-500",
-                "bg-gradient-to-br from-blue-600 via-blue-500 to-teal-500",
-                "bg-gradient-to-br from-orange-600 via-red-500 to-pink-600",
-                "bg-gradient-to-br from-green-600 via-emerald-500 to-teal-500",
-                "bg-gradient-to-br from-indigo-600 via-purple-500 to-pink-500",
+                "bg-gradient-to-br from-emerald-300 via-teal-200 to-cyan-300",
+                "bg-gradient-to-br from-sky-300 via-blue-200 to-indigo-300",
+                "bg-gradient-to-br from-amber-300 via-yellow-200 to-orange-300",
+                "bg-gradient-to-br from-gray-300 via-slate-200 to-zinc-300",
+                "bg-gradient-to-br from-rose-300 via-pink-200 to-fuchsia-300",
               ]
               const cardGradient = gradients[currentCardIndex % gradients.length]
 
