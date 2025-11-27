@@ -572,14 +572,13 @@ export default function CardsPage() {
 
                     <div className="w-full max-w-md perspective-1000 overflow-hidden">
                       <div
-                        className={`relative w-full transform-style-3d cursor-pointer hover:scale-105 transition-all duration-300 ${
-                          isFading ? "animate-fade-out" : "animate-fade-in"
-                        }`}
+                        className={`relative w-full transform-style-3d cursor-pointer hover:scale-105 transition-all duration-300`}
                         onClick={toggleFlip}
                         style={{
                           transformStyle: "preserve-3d",
                           transform: isFlipped ? "rotateY(180deg)" : "rotateY(0deg)",
                           transition: "transform 0.6s ease-in-out",
+                          opacity: isFading ? 0 : 1,
                         }}
                       >
                         {/* Front of Card */}
