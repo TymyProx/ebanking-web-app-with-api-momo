@@ -53,7 +53,6 @@ import { importAesGcmKeyFromBase64, isEncryptedJson, decryptAesGcmFromJson } fro
 import { getAccounts } from "../accounts/actions"
 import { Badge } from "@/components/ui/badge"
 import { Label } from "@/components/ui/label"
-import { getCurrentUser } from "@/app/user/actions"
 
 type CardWithUI = CardType & {
   holder?: string
@@ -79,10 +78,10 @@ type Account = {
 export default function CardsPage() {
   const [cards, setCards] = useState<CardWithUI[]>([])
   const [total, setTotal] = useState<number>(0)
-  const [loading, setLoading] = useState<boolean>(true)
+  const [loading, setLoading] = useState<boolean>(false)
   const [error, setError] = useState<string | null>(null)
-  const [statusFilter, setStatusFilter] = useState<string>("all")
-  const [currentIndex, setCurrentIndex] = useState(0)
+  const [statusFilter, setStatusFilter] = useState<string>("ACTIF")
+  const [currentCardIndex, setCurrentCardIndex] = useState<number>(0)
 
   const [accounts, setAccounts] = useState<Account[]>([])
   const [loadingAccounts, setLoadingAccounts] = useState<boolean>(false)
@@ -119,18 +118,7 @@ export default function CardsPage() {
     action: "block",
   })
 
-  const [userData, setUserData] = useState<any>(null)
-
   const toast = useToast()
-
-  async function loadUserData() {
-    try {
-      const user = await getCurrentUser()
-      setUserData(user)
-    } catch (e) {
-      console.error("[v0] Error loading user data:", e)
-    }
-  }
 
   async function loadAccounts() {
     setLoadingAccounts(true)
@@ -146,10 +134,14 @@ export default function CardsPage() {
   }
 
   async function loadCards() {
+    console.log("[v0] Chargement des cartes...")
+    setLoading(true)
     setError(null)
 
     try {
-      const response = await fetchAllCards()
+      const result = await fetchAllCards()
+      console.log("[v0] Résultat getCards:", result)
+
       const secureMode = (process.env.NEXT_PUBLIC_PORTAL_SECURE_MODE || "false").toLowerCase() === "true"
       const keyB64 = process.env.NEXT_PUBLIC_PORTAL_KEY_B64 || ""
       const logDebug = (process.env.NEXT_PUBLIC_LOG_LEVEL || "").toLowerCase() === "debug"
@@ -159,11 +151,11 @@ export default function CardsPage() {
       } catch (_) {
         key = null
       }
-      if (logDebug) console.log("[CARDS/UI] secure:", secureMode, "key:", !!key, "rows:", response.rows.length)
+      if (logDebug) console.log("[CARDS/UI] secure:", secureMode, "key:", !!key, "rows:", result.rows.length)
 
       const decryptedRows = key
         ? await Promise.all(
-            response.rows.map(async (c: any) => {
+            result.rows.map(async (c: any) => {
               const out: any = { ...c }
               try {
                 if (isEncryptedJson(out.numCard))
@@ -192,11 +184,11 @@ export default function CardsPage() {
               return out
             }),
           )
-        : response.rows
+        : result.rows
 
       const enhancedCards = decryptedRows.map((card) => ({
         ...card,
-        holder: userData?.fullName || "TITULAIRE",
+        holder: "MAMADOU DIALLO", // Default holder name
         dailyLimit: 500000,
         monthlyLimit: 2000000,
         balance: 1250000,
@@ -205,7 +197,7 @@ export default function CardsPage() {
       }))
       if (logDebug) console.log("[CARDS/UI] final rows:", enhancedCards.length)
       setCards(enhancedCards)
-      setTotal(response.count)
+      setTotal(result.count)
     } catch (e: any) {
       setError(e?.message ?? String(e))
       setCards([])
@@ -431,7 +423,6 @@ export default function CardsPage() {
   }, [submitSuccess])
 
   useEffect(() => {
-    loadUserData()
     loadCards()
     loadAccounts()
   }, [])
@@ -519,7 +510,7 @@ export default function CardsPage() {
                 )
               }
 
-              const currentCard = filteredCards[currentIndex]
+              const currentCard = filteredCards[currentCardIndex]
               const gradients = [
                 "bg-gradient-to-br from-purple-600 via-purple-500 to-pink-500",
                 "bg-gradient-to-br from-blue-600 via-blue-500 to-teal-500",
@@ -527,7 +518,7 @@ export default function CardsPage() {
                 "bg-gradient-to-br from-green-600 via-emerald-500 to-teal-500",
                 "bg-gradient-to-br from-indigo-600 via-purple-500 to-pink-500",
               ]
-              const cardGradient = gradients[currentIndex % gradients.length]
+              const cardGradient = gradients[currentCardIndex % gradients.length]
 
               return (
                 <div className="space-y-6">
@@ -538,7 +529,9 @@ export default function CardsPage() {
                       <Button
                         variant="outline"
                         size="icon"
-                        onClick={() => setCurrentIndex((prev) => (prev === 0 ? filteredCards.length - 1 : prev - 1))}
+                        onClick={() =>
+                          setCurrentCardIndex((prev) => (prev === 0 ? filteredCards.length - 1 : prev - 1))
+                        }
                         className="shrink-0"
                       >
                         <ChevronLeft className="h-5 w-5" />
@@ -674,7 +667,9 @@ export default function CardsPage() {
                       <Button
                         variant="outline"
                         size="icon"
-                        onClick={() => setCurrentIndex((prev) => (prev === filteredCards.length - 1 ? 0 : prev + 1))}
+                        onClick={() =>
+                          setCurrentCardIndex((prev) => (prev === filteredCards.length - 1 ? 0 : prev + 1))
+                        }
                         className="shrink-0"
                       >
                         <ChevronRight className="h-5 w-5" />
@@ -688,9 +683,9 @@ export default function CardsPage() {
                       {filteredCards.map((_, index) => (
                         <button
                           key={index}
-                          onClick={() => setCurrentIndex(index)}
+                          onClick={() => setCurrentCardIndex(index)}
                           className={`w-2 h-2 rounded-full transition-all ${
-                            index === currentIndex ? "bg-primary w-8" : "bg-gray-300 hover:bg-gray-400"
+                            index === currentCardIndex ? "bg-primary w-8" : "bg-gray-300 hover:bg-gray-400"
                           }`}
                         />
                       ))}
