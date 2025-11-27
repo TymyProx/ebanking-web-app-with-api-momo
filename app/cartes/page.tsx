@@ -47,14 +47,12 @@ import {
 import Link from "next/link"
 import { useToast } from "@/hooks/use-toast"
 import { toggleCardStatus } from "@/actions/card"
-import Cookies from "js-cookie"
 
-import { createCardRequest, type Card as CardType, type NewCardRequest } from "../../actions/card"
+import { fetchAllCards, createCardRequest, type Card as CardType, type NewCardRequest } from "../../actions/card"
+import { importAesGcmKeyFromBase64, isEncryptedJson, decryptAesGcmFromJson } from "@/lib/crypto"
 import { getAccounts } from "../accounts/actions"
 import { Badge } from "@/components/ui/badge"
 import { Label } from "@/components/ui/label"
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL
 
 type CardWithUI = CardType & {
   holder?: string
@@ -80,9 +78,9 @@ type Account = {
 export default function CardsPage() {
   const [cards, setCards] = useState<CardWithUI[]>([])
   const [total, setTotal] = useState<number>(0)
-  const [isLoading, setIsLoading] = useState<boolean>(true)
+  const [loading, setLoading] = useState<boolean>(false)
   const [error, setError] = useState<string | null>(null)
-  const [statusFilter, setStatusFilter] = useState<string>("all")
+  const [statusFilter, setStatusFilter] = useState<string>("ACTIF")
   const [currentCardIndex, setCurrentCardIndex] = useState<number>(0)
 
   const [accounts, setAccounts] = useState<Account[]>([])
@@ -122,90 +120,72 @@ export default function CardsPage() {
 
   const toast = useToast()
 
-  const [userFullName, setUserFullName] = useState<string>("")
-
-  const loadUserInfo = async (): Promise<string> => {
+  async function loadAccounts() {
+    setLoadingAccounts(true)
     try {
-      const token = Cookies.get("authToken")
-      if (!token) return ""
-
-      const response = await fetch(`${API_BASE_URL}/auth/me`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      })
-
-      if (response.ok) {
-        const userData = await response.json()
-        const fullName = userData?.fullName || userData?.name || ""
-        setUserFullName(fullName)
-        console.log("[v0] User full name loaded:", fullName)
-        return fullName
-      }
-    } catch (error) {
-      console.error("[v0] Error fetching user info:", error)
+      const accountsData = await getAccounts()
+      setAccounts(accountsData || [])
+    } catch (e: any) {
+      console.error("[v0] Erreur lors du chargement des comptes:", e)
+      setAccounts([])
+    } finally {
+      setLoadingAccounts(false)
     }
-    return ""
   }
 
-  const loadCards = async (holderName?: string) => {
-    const logDebug = false
-    setIsLoading(true)
+  async function loadCards() {
+    setLoading(true)
     setError(null)
 
     try {
-      const token = Cookies.get("authToken")
-      const clientId = Cookies.get("clientId")
-      const tenantId = process.env.NEXT_PUBLIC_TENANT_ID
-
-      if (logDebug) console.log("[CARDS/UI] Token:", token ? "exists" : "missing")
-      if (logDebug) console.log("[CARDS/UI] ClientID:", clientId)
-      if (logDebug) console.log("[CARDS/UI] TenantID:", tenantId)
-
-      if (!token || !clientId || !tenantId) {
-        setError("Informations d'authentification manquantes")
-        setIsLoading(false)
-        return
+      const response = await fetchAllCards()
+      const secureMode = (process.env.NEXT_PUBLIC_PORTAL_SECURE_MODE || "false").toLowerCase() === "true"
+      const keyB64 = process.env.NEXT_PUBLIC_PORTAL_KEY_B64 || ""
+      const logDebug = (process.env.NEXT_PUBLIC_LOG_LEVEL || "").toLowerCase() === "debug"
+      let key: CryptoKey | null = null
+      try {
+        if (secureMode && keyB64) key = await importAesGcmKeyFromBase64(keyB64)
+      } catch (_) {
+        key = null
       }
+      if (logDebug) console.log("[CARDS/UI] secure:", secureMode, "key:", !!key, "rows:", response.rows.length)
 
-      const url = `${API_BASE_URL}/tenant/${tenantId}/carte?clientId=${clientId}`
-      if (logDebug) console.log("[CARDS/UI] Fetching:", url)
+      const decryptedRows = key
+        ? await Promise.all(
+            response.rows.map(async (c: any) => {
+              const out: any = { ...c }
+              try {
+                if (isEncryptedJson(out.numCard))
+                  out.numCard = await decryptAesGcmFromJson(out.numCard, key as CryptoKey)
+                if (isEncryptedJson(out.accountNumber))
+                  out.accountNumber = await decryptAesGcmFromJson(out.accountNumber, key as CryptoKey)
+                if (isEncryptedJson(out.typCard))
+                  out.typCard = await decryptAesGcmFromJson(out.typCard, key as CryptoKey)
+                if (isEncryptedJson(out.status)) out.status = await decryptAesGcmFromJson(out.status, key as CryptoKey)
+                if (isEncryptedJson(out.dateEmission))
+                  out.dateEmission = await decryptAesGcmFromJson(out.dateEmission, key as CryptoKey)
+                if (isEncryptedJson(out.dateExpiration))
+                  out.dateExpiration = await decryptAesGcmFromJson(out.dateExpiration, key as CryptoKey)
+              } catch (_) {}
+              if (logDebug)
+                console.log("[CARDS/UI] row:", {
+                  id: out.id,
+                  clientId: out.clientId,
+                  numType: typeof out.numCard,
+                  accType: typeof out.accountNumber,
+                })
+              out.numCard = typeof out.numCard === "string" ? out.numCard : ""
+              out.accountNumber = typeof out.accountNumber === "string" ? out.accountNumber : ""
+              out.typCard = typeof out.typCard === "string" ? out.typCard : ""
+              out.status = typeof out.status === "string" ? out.status : ""
+              return out
+            }),
+          )
+        : response.rows
 
-      const response = await fetch(url, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      })
-
-      if (logDebug) console.log("[CARDS/UI] Response status:", response.status)
-
-      if (!response.ok) {
-        throw new Error(`Erreur HTTP: ${response.status}`)
-      }
-
-      const data = await response.json()
-      if (logDebug) console.log("[CARDS/UI] Rows received:", data.rows?.length)
-
-      const secureMode = process.env.NEXT_PUBLIC_PORTAL_SECURE_MODE === "true"
-
-      const decryptedRows =
-        secureMode && data.rows
-          ? await Promise.all(
-              data.rows.map(async (r: any) => {
-                const out = { ...r }
-                out.numero = out.numero ? await decryptText(out.numero) : ""
-                out.dateExpiration = out.dateExpiration ? await decryptText(out.dateExpiration) : ""
-                out.cvv = out.cvv ? await decryptText(out.cvv) : ""
-                out.status = typeof out.status === "string" ? out.status : ""
-                return out
-              }),
-            )
-          : data.rows || []
-
-      const finalHolderName = holderName || userFullName || "Titulaire"
-      const enhancedCards = decryptedRows.map((card: any) => ({
+      const enhancedCards = decryptedRows.map((card) => ({
         ...card,
-        holder: finalHolderName,
+        holder: "MAMADOU DIALLO", // Default holder name
         dailyLimit: 500000,
         monthlyLimit: 2000000,
         balance: 1250000,
@@ -213,16 +193,14 @@ export default function CardsPage() {
         isNumberVisible: false,
       }))
       if (logDebug) console.log("[CARDS/UI] final rows:", enhancedCards.length)
-
       setCards(enhancedCards)
-      if (enhancedCards.length > 0) {
-        setCurrentCardIndex(0)
-      }
-    } catch (err) {
-      console.error("[CARDS/UI] Error fetching cards:", err)
-      setError(err instanceof Error ? err.message : "Erreur lors du chargement des cartes")
+      setTotal(response.count)
+    } catch (e: any) {
+      setError(e?.message ?? String(e))
+      setCards([])
+      setTotal(0)
     } finally {
-      setIsLoading(false)
+      setLoading(false)
     }
   }
 
@@ -442,19 +420,9 @@ export default function CardsPage() {
   }, [submitSuccess])
 
   useEffect(() => {
-    const initialize = async () => {
-      const fullName = await loadUserInfo()
-      await loadCards(fullName)
-      const accountsData = await getAccounts()
-      setAccounts(accountsData)
-    }
-    initialize()
+    loadCards()
+    loadAccounts()
   }, [])
-
-  const handleRefresh = async () => {
-    const fullName = userFullName || (await loadUserInfo())
-    await loadCards(fullName)
-  }
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -478,8 +446,8 @@ export default function CardsPage() {
             </SelectContent>
           </Select>
 
-          <Button variant="outline" onClick={handleRefresh} disabled={isLoading || isRefreshing}>
-            <RefreshCw className={`w-4 h-4 mr-2 ${isLoading || isRefreshing ? "animate-spin" : ""}`} />
+          <Button variant="outline" onClick={loadCards} disabled={loading || isRefreshing}>
+            <RefreshCw className={`w-4 h-4 mr-2 ${loading || isRefreshing ? "animate-spin" : ""}`} />
             Actualiser
           </Button>
         </div>
@@ -499,7 +467,7 @@ export default function CardsPage() {
           </Alert>
         )}
 
-        {isLoading || isRefreshing ? (
+        {loading || isRefreshing ? (
           <div className="flex justify-center items-center py-12">
             <Card className="w-full max-w-md h-64 animate-pulse">
               <CardContent className="p-6">
@@ -947,9 +915,4 @@ export default function CardsPage() {
       </AlertDialog>
     </div>
   )
-}
-
-async function decryptText(text: string) {
-  // Placeholder for decryption logic
-  return text
 }
