@@ -84,6 +84,8 @@ export default function CardsPage() {
   const [statusFilter, setStatusFilter] = useState<string>("ACTIF")
   const [currentCardIndex, setCurrentCardIndex] = useState<number>(0)
 
+  const [transitionDirection, setTransitionDirection] = useState<"left" | "right" | "none">("none")
+
   const [accounts, setAccounts] = useState<Account[]>([])
   const [loadingAccounts, setLoadingAccounts] = useState<boolean>(false)
 
@@ -553,8 +555,12 @@ export default function CardsPage() {
                         variant="outline"
                         size="icon"
                         onClick={() => {
-                          setCurrentCardIndex((prev) => (prev === 0 ? filteredCards.length - 1 : prev - 1))
-                          setIsFlipped(false) // Reset flip on navigation
+                          setTransitionDirection("right")
+                          setTimeout(() => {
+                            setCurrentCardIndex((prev) => (prev === 0 ? filteredCards.length - 1 : prev - 1))
+                            setIsFlipped(false)
+                            setTransitionDirection("none")
+                          }, 50)
                         }}
                         className="shrink-0"
                       >
@@ -562,15 +568,21 @@ export default function CardsPage() {
                       </Button>
                     )}
 
-                    <div className="w-full max-w-md perspective-1000">
+                    <div className="w-full max-w-md perspective-1000 overflow-hidden">
                       <div
                         className={`relative w-full transition-all duration-700 transform-style-3d cursor-pointer hover:scale-105 ${
                           isFlipped ? "rotate-y-180" : ""
+                        } ${
+                          transitionDirection === "left"
+                            ? "animate-slide-in-left"
+                            : transitionDirection === "right"
+                              ? "animate-slide-in-right"
+                              : ""
                         }`}
                         onClick={toggleFlip}
                         style={{
                           transformStyle: "preserve-3d",
-                          transition: "transform 0.7s, box-shadow 0.3s, scale 0.3s",
+                          transition: "transform 0.7s, box-shadow 0.3s, scale 0.3s, opacity 0.5s",
                           transform: isFlipped ? "rotateY(180deg)" : "rotateY(0deg)",
                         }}
                       >
@@ -695,8 +707,12 @@ export default function CardsPage() {
                         variant="outline"
                         size="icon"
                         onClick={() => {
-                          setCurrentCardIndex((prev) => (prev === filteredCards.length - 1 ? 0 : prev + 1))
-                          setIsFlipped(false) // Reset flip on navigation
+                          setTransitionDirection("left")
+                          setTimeout(() => {
+                            setCurrentCardIndex((prev) => (prev === filteredCards.length - 1 ? 0 : prev + 1))
+                            setIsFlipped(false)
+                            setTransitionDirection("none")
+                          }, 50)
                         }}
                         className="shrink-0"
                       >
@@ -712,8 +728,13 @@ export default function CardsPage() {
                         <button
                           key={index}
                           onClick={() => {
-                            setCurrentCardIndex(index)
-                            setIsFlipped(false) // Reset flip on dot click
+                            const direction = index > currentCardIndex ? "left" : "right"
+                            setTransitionDirection(direction)
+                            setTimeout(() => {
+                              setCurrentCardIndex(index)
+                              setIsFlipped(false)
+                              setTransitionDirection("none")
+                            }, 50)
                           }}
                           className={`w-2 h-2 rounded-full transition-all ${
                             index === currentCardIndex ? "bg-primary w-6" : "bg-gray-300 hover:bg-gray-400"
