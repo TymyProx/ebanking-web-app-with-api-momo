@@ -53,6 +53,7 @@ import { importAesGcmKeyFromBase64, isEncryptedJson, decryptAesGcmFromJson } fro
 import { getAccounts } from "../accounts/actions"
 import { Badge } from "@/components/ui/badge"
 import { Label } from "@/components/ui/label"
+import cn from "classnames"
 
 type CardWithUI = CardType & {
   holder?: string
@@ -426,6 +427,11 @@ export default function CardsPage() {
     setIsFlipped(!isFlipped)
   }
 
+  const handleRefresh = async () => {
+    setIsRefreshing(true)
+    await loadCards()
+  }
+
   // Effect to filter cards when statusFilter changes
   useEffect(() => {
     const initialFiltered = cards.filter((card) => {
@@ -452,11 +458,8 @@ export default function CardsPage() {
   }, [submitSuccess])
 
   useEffect(() => {
-    // Only load data if not already loading
-    if (!loading) {
-      loadCards()
-      loadAccounts()
-    }
+    loadCards()
+    loadAccounts()
   }, []) // Empty dependency array ensures this runs only once on mount
 
   return (
@@ -481,8 +484,14 @@ export default function CardsPage() {
             </SelectContent>
           </Select>
 
-          <Button variant="outline" onClick={loadCards} disabled={loading || isRefreshing}>
-            <RefreshCw className={`w-4 h-4 mr-2 ${loading || isRefreshing ? "animate-spin" : ""}`} />
+          <Button
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+            size="sm"
+            variant="outline"
+            className="gap-2 bg-transparent"
+          >
+            <RefreshCw className={cn("h-4 w-4", isRefreshing && "animate-spin")} />
             Actualiser
           </Button>
 
