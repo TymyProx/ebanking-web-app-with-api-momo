@@ -42,7 +42,6 @@ import {
   Shield,
   AlertTriangle,
   Clock,
-  ShieldOff,
 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { toggleCardStatus } from "@/actions/card"
@@ -470,6 +469,36 @@ export default function CardsPage() {
     loadAccounts()
   }, []) // Empty dependency array ensures this runs only once on mount
 
+  // Function to assign gradient based on card type
+  const getCardGradient = (card: any, index: number) => {
+    // Use card type if available
+    if (card.type) {
+      switch (card.type.toUpperCase()) {
+        case "GOLD":
+          return "bg-gradient-to-br from-yellow-600 via-yellow-500 to-yellow-700"
+        case "PLATINUM":
+          return "bg-gradient-to-br from-gray-600 via-gray-500 to-gray-700"
+        case "CREDIT":
+          return "bg-gradient-to-br from-blue-600 via-blue-500 to-blue-700"
+        case "DEBIT":
+          return "bg-gradient-to-br from-green-600 via-green-500 to-green-700"
+        case "PREPAID":
+          return "bg-gradient-to-br from-purple-600 via-purple-500 to-purple-700"
+        default:
+          return "bg-gradient-to-br from-gray-600 via-gray-500 to-gray-700"
+      }
+    }
+    // Fallback to index-based gradient if no type
+    const gradients = [
+      "bg-gradient-to-br from-green-600 via-green-500 to-green-700",
+      "bg-gradient-to-br from-yellow-600 via-yellow-500 to-yellow-700",
+      "bg-gradient-to-br from-orange-600 via-red-500 to-pink-600",
+      "bg-gradient-to-br from-green-600 via-emerald-500 to-teal-500",
+      "bg-gradient-to-br from-indigo-600 via-purple-500 to-pink-500",
+    ]
+    return gradients[index % gradients.length]
+  }
+
   return (
     <div className="flex min-h-screen flex-col">
       <div className="mt-6 space-y-6">
@@ -543,14 +572,7 @@ export default function CardsPage() {
                 )
               }
 
-              const gradients = [
-                "bg-gradient-to-br from-green-600 via-green-500 to-green-700",
-                "bg-gradient-to-br from-yellow-600 via-yellow-500 to-yellow-700",
-                "bg-gradient-to-br from-orange-600 via-red-500 to-pink-600",
-                "bg-gradient-to-br from-green-600 via-emerald-500 to-teal-500",
-                "bg-gradient-to-br from-indigo-600 via-purple-500 to-pink-500",
-              ]
-              const cardGradient = gradients[currentCardIndex % gradients.length]
+              const cardGradient = getCardGradient(currentCard, currentCardIndex)
 
               return (
                 <div className="space-y-6">
