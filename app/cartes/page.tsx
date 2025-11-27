@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import Link from "next/link"
 import {
   CreditCard,
   Plus,
@@ -565,10 +566,12 @@ export default function CardsPage() {
           <CreditCard className="w-12 h-12 mx-auto text-gray-400 mb-4" />
           <h3 className="text-lg font-medium text-gray-900 mb-2">Aucune carte trouvée</h3>
           <p className="text-gray-500 mb-4">Vous n'avez pas encore de carte bancaire.</p>
-          <Button onClick={() => setShowNewCardForm(true)}>
-            <Plus className="w-4 h-4 mr-2" />
-            Demander une carte
-          </Button>
+          <Link href="/cartes/demande">
+            <Button>
+              <Plus className="w-4 h-4 mr-2" />
+              Demander une carte
+            </Button>
+          </Link>
         </Card>
       )}
 
