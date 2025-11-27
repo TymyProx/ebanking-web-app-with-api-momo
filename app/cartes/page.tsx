@@ -1,6 +1,9 @@
 "use client"
 
-import { DialogTrigger } from "@/components/ui/dialog"
+import { useState, useEffect } from "react"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent } from "@/components/ui/card"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -11,45 +14,45 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-
-import { useEffect, useState } from "react"
-import { Card, CardContent } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Label } from "@/components/ui/label"
-import { Badge } from "@/components/ui/badge"
-import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import Link from "next/link"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
 import {
   CreditCard,
-  Plus,
-  Shield,
-  ShieldOff,
-  Settings,
-  AlertTriangle,
   Eye,
   EyeOff,
-  RefreshCw,
-  CheckCircle,
-  XCircle,
-  Clock,
-  DollarSign,
   Lock,
   Unlock,
+  Settings,
+  RefreshCw,
+  Plus,
+  CheckCircle,
+  XCircle,
   Loader2,
+  ChevronLeft,
+  ChevronRight,
+  Wifi,
+  DollarSign,
+  Shield,
+  AlertTriangle,
+  Clock,
+  ShieldOff,
 } from "lucide-react"
-import { toast } from "@/components/ui/use-toast"
+import Link from "next/link"
+import { useToast } from "@/hooks/use-toast"
+import { toggleCardStatus } from "@/actions/card"
 
-import {
-  fetchAllCards,
-  createCardRequest,
-  toggleCardStatus,
-  type Card as CardType,
-  type NewCardRequest,
-} from "../../actions/card"
+import { fetchAllCards, createCardRequest, type Card as CardType, type NewCardRequest } from "../../actions/card"
 import { importAesGcmKeyFromBase64, isEncryptedJson, decryptAesGcmFromJson } from "@/lib/crypto"
 import { getAccounts } from "../accounts/actions"
+import { Badge } from "@/components/ui/badge"
+import { Label } from "@/components/ui/label"
 
 type CardWithUI = CardType & {
   holder?: string
@@ -78,6 +81,7 @@ export default function CardsPage() {
   const [loading, setLoading] = useState<boolean>(false)
   const [error, setError] = useState<string | null>(null)
   const [statusFilter, setStatusFilter] = useState<string>("ACTIF")
+  const [currentCardIndex, setCurrentCardIndex] = useState<number>(0)
 
   const [accounts, setAccounts] = useState<Account[]>([])
   const [loadingAccounts, setLoadingAccounts] = useState<boolean>(false)
@@ -113,6 +117,8 @@ export default function CardsPage() {
     currentStatus: "",
     action: "block",
   })
+
+  const toast = useToast()
 
   async function loadAccounts() {
     setLoadingAccounts(true)
@@ -238,21 +244,21 @@ export default function CardsPage() {
       const result = await toggleCardStatus(cardId, currentStatus)
 
       if (result.success) {
-        toast({
+        toast.toast({
           title: "Succès",
           description: result.message,
         })
         // Refresh the cards list
         await loadCards()
       } else {
-        toast({
+        toast.toast({
           title: "Erreur",
           description: result.error,
           variant: "destructive",
         })
       }
     } catch (error) {
-      toast({
+      toast.toast({
         title: "Erreur",
         description: "Une erreur est survenue lors de la mise à jour du statut",
         variant: "destructive",
@@ -377,7 +383,6 @@ export default function CardsPage() {
 
     switch (status.toUpperCase()) {
       case "ACTIF":
-      case "ACTIF":
         return <Badge className="bg-green-100 text-green-800">Actif</Badge>
       case "BLOCKED":
       case "BLOQUE":
@@ -434,6 +439,7 @@ export default function CardsPage() {
               <SelectValue placeholder="Filtrer par statut" />
             </SelectTrigger>
             <SelectContent>
+              <SelectItem value="all">Tous</SelectItem>
               <SelectItem value="ACTIF">Actif</SelectItem>
               <SelectItem value="BLOCKED">Bloqué</SelectItem>
               <SelectItem value="EXPIRED">Expiré</SelectItem>
@@ -461,19 +467,16 @@ export default function CardsPage() {
           </Alert>
         )}
 
-        {/* Cards Grid */}
         {loading || isRefreshing ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[1, 2, 3].map((i) => (
-              <Card key={i} className="h-64 animate-pulse">
-                <CardContent className="p-6">
-                  <div className="h-full bg-gray-200 rounded"></div>
-                </CardContent>
-              </Card>
-            ))}
+          <div className="flex justify-center items-center py-12">
+            <Card className="w-full max-w-md h-64 animate-pulse">
+              <CardContent className="p-6">
+                <div className="h-full bg-gray-200 rounded"></div>
+              </CardContent>
+            </Card>
           </div>
         ) : cards.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="relative">
             {(() => {
               const filteredCards = cards.filter((card) => {
                 if (statusFilter === "all") return true
@@ -490,8 +493,8 @@ export default function CardsPage() {
                 const statusLabel = statusLabels[statusFilter] || ""
 
                 return (
-                  <div className="col-span-full">
-                    <Card className="p-12 text-center">
+                  <div className="flex justify-center py-12">
+                    <Card className="w-full max-w-md p-12 text-center">
                       <CreditCard className="w-12 h-12 mx-auto text-gray-400 mb-4" />
                       <h3 className="text-lg font-medium text-gray-900 mb-2">Aucune carte {statusLabel}</h3>
                       <p className="text-gray-500">
@@ -504,115 +507,205 @@ export default function CardsPage() {
                 )
               }
 
-              return filteredCards.map((card) => (
-                <div key={card.id}>
-                  <Card className="overflow-hidden">
-                    {/* Card Visual */}
-                    <div className={`${getCardTypeColor(card.typCard)} p-6 text-white relative`}>
-                      <div className="flex justify-between items-start mb-4">
-                        <div className="text-sm opacity-90">{card.typCard}</div>
-                        {getStatusBadge(card.status)}
-                      </div>
+              const currentCard = filteredCards[currentCardIndex]
+              const gradients = [
+                "bg-gradient-to-br from-purple-600 via-purple-500 to-pink-500",
+                "bg-gradient-to-br from-blue-600 via-blue-500 to-teal-500",
+                "bg-gradient-to-br from-orange-600 via-red-500 to-pink-600",
+                "bg-gradient-to-br from-green-600 via-emerald-500 to-teal-500",
+                "bg-gradient-to-br from-indigo-600 via-purple-500 to-pink-500",
+              ]
+              const cardGradient = gradients[currentCardIndex % gradients.length]
 
-                      <div className="space-y-4">
-                        <div className="flex items-center justify-between">
-                          <div className="font-mono text-lg tracking-wider">
-                            {formatCardNumber(card.numCard, card.isNumberVisible || false)}
+              return (
+                <div className="space-y-6">
+                  {/* Carousel Container */}
+                  <div className="flex justify-center items-center gap-4">
+                    {/* Previous Button */}
+                    {filteredCards.length > 1 && (
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() =>
+                          setCurrentCardIndex((prev) => (prev === 0 ? filteredCards.length - 1 : prev - 1))
+                        }
+                        className="shrink-0"
+                      >
+                        <ChevronLeft className="h-5 w-5" />
+                      </Button>
+                    )}
+
+                    {/* Card Display */}
+                    <div className="w-full max-w-md">
+                      <Card className="overflow-hidden shadow-2xl">
+                        {/* Realistic Card Design with Gradient */}
+                        <div
+                          className={`${cardGradient} p-8 text-white relative min-h-[240px] flex flex-col justify-between`}
+                        >
+                          {/* Card Type and Status */}
+                          <div className="flex justify-between items-start">
+                            <div className="text-sm font-medium opacity-90 uppercase tracking-wide">
+                              {currentCard.typCard}
+                            </div>
+                            {getStatusBadge(currentCard.status)}
                           </div>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => toggleCardNumberVisibility(card.id)}
-                            className="text-white hover:bg-white/20"
-                          >
-                            {card.isNumberVisible ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                          </Button>
+
+                          {/* EMV Chip and Contactless */}
+                          <div className="flex items-center gap-4 my-4">
+                            <div className="w-12 h-10 bg-gradient-to-br from-yellow-300 to-yellow-500 rounded-md shadow-lg flex items-center justify-center">
+                              <div className="grid grid-cols-3 gap-[2px]">
+                                {[...Array(9)].map((_, i) => (
+                                  <div key={i} className="w-1 h-1 bg-yellow-900/30 rounded-full" />
+                                ))}
+                              </div>
+                            </div>
+                            <Wifi className="w-6 h-6 rotate-90 opacity-90" />
+                          </div>
+
+                          {/* Card Number */}
+                          <div className="space-y-6">
+                            <div className="flex items-center justify-between">
+                              <div className="font-mono text-xl tracking-[0.3em] font-light">
+                                {formatCardNumber(currentCard.numCard, currentCard.isNumberVisible || false)}
+                              </div>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => toggleCardNumberVisibility(currentCard.id)}
+                                className="text-white hover:bg-white/20 shrink-0"
+                              >
+                                {currentCard.isNumberVisible ? (
+                                  <EyeOff className="w-4 h-4" />
+                                ) : (
+                                  <Eye className="w-4 h-4" />
+                                )}
+                              </Button>
+                            </div>
+
+                            {/* Holder and Expiry */}
+                            <div className="flex justify-between items-end">
+                              <div>
+                                <div className="text-[10px] uppercase opacity-75 tracking-wider mb-1">Titulaire</div>
+                                <div className="font-medium uppercase tracking-wide text-sm">{currentCard.holder}</div>
+                              </div>
+                              <div className="text-right">
+                                <div className="text-[10px] uppercase opacity-75 tracking-wider mb-1">Expire</div>
+                                <div className="font-medium tracking-wider text-sm">{currentCard.dateExpiration}</div>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Decorative Pattern */}
+                          <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-3xl" />
+                          <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/5 rounded-full blur-2xl" />
                         </div>
 
-                        <div className="flex justify-between items-end">
-                          <div>
-                            <div className="text-xs opacity-75">Titulaire</div>
-                            <div className="font-medium">{card.holder}</div>
+                        {/* Card Actions */}
+                        <CardContent className="p-4 space-y-4 bg-white">
+                          <div className="flex gap-2">
+                            {currentCard.status?.toUpperCase() === "ACTIF" ? (
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                onClick={() => openConfirmDialog(currentCard.id, currentCard.status)}
+                                disabled={loadingCardId === currentCard.id}
+                                className="flex-1"
+                              >
+                                {loadingCardId === currentCard.id ? (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <>
+                                    <Lock className="mr-2 h-4 w-4" />
+                                    Bloquer
+                                  </>
+                                )}
+                              </Button>
+                            ) : currentCard.status?.toUpperCase() === "BLOCKED" ||
+                              currentCard.status?.toUpperCase() === "BLOQUE" ? (
+                              <Button
+                                variant="default"
+                                size="sm"
+                                onClick={() => openConfirmDialog(currentCard.id, currentCard.status)}
+                                disabled={loadingCardId === currentCard.id}
+                                className="flex-1"
+                              >
+                                {loadingCardId === currentCard.id ? (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <>
+                                    <Unlock className="mr-2 h-4 w-4" />
+                                    Débloquer
+                                  </>
+                                )}
+                              </Button>
+                            ) : null}
+                            <Dialog>
+                              <DialogTrigger asChild>
+                                <Button variant="outline" size="sm" onClick={() => setSelectedCard(currentCard)}>
+                                  <Settings className="w-4 h-4" />
+                                </Button>
+                              </DialogTrigger>
+                              <DialogContent className="max-w-2xl">
+                                <DialogHeader>
+                                  <DialogTitle>Gestion de la carte</DialogTitle>
+                                  <DialogDescription>
+                                    {currentCard.typCard} - {formatCardNumber(currentCard.numCard, false)}
+                                  </DialogDescription>
+                                </DialogHeader>
+                              </DialogContent>
+                            </Dialog>
                           </div>
-                          <div className="text-right">
-                            <div className="text-xs opacity-75">Expire</div>
-                            <div className="font-medium">{card.dateExpiration}</div>
-                          </div>
-                        </div>
-                      </div>
+                        </CardContent>
+                      </Card>
                     </div>
 
-                    {/* Card Info */}
-                    <CardContent className="p-4 space-y-4">
-                      {/* Action Buttons */}
-                      <div className="flex gap-2">
-                        {card.status?.toUpperCase() === "ACTIF" ? (
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            onClick={() => openConfirmDialog(card.id, card.status)}
-                            disabled={loadingCardId === card.id}
-                          >
-                            {loadingCardId === card.id ? (
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                            ) : (
-                              <>
-                                <Lock className="mr-2 h-4 w-4" />
-                                Bloquer
-                              </>
-                            )}
-                          </Button>
-                        ) : card.status?.toUpperCase() === "BLOCKED" || card.status?.toUpperCase() === "BLOQUE" ? (
-                          <Button
-                            variant="default"
-                            size="sm"
-                            onClick={() => openConfirmDialog(card.id, card.status)}
-                            disabled={loadingCardId === card.id}
-                          >
-                            {loadingCardId === card.id ? (
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                            ) : (
-                              <>
-                                <Unlock className="mr-2 h-4 w-4" />
-                                Débloquer
-                              </>
-                            )}
-                          </Button>
-                        ) : null}
-                        <Dialog>
-                          <DialogTrigger asChild>
-                            <Button variant="outline" size="sm" onClick={() => setSelectedCard(card)}>
-                              <Settings className="w-4 h-4" />
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent className="max-w-2xl">
-                            <DialogHeader>
-                              <DialogTitle>Gestion de la carte</DialogTitle>
-                              <DialogDescription>
-                                {card.typCard} - {formatCardNumber(card.numCard, false)}
-                              </DialogDescription>
-                            </DialogHeader>
-                          </DialogContent>
-                        </Dialog>
-                      </div>
-                    </CardContent>
-                  </Card>
+                    {/* Next Button */}
+                    {filteredCards.length > 1 && (
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() =>
+                          setCurrentCardIndex((prev) => (prev === filteredCards.length - 1 ? 0 : prev + 1))
+                        }
+                        className="shrink-0"
+                      >
+                        <ChevronRight className="h-5 w-5" />
+                      </Button>
+                    )}
+                  </div>
+
+                  {/* Pagination Dots */}
+                  {filteredCards.length > 1 && (
+                    <div className="flex justify-center gap-2">
+                      {filteredCards.map((_, index) => (
+                        <button
+                          key={index}
+                          onClick={() => setCurrentCardIndex(index)}
+                          className={`w-2 h-2 rounded-full transition-all ${
+                            index === currentCardIndex ? "bg-primary w-8" : "bg-gray-300 hover:bg-gray-400"
+                          }`}
+                        />
+                      ))}
+                    </div>
+                  )}
                 </div>
-              ))
+              )
             })()}
           </div>
         ) : (
-          <Card className="p-12 text-center">
-            <CreditCard className="w-12 h-12 mx-auto text-gray-400 mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Aucune carte trouvée</h3>
-            <p className="text-gray-500 mb-4">Vous n'avez pas encore de carte bancaire.</p>
-            <Link href="/cartes/demande">
-              <Button>
-                <Plus className="w-4 h-4 mr-2" />
-                Demander une carte
-              </Button>
-            </Link>
-          </Card>
+          <div className="flex justify-center py-12">
+            <Card className="w-full max-w-md p-12 text-center">
+              <CreditCard className="w-12 h-12 mx-auto text-gray-400 mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">Aucune carte trouvée</h3>
+              <p className="text-gray-500 mb-4">Vous n'avez pas encore de carte bancaire.</p>
+              <Link href="/cartes/demande">
+                <Button>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Demander une carte
+                </Button>
+              </Link>
+            </Card>
+          </div>
         )}
 
         {/* New Card Request Dialog */}
