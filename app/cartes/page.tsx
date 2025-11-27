@@ -427,6 +427,14 @@ export default function CardsPage() {
     setIsFlipped(!isFlipped)
   }
 
+  const changeCard = (newIndex: number) => {
+    setIsFading(true)
+    setTimeout(() => {
+      setCurrentCardIndex(newIndex)
+      setIsFading(false)
+    }, 300)
+  }
+
   const handleRefresh = async () => {
     setIsRefreshing(true)
     await loadCards()
@@ -554,12 +562,7 @@ export default function CardsPage() {
                         variant="outline"
                         size="icon"
                         onClick={() => {
-                          setIsFading(true)
-                          setTimeout(() => {
-                            setCurrentCardIndex((prev) => (prev === 0 ? filteredCards.length - 1 : prev - 1))
-                            setIsFlipped(false)
-                            setIsFading(false)
-                          }, 300)
+                          changeCard(currentCardIndex === 0 ? filteredCards.length - 1 : currentCardIndex - 1)
                         }}
                         className="shrink-0"
                       >
@@ -569,14 +572,14 @@ export default function CardsPage() {
 
                     <div className="w-full max-w-md perspective-1000 overflow-hidden">
                       <div
-                        className={`relative w-full transition-all duration-700 transform-style-3d cursor-pointer hover:scale-105 ${
-                          isFlipped ? "rotate-y-180" : ""
-                        } ${isFading ? "animate-fade-out" : "animate-fade-in"}`}
+                        className={`relative w-full transform-style-3d cursor-pointer hover:scale-105 transition-all duration-300 ${
+                          isFading ? "animate-fade-out" : "animate-fade-in"
+                        }`}
                         onClick={toggleFlip}
                         style={{
                           transformStyle: "preserve-3d",
-                          transition: "transform 0.7s, box-shadow 0.3s, scale 0.3s",
                           transform: isFlipped ? "rotateY(180deg)" : "rotateY(0deg)",
+                          transition: "transform 0.6s ease-in-out",
                         }}
                       >
                         {/* Front of Card */}
@@ -700,12 +703,7 @@ export default function CardsPage() {
                         variant="outline"
                         size="icon"
                         onClick={() => {
-                          setIsFading(true)
-                          setTimeout(() => {
-                            setCurrentCardIndex((prev) => (prev === filteredCards.length - 1 ? 0 : prev + 1))
-                            setIsFlipped(false)
-                            setIsFading(false)
-                          }, 300)
+                          changeCard(currentCardIndex === filteredCards.length - 1 ? 0 : currentCardIndex + 1)
                         }}
                         className="shrink-0"
                       >
@@ -716,21 +714,17 @@ export default function CardsPage() {
 
                   {/* Pagination Dots */}
                   {filteredCards.length > 1 && (
-                    <div className="flex justify-center gap-2 mt-4">
+                    <div className="flex justify-center gap-2 mt-6">
                       {filteredCards.map((_, index) => (
                         <button
                           key={index}
                           onClick={() => {
-                            setIsFading(true)
-                            setTimeout(() => {
-                              setCurrentCardIndex(index)
-                              setIsFlipped(false)
-                              setIsFading(false)
-                            }, 300)
+                            changeCard(index)
                           }}
-                          className={`w-2 h-2 rounded-full transition-all ${
-                            index === currentCardIndex ? "bg-primary w-6" : "bg-gray-300 hover:bg-gray-400"
+                          className={`h-2 rounded-full transition-all duration-300 ${
+                            index === currentCardIndex ? "w-8 bg-primary" : "w-2 bg-gray-300 hover:bg-gray-400"
                           }`}
+                          aria-label={`Aller à la carte ${index + 1}`}
                         />
                       ))}
                     </div>
