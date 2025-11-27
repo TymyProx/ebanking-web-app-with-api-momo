@@ -1,7 +1,9 @@
 "use client"
 
+import { DialogTrigger } from "@/components/ui/dialog"
+
 import { useEffect, useState } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
@@ -16,7 +18,6 @@ import {
   ShieldOff,
   Settings,
   AlertTriangle,
-  Phone,
   Eye,
   EyeOff,
   RefreshCw,
@@ -56,6 +57,7 @@ export default function CardsPage() {
   const [total, setTotal] = useState<number>(0)
   const [loading, setLoading] = useState<boolean>(false)
   const [error, setError] = useState<string | null>(null)
+  const [statusFilter, setStatusFilter] = useState<string>("all")
 
   const [accounts, setAccounts] = useState<Account[]>([])
   const [loadingAccounts, setLoadingAccounts] = useState<boolean>(false)
@@ -350,12 +352,22 @@ export default function CardsPage() {
 
       {/* Buttons */}
       <div className="flex items-center justify-end gap-3">
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={loadCards} disabled={loading}>
-            <RefreshCw className={`w-4 h-4 mr-2 ${loading ? "animate-spin" : ""}`} />
-            Actualiser
-          </Button>
-        </div>
+        <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="Filtrer par statut" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Tous les statuts</SelectItem>
+            <SelectItem value="ACTIF">Actif</SelectItem>
+            <SelectItem value="BLOCKED">Bloqué</SelectItem>
+            <SelectItem value="EXPIRED">Expiré</SelectItem>
+          </SelectContent>
+        </Select>
+
+        <Button variant="outline" onClick={loadCards} disabled={loading}>
+          <RefreshCw className={`w-4 h-4 mr-2 ${loading ? "animate-spin" : ""}`} />
+          Actualiser
+        </Button>
       </div>
 
       {/* Success/Error Messages */}
@@ -386,180 +398,169 @@ export default function CardsPage() {
         </div>
       ) : cards.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {cards.map((card) => (
-            <Card key={card.id} className="overflow-hidden">
-              {/* Card Visual */}
-              <div className={`${getCardTypeColor(card.typCard)} p-6 text-white relative`}>
-                <div className="flex justify-between items-start mb-4">
-                  <div className="text-sm opacity-90">{card.typCard}</div>
-                  {getStatusBadge(card.status)}
-                </div>
-
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div className="font-mono text-lg tracking-wider">
-                      {formatCardNumber(card.numCard, card.isNumberVisible || false)}
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => toggleCardNumberVisibility(card.id)}
-                      className="text-white hover:bg-white/20"
-                    >
-                      {card.isNumberVisible ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                    </Button>
+          {cards
+            .filter((card) => {
+              if (statusFilter === "all") return true
+              return card.status?.toUpperCase() === statusFilter.toUpperCase()
+            })
+            .map((card) => (
+              <Card key={card.id} className="overflow-hidden">
+                {/* Card Visual */}
+                <div className={`${getCardTypeColor(card.typCard)} p-6 text-white relative`}>
+                  <div className="flex justify-between items-start mb-4">
+                    <div className="text-sm opacity-90">{card.typCard}</div>
+                    {getStatusBadge(card.status)}
                   </div>
 
-                  <div className="flex justify-between items-end">
-                    <div>
-                      <div className="text-xs opacity-75">Titulaire</div>
-                      <div className="font-medium">{card.holder}</div>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-xs opacity-75">Expire</div>
-                      <div className="font-medium">{card.dateExpiration}</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Card Info */}
-              <CardContent className="p-4 space-y-4">
-                {/* <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <div className="text-gray-500">Plafond jour</div>
-                    <div className="font-medium">{formatAmount(card.dailyLimit || 0)} GNF</div>
-                  </div>
-                  <div>
-                    <div className="text-gray-500">Plafond mois</div>
-                    <div className="font-medium">{formatAmount(card.monthlyLimit || 0)} GNF</div>
-                  </div>
-                </div>
-
-                <div className="text-sm">
-                  <div className="text-gray-500">Dernière transaction</div>
-                  <div className="font-medium">{card.lastTransaction}</div>
-                </div> */}
-
-                {/* Action Buttons */}
-                {/* <div className="flex gap-2">
-                  {card.status?.toUpperCase() === "ACTIF" ? (
-                    <Button variant="outline" size="sm" className="flex-1 bg-transparent">
-                      <Lock className="w-4 h-4 mr-1" />
-                      Bloquer
-                    </Button>
-                  ) : (
-                    <Button variant="outline" size="sm" className="flex-1 bg-transparent">
-                      <Unlock className="w-4 h-4 mr-1" />
-                      Débloquer
-                    </Button>
-                  )}
-
-                  <Dialog>
-                    <DialogTrigger asChild>
-                      <Button variant="outline" size="sm" onClick={() => setSelectedCard(card)}>
-                        <Settings className="w-4 h-4" />
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div className="font-mono text-lg tracking-wider">
+                        {formatCardNumber(card.numCard, card.isNumberVisible || false)}
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => toggleCardNumberVisibility(card.id)}
+                        className="text-white hover:bg-white/20"
+                      >
+                        {card.isNumberVisible ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                       </Button>
-                    </DialogTrigger>
-                    <DialogContent className="max-w-2xl">
-                      <DialogHeader>
-                        <DialogTitle>Gestion de la carte</DialogTitle>
-                        <DialogDescription>
-                          {card.typCard} - {formatCardNumber(card.numCard, false)}
-                        </DialogDescription>
-                      </DialogHeader>
+                    </div>
 
-                      <Tabs defaultValue="limits" className="w-full">
-                        <TabsList className="grid w-full grid-cols-3">
-                          <TabsTrigger value="limits">Plafonds</TabsTrigger>
-                          <TabsTrigger value="security">Sécurité</TabsTrigger>
-                          <TabsTrigger value="history">Historique</TabsTrigger>
-                        </TabsList>
+                    <div className="flex justify-between items-end">
+                      <div>
+                        <div className="text-xs opacity-75">Titulaire</div>
+                        <div className="font-medium">{card.holder}</div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-xs opacity-75">Expire</div>
+                        <div className="font-medium">{card.dateExpiration}</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
 
-                        <TabsContent value="limits" className="space-y-4">
-                          <div className="grid grid-cols-2 gap-4">
-                            <div>
-                              <Label htmlFor="daily-limit">Plafond journalier (GNF)</Label>
-                              <Input
-                                id="daily-limit"
-                                type="number"
-                                defaultValue={card.dailyLimit}
-                                onChange={(e) => setTempLimits((prev) => ({ ...prev, daily: Number(e.target.value) }))}
-                              />
-                            </div>
-                            <div>
-                              <Label htmlFor="monthly-limit">Plafond mensuel (GNF)</Label>
-                              <Input
-                                id="monthly-limit"
-                                type="number"
-                                defaultValue={card.monthlyLimit}
-                                onChange={(e) =>
-                                  setTempLimits((prev) => ({ ...prev, monthly: Number(e.target.value) }))
-                                }
-                              />
-                            </div>
-                          </div>
-                          <Button className="w-full">
-                            <Edit className="w-4 h-4 mr-2" />
-                            Modifier les plafonds
-                          </Button>
-                        </TabsContent>
+                {/* Card Info */}
+                <CardContent className="p-4 space-y-4">
+                  {/* Action Buttons */}
+                  <div className="flex gap-2">
+                    {card.status?.toUpperCase() === "ACTIF" ? (
+                      <Button variant="outline" size="sm" className="flex-1 bg-transparent">
+                        <ShieldOff className="w-4 h-4 mr-1" />
+                        Bloquer
+                      </Button>
+                    ) : (
+                      <Button variant="outline" size="sm" className="flex-1 bg-transparent">
+                        <Shield className="w-4 h-4 mr-1" />
+                        Débloquer
+                      </Button>
+                    )}
 
-                        <TabsContent value="security" className="space-y-4">
-                          <div className="space-y-4">
-                            <div className="flex items-center justify-between">
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <Button variant="outline" size="sm" onClick={() => setSelectedCard(card)}>
+                          <Settings className="w-4 h-4" />
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="max-w-2xl">
+                        <DialogHeader>
+                          <DialogTitle>Gestion de la carte</DialogTitle>
+                          <DialogDescription>
+                            {card.typCard} - {formatCardNumber(card.numCard, false)}
+                          </DialogDescription>
+                        </DialogHeader>
+
+                        {/* <Tabs defaultValue="limits" className="w-full">
+                          <TabsList className="grid w-full grid-cols-3">
+                            <TabsTrigger value="limits">Plafonds</TabsTrigger>
+                            <TabsTrigger value="security">Sécurité</TabsTrigger>
+                            <TabsTrigger value="history">Historique</TabsTrigger>
+                          </TabsList>
+
+                          <TabsContent value="limits" className="space-y-4">
+                            <div className="grid grid-cols-2 gap-4">
                               <div>
-                                <div className="font-medium">Notifications SMS</div>
-                                <div className="text-sm text-gray-500">Recevoir des SMS pour chaque transaction</div>
+                                <Label htmlFor="daily-limit">Plafond journalier (GNF)</Label>
+                                <Input
+                                  id="daily-limit"
+                                  type="number"
+                                  defaultValue={card.dailyLimit}
+                                  onChange={(e) => setTempLimits((prev) => ({ ...prev, daily: Number(e.target.value) }))}
+                                />
                               </div>
-                              <Switch defaultChecked />
-                            </div>
-                            <div className="flex items-center justify-between">
                               <div>
-                                <div className="font-medium">Paiements en ligne</div>
-                                <div className="text-sm text-gray-500">Autoriser les achats sur internet</div>
+                                <Label htmlFor="monthly-limit">Plafond mensuel (GNF)</Label>
+                                <Input
+                                  id="monthly-limit"
+                                  type="number"
+                                  defaultValue={card.monthlyLimit}
+                                  onChange={(e) =>
+                                    setTempLimits((prev) => ({ ...prev, monthly: Number(e.target.value) }))
+                                  }
+                                />
                               </div>
-                              <Switch defaultChecked />
                             </div>
-                            <div className="flex items-center justify-between">
-                              <div>
-                                <div className="font-medium">Paiements à l'étranger</div>
-                                <div className="text-sm text-gray-500">Autoriser les transactions hors Guinée</div>
-                              </div>
-                              <Switch />
-                            </div>
-                          </div>
-                        </TabsContent>
+                            <Button className="w-full">
+                              <Edit className="w-4 h-4 mr-2" />
+                              Modifier les plafonds
+                            </Button>
+                          </TabsContent>
 
-                        <TabsContent value="history" className="space-y-4">
-                          <div className="space-y-3">
-                            {[
-                              { date: "2024-01-15", description: "Achat Carrefour", amount: -45000, type: "debit" },
-                              { date: "2024-01-14", description: "Retrait DAB", amount: -50000, type: "withdrawal" },
-                              { date: "2024-01-13", description: "Virement reçu", amount: 200000, type: "credit" },
-                            ].map((transaction, index) => (
-                              <div key={index} className="flex items-center justify-between p-3 border rounded">
+                          <TabsContent value="security" className="space-y-4">
+                            <div className="space-y-4">
+                              <div className="flex items-center justify-between">
                                 <div>
-                                  <div className="font-medium">{transaction.description}</div>
-                                  <div className="text-sm text-gray-500">{transaction.date}</div>
+                                  <div className="font-medium">Notifications SMS</div>
+                                  <div className="text-sm text-gray-500">Recevoir des SMS pour chaque transaction</div>
                                 </div>
-                                <div
-                                  className={`font-medium ${transaction.amount > 0 ? "text-green-600" : "text-red-600"}`}
-                                >
-                                  {transaction.amount > 0 ? "+" : ""}
-                                  {formatAmount(Math.abs(transaction.amount))} GNF
-                                </div>
+                                <Switch defaultChecked />
                               </div>
-                            ))}
-                          </div>
-                        </TabsContent>
-                      </Tabs>
-                    </DialogContent>
-                  </Dialog>
-                </div> */}
-              </CardContent>
-            </Card>
-          ))}
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <div className="font-medium">Paiements en ligne</div>
+                                  <div className="text-sm text-gray-500">Autoriser les achats sur internet</div>
+                                </div>
+                                <Switch defaultChecked />
+                              </div>
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <div className="font-medium">Paiements à l'étranger</div>
+                                  <div className="text-sm text-gray-500">Autoriser les transactions hors Guinée</div>
+                                </div>
+                                <Switch />
+                              </div>
+                            </div>
+                          </TabsContent>
+
+                          <TabsContent value="history" className="space-y-4">
+                            <div className="space-y-3">
+                              {[
+                                { date: "2024-01-15", description: "Achat Carrefour", amount: -45000, type: "debit" },
+                                { date: "2024-01-14", description: "Retrait DAB", amount: -50000, type: "withdrawal" },
+                                { date: "2024-01-13", description: "Virement reçu", amount: 200000, type: "credit" },
+                              ].map((transaction, index) => (
+                                <div key={index} className="flex items-center justify-between p-3 border rounded">
+                                  <div>
+                                    <div className="font-medium">{transaction.description}</div>
+                                    <div className="text-sm text-gray-500">{transaction.date}</div>
+                                  </div>
+                                  <div
+                                    className={`font-medium ${transaction.amount > 0 ? "text-green-600" : "text-red-600"}`}
+                                  >
+                                    {transaction.amount > 0 ? "+" : ""}
+                                    {formatAmount(Math.abs(transaction.amount))} GNF
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </TabsContent>
+                        </Tabs> */}
+                      </DialogContent>
+                    </Dialog>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
         </div>
       ) : (
         <Card className="p-12 text-center">
@@ -755,8 +756,7 @@ export default function CardsPage() {
             </div>
           </CardContent>
         </Card>
-        <Card>
-        </Card>
+        <Card></Card>
       </div>
     </div>
   )
