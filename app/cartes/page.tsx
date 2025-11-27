@@ -42,7 +42,6 @@ import {
   Shield,
   AlertTriangle,
   Clock,
-  ShieldOff,
 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { toggleCardStatus } from "@/actions/card"
@@ -365,6 +364,7 @@ export default function CardsPage() {
   }
 
   function toggleCardNumberVisibility(cardId: string) {
+    console.log("[v0] Toggling card number visibility for card:", cardId) // Debug log
     setCards((prev) =>
       prev.map((card) => (card.id === cardId ? { ...card, isNumberVisible: !card.isNumberVisible } : card)),
     )
@@ -424,10 +424,12 @@ export default function CardsPage() {
   }
 
   const toggleFlip = () => {
+    console.log("[v0] Toggling card flip") // Debug log
     setIsFlipped(!isFlipped)
   }
 
   const changeCard = (newIndex: number) => {
+    console.log("[v0] Changing card to index:", newIndex) // Debug log
     setIsFading(true)
     setTimeout(() => {
       setCurrentCardIndex(newIndex)
@@ -619,7 +621,9 @@ export default function CardsPage() {
                                   variant="ghost"
                                   size="sm"
                                   onClick={(e) => {
+                                    console.log("[v0] Eye button clicked") // Debug log
                                     e.stopPropagation() // Prevent card flip when clicking visibility toggle
+                                    e.preventDefault() // Also prevent default action
                                     toggleCardNumberVisibility(currentCard.id)
                                   }}
                                   className="text-white hover:bg-white/20 shrink-0"
