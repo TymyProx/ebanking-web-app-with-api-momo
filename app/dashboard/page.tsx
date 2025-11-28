@@ -1,7 +1,7 @@
 import Link from "next/link"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Eye, Send, Receipt, ArrowUpRight, ArrowDownRight, Users } from "lucide-react"
+import { Eye, Send, Receipt, ArrowUpRight, ArrowDownRight, Users } from 'lucide-react'
 import { getUserTransactions } from "@/app/transfers/mes-virements/actions"
 import { getAccounts } from "@/app/accounts/actions"
 import { AccountsCarousel } from "@/components/accounts-carousel"
@@ -79,64 +79,73 @@ async function RecentTransactions() {
 
   return (
     <Card className="border-0 shadow-lg">
-      <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle className="font-heading text-xl">Dernières transactions</CardTitle>
+      {/* Reduced header padding and title size */}
+      <CardHeader className="flex flex-row items-center justify-between pb-3">
+        <CardTitle className="font-heading text-lg">Dernières transactions</CardTitle>
         <Link
           href="/transfers/mes-virements"
-          className="text-sm text-primary hover:text-primary/80 font-medium flex items-center gap-1 transition-colors"
+          className="text-xs text-primary hover:text-primary/80 font-medium flex items-center gap-1 transition-colors"
         >
           Voir tout
-          <ArrowUpRight className="h-4 w-4" />
+          <ArrowUpRight className="h-3.5 w-3.5" />
         </Link>
       </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
+      {/* Reduced card content padding */}
+      <CardContent className="pt-0">
+        {/* Reduced space between transactions */}
+        <div className="space-y-2">
           {transactions.length > 0 ? (
-            transactions.slice(0, 3).map((transaction: any, index: number) => {
+            transactions.slice(0, 4).map((transaction: any, index: number) => {
               const formattedTransaction = formatTransaction(transaction, accounts)
               return (
                 <div
                   key={transaction.txnId || index}
-                  className="flex items-center justify-between p-4 bg-gradient-to-r from-muted/50 to-muted/30 rounded-xl border border-border/50 hover:shadow-md transition-all duration-200"
+                
+                  className="flex items-center justify-between p-3 bg-gradient-to-r from-muted/50 to-muted/30 rounded-xl border border-border/50 hover:shadow-md transition-all duration-200"
                 >
-                  <div className="flex items-center space-x-4">
+                  {/* Reduced space between icon and text */}
+                  <div className="flex items-center space-x-3">
+                    {/* Reduced icon container size */}
                     <div
-                      className={`w-12 h-12 rounded-full flex items-center justify-center ${
+                      className={`w-9 h-9 rounded-full flex items-center justify-center ${
                         formattedTransaction.rawAmount < 0
                           ? "bg-red-500/20 text-red-600"
                           : "bg-green-500/20 text-green-600"
                       }`}
                     >
+                      {/* Reduced icon size */}
                       {formattedTransaction.rawAmount < 0 ? (
-                        <ArrowUpRight className="w-5 h-5" />
+                        <ArrowUpRight className="w-4 h-4" />
                       ) : (
-                        <ArrowDownRight className="w-5 h-5" />
+                        <ArrowDownRight className="w-4 h-4" />
                       )}
                     </div>
                     <div>
-                      <p className="font-medium text-sm">{formattedTransaction.type}</p>
-                      <p className="text-sm text-muted-foreground">{formattedTransaction.from}</p>
+                      {/* Reduced text size */}
+                      <p className="font-medium text-xs">{formattedTransaction.type}</p>
+                      <p className="text-xs text-muted-foreground">{formattedTransaction.from}</p>
                     </div>
                   </div>
                   <div className="text-right">
+                    {/* Reduced amount and date text size */}
                     <p
-                      className={`font-semibold text-sm ${
+                      className={`font-semibold text-xs ${
                         formattedTransaction.rawAmount < 0 ? "text-red-600" : "text-green-600"
                       }`}
                     >
                       {formattedTransaction.amount}
                     </p>
-                    <p className="text-sm text-muted-foreground">{formattedTransaction.date}</p>
+                    <p className="text-xs text-muted-foreground">{formattedTransaction.date}</p>
                   </div>
                 </div>
               )
             })
           ) : (
-            <div className="text-center py-12 text-muted-foreground">
-              <div className="p-4 rounded-full bg-muted/50 mx-auto mb-4 w-fit">
-                <Receipt className="h-6 w-6" />
+            <div className="text-center py-8 text-muted-foreground">
+              <div className="p-3 rounded-full bg-muted/50 mx-auto mb-3 w-fit">
+                <Receipt className="h-5 w-5" />
               </div>
-              <p className="text-sm">Aucune transaction récente</p>
+              <p className="text-xs">Aucune transaction récente</p>
             </div>
           )}
         </div>
