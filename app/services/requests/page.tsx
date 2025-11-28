@@ -785,7 +785,7 @@ export default function ServiceRequestsPage() {
               <Alert className="border-green-200 bg-green-50">
                 <CheckCircle className="h-4 w-4 text-green-600" />
                 <AlertDescription className="text-green-800">
-                  ✅ Votre demande de chéquier a été soumise avec succès ! Référence: {checkbookSubmitState.reference}
+                  Votre demande de chéquier a été soumise avec succès ! Référence: {checkbookSubmitState.reference}
                 </AlertDescription>
               </Alert>
             )}
@@ -965,7 +965,7 @@ export default function ServiceRequestsPage() {
               <Alert className="border-green-200 bg-green-50">
                 <CheckCircle className="h-4 w-4 text-green-600" />
                 <AlertDescription className="text-green-800">
-                  ✅ Votre demande de crédit a été envoyée avec succès. Référence: {creditSubmitState.reference}.
+                  Votre demande de crédit a été envoyée avec succès. Référence: {creditSubmitState.reference}.
                   Réponse sous {selectedServiceData?.processingTime}.
                 </AlertDescription>
               </Alert>
@@ -1270,7 +1270,7 @@ export default function ServiceRequestsPage() {
               <Alert className="border-green-200 bg-green-50">
                 <CheckCircle className="h-4 w-4 text-green-600" />
                 <AlertDescription className="text-green-800">
-                  ✅ Votre e-demande a été envoyée avec succès. Référence: {eDemandeSubmitState.reference}. Réponse sous{" "}
+                  Votre e-demande a été envoyée avec succès. Référence: {eDemandeSubmitState.reference}. Réponse sous{" "}
                   {selectedServiceData?.processingTime}.
                 </AlertDescription>
               </Alert>
@@ -1456,7 +1456,7 @@ export default function ServiceRequestsPage() {
                   <Alert className="border-green-200 bg-green-50">
                     <CheckCircle className="h-4 w-4 text-green-600" />
                     <AlertDescription className="text-green-800">
-                      ✅ Votre demande a été envoyée avec succès. Référence: {submitState.reference}. Réponse sous{" "}
+                      Votre demande a été envoyée avec succès. Référence: {submitState.reference}. Réponse sous{" "}
                       {selectedServiceData?.processingTime}.
                     </AlertDescription>
                   </Alert>
