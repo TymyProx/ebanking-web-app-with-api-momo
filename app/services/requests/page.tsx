@@ -21,8 +21,6 @@ import {
   AlertCircle,
   Send,
   Eye,
-  Banknote,
-  Shield,
   Plus,
   Search,
   DollarSign,
@@ -817,13 +815,12 @@ export default function ServiceRequestsPage() {
               <div className="space-y-2">
                 <Label htmlFor="intitulecompte">Sélectionner un compte *</Label>
                 <Select
-                  value={formData.numcompteId || ""}
+                  value={formData.numcompte || ""}
                   onValueChange={(value) => {
-                    const selectedAccount = accounts.find((acc) => acc.id === value)
+                    const selectedAccount = accounts.find((acc) => acc.number === value)
                     if (selectedAccount) {
-                      handleInputChange("accountId", selectedAccount.id)
-                      handleInputChange("intitulecompte", selectedAccount.name)
                       handleInputChange("numcompte", selectedAccount.number)
+                      handleInputChange("intitulecompte", selectedAccount.name)
                     }
                   }}
                 >
@@ -841,7 +838,7 @@ export default function ServiceRequestsPage() {
                       </SelectItem>
                     ) : (
                       accounts.map((account) => (
-                        <SelectItem key={account.id} value={account.id}>
+                        <SelectItem key={account.id} value={account.number}>
                           <div className="flex flex-col">
                             <span className="font-medium">{account.name}</span>
                             <span className="text-sm text-gray-500">
@@ -860,102 +857,93 @@ export default function ServiceRequestsPage() {
                 </Select>
               </div>
 
-              <div>
-                <Label htmlFor="numcompte">Numéro de compte *</Label>
-                <Input
-                  id="numcompte"
-                  name="numcompte"
-                  type="text"
-                  value={formData.numcompte || ""}
-                  onChange={(e) => handleInputChange("numcompte", e.target.value)}
-                  placeholder="Ex: 000123456789"
-                  required
-                  readOnly
-                  className="bg-gray-50"
-                />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="nbrechequier">Nombre de chéquiers *</Label>
+                  <Input
+                    id="nbrechequier"
+                    name="nbrechequier"
+                    type="number"
+                    min="1"
+                    max="10"
+                    value={formData.nbrechequier || ""}
+                    onChange={(e) => handleInputChange("nbrechequier", e.target.value)}
+                    placeholder="Ex: 2"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="nbrefeuille">Nombre de feuillets *</Label>
+                  <Select
+                    value={formData.nbrefeuille || ""}
+                    onValueChange={(value) => handleInputChange("nbrefeuille", value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Choisir" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="25">25 feuillets</SelectItem>
+                      <SelectItem value="50">50 feuillets</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
 
-              <div>
-                <Label htmlFor="dateorder">Date de commande *</Label>
-                <Input
-                  id="dateorder"
-                  name="dateorder"
-                  type="date"
-                  value={formData.dateorder || new Date().toISOString().split("T")[0]}
-                  onChange={(e) => handleInputChange("dateorder", e.target.value)}
-                  required
-                />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
+                <div>
+                  <Label htmlFor="typeCheque">Type de chèque *</Label>
+                  <Select
+                    value={formData.typeCheque || ""}
+                    onValueChange={(value) => handleInputChange("typeCheque", value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Choisir le type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Standard">Standard</SelectItem>
+                      <SelectItem value="Certifié">Certifié</SelectItem>
+                      <SelectItem value="Barré">Barré</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="flex items-center space-x-2 pb-2">
+                  <Checkbox
+                    id="talonCheque"
+                    checked={formData.talonCheque || false}
+                    onCheckedChange={(checked) => handleInputChange("talonCheque", checked)}
+                  />
+                  <Label htmlFor="talonCheque" className="text-sm font-normal">
+                    Avec talon de chèque
+                  </Label>
+                </div>
               </div>
 
-              <div>
-                <Label htmlFor="nbrechequier">Nombre de chéquiers *</Label>
-                <Input
-                  id="nbrechequier"
-                  name="nbrechequier"
-                  type="number"
-                  min="1"
-                  max="10"
-                  value={formData.nbrechequier || ""}
-                  onChange={(e) => handleInputChange("nbrechequier", e.target.value)}
-                  placeholder="Ex: 2"
-                  required
-                />
-              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="commentaire">Commentaire</Label>
+                  <Textarea
+                    id="commentaire"
+                    name="commentaire"
+                    value={formData.commentaire || ""}
+                    onChange={(e) => handleInputChange("commentaire", e.target.value)}
+                    placeholder="Commentaire optionnel..."
+                    rows={3}
+                  />
+                </div>
 
-              <div>
-                <Label htmlFor="nbrefeuille">Nombre de feuillets par chéquier *</Label>
-                <Select
-                  value={formData.nbrefeuille || ""}
-                  onValueChange={(value) => handleInputChange("nbrefeuille", value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Choisir le nombre de feuillets" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="25">25 feuillets</SelectItem>
-                    <SelectItem value="50">50 feuillets</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label htmlFor="typeCheque">Type de chèque *</Label>
-                <Select
-                  value={formData.typeCheque || ""}
-                  onValueChange={(value) => handleInputChange("typeCheque", value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Choisir le type de chèque" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Standard">Standard</SelectItem>
-                    <SelectItem value="Certifié">Certifié</SelectItem>
-                    <SelectItem value="Barré">Barré</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="talonCheque"
-                  checked={formData.talonCheque || false}
-                  onCheckedChange={(checked) => handleInputChange("talonCheque", checked)}
-                />
-                <Label htmlFor="talonCheque" className="text-sm font-normal">
-                  Avec talon de chèque
-                </Label>
-              </div>
-
-              <div>
-                <Label htmlFor="commentaire">Commentaire</Label>
-                <Textarea
-                  id="commentaire"
-                  name="commentaire"
-                  value={formData.commentaire || ""}
-                  onChange={(e) => handleInputChange("commentaire", e.target.value)}
-                  placeholder="Commentaire optionnel..."
-                  rows={3}
-                />
+                <div>
+                  <Label htmlFor="dateorder">Date de commande *</Label>
+                  <Input
+                    id="dateorder"
+                    name="dateorder"
+                    type="date"
+                    value={formData.dateorder || new Date().toISOString().split("T")[0]}
+                    onChange={(e) => handleInputChange("dateorder", e.target.value)}
+                    required
+                  />
+                </div>
               </div>
 
               <div className="flex items-center space-x-2">
@@ -1415,7 +1403,7 @@ export default function ServiceRequestsPage() {
             </CardContent>
           </Card>
 
-           {checkbookSubmitState?.success && (
+          {checkbookSubmitState?.success && (
             <div className="px-6 pb-4">
               <Alert className="border-green-200 bg-green-50">
                 <CheckCircle className="h-4 w-4 text-green-600" />
