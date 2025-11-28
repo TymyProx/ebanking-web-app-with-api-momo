@@ -617,6 +617,7 @@ export default function ServiceRequestsPage() {
     ) {
       console.log("[v0] Validation échouée - champs manquants")
       setCreditSubmitState({ error: "Veuillez remplir tous les champs obligatoires" })
+      window.scrollTo({ top: 0, behavior: "smooth" })
       return
     }
 
@@ -640,6 +641,7 @@ export default function ServiceRequestsPage() {
         success: true,
         reference: result.reference || "CRD-" + new Date().getFullYear() + "-" + String(Date.now()).slice(-3),
       })
+      window.scrollTo({ top: 0, behavior: "smooth" })
       // Réinitialiser le formulaire après succès
       setFormData({})
       // Recharger les demandes
@@ -649,6 +651,7 @@ export default function ServiceRequestsPage() {
     } catch (error: any) {
       console.log("[v0] Erreur lors de la soumission:", error.message)
       setCreditSubmitState({ error: error.message || "Une erreur s'est produite lors de la soumission" })
+      window.scrollTo({ top: 0, behavior: "smooth" })
     } finally {
       setIsCreditSubmitting(false)
     }
@@ -666,6 +669,7 @@ export default function ServiceRequestsPage() {
       !formData.terms
     ) {
       setCheckbookSubmitState({ error: "Veuillez remplir tous les champs obligatoires" })
+      window.scrollTo({ top: 0, behavior: "smooth" })
       return
     }
 
@@ -705,6 +709,7 @@ export default function ServiceRequestsPage() {
         success: true,
         reference: result.reference || "CHQ-" + new Date().getFullYear() + "-" + String(Date.now()).slice(-3),
       })
+      window.scrollTo({ top: 0, behavior: "smooth" })
       // Réinitialiser le formulaire après succès
       setFormData({})
       // Recharger les demandes
@@ -713,6 +718,7 @@ export default function ServiceRequestsPage() {
       }
     } catch (error: any) {
       setCheckbookSubmitState({ error: error.message || "Une erreur s'est produite lors de la soumission" })
+      window.scrollTo({ top: 0, behavior: "smooth" })
     } finally {
       setIsCheckbookSubmitting(false)
     }
@@ -775,6 +781,22 @@ export default function ServiceRequestsPage() {
       case "checkbook":
         return (
           <form onSubmit={handleCheckbookSubmit} className="space-y-4">
+            {checkbookSubmitState?.success && (
+              <Alert className="border-green-200 bg-green-50">
+                <CheckCircle className="h-4 w-4 text-green-600" />
+                <AlertDescription className="text-green-800">
+                  ✅ Votre demande de chéquier a été soumise avec succès ! Référence: {checkbookSubmitState.reference}
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {checkbookSubmitState?.error && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>❌ {checkbookSubmitState.error}</AlertDescription>
+              </Alert>
+            )}
+
             <div className="space-y-2">
               <Label htmlFor="intitulecompte">Sélectionner un compte *</Label>
               <Select
@@ -919,22 +941,6 @@ export default function ServiceRequestsPage() {
               />
             </div>
 
-            {checkbookSubmitState?.success && (
-              <Alert className="border-green-200 bg-green-50">
-                <CheckCircle className="h-4 w-4 text-green-600" />
-                <AlertDescription className="text-green-800">
-                  ✅ Votre demande de chéquier a été soumise avec succès ! Référence: {checkbookSubmitState.reference}
-                </AlertDescription>
-              </Alert>
-            )}
-
-            {checkbookSubmitState?.error && (
-              <Alert variant="destructive">
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>❌ {checkbookSubmitState.error}</AlertDescription>
-              </Alert>
-            )}
-
             <div className="flex items-center space-x-2">
               <Checkbox
                 id="checkbook_terms"
@@ -955,6 +961,25 @@ export default function ServiceRequestsPage() {
       case "credit":
         return (
           <form onSubmit={handleCreditSubmit} className="space-y-4">
+            {creditSubmitState?.success && (
+              <Alert className="border-green-200 bg-green-50">
+                <CheckCircle className="h-4 w-4 text-green-600" />
+                <AlertDescription className="text-green-800">
+                  ✅ Votre demande de crédit a été envoyée avec succès. Référence: {creditSubmitState.reference}.
+                  Réponse sous {selectedServiceData?.processingTime}.
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {creditSubmitState?.error && (
+              <Alert className="border-red-200 bg-red-50">
+                <AlertCircle className="h-4 w-4 text-red-600" />
+                <AlertDescription className="text-red-800">
+                  ❌ Une erreur est survenue: {creditSubmitState.error}. Veuillez réessayer.
+                </AlertDescription>
+              </Alert>
+            )}
+
             <div className="space-y-2">
               <Label htmlFor="intitulecompte">Sélectionner un compte *</Label>
               <Select
@@ -1142,26 +1167,6 @@ export default function ServiceRequestsPage() {
               </div>
             </div>
 
-            {/* Feedback Messages */}
-            {creditSubmitState?.success && (
-              <Alert className="border-green-200 bg-green-50">
-                <CheckCircle className="h-4 w-4 text-green-600" />
-                <AlertDescription className="text-green-800">
-                  ✅ Votre demande de crédit a été envoyée avec succès. Référence: {creditSubmitState.reference}.
-                  Réponse sous {selectedServiceData?.processingTime}.
-                </AlertDescription>
-              </Alert>
-            )}
-
-            {creditSubmitState?.error && (
-              <Alert className="border-red-200 bg-red-50">
-                <AlertCircle className="h-4 w-4 text-red-600" />
-                <AlertDescription className="text-red-800">
-                  ❌ Une erreur est survenue: {creditSubmitState.error}. Veuillez réessayer.
-                </AlertDescription>
-              </Alert>
-            )}
-
             <div className="flex items-start space-x-2">
               <Checkbox
                 id="credit_terms"
@@ -1288,11 +1293,9 @@ export default function ServiceRequestsPage() {
   }
 
   return (
-   <div className="mt-6 space-y-6">
+    <div className="mt-6 space-y-6">
       <div className="space-y-2">
-        <h1 className="text-3xl font-bold text-primary">
-          E-Services
-        </h1>
+        <h1 className="text-3xl font-bold text-primary">E-Services</h1>
         <p className="text-sm text-muted-foreground">Faites vos demandes de services en ligne</p>
       </div>
 
