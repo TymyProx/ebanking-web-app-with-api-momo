@@ -86,7 +86,7 @@ export default function CheckDepositPage() {
         <h1 className="text-3xl font-heading font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
           Remise de chèque
         </h1>
-        <p className="text-muted-foreground text-lg">Déposez vos chèques en toute sécurité avec une photo de qualité</p>
+        <p className="text-sm text-muted-foreground">Déposez vos chèques en toute sécurité avec une photo de qualité</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

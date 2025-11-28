@@ -4,337 +4,432 @@ import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { MapPin, Phone, Clock, Navigation, Search, Filter } from "lucide-react"
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { MapPin, Search, Filter, ExternalLink, List, Map, AlertCircle, Loader2, Settings } from "lucide-react"
+import { useAgences, type Agence } from "@/hooks/use-agences"
+import { AgenceCard } from "@/components/agence-card"
+import { AgenceMap } from "@/components/agence-map"
 import { toast } from "@/hooks/use-toast"
-
-interface Agence {
-  id: string
-  nom: string
-  adresse: string
-  commune: string
-  telephone: string
-  email: string
-  horaires: {
-    semaine: string
-    samedi: string
-    dimanche: string
-  }
-  services: string[]
-  coordonnees: {
-    lat: number
-    lng: number
-  }
-  distance?: number
-}
-
-const agences: Agence[] = [
-  {
-    id: "1",
-    nom: "BNG Plateau",
-    adresse: "Avenue Chardy, Immeuble SCIAM, Plateau",
-    commune: "Plateau",
-    telephone: "+225 20 20 20 20",
-    email: "plateau@bng.ci",
-    horaires: {
-      semaine: "8h00 - 17h00",
-      samedi: "8h00 - 12h00",
-      dimanche: "Fermé",
-    },
-    services: ["Guichet automatique", "Conseiller clientèle", "Coffre-fort", "Change"],
-    coordonnees: { lat: 5.3196, lng: -4.0231 },
-  },
-  {
-    id: "2",
-    nom: "BNG Cocody",
-    adresse: "Boulevard Lagunaire, Riviera 2, Cocody",
-    commune: "Cocody",
-    telephone: "+225 20 20 20 21",
-    email: "cocody@bng.ci",
-    horaires: {
-      semaine: "8h00 - 17h00",
-      samedi: "8h00 - 12h00",
-      dimanche: "Fermé",
-    },
-    services: ["Guichet automatique", "Conseiller clientèle", "Crédit immobilier"],
-    coordonnees: { lat: 5.3441, lng: -3.9921 },
-  },
-  {
-    id: "3",
-    nom: "BNG Marcory",
-    adresse: "Boulevard VGE, Zone 4C, Marcory",
-    commune: "Marcory",
-    telephone: "+225 20 20 20 22",
-    email: "marcory@bng.ci",
-    horaires: {
-      semaine: "8h00 - 17h00",
-      samedi: "8h00 - 12h00",
-      dimanche: "Fermé",
-    },
-    services: ["Guichet automatique", "Conseiller clientèle", "Western Union"],
-    coordonnees: { lat: 5.2847, lng: -4.0162 },
-  },
-  {
-    id: "4",
-    nom: "BNG Adjamé",
-    adresse: "Avenue 13, près du marché d'Adjamé",
-    commune: "Adjamé",
-    telephone: "+225 20 20 20 23",
-    email: "adjame@bng.ci",
-    horaires: {
-      semaine: "8h00 - 17h00",
-      samedi: "8h00 - 12h00",
-      dimanche: "Fermé",
-    },
-    services: ["Guichet automatique", "Conseiller clientèle", "Microfinance"],
-    coordonnees: { lat: 5.378, lng: -4.0164 },
-  },
-  {
-    id: "5",
-    nom: "BNG Treichville",
-    adresse: "Avenue 7, Boulevard de la République, Treichville",
-    commune: "Treichville",
-    telephone: "+225 20 20 20 24",
-    email: "treichville@bng.ci",
-    horaires: {
-      semaine: "8h00 - 17h00",
-      samedi: "8h00 - 12h00",
-      dimanche: "Fermé",
-    },
-    services: ["Guichet automatique", "Conseiller clientèle", "Change", "Transfert international"],
-    coordonnees: { lat: 5.2944, lng: -4.0267 },
-  },
-]
+import { config } from "@/lib/config"
+import AuthService, { type User } from "@/lib/auth-service"
 
 export default function AgencesPage() {
-  const [filteredAgences, setFilteredAgences] = useState<Agence[]>(agences)
+  // État de l'utilisateur et des rôles
+  const [currentUser, setCurrentUser] = useState<User | null>(null)
+  const [userRole, setUserRole] = useState<string | null>(null)
+  const [isNetworkManager, setIsNetworkManager] = useState(false)
+
+  // Vue active (liste ou carte)
+  const [activeView, setActiveView] = useState<"list" | "map">("list")
+
+  // Filtres
   const [searchTerm, setSearchTerm] = useState("")
-  const [selectedCommune, setSelectedCommune] = useState<string>("all")
-  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null)
-  const [isLoadingLocation, setIsLoadingLocation] = useState(false)
+  const [selectedCity, setSelectedCity] = useState<string>("all")
+  const [selectedCountry, setSelectedCountry] = useState<string>("all")
+  const [selectedStatus, setSelectedStatus] = useState<"all" | "open" | "closed">("all")
+  const [currentPage, setCurrentPage] = useState(1)
 
-  const communes = Array.from(new Set(agences.map((a) => a.commune))).sort()
+  // Hook personnalisé pour les agences
+  const {
+    agences,
+    loading,
+    error,
+    totalCount,
+    totalPages,
+    currentPage: page,
+    setQuery,
+  } = useAgences({
+    search: searchTerm,
+    city: selectedCity,
+    country: selectedCountry,
+    status: selectedStatus,
+    page: currentPage,
+    limit: 25,
+  })
 
+  // Agence sélectionnée sur la carte
+  const [selectedAgence, setSelectedAgence] = useState<Agence | null>(null)
+
+  // Charger les informations utilisateur
   useEffect(() => {
-    let filtered = agences
+    const user = AuthService.getCurrentUser()
+    setCurrentUser(user)
 
-    if (searchTerm) {
-      filtered = filtered.filter(
-        (agence) =>
-          agence.nom.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          agence.adresse.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          agence.commune.toLowerCase().includes(searchTerm.toLowerCase()),
-      )
-    }
+    if (user && user.tenants && user.tenants.length > 0) {
+      const tenant = user.tenants.find((t) => t.tenantId === config.TENANT_ID)
+      if (tenant && tenant.roles) {
+        const roles = tenant.roles
+        setUserRole(roles[0] || "Client")
 
-    if (selectedCommune !== "all") {
-      filtered = filtered.filter((agence) => agence.commune === selectedCommune)
-    }
-
-    // Calculer les distances si la géolocalisation est disponible
-    if (userLocation) {
-      filtered = filtered
-        .map((agence) => ({
-          ...agence,
-          distance: calculateDistance(userLocation, agence.coordonnees),
-        }))
-        .sort((a, b) => (a.distance || 0) - (b.distance || 0))
-    }
-
-    setFilteredAgences(filtered)
-  }, [searchTerm, selectedCommune, userLocation])
-
-  const calculateDistance = (pos1: { lat: number; lng: number }, pos2: { lat: number; lng: number }) => {
-    const R = 6371 // Rayon de la Terre en km
-    const dLat = ((pos2.lat - pos1.lat) * Math.PI) / 180
-    const dLon = ((pos2.lng - pos1.lng) * Math.PI) / 180
-    const a =
-      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-      Math.cos((pos1.lat * Math.PI) / 180) *
-        Math.cos((pos2.lat * Math.PI) / 180) *
-        Math.sin(dLon / 2) *
-        Math.sin(dLon / 2)
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
-    return R * c
-  }
-
-  const getCurrentLocation = () => {
-    setIsLoadingLocation(true)
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setUserLocation({
-            lat: position.coords.latitude,
-            lng: position.coords.longitude,
-          })
-          setIsLoadingLocation(false)
-          toast({
-            title: "Position détectée",
-            description: "Les agences sont maintenant triées par distance.",
-          })
-        },
-        (error) => {
-          setIsLoadingLocation(false)
-          toast({
-            title: "Erreur de géolocalisation",
-            description: "Impossible d'obtenir votre position.",
-            variant: "destructive",
-          })
-        },
-      )
+        // Vérifier si l'utilisateur est Responsable réseau
+        setIsNetworkManager(roles.includes("Responsable réseau") || roles.includes("network_manager"))
+      } else {
+        setUserRole("Client")
+      }
     } else {
-      setIsLoadingLocation(false)
+      setUserRole("Client")
+    }
+  }, [])
+
+  // Mettre à jour la query quand les filtres changent
+  useEffect(() => {
+    setQuery({
+      search: searchTerm,
+      city: selectedCity,
+      country: selectedCountry,
+      status: selectedStatus,
+      page: currentPage,
+      limit: 25,
+    })
+  }, [searchTerm, selectedCity, selectedCountry, selectedStatus, currentPage, setQuery])
+
+  // Extraire les villes et pays uniques
+  const cities = Array.from(new Set(agences.map((a) => a.city).filter(Boolean))).sort()
+  const countries = Array.from(new Set(agences.map((a) => a.country).filter(Boolean))).sort()
+
+  // Gérer l'obtention d'itinéraire
+  const handleGetDirections = (agence: Agence) => {
+    if (agence.mapEmbedUrl) {
+      window.open(agence.mapEmbedUrl, "_blank")
+      return
+    }
+
+    if (agence.latitude && agence.longitude) {
+      const url = `https://www.google.com/maps/dir/?api=1&destination=${agence.latitude},${agence.longitude}`
+      window.open(url, "_blank")
+    } else if (agence.address || agence.city) {
+      const query = encodeURIComponent(`${agence.address || ""} ${agence.city || ""}`.trim())
+      window.open(`https://www.google.com/maps/search/?api=1&query=${query}`, "_blank")
+    } else {
       toast({
-        title: "Géolocalisation non supportée",
-        description: "Votre navigateur ne supporte pas la géolocalisation.",
+        title: "Information manquante",
+        description: "Les coordonnées de cette agence ne sont pas disponibles.",
         variant: "destructive",
       })
     }
   }
 
-  const openInMaps = (agence: Agence) => {
-    const url = `https://www.google.com/maps/dir/?api=1&destination=${agence.coordonnees.lat},${agence.coordonnees.lng}`
-    window.open(url, "_blank")
+  // Gérer le changement de page
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page)
+    // Scroll vers le haut
+    window.scrollTo({ top: 0, behavior: "smooth" })
+  }
+
+  // Réinitialiser les filtres
+  const resetFilters = () => {
+    setSearchTerm("")
+    setSelectedCity("all")
+    setSelectedCountry("all")
+    setSelectedStatus("all")
+    setCurrentPage(1)
+  }
+
+  // Rediriger vers le Back-Office pour la gestion des agences
+  const handleManageAgences = () => {
+    const backOfficeUrl = process.env.NEXT_PUBLIC_BACK_OFFICE_URL || "https://back-office.bng.cm"
+    window.open(`${backOfficeUrl}/agences`, "_blank")
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Nos Agences</h1>
-          <p className="text-gray-600">Trouvez l'agence BNG la plus proche de vous</p>
+   <div className="mt-6 space-y-6" lang="fr">
+      {/* En-tête */}
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div className="space-y-2">
+          <h1 className="text-3xl font-bold text-primary">
+            Localisation des agences
+          </h1>
+          <p className="text-xs text-muted-foreground">Trouvez l'agence BNG la plus proche de vous</p>
         </div>
-        <Button onClick={getCurrentLocation} disabled={isLoadingLocation} variant="outline">
-          <Navigation className="w-4 h-4 mr-2" />
-          {isLoadingLocation ? "Localisation..." : "Me localiser"}
-        </Button>
+
+        {/* Bouton pour le Responsable réseau */}
+        {isNetworkManager && (
+          <Button
+            variant="default"
+            onClick={handleManageAgences}
+            className="shrink-0"
+            aria-label="Gérer les agences dans le Back-Office"
+          >
+            <Settings className="w-4 h-4 mr-2" />
+            Mettre à jour les agences
+            <ExternalLink className="w-4 h-4 ml-2" />
+          </Button>
+        )}
       </div>
 
-      {/* Filtres */}
+      {/* Message d'erreur avec fallback */}
+      {error && (
+        <Alert variant={error.includes("hors ligne") ? "default" : "destructive"}>
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
+
+      {/* Barre de filtres */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center">
-            <Filter className="w-5 h-5 mr-2" />
+          <CardTitle className="flex items-center text-lg">
+            <Filter className="w-5 h-5 mr-2" aria-hidden="true" />
             Filtres de recherche
           </CardTitle>
+          <CardDescription>Affinez votre recherche d'agence selon vos besoins</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-col md:flex-row gap-4">
-            <div className="flex-1">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                <Input
-                  placeholder="Rechercher par nom, adresse ou commune..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
+          <div className="space-y-4">
+            {/* Ligne 1: Recherche textuelle */}
+            <div className="relative">
+              <Search
+                className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4"
+                aria-hidden="true"
+              />
+              <Input
+                placeholder="Rechercher par nom, adresse, ville..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+                aria-label="Rechercher une agence"
+              />
             </div>
-            <Select value={selectedCommune} onValueChange={setSelectedCommune}>
-              <SelectTrigger className="w-full md:w-48">
-                <SelectValue placeholder="Toutes les communes" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Toutes les communes</SelectItem>
-                {communes.map((commune) => (
-                  <SelectItem key={commune} value={commune}>
-                    {commune}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+
+            {/* Ligne 2: Filtres */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              {/* Filtre par ville */}
+              <Select value={selectedCity} onValueChange={setSelectedCity}>
+                <SelectTrigger aria-label="Filtrer par ville">
+                  <SelectValue placeholder="Toutes les villes" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Toutes les villes</SelectItem>
+                  {cities.map((city) => (
+                    <SelectItem key={city} value={city}>
+                      {city}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              {/* Filtre par pays */}
+              <Select value={selectedCountry} onValueChange={setSelectedCountry}>
+                <SelectTrigger aria-label="Filtrer par pays">
+                  <SelectValue placeholder="Tous les pays" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tous les pays</SelectItem>
+                  {countries.map((country) => (
+                    <SelectItem key={country} value={country}>
+                      {country}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              {/* Filtre par statut */}
+              <Select
+                value={selectedStatus}
+                onValueChange={(value) => setSelectedStatus(value as "all" | "open" | "closed")}
+              >
+                <SelectTrigger aria-label="Filtrer par statut">
+                  <SelectValue placeholder="Tous les statuts" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tous les statuts</SelectItem>
+                  <SelectItem value="open">Ouvert maintenant</SelectItem>
+                  <SelectItem value="closed">Fermé</SelectItem>
+                </SelectContent>
+              </Select>
+
+              {/* Bouton réinitialiser */}
+              <Button
+                variant="outline"
+                onClick={resetFilters}
+                className="w-full bg-transparent"
+                aria-label="Réinitialiser les filtres"
+              >
+                Réinitialiser
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Liste des agences */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {filteredAgences.map((agence) => (
-          <Card key={agence.id} className="hover:shadow-lg transition-shadow">
-            <CardHeader>
-              <div className="flex items-start justify-between">
-                <div>
-                  <CardTitle className="text-lg">{agence.nom}</CardTitle>
-                  <CardDescription className="flex items-center mt-1">
-                    <MapPin className="w-4 h-4 mr-1" />
-                    {agence.commune}
-                    {agence.distance && (
-                      <Badge variant="outline" className="ml-2">
-                        {agence.distance.toFixed(1)} km
-                      </Badge>
+      {/* Bascule Liste/Carte */}
+      <Tabs value={activeView} onValueChange={(v) => setActiveView(v as "list" | "map")}>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <TabsList className="grid w-full sm:w-auto grid-cols-2" role="tablist" aria-label="Vues des agences">
+            <TabsTrigger value="list" className="flex items-center gap-2" aria-label="Vue liste">
+              <List className="w-4 h-4" aria-hidden="true" />
+              Liste
+            </TabsTrigger>
+            <TabsTrigger value="map" className="flex items-center gap-2" aria-label="Vue carte">
+              <Map className="w-4 h-4" aria-hidden="true" />
+              Carte
+            </TabsTrigger>
+          </TabsList>
+
+          {/* Compteur de résultats */}
+          <div className="text-sm text-muted-foreground">
+            {loading ? (
+              <div className="flex items-center gap-2">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span>Chargement...</span>
+              </div>
+            ) : (
+              <span>
+                {totalCount} agence{totalCount !== 1 ? "s" : ""} trouvée{totalCount !== 1 ? "s" : ""}
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Vue Liste */}
+        <TabsContent value="list" className="space-y-6 mt-6">
+          {loading ? (
+            <Card>
+              <CardContent className="flex items-center justify-center h-64">
+                <div className="text-center space-y-4">
+                  <Loader2 className="w-8 h-8 animate-spin mx-auto text-primary" />
+                  <p className="text-sm text-muted-foreground">Chargement des agences...</p>
+                </div>
+              </CardContent>
+            </Card>
+          ) : agences.length === 0 ? (
+            <Card>
+              <CardContent className="text-center py-12">
+                <MapPin className="w-12 h-12 mx-auto text-muted-foreground mb-4" aria-hidden="true" />
+                <h3 className="text-lg font-medium text-foreground mb-2">Aucune agence trouvée</h3>
+                <p className="text-muted-foreground mb-4">Aucune agence ne correspond à vos critères de recherche.</p>
+                <Button variant="outline" onClick={resetFilters}>
+                  Réinitialiser les filtres
+                </Button>
+              </CardContent>
+            </Card>
+          ) : (
+            <>
+              {/* Grille des agences */}
+              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                {agences.map((agence) => (
+                  <AgenceCard key={agence.id} agence={agence} onGetDirections={handleGetDirections} />
+                ))}
+              </div>
+
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <Pagination>
+                  <PaginationContent>
+                    <PaginationItem>
+                      <PaginationPrevious
+                        onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
+                        aria-disabled={currentPage === 1}
+                        className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                      />
+                    </PaginationItem>
+
+                    {/* Pages */}
+                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                      let pageNum: number
+                      if (totalPages <= 5) {
+                        pageNum = i + 1
+                      } else if (currentPage <= 3) {
+                        pageNum = i + 1
+                      } else if (currentPage >= totalPages - 2) {
+                        pageNum = totalPages - 4 + i
+                      } else {
+                        pageNum = currentPage - 2 + i
+                      }
+
+                      return (
+                        <PaginationItem key={pageNum}>
+                          <PaginationLink
+                            onClick={() => handlePageChange(pageNum)}
+                            isActive={currentPage === pageNum}
+                            className="cursor-pointer"
+                            aria-label={`Aller à la page ${pageNum}`}
+                            aria-current={currentPage === pageNum ? "page" : undefined}
+                          >
+                            {pageNum}
+                          </PaginationLink>
+                        </PaginationItem>
+                      )
+                    })}
+
+                    {totalPages > 5 && currentPage < totalPages - 2 && (
+                      <PaginationItem>
+                        <PaginationEllipsis />
+                      </PaginationItem>
                     )}
-                  </CardDescription>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <p className="text-sm text-gray-600">{agence.adresse}</p>
-                <div className="flex items-center text-sm text-gray-600">
-                  <Phone className="w-4 h-4 mr-2" />
-                  {agence.telephone}
-                </div>
-              </div>
 
-              <div className="space-y-2">
-                <div className="flex items-center text-sm font-medium">
-                  <Clock className="w-4 h-4 mr-2" />
-                  Horaires
-                </div>
-                <div className="text-sm text-gray-600 space-y-1">
-                  <p>Lun-Ven: {agence.horaires.semaine}</p>
-                  <p>Samedi: {agence.horaires.samedi}</p>
-                  <p>Dimanche: {agence.horaires.dimanche}</p>
-                </div>
-              </div>
+                    <PaginationItem>
+                      <PaginationNext
+                        onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
+                        aria-disabled={currentPage === totalPages}
+                        className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                      />
+                    </PaginationItem>
+                  </PaginationContent>
+                </Pagination>
+              )}
+            </>
+          )}
+        </TabsContent>
 
-              <div className="space-y-2">
-                <p className="text-sm font-medium">Services disponibles:</p>
-                <div className="flex flex-wrap gap-1">
-                  {agence.services.map((service, index) => (
-                    <Badge key={index} variant="secondary" className="text-xs">
-                      {service}
-                    </Badge>
-                  ))}
+        {/* Vue Carte */}
+        <TabsContent value="map" className="mt-6">
+          {loading ? (
+            <Card>
+              <CardContent className="flex items-center justify-center h-[600px]">
+                <div className="text-center space-y-4">
+                  <Loader2 className="w-8 h-8 animate-spin mx-auto text-primary" />
+                  <p className="text-sm text-muted-foreground">Chargement de la carte...</p>
                 </div>
-              </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <AgenceMap
+              agences={agences}
+              selectedAgence={selectedAgence}
+              onAgenceSelect={setSelectedAgence}
+              onGetDirections={handleGetDirections}
+            />
+          )}
+        </TabsContent>
+      </Tabs>
 
-              <div className="flex space-x-2 pt-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="flex-1 bg-transparent"
-                  onClick={() => window.open(`tel:${agence.telephone}`)}
-                >
-                  <Phone className="w-4 h-4 mr-1" />
-                  Appeler
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="flex-1 bg-transparent"
-                  onClick={() => openInMaps(agence)}
-                >
-                  <Navigation className="w-4 h-4 mr-1" />
-                  Itinéraire
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      {filteredAgences.length === 0 && (
-        <Card>
-          <CardContent className="text-center py-8">
-            <MapPin className="w-12 h-12 mx-auto text-gray-400 mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Aucune agence trouvée</h3>
-            <p className="text-gray-600">Essayez de modifier vos critères de recherche.</p>
-          </CardContent>
-        </Card>
-      )}
+      {/* Informations d'accessibilité */}
+      <Card className="border-muted">
+        <CardContent className="pt-6">
+          <div className="flex items-start gap-3 text-sm text-muted-foreground">
+            <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" aria-hidden="true" />
+            <div>
+              <p className="font-medium text-foreground mb-1">Informations importantes</p>
+              <ul className="list-disc list-inside space-y-1">
+                <li>Les horaires peuvent varier en fonction des jours fériés et événements exceptionnels.</li>
+                <li>Nous vous recommandons d'appeler avant de vous déplacer pour confirmer l'ouverture.</li>
+                <li>
+                  Pour toute question, contactez notre service client au{" "}
+                  <a
+                    href="tel:+237222000000"
+                    className="text-primary hover:underline focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded"
+                  >
+                    +237 222 000 000
+                  </a>
+                  .
+                </li>
+              </ul>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   )
 }

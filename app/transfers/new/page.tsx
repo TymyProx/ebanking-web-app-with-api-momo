@@ -17,6 +17,8 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { ArrowRight, Plus, User, Building, Check, AlertCircle } from "lucide-react"
 import { useActionState } from "react"
 import Link from "next/link"
+import { importAesGcmKeyFromBase64, decryptAesGcmFromJson, isEncryptedJson } from "@/lib/crypto"
+import { OtpModal } from "@/components/otp-modal"
 
 // Types
 interface Beneficiary {
@@ -25,6 +27,8 @@ interface Beneficiary {
   account: string
   bank: string
   type: "BNG-BNG" | "BNG-CONFRERE" | "International"
+  workflowStatus?: string
+  status?: number
 }
 
 interface Account {
@@ -93,7 +97,13 @@ export default function NewTransferPage() {
   const [amountError, setAmountError] = useState<string>("")
   const [isAmountValid, setIsAmountValid] = useState(true)
 
+  // États pour l'OTP
+  const [showOtpModal, setShowOtpModal] = useState(false)
+  const [otpReferenceId, setOtpReferenceId] = useState<string | null>(null)
+  const [pendingTransferData, setPendingTransferData] = useState<FormData | null>(null)
+
   // Fonctions utilitaires
+  const toText = (val: any): string => (typeof val === "string" ? val : val ? JSON.stringify(val) : "")
   const formatCurrency = (amount: number, currency: string) => {
     return new Intl.NumberFormat("fr-FR", {
       style: "currency",
@@ -205,9 +215,24 @@ export default function NewTransferPage() {
     formData.append("purpose", motif)
     formData.append("transferDate", transferDate)
 
-    startTransition(() => {
-      transferAction(formData)
-    })
+    // Au lieu d'exécuter directement le virement, on ouvre le modal OTP
+    // Générer un référence unique pour ce virement
+    const referenceId = `TRANSFER-${Date.now()}-${selectedAccount.substring(0, 8)}`
+    setOtpReferenceId(referenceId)
+    setPendingTransferData(formData)
+    setShowOtpModal(true)
+  }
+
+  // Fonction appelée après validation OTP
+  const handleOtpVerified = () => {
+    if (pendingTransferData) {
+      startTransition(() => {
+        transferAction(pendingTransferData)
+      })
+      // Réinitialiser les données en attente
+      setPendingTransferData(null)
+      setOtpReferenceId(null)
+    }
   }
 
   const handleDialogClose = (open: boolean) => {
@@ -273,19 +298,103 @@ export default function NewTransferPage() {
       setIsLoadingBeneficiaries(true)
       const result = await getBeneficiaries()
 
+      const secureMode = (process.env.NEXT_PUBLIC_PORTAL_SECURE_MODE || "false").toLowerCase() === "true"
+      const keyB64 = process.env.NEXT_PUBLIC_PORTAL_KEY_B64 || ""
+      let cryptoKey: CryptoKey | null = null
+
+      if (secureMode && keyB64 && typeof window !== "undefined" && window.crypto?.subtle) {
+        try {
+          cryptoKey = await importAesGcmKeyFromBase64(keyB64)
+        } catch (error) {
+          console.error("[v0] Échec de l'import de la clé de déchiffrement des bénéficiaires:", error)
+        }
+      }
+
+      const resolveField = async (value: any, fallback?: any): Promise<string> => {
+        const candidate = value ?? fallback
+        if (candidate === null || candidate === undefined) {
+          return ""
+        }
+
+        const tryDecrypt = async (payload: any): Promise<string | null> => {
+          if (!secureMode || !cryptoKey) return null
+          try {
+            return await decryptAesGcmFromJson(payload, cryptoKey)
+          } catch (err) {
+            // Tentative de parsing si payload est une chaîne JSONifiée
+            if (typeof payload === "string") {
+              try {
+                const parsed = JSON.parse(payload)
+                return await decryptAesGcmFromJson(parsed, cryptoKey)
+              } catch (_) {
+                return null
+              }
+            }
+            return null
+          }
+        }
+
+        const decrypted = await tryDecrypt(candidate)
+        if (decrypted !== null) {
+          return decrypted
+        }
+
+        if (typeof candidate === "string") {
+          return candidate
+        }
+
+        if (secureMode && !cryptoKey && isEncryptedJson(candidate)) {
+          return "[donnée chiffrée]"
+        }
+
+        try {
+          return JSON.stringify(candidate)
+        } catch (err) {
+          return String(candidate)
+        }
+      }
+
       if (Array.isArray(result) && result.length > 0) {
-        // Adapter les données API au format Beneficiary
-        const adaptedBeneficiaries = result.map((apiBeneficiary: any) => ({
-          id: apiBeneficiary.id,
-          name: apiBeneficiary.name,
-          account: apiBeneficiary.accountNumber,
-          bank: apiBeneficiary.bankName,
-          type: apiBeneficiary.beneficiaryType || "BNG-BNG",
-        }))
+        const adaptedBeneficiaries = await Promise.all(
+          result.map(async (apiBeneficiary: any) => {
+            const name = await resolveField(apiBeneficiary.name, apiBeneficiary.name_json)
+            const accountNumber = await resolveField(
+              apiBeneficiary.accountNumber,
+              apiBeneficiary.accountNumber_json,
+            )
+            const bankName = await resolveField(apiBeneficiary.bankName, apiBeneficiary.bankName_json)
+            const workflowStatus = apiBeneficiary.workflowStatus || "disponible"
+            const rawType = apiBeneficiary.beneficiaryType || apiBeneficiary.typeBeneficiary || "BNG-BNG"
+            const normalizedType: Beneficiary["type"] =
+              rawType === "BNG-INTERNATIONAL" ? "International" : (rawType as Beneficiary["type"])
+
+            return {
+              id: apiBeneficiary.id,
+              name,
+              account: accountNumber,
+              bank: bankName,
+              type: normalizedType,
+              workflowStatus,
+              status: Number.parseInt(String(apiBeneficiary.status ?? "0"), 10),
+            } as Beneficiary
+          }),
+        )
+
         const activeBeneficiaries = adaptedBeneficiaries.filter((beneficiary: any) => {
-          // Check if the original API data has status field and filter by status 0
           const originalBeneficiary = result.find((api: any) => api.id === beneficiary.id)
-          return originalBeneficiary && String(originalBeneficiary.status) === "0"
+          if (!originalBeneficiary) {
+            return false
+          }
+
+          const workflow = (originalBeneficiary.workflowStatus || beneficiary.workflowStatus || "").toLowerCase()
+          const statusRaw = originalBeneficiary.status ?? beneficiary.status
+          const statusValue = Number(statusRaw)
+          const normalizedStatus = Number.isNaN(statusValue) ? 0 : statusValue
+
+          const isStatusActive = normalizedStatus === 0 || normalizedStatus === 1
+          const isWorkflowActive = workflow === "" || workflow === "disponible"
+
+          return isStatusActive && isWorkflowActive
         })
         setBeneficiaries(activeBeneficiaries)
       } else {
@@ -308,7 +417,7 @@ export default function NewTransferPage() {
     if (addBeneficiaryState?.success) {
       setBeneficiaryMessage({
         type: "success",
-        text: addBeneficiaryState.message || "Bénéficiaire ajouté avec succès !",
+        text: "Bénéficiaire enregistré. Il sera disponible après vérification et validation.",
       })
       // Recharger la liste des bénéficiaires
       loadBeneficiaries()
@@ -389,12 +498,12 @@ export default function NewTransferPage() {
   }, [selectedAccount])
 
   return (
-    <div className="space-y-6">
+    <div className="mt-6 space-y-6">
       <div className="space-y-2">
-        <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+        <h1 className="text-3xl font-bold text-primary">
           Effectuer un virement
         </h1>
-        <p className="text-muted-foreground">Effectuer un virement vers un bénéficiaire ou un autre compte</p>
+        <p className="text-sm text-muted-foreground">Effectuer un virement vers un bénéficiaire ou un autre compte</p>
       </div>
 
       {transferValidationError && transferSubmitted && !isDialogOpen && (
@@ -408,7 +517,7 @@ export default function NewTransferPage() {
         <Alert className="border-l-4 border-green-500 bg-green-50/50 dark:bg-green-950/20">
           <Check className="h-4 w-4 text-green-600" />
           <AlertDescription className="text-green-800 dark:text-green-400">
-            {transferState.message || "Virement effectué avec succès !"}
+            {toText(transferState.message) || "Virement effectué avec succès !"}
           </AlertDescription>
         </Alert>
       )}
@@ -416,7 +525,7 @@ export default function NewTransferPage() {
       {transferState?.error && !isDialogOpen && (
         <Alert variant="destructive" className="border-l-4 border-destructive">
           <AlertCircle className="h-4 w-4" />
-          <AlertDescription>{transferState.error}</AlertDescription>
+          <AlertDescription>{toText(transferState.error)}</AlertDescription>
         </Alert>
       )}
 
@@ -852,6 +961,19 @@ export default function NewTransferPage() {
           </Card>
         </div>
       </form>
+
+      {/* Modal OTP */}
+      <OtpModal
+        open={showOtpModal}
+        onOpenChange={setShowOtpModal}
+        onVerified={handleOtpVerified}
+        purpose="TRANSFER"
+        referenceId={otpReferenceId || undefined}
+        title="Confirmer le virement"
+        description={`Entrez le code OTP pour confirmer le virement de ${amount ? formatCurrency(Number.parseFloat(amount), selectedAccountData?.currency || "GNF") : "0 GNF"}`}
+        deliveryMethod="EMAIL"
+        autoGenerate={true}
+      />
     </div>
   )
 }

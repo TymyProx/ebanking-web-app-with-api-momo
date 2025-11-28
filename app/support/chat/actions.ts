@@ -1,5 +1,14 @@
 "use server"
 
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0"
+
+import { cookies } from "next/headers"
+import { config } from "@/lib/config"
+
+const normalize = (u?: string) => (u ? u.replace(/\/$/, "") : "")
+const API_BASE_URL = `${normalize(config.API_BASE_URL)}/api`
+const TENANT_ID = config.TENANT_ID
+
 interface ChatSessionData {
   fullName: string
   accountNumber: string
@@ -150,34 +159,157 @@ export async function rateChatSession(sessionId: string, rating: number, feedbac
   }
 }
 
-export async function getChatHistory(accountNumber: string) {
-  // Simulation de récupération de l'historique
-  await new Promise((resolve) => setTimeout(resolve, 1000))
+interface SessionChatRecord {
+  id: string
+  chatId?: string | null
+  clientId?: string | null
+  subject?: string | null
+  openedAt?: string | null
+  closedAt?: string | null
+  createdAt?: string | null
+  updatedAt?: string | null
+}
 
-  const mockHistory = [
-    {
-      id: "CHAT-1704067200000",
-      date: new Date("2024-01-01T10:00:00"),
-      subject: "Problème de transaction",
-      agentName: "Sarah Camara",
-      duration: "15 minutes",
-      status: "resolved" as const,
-      rating: 5,
-      transcript: "Transcription disponible",
-    },
-    {
-      id: "CHAT-1703980800000",
-      date: new Date("2023-12-30T14:30:00"),
-      subject: "Question sur mon compte",
-      agentName: "Ibrahim Diallo",
-      duration: "8 minutes",
-      status: "resolved" as const,
-      rating: 4,
-      transcript: "Transcription disponible",
-    },
-  ]
+interface SessionChatListResponse {
+  rows?: SessionChatRecord[]
+  count?: number
+}
 
-  return mockHistory
+export interface PortalChatHistoryEntry {
+  id: string
+  date: Date
+  subject: string
+  agentName: string
+  duration: string
+  status: "resolved" | "pending" | "escalated"
+  rating?: number
+  transcript: string
+}
+
+const formatDuration = (openedAt?: Date | null, closedAt?: Date | null) => {
+  if (!openedAt) {
+    return "--"
+  }
+
+  if (!closedAt) {
+    return "En cours"
+  }
+
+  const diffMs = closedAt.getTime() - openedAt.getTime()
+  if (diffMs <= 0) {
+    return "Moins d'une minute"
+  }
+
+  const totalMinutes = Math.round(diffMs / 60000)
+
+  if (totalMinutes < 1) {
+    return "Moins d'une minute"
+  }
+
+  if (totalMinutes < 60) {
+    return `${totalMinutes} minute${totalMinutes > 1 ? "s" : ""}`
+  }
+
+  const totalHours = Math.floor(totalMinutes / 60)
+  const remainingMinutes = totalMinutes % 60
+
+  if (totalHours < 24) {
+    return remainingMinutes
+      ? `${totalHours}h${remainingMinutes.toString().padStart(2, "0")}`
+      : `${totalHours}h`
+  }
+
+  const days = Math.floor(totalHours / 24)
+  const remainingHours = totalHours % 24
+
+  if (!remainingHours) {
+    return `${days}j`
+  }
+
+  return `${days}j${remainingHours}h`
+}
+
+export async function getChatHistory(): Promise<PortalChatHistoryEntry[]> {
+  try {
+    const cookieStore = await cookies()
+    const token = cookieStore.get("token")?.value
+
+    if (!token) {
+      console.warn("[LiveChat] Aucun token trouvé pour récupérer l'historique")
+      return []
+    }
+
+    let clientId: string | null = null
+
+    try {
+      const meResponse = await fetch(`${API_BASE_URL}/auth/me`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        cache: "no-store",
+      })
+
+      if (meResponse.ok) {
+        const user = await meResponse.json()
+        clientId = user?.id ?? null
+      } else {
+        console.warn("[LiveChat] Impossible de récupérer le profil utilisateur pour l'historique")
+      }
+    } catch (error) {
+      console.error("[LiveChat] Erreur lors de la récupération de l'utilisateur:", error)
+    }
+
+    const params = new URLSearchParams()
+    params.set("orderBy", "openedAt_DESC")
+    params.set("limit", "50")
+    if (clientId) {
+      params.set("filter[clientId]", clientId)
+    }
+
+    const historyResponse = await fetch(
+      `${API_BASE_URL}/tenant/${TENANT_ID}/session-chat?${params.toString()}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        cache: "no-store",
+      },
+    )
+
+    if (!historyResponse.ok) {
+      const errorText = await historyResponse.text()
+      console.error("[LiveChat] Erreur API historique:", historyResponse.status, errorText)
+      return []
+    }
+
+    const payload: SessionChatListResponse | SessionChatRecord[] = await historyResponse.json()
+    const rows: SessionChatRecord[] = Array.isArray(payload)
+      ? payload
+      : Array.isArray(payload.rows)
+        ? payload.rows
+        : []
+
+    return rows.map((row) => {
+      const openedAt = row.openedAt ? new Date(row.openedAt) : row.createdAt ? new Date(row.createdAt) : null
+      const closedAt = row.closedAt ? new Date(row.closedAt) : null
+      const safeOpened = openedAt ?? new Date()
+      const subject = row.subject?.trim() || "Assistance client"
+      const chatId = row.chatId?.trim() || row.id
+
+      return {
+        id: chatId,
+        date: safeOpened,
+        subject,
+        agentName: "Service client BNG",
+        duration: formatDuration(safeOpened, closedAt),
+        status: closedAt ? "resolved" : "pending",
+        transcript: chatId ? `Référence ${chatId}` : "Transcription disponible",
+      }
+    })
+  } catch (error) {
+    console.error("[LiveChat] Erreur imprévue lors de la récupération de l'historique:", error)
+    return []
+  }
 }
 
 export async function getAgentAvailability() {

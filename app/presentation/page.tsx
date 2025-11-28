@@ -169,7 +169,7 @@ const features = [
       {
         title: "RIB électronique",
         description: "Téléchargez votre RIB instantanément",
-        href: "/services/rib",
+        href: "/accounts/rib",
         status: "Disponible",
       },
       {
@@ -493,7 +493,7 @@ export default function PresentationPage() {
                 <li>Conditions d'utilisation</li>
                 <li>Politique de confidentialité</li>
                 <li>Sécurité</li>
-                <li>R��glementation</li>
+                <li>Rglementation</li>
               </ul>
             </div>
           </div>

@@ -22,7 +22,10 @@ import {
   BarChart3,
   Clock,
   Sparkles,
-  AlertTriangle,
+  AlertCircle,
+  Loader2,
+  PlusCircle,
+  FileCheck,
 } from "lucide-react"
 import Image from "next/image"
 import { cn } from "@/lib/utils"
@@ -56,6 +59,9 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import { LogoutButton } from "@/components/auth/logout-button"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { getAccounts } from "@/app/accounts/actions"
 
 const navigationData = {
   main: [
@@ -73,17 +79,27 @@ const navigationData = {
   ],
   accounts: [
     {
-      title: "Mes Comptes",
+      title: "Gérer vos comptes",
       icon: Wallet,
       items: [
         {
-          title: "Soldes",
+          title: "Consultation de solde",
           url: "/accounts/balance",
           icon: BarChart3,
         },
         {
           title: "Relevés de compte",
           url: "/accounts/statements",
+          icon: FileText,
+        },
+        {
+          title: "Ouverture compte",
+          url: "/accounts/new",
+          icon: PlusCircle,
+        },
+        {
+          title: "Relevé de coordonnées bancaires",
+          url: "/accounts/rib",
           icon: FileText,
         },
       ],
@@ -111,86 +127,30 @@ const navigationData = {
         },
       ],
     },
-    // {
-    //   title: "Paiements",
-    //   icon: Receipt,
-    //   items: [
-    //     {
-    //       title: "Payer une facture",
-    //       url: "/payments/bills",
-    //       icon: Receipt,
-    //     },
-    //     {
-    //       title: "Paiements groupés",
-    //       url: "/payments/bulk",
-    //       icon: FileText,
-    //     },
-    //   ],
-    // },
     {
-      title: "Cartes",
-      url: "/cartes",
+      title: "Gestion des cartes",
       icon: CreditCard,
-      badge: "Nouveau",
+      items: [
+        {
+          title: "Mes cartes",
+          url: "/cartes",
+          icon: CreditCard,
+        },
+        {
+          title: "Demande de carte",
+          url: "/cartes/demande",
+          icon: FileCheck,
+        },
+      ],
     },
   ],
   services: [
     {
       title: "E-Services",
-      icon: Settings,
-      items: [
-        {
-          title: "Demandes",
-          url: "/services/requests",
-          icon: FileText,
-        },
-        {
-          title: "RIB",
-          url: "/services/rib",
-          icon: FileText,
-        },
-        {
-          title: "Réclamations",
-          url: "/services/complain",
-          icon: AlertTriangle,
-        },
-      ],
+      url: "/services/requests",
+      icon: FileText,
     },
   ],
-  // investments: [
-  //   {
-  //     title: "Investissements",
-  //     icon: TrendingUp,
-  //     items: [
-  //       {
-  //         title: "Mes investissements",
-  //         url: "/investments",
-  //         icon: TrendingUp,
-  //       },
-  //       {
-  //         title: "Nouveau placement",
-  //         url: "/investments/new",
-  //         icon: TrendingUp,
-  //       },
-  //     ],
-  //   },
-  //   {
-  //     title: "Budget",
-  //     icon: PiggyBank,
-  //     items: [
-  //       {
-  //         title: "Vue d'ensemble",
-  //         url: "/budget",
-  //         icon: BarChart3,
-  //       },
-  //       {
-  //         title: "Budget personnel",
-  //         url: "/budget/personal",
-  //         icon: PiggyBank,
-  //       },
-  //     ],
-  //   },
-  // ],
   support: [
     {
       title: "Support",
@@ -200,7 +160,6 @@ const navigationData = {
           title: "Chat en direct",
           url: "/support/chat",
           icon: MessageSquare,
-          badge: "En ligne",
         },
         {
           title: "Historique des chats",
@@ -257,6 +216,8 @@ const SidebarGroupLabel = React.forwardRef<HTMLDivElement, React.ComponentProps<
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>): ReactElement {
   const pathname = usePathname()
   const [userData, setUserData] = useState<any>(null)
+  const [hasActiveAccount, setHasActiveAccount] = useState<boolean>(false)
+  const [isCheckingAccounts, setIsCheckingAccounts] = useState<boolean>(true)
   const { state } = useSidebar()
 
   useEffect(() => {
@@ -264,6 +225,26 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>): 
     if (storedUserData) {
       setUserData(JSON.parse(storedUserData))
     }
+  }, [])
+
+  useEffect(() => {
+    async function checkActiveAccounts() {
+      try {
+        setIsCheckingAccounts(true)
+        const accounts = await getAccounts()
+
+        const hasActive = accounts.some((account) => account.status === "ACTIF")
+
+        setHasActiveAccount(hasActive)
+      } catch (error) {
+        console.error("Error checking accounts:", error)
+        setHasActiveAccount(false)
+      } finally {
+        setIsCheckingAccounts(false)
+      }
+    }
+
+    checkActiveAccounts()
   }, [])
 
   const getInitials = (fullName: string) => {
@@ -347,151 +328,237 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>): 
     <Sidebar collapsible="icon" variant="inset" {...props}>
       <SidebarHeader>
         <div className="flex items-center gap-2 px-4 py-2">
-          <div className="flex h-120 w-120 items-center justify-center">
-            <Image src="/images/logo-bng.png" alt="BNG Logo" width={120} height={120} className="object-contain" />
-          </div>
+          {state === "collapsed" ? (
+            <div className="flex min-h-[64px] w-full items-center justify-center">
+              <div className="h-14 w-14 flex-shrink-0">
+                <Image
+                  src="/images/portrait-logo.png"
+                  alt="BNG Logo"
+                  width={56}
+                  height={56}
+                  className="h-full w-full object-contain"
+                  priority
+                />
+              </div>
+            </div>
+          ) : (
+            <div className="flex min-h-[120px] w-full items-center justify-center">
+              <div className="h-[120px] w-[120px] flex-shrink-0">
+                <Image
+                  src="/images/logo-bng.png"
+                  alt="BNG Logo"
+                  width={120}
+                  height={120}
+                  className="h-full w-full object-contain"
+                  priority
+                />
+              </div>
+            </div>
+          )}
         </div>
       </SidebarHeader>
 
       <SidebarContent>
-        {/* Navigation principale */}
-        <SidebarGroup>
-          <SidebarGroupLabel asChild>
-            <div>Principal</div>
-          </SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {navigationData.main.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild isActive={pathname === item.url}>
-                    <Link href={item.url}>
-                      <item.icon />
-                      <span>{item.title}</span>
-                      {item.badge && (
-                        <Badge variant="secondary" className="ml-auto">
-                          {item.badge}
-                        </Badge>
-                      )}
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+        {isCheckingAccounts ? (
+          <div className="flex flex-col items-center justify-center py-8 space-y-3">
+            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            <p className="text-sm text-muted-foreground">Chargement...</p>
+          </div>
+        ) : !hasActiveAccount ? (
+          <>
+            <div className="px-3 py-2">
+              {state === "collapsed" ? (
+                <TooltipProvider>
+                  <Tooltip delayDuration={0}>
+                    <TooltipTrigger asChild>
+                      <div className="flex items-center justify-center rounded-md border border-amber-500/50 bg-amber-50 p-2 dark:bg-amber-950/20 cursor-help">
+                        <AlertCircle className="h-5 w-5 text-amber-600 dark:text-amber-500" />
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent side="right" className="max-w-xs">
+                      <p className="text-sm">
+                        Veuillez initier la demande d'ouverture de compte pour accéder à toutes les fonctionnalités
+                      </p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              ) : (
+                <Alert className="border-amber-500/50 bg-amber-50 dark:bg-amber-950/20">
+                  <AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-500" />
+                  <AlertDescription className="text-xs text-amber-800 dark:text-amber-300">
+                    Veuillez initier la demande d'ouverture de compte pour accéder à toutes les fonctionnalités
+                  </AlertDescription>
+                </Alert>
+              )}
+            </div>
 
-        {/* Comptes */}
-        <SidebarGroup>
-          <SidebarGroupLabel asChild>
-            <div>Comptes</div>
-          </SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {navigationData.accounts.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <MenuItemWithSubmenu item={item} />
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-
-        {/* Opérations */}
-        <SidebarGroup>
-          <SidebarGroupLabel asChild>
-            <div>Opérations</div>
-          </SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {navigationData.operations.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  {item.items ? (
-                    <MenuItemWithSubmenu item={item} />
-                  ) : (
-                    <SidebarMenuButton asChild isActive={pathname === item.url}>
-                      <Link href={item.url!}>
-                        <item.icon />
-                        <span>{item.title}</span>
-                        {item.badge && (
-                          <Badge variant="secondary" className="ml-auto">
-                            {item.badge}
-                          </Badge>
-                        )}
+            <SidebarGroup>
+              <SidebarGroupLabel asChild>
+                <div>Comptes</div>
+              </SidebarGroupLabel>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton asChild isActive={pathname === "/accounts/new"}>
+                      <Link href="/accounts/new">
+                        <PlusCircle />
+                        <span>Ouverture compte</span>
                       </Link>
                     </SidebarMenuButton>
-                  )}
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+                  </SidebarMenuItem>
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+          </>
+        ) : (
+          <>
+            {/* Navigation principale */}
+            <SidebarGroup>
+              <SidebarGroupLabel asChild>
+                <div>Principal</div>
+              </SidebarGroupLabel>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  {navigationData.main.map((item) => (
+                    <SidebarMenuItem key={item.title}>
+                      <SidebarMenuButton asChild isActive={pathname === item.url}>
+                        <Link href={item.url}>
+                          <item.icon />
+                          <span>{item.title}</span>
+                          {item.badge && (
+                            <Badge variant="secondary" className="ml-auto">
+                              {item.badge}
+                            </Badge>
+                          )}
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  ))}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
 
-        {/* Services */}
-        <SidebarGroup>
-          <SidebarGroupLabel asChild>
-            <div>Services</div>
-          </SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {navigationData.services.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <MenuItemWithSubmenu item={item} />
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+            {/* Comptes */}
+            <SidebarGroup>
+              <SidebarGroupLabel asChild>
+                <div>Comptes</div>
+              </SidebarGroupLabel>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  {navigationData.accounts.map((item) => (
+                    <SidebarMenuItem key={item.title}>
+                      <MenuItemWithSubmenu item={item} />
+                    </SidebarMenuItem>
+                  ))}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
 
-        {/* Support */}
-        <SidebarGroup>
-          <SidebarGroupLabel asChild>
-            <div>Support</div>
-          </SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {navigationData.support.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  {item.items ? (
-                    <MenuItemWithSubmenu item={item} />
-                  ) : (
-                    <SidebarMenuButton asChild isActive={pathname === item.url}>
-                      <Link href={item.url!}>
-                        <item.icon />
-                        <span>{item.title}</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  )}
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-
-        {/* Autres */}
-        <SidebarGroup>
-          <SidebarGroupLabel asChild>
-            <div>Autres</div>
-          </SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {navigationData.other.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild isActive={pathname === item.url}>
-                    <Link href={item.url}>
-                      <item.icon />
-                      <span>{item.title}</span>
-                      {item.badge && (
-                        <Badge variant="destructive" className="ml-auto">
-                          {item.badge}
-                        </Badge>
+            {/* Opérations */}
+            <SidebarGroup>
+              <SidebarGroupLabel asChild>
+                <div>Opérations</div>
+              </SidebarGroupLabel>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  {navigationData.operations.map((item) => (
+                    <SidebarMenuItem key={item.title}>
+                      {item.items ? (
+                        <MenuItemWithSubmenu item={item} />
+                      ) : (
+                        <SidebarMenuButton asChild isActive={pathname === item.url}>
+                          <Link href={item.url!}>
+                            <item.icon />
+                            <span>{item.title}</span>
+                            {item.badge && (
+                              <Badge variant="secondary" className="ml-auto">
+                                {item.badge}
+                              </Badge>
+                            )}
+                          </Link>
+                        </SidebarMenuButton>
                       )}
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+                    </SidebarMenuItem>
+                  ))}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+
+            {/* Services */}
+            <SidebarGroup>
+              <SidebarGroupLabel asChild>
+                <div>Services</div>
+              </SidebarGroupLabel>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  {navigationData.services.map((item) => (
+                    <SidebarMenuItem key={item.title}>
+                      {item.url ? (
+                        <SidebarMenuButton asChild isActive={pathname === item.url}>
+                          <Link href={item.url}>
+                            <item.icon />
+                            <span>{item.title}</span>
+                          </Link>
+                        </SidebarMenuButton>
+                      ) : null}
+                    </SidebarMenuItem>
+                  ))}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+
+            {/* Support */}
+            <SidebarGroup>
+              <SidebarGroupLabel asChild>
+                <div>Support</div>
+              </SidebarGroupLabel>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  {navigationData.support.map((item) => (
+                    <SidebarMenuItem key={item.title}>
+                      {"items" in item ? (
+                        <MenuItemWithSubmenu item={item} />
+                      ) : "url" in item ? (
+                        <SidebarMenuButton asChild isActive={pathname === item.url}>
+                          <Link href={item.url}>
+                            <item.icon />
+                            <span>{item.title}</span>
+                          </Link>
+                        </SidebarMenuButton>
+                      ) : null}
+                    </SidebarMenuItem>
+                  ))}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+
+            {/* Autres */}
+            <SidebarGroup>
+              <SidebarGroupLabel asChild>
+                <div>Autres</div>
+              </SidebarGroupLabel>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  {navigationData.other.map((item) => (
+                    <SidebarMenuItem key={item.title}>
+                      <SidebarMenuButton asChild isActive={pathname === item.url}>
+                        <Link href={item.url}>
+                          <item.icon />
+                          <span>{item.title}</span>
+                          {item.badge && (
+                            <Badge variant="destructive" className="ml-auto">
+                              {item.badge}
+                            </Badge>
+                          )}
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  ))}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+          </>
+        )}
       </SidebarContent>
 
       <SidebarFooter>

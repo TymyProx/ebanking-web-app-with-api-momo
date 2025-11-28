@@ -54,7 +54,7 @@ const SettingsIcon = () => (
       strokeLinecap="round"
       strokeLinejoin="round"
       strokeWidth={2}
-      d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+      d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-2.573 1.066c-.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
     />
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
   </svg>
@@ -286,9 +286,11 @@ export default function BudgetPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Gestion budgétaire</h1>
-          <p className="text-gray-600">Suivez vos revenus, dépenses et objectifs budgétaires</p>
+        <div className="space-y-2">
+          <h1 className="text-3xl font-heading font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+            Gestion budgétaire
+          </h1>
+          <p className="text-sm text-muted-foreground">Suivez vos revenus, dépenses et objectifs budgétaires</p>
         </div>
         <div className="flex space-x-2">
           <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
@@ -490,7 +492,7 @@ export default function BudgetPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-green-600">{formatAmount(budgetData.monthlyIncome)} GNF</div>
-            <p className="text-xs text-muted-foreground">Revenus du mois</p>
+            <p className="text-sm text-muted-foreground">Revenus du mois</p>
           </CardContent>
         </Card>
 
@@ -501,7 +503,7 @@ export default function BudgetPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{formatAmount(budgetData.monthlyBudget)} GNF</div>
-            <p className="text-xs text-muted-foreground">Objectif fixé</p>
+            <p className="text-sm text-muted-foreground">Objectif fixé</p>
           </CardContent>
         </Card>
 
@@ -514,7 +516,7 @@ export default function BudgetPage() {
             <div className={`text-2xl font-bold ${getBudgetStatusColor()}`}>
               {formatAmount(budgetData.totalExpenses)} GNF
             </div>
-            <p className="text-xs text-muted-foreground">{budgetData.budgetUsagePercent}% du budget utilisé</p>
+            <p className="text-sm text-muted-foreground">{budgetData.budgetUsagePercent}% du budget utilisé</p>
           </CardContent>
         </Card>
 
@@ -529,7 +531,7 @@ export default function BudgetPage() {
             <div className={`text-2xl font-bold ${budgetData.isOverBudget ? "text-red-600" : "text-green-600"}`}>
               {formatAmount(Math.abs(budgetData.remainingBudget))} GNF
             </div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-sm text-muted-foreground">
               {budgetData.isOverBudget ? "Au-dessus du budget" : "Disponible ce mois"}
             </p>
           </CardContent>
@@ -775,7 +777,7 @@ export default function BudgetPage() {
                     </div>
                     <div className="text-right">
                       <p className="font-semibold text-red-600">-{formatAmount(expense.amount)} GNF</p>
-                      <p className="text-xs text-muted-foreground">{expense.account}</p>
+                      <p className="text-sm text-muted-foreground">{expense.account}</p>
                     </div>
                   </div>
                 ))}

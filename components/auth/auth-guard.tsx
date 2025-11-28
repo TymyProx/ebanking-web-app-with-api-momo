@@ -5,6 +5,7 @@ import type React from "react"
 import { useEffect, useState } from "react"
 import { useRouter, usePathname } from "next/navigation"
 import AuthService from "@/lib/auth-service"
+import { getAccounts } from "@/app/accounts/actions"
 
 interface AuthGuardProps {
   children: React.ReactNode
@@ -23,7 +24,19 @@ export function AuthGuard({ children }: AuthGuardProps) {
 
       if (isPublicPage) {
         if (AuthService.isAuthenticated() && pathname === "/") {
-          router.push("/dashboard")
+          try {
+            const accounts = await getAccounts()
+            const hasActiveAccount = accounts.some((account) => account.status === "ACTIF")
+
+            if (hasActiveAccount) {
+              router.push("/dashboard")
+            } else {
+              router.push("/accounts/new")
+            }
+          } catch (error) {
+            console.error("Error checking accounts:", error)
+            router.push("/accounts/new")
+          }
           return
         }
         setIsAuthenticated(true)

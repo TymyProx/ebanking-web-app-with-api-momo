@@ -64,7 +64,7 @@ const SmartphoneIcon = () => (
       strokeLinecap="round"
       strokeLinejoin="round"
       strokeWidth={2}
-      d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"
+      d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v10a2 2 0 002 2z"
     />
   </svg>
 )
@@ -227,9 +227,11 @@ export default function NotificationsPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Notifications</h1>
-          <p className="text-gray-600">Gérez vos notifications de débit et crédit automatiques</p>
+        <div className="space-y-2">
+          <h1 className="text-3xl font-heading font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+            Notifications
+          </h1>
+          <p className="text-sm text-muted-foreground">Gérez vos notifications de débit et crédit automatiques</p>
         </div>
         <div className="flex items-center space-x-2">
           <Badge variant="secondary">{unreadCount} non lues</Badge>

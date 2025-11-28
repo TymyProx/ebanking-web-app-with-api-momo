@@ -7,21 +7,11 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { MessageCircle, Download, Search, Star, Clock, User } from "lucide-react"
 import { getChatHistory } from "../actions"
-
-interface ChatHistoryItem {
-  id: string
-  date: Date
-  subject: string
-  agentName: string
-  duration: string
-  status: "resolved" | "pending" | "escalated"
-  rating?: number
-  transcript: string
-}
+import type { PortalChatHistoryEntry } from "../actions"
 
 export default function ChatHistoryPage() {
-  const [history, setHistory] = useState<ChatHistoryItem[]>([])
-  const [filteredHistory, setFilteredHistory] = useState<ChatHistoryItem[]>([])
+  const [history, setHistory] = useState<PortalChatHistoryEntry[]>([])
+  const [filteredHistory, setFilteredHistory] = useState<PortalChatHistoryEntry[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [isLoading, setIsLoading] = useState(true)
 
@@ -45,7 +35,7 @@ export default function ChatHistoryPage() {
 
   const loadHistory = async () => {
     try {
-      const data = await getChatHistory("GN123456789012345")
+      const data = await getChatHistory()
       setHistory(data)
       setFilteredHistory(data)
     } catch (error) {

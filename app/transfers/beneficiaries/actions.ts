@@ -2,11 +2,14 @@
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0"
 import { revalidatePath } from "next/cache"
 import { cookies } from "next/headers"
+import { encryptAesGcmNode } from "../../transfers/new/secure"
+import { config } from "@/lib/config"
 
 interface ActionResult {
   success?: boolean
   error?: string
   message?: string
+  details?: any
 }
 
 interface ApiBeneficiary {
@@ -25,6 +28,8 @@ interface ApiBeneficiary {
   bankCode: string
   bankName: string
   status: number
+  workflowStatus?: string
+  workflowMetadata?: any
   typeBeneficiary: string
   favoris: boolean
   codagence: string
@@ -37,8 +42,16 @@ interface GetBeneficiariesResponse {
 }
 
 const normalize = (u?: string) => (u ? u.replace(/\/$/, "") : "")
-const API_BASE_URL = `${normalize(process.env.NEXT_PUBLIC_API_URL || "https://35.184.98.9:4000")}/api`
-const TENANT_ID = process.env.NEXT_PUBLIC_TENANT_ID || "aa1287f6-06af-45b7-a905-8c57363565c2"
+const API_BASE_URL = `${normalize(config.API_BASE_URL)}/api`
+const TENANT_ID = config.TENANT_ID
+
+const WORKFLOW_STATUS = {
+  CREATED: "cree",
+  VERIFIED: "verifie",
+  VALIDATED: "valide",
+  AVAILABLE: "disponible",
+  SUSPENDED: "suspendu",
+} as const
 
 async function getCurrentClientId(): Promise<string> {
   const cookieToken = (await cookies()).get("token")?.value
@@ -89,7 +102,15 @@ export async function getBeneficiaries(): Promise<ApiBeneficiary[]> {
       console.error("Erreur lors de la récupération du user ID:", error)
     }
 
-    const response = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/beneficiaire`, {
+    const queryParams = new URLSearchParams()
+    if (currentUserId) {
+      queryParams.set("filter[clientId]", currentUserId)
+    }
+    queryParams.set("limit", "200")
+
+    const endpoint = `${API_BASE_URL}/tenant/${TENANT_ID}/beneficiaire${queryParams.toString() ? `?${queryParams.toString()}` : ""}`
+
+    const response = await fetch(endpoint, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -182,18 +203,42 @@ function getBeneficiaryType(bankCode: string): "BNG-BNG" | "BNG-CONFRERE" | "BNG
   }
 }
 
-export async function addBeneficiary(prevState: ActionResult | null, formData: FormData): Promise<ActionResult> {
+/**
+ * ✅ STREAMLINED: Create and activate beneficiary after OTP verification
+ * This automatically: creates → verifies RIB → validates → makes available
+ * The beneficiary is immediately active and usable
+ */
+export async function addBeneficiaryAndActivate(
+  prevState: ActionResult | null,
+  formData: FormData,
+): Promise<ActionResult> {
   try {
     await new Promise((resolve) => setTimeout(resolve, 1000))
 
-    const name = formData.get("name") as string
-    const account = formData.get("account") as string
-    const bank = formData.get("bank") as string
-    const type = formData.get("type") as string
-    const bankname = formData.get("bankname") as string
-    const codeAgence = formData.get("codeAgence") as string
-    const codeBanque = formData.get("codeBanque") as string
-    const cleRib = formData.get("cleRib") as string
+    const getStr = (k: string) => (formData.get(k) as string) || ""
+    const name = getStr("name") || getStr("1_name")
+    const account = getStr("account") || getStr("1_account")
+    const type = getStr("type") || getStr("1_type")
+
+    // Extract bank code from multiple possible field names
+    let codeBanque =
+      getStr("codeBanque") || getStr("bankCode") || getStr("1_bankCode") || getStr("bank") || getStr("1_bank")
+
+    // Extract bank name
+    let bankname = getStr("bankname") || getStr("1_bankname") || getStr("bankName") || getStr("1_bankName")
+
+    // If we have a bank name but no code, try to derive the code
+    if (bankname && !codeBanque) {
+      codeBanque = getBankCode(bankname, type)
+    }
+
+    // If we have a code but no name, try to derive the name
+    if (codeBanque && !bankname) {
+      bankname = getBankNameFromCode(codeBanque)
+    }
+
+    const codeAgence = getStr("codeAgence") || getStr("1_codeAgence")
+    const cleRib = getStr("cleRib") || getStr("1_cleRib")
 
     if (!name || !account || !type) {
       return {
@@ -202,14 +247,14 @@ export async function addBeneficiary(prevState: ActionResult | null, formData: F
       }
     }
 
-    if (type === "BNG-INTERNATIONAL" && !bank) {
+    if (type === "BNG-INTERNATIONAL" && !bankname && !codeBanque) {
       return {
         success: false,
         error: "Le nom de la banque est obligatoire pour les bénéficiaires internationaux",
       }
     }
 
-    if (type === "BNG-CONFRERE" && !bank) {
+    if (type === "BNG-CONFRERE" && !(bankname || codeBanque)) {
       return {
         success: false,
         error: "Le nom de la banque est obligatoire",
@@ -228,20 +273,225 @@ export async function addBeneficiary(prevState: ActionResult | null, formData: F
 
     const clientId = await getCurrentClientId()
 
-    const apiData = {
-      data: {
-        beneficiaryId: `BEN_${Date.now()}`,
-        clientId: clientId,
-        name: name,
-        accountNumber: account,
-        bankCode: bank,
-        bankName: bankname,
-        status: 0,
-        typeBeneficiary: type,
-        favoris: false,
-        codagence: type === "BNG-INTERNATIONAL" ? "N/A" : codeAgence || "N/A",
-        clerib: type === "BNG-INTERNATIONAL" ? "N/A" : cleRib || "N/A",
+    const secureMode = (process.env.NEXT_PUBLIC_PORTAL_SECURE_MODE || "false").toLowerCase() === "true"
+    const keyB64 = process.env.NEXT_PUBLIC_PORTAL_KEY_B64 || ""
+    const keyId = process.env.NEXT_PUBLIC_PORTAL_KEY_ID || "k1-mobile-v1"
+
+    console.log("[addBeneficiaryAndActivate] Form values", {
+      name,
+      account,
+      type,
+      codeBanque,
+      bankname,
+      codeAgence,
+      cleRib,
+    })
+
+    const base = {
+      beneficiaryId: `BEN_${Date.now()}`,
+      clientId: clientId,
+      status: 0, // Active
+      workflowStatus: WORKFLOW_STATUS.AVAILABLE, // ✅ Directly available
+      typeBeneficiary: type,
+      favoris: false,
+    }
+
+    let apiData: any
+    const plainFields = {
+      name,
+      accountNumber: account,
+      bankCode: codeBanque || "",
+      bankName: bankname || "",
+      codagence: type === "BNG-INTERNATIONAL" ? "N/A" : codeAgence || "N/A",
+      clerib: type === "BNG-INTERNATIONAL" ? "N/A" : cleRib || "N/A",
+    }
+
+    if (secureMode && keyB64) {
+      const enc = (v: any) => ({ ...encryptAesGcmNode(v, keyB64), key_id: keyId })
+      apiData = {
+        data: {
+          ...base,
+          ...plainFields,
+          name_json: enc(name),
+          accountNumber_json: enc(account),
+          bankCode_json: enc(codeBanque || ""),
+          bankName_json: enc(bankname || ""),
+          codagence_json: enc(type === "BNG-INTERNATIONAL" ? "N/A" : codeAgence || "N/A"),
+          clerib_json: enc(type === "BNG-INTERNATIONAL" ? "N/A" : cleRib || "N/A"),
+          key_id: keyId,
+        },
+      }
+    } else {
+      apiData = {
+        data: {
+          ...base,
+          ...plainFields,
+        },
+      }
+    }
+
+    const payloadToSend = apiData.data ?? apiData
+
+    console.log("[addBeneficiaryAndActivate] API payload (secureMode:", secureMode, ")", apiData)
+    console.log("[addBeneficiaryAndActivate] Payload sent to API", payloadToSend)
+
+    const cookieToken = (await cookies()).get("token")?.value
+    const usertoken = cookieToken
+
+    // ✅ Use new streamlined endpoint
+    const response = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/beneficiaire/create-and-activate`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${usertoken}`,
       },
+      body: JSON.stringify(payloadToSend),
+    })
+
+    if (!response.ok) {
+      let errorMessage = `Erreur API: ${response.status} ${response.statusText}`
+      let errorDetails: any = null
+      try {
+        errorDetails = await response.json()
+        if (errorDetails && typeof errorDetails === "object") {
+          errorMessage = errorDetails.message || errorDetails.error || errorMessage
+        }
+      } catch (parseError) {
+        // ignore JSON parse errors
+      }
+      return {
+        success: false,
+        error: errorMessage,
+        details: errorDetails,
+      }
+    }
+
+    const result = await response.json()
+
+    revalidatePath("/transfers/beneficiaries")
+    revalidatePath("/transfers/new")
+
+    return {
+      success: true,
+      message: "Bénéficiaire ajouté et activé avec succès",
+    }
+  } catch (error) {
+    console.error("Erreur lors de l'ajout du bénéficiaire:", error)
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Une erreur inattendue s'est produite",
+    }
+  }
+}
+
+/**
+ * OLD METHOD: Creates beneficiary in "CREATED" status (requires manual verification)
+ * Kept for backward compatibility or manual workflows
+ */
+export async function addBeneficiary(prevState: ActionResult | null, formData: FormData): Promise<ActionResult> {
+  try {
+    await new Promise((resolve) => setTimeout(resolve, 1000))
+
+    const getStr = (k: string) => (formData.get(k) as string) || ""
+    const name = getStr("name") || getStr("1_name")
+    const account = getStr("account") || getStr("1_account")
+    const type = getStr("type") || getStr("1_type")
+
+    // Extract bank code from multiple possible field names
+    let codeBanque =
+      getStr("codeBanque") || getStr("bankCode") || getStr("1_bankCode") || getStr("bank") || getStr("1_bank")
+
+    // Extract bank name
+    let bankname = getStr("bankname") || getStr("1_bankname") || getStr("bankName") || getStr("1_bankName")
+
+    // If we have a bank name but no code, try to derive the code
+    if (bankname && !codeBanque) {
+      codeBanque = getBankCode(bankname, type)
+    }
+
+    // If we have a code but no name, try to derive the name
+    if (codeBanque && !bankname) {
+      bankname = getBankNameFromCode(codeBanque)
+    }
+
+    const codeAgence = getStr("codeAgence") || getStr("1_codeAgence")
+    const cleRib = getStr("cleRib") || getStr("1_cleRib")
+
+    if (!name || !account || !type) {
+      return {
+        success: false,
+        error: "Tous les champs obligatoires doivent être remplis",
+      }
+    }
+
+    if (type === "BNG-INTERNATIONAL" && !bankname && !codeBanque) {
+      return {
+        success: false,
+        error: "Le nom de la banque est obligatoire pour les bénéficiaires internationaux",
+      }
+    }
+
+    if (type === "BNG-CONFRERE" && !(bankname || codeBanque)) {
+      return {
+        success: false,
+        error: "Le nom de la banque est obligatoire",
+      }
+    }
+
+    if (type !== "BNG-INTERNATIONAL") {
+      const digitsOnly = account.replace(/\D/g, "")
+      if (digitsOnly.length !== 10 || account !== digitsOnly) {
+        return {
+          success: false,
+          error: "Le numéro de compte doit contenir exactement 10 chiffres sans caractères spéciaux",
+        }
+      }
+    }
+
+    const clientId = await getCurrentClientId()
+
+    const secureMode = (process.env.NEXT_PUBLIC_PORTAL_SECURE_MODE || "false").toLowerCase() === "true"
+    const keyB64 = process.env.NEXT_PUBLIC_PORTAL_KEY_B64 || ""
+    const keyId = process.env.NEXT_PUBLIC_PORTAL_KEY_ID || "k1-mobile-v1"
+
+    const base = {
+      beneficiaryId: `BEN_${Date.now()}`,
+      clientId: clientId,
+      status: 0,
+      workflowStatus: WORKFLOW_STATUS.CREATED,
+      typeBeneficiary: type,
+      favoris: false,
+    }
+
+    let apiData: any
+    if (secureMode && keyB64) {
+      const enc = (v: any) => ({ ...encryptAesGcmNode(v, keyB64), key_id: keyId })
+      apiData = {
+        data: {
+          ...base,
+          name_json: enc(name),
+          accountNumber_json: enc(account),
+          bankCode_json: enc(codeBanque || ""),
+          bankName_json: enc(bankname || ""),
+          codagence_json: enc(type === "BNG-INTERNATIONAL" ? "N/A" : codeAgence || "N/A"),
+          clerib_json: enc(type === "BNG-INTERNATIONAL" ? "N/A" : cleRib || "N/A"),
+          key_id: keyId,
+          workflowStatus: WORKFLOW_STATUS.CREATED,
+        },
+      }
+    } else {
+      apiData = {
+        data: {
+          ...base,
+          name: name,
+          accountNumber: account,
+          bankCode: codeBanque || "",
+          bankName: bankname || "",
+          codagence: type === "BNG-INTERNATIONAL" ? "N/A" : codeAgence || "N/A",
+          clerib: type === "BNG-INTERNATIONAL" ? "N/A" : cleRib || "N/A",
+          workflowStatus: WORKFLOW_STATUS.CREATED,
+        },
+      }
     }
 
     const cookieToken = (await cookies()).get("token")?.value
@@ -344,6 +594,7 @@ export async function updateBeneficiary(prevState: ActionResult | null, formData
         favoris: currentBeneficiary?.favoris || false,
         codagence: type === "BNG-INTERNATIONAL" ? "N/A" : codeAgence || "N/A",
         clerib: type === "BNG-INTERNATIONAL" ? "N/A" : cleRib || "N/A",
+        workflowStatus: currentBeneficiary?.workflowStatus || WORKFLOW_STATUS.AVAILABLE,
       },
     }
 
@@ -442,29 +693,9 @@ export async function toggleBeneficiaryFavorite(
     const cookieToken = (await cookies()).get("token")?.value
     const usertoken = cookieToken
 
-    const currentBeneficiaries = await getBeneficiaries()
-    const currentBeneficiary = currentBeneficiaries.find((b) => b.id === beneficiaryId)
-
-    if (!currentBeneficiary) {
-      return {
-        success: false,
-        error: "Bénéficiaire non trouvé",
-      }
-    }
-
     const apiData = {
       data: {
-        beneficiaryId: currentBeneficiary.beneficiaryId,
-        clientId: currentBeneficiary.clientId,
-        name: currentBeneficiary.name,
-        accountNumber: currentBeneficiary.accountNumber,
-        bankCode: currentBeneficiary.bankCode,
-        bankName: currentBeneficiary.bankName,
-        status: currentBeneficiary.status,
-        typeBeneficiary: currentBeneficiary.typeBeneficiary,
         favoris: !currentFavoriteStatus,
-        codagence: currentBeneficiary.codagence,
-        clerib: currentBeneficiary.clerib,
       },
     }
 
@@ -479,13 +710,14 @@ export async function toggleBeneficiaryFavorite(
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}))
+      console.error("[toggleBeneficiaryFavorite] API Error:", errorData)
       return {
         success: false,
         error: errorData.message || `Erreur API: ${response.status} ${response.statusText}`,
       }
     }
 
-    const result = await response.json()
+    await response.json()
 
     revalidatePath("/transfers/beneficiaries")
     revalidatePath("/transfers/new")
@@ -519,29 +751,9 @@ export async function deactivateBeneficiary(prevState: ActionResult | null, form
     const cookieToken = (await cookies()).get("token")?.value
     const usertoken = cookieToken
 
-    const currentBeneficiaries = await getBeneficiaries()
-    const currentBeneficiary = currentBeneficiaries.find((b) => b.id === id)
-
-    if (!currentBeneficiary) {
-      return {
-        success: false,
-        error: "Bénéficiaire non trouvé",
-      }
-    }
-
     const apiData = {
       data: {
-        beneficiaryId: currentBeneficiary.beneficiaryId,
-        clientId: currentBeneficiary.clientId,
-        name: currentBeneficiary.name,
-        accountNumber: currentBeneficiary.accountNumber,
-        bankCode: currentBeneficiary.bankCode,
-        bankName: currentBeneficiary.bankName,
         status: 1,
-        typeBeneficiary: currentBeneficiary.typeBeneficiary,
-        favoris: currentBeneficiary.favoris,
-        codagence: currentBeneficiary.codagence,
-        clerib: currentBeneficiary.clerib,
       },
     }
 
@@ -562,7 +774,7 @@ export async function deactivateBeneficiary(prevState: ActionResult | null, form
       }
     }
 
-    const result = await response.json()
+    await response.json()
 
     revalidatePath("/transfers/beneficiaries")
     revalidatePath("/transfers/new")
@@ -596,29 +808,9 @@ export async function reactivateBeneficiary(prevState: ActionResult | null, form
     const cookieToken = (await cookies()).get("token")?.value
     const usertoken = cookieToken
 
-    const currentBeneficiaries = await getBeneficiaries()
-    const currentBeneficiary = currentBeneficiaries.find((b) => b.id === id)
-
-    if (!currentBeneficiary) {
-      return {
-        success: false,
-        error: "Bénéficiaire non trouvé",
-      }
-    }
-
     const apiData = {
       data: {
-        beneficiaryId: currentBeneficiary.beneficiaryId,
-        clientId: currentBeneficiary.clientId,
-        name: currentBeneficiary.name,
-        accountNumber: currentBeneficiary.accountNumber,
-        bankCode: currentBeneficiary.bankCode,
-        bankName: currentBeneficiary.bankName,
         status: 0,
-        typeBeneficiary: currentBeneficiary.typeBeneficiary,
-        favoris: currentBeneficiary.favoris,
-        codagence: currentBeneficiary.codagence,
-        clerib: currentBeneficiary.clerib,
       },
     }
 
@@ -639,7 +831,7 @@ export async function reactivateBeneficiary(prevState: ActionResult | null, form
       }
     }
 
-    const result = await response.json()
+    await response.json()
 
     revalidatePath("/transfers/beneficiaries")
     revalidatePath("/transfers/new")
@@ -655,24 +847,6 @@ export async function reactivateBeneficiary(prevState: ActionResult | null, form
       error: error instanceof Error ? error.message : "Une erreur inattendue s'est produite",
     }
   }
-}
-
-function getBankCode(bankName: string, type: string): string {
-  const bankCodes: Record<string, string> = {
-    "Banque Nationale de Guinée": "bng",
-    BICIGUI: "bici",
-    "Société Générale de Banques en Guinée": "sgbg",
-    "United Bank for Africa": "uba",
-    "Ecobank Guinée": "eco",
-    "VISTA BANK": "vista",
-    "BNP Paribas": "bnpp",
-    "Société Générale": "sg",
-    "Crédit Agricole": "ca",
-    HSBC: "hsbc",
-    "Deutsche Bank": "db",
-  }
-
-  return bankCodes[bankName] || bankName.substring(0, 4).toLowerCase()
 }
 
 export async function getBanks() {
@@ -700,4 +874,22 @@ export async function getBanks() {
     console.error("Erreur lors de la récupération des banques:", error)
     return []
   }
+}
+
+function getBankCode(bankName: string, type: string): string {
+  const bankCodes: Record<string, string> = {
+    "Banque Nationale de Guinée": "bng",
+    BICIGUI: "bici",
+    "Société Générale de Banques en Guinée": "sgbg",
+    "United Bank for Africa": "uba",
+    "Ecobank Guinée": "eco",
+    "VISTA BANK": "vista",
+    "BNP Paribas": "bnpp",
+    "Société Générale": "sg",
+    "Crédit Agricole": "ca",
+    HSBC: "hsbc",
+    "Deutsche Bank": "db",
+  }
+
+  return bankCodes[bankName] || bankName.substring(0, 4).toLowerCase()
 }

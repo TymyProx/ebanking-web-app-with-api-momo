@@ -2,14 +2,6 @@
 
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { Separator } from "@/components/ui/separator"
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -25,19 +17,42 @@ import { LogoutButton } from "@/components/auth/logout-button"
 import { NotificationDropdown } from "@/components/notifications/notification-dropdown"
 import { usePathname } from "next/navigation"
 import { useState, useEffect } from "react"
+import { getAccounts } from "@/app/accounts/actions"
+import { getCurrentUser } from "@/app/user/actions"
 
 export function Header() {
   const pathname = usePathname()
   const [userData, setUserData] = useState<any>(null)
+  const [hasActiveAccount, setHasActiveAccount] = useState<boolean>(false)
+  const [isCheckingAccounts, setIsCheckingAccounts] = useState<boolean>(true)
 
   useEffect(() => {
-    const storedUserData = localStorage.getItem("userData")
-    const token = localStorage.getItem("token")
-    //console.log("Token récupéré:", token)
-
-    if (storedUserData) {
-      setUserData(JSON.parse(storedUserData))
+    const fetchUser = async () => {
+      const user = await getCurrentUser()
+      console.log("[v0] User data received in header:", user)
+      if (user) {
+        setUserData(user)
+      }
     }
+
+    fetchUser()
+  }, [])
+
+  useEffect(() => {
+    const checkActiveAccounts = async () => {
+      try {
+        const accounts = await getAccounts()
+        const activeAccounts = accounts.filter((account) => account.status?.toUpperCase() === "ACTIF")
+        setHasActiveAccount(activeAccounts.length > 0)
+      } catch (error) {
+        console.error("Error checking active accounts:", error)
+        setHasActiveAccount(true)
+      } finally {
+        setIsCheckingAccounts(false)
+      }
+    }
+
+    checkActiveAccounts()
   }, [])
 
   const getInitials = (fullName: string) => {
@@ -50,53 +65,27 @@ export function Header() {
       .slice(0, 2)
   }
 
-  // Générer le breadcrumb basé sur le pathname
-  const generateBreadcrumb = () => {
-    const segments = pathname.split("/").filter(Boolean)
+  const displayName =
+    userData?.fullName ||
+    (userData?.firstName && userData?.lastName
+      ? `${userData.firstName} ${userData.lastName}`
+      : userData?.firstName || userData?.lastName || userData?.email?.split("@")[0] || "Utilisateur")
 
-    if (segments.length === 0) {
-      return [{ label: "Tableau de bord", href: "/" }]
-    }
-
-    const breadcrumbItems = [{ label: "Accueil", href: "/" }]
-
-    segments.forEach((segment, index) => {
-      const href = "/" + segments.slice(0, index + 1).join("/")
-      const label = segment.charAt(0).toUpperCase() + segment.slice(1).replace("-", " ")
-      breadcrumbItems.push({ label, href })
-    })
-
-    return breadcrumbItems
-  }
-
-  const breadcrumbItems = generateBreadcrumb()
+  console.log("[v0] Display name in header:", displayName)
 
   return (
-    <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
+    <header className="sticky top-0 z-50 flex h-16 shrink-0 items-center gap-2 border-b bg-background px-4">
       <SidebarTrigger className="-ml-1" />
       <Separator orientation="vertical" className="mr-2 h-4" />
 
-      {/* Breadcrumb */}
-      <Breadcrumb>
-        <BreadcrumbList>
-          {breadcrumbItems.map((item, index) => (
-            <div key={item.href} className="flex items-center">
-              {index > 0 && <BreadcrumbSeparator className="hidden md:block" />}
-              <BreadcrumbItem className="hidden md:block">
-                {index === breadcrumbItems.length - 1 ? (
-                  <BreadcrumbPage>{item.label}</BreadcrumbPage>
-                ) : (
-                  <BreadcrumbLink href={item.href}>{item.label}</BreadcrumbLink>
-                )}
-              </BreadcrumbItem>
-            </div>
-          ))}
-        </BreadcrumbList>
-      </Breadcrumb>
+      {!isCheckingAccounts && userData && (
+        <div className="flex flex-col gap-[2px]">
+          <span className="text-sm text-muted-foreground">Bonjour,</span>
+          <span className="text-xl font-bold text-primary">{displayName}</span>
+        </div>
+      )}
 
-      {/* Spacer */}
       <div className="ml-auto flex items-center gap-2">
-        {/* Search */}
         <Button variant="ghost" size="icon" className="h-8 w-8">
           <Search className="h-4 w-4" />
           <span className="sr-only">Rechercher</span>
@@ -104,20 +93,19 @@ export function Header() {
 
         <NotificationDropdown />
 
-        {/* User Menu */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="relative h-8 w-8 rounded-full">
               <Avatar className="h-8 w-8">
                 <AvatarImage src="/placeholder-user.jpg" alt="Avatar" />
-                <AvatarFallback>{userData?.fullName ? getInitials(userData.fullName) : "U"}</AvatarFallback>
+                <AvatarFallback>{getInitials(displayName)}</AvatarFallback>
               </Avatar>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent className="w-56" align="end" forceMount>
             <DropdownMenuLabel className="font-normal">
               <div className="flex flex-col space-y-1">
-                <p className="text-sm font-medium leading-none">{userData?.fullName || "Utilisateur"}</p>
+                <p className="text-sm font-medium leading-none">{displayName}</p>
                 <p className="text-xs leading-none text-muted-foreground">{userData?.email || "email@example.com"}</p>
               </div>
             </DropdownMenuLabel>

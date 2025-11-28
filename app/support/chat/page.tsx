@@ -17,6 +17,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { MessageCircle, Send, User, Clock, Star, Download, X } from "lucide-react"
+import AuthService from "@/lib/auth-service"
 
 interface Message {
   id: string
@@ -33,17 +34,33 @@ interface ChatSession {
   status: "waiting" | "connected" | "ended"
   startTime: Date
   subject: string
+  clientId: string
+  clientName: string
+  clientEmail: string
+  clientPhone: string
+}
+
+interface ChatFormData {
+  fullName: string
+  email: string
+  phone: string
+  subject: string
+  customSubject: string
 }
 
 export default function LiveChatPage() {
   const [step, setStep] = useState<"form" | "chat" | "ended">("form")
-  const [formData, setFormData] = useState({
-    fullName: "Mamadou Diallo",
-    accountNumber: "",
-    email: "mamadou.diallo@email.com",
+  const [formData, setFormData] = useState<ChatFormData>({
+    fullName: "",
+    email: "",
     phone: "",
     subject: "",
     customSubject: "",
+  })
+  const [clientId, setClientId] = useState<string | null>(null)
+  const [prefillStatus, setPrefillStatus] = useState<{ loading: boolean; error: string | null }>({
+    loading: true,
+    error: null,
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [isLoading, setIsLoading] = useState(false)
@@ -75,6 +92,61 @@ export default function LiveChatPage() {
     scrollToBottom()
   }, [messages])
 
+  useEffect(() => {
+    let isMounted = true
+
+    const loadClientIdentity = async () => {
+      setPrefillStatus({ loading: true, error: null })
+
+      try {
+        let user = AuthService.getCurrentUser()
+
+        if (!user && AuthService.getToken()) {
+          user = await AuthService.fetchMe()
+        }
+
+        if (!isMounted) return
+
+        if (!user) {
+          setPrefillStatus({
+            loading: false,
+            error: "Impossible de récupérer vos informations client. Veuillez vous reconnecter.",
+          })
+          return
+        }
+
+        const formattedName =
+          user.fullName?.trim() ||
+          [user.firstName, user.lastName].filter(Boolean).join(" ").trim() ||
+          user.email ||
+          "Client BNG"
+
+        setClientId(user.id)
+        setFormData((prev) => ({
+          ...prev,
+          fullName: formattedName,
+          email: user.email || prev.email,
+          phone: user.phoneNumber || prev.phone,
+        }))
+
+        setPrefillStatus({ loading: false, error: null })
+      } catch (error) {
+        if (!isMounted) return
+        console.error("Erreur lors du chargement des informations client:", error)
+        setPrefillStatus({
+          loading: false,
+          error: "Une erreur est survenue lors du chargement de vos informations client.",
+        })
+      }
+    }
+
+    loadClientIdentity()
+
+    return () => {
+      isMounted = false
+    }
+  }, [])
+
   // Simulation de messages de l'agent
   useEffect(() => {
     if (chatSession && chatSession.status === "connected" && messages.length === 1) {
@@ -94,27 +166,6 @@ export default function LiveChatPage() {
   const validateForm = () => {
     const newErrors: Record<string, string> = {}
 
-    // Validation numéro de compte (IBAN Guinée ou format interne)
-    if (!formData.accountNumber) {
-      newErrors.accountNumber = "Le numéro de compte est obligatoire"
-    } else if (!/^(GN\d{15}|\d{10,16})$/.test(formData.accountNumber.replace(/\s/g, ""))) {
-      newErrors.accountNumber = "Le numéro de compte saisi est incorrect."
-    }
-
-    // Validation email
-    if (!formData.email) {
-      newErrors.email = "L'adresse e-mail est obligatoire"
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = "Veuillez saisir une adresse e-mail valide."
-    }
-
-    // Validation téléphone
-    if (!formData.phone) {
-      newErrors.phone = "Le numéro de téléphone est obligatoire"
-    } else if (!/^\+?[\d\s-]{8,15}$/.test(formData.phone)) {
-      newErrors.phone = "Numéro de téléphone invalide."
-    }
-
     // Validation sujet
     if (!formData.subject) {
       newErrors.subject = "Merci d'indiquer le sujet de votre demande."
@@ -127,13 +178,19 @@ export default function LiveChatPage() {
   }
 
   const handleStartChat = async () => {
+    if (prefillStatus.loading) return
+
     if (!validateForm()) return
 
     setIsLoading(true)
     try {
       const finalSubject = formData.subject === "Autre (préciser)" ? formData.customSubject : formData.subject
 
-      // Simulation de démarrage de session
+      const safeClientId = clientId ?? `GUEST-${Date.now()}`
+      const safeClientName = formData.fullName?.trim() || "Client BNG"
+      const safeClientEmail = formData.email?.trim() || ""
+      const safeClientPhone = formData.phone?.trim() || ""
+
       const session: ChatSession = {
         id: `CHAT-${Date.now()}`,
         agentName: "Sarah Camara",
@@ -141,23 +198,25 @@ export default function LiveChatPage() {
         status: "waiting",
         startTime: new Date(),
         subject: finalSubject,
+        clientId: safeClientId,
+        clientName: safeClientName,
+        clientEmail: safeClientEmail,
+        clientPhone: safeClientPhone,
       }
 
       setChatSession(session)
 
-      // Message initial de l'utilisateur
       const initialMessage: Message = {
         id: Date.now().toString(),
         content: `Bonjour, j'aimerais discuter de : ${finalSubject}`,
         sender: "user",
         timestamp: new Date(),
-        senderName: formData.fullName,
+        senderName: safeClientName,
       }
 
       setMessages([initialMessage])
       setStep("chat")
 
-      // Simulation de connexion avec un agent
       setTimeout(() => {
         setChatSession((prev) => (prev ? { ...prev, status: "connected" } : null))
       }, 3000)
@@ -176,7 +235,7 @@ export default function LiveChatPage() {
       content: newMessage,
       sender: "user",
       timestamp: new Date(),
-      senderName: formData.fullName,
+      senderName: chatSession.clientName,
     }
 
     setMessages((prev) => [...prev, message])
@@ -247,61 +306,16 @@ export default function LiveChatPage() {
                 Assistance Live Chat
               </CardTitle>
               <CardDescription>
-                Discutez en temps réel avec un de nos conseillers. Veuillez remplir les informations ci-dessous pour
-                démarrer la conversation.
+                Discutez en temps réel avec un de nos conseillers. Sélectionnez simplement le sujet que vous souhaitez
+                aborder.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="fullName">Nom complet</Label>
-                  <Input
-                    id="fullName"
-                    value={formData.fullName}
-                    onChange={(e) => setFormData((prev) => ({ ...prev, fullName: e.target.value }))}
-                    className={errors.fullName ? "border-red-500" : ""}
-                  />
-                  {errors.fullName && <p className="text-sm text-red-500">{errors.fullName}</p>}
+              {prefillStatus.error && (
+                <div className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                  {prefillStatus.error}
                 </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="accountNumber">Numéro de compte</Label>
-                  <Input
-                    id="accountNumber"
-                    placeholder="GN123456789012345 ou 1234567890"
-                    value={formData.accountNumber}
-                    onChange={(e) => setFormData((prev) => ({ ...prev, accountNumber: e.target.value }))}
-                    className={errors.accountNumber ? "border-red-500" : ""}
-                  />
-                  {errors.accountNumber && <p className="text-sm text-red-500">{errors.accountNumber}</p>}
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="email">Adresse e-mail</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => setFormData((prev) => ({ ...prev, email: e.target.value }))}
-                    className={errors.email ? "border-red-500" : ""}
-                  />
-                  {errors.email && <p className="text-sm text-red-500">{errors.email}</p>}
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="phone">Numéro de téléphone</Label>
-                  <Input
-                    id="phone"
-                    placeholder="+224 123 456 789"
-                    value={formData.phone}
-                    onChange={(e) => setFormData((prev) => ({ ...prev, phone: e.target.value }))}
-                    className={errors.phone ? "border-red-500" : ""}
-                  />
-                  {errors.phone && <p className="text-sm text-red-500">{errors.phone}</p>}
-                </div>
-              </div>
+              )}
 
               <div className="space-y-2">
                 <Label htmlFor="subject">Sujet de la discussion</Label>
@@ -309,7 +323,7 @@ export default function LiveChatPage() {
                   value={formData.subject}
                   onValueChange={(value) => setFormData((prev) => ({ ...prev, subject: value }))}
                 >
-                  <SelectTrigger className={errors.subject ? "border-red-500" : ""}>
+                  <SelectTrigger className={errors.subject ? "border-red-500" : ""} disabled={prefillStatus.loading}>
                     <SelectValue placeholder="Sélectionnez le sujet de votre demande" />
                   </SelectTrigger>
                   <SelectContent>
@@ -347,8 +361,16 @@ export default function LiveChatPage() {
                 </ul>
               </div>
 
-              <Button onClick={handleStartChat} disabled={isLoading} className="w-full">
-                {isLoading ? "Connexion en cours..." : "Démarrer la conversation"}
+              <Button
+                onClick={handleStartChat}
+                disabled={isLoading || prefillStatus.loading}
+                className="w-full"
+              >
+                {isLoading
+                  ? "Connexion en cours..."
+                  : prefillStatus.loading
+                    ? "Chargement des informations..."
+                    : "Démarrer la conversation"}
               </Button>
             </CardContent>
           </Card>
@@ -372,19 +394,25 @@ export default function LiveChatPage() {
                     <CardTitle className="text-lg">
                       {chatSession?.status === "waiting" ? "Connexion en cours..." : chatSession?.agentName}
                     </CardTitle>
-                    <CardDescription className="flex items-center gap-2">
+                    <CardDescription className="flex flex-col gap-2 text-sm text-muted-foreground sm:flex-row sm:items-center sm:gap-4">
                       {chatSession?.status === "waiting" ? (
-                        <>
+                        <span className="flex items-center gap-2">
                           <Clock className="w-4 h-4" />
                           Recherche d'un conseiller disponible...
-                        </>
+                        </span>
                       ) : (
-                        <>
-                          <Badge variant="secondary" className="bg-green-100 text-green-800">
-                            En ligne
-                          </Badge>
-                          Sujet: {chatSession?.subject}
-                        </>
+                        <div className="flex flex-col gap-1 text-sm text-muted-foreground sm:flex-row sm:items-center sm:gap-4">
+                          <span className="flex items-center gap-2">
+                            <Badge variant="secondary" className="bg-green-100 text-green-800">
+                              En ligne
+                            </Badge>
+                            Sujet: {chatSession?.subject}
+                          </span>
+                          <span className="flex items-center gap-2">
+                            <User className="w-4 h-4" />
+                            {chatSession?.clientName}
+                          </span>
+                        </div>
                       )}
                     </CardDescription>
                   </div>

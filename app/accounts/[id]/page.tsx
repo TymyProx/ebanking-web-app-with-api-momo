@@ -1,7 +1,7 @@
 "use client"
 
 import { useParams, useRouter } from "next/navigation"
-import { useState, useEffect, useTransition } from "react"
+import { useState, useEffect, useTransition, useMemo } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -25,12 +25,10 @@ import {
   Shield,
   Info,
   RefreshCw,
-  Sparkles,
 } from "lucide-react"
 import { getAccounts } from "../actions"
-import { getTransactions } from "../../transfers/new/actions"
 import { toggleAccountStatus, getAccountDetails } from "./actions"
-import { useNotifications } from "@/contexts/notification-context"
+import { getUserTransactions } from "@/app/transfers/mes-virements/actions"
 
 interface Account {
   id: string
@@ -68,14 +66,51 @@ export default function AccountDetailsPage() {
   const accountId = params.id as string
   const [showBalance, setShowBalance] = useState(true)
   const [account, setAccount] = useState<Account | null>(null)
-  const [transactions, setTransactions] = useState<Transaction[]>([])
+
+  const [transactions, setTransactions] = useState<Transaction[]>(() => {
+    if (typeof window !== "undefined") {
+      const cacheKey = `transactions_${accountId}`
+      const cached = sessionStorage.getItem(cacheKey)
+      if (cached) {
+        try {
+          const cachedData = JSON.parse(cached)
+          if (Date.now() - cachedData.timestamp < 60000) {
+            return cachedData.transactions
+          }
+        } catch (e) {
+          // Invalid cache, return empty array
+        }
+      }
+    }
+    return []
+  })
+
   const [isLoadingAccount, setIsLoadingAccount] = useState(true)
   const [isLoadingTransactions, setIsLoadingTransactions] = useState(true)
   const [isPending, startTransition] = useTransition()
-  const { addNotification } = useNotifications()
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 5
+  const maxTransactions = 20
+
+  const paginatedTransactions = useMemo(() => {
+    const limitedTransactions = transactions.slice(0, maxTransactions)
+    const startIndex = (currentPage - 1) * itemsPerPage
+    const endIndex = startIndex + itemsPerPage
+    return limitedTransactions.slice(startIndex, endIndex)
+  }, [transactions, currentPage])
+
+  const totalPages = Math.ceil(Math.min(transactions.length, maxTransactions) / itemsPerPage)
+
+  const displayedTransactions = useMemo(() => {
+    return transactions.slice(0, itemsPerPage)
+  }, [transactions])
 
   useEffect(() => {
-    const loadAccount = async () => {
+    const loadData = async () => {
+      await loadAccountData()
+    }
+
+    const loadAccountData = async () => {
       try {
         const accountDetails = await getAccountDetails(accountId)
 
@@ -97,6 +132,7 @@ export default function AccountDetailsPage() {
             overdraftLimit: accountDetails.currency === "GNF" ? 500000 : undefined,
           }
           setAccount(adaptedAccount)
+          await loadTransactionsData(accountDetails.accountNumber)
         } else {
           const accountsData = await getAccounts()
 
@@ -108,10 +144,10 @@ export default function AccountDetailsPage() {
 
               const adaptedAccount: Account = {
                 id: foundAccount.id || foundAccount.accountId,
-                name: foundAccount.accountName || foundAccount.name || `Compte ${foundAccount.accountNumber}`,
+                name: foundAccount.accountName || `Compte ${foundAccount.accountNumber}`,
                 number: foundAccount.accountNumber,
-                balance: Number.parseFloat(foundAccount.bookBalance || foundAccount.balance || "0"),
-                availableBalance: Number.parseFloat(foundAccount.availableBalance || foundAccount.balance || "0"),
+                balance: Number.parseFloat(foundAccount.bookBalance || "0"),
+                availableBalance: Number.parseFloat(foundAccount.availableBalance || "0"),
                 currency: foundAccount.currency || "GNF",
                 type: foundAccount.type,
                 status: foundAccount.status,
@@ -121,95 +157,118 @@ export default function AccountDetailsPage() {
                 overdraftLimit: foundAccount.currency === "GNF" ? 500000 : undefined,
               }
               setAccount(adaptedAccount)
+              await loadTransactionsData(foundAccount.accountNumber)
             }
           }
         }
       } catch (error) {
-        console.error("Erreur lors du chargement du compte:", error)
+        console.error("[v0] Error loading account:", error)
       } finally {
         setIsLoadingAccount(false)
       }
     }
 
-    loadAccount()
-  }, [accountId])
-
-  useEffect(() => {
-    const loadTransactions = async () => {
+    const loadTransactionsData = async (accountNumber?: string) => {
       try {
-        const transactionsData = await getTransactions()
-        //console.log("[v0] Transactions récupérées:", transactionsData)
+        const transactionsData = await getUserTransactions()
 
-        if (transactionsData.data && Array.isArray(transactionsData.data)) {
-          // Filtrer les transactions pour ce compte spécifique
+        if (transactionsData.success && transactionsData.data && Array.isArray(transactionsData.data)) {
           const accountTransactions = transactionsData.data
-            .filter((txn: any) => txn.accountId === accountId)
+            .filter((txn: any) => {
+              const txnAccountNumber = txn.numCompte || txn.accountNumber || txn.accountId
+              return txnAccountNumber === accountNumber
+            })
             .map((txn: any) => {
-              const amount = Number.parseFloat(txn.amount || "0")
+              const amount = Number.parseFloat(txn.montantOperation || txn.amount || "0")
               const isCredit = txn.txnType === "CREDIT"
-              const isDebit = txn.txnType === "DEBIT"
 
               return {
-                id: txn.txnId || txn.id,
-                accountId: txn.accountId,
+                id: txn.txnId || txn.id || txn.transactionId,
+                accountId: txn.accountId || txn.numCompte || accountId,
                 type: isCredit ? "Virement reçu" : "Virement émis",
-                description: txn.description || "Transaction",
+                description: txn.description || txn.referenceOperation || "Transaction",
                 amount: isCredit ? Math.abs(amount) : -Math.abs(amount),
-                currency: account?.currency || "GNF",
-                date: txn.valueDate || new Date().toISOString(),
-                status: txn.status, //txn.status === "COMPLETED" ? "Exécuté" : txn.status === "PENDING" ? "En attente" : "Rejeté",
-                counterparty: txn.beneficiaryId || "Système",
-                reference: txn.txnId || "REF-" + Date.now(),
-                balanceAfter: 0, // Calculé dynamiquement si nécessaire
+                currency: txn.codeDevise || "GNF",
+                date: txn.valueDate || txn.date || txn.createdAt || new Date().toISOString(),
+                status: txn.status || "Exécuté",
+                counterparty: txn.creditAccount || txn.beneficiaryId || txn.beneficiary || "Système",
+                reference: txn.txnId || txn.referenceOperation || txn.reference || "REF-" + Date.now(),
+                balanceAfter: 0,
               } as Transaction
             })
-            .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()) // Trier par date décroissante
+            .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
 
           setTransactions(accountTransactions)
+
+          const cacheKey = `transactions_${accountId}`
+          sessionStorage.setItem(
+            cacheKey,
+            JSON.stringify({
+              transactions: accountTransactions,
+              timestamp: Date.now(),
+            }),
+          )
+        } else {
+          setTransactions([])
         }
       } catch (error) {
-        console.error("Erreur lors du chargement des transactions:", error)
+        console.error("[v0] Error loading transactions:", error)
+        setTransactions([])
       } finally {
         setIsLoadingTransactions(false)
       }
     }
 
-    if (account) {
-      loadTransactions()
-    }
-  }, [accountId, account])
+    loadData()
+  }, [accountId])
 
   const handleRefreshTransactions = async () => {
     setIsLoadingTransactions(true)
     try {
-      const transactionsData = await getTransactions()
-      if (transactionsData.data && Array.isArray(transactionsData.data)) {
+      const transactionsData = await getUserTransactions()
+
+      if (transactionsData.success && transactionsData.data && Array.isArray(transactionsData.data)) {
+        const accountNumber = account?.number || accountId
         const accountTransactions = transactionsData.data
-          .filter((txn: any) => txn.accountId === accountId)
+          .filter((txn: any) => {
+            const txnAccountNumber = txn.numCompte || txn.accountNumber || txn.accountId
+            return txnAccountNumber === accountNumber
+          })
           .map((txn: any) => {
-            const amount = Number.parseFloat(txn.amount || "0")
+            const amount = Number.parseFloat(txn.montantOperation || txn.amount || "0")
             const isCredit = txn.txnType === "CREDIT"
 
             return {
-              id: txn.txnId || txn.id,
-              accountId: txn.accountId,
+              id: txn.txnId || txn.id || txn.transactionId,
+              accountId: txn.accountId || txn.numCompte || accountId,
               type: isCredit ? "Virement reçu" : "Virement émis",
-              description: txn.description || "Transaction",
+              description: txn.description || txn.referenceOperation || "Transaction",
               amount: isCredit ? Math.abs(amount) : -Math.abs(amount),
-              currency: account?.currency || "GNF",
-              date: txn.valueDate || new Date().toISOString(),
-              status: txn.status, //txn.status === "COMPLETED" ? "Exécuté" : txn.status === "PENDING" ? "En attente" : "Rejeté",
-              counterparty: txn.beneficiaryId || "Système",
-              reference: txn.txnId || "REF-" + Date.now(),
+              currency: txn.codeDevise || "GNF",
+              date: txn.valueDate || txn.date || txn.createdAt || new Date().toISOString(),
+              status: txn.status || "Exécuté",
+              counterparty: txn.creditAccount || txn.beneficiaryId || txn.beneficiary || "Système",
+              reference: txn.txnId || txn.referenceOperation || txn.reference || "REF-" + Date.now(),
               balanceAfter: 0,
             } as Transaction
           })
           .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
 
         setTransactions(accountTransactions)
+
+        const cacheKey = `transactions_${accountId}`
+        sessionStorage.setItem(
+          cacheKey,
+          JSON.stringify({
+            transactions: accountTransactions,
+            timestamp: Date.now(),
+          }),
+        )
+      } else {
+        setTransactions([])
       }
     } catch (error) {
-      console.error("Erreur lors du rechargement des transactions:", error)
+      setTransactions([])
     } finally {
       setIsLoadingTransactions(false)
     }
@@ -222,34 +281,13 @@ export default function AccountDetailsPage() {
 
     startTransition(async () => {
       try {
-        //console.log("[v0] Changement de statut:", { accountId, previousStatus, newStatus })
-
         const result = await toggleAccountStatus(accountId, newStatus)
 
         if (result.success) {
-          // Update local account state
           setAccount((prev) => (prev ? { ...prev, status: newStatus } : null))
-
-          // Add notification to the context
-          // addNotification({
-          //   type: "account_status",
-          //   title: "Changement de statut de compte",
-          //   message: `Le statut de votre compte ${account.name} (${account.number}) a été modifié de "${previousStatus}" vers "${newStatus}".`,
-          //   timestamp: new Date(),
-          //   isRead: false,
-          // })
-
-          //console.log("[v0] Statut mis à jour avec succès")
         }
       } catch (error) {
-        //console.error("[v0] Erreur lors du changement de statut:", error)
-        // addNotification({
-        //   type: "error",
-        //   title: "Erreur",
-        //   message: "Impossible de modifier le statut du compte. Veuillez réessayer.",
-        //   timestamp: new Date(),
-        //   isRead: false,
-        // })
+        // No console.error or notification for status change error
       }
     })
   }
@@ -358,34 +396,23 @@ export default function AccountDetailsPage() {
 
   return (
     <div className="space-y-8">
-      <div className="relative">
-        <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-secondary/10 to-primary/10 rounded-2xl blur-3xl -z-10" />
-        <div className="flex items-center justify-between p-6 bg-white/80 backdrop-blur-sm rounded-2xl border border-border/50 shadow-sm">
-          <div className="flex items-center space-x-4">
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={() => router.back()}
-              className="bg-white/80 backdrop-blur-sm"
-            >
-              <ArrowLeft className="w-4 h-4" />
-            </Button>
-            <div>
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-primary via-secondary to-primary bg-clip-text text-transparent">
-                Détails du Compte
-              </h1>
-              <p className="text-muted-foreground">
-                {account.name} • {account.number}
-              </p>
-            </div>
-          </div>
+      <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-secondary/10 to-primary/10 rounded-2xl blur-3xl -z-10" />
+      <div className="flex items-center gap-3">
+        <Button variant="outline" size="icon" onClick={() => router.back()} className="bg-white/80 backdrop-blur-sm">
+          <ArrowLeft className="w-4 h-4" />
+        </Button>
+        <div>
+          <h1 className="text-2xl font-bold text-primary">Détails du Compte</h1>
+          <p className="text-muted-foreground">
+            {account.name} • {account.number}
+          </p>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
         {/* Main balance card */}
         <Card className="lg:col-span-2 relative overflow-hidden border-2 hover:border-primary/50 transition-all duration-300 shadow-lg">
-          <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-secondary/5" />
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent" />
 
           <CardHeader className="relative">
             <CardTitle className="flex items-center justify-between">
@@ -451,7 +478,7 @@ export default function AccountDetailsPage() {
             <Separator />
 
             {/* Account details grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div className="space-y-4">
                 <div className="flex items-start space-x-3 p-3 rounded-lg bg-muted/30">
                   <Building className="h-5 w-5 text-primary mt-0.5" />
@@ -506,7 +533,7 @@ export default function AccountDetailsPage() {
 
           <CardHeader className="relative">
             <CardTitle className="flex items-center">
-              <div className="p-2 rounded-lg bg-gradient-to-br from-primary to-secondary mr-2">
+              <div className="p-2 rounded-lg bg-primary mr-2">
                 <Info className="w-5 h-5 text-white" />
               </div>
               Informations
@@ -526,7 +553,7 @@ export default function AccountDetailsPage() {
                 <p className="text-xs text-muted-foreground uppercase font-medium mb-1">Statut</p>
                 <Badge
                   variant={account.status === "ACTIF" ? "default" : "secondary"}
-                  className={account.status === "ACTIF" ? "bg-gradient-to-r from-primary to-secondary text-white" : ""}
+                  className={account.status === "ACTIF" ? "bg-primary text-white" : ""}
                 >
                   {account.status}
                 </Badge>
@@ -562,7 +589,7 @@ export default function AccountDetailsPage() {
                       variant="outline"
                       size="sm"
                       className="w-full justify-start bg-white/50 hover:bg-primary/10 hover:border-primary/50 transition-all"
-                      onClick={() => router.push(`/services/rib?accountId=${accountId}`)}
+                      onClick={() => router.push(`/accounts/rib?accountId=${accountId}`)}
                     >
                       <FileText className="w-4 h-4 mr-2" />
                       Obtenir RIB
@@ -580,12 +607,7 @@ export default function AccountDetailsPage() {
 
         <CardHeader className="relative">
           <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center">
-              <div className="p-2 rounded-lg bg-gradient-to-br from-primary to-secondary mr-3">
-                <Sparkles className="h-5 w-5 text-white" />
-              </div>
-              Transactions du compte
-            </CardTitle>
+            <CardTitle className="flex items-center">Transactions du compte</CardTitle>
             <Button onClick={handleRefreshTransactions} disabled={isLoadingTransactions} variant="outline" size="sm">
               <RefreshCw className={`h-4 w-4 mr-2 ${isLoadingTransactions ? "animate-spin" : ""}`} />
               {isLoadingTransactions ? "Actualisation..." : "Actualiser"}
@@ -621,59 +643,88 @@ export default function AccountDetailsPage() {
               <p className="text-muted-foreground">Aucune transaction trouvée pour ce compte</p>
             </div>
           ) : (
-            <div className="space-y-3">
-              {transactions.map((transaction) => (
-                <div
-                  key={transaction.id}
-                  className="flex items-center justify-between p-4 border-2 rounded-xl hover:border-primary/50 hover:shadow-md transition-all duration-300 bg-white/50 backdrop-blur-sm group"
-                >
-                  <div className="flex items-center space-x-4">
-                    <div
-                      className={`w-12 h-12 rounded-full flex items-center justify-center ${
-                        transaction.amount > 0
-                          ? "bg-gradient-to-br from-primary/20 to-secondary/20"
-                          : "bg-gradient-to-br from-destructive/20 to-destructive/10"
-                      }`}
-                    >
-                      {transaction.amount > 0 ? (
-                        <ArrowDownRight className="w-5 h-5 text-primary" />
-                      ) : (
-                        <ArrowUpRight className="w-5 h-5 text-destructive" />
-                      )}
+            <>
+              <div className="space-y-3">
+                {paginatedTransactions.map((transaction) => (
+                  <div
+                    key={transaction.id}
+                    className="flex items-center justify-between p-4 border-2 rounded-xl hover:border-primary/50 hover:shadow-md transition-all duration-300 bg-white/50 backdrop-blur-sm group"
+                  >
+                    <div className="flex items-center space-x-4">
+                      <div
+                        className={`w-12 h-12 rounded-full flex items-center justify-center ${
+                          transaction.amount > 0
+                            ? "bg-gradient-to-br from-primary/20 to-secondary/20"
+                            : "bg-gradient-to-br from-destructive/20 to-destructive/10"
+                        }`}
+                      >
+                        {transaction.amount > 0 ? (
+                          <ArrowDownRight className="w-5 h-5 text-primary" />
+                        ) : (
+                          <ArrowUpRight className="w-5 h-5 text-destructive" />
+                        )}
+                      </div>
+                      <div>
+                        <p className="font-semibold">{transaction.type}</p>
+                        <p className="text-sm text-muted-foreground">{transaction.description}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {transaction.counterparty} • Réf: {transaction.reference}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="font-semibold">{transaction.type}</p>
-                      <p className="text-sm text-muted-foreground">{transaction.description}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {transaction.counterparty} • Réf: {transaction.reference}
+                    <div className="text-right">
+                      <p
+                        className={`text-lg font-bold ${transaction.amount > 0 ? "text-primary" : "text-destructive"}`}
+                      >
+                        {transaction.amount > 0 ? "+" : "-"}
+                        {formatAmount(Math.abs(transaction.amount), account?.currency || transaction.currency)}{" "}
+                        {account?.currency || transaction.currency}
                       </p>
+                      <p className="text-sm text-muted-foreground">{formatDateTime(transaction.date)}</p>
+                      {/* <Badge
+                        variant={
+                          transaction.status === "Exécuté"
+                            ? "default"
+                            : transaction.status === "En attente"
+                              ? "secondary"
+                              : "destructive"
+                        }
+                        className={
+                          transaction.status === "Exécuté"
+                            ? "bg-gradient-to-r from-primary to-secondary text-white"
+                            : ""
+                        }
+                      >
+                        {transaction.status}
+                      </Badge> */}
                     </div>
                   </div>
-                  <div className="text-right">
-                    <p className={`text-lg font-bold ${transaction.amount > 0 ? "text-primary" : "text-destructive"}`}>
-                      {transaction.amount > 0 ? "+" : "-"}
-                      {formatAmount(Math.abs(transaction.amount), account?.currency || transaction.currency)}{" "}
-                      {account?.currency || transaction.currency}
-                    </p>
-                    <p className="text-sm text-muted-foreground">{formatDateTime(transaction.date)}</p>
-                    <Badge
-                      variant={
-                        transaction.status === "Exécuté"
-                          ? "default"
-                          : transaction.status === "En attente"
-                            ? "secondary"
-                            : "destructive"
-                      }
-                      className={
-                        transaction.status === "Exécuté" ? "bg-gradient-to-r from-primary to-secondary text-white" : ""
-                      }
-                    >
-                      {transaction.status}
-                    </Badge>
-                  </div>
+                ))}
+              </div>
+              {totalPages > 1 && (
+                <div className="mt-6 flex items-center justify-center gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                    disabled={currentPage === 1}
+                    className="bg-gradient-to-r from-primary/10 to-secondary/10 hover:from-primary/20 hover:to-secondary/20"
+                  >
+                    Précédent
+                  </Button>
+                  <span className="px-4 py-2 text-sm text-muted-foreground">
+                    Page {currentPage} sur {totalPages}
+                  </span>
+                  <Button
+                    variant="outline"
+                    onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                    disabled={currentPage === totalPages}
+                    className="bg-gradient-to-r from-primary/10 to-secondary/10 hover:from-primary/20 hover:to-secondary/20"
+                  >
+                    Suivant
+                  </Button>
                 </div>
-              ))}
-            </div>
+              )}
+            </>
           )}
         </CardContent>
       </Card>

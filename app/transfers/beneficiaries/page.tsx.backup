@@ -1,0 +1,1422 @@
+"use client"
+
+import { useState, useEffect, useTransition } from "react"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Badge } from "@/components/ui/badge"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import {
+  Users,
+  Plus,
+  Search,
+  UserX,
+  Building,
+  User,
+  Globe,
+  MoreVertical,
+  Star,
+  StarOff,
+  CheckCircle,
+  AlertCircle,
+} from "lucide-react"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import {
+  addBeneficiary,
+  addBeneficiaryAndActivate,
+  updateBeneficiary,
+  deactivateBeneficiary,
+  reactivateBeneficiary,
+  getBeneficiaries,
+  toggleBeneficiaryFavorite,
+  getBanks,
+  getBeneficiaryDetails,
+} from "./actions"
+import { useActionState } from "react"
+import type React from "react"
+import { useRef } from "react"
+import { importAesGcmKeyFromBase64, decryptAesGcmFromJson, isEncryptedJson } from "@/lib/crypto"
+import { toast } from "@/hooks/use-toast"
+import { OtpModal } from "@/components/otp-modal"
+
+interface Beneficiary {
+  id: string
+  name: string
+  account: string
+  bank: string
+  type: string
+  favorite: boolean
+  lastUsed: string
+  addedDate: string
+  iban?: string
+  swiftCode?: string
+  country?: string
+  status: number
+  codagence?: string
+  clerib?: string
+  workflowStatus: WorkflowStatus
+  workflowMetadata?: Record<string, any> | null
+}
+
+interface Bank {
+  id: string
+  bankName: string
+  swiftCode: string
+  codeBank: string
+}
+
+type ActionResult = {
+  success?: boolean
+  error?: string
+  message?: string
+}
+
+const WORKFLOW_STATUS = {
+  CREATED: "cree",
+  VERIFIED: "verifie",
+  VALIDATED: "valide",
+  AVAILABLE: "disponible",
+  SUSPENDED: "suspendu",
+} as const
+
+type WorkflowStatus = (typeof WORKFLOW_STATUS)[keyof typeof WORKFLOW_STATUS]
+
+const PENDING_WORKFLOW_STATUSES: WorkflowStatus[] = [
+  WORKFLOW_STATUS.CREATED,
+  WORKFLOW_STATUS.VERIFIED,
+  WORKFLOW_STATUS.VALIDATED,
+]
+
+const WORKFLOW_LABELS: Record<WorkflowStatus, string> = {
+  [WORKFLOW_STATUS.CREATED]: "Créé",
+  [WORKFLOW_STATUS.VERIFIED]: "Vérification",
+  [WORKFLOW_STATUS.VALIDATED]: "Validation",
+  [WORKFLOW_STATUS.AVAILABLE]: "Disponible",
+  [WORKFLOW_STATUS.SUSPENDED]: "Suspendu",
+}
+
+const toWorkflowStatus = (value: any): WorkflowStatus => {
+  const allowed = Object.values(WORKFLOW_STATUS) as WorkflowStatus[]
+  return allowed.includes(value as WorkflowStatus) ? (value as WorkflowStatus) : WORKFLOW_STATUS.AVAILABLE
+}
+
+export default function BeneficiariesPage() {
+  const [searchTerm, setSearchTerm] = useState("")
+  const [filterType, setFilterType] = useState("all")
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
+  const [editingBeneficiary, setEditingBeneficiary] = useState<Beneficiary | null>(null)
+  const [beneficiaries, setBeneficiaries] = useState<Beneficiary[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [isPending, startTransition] = useTransition()
+
+  const [selectedType, setSelectedType] = useState("")
+  const [selectedBank, setSelectedBank] = useState("")
+  const [banks, setBanks] = useState<Bank[]>([])
+  const [selectedBankCode, setSelectedBankCode] = useState("")
+  const [selectedSwiftCode, setSelectedSwiftCode] = useState("")
+  const [loadingBanks, setLoadingBanks] = useState(false)
+  const [accountNumberError, setAccountNumberError] = useState<string | null>(null)
+  const [ribError, setRibError] = useState<string | null>(null)
+  const [formDirty, setFormDirty] = useState(false)
+  const formRef = useRef<HTMLFormElement>(null)
+  const editFormRef = useRef<HTMLFormElement>(null)
+
+  const [addState, addAction, isAddPending] = useActionState<any, any>(addBeneficiary as any, null as any)
+  // ✅ NEW: Streamlined action for OTP-verified beneficiary creation
+  const [addAndActivateState, addAndActivateAction, isAddAndActivatePending] = useActionState<any, any>(
+    addBeneficiaryAndActivate as any,
+    null as any,
+  )
+  const [updateState, updateAction, isUpdatePending] = useActionState<any, any>(updateBeneficiary as any, null as any)
+  const [deactivateState, deactivateAction, isDeactivatePending] = useActionState<any, any>(
+    deactivateBeneficiary as any,
+    null as any,
+  )
+  const [reactivateState, reactivateAction, isReactivatePending] = useActionState<any, any>(
+    reactivateBeneficiary as any,
+    null as any,
+  )
+
+  const [showDeactivateSuccess, setShowDeactivateSuccess] = useState(false)
+  const [showReactivateSuccess, setShowReactivateSuccess] = useState(false)
+  const [showAddSuccess, setShowAddSuccess] = useState(false)
+  const [showUpdateSuccess, setShowUpdateSuccess] = useState(false)
+
+  const [showOtpModal, setShowOtpModal] = useState(false)
+  const [otpReferenceId, setOtpReferenceId] = useState<string | null>(null)
+  const [pendingBeneficiaryData, setPendingBeneficiaryData] = useState<FormData | null>(null)
+
+  const loadBeneficiaries = async () => {
+    setIsLoading(true)
+    try {
+      const apiBeneficiaries = await getBeneficiaries()
+      const secureMode = (process.env.NEXT_PUBLIC_PORTAL_SECURE_MODE || "false").toLowerCase() === "true"
+      const keyB64 = process.env.NEXT_PUBLIC_PORTAL_KEY_B64 || ""
+      const key = secureMode && keyB64 ? await importAesGcmKeyFromBase64(keyB64) : null
+
+      async function resolveField(value: any): Promise<string> {
+        if (!value) return ""
+        if (secureMode && key && (isEncryptedJson(value) || typeof value === "string")) {
+          try {
+            return await decryptAesGcmFromJson(value, key)
+          } catch {
+            // Fallback to string if decrypt fails
+          }
+        }
+        return typeof value === "string" ? value : JSON.stringify(value)
+      }
+
+      const transformedBeneficiaries: Beneficiary[] = await Promise.all(
+        apiBeneficiaries.map(async (apiB: any) => {
+          const name = await resolveField(apiB.name ?? apiB.name_json)
+          const accountNumber = await resolveField(apiB.accountNumber ?? apiB.accountNumber_json)
+          const bankNamePlain = await resolveField(apiB.bankName ?? apiB.bankName_json)
+          const bankCodePlain = await resolveField(apiB.bankCode ?? apiB.bankCode_json)
+          const bankResolved = bankNamePlain || getBankNameFromCode(bankCodePlain)
+          const codagence = await resolveField(apiB.codagence ?? apiB.codagence_json)
+          const clerib = await resolveField(apiB.clerib ?? apiB.clerib_json)
+          const workflowStatus = toWorkflowStatus(apiB.workflowStatus)
+          let workflowMetadata = apiB.workflowMetadata || null
+          if (workflowMetadata && typeof workflowMetadata === "string") {
+            try {
+              workflowMetadata = JSON.parse(workflowMetadata)
+            } catch {
+              workflowMetadata = null
+            }
+          }
+
+          return {
+            id: apiB.id,
+            name,
+            account: accountNumber,
+            bank: bankResolved,
+            type: apiB.typeBeneficiary,
+            favorite: Boolean(apiB.favoris),
+            lastUsed: "Jamais",
+            addedDate: new Date(apiB.createdAt).toLocaleDateString("fr-FR"),
+            status: apiB.status,
+            codagence,
+            clerib,
+            workflowStatus,
+            workflowMetadata,
+          } as Beneficiary
+        }),
+      )
+      setBeneficiaries(transformedBeneficiaries)
+    } catch (error) {
+      console.error("Erreur lors du chargement des bénéficiaires:", error)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const loadBanks = async () => {
+    try {
+      setLoadingBanks(true)
+      const banksData = await getBanks()
+      setBanks(banksData)
+    } catch (error) {
+      console.error("Erreur lors du chargement des banques:", error)
+      setBanks([])
+    } finally {
+      setLoadingBanks(false)
+    }
+  }
+
+  useEffect(() => {
+    if (selectedType === "BNG-CONFRERE") {
+      loadBanks()
+    }
+  }, [selectedType])
+
+  useEffect(() => {
+    if (selectedType === "BNG-BNG") {
+      setSelectedBank("Banque Nationale de Guinée")
+      setSelectedBankCode("022") // Auto-fill code banque with "022" for internal type
+      setSelectedSwiftCode("")
+    } else if (selectedType === "BNG-CONFRERE") {
+      setSelectedBank("")
+      setSelectedBankCode("")
+      setSelectedSwiftCode("")
+    } else if (selectedType !== "") {
+      setSelectedBank("")
+      setSelectedBankCode("")
+      setSelectedSwiftCode("")
+    }
+    if (selectedType === "BNG-INTERNATIONAL") {
+      setRibError(null)
+    }
+  }, [selectedType])
+
+  useEffect(() => {
+    loadBeneficiaries()
+  }, [])
+
+  useEffect(() => {
+    if (addState?.success || addAndActivateState?.success || updateState?.success || deactivateState?.success || reactivateState?.success) {
+      loadBeneficiaries()
+    }
+  }, [addState?.success, addAndActivateState?.success, updateState?.success, deactivateState?.success, reactivateState?.success])
+
+  useEffect(() => {
+    if (addState?.success || addAndActivateState?.success) {
+      setShowAddSuccess(true)
+      const timer = setTimeout(() => {
+        setShowAddSuccess(false)
+      }, 5000)
+      return () => clearTimeout(timer)
+    }
+  }, [addState?.success, addAndActivateState?.success])
+
+  useEffect(() => {
+    if (updateState?.success) {
+      setShowUpdateSuccess(true)
+      const timer = setTimeout(() => {
+        setShowUpdateSuccess(false)
+      }, 5000)
+      return () => clearTimeout(timer)
+    }
+  }, [updateState?.success])
+
+  useEffect(() => {
+    if (deactivateState?.success) {
+      setShowDeactivateSuccess(true)
+      const timer = setTimeout(() => {
+        setShowDeactivateSuccess(false)
+      }, 5000)
+      return () => clearTimeout(timer)
+    }
+  }, [deactivateState?.success])
+
+  useEffect(() => {
+    if (reactivateState?.success) {
+      setShowReactivateSuccess(true)
+      const timer = setTimeout(() => {
+        setShowReactivateSuccess(false)
+      }, 5000)
+      return () => clearTimeout(timer)
+    }
+  }, [reactivateState?.success])
+
+  const getBankNameFromCode = (bankCode: string): string => {
+    const bankNames: Record<string, string> = {
+      BNG: "Banque Nationale de Guinée",
+      BICI: "BICIGUI",
+      SGBG: "Société Générale de Banques en Guinée",
+      UBA: "United Bank for Africa",
+      ECO: "Ecobank Guinée",
+      VISTA: "VISTA BANK",
+      BNPP: "BNP Paribas",
+      SG: "Société Générale",
+      CA: "Crédit Agricole",
+      HSBC: "HSBC",
+      DB: "Deutsche Bank",
+    }
+    return bankNames[bankCode] || bankCode
+  }
+
+  const filteredBeneficiaries = beneficiaries.filter((beneficiary) => {
+    const safe = (v: any) => (typeof v === "string" ? v : v ? JSON.stringify(v) : "")
+    const searchLc = searchTerm.toLowerCase()
+    const nameLc = safe(beneficiary.name).toLowerCase()
+    const accountLc = safe(beneficiary.account).toLowerCase()
+    const bankLc = safe(beneficiary.bank).toLowerCase()
+    const matchesSearch = nameLc.includes(searchLc) || accountLc.includes(searchLc) || bankLc.includes(searchLc)
+
+    const isAvailable = beneficiary.status === 0 && beneficiary.workflowStatus === WORKFLOW_STATUS.AVAILABLE
+    const isSuspended = beneficiary.status === 1 || beneficiary.workflowStatus === WORKFLOW_STATUS.SUSPENDED
+    const isPending = PENDING_WORKFLOW_STATUSES.includes(beneficiary.workflowStatus)
+
+    let matchesFilter = false
+    if (filterType === "all") {
+      matchesFilter = !isSuspended
+    } else if (filterType === "inactive") {
+      matchesFilter = isSuspended
+    } else if (filterType === "favorites") {
+      matchesFilter = beneficiary.favorite && isAvailable
+    } else if (filterType === "pending") {
+      matchesFilter = isPending
+    } else {
+      matchesFilter = beneficiary.type === filterType && isAvailable
+    }
+
+    return matchesSearch && matchesFilter
+  })
+
+  const validateAccountNumber = (value: string) => {
+    const digitsOnly = value.replace(/\D/g, "")
+
+    if (digitsOnly.length === 0) {
+      setAccountNumberError(null)
+      return
+    }
+
+    if (digitsOnly.length !== 10) {
+      setAccountNumberError("Le numéro de compte doit contenir exactement 10 chiffres")
+      return false
+    }
+
+    if (value !== digitsOnly) {
+      setAccountNumberError("Le numéro de compte ne doit contenir que des chiffres")
+      return false
+    }
+
+    setAccountNumberError(null)
+    return true
+  }
+
+  const sanitizeRibPart = (value: string) => value.replace(/\s+/g, "").toUpperCase()
+
+  const replaceLettersWithDigits = (value: string) =>
+    value
+      .split("")
+      .map((char) => {
+        if (/[0-9]/.test(char)) {
+          return char
+        }
+        const code = char.charCodeAt(0) - 55
+        return code >= 10 && code <= 35 ? String(code) : ""
+      })
+      .join("")
+
+  const mod97 = (numeric: string) => {
+    let remainder = 0
+    for (let i = 0; i < numeric.length; i += 1) {
+      const digit = numeric.charCodeAt(i) - 48
+      if (digit < 0 || digit > 9) {
+        return -1
+      }
+      remainder = (remainder * 10 + digit) % 97
+    }
+    return remainder
+  }
+
+  const computeRibKey = (bankCode: string, agencyCode: string, accountNumber: string) => {
+    const numeric = `${replaceLettersWithDigits(bankCode)}${replaceLettersWithDigits(agencyCode)}${replaceLettersWithDigits(accountNumber)}`
+    const remainder = mod97(numeric)
+    if (remainder < 0) {
+      return ""
+    }
+    const key = 97 - remainder
+    return key.toString().padStart(2, "0")
+  }
+
+  const validateRibLocally = (bankCode: string, agencyCode: string, accountNumber: string, ribKey: string) => {
+    const sanitizedBank = sanitizeRibPart(bankCode)
+    const sanitizedAgency = sanitizeRibPart(agencyCode)
+    const sanitizedAccount = sanitizeRibPart(accountNumber)
+    const sanitizedKey = sanitizeRibPart(ribKey)
+
+    if (!sanitizedBank || !sanitizedAgency || !sanitizedAccount || !sanitizedKey) {
+      return { valid: false, error: "Tous les champs RIB sont requis" }
+    }
+
+    if (!/^[0-9]{2}$/.test(sanitizedKey)) {
+      return { valid: false, error: "La clé RIB doit contenir 2 chiffres" }
+    }
+
+    const expectedKey = computeRibKey(sanitizedBank, sanitizedAgency, sanitizedAccount)
+    if (!expectedKey) {
+      return { valid: false, error: "Impossible de calculer la clé RIB" }
+    }
+
+    if (expectedKey !== sanitizedKey) {
+      console.log("[v0] Clé RIB incorrecte !")
+      console.log("[v0] Clé RIB saisie:", sanitizedKey)
+      console.log("[v0] Clé RIB attendue:", expectedKey)
+      console.log("[v0] Code Banque:", sanitizedBank)
+      console.log("[v0] Code Agence:", sanitizedAgency)
+      console.log("[v0] Numéro de compte:", sanitizedAccount)
+      return { valid: false, error: "Clé RIB invalide" }
+    }
+
+    return { valid: true, error: null }
+  }
+
+  const handleBankSelection = (bankName: string) => {
+    setSelectedBank(bankName)
+    const selectedBankData = banks.find((bank) => bank.bankName === bankName)
+    if (selectedBankData) {
+      setSelectedBankCode(selectedBankData.codeBank || "")
+      setSelectedSwiftCode(selectedBankData.swiftCode || "")
+    } else {
+      setSelectedBankCode("")
+      setSelectedSwiftCode("")
+    }
+  }
+
+  const resetForm = () => {
+    setSelectedType("")
+    setSelectedBank("")
+    setSelectedBankCode("")
+    setSelectedSwiftCode("")
+    setAccountNumberError(null)
+    setRibError(null)
+    setFormDirty(false)
+  }
+
+  const handleRibFieldChange = () => {
+    setRibError(null)
+    setFormDirty(true)
+  }
+
+  const handleAddBeneficiary = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    const formData = new FormData(e.currentTarget)
+
+    if (selectedType !== "BNG-INTERNATIONAL") {
+      const accountNumber = formData.get("account") as string
+      if (!validateAccountNumber(accountNumber)) {
+        return
+      }
+
+      if (selectedType === "BNG-BNG" || selectedType === "BNG-CONFRERE") {
+        const agencyCode = (formData.get("codeAgence") as string) || ""
+        const cleRib = (formData.get("cleRib") as string) || ""
+        const bankCodeForRib =
+          selectedType === "BNG-BNG"
+            ? selectedBankCode || "022"
+            : selectedBankCode || (formData.get("bank") as string) || ""
+
+        const ribValidation = validateRibLocally(bankCodeForRib, agencyCode, accountNumber, cleRib)
+        if (!ribValidation.valid) {
+          setRibError(ribValidation.error)
+          toast({
+            title: "RIB invalide",
+            description: ribValidation.error,
+            variant: "destructive",
+          })
+          return
+        }
+        setRibError(null)
+      }
+    }
+
+    formData.set("type", selectedType)
+
+    if (selectedType === "BNG-BNG") {
+      formData.set("bank", "GNXXX")
+      formData.set("bankname", "Banque Nationale de Guinée")
+    } else if (selectedType === "BNG-CONFRERE") {
+      formData.set("bank", selectedBankCode)
+      formData.set("bankname", selectedBank)
+    } else {
+      const bankValue = selectedBank
+      formData.set("bank", bankValue)
+    }
+
+    if (selectedType === "BNG-CONFRERE" && selectedBankCode) {
+      formData.set("bankCode", selectedBankCode)
+    }
+
+    const beneficiaryName = formData.get("name") as string
+    const referenceId = `BEN-${Date.now()}-${beneficiaryName.substring(0, 10).replace(/\s/g, "")}`
+    setOtpReferenceId(referenceId)
+    setPendingBeneficiaryData(formData)
+    setShowOtpModal(true)
+  }
+
+  const handleOtpVerified = () => {
+    if (pendingBeneficiaryData) {
+      startTransition(() => {
+        // ✅ Use streamlined action that creates AND activates
+        addAndActivateAction(pendingBeneficiaryData)
+      })
+      // Reset pending data
+      setPendingBeneficiaryData(null)
+      setOtpReferenceId(null)
+      setIsAddDialogOpen(false)
+    }
+  }
+
+  const handleEditBeneficiary = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    if (!editingBeneficiary) return
+
+    const formData = new FormData(e.currentTarget)
+
+    if (selectedType !== "BNG-INTERNATIONAL") {
+      const accountNumber = formData.get("account") as string
+      if (!validateAccountNumber(accountNumber)) {
+        return
+      }
+
+      if (selectedType === "BNG-BNG" || selectedType === "BNG-CONFRERE") {
+        const agencyCode = (formData.get("codeAgence") as string) || ""
+        const cleRib = (formData.get("cleRib") as string) || ""
+        const bankCodeForRib =
+          selectedType === "BNG-BNG"
+            ? selectedBankCode || "022"
+            : selectedBankCode || (formData.get("bank") as string) || ""
+
+        const ribValidation = validateRibLocally(bankCodeForRib, agencyCode, accountNumber, cleRib)
+        if (!ribValidation.valid) {
+          setRibError(ribValidation.error)
+          toast({
+            title: "RIB invalide",
+            description: ribValidation.error,
+            variant: "destructive",
+          })
+          return
+        }
+        setRibError(null)
+      }
+    }
+
+    formData.set("type", selectedType)
+
+    if (selectedType === "BNG-BNG") {
+      formData.set("bank", "GNXXX")
+      formData.set("bankname", "Banque Nationale de Guinée")
+    } else if (selectedType === "BNG-CONFRERE") {
+      formData.set("bank", selectedBankCode)
+      formData.set("bankname", selectedBank)
+    } else {
+      const bankValue = selectedBank
+      formData.set("bank", bankValue)
+    }
+
+    if (selectedType === "BNG-CONFRERE" && selectedBankCode) {
+      formData.set("bankCode", selectedBankCode)
+    }
+
+    formData.append("id", editingBeneficiary.id)
+    const apiBeneficiaries = await getBeneficiaries()
+    const apiBeneficiary = apiBeneficiaries.find((b) => b.id === editingBeneficiary.id)
+    if (apiBeneficiary?.beneficiaryId) {
+      formData.append("beneficiaryId", apiBeneficiary.beneficiaryId)
+    }
+
+    startTransition(() => {
+      updateAction(formData)
+    })
+  }
+
+  const toggleFavorite = async (id: string) => {
+    const beneficiary = beneficiaries.find((b) => b.id === id)
+    if (!beneficiary) return
+
+    try {
+      const result = await toggleBeneficiaryFavorite(id, beneficiary.favorite)
+      if (result.success) {
+        setBeneficiaries((prev) => prev.map((b) => (b.id === id ? { ...b, favorite: !b.favorite } : b)))
+      } else {
+        console.error("Erreur lors de la modification du favori:", result.error)
+      }
+    } catch (error) {
+      console.error("Erreur lors de la modification du favori:", error)
+    }
+  }
+
+  const openEditDialog = async (beneficiary: Beneficiary) => {
+    const fullBeneficiary = await getBeneficiaryDetails(beneficiary.id)
+
+    if (fullBeneficiary) {
+      setEditingBeneficiary({
+        ...beneficiary,
+        codagence: fullBeneficiary.codagence,
+        clerib: fullBeneficiary.clerib,
+      })
+    } else {
+      setEditingBeneficiary(beneficiary)
+    }
+
+    setSelectedType(beneficiary.type)
+    setSelectedBank(beneficiary.bank)
+    setIsEditDialogOpen(true)
+  }
+
+  const getTypeIcon = (type: string) => {
+    switch (type) {
+      case "BNG-BNG":
+        return <Building className="w-4 h-4 text-blue-600" />
+      case "BNG-CONFRERE":
+        return <User className="w-4 h-4 text-green-600" />
+      case "BNG-INTERNATIONAL":
+        return <Globe className="w-4 h-4 text-purple-600" />
+      default:
+        return <User className="w-4 h-4" />
+    }
+  }
+
+  const getTypeBadge = (type: string) => {
+    switch (type) {
+      case "BNG-BNG":
+        return <Badge variant="secondary">BNG</Badge>
+      case "BNG-CONFRERE":
+        return <Badge variant="outline">Confrère</Badge>
+      case "BNG-INTERNATIONAL":
+        return <Badge className="bg-purple-100 text-purple-800">International</Badge>
+      default:
+        return <Badge variant="outline">Autre</Badge>
+    }
+  }
+
+  const getWorkflowBadge = (status: WorkflowStatus) => {
+    switch (status) {
+      case WORKFLOW_STATUS.CREATED:
+        return (
+          <Badge variant="outline" className="border-amber-300 text-amber-700 bg-amber-50">
+            ⏳ En attente
+          </Badge>
+        )
+      case WORKFLOW_STATUS.VERIFIED:
+        return (
+          <Badge variant="outline" className="border-blue-300 text-blue-700 bg-blue-50">
+            🔍 Vérifié
+          </Badge>
+        )
+      case WORKFLOW_STATUS.VALIDATED:
+        return (
+          <Badge variant="outline" className="border-green-300 text-green-700 bg-green-50">
+            ✓ Validé
+          </Badge>
+        )
+      case WORKFLOW_STATUS.SUSPENDED:
+        return (
+          <Badge variant="outline" className="border-red-400 text-red-700 bg-red-50">
+            🚫 Suspendu
+          </Badge>
+        )
+      case WORKFLOW_STATUS.AVAILABLE:
+      default:
+        return (
+          <Badge variant="outline" className="border-green-500 text-green-800 bg-green-100 font-semibold">
+            ✅ Actif
+          </Badge>
+        )
+    }
+  }
+
+  const handleFormSuccess = async () => {
+    await loadBeneficiaries()
+  }
+
+  const handleDeactivateBeneficiary = async (id: string) => {
+    try {
+      const fd = new FormData()
+      fd.set("id", id)
+      deactivateAction(fd)
+      setBeneficiaries((prev) => prev.map((b) => (b.id === id ? { ...b, status: 1 } : b)))
+      setShowDeactivateSuccess(true)
+      setTimeout(() => setShowDeactivateSuccess(false), 5000)
+    } catch (error) {
+      console.error("Erreur lors de la désactivation du bénéficiaire:", error)
+    }
+  }
+
+  const handleReactivateBeneficiary = async (id: string) => {
+    try {
+      const fd = new FormData()
+      fd.set("id", id)
+      reactivateAction(fd)
+      setBeneficiaries((prev) => prev.map((b) => (b.id === id ? { ...b, status: 0 } : b)))
+      setShowReactivateSuccess(true)
+      setTimeout(() => setShowReactivateSuccess(false), 5000)
+    } catch (error) {
+      console.error("Erreur lors de la réactivation du bénéficiaire:", error)
+    }
+  }
+
+  return (
+    <div className="mt-6 space-y-6">
+      <div className="flex items-center justify-between">
+        <div className="space-y-2">
+          <h1 className="text-3xl font-bold text-primary">Gestion des bénéficiaires</h1>
+          <p className="text-sm text-muted-foreground">Gérez vos destinataires de virements</p>
+        </div>
+
+        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+          <DialogTrigger asChild>
+            <Button onClick={resetForm}>
+              <Plus className="w-4 h-4 mr-2" />
+              Ajouter un bénéficiaire
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[700px]">
+            <DialogHeader>
+              <DialogTitle>Ajouter un bénéficiaire</DialogTitle>
+            </DialogHeader>
+
+            <form ref={formRef} onSubmit={handleAddBeneficiary} className="space-y-4">
+              {/* ✅ Show success from streamlined flow */}
+              {addAndActivateState?.success && (
+                <Alert variant="default" className="border-green-200 bg-green-50">
+                  <CheckCircle className="h-4 w-4 text-green-600" />
+                  <AlertDescription className="text-green-800">
+                    ✅ Bénéficiaire ajouté et activé avec succès! Vous pouvez maintenant effectuer des virements.
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              {/* Show errors from streamlined flow */}
+              {addAndActivateState?.error && (
+                <Alert variant="destructive">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>❌ {addAndActivateState.error}</AlertDescription>
+                </Alert>
+              )}
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="name">Nom complet *</Label>
+                  <Input id="name" name="name" placeholder="Nom et prénom du bénéficiaire" required />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="type">Type de bénéficiaire *</Label>
+                  <Select value={selectedType} onValueChange={setSelectedType} required>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Sélectionnez le type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="BNG-BNG">Interne</SelectItem>
+                      <SelectItem value="BNG-CONFRERE">Confrère(Guinée)</SelectItem>
+                      <SelectItem value="BNG-INTERNATIONAL">International</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {selectedType !== "" && (
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="bank">Banque *</Label>
+                    {selectedType === "BNG-BNG" ? (
+                      <Input
+                        id="bank"
+                        name="bankname"
+                        value="Banque Nationale de Guinée"
+                        readOnly
+                        className="bg-gray-50"
+                      />
+                    ) : selectedType === "BNG-CONFRERE" ? (
+                      <Select name="bankname" value={selectedBank} onValueChange={handleBankSelection} required>
+                        <SelectTrigger>
+                          <SelectValue placeholder={loadingBanks ? "Chargement..." : "Sélectionnez une banque"} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {banks.map((bank) => (
+                            <SelectItem key={bank.id} value={bank.bankName}>
+                              {bank.bankName}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    ) : selectedType === "BNG-INTERNATIONAL" ? (
+                      <Input
+                        id="bank"
+                        name="bank"
+                        value={selectedBank || ""}
+                        onChange={(e) => setSelectedBank(e.target.value)}
+                        placeholder="Saisissez le nom de la banque"
+                        className="bg-white"
+                        required
+                      />
+                    ) : null}
+                  </div>
+
+                  {(selectedType === "BNG-CONFRERE" || selectedType === "BNG-BNG") && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="codeBanque">Code Banque *</Label>
+                        {selectedType === "BNG-CONFRERE" || selectedType === "BNG-BNG" ? (
+                          <Input
+                            id="codeBanque"
+                            name="codeBanque"
+                            value={selectedBankCode || ""}
+                            placeholder="Code banque"
+                            disabled
+                            className="bg-gray-50"
+                            required
+                          />
+                        ) : (
+                          <Input id="codeBanque" name="codeBanque" placeholder="Ex: GNXXX" required />
+                        )}
+                      </div>
+
+                      {selectedType === "BNG-CONFRERE" && (
+                        <div className="space-y-2">
+                          <Label htmlFor="swiftCode">Code SWIFT</Label>
+                          <Input
+                            id="swiftCode"
+                            name="swiftCode"
+                            value={selectedSwiftCode || ""}
+                            placeholder="Code SWIFT"
+                            disabled
+                            className="bg-gray-50"
+                          />
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {selectedType !== "BNG-INTERNATIONAL" && selectedType !== "" && (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="codeAgence">Code agence *</Label>
+                    <Input
+                      id="codeAgence"
+                      name="codeAgence"
+                      placeholder="Ex: 0001"
+                      onChange={handleRibFieldChange}
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="account">Numéro de compte *</Label>
+                    <Input
+                      id="account"
+                      name="account"
+                      onChange={(e) => {
+                        validateAccountNumber(e.target.value)
+                        handleRibFieldChange()
+                      }}
+                      placeholder="1234567890"
+                      maxLength={10}
+                      pattern="[0-9]{10}"
+                      required
+                    />
+                    {accountNumberError && <p className="text-sm text-red-600">{accountNumberError}</p>}
+                    <p className="text-sm text-muted-foreground">10 chiffres uniquement</p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="cleRib">Clé RIB *</Label>
+                    <Input
+                      id="cleRib"
+                      name="cleRib"
+                      placeholder="Ex: 89"
+                      maxLength={2}
+                      onChange={handleRibFieldChange}
+                      required
+                    />
+                    {ribError && selectedType !== "BNG-INTERNATIONAL" && (
+                      <p className="text-sm text-red-600">{ribError}</p>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {selectedType === "BNG-INTERNATIONAL" && (
+                <div className="space-y-2">
+                  <Label htmlFor="account">IBAN *</Label>
+                  <Input id="account" name="account" placeholder="FR76 1234 5678 9012 3456 78" required />
+                </div>
+              )}
+
+              <div className="flex justify-end space-x-2 pt-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsAddDialogOpen(false)}
+                  disabled={isAddPending}
+                >
+                  Annuler
+                </Button>
+              <Button
+                type="submit"
+                disabled={
+                  isAddAndActivatePending ||
+                  ((accountNumberError !== null || ribError !== null) && selectedType !== "BNG-INTERNATIONAL")
+                }
+              >
+                {isAddAndActivatePending ? "Traitement..." : "Ajouter"}
+              </Button>
+              </div>
+            </form>
+          </DialogContent>
+        </Dialog>
+      </div>
+
+      {showAddSuccess && (
+        <Alert className="border-green-200 bg-green-50">
+          <CheckCircle className="h-4 w-4 text-green-600" />
+          <AlertDescription className="text-green-800">
+            ✅ Bénéficiaire ajouté et activé avec succès! Vous pouvez maintenant effectuer des virements.
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {/* ✅ NEW: OTP verification info */}
+      <Alert className="border-blue-200 bg-blue-50">
+        <AlertCircle className="h-4 w-4 text-blue-600" />
+        <AlertDescription className="text-blue-800">
+          <div className="space-y-2">
+            <p className="font-semibold">📧 Nouveau: Activation instantanée avec OTP</p>
+            <p className="text-sm">
+              • Un code de vérification sera envoyé par email<br />
+              • Après validation OTP, votre bénéficiaire est <strong>immédiatement actif</strong><br />
+              • Vous pouvez effectuer des virements sans attendre
+            </p>
+          </div>
+        </AlertDescription>
+      </Alert>
+
+      {/* Show errors from streamlined flow */}
+      {addAndActivateState?.error && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>❌ {addAndActivateState.error}</AlertDescription>
+        </Alert>
+      )}
+
+      {showUpdateSuccess && (
+        <Alert className="border-green-200 bg-green-50">
+          <CheckCircle className="h-4 w-4 text-green-600" />
+          <AlertDescription className="text-green-800">✅ Bénéficiaire modifié avec succès.</AlertDescription>
+        </Alert>
+      )}
+
+      {updateState?.error && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>❌ {updateState.error}</AlertDescription>
+        </Alert>
+      )}
+
+      {showDeactivateSuccess && (
+        <Alert className="border-green-200 bg-green-50">
+          <CheckCircle className="h-4 w-4 text-green-600" />
+          <AlertDescription className="text-green-800">✅ Bénéficiaire désactivé avec succès.</AlertDescription>
+        </Alert>
+      )}
+
+      {reactivateState?.error && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>❌ Erreur lors de la réactivation. Veuillez réessayer.</AlertDescription>
+        </Alert>
+      )}
+
+      <Card>
+        <CardContent className="pt-6">
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <Input
+                placeholder="Rechercher un bénéficiaire..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            <Select value={filterType} onValueChange={setFilterType}>
+              <SelectTrigger className="w-full sm:w-48">
+                <SelectValue placeholder="Filtrer par type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tous les bénéficiaires</SelectItem>
+                <SelectItem value="BNG-CONFRERE">Confrère(Guinée)</SelectItem>
+                <SelectItem value="favorites">Favoris</SelectItem>
+                <SelectItem value="pending">En validation</SelectItem>
+                <SelectItem value="inactive">Inactifs</SelectItem>
+                <SelectItem value="BNG-BNG">Interne</SelectItem>
+                <SelectItem value="BNG-INTERNATIONAL">International</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </CardContent>
+      </Card>
+
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center">
+              <Users className="h-8 w-8 text-blue-600" />
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Total</p>
+                <p className="text-2xl font-bold">{beneficiaries.length}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center">
+              <Star className="h-8 w-8 text-yellow-600" />
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Favoris</p>
+                <p className="text-2xl font-bold">{beneficiaries.filter((b) => b.favorite).length}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center">
+              <Building className="h-8 w-8 text-green-600" />
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">BNG</p>
+                <p className="text-2xl font-bold">{beneficiaries.filter((b) => b.type === "BNG-BNG").length}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center">
+              <Globe className="h-8 w-8 text-purple-600" />
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">International</p>
+                <p className="text-2xl font-bold">
+                  {beneficiaries.filter((b) => b.type === "BNG-INTERNATIONAL").length}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center">
+            <Users className="w-5 h-5 mr-2" />
+            Mes bénéficiaires ({filteredBeneficiaries.length})
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <div className="text-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+              <p className="text-gray-500">Chargement des bénéficiaires...</p>
+            </div>
+          ) : filteredBeneficiaries.length === 0 ? (
+            <div className="text-center py-8">
+              <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+              <p className="text-gray-500">Aucun bénéficiaire trouvé</p>
+              <p className="text-sm text-gray-400">Ajoutez votre premier bénéficiaire pour commencer</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {filteredBeneficiaries.map((beneficiary) => (
+                <div
+                  key={beneficiary.id}
+                  className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  <div className="flex items-center space-x-4">
+                    <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center">
+                      {getTypeIcon(beneficiary.type)}
+                    </div>
+
+                    <div className="flex-1">
+                      <div className="flex items-center space-x-2">
+                        <h3 className="font-semibold text-gray-900">{beneficiary.name}</h3>
+                        {beneficiary.favorite && <Star className="w-4 h-4 text-yellow-500 fill-current" />}
+                        {getTypeBadge(beneficiary.type)}
+                        {getWorkflowBadge(beneficiary.workflowStatus)}
+                      </div>
+
+                      <div className="text-sm text-gray-600 space-y-1">
+                        <p className="font-mono">{beneficiary.account}</p>
+                        <p className="font-medium">{beneficiary.bank}</p>
+                        {beneficiary.workflowStatus !== WORKFLOW_STATUS.AVAILABLE && (
+                          <p className="text-xs text-amber-700 bg-amber-50 px-2 py-1 rounded inline-block">
+                            ⏳ En attente de validation manuelle
+                          </p>
+                        )}
+                        {beneficiary.country && <p className="text-xs text-gray-500">{beneficiary.country}</p>}
+                      </div>
+                    </div>
+
+                    <div className="text-right text-sm text-gray-500">
+                      <p>Dernier virement</p>
+                      <p className="font-medium">{beneficiary.lastUsed}</p>
+                      <p className="text-xs">Ajouté le {beneficiary.addedDate}</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center space-x-2">
+                    {beneficiary.status === 0 && beneficiary.workflowStatus === WORKFLOW_STATUS.AVAILABLE && (
+                      <Button variant="ghost" size="sm" onClick={() => toggleFavorite(beneficiary.id)}>
+                        {beneficiary.favorite ? (
+                          <Star className="w-4 h-4 text-yellow-500 fill-current" />
+                        ) : (
+                          <StarOff className="w-4 h-4 text-gray-400" />
+                        )}
+                      </Button>
+                    )}
+
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="sm">
+                          <MoreVertical className="w-4 h-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        {beneficiary.status === 0 ? (
+                          <>
+                            <DropdownMenuItem 
+                              disabled={beneficiary.workflowStatus !== WORKFLOW_STATUS.AVAILABLE}
+                              onClick={() => beneficiary.workflowStatus === WORKFLOW_STATUS.AVAILABLE && window.location.href = '/transfers/new'}
+                            >
+                              <Users className="w-4 h-4 mr-2" />
+                              {beneficiary.workflowStatus === WORKFLOW_STATUS.AVAILABLE
+                                ? "Faire un virement"
+                                : "⏳ En attente de validation"}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              className="text-orange-600"
+                              onClick={() => handleDeactivateBeneficiary(beneficiary.id)}
+                              disabled={isDeactivatePending}
+                            >
+                              <UserX className="w-4 h-4 mr-2" />
+                              Désactiver
+                            </DropdownMenuItem>
+                          </>
+                        ) : (
+                          <DropdownMenuItem
+                            className="text-green-600"
+                            onClick={() => handleReactivateBeneficiary(beneficiary.id)}
+                            disabled={isReactivatePending}
+                          >
+                            <CheckCircle className="w-4 h-4 mr-2" />
+                            Réactiver
+                          </DropdownMenuItem>
+                        )}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="sm:max-w-[700px]">
+          <DialogHeader>
+            <DialogTitle>Modifier le bénéficiaire</DialogTitle>
+          </DialogHeader>
+
+          <form ref={editFormRef} onSubmit={handleEditBeneficiary} className="space-y-4">
+            {updateState?.success && (
+              <Alert variant="default" className="border-green-200 bg-green-50">
+                <CheckCircle className="h-4 w-4 text-green-600" />
+                <AlertDescription className="text-green-800">Bénéficiaire modifié avec succès</AlertDescription>
+              </Alert>
+            )}
+
+            {updateState?.error && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{updateState.error}</AlertDescription>
+              </Alert>
+            )}
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-name">Nom complet *</Label>
+                <Input
+                  id="edit-name"
+                  name="name"
+                  defaultValue={editingBeneficiary?.name || ""}
+                  placeholder="Nom et prénom du bénéficiaire"
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="edit-type">Type de bénéficiaire *</Label>
+                <Select value={selectedType} onValueChange={setSelectedType} required>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Sélectionnez le type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="BNG-BNG">Interne</SelectItem>
+                    <SelectItem value="BNG-CONFRERE">Confrère(Guinée)</SelectItem>
+                    <SelectItem value="BNG-INTERNATIONAL">International</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {selectedType !== "" && (
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="edit-bank">Banque *</Label>
+                  {selectedType === "BNG-BNG" ? (
+                    <Input
+                      id="edit-bank"
+                      name="bankname"
+                      value="Banque Nationale de Guinée"
+                      readOnly
+                      className="bg-gray-50"
+                    />
+                  ) : selectedType === "BNG-CONFRERE" ? (
+                    <Select name="bankname" value={selectedBank} onValueChange={handleBankSelection} required>
+                      <SelectTrigger>
+                        <SelectValue placeholder={loadingBanks ? "Chargement..." : "Sélectionnez une banque"} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {banks.map((bank) => (
+                          <SelectItem key={bank.id} value={bank.bankName}>
+                            {bank.bankName}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  ) : selectedType === "BNG-INTERNATIONAL" ? (
+                    <Input
+                      id="edit-bank"
+                      name="bank"
+                      value={selectedBank || ""}
+                      onChange={(e) => setSelectedBank(e.target.value)}
+                      placeholder="Saisissez le nom de la banque"
+                      className="bg-white"
+                      required
+                    />
+                  ) : null}
+                </div>
+
+                {(selectedType === "BNG-CONFRERE" || selectedType === "BNG-BNG") && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-codeBanque">Code Banque *</Label>
+                      {selectedType === "BNG-CONFRERE" || selectedType === "BNG-BNG" ? (
+                        <Input
+                          id="edit-codeBanque"
+                          name="codeBanque"
+                          value={selectedBankCode || ""}
+                          placeholder="Code banque"
+                          disabled
+                          className="bg-gray-50"
+                          required
+                        />
+                      ) : (
+                        <Input id="edit-codeBanque" name="codeBanque" placeholder="Ex: GNXXX" required />
+                      )}
+                    </div>
+
+                    {selectedType === "BNG-CONFRERE" && (
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-swiftCode">Code SWIFT</Label>
+                        <Input
+                          id="edit-swiftCode"
+                          name="swiftCode"
+                          value={selectedSwiftCode || ""}
+                          placeholder="Code SWIFT"
+                          disabled
+                          className="bg-gray-50"
+                        />
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {selectedType !== "BNG-INTERNATIONAL" && selectedType !== "" && (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="edit-codeAgence">Code agence *</Label>
+                  <Input
+                    id="edit-codeAgence"
+                    name="codeAgence"
+                    defaultValue={editingBeneficiary?.codagence || ""}
+                    placeholder="Ex: 0001"
+                    onChange={handleRibFieldChange}
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="edit-account">Numéro de compte *</Label>
+                  <Input
+                    id="edit-account"
+                    name="account"
+                    defaultValue={editingBeneficiary?.account || ""}
+                    onChange={(e) => {
+                      validateAccountNumber(e.target.value)
+                      handleRibFieldChange()
+                    }}
+                    placeholder="1234567890"
+                    maxLength={10}
+                    pattern="[0-9]{10}"
+                    required
+                  />
+                  {accountNumberError && <p className="text-sm text-red-600">{accountNumberError}</p>}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="edit-cleRib">Clé RIB *</Label>
+                  <Input
+                    id="edit-cleRib"
+                    name="cleRib"
+                    defaultValue={editingBeneficiary?.clerib || ""}
+                    placeholder="Ex: 89"
+                    maxLength={2}
+                    onChange={handleRibFieldChange}
+                    required
+                  />
+                  {ribError && selectedType !== "BNG-INTERNATIONAL" && (
+                    <p className="text-sm text-red-600">{ribError}</p>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {selectedType === "BNG-INTERNATIONAL" && (
+              <div className="space-y-2">
+                <Label htmlFor="edit-account">IBAN *</Label>
+                <Input
+                  id="edit-account"
+                  name="account"
+                  defaultValue={editingBeneficiary?.account || ""}
+                  placeholder="FR76 1234 5678 9012 3456 78"
+                  required
+                />
+              </div>
+            )}
+
+            <div className="flex justify-end space-x-2 pt-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setIsEditDialogOpen(false)
+                  setEditingBeneficiary(null)
+                }}
+                disabled={isUpdatePending}
+              >
+                Annuler
+              </Button>
+              <Button
+                type="submit"
+                disabled={
+                  isUpdatePending ||
+                  ((accountNumberError !== null || ribError !== null) && selectedType !== "BNG-INTERNATIONAL")
+                }
+              >
+                {isUpdatePending ? "Traitement..." : "Modifier"}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      <OtpModal
+        open={showOtpModal}
+        onOpenChange={setShowOtpModal}
+        onVerified={handleOtpVerified}
+        purpose="ADD_BENEFICIARY"
+        referenceId={otpReferenceId || undefined}
+        title="🔐 Confirmer l'ajout du bénéficiaire"
+        description={`Pour confirmer l'ajout de "${pendingBeneficiaryData?.get("name") || "ce bénéficiaire"}", entrez le code OTP envoyé par email. Le bénéficiaire sera immédiatement actif après validation.`}
+        deliveryMethod="EMAIL"
+        autoGenerate={true}
+      />
+    </div>
+  )
+}

@@ -3,6 +3,7 @@ process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0"
 import { revalidatePath } from "next/cache"
 import { cookies } from "next/headers"
 import type { Account } from "../actions"
+import { config } from "@/lib/config"
 
 export async function getAccountDetails(accountId: string): Promise<Account | null> {
   try {
@@ -15,7 +16,7 @@ export async function getAccountDetails(accountId: string): Promise<Account | nu
 
     // Get user info to retrieve tenantId
     const normalize = (u?: string) => (u ? u.replace(/\/$/, "") : "")
-    const API_BASE_URL = `${normalize(process.env.NEXT_PUBLIC_API_URL || "https://35.184.98.9:4000")}/api`
+    const API_BASE_URL = `${normalize(config.API_BASE_URL)}/api`
     const userResponse = await fetch(`${API_BASE_URL}/auth/me`, {
       headers: {
         Authorization: `Bearer ${token}`,
@@ -28,7 +29,7 @@ export async function getAccountDetails(accountId: string): Promise<Account | nu
     }
 
     const userData = await userResponse.json()
-    const tenantId = userData.tenants?.[0]?.tenantId || process.env.NEXT_PUBLIC_TENANT_ID
+    const tenantId = userData.tenants?.[0]?.tenantId || config.TENANT_ID
 
     if (!tenantId) {
       throw new Error("Tenant ID non trouvé")

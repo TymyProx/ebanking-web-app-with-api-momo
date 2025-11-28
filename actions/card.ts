@@ -1,10 +1,11 @@
 "use server"
 
 import { cookies } from "next/headers"
+import { config } from "@/lib/config"
 
 const normalize = (u?: string) => (u ? u.replace(/\/$/, "") : "")
-const BASE_URL = `${normalize(process.env.NEXT_PUBLIC_API_URL || "https://35.184.98.9:4000")}/api`
-const TENANT_ID = process.env.NEXT_PUBLIC_TENANT_ID || "aa1287f6-06af-45b7-a905-8c57363565c2"
+const BASE_URL = `${normalize(config.API_BASE_URL)}/api`
+const TENANT_ID = config.TENANT_ID
 
 export type Card = {
   id: string
@@ -32,6 +33,7 @@ export type CardsResponse = {
 export type NewCardRequest = {
   typCard: string
   accountNumber?: string
+  clientId: string
 }
 
 async function getCurrentUserInfo(token: string) {
@@ -68,6 +70,7 @@ export async function fetchAllCards(): Promise<CardsResponse> {
   }
 
   let currentUserId: string | null = null
+  const logDebug = (process.env.LOG_LEVEL || "").toLowerCase() === "debug"
   try {
     const userResponse = await fetch(`${BASE_URL}/auth/me`, {
       method: "GET",
@@ -80,12 +83,13 @@ export async function fetchAllCards(): Promise<CardsResponse> {
     if (userResponse.ok) {
       const userData = await userResponse.json()
       currentUserId = userData.id
+      if (logDebug) console.log("[CARDS] currentUserId:", currentUserId)
     }
   } catch (error) {
     console.error("[v0] Error fetching user ID:", error)
   }
 
-  const res = await fetch(`${BASE_URL}/tenant/${TENANT_ID}/card`, {
+  const res = await fetch(`${BASE_URL}/tenant/${TENANT_ID}/card?limit=500&orderBy=createdAt_DESC`, {
     method: "GET",
     headers: {
       Accept: "application/json",
@@ -108,8 +112,22 @@ export async function fetchAllCards(): Promise<CardsResponse> {
   }
 
   let filteredRows = parsed?.rows ?? []
+  if (logDebug) {
+    console.log("[CARDS] api rows:", filteredRows.length)
+    if (filteredRows[0]) {
+      const c: any = filteredRows[0]
+      console.log("[CARDS] sample types:", {
+        clientIdType: typeof c.clientId,
+        numCardType: typeof c.numCard,
+      })
+    }
+  }
   if (currentUserId && filteredRows.length > 0) {
-    filteredRows = filteredRows.filter((card) => card.clientId === currentUserId)
+    const before = filteredRows.length
+    filteredRows = filteredRows.filter(
+      (card: any) => card.clientId === currentUserId || card.createdById === currentUserId,
+    )
+    if (logDebug) console.log("[CARDS] filtered by clientId/createdById:", before, "->", filteredRows.length)
   }
 
   return {
@@ -167,16 +185,38 @@ export async function createCardRequest(cardData: NewCardRequest): Promise<Card>
   expirationDate.setFullYear(expirationDate.getFullYear() + 4)
   const dateExpiration = expirationDate.toISOString().split("T")[0]
 
-  const requestBody = {
-    data: {
-      numCard: "",
-      typCard: cardData.typCard,
-      status: "EN_ATTENTE",
-      dateEmission: today,
-      dateExpiration: dateExpiration,
-      clientId: clientId,
-      accountNumber: cardData.accountNumber || "",
-    },
+  const secure = (process.env.NEXT_PUBLIC_PORTAL_SECURE_MODE || "false").toLowerCase() === "false"
+  const keyB64 = process.env.NEXT_PUBLIC_PORTAL_KEY_B64 || ""
+  let requestBody: any
+  if (secure && keyB64) {
+    const { encryptAesGcmNode } = await import("../app/transfers/new/secure")
+    const enc = (v: any) => ({ ...encryptAesGcmNode(v, keyB64), key_id: "k1-mobile-v1" })
+    requestBody = {
+      data: {
+        numCard_json: enc("AUTO"),
+        typCard_json: enc(cardData.typCard),
+        status_json: enc("EN_ATTENTE"),
+        dateEmission_json: enc(today),
+        dateExpiration_json: enc(dateExpiration),
+        clientId_json: enc(clientId),
+        // keep plaintext clientId for server-side filtering and client list
+        clientId: clientId,
+        accountNumber_json: enc(cardData.accountNumber || ""),
+        key_id: "k1-mobile-v1",
+      },
+    }
+  } else {
+    requestBody = {
+      data: {
+        numCard: "",
+        typCard: cardData.typCard,
+        status: "EN_ATTENTE",
+        dateEmission: today,
+        dateExpiration: dateExpiration,
+        clientId: clientId,
+        accountNumber: cardData.accountNumber || "",
+      },
+    }
   }
 
   const res = await fetch(`${BASE_URL}/tenant/${TENANT_ID}/card`, {
@@ -201,4 +241,79 @@ export async function createCardRequest(cardData: NewCardRequest): Promise<Card>
   }
 
   throw new Error("Réponse invalide du serveur")
+}
+
+export async function toggleCardStatus(cardId: string, currentStatus: string) {
+  const cookieToken = (await cookies()).get("token")?.value
+  const usertoken = cookieToken
+
+  if (!usertoken) {
+    return {
+      success: false,
+      error: "Token d'authentification manquant",
+    }
+  }
+
+  try {
+    // Determine new status based on current status
+    const newStatus = currentStatus?.toUpperCase() === "ACTIF" ? "BLOCKED" : "ACTIF"
+
+    const secure = (process.env.NEXT_PUBLIC_PORTAL_SECURE_MODE || "false").toLowerCase() === "false"
+    const keyB64 = process.env.NEXT_PUBLIC_PORTAL_KEY_B64 || ""
+    let requestBody: any
+
+    if (secure && keyB64) {
+      const { encryptAesGcmNode } = await import("../app/transfers/new/secure")
+      const enc = (v: any) => ({ ...encryptAesGcmNode(v, keyB64), key_id: "k1-mobile-v1" })
+      requestBody = {
+        data: {
+          status_json: enc(newStatus),
+          key_id: "k1-mobile-v1",
+        },
+      }
+    } else {
+      requestBody = {
+        data: {
+          status: newStatus,
+        },
+      }
+    }
+
+    const res = await fetch(`${BASE_URL}/tenant/${TENANT_ID}/card/${cardId}`, {
+      method: "PUT",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${usertoken}`,
+      },
+      body: JSON.stringify(requestBody),
+    })
+
+    const contentType = res.headers.get("content-type") || ""
+    const bodyText = await res.text()
+
+    if (!res.ok) {
+      return {
+        success: false,
+        error: `Erreur ${res.status}: ${bodyText || "Erreur lors de la mise à jour"}`,
+      }
+    }
+
+    let result: any = {}
+    if (contentType.includes("application/json") && bodyText) {
+      result = JSON.parse(bodyText)
+    }
+
+    return {
+      success: true,
+      message: newStatus === "ACTIF" ? "Carte débloquée avec succès" : "Carte bloquée avec succès",
+      data: result,
+    }
+  } catch (error) {
+    console.error("[v0] Error toggling card status:", error)
+    return {
+      success: false,
+      error: "Erreur lors de la mise à jour du statut. Veuillez réessayer.",
+    }
+  }
 }

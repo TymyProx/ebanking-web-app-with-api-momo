@@ -11,6 +11,8 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Eye, EyeOff, User } from "lucide-react"
 import AuthService from "@/lib/auth-service"
 import { config } from "@/lib/config"
+import { storeAuthToken } from "./actions"
+import { getAccounts } from "@/app/accounts/actions"
 
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false)
@@ -35,13 +37,29 @@ export default function LoginPage() {
       const loginResult = await AuthService.signIn(email, password, tenantId, invitationToken)
 
       if (loginResult.success) {
-        await AuthService.fetchMe()
+        const userData = await AuthService.fetchMe()
+
+        await storeAuthToken(loginResult.token, userData)
 
         if (rememberMe) {
           localStorage.setItem("rememberMe", "true")
         }
 
-        router.push("/dashboard")
+        const accounts = await getAccounts()
+
+        console.log("[v0] Fetched accounts:", accounts)
+
+        const hasActiveAccounts = accounts.some(
+          (acc) => acc.status?.toUpperCase() === "ACTIF" || acc.status?.toUpperCase() === "ACTIVE",
+        )
+
+        console.log("[v0] Has active accounts:", hasActiveAccounts)
+
+        if (hasActiveAccounts) {
+          router.push("/dashboard")
+        } else {
+          router.push("/accounts/new")
+        }
       }
     } catch (err: any) {
       setError(err.message)
@@ -81,7 +99,7 @@ export default function LoginPage() {
           {/* Welcome Text */}
           <div className="space-y-2">
             <h1 className="text-5xl font-bold text-[hsl(45,93%,47%)]">Bienvenue</h1>
-            <p className="text-3xl font-semibold text-[hsl(123,38%,57%)]">
+            <p className="text-3xl font-semibold text-primary">
               sur <span className="font-bold">MyBNG Bank</span>
             </p>
           </div>
@@ -100,14 +118,14 @@ export default function LoginPage() {
               {/* Username/Email Field */}
               <div className="space-y-2">
                 <Label htmlFor="email" className="text-sm font-medium text-[hsl(220,13%,13%)]">
-                  Nom d'utilisateur
+                  Email
                 </Label>
                 <div className="relative">
                   <Input
                     id="email"
                     name="email"
                     type="email"
-                    placeholder="Nom d'utilisateur"
+                    placeholder="Email"
                     className="h-12 pr-10 bg-white border-gray-300 focus:border-[hsl(123,38%,57%)] focus:ring-[hsl(123,38%,57%)]"
                     required
                     disabled={isLoading}
@@ -168,7 +186,7 @@ export default function LoginPage() {
               {/* Submit Button */}
               <Button
                 type="submit"
-                className="w-full h-12 bg-gradient-to-r from-[hsl(45,93%,47%)] to-[hsl(123,38%,57%)] hover:opacity-90 text-white font-semibold text-base shadow-lg"
+                className="w-full h-12 bg-primary hover:opacity-90 text-white font-semibold text-base shadow-lg"
                 disabled={isLoading}
               >
                 {isLoading ? (

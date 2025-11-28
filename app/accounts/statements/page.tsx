@@ -5,32 +5,28 @@ import { useSearchParams } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Tabs, TabsContent } from "@/components/ui/tabs"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Checkbox } from "@/components/ui/checkbox"
 import {
   Download,
-  FileText,
   Calendar,
   CreditCard,
   CheckCircle,
   AlertCircle,
   Clock,
-  FileSpreadsheet,
-  History,
   Mail,
-  Settings,
   Wallet,
   PiggyBank,
   DollarSign,
 } from "lucide-react"
-import { generateStatement, sendStatementByEmail } from "./actions"
+import { generateStatement, sendStatementByEmail, getTransactionsByNumCompte } from "./actions"
 import { useActionState } from "react"
-import { getAccounts } from "../actions"
-import { getTransactions } from "../../transfers/new/actions"
+import { getAccounts, getAccountById } from "../actions"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import jsPDF from "jspdf"
 
 interface Account {
   id: string
@@ -52,17 +48,6 @@ interface StatementRequest {
   language: "fr" | "en"
 }
 
-interface StatementHistory {
-  id: string
-  accountName: string
-  period: string
-  format: string
-  generatedAt: string
-  downloadCount: number
-  fileSize: string
-  status: "Généré" | "Expiré" | "En cours"
-}
-
 const predefinedPeriods = [
   {
     value: "lastMonth",
@@ -79,34 +64,11 @@ const predefinedPeriods = [
   { value: "custom", label: "Personnalisé" },
 ]
 
-const statementHistory = [
-  {
-    id: "1",
-    accountName: "Compte Courant",
-    period: "01/01/2023 - 31/01/2023",
-    format: "PDF",
-    generatedAt: "01/02/2023",
-    downloadCount: 5,
-    fileSize: "2MB",
-    status: "Généré",
-  },
-  {
-    id: "2",
-    accountName: "Compte Épargne",
-    period: "01/02/2023 - 28/02/2023",
-    format: "Excel",
-    generatedAt: "01/03/2023",
-    downloadCount: 3,
-    fileSize: "1.5MB",
-    status: "Expiré",
-  },
-]
-
 export default function StatementsPage() {
   const searchParams = useSearchParams()
   const preSelectedAccountId = searchParams.get("accountId")
 
-  const [selectedAccount, setSelectedAccount] = useState<string>("")
+  const [selectedAccount, setSelectedAccount] = useState<Account | null>(null)
   const [startDate, setStartDate] = useState<string>("")
   const [endDate, setEndDate] = useState<string>("")
   const [format, setFormat] = useState<"pdf" | "excel">("pdf")
@@ -114,16 +76,19 @@ export default function StatementsPage() {
   const [language, setLanguage] = useState<"fr" | "en">("fr")
   const [emailAddress, setEmailAddress] = useState("")
   const [selectedPeriod, setSelectedPeriod] = useState<string>("")
-
+  const [displayLimit, setDisplayLimit] = useState(50) // Limit initial display
+  const [filteredTransactions, setFilteredTransactions] = useState<any[]>([])
+  const [transactionCount, setTransactionCount] = useState(0)
+  const [showDownloadLink, setShowDownloadLink] = useState(false)
+  const [isLoadingTransactions, setIsLoadingTransactions] = useState(false)
+  const [errorMessage, setErrorMessage] = useState<string>("")
   const [accounts, setAccounts] = useState<Account[]>([])
   const [isLoadingAccounts, setIsLoadingAccounts] = useState(true)
-  const [transactions, setTransactions] = useState<any[]>([])
-
-  // États pour les actions serveur
+  const [transactions, setTransactions] = useState<any[]>([]) // Kept for potential future use, but not used in the new generation logic
   const [generateState, generateAction, isGenerating] = useActionState(generateStatement, null)
   const [emailState, emailAction, isSending] = useActionState(sendStatementByEmail, null)
-
   const [isPending, startTransition] = useTransition()
+  const [hasSearched, setHasSearched] = useState(false) // Track if user has initiated a search
 
   useEffect(() => {
     const loadAccounts = async () => {
@@ -140,7 +105,7 @@ export default function StatementsPage() {
             currency: acc.currency || "GNF",
             type: acc.type,
             status: acc.status,
-            iban: `GN82 BNG 001 ${acc.accountNumber}`,
+            iban: `GN82BNG001${acc.accountNumber}`,
           }))
 
           const activeAccounts = adaptedAccounts.filter(
@@ -160,7 +125,7 @@ export default function StatementsPage() {
             currency: "GNF",
             type: "Courant",
             status: "Actif",
-            iban: "GN82 BNG 001 0001234567 89",
+            iban: "GN82BNG0010001234567",
           },
         ])
       } finally {
@@ -172,33 +137,98 @@ export default function StatementsPage() {
   }, [])
 
   useEffect(() => {
-    const loadTransactions = async () => {
-      if (!selectedAccount) return
-
+    const loadTransactionsData = async () => {
       try {
-        const transactionsData = await getTransactions()
-        //console.log("[v0] Transactions récupérées pour relevé:", transactionsData)
+        setIsLoadingTransactions(true)
+        setErrorMessage("")
 
-        if (transactionsData.data && Array.isArray(transactionsData.data)) {
-          const accountTransactions = transactionsData.data.filter(
-            (txn: any) => txn.accountId === selectedAccount || txn.creditAccount === selectedAccount,
-          )
-          setTransactions(accountTransactions)
+        if (!selectedAccount) {
+          if (hasSearched) {
+            setErrorMessage("Veuillez sélectionner un compte")
+          }
+          setIsLoadingTransactions(false)
+          return
         }
+
+        const accountDetails = await getAccountById(selectedAccount.id)
+        if (!accountDetails.data) {
+          setErrorMessage("Impossible de récupérer les informations du compte")
+          return
+        }
+
+        const transactionsResponse = await getTransactionsByNumCompte(selectedAccount.number)
+
+        if (!transactionsResponse.success) {
+          alert(`❌ ${transactionsResponse.error || "Impossible de récupérer les transactions"}`)
+          return
+        }
+
+        const allTransactions = transactionsResponse.data
+
+        console.log("[v0] Total transactions reçues:", allTransactions.length)
+
+        const filteredTxns = allTransactions.filter((txn: any) => {
+          if (!txn.valueDate) return false
+
+          const txnDate = new Date(txn.valueDate)
+          const start = new Date(startDate)
+          const end = new Date(endDate)
+
+          const isInRange = txnDate >= start && txnDate <= end
+
+          return isInRange
+        })
+
+        console.log("[v0] Transactions filtrées:", filteredTxns.length)
+
+        const closingBalance = Number.parseFloat(accountDetails.data.bookBalance || "0")
+        const transactionsSum = filteredTxns.reduce((sum: number, txn: any) => {
+          return sum + Number.parseFloat(txn.montantOperation || "0")
+        }, 0)
+        const openingBalance = closingBalance - transactionsSum
+
+        console.log("[v0] Solde de fermeture (bookBalance):", closingBalance)
+        console.log("[v0] Somme algébrique des transactions:", transactionsSum)
+        console.log("[v0] Solde d'ouverture calculé:", openingBalance)
+
+        const sortedTransactions = filteredTxns.sort((a: any, b: any) => {
+          const dateA = new Date(a.valueDate || 0).getTime()
+          const dateB = new Date(b.valueDate || 0).getTime()
+          return dateB - dateA
+        })
+
+        const cleanedTransactions = sortedTransactions.map((txn: any, index: number) => ({
+          referenceOperation: txn.referenceOperation || "",
+          montantOperation: txn.montantOperation || 0,
+          description: txn.description || "",
+          valueDate: txn.valueDate || "",
+          dateEcriture: txn.dateEcriture || "",
+          txnType: txn.txnType || "",
+          ...(index === 0 && { balanceOuverture: openingBalance }),
+          ...(index === sortedTransactions.length - 1 && { balanceFermeture: closingBalance }),
+        }))
+
+        console.log("[v0] Transactions nettoyées et triées:", cleanedTransactions.length)
+
+        setFilteredTransactions(cleanedTransactions)
+        setTransactionCount(cleanedTransactions.length)
+        setShowDownloadLink(true)
       } catch (error) {
-        console.error("Erreur lors du chargement des transactions:", error)
-        setTransactions([])
+        console.error("[v0] Erreur lors de la récupération des transactions:", error)
+        setErrorMessage("Erreur lors de la récupération des transactions")
+      } finally {
+        setIsLoadingTransactions(false)
       }
     }
 
-    loadTransactions()
+    loadTransactionsData()
   }, [selectedAccount])
 
-  // Pré-sélectionner le compte si fourni dans l'URL
   useEffect(() => {
-    if (preSelectedAccountId && accounts.find((acc) => acc.id === preSelectedAccountId)) {
-      setSelectedAccount(preSelectedAccountId)
-    }
+    // User must now manually select an account before generating statements
+    // if (preSelectedAccountId && accounts.find((acc) => acc.id === preSelectedAccountId)) {
+    //   setSelectedAccount(preSelectedAccountId)
+    // }
   }, [preSelectedAccountId, accounts])
 
   const handlePeriodChange = (value: string) => {
@@ -212,38 +242,124 @@ export default function StatementsPage() {
       setEndDate("")
     }
   }
+
   const handleGenerateStatement = async () => {
-    if (!selectedAccount || !startDate || !endDate) {
-      return
+    if (!selectedAccount || !startDate || !endDate) return
+
+    setHasSearched(true)
+    setIsLoadingTransactions(true)
+    setErrorMessage("")
+    setShowDownloadLink(false)
+    setFilteredTransactions([])
+    setTransactionCount(0)
+
+    const accountNumber = selectedAccount.number
+
+    try {
+      const result = await getTransactionsByNumCompte(accountNumber)
+
+      if (!result.success) {
+        setErrorMessage(result.error || "Impossible de récupérer les transactions")
+        setIsLoadingTransactions(false)
+        return
+      }
+
+      const allTransactions = result.data
+
+      console.log("[v0] Total transactions reçues:", allTransactions.length)
+
+      const filteredTxns = allTransactions.filter((txn: any) => {
+        if (!txn.valueDate) return false
+
+        const txnDate = new Date(txn.valueDate)
+        const start = new Date(startDate)
+        const end = new Date(endDate)
+
+        const isInRange = txnDate >= start && txnDate <= end
+
+        return isInRange
+      })
+
+      console.log("[v0] Transactions après filtre par valueDate:", filteredTxns.length)
+
+      if (filteredTxns.length === 0) {
+        setErrorMessage("Aucune transaction trouvée pour cette période.")
+        setIsLoadingTransactions(false)
+        return
+      }
+
+      const accountDetails = await getAccountById(selectedAccount.id)
+      if (!accountDetails.data) {
+        setErrorMessage("Impossible de récupérer les informations du compte")
+        setIsLoadingTransactions(false)
+        return
+      }
+
+      const closingBalance = Number.parseFloat(accountDetails.data.bookBalance || "0")
+      const transactionsSum = filteredTxns.reduce((sum: number, txn: any) => {
+        return sum + Number.parseFloat(txn.montantOperation || "0")
+      }, 0)
+      const openingBalance = closingBalance - transactionsSum
+
+      console.log("[v0] Solde de fermeture (bookBalance):", closingBalance)
+      console.log("[v0] Somme algébrique des transactions:", transactionsSum)
+      console.log("[v0] Solde d'ouverture calculé:", openingBalance)
+
+      const sortedTransactions = filteredTxns.sort((a: any, b: any) => {
+        const dateA = new Date(a.valueDate || 0).getTime()
+        const dateB = new Date(b.valueDate || 0).getTime()
+        return dateB - dateA
+      })
+
+      const cleanedTransactions = sortedTransactions.map((txn: any, index: number) => ({
+        referenceOperation: txn.referenceOperation || "",
+        montantOperation: txn.montantOperation || 0,
+        description: txn.description || "",
+        valueDate: txn.valueDate || "",
+        dateEcriture: txn.dateEcriture || "",
+        txnType: txn.txnType || "",
+        ...(index === 0 && { balanceOuverture: openingBalance }),
+        ...(index === sortedTransactions.length - 1 && { balanceFermeture: closingBalance }),
+      }))
+
+      console.log("[v0] Transactions nettoyées et triées:", cleanedTransactions.length)
+
+      setFilteredTransactions(cleanedTransactions)
+      setTransactionCount(cleanedTransactions.length)
+      setShowDownloadLink(true)
+
+      console.log("[v0] Generating PDF with opening balance:", openingBalance, "closing balance:", closingBalance)
+      console.log(
+        "[v0] Type of openingBalance:",
+        typeof openingBalance,
+        "Type of closingBalance:",
+        typeof closingBalance,
+      )
+
+      await generatePDFStatement(
+        cleanedTransactions,
+        selectedAccount,
+        startDate,
+        endDate,
+        openingBalance,
+        closingBalance,
+      )
+    } catch (error) {
+      console.error("[v0] Erreur lors de la récupération des transactions:", error)
+      setErrorMessage("Erreur lors de la récupération des transactions")
+    } finally {
+      setIsLoadingTransactions(false)
     }
+  }
 
-    // Filtrer les transactions par période
-    const filteredTransactions = transactions.filter((txn) => {
-      const txnDate = new Date(txn.valueDate || txn.date)
-      const start = new Date(startDate)
-      const end = new Date(endDate)
-      return txnDate >= start && txnDate <= end
-    })
+  const handleDownloadPDF = () => {
+    if (!selectedAccount || filteredTransactions.length === 0) return
 
-    // console.log("[v0] Génération relevé avec transactions filtrées:", {
-    //   compte: selectedAccount,
-    //   période: `${startDate} à ${endDate}`,
-    //   nombreTransactions: filteredTransactions.length,
-    //   format,
-    // })
+    const balanceOuverture = filteredTransactions[0]?.balanceOuverture || selectedAccount.balance
+    const balanceFermeture =
+      filteredTransactions[filteredTransactions.length - 1]?.balanceFermeture || selectedAccount.balance
 
-    const formData = new FormData()
-    formData.append("accountId", selectedAccount)
-    formData.append("startDate", startDate)
-    formData.append("endDate", endDate)
-    formData.append("format", format)
-    formData.append("includeImages", includeImages.toString())
-    formData.append("language", language)
-    formData.append("transactions", JSON.stringify(filteredTransactions))
-
-    startTransition(() => {
-      generateAction(formData)
-    })
+    generatePDFStatement(filteredTransactions, selectedAccount, startDate, endDate, balanceOuverture, balanceFermeture)
   }
 
   const handleSendByEmail = async () => {
@@ -276,15 +392,15 @@ export default function StatementsPage() {
   const formatAmount = (amount: number, currency = "GNF") => {
     if (currency === "GNF") {
       return new Intl.NumberFormat("fr-FR", {
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0,
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
       })
         .format(amount)
         .replace(/\s/g, " ")
     }
     return new Intl.NumberFormat("en-US", {
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
     }).format(amount)
   }
 
@@ -294,641 +410,755 @@ export default function StatementsPage() {
   const preSelectedAccount = preSelectedAccountId ? accounts.find((acc) => acc.id === preSelectedAccountId) : null
 
   return (
-    <div className="space-y-6">
-      <div className="space-y-2">
-        <h1 className="text-3xl font-heading font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-          Télécharger relevé
-        </h1>
-        <p className="text-muted-foreground text-lg">Générez et téléchargez vos relevés de compte</p>
-        {preSelectedAccountId && accounts.find((acc) => acc.id === preSelectedAccountId) && (
-          <div className="mt-2">
-            <Alert className="border-blue-200 bg-blue-50">
-              <CheckCircle className="h-4 w-4 text-blue-600" />
-              <AlertDescription className="text-blue-800">
-                Compte pré-sélectionné : {accounts.find((acc) => acc.id === preSelectedAccountId)?.name} (
-                {accounts.find((acc) => acc.id === preSelectedAccountId)?.number})
+    <div className="min-h-screen bg-background">
+      <div className="container mx-auto px-4 py-8">
+        <div className="space-y-2 mb-6">
+          <h1 className="text-3xl font-bold text-primary">Relevé de Compte</h1>
+          <p className="text-sm text-muted-foreground">
+            Consultez et téléchargez vos relevés de compte pour la période de votre choix
+          </p>
+        </div>
+        {/* </CHANGE> */}
+        {hasSearched && errorMessage && !isLoadingTransactions && (
+          <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-4">
+            <p className="text-red-800">{errorMessage}</p>
+          </div>
+        )}
+
+        {showDownloadLink && transactionCount > 0 && (
+          <div>
+            <Alert className="border-green-200 bg-green-50">
+              <CheckCircle className="h-4 w-4 text-green-600" />
+              <AlertDescription className="text-green-800 flex items-center justify-between">
+                <span>{transactionCount} transaction(s) trouvée(s) pour cette période.</span>
+                <Button
+                  variant="link"
+                  className="p-0 h-auto text-green-700 underline"
+                  onClick={async () => {
+                    if (!selectedAccount) return
+                    await generatePDFStatement(filteredTransactions, selectedAccount, startDate, endDate)
+                  }}
+                >
+                  Télécharger le relevé
+                </Button>
               </AlertDescription>
             </Alert>
           </div>
         )}
-      </div>
 
-      <div className="flex items-center justify-between">
-        <div></div>
-        <div className="flex items-center space-x-2">
-          <Button variant="outline">
-            <History className="w-4 h-4 mr-2" />
-            Historique
-          </Button>
-          <Button variant="outline">
-            <Settings className="w-4 h-4 mr-2" />
-            Paramètres
-          </Button>
-        </div>
-      </div>
+        {generateState?.success && (
+          <Alert className="border-green-200 bg-green-50">
+            <CheckCircle className="h-4 w-4 text-green-600" />
+            <AlertDescription className="text-green-800">
+              ✅ Relevé généré avec succès ! ({generateState.transactionCount} transactions)
+              <Button
+                variant="link"
+                className="p-0 h-auto text-green-700 underline ml-2"
+                onClick={() => {
+                  // Note: The logic to actually download here is removed as generation happens directly in handleGenerateStatement
+                }}
+              >
+                Télécharger maintenant
+              </Button>
+            </AlertDescription>
+          </Alert>
+        )}
 
-      {/* Messages de feedback */}
-      {generateState?.success && (
-        <Alert className="border-green-200 bg-green-50">
-          <CheckCircle className="h-4 w-4 text-green-600" />
-          <AlertDescription className="text-green-800">
-            ✅ Relevé généré avec succès ! ({generateState.transactionCount} transactions)
-            <Button
-              variant="link"
-              className="p-0 h-auto text-green-700 underline ml-2"
-              onClick={() => {
-                if (format === "pdf") {
-                  generateAndDownloadPDF()
-                } else {
-                  generateAndDownloadExcel()
-                }
-              }}
-            >
-              Télécharger maintenant
-            </Button>
-          </AlertDescription>
-        </Alert>
-      )}
+        {generateState?.error && (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>❌ {generateState.error}</AlertDescription>
+          </Alert>
+        )}
 
-      {generateState?.error && (
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>❌ {generateState.error}</AlertDescription>
-        </Alert>
-      )}
+        {emailState?.success && (
+          <Alert className="border-blue-200 bg-blue-50">
+            <CheckCircle className="h-4 w-4 text-blue-600" />
+            <AlertDescription className="text-blue-800">✅ Relevé envoyé par email à {emailAddress}</AlertDescription>
+          </Alert>
+        )}
 
-      {emailState?.success && (
-        <Alert className="border-blue-200 bg-blue-50">
-          <CheckCircle className="h-4 w-4 text-blue-600" />
-          <AlertDescription className="text-blue-800">✅ Relevé envoyé par email à {emailAddress}</AlertDescription>
-        </Alert>
-      )}
+        {isGenerating && (
+          <Alert className="border-yellow-200 bg-yellow-50">
+            <Clock className="h-4 w-4 text-yellow-600 animate-pulse" />
+            <AlertDescription className="text-yellow-800">
+              ⏳ Téléchargement du relevé en cours... Veuillez patienter.
+            </AlertDescription>
+          </Alert>
+        )}
 
-      {isGenerating && (
-        <Alert className="border-yellow-200 bg-yellow-50">
-          <Clock className="h-4 w-4 text-yellow-600 animate-pulse" />
-          <AlertDescription className="text-yellow-800">
-            ⏳ Téléchargement du relevé en cours... Veuillez patienter.
-          </AlertDescription>
-        </Alert>
-      )}
-
-      <Tabs defaultValue="generate" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="generate">Générer un relevé</TabsTrigger>
-          <TabsTrigger value="history">Historique des relevés</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="generate" className="space-y-6">
-          {/* Sélection du compte */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <CreditCard className="w-5 h-5 mr-2" />
-                Sélection du compte
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {isLoadingAccounts ? (
-                <div className="text-center py-4">
-                  <Clock className="w-6 h-6 animate-spin mx-auto mb-2" />
-                  <p className="text-gray-500">Chargement des comptes...</p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {accounts.map((account) => (
-                    <div
-                      key={account.id}
-                      className={`p-4 border rounded-lg cursor-pointer transition-all ${
-                        selectedAccount === account.id
-                          ? "border-blue-500 bg-blue-50 ring-2 ring-blue-200"
-                          : "border-gray-200 hover:border-gray-300"
-                      } ${preSelectedAccountId === account.id && !selectedAccount ? "border-blue-300 bg-blue-25" : ""}`}
-                      onClick={() => setSelectedAccount(account.id)}
+        <Tabs defaultValue="generate" className="space-y-3">
+          <TabsContent value="generate" className="space-y-3">
+            {/* Sélection du compte */}
+            <Card>
+              <CardHeader className="py-2">
+                <CardTitle className="flex items-center text-base">
+                  <CreditCard className="w-4 h-4 mr-2" />
+                  Sélection du compte
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-2 pb-3">
+                {isLoadingAccounts ? (
+                  <div className="text-center py-2">
+                    <Clock className="w-6 h-6 animate-spin mx-auto mb-2" />
+                    <p className="text-gray-500">Chargement des comptes...</p>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <Select
+                      value={selectedAccount?.id || ""}
+                      onValueChange={(id) => setSelectedAccount(accounts.find((acc) => acc.id === id) || null)}
                     >
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center space-x-2">
-                          {getAccountIcon(account.type)}
-                          <span className="font-medium text-sm">{account.name}</span>
-                          {preSelectedAccountId === account.id && (
-                            <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700">
-                              Suggéré
-                            </Badge>
+                      <SelectTrigger className="w-full h-auto py-2">
+                        <SelectValue placeholder="Sélectionnez un compte">
+                          {selectedAccount && (
+                            <div className="flex items-center justify-between w-full">
+                              <div className="flex items-center gap-2">
+                                {getAccountIcon(selectedAccount.type)}
+                                <div className="text-left">
+                                  <div className="font-medium text-sm">{selectedAccount.name}</div>
+                                  <div className="text-xs text-muted-foreground font-mono">
+                                    {selectedAccount.number}
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="text-right ml-4">
+                                <div className="font-bold text-sm">
+                                  {formatAmount(selectedAccount.balance, selectedAccount.currency)}{" "}
+                                  {selectedAccount.currency}
+                                </div>
+                              </div>
+                            </div>
                           )}
-                        </div>
-                        <Badge variant={account.status === "Actif" ? "default" : "secondary"}>{account.status}</Badge>
+                        </SelectValue>
+                      </SelectTrigger>
+                      <SelectContent className="max-h-[400px]">
+                        {accounts.map((account) => (
+                          <SelectItem key={account.id} value={account.id} className="h-auto py-2">
+                            <div className="flex items-center justify-between w-full gap-4">
+                              <div className="flex items-center gap-2 flex-1">
+                                {getAccountIcon(account.type)}
+                                <div className="text-left">
+                                  <div className="font-medium flex items-center gap-1.5 text-sm">
+                                    {account.name}
+                                    {preSelectedAccountId === account.id && (
+                                      <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700">
+                                        Suggéré
+                                      </Badge>
+                                    )}
+                                  </div>
+                                  <div className="text-xs text-muted-foreground font-mono">{account.number}</div>
+                                </div>
+                              </div>
+                              <div className="text-right ml-4">
+                                <div className="font-bold text-sm">
+                                  {formatAmount(account.balance, account.currency)} {account.currency}
+                                </div>
+                              </div>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Configuration du relevé */}
+            <Card>
+              <CardHeader className="py-2">
+                <CardTitle className="flex items-center text-base">
+                  <Calendar className="w-4 h-4 mr-2" />
+                  Détails du relevé
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3 pt-2 pb-3">
+                {/* Sélection de période */}
+                <div className="space-y-2">
+                  <Label className="text-sm">Période du relevé</Label>
+                  <Select value={selectedPeriod} onValueChange={handlePeriodChange}>
+                    <SelectTrigger className="h-9">
+                      <SelectValue placeholder="Choisir une période" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {predefinedPeriods.map((period) => (
+                        <SelectItem key={period.value} value={period.value}>
+                          {period.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+
+                  {selectedPeriod === "custom" && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                      <div>
+                        <Label htmlFor="startDate" className="text-sm">
+                          Date de début
+                        </Label>
+                        <Input
+                          id="startDate"
+                          type="date"
+                          value={startDate}
+                          onChange={(e) => setStartDate(e.target.value)}
+                          max={endDate || undefined}
+                          className="h-9"
+                        />
                       </div>
-                      <p className="text-xs text-gray-500 font-mono mb-1">{account.number}</p>
-                      <p className="text-lg font-bold">
-                        {formatAmount(account.balance, account.currency)} {account.currency}
+                      <div>
+                        <Label htmlFor="endDate" className="text-sm">
+                          Date de fin
+                        </Label>
+                        <Input
+                          id="endDate"
+                          type="date"
+                          value={endDate}
+                          onChange={(e) => setEndDate(e.target.value)}
+                          min={startDate || undefined}
+                          max={new Date().toISOString().split("T")[0]}
+                          className="h-9"
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {startDate && endDate && (
+                    <div className="p-2 bg-blue-50 rounded-lg">
+                      <p className="text-sm text-blue-800">
+                        <Calendar className="w-4 h-4 inline mr-1" />
+                        Période sélectionnée : du {new Date(startDate).toLocaleDateString("fr-FR")} au{" "}
+                        {new Date(endDate).toLocaleDateString("fr-FR")}
                       </p>
                     </div>
-                  ))}
+                  )}
                 </div>
-              )}
-            </CardContent>
-          </Card>
 
-          {/* Configuration du relevé */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <Calendar className="w-5 h-5 mr-2" />
-                Configuration du relevé
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {/* Sélection de période */}
-              <div className="space-y-4">
-                <Label>Période du relevé</Label>
-                <Select value={selectedPeriod} onValueChange={handlePeriodChange}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Choisir une période" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {predefinedPeriods.map((period) => (
-                      <SelectItem key={period.value} value={period.value}>
-                        {period.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-
-                {selectedPeriod === "custom" && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="startDate">Date de début</Label>
-                      <Input
-                        id="startDate"
-                        type="date"
-                        value={startDate}
-                        onChange={(e) => setStartDate(e.target.value)}
-                        max={endDate || undefined}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="endDate">Date de fin</Label>
-                      <Input
-                        id="endDate"
-                        type="date"
-                        value={endDate}
-                        onChange={(e) => setEndDate(e.target.value)}
-                        min={startDate || undefined}
-                        max={new Date().toISOString().split("T")[0]}
-                      />
-                    </div>
-                  </div>
-                )}
-
-                {startDate && endDate && (
-                  <div className="p-3 bg-blue-50 rounded-lg">
-                    <p className="text-sm text-blue-800">
-                      <Calendar className="w-4 h-4 inline mr-1" />
-                      Période sélectionnée : du {new Date(startDate).toLocaleDateString("fr-FR")} au{" "}
-                      {new Date(endDate).toLocaleDateString("fr-FR")}
-                    </p>
-                  </div>
-                )}
-              </div>
-
-              {/* Options de format */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-4">
-                  <Label>Format du fichier</Label>
-                  <div className="space-y-3">
+                {/* Options de format */}
+                {/* <div className="space-y-2">
+                  <Label className="text-sm">Format du fichier</Label>
+                  <div className="grid grid-cols-2 gap-2">
                     <div
-                      className={`p-4 border rounded-lg cursor-pointer transition-all ${
+                      className={`p-2 border rounded-lg cursor-pointer transition-all ${
                         format === "pdf"
                           ? "border-red-500 bg-red-50 ring-2 ring-red-200"
                           : "border-gray-200 hover:border-gray-300"
                       }`}
                       onClick={() => setFormat("pdf")}
                     >
-                      <div className="flex items-center space-x-3">
-                        <FileText className="w-6 h-6 text-red-600" />
+                      <div className="flex items-center space-x-2">
+                        <FileText className="w-5 h-5 text-red-600" />
                         <div>
-                          <p className="font-medium">PDF</p>
-                          <p className="text-sm text-gray-500">Format standard, idéal pour l'impression</p>
+                          <p className="font-medium text-sm">PDF</p>
+                          <p className="text-xs text-gray-500">Format standard</p>
                         </div>
                       </div>
                     </div>
                     <div
-                      className={`p-4 border rounded-lg cursor-pointer transition-all ${
+                      className={`p-2 border rounded-lg cursor-pointer transition-all ${
                         format === "excel"
                           ? "border-green-500 bg-green-50 ring-2 ring-green-200"
                           : "border-gray-200 hover:border-gray-300"
                       }`}
                       onClick={() => setFormat("excel")}
                     >
-                      <div className="flex items-center space-x-3">
-                        <FileSpreadsheet className="w-6 h-6 text-green-600" />
+                      <div className="flex items-center space-x-2">
+                        <FileSpreadsheet className="w-5 h-5 text-green-600" />
                         <div>
-                          <p className="font-medium">Excel</p>
-                          <p className="text-sm text-gray-500">Format tableur, idéal pour l'analyse</p>
+                          <p className="font-medium text-sm">Excel</p>
+                          <p className="text-xs text-gray-500">Format tableur</p>
                         </div>
                       </div>
                     </div>
                   </div>
+                </div> */}
+              </CardContent>
+            </Card>
+
+            {/* Actions */}
+            <Card>
+              <CardHeader className="py-2">
+                <CardTitle className="flex items-center text-base">
+                  <Download className="w-4 h-4 mr-2" />
+                  Téléchargement
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3 pt-2 pb-3">
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <Button
+                    onClick={handleGenerateStatement}
+                    disabled={!isFormValid || isLoadingTransactions}
+                    className="flex-1 h-9"
+                  >
+                    {isLoadingTransactions ? (
+                      <>
+                        <Clock className="w-4 h-4 mr-2 animate-spin" />
+                        Recherche en cours...
+                      </>
+                    ) : (
+                      <>
+                        <Download className="w-4 h-4 mr-2" />
+                        Demander relevé
+                      </>
+                    )}
+                  </Button>
                 </div>
 
-                <div className="space-y-4">
-                  <Label>Options avancées</Label>
-                  <div className="space-y-4">
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="includeImages"
-                        checked={includeImages}
-                        onCheckedChange={(checked) => setIncludeImages(checked as boolean)}
+                {generateState?.success && (
+                  <div className="border-t pt-3 space-y-2">
+                    <Label htmlFor="email" className="text-sm">
+                      Envoyer par email (optionnel)
+                    </Label>
+                    <div className="flex gap-2">
+                      <Input
+                        id="email"
+                        type="email"
+                        placeholder="votre@email.com"
+                        value={emailAddress}
+                        onChange={(e) => setEmailAddress(e.target.value)}
+                        className="flex-1 h-9"
                       />
-                      <Label htmlFor="includeImages" className="text-sm">
-                        Inclure les images des chèques
-                      </Label>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="language">Langue du relevé</Label>
-                      <Select value={language} onValueChange={(value: "fr" | "en") => setLanguage(value)}>
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="fr">Français</SelectItem>
-                          <SelectItem value="en">English</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <Button
+                        onClick={handleSendByEmail}
+                        disabled={!emailAddress || isSending || isPending}
+                        variant="outline"
+                        className="h-9 bg-transparent"
+                      >
+                        {isSending || isPending ? (
+                          <Clock className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Mail className="w-4 h-4" />
+                        )}
+                      </Button>
                     </div>
                   </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+                )}
 
-          {/* Actions */}
+                {!isFormValid && (
+                  <Alert>
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription className="text-sm">
+                      Veuillez sélectionner un compte et une période valide pour continuer.
+                    </AlertDescription>
+                  </Alert>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+
+        {showDownloadLink && filteredTransactions.length > 0 && (
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center">
-                <Download className="w-5 h-5 mr-2" />
-                Téléchargement
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex flex-col sm:flex-row gap-4">
-                <Button
-                  onClick={handleGenerateStatement}
-                  disabled={!isFormValid || isGenerating || isPending}
-                  className="flex-1"
-                >
-                  {isGenerating || isPending ? (
-                    <>
-                      <Clock className="w-4 h-4 mr-2 animate-spin" />
-                      Génération en cours...
-                    </>
-                  ) : (
-                    <>
-                      <Download className="w-4 h-4 mr-2" />
-                      Générer et télécharger
-                    </>
-                  )}
-                </Button>
-
-                {/* <Button variant="outline" disabled={!isFormValid}>
-                  <Eye className="w-4 h-4 mr-2" />
-                  Aperçu
-                </Button>
-
-                <Button variant="outline" disabled={!isFormValid}>
-                  <Printer className="w-4 h-4 mr-2" />
-                  Imprimer
-                </Button> */}
-              </div>
-
-              {/* Envoi par email */}
-              {generateState?.success && (
-                <div className="border-t pt-4 space-y-3">
-                  <Label htmlFor="email">Envoyer par email (optionnel)</Label>
-                  <div className="flex gap-2">
-                    <Input
-                      id="email"
-                      type="email"
-                      placeholder="votre@email.com"
-                      value={emailAddress}
-                      onChange={(e) => setEmailAddress(e.target.value)}
-                      className="flex-1"
-                    />
-                    <Button
-                      onClick={handleSendByEmail}
-                      disabled={!emailAddress || isSending || isPending}
-                      variant="outline"
-                    >
-                      {isSending || isPending ? (
-                        <Clock className="w-4 h-4 animate-spin" />
-                      ) : (
-                        <Mail className="w-4 h-4" />
-                      )}
-                    </Button>
-                  </div>
-                </div>
-              )}
-
-              {!isFormValid && (
-                <Alert>
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertDescription>
-                    Veuillez sélectionner un compte et une période valide pour continuer.
-                  </AlertDescription>
-                </Alert>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="history" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <History className="w-5 h-5 mr-2" />
-                Historique des relevés générés
+              <CardTitle className="flex items-center text-base">
+                <CreditCard className="w-4 h-4 mr-2" />
+                Aperçu des transactions ({filteredTransactions.length})
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {statementHistory.length === 0 ? (
-                <div className="text-center py-8">
-                  <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                  <p className="text-gray-500">Aucun relevé généré récemment</p>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {statementHistory.map((statement) => (
-                    <div
-                      key={statement.id}
-                      className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50"
-                    >
-                      <div className="flex items-center space-x-4">
-                        <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                          {statement.format === "PDF" ? (
-                            <FileText className="w-5 h-5 text-red-600" />
-                          ) : (
-                            <FileSpreadsheet className="w-5 h-5 text-green-600" />
-                          )}
-                        </div>
-                        <div>
-                          <p className="font-medium">{statement.accountName}</p>
-                          <p className="text-sm text-gray-500">{statement.period}</p>
-                          <p className="text-xs text-gray-400">
-                            Généré le {statement.generatedAt} • {statement.fileSize}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex items-center space-x-3">
-                        <Badge
-                          variant={
-                            statement.status === "Généré"
-                              ? "default"
-                              : statement.status === "Expiré"
-                                ? "destructive"
-                                : "secondary"
-                          }
-                        >
-                          {statement.status}
-                        </Badge>
-                        <div className="text-right text-sm">
-                          <p className="text-gray-600">{statement.downloadCount} téléchargements</p>
-                        </div>
-                        {statement.status === "Généré" && (
-                          <Button size="sm" variant="outline">
-                            <Download className="w-4 h-4" />
-                          </Button>
-                        )}
-                      </div>
-                    </div>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Référence</TableHead>
+                    <TableHead>Description</TableHead>
+                    <TableHead className="text-right">Montant</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredTransactions.map((txn, index) => (
+                    <TableRow key={index}>
+                      <TableCell className="font-mono text-sm">
+                        {txn.valueDate ? new Date(txn.valueDate).toLocaleDateString("fr-FR") : "N/A"}
+                      </TableCell>
+                      <TableCell className="font-mono text-sm">{txn.referenceOperation || "N/A"}</TableCell>
+                      <TableCell className="max-w-[300px] truncate">{txn.description || "N/A"}</TableCell>
+                      <TableCell
+                        className={`text-right font-semibold ${
+                          txn.montantOperation >= 0 ? "text-green-600" : "text-red-600"
+                        }`}
+                      >
+                        {formatAmount(txn.montantOperation)} GNF
+                      </TableCell>
+                    </TableRow>
                   ))}
-                </div>
-              )}
+                </TableBody>
+              </Table>
             </CardContent>
           </Card>
-        </TabsContent>
-      </Tabs>
+        )}
+      </div>
     </div>
   )
 
-  function generateAndDownloadPDF() {
-    const selectedAccountData = accounts.find((acc) => acc.id === selectedAccount)
-    if (!selectedAccountData) return
-
-    // Filtrer les transactions par période
-    const filteredTransactions = transactions.filter((txn) => {
-      const txnDate = new Date(txn.valueDate || txn.date)
-      const start = new Date(startDate)
-      const end = new Date(endDate)
-      return txnDate >= start && txnDate <= end
-    })
-
+  async function generatePDFStatement(
+    transactions: any[],
+    account: Account,
+    startDate: string,
+    endDate: string,
+    openingBalance: number,
+    closingBalance: number,
+  ) {
     try {
-      // Utilisation de jsPDF pour générer le PDF
-      const { jsPDF } = require("jspdf")
+      console.log("[v0] PDF generation - openingBalance:", openingBalance, "type:", typeof openingBalance)
+      console.log("[v0] PDF generation - closingBalance:", closingBalance, "type:", typeof closingBalance)
+      console.log("[v0] PDF generation - formatted opening:", formatAmount(openingBalance))
+      console.log("[v0] PDF generation - formatted closing:", formatAmount(closingBalance))
+
       const doc = new jsPDF()
 
-      // En-tête du relevé
-      doc.setFontSize(20)
-      doc.setTextColor(40, 40, 40)
-      doc.text("RELEVÉ DE COMPTE", 20, 30)
+      const pageWidth = 210
+      const pageHeight = 297
 
-      doc.setFontSize(12)
-      doc.setTextColor(100, 100, 100)
-      doc.text(
-        `Période: ${new Date(startDate).toLocaleDateString("fr-FR")} au ${new Date(endDate).toLocaleDateString("fr-FR")}`,
-        20,
-        45,
-      )
+      // Couleurs
+      const blackText: [number, number, number] = [0, 0, 0]
+      const grayText: [number, number, number] = [100, 100, 100]
 
-      // Informations du compte
-      doc.setFontSize(14)
-      doc.setTextColor(40, 40, 40)
-      doc.text("Informations du compte", 20, 65)
+      // Charger le logo BNG
+      let yPos = 15
 
-      doc.setFontSize(10)
-      doc.text(`Nom: ${selectedAccountData.name}`, 20, 80)
-      doc.text(`Numéro: ${selectedAccountData.number}`, 20, 90)
-      doc.text(`IBAN: ${selectedAccountData.iban}`, 20, 100)
-      doc.text(
-        `Solde: ${formatAmount(selectedAccountData.balance, selectedAccountData.currency)} ${selectedAccountData.currency}`,
-        20,
-        110,
-      )
+      // Logo BNG (même position que dans le RIB)
+      const img = new Image()
+      img.src = "/images/logo-bng.png"
+      img.crossOrigin = "anonymous"
 
-      // Tableau des transactions
-      let yPos = 130
-      doc.setFontSize(14)
-      doc.text("Transactions", 20, yPos)
-      yPos += 15
-
-      // En-têtes du tableau
-      doc.setFontSize(9)
-      doc.setTextColor(60, 60, 60)
-      doc.text("Date", 20, yPos)
-      doc.text("Description", 50, yPos)
-      doc.text("Montant", 140, yPos)
-      doc.text("Type", 170, yPos)
-      yPos += 10
-
-      // Ligne de séparation
-      doc.line(20, yPos - 5, 190, yPos - 5)
-
-      // Transactions
-      filteredTransactions.forEach((txn, index) => {
-        if (yPos > 270) {
-          doc.addPage()
-          yPos = 30
-        }
-
-        const amount = Number.parseFloat(txn.amount || "0")
-        const isCredit = txn.creditAccount === selectedAccount
-        const displayAmount = isCredit ? Math.abs(amount) : -Math.abs(amount)
-
-        doc.setTextColor(40, 40, 40)
-        doc.text(new Date(txn.valueDate || txn.date).toLocaleDateString("fr-FR"), 20, yPos)
-        doc.text((txn.description || "Transaction").substring(0, 25), 50, yPos)
-        doc.setTextColor(isCredit ? 0 : 200, isCredit ? 150 : 0, 0)
-        doc.text(
-          `${isCredit ? "+" : "-"}${formatAmount(Math.abs(displayAmount), selectedAccountData.currency)} ${selectedAccountData.currency}`,
-          140,
-          yPos,
-        )
-        doc.setTextColor(40, 40, 40)
-        doc.text(isCredit ? "CRÉDIT" : "DÉBIT", 170, yPos)
-        yPos += 8
-      })
-
-      // Pied de page
-      const pageCount = doc.internal.getNumberOfPages()
-      for (let i = 1; i <= pageCount; i++) {
-        doc.setPage(i)
-        doc.setFontSize(8)
-        doc.setTextColor(150, 150, 150)
-        doc.text(`Page ${i} sur ${pageCount}`, 20, 285)
-        doc.text(
-          `Généré le ${new Date().toLocaleDateString("fr-FR")} à ${new Date().toLocaleTimeString("fr-FR")}`,
-          120,
-          285,
-        )
+      img.onload = () => {
+        doc.addImage(img, "PNG", 15, yPos, 35, 12)
+        continueGeneratingPDF()
       }
 
-      // Téléchargement
-      const fileName = `releve_${selectedAccountData.number}_${startDate}_${endDate}.pdf`
-      doc.save(fileName)
+      img.onerror = () => {
+        console.warn("[v0] Logo BNG non trouvé, génération sans logo")
+        continueGeneratingPDF()
+      }
 
-      //console.log("[v0] PDF généré et téléchargé:", fileName)
+      const continueGeneratingPDF = () => {
+        yPos = 40
+
+        // TITRE DE LA BANQUE (même style que RIB)
+        doc.setTextColor(...blackText)
+        doc.setFontSize(14)
+        doc.setFont("helvetica", "bold")
+        doc.text("BANQUE NATIONALE DE GUINÉE", 15, yPos)
+
+        yPos += 5
+        doc.setFontSize(8)
+        doc.setFont("helvetica", "normal")
+        doc.text("6ème Avenue Boulevard DIALLO Telly BP: 1781 Conakry", 15, yPos)
+
+        yPos += 12
+
+        // DÉPARTEMENT
+        doc.setFontSize(9)
+        doc.setFont("helvetica", "bold")
+        doc.text("DEPARTEMENT DES OPERATIONS", 15, yPos)
+
+        yPos += 12
+
+        // TITRE DU DOCUMENT
+        doc.setFontSize(10)
+        doc.setFont("helvetica", "bold")
+        doc.text("RELEVÉ DE COMPTE", 15, yPos)
+
+        yPos += 8
+
+        // PÉRIODE
+        doc.setFontSize(8)
+        doc.setFont("helvetica", "normal")
+        doc.text(
+          `Période: ${new Date(startDate).toLocaleDateString("fr-FR")} au ${new Date(endDate).toLocaleDateString(
+            "fr-FR",
+          )}`,
+          15,
+          yPos,
+        )
+
+        yPos += 10
+
+        // INFORMATIONS DU COMPTE
+        doc.setFontSize(9)
+        doc.setFont("helvetica", "bold")
+        doc.text(`COMPTE: ${account.name.toUpperCase()}`, 15, yPos)
+
+        yPos += 6
+
+        doc.setFontSize(8)
+        doc.setFont("helvetica", "normal")
+        doc.text(`Numéro de compte: ${account.number}`, 15, yPos)
+
+        yPos += 4
+        doc.text(`IBAN: ${account.iban}`, 15, yPos)
+
+        yPos += 10
+
+        doc.setFontSize(9)
+        doc.setFont("helvetica", "bold")
+        doc.text("SOLDE D'OUVERTURE:", 15, yPos)
+
+        doc.setFont("helvetica", "normal")
+        const formattedOpeningBalance = formatAmount(Number(openingBalance))
+        doc.text(`${formattedOpeningBalance} ${account.currency}`, 70, yPos)
+
+        yPos += 10
+
+        // TABLEAU DES TRANSACTIONS (AVEC GRILLES VISIBLES)
+        doc.setFontSize(10)
+        doc.setFont("helvetica", "bold")
+        doc.text(`TRANSACTIONS (${transactions.length})`, 15, yPos)
+
+        yPos += 8
+
+        const tableStartX = 15
+        const col1Width = 25 // Date Valeur
+        const col2Width = 50 // Description
+        const col3Width = 35 // Reference
+        const col4Width = 30 // Date Operation (dateEcriture)
+        const col5Width = 30 // Montant
+        const rowHeight = 9
+        const tableWidth = col1Width + col2Width + col3Width + col4Width + col5Width
+
+        // EN-TÊTES AVEC CADRE
+        doc.setFontSize(9)
+        doc.setFont("helvetica", "bold")
+
+        // Dessiner le rectangle pour l'en-tête
+        doc.setDrawColor(0)
+        doc.setLineWidth(0.5)
+        doc.rect(tableStartX, yPos, tableWidth, rowHeight)
+
+        // Lignes verticales de l'en-tête
+        doc.line(tableStartX + col1Width, yPos, tableStartX + col1Width, yPos + rowHeight)
+        doc.line(tableStartX + col1Width + col2Width, yPos, tableStartX + col1Width + col2Width, yPos + rowHeight)
+        doc.line(
+          tableStartX + col1Width + col2Width + col3Width,
+          yPos,
+          tableStartX + col1Width + col2Width + col3Width,
+          yPos + rowHeight,
+        )
+        doc.line(
+          tableStartX + col1Width + col2Width + col3Width + col4Width,
+          yPos,
+          tableStartX + col1Width + col2Width + col3Width + col4Width,
+          yPos + rowHeight,
+        )
+
+        doc.text("Date Valeur", tableStartX + 2, yPos + 6)
+        doc.text("Description", tableStartX + col1Width + 2, yPos + 6)
+        doc.text("Référence", tableStartX + col1Width + col2Width + 2, yPos + 6)
+        doc.text("Date Opération", tableStartX + col1Width + col2Width + col3Width + 2, yPos + 6)
+        doc.text("Montant", tableStartX + col1Width + col2Width + col3Width + col4Width + 2, yPos + 6)
+
+        yPos += rowHeight
+
+        doc.setFont("helvetica", "normal")
+        doc.setFontSize(8)
+
+        transactions.forEach((txn) => {
+          if (yPos > 260) {
+            doc.addPage()
+            yPos = 30
+
+            // Réécrire les entêtes sur la nouvelle page avec cadre
+            doc.setFontSize(9)
+            doc.setFont("helvetica", "bold")
+
+            doc.rect(tableStartX, yPos, tableWidth, rowHeight)
+            doc.line(tableStartX + col1Width, yPos, tableStartX + col1Width, yPos + rowHeight)
+            doc.line(tableStartX + col1Width + col2Width, yPos, tableStartX + col1Width + col2Width, yPos + rowHeight)
+            doc.line(
+              tableStartX + col1Width + col2Width + col3Width,
+              yPos,
+              tableStartX + col1Width + col2Width + col3Width,
+              yPos + rowHeight,
+            )
+            doc.line(
+              tableStartX + col1Width + col2Width + col3Width + col4Width,
+              yPos,
+              tableStartX + col1Width + col2Width + col3Width + col4Width,
+              yPos + rowHeight,
+            )
+
+            doc.text("Date Valeur", tableStartX + 2, yPos + 6)
+            doc.text("Description", tableStartX + col1Width + 2, yPos + 6)
+            doc.text("Référence", tableStartX + col1Width + col2Width + 2, yPos + 6)
+            doc.text("Date Opération", tableStartX + col1Width + col2Width + col3Width + 2, yPos + 6)
+            doc.text("Montant", tableStartX + col1Width + col2Width + col3Width + col4Width + 2, yPos + 6)
+
+            yPos += rowHeight
+            doc.setFont("helvetica", "normal")
+            doc.setFontSize(8)
+          }
+
+          // Dessiner le rectangle pour la ligne
+          doc.rect(tableStartX, yPos, tableWidth, rowHeight)
+
+          // Lignes verticales pour chaque cellule
+          doc.line(tableStartX + col1Width, yPos, tableStartX + col1Width, yPos + rowHeight)
+          doc.line(tableStartX + col1Width + col2Width, yPos, tableStartX + col1Width + col2Width, yPos + rowHeight)
+          doc.line(
+            tableStartX + col1Width + col2Width + col3Width,
+            yPos,
+            tableStartX + col1Width + col2Width + col3Width,
+            yPos + rowHeight,
+          )
+          doc.line(
+            tableStartX + col1Width + col2Width + col3Width + col4Width,
+            yPos,
+            tableStartX + col1Width + col2Width + col3Width + col4Width,
+            yPos + rowHeight,
+          )
+
+          // Date Valeur
+          const dateValeur = txn.valueDate ? new Date(txn.valueDate).toLocaleDateString("fr-FR") : "N/A"
+          doc.text(dateValeur, tableStartX + 2, yPos + 6)
+
+          // Description (tronquée)
+          const description = (txn.description || "N/A").substring(0, 30)
+          doc.text(description, tableStartX + col1Width + 2, yPos + 6)
+
+          // Reference (tronquée)
+          const reference = (txn.referenceOperation || "N/A").substring(0, 20)
+          doc.text(reference, tableStartX + col1Width + col2Width + 2, yPos + 6)
+
+          // Date Operation (dateEcriture)
+          const dateOperation = txn.dateEcriture ? new Date(txn.dateEcriture).toLocaleDateString("fr-FR") : "N/A"
+          doc.text(dateOperation, tableStartX + col1Width + col2Width + col3Width + 2, yPos + 6)
+
+          // Montant
+          const montant = formatAmount(txn.montantOperation)
+          doc.text(`${montant}`, tableStartX + col1Width + col2Width + col3Width + col4Width + 2, yPos + 6)
+
+          yPos += rowHeight
+        })
+
+        yPos += 10
+
+        // SOLDE DE FERMETURE
+        doc.setFontSize(9)
+        doc.setFont("helvetica", "bold")
+        doc.text("SOLDE DE FERMETURE:", 15, yPos)
+
+        doc.setFont("helvetica", "normal")
+        const formattedClosingBalance = formatAmount(Number(closingBalance))
+        doc.text(`${formattedClosingBalance} ${account.currency}`, 70, yPos)
+
+        yPos += 10
+
+        // PIED DE PAGE
+        const addFooter = (pageNum: number, totalPages: number) => {
+          const footerY = pageHeight - 20
+
+          doc.setDrawColor(150, 150, 150)
+          doc.setLineWidth(0.3)
+          doc.line(15, footerY, pageWidth - 15, footerY)
+
+          let footerTextY = footerY + 5
+
+          doc.setTextColor(...grayText)
+          doc.setFontSize(7)
+          doc.setFont("helvetica", "normal")
+
+          const footerLines = [
+            "Banque Nationale de Guinée SA - Agrément par décision N° 06/019/93/CAB/PE 06/06/1993",
+            "Capital : 60.000.000.000 GNF",
+            "Boulevard Tidiani Kaba - Quartier Boulbinet/Almamya, Kaloum, Conakry, Guinée",
+            "Tél: +224 - 622 454 049 - B.P 1781 - mail: contact@bng.gn",
+          ]
+
+          footerLines.forEach((line) => {
+            doc.text(line, 15, footerTextY)
+            footerTextY += 3
+          })
+
+          // Numéro de page
+          doc.setFontSize(7)
+          doc.text(`Page ${pageNum} sur ${totalPages}`, pageWidth - 35, footerY + 5)
+        }
+
+        const pageCount = doc.internal.getNumberOfPages()
+        for (let i = 1; i <= pageCount; i++) {
+          doc.setPage(i)
+          addFooter(i, pageCount)
+        }
+
+        const fileName = `Releve_Compte_${account.number.replace(/-/g, "_")}_${
+          new Date().toISOString().split("T")[0]
+        }.pdf`
+        doc.save(fileName)
+
+        console.log("[v0] PDF généré et téléchargé:", fileName)
+      }
     } catch (error) {
-      //console.error("Erreur lors de la génération PDF:", error)
-      // Fallback vers téléchargement texte
-      generateAndDownloadText()
+      console.error("[v0] Erreur génération PDF:", error)
+      alert("❌ Erreur lors de la génération du PDF")
     }
   }
 
-  function generateAndDownloadExcel() {
-    const selectedAccountData = accounts.find((acc) => acc.id === selectedAccount)
-    if (!selectedAccountData) return
-
-    // Filtrer les transactions par période
-    const filteredTransactions = transactions.filter((txn) => {
-      const txnDate = new Date(txn.valueDate || txn.date)
-      const start = new Date(startDate)
-      const end = new Date(endDate)
-      return txnDate >= start && txnDate <= end
-    })
-
+  function generateAndDownloadExcelWithTransactions(account: Account, transactions: any[]) {
     try {
-      // Création du contenu CSV (compatible Excel)
       let csvContent = "\uFEFF" // BOM UTF-8 pour Excel
 
-      // En-tête du fichier
       csvContent += `RELEVÉ DE COMPTE\n`
-      csvContent += `Compte: ${selectedAccountData.name}\n`
-      csvContent += `Numéro: ${selectedAccountData.number}\n`
-      csvContent += `Période: ${new Date(startDate).toLocaleDateString("fr-FR")} au ${new Date(endDate).toLocaleDateString("fr-FR")}\n`
-      csvContent += `Solde: ${formatAmount(selectedAccountData.balance, selectedAccountData.currency)} ${selectedAccountData.currency}\n\n`
+      csvContent += `Compte: ${account.name}\n`
+      csvContent += `Numéro: ${account.number}\n`
+      csvContent += `Période: ${new Date(startDate).toLocaleDateString("fr-FR")} au ${new Date(endDate).toLocaleDateString("fr-FR")}\n\n`
 
-      // En-têtes des colonnes
-      csvContent += "Date,Description,Montant,Type,Référence\n"
+      // En-têtes des colonnes (4 champs uniquement)
+      csvContent += "Référence,Montant,Description,Date valeur\n"
 
       // Données des transactions
-      filteredTransactions.forEach((txn) => {
-        const amount = Number.parseFloat(txn.amount || "0")
-        const isCredit = txn.creditAccount === selectedAccount
-        const displayAmount = isCredit ? Math.abs(amount) : -Math.abs(amount)
-
-        csvContent += `${new Date(txn.valueDate || txn.date).toLocaleDateString("fr-FR")},`
-        csvContent += `"${(txn.description || "Transaction").replace(/"/g, '""')}",`
-        csvContent += `"${isCredit ? "+" : "-"}${formatAmount(Math.abs(displayAmount), selectedAccountData.currency)} ${selectedAccountData.currency}",`
-        csvContent += `${isCredit ? "CRÉDIT" : "DÉBIT"},`
-        csvContent += `${txn.txnId || txn.id}\n`
+      transactions.forEach((txn) => {
+        csvContent += `${txn.referenceOperation || "N/A"},`
+        csvContent += `${formatAmount(txn.montantOperation)} GNF,`
+        csvContent += `"${(txn.description || "N/A").replace(/"/g, '""')}",`
+        csvContent += `${new Date(txn.valueDate).toLocaleDateString("fr-FR")}\n`
       })
 
       // Téléchargement
       const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8" })
       const link = document.createElement("a")
       link.href = URL.createObjectURL(blob)
-      link.download = `releve_${selectedAccountData.number}_${startDate}_${endDate}.csv`
+      link.download = `releve_${account.number}_${startDate}_${endDate}.csv`
       document.body.appendChild(link)
       link.click()
       document.body.removeChild(link)
       URL.revokeObjectURL(link.href)
 
-      //console.log("[v0] Excel/CSV généré et téléchargé")
+      console.log("[v0] Excel/CSV généré et téléchargé")
     } catch (error) {
-      //console.error("Erreur lors de la génération Excel:", error)
-      // Fallback vers téléchargement texte
-      generateAndDownloadText()
+      console.error("[v0] Erreur génération Excel:", error)
+      alert("❌ Erreur lors de la génération du fichier Excel")
     }
   }
 
-  function generateAndDownloadText() {
-    const selectedAccountData = accounts.find((acc) => acc.id === selectedAccount)
-    if (!selectedAccountData) return
-
-    // Filtrer les transactions par période
-    const filteredTransactions = transactions.filter((txn) => {
-      const txnDate = new Date(txn.valueDate || txn.date)
-      const start = new Date(startDate)
-      const end = new Date(endDate)
-      return txnDate >= start && txnDate <= end
-    })
-
+  function generateAndDownloadTextWithTransactions(account: Account, transactions: any[]) {
     let content = `RELEVÉ DE COMPTE\n`
     content += `================\n\n`
-    content += `Compte: ${selectedAccountData.name}\n`
-    content += `Numéro: ${selectedAccountData.number}\n`
-    content += `IBAN: ${selectedAccountData.iban}\n`
-    content += `Période: ${new Date(startDate).toLocaleDateString("fr-FR")} au ${new Date(endDate).toLocaleDateString("fr-FR")}\n`
-    content += `Solde: ${formatAmount(selectedAccountData.balance, selectedAccountData.currency)} ${selectedAccountData.currency}\n\n`
-    content += `TRANSACTIONS (${filteredTransactions.length})\n`
+    content += `Compte: ${account.name}\n`
+    content += `Numéro: ${account.number}\n`
+    content += `IBAN: ${account.iban}\n`
+    content += `Période: ${new Date(startDate).toLocaleDateString("fr-FR")} au ${new Date(endDate).toLocaleDateString("fr-FR")}\n\n`
+    content += `TRANSACTIONS (${transactions.length})\n`
     content += `=============\n\n`
 
-    filteredTransactions.forEach((txn) => {
-      const amount = Number.parseFloat(txn.amount || "0")
-      const isCredit = txn.creditAccount === selectedAccount
-      const displayAmount = isCredit ? Math.abs(amount) : -Math.abs(amount)
-
-      content += `Date: ${new Date(txn.valueDate || txn.date).toLocaleDateString("fr-FR")}\n`
-      content += `Description: ${txn.description || "Transaction"}\n`
-      content += `Montant: ${isCredit ? "+" : "-"}${formatAmount(Math.abs(displayAmount), selectedAccountData.currency)} ${selectedAccountData.currency}\n`
-      content += `Type: ${isCredit ? "CRÉDIT" : "DÉBIT"}\n`
-      content += `Référence: ${txn.txnId || txn.id}\n`
+    transactions.forEach((txn) => {
+      content += `Référence: ${txn.referenceOperation || "N/A"}\n`
+      content += `Montant: ${formatAmount(txn.montantOperation)} GNF\n`
+      content += `Description: ${txn.description || "N/A"}\n`
+      content += `Date valeur: ${new Date(txn.valueDate).toLocaleDateString("fr-FR")}\n`
       content += `---\n\n`
     })
 
     content += `\nGénéré le ${new Date().toLocaleDateString("fr-FR")} à ${new Date().toLocaleTimeString("fr-FR")}\n`
 
-    // Téléchargement
     const blob = new Blob([content], { type: "text/plain;charset=utf-8" })
     const link = document.createElement("a")
     link.href = URL.createObjectURL(blob)
-    link.download = `releve_${selectedAccountData.number}_${startDate}_${endDate}.txt`
+    link.download = `releve_${account.number}_${startDate}_${endDate}.txt`
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
     URL.revokeObjectURL(link.href)
 
-    //console.log("[v0] Relevé texte généré et téléchargé")
+    console.log("[v0] Relevé texte généré et téléchargé")
   }
 }
