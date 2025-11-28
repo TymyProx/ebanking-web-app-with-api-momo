@@ -812,33 +812,7 @@ export default function ServiceRequestsPage() {
     if (selectedService === "checkbook") {
       return (
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <BookOpen className="w-5 h-5" />
-              <span>Demande de chéquier</span>
-            </CardTitle>
-            <CardDescription>Remplissez les informations pour commander un chéquier</CardDescription>
-          </CardHeader>
-          {checkbookSubmitState?.success && (
-            <div className="px-6 pb-4">
-              <Alert className="border-green-200 bg-green-50">
-                <CheckCircle className="h-4 w-4 text-green-600" />
-                <AlertDescription className="text-green-800">
-                  Votre demande de chéquier a été soumise avec succès ! Référence: {checkbookSubmitState.reference}
-                </AlertDescription>
-              </Alert>
-            </div>
-          )}
-
-          {checkbookSubmitState?.error && (
-            <div className="px-6 pb-4">
-              <Alert variant="destructive">
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>❌ {checkbookSubmitState.error}</AlertDescription>
-              </Alert>
-            </div>
-          )}
-          <CardContent>
+          <CardContent className="pt-6">
             <form onSubmit={handleCheckbookSubmit} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="intitulecompte">Sélectionner un compte *</Label>
@@ -1441,6 +1415,26 @@ export default function ServiceRequestsPage() {
             </CardContent>
           </Card>
 
+           {checkbookSubmitState?.success && (
+            <div className="px-6 pb-4">
+              <Alert className="border-green-200 bg-green-50">
+                <CheckCircle className="h-4 w-4 text-green-600" />
+                <AlertDescription className="text-green-800">
+                  Votre demande de chéquier a été soumise avec succès ! Référence: {checkbookSubmitState.reference}
+                </AlertDescription>
+              </Alert>
+            </div>
+          )}
+
+          {checkbookSubmitState?.error && (
+            <div className="px-6 pb-4">
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>❌ {checkbookSubmitState.error}</AlertDescription>
+              </Alert>
+            </div>
+          )}
+
           {/* Service Details & Form */}
           {selectedServiceData && (
             <Card>
@@ -1452,31 +1446,6 @@ export default function ServiceRequestsPage() {
                 <CardDescription>{selectedServiceData.description}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
-                {/* Service Info */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-gray-50 rounded-lg">
-                  <div className="flex items-center space-x-2">
-                    <Clock className="w-4 h-4 text-gray-500" />
-                    <div>
-                      <p className="text-sm font-medium">Délai de traitement</p>
-                      <p className="text-xs text-gray-600">{selectedServiceData.processingTime}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Banknote className="w-4 h-4 text-gray-500" />
-                    <div>
-                      <p className="text-sm font-medium">Coût</p>
-                      <p className="text-xs text-gray-600">{selectedServiceData.cost}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Shield className="w-4 h-4 text-gray-500" />
-                    <div>
-                      <p className="text-sm font-medium">Sécurisé</p>
-                      <p className="text-xs text-gray-600">Traitement confidentiel</p>
-                    </div>
-                  </div>
-                </div>
-
                 {/* Dynamic Form */}
                 {renderServiceForm()}
 
