@@ -179,7 +179,7 @@ function AccountsLoading() {
 
 export default async function Dashboard() {
   return (
-    <div className="space-y-4 fade-in">
+    <div className="space-y-4 fade-in pt-6 pb-12">
       <Suspense fallback={<AccountsLoading />}>
         <AccountsSection />
       </Suspense>
