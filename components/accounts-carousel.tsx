@@ -118,14 +118,14 @@ export function AccountsCarousel({ accounts }: AccountsCarouselProps) {
               <CarouselItem key={account.id}>
                 <Link href={`/accounts/${account.id}`}>
                   <Card className="card-hover border-0 shadow-md bg-gradient-to-br from-primary/10 via-background to-secondary/10 backdrop-blur-sm">
-                    <CardContent className="p-4">
+                    <CardContent className="p-6">
                       <div className="flex items-center justify-between gap-4">
                         {/* Left section: Account info and type */}
-                        <div className="flex-1 space-y-2">
+                        <div className="flex-1 space-y-3">
                           <div className="flex items-center gap-2">
-                            <div className="p-2 rounded-lg bg-primary/10">{getAccountIcon(account.type)}</div>
+                            <div className="p-3 rounded-lg bg-primary/10">{getAccountIcon(account.type)}</div>
                             <div>
-                              <CardTitle className="text-base font-heading font-semibold mb-0.5">
+                              <CardTitle className="text-lg font-heading font-semibold mb-0.5">
                                 {account.accountName}
                               </CardTitle>
                               <Badge
@@ -139,31 +139,25 @@ export function AccountsCarousel({ accounts }: AccountsCarouselProps) {
 
                           <div>
                             <p className="text-xs text-muted-foreground mb-1">Numéro de compte</p>
-                            <p className="text-sm font-mono font-semibold bg-muted/50 px-3 py-1.5 rounded-md inline-block">
+                            <p className="text-sm font-mono font-semibold bg-muted/50 px-4 py-2 rounded-md inline-block">
                               {account.accountNumber}
                             </p>
                           </div>
-
-                          {/* <div className="flex items-center gap-2 pt-2">
-                            <TrendingUp className="h-4 w-4 text-secondary" />
-                            <span className="text-sm text-secondary font-medium">{getAccountTrend()}</span>
-                            <span className="text-sm text-muted-foreground">ce mois</span>
-                          </div> */}
                         </div>
 
                         {/* Right section: Balances */}
-                        <div className="flex-1 space-y-2 text-right">
+                        <div className="flex-1 space-y-3 text-right">
                           <div>
                             <p className="text-xs text-muted-foreground mb-1">Solde disponible</p>
-                            <div className="text-2xl font-heading font-bold text-foreground">
+                            <div className="text-3xl font-heading font-bold text-foreground">
                               {formatAmount(account.availableBalance, account.currency)}
                             </div>
                             <div className="text-sm text-muted-foreground mt-1">{account.currency}</div>
                           </div>
 
-                          <div className="pt-1 border-t border-border/50">
+                          <div className="pt-2 border-t border-border/50">
                             <p className="text-xs text-muted-foreground mb-1">Solde comptable</p>
-                            <div className="text-lg font-heading font-semibold text-muted-foreground">
+                            <div className="text-xl font-heading font-semibold text-muted-foreground">
                               {formatAmount(account.bookBalance, account.currency)} {account.currency}
                             </div>
                           </div>
