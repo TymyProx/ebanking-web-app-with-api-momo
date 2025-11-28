@@ -25,6 +25,7 @@ import {
   Shield,
   Plus,
   Search,
+  DollarSign,
 } from "lucide-react"
 import {
   submitCreditRequest,
@@ -146,6 +147,39 @@ export default function ServiceRequestsPage() {
   const [isLoadingAccounts, setIsLoadingAccounts] = useState(true)
 
   const selectedServiceData = serviceTypes.find((s) => s.id === selectedService)
+
+  useEffect(() => {
+    if (checkbookSubmitState) {
+      const timer = setTimeout(() => {
+        setCheckbookSubmitState(null)
+      }, 4000)
+      return () => clearTimeout(timer)
+    }
+  }, [checkbookSubmitState])
+
+  useEffect(() => {
+    if (creditSubmitState) {
+      const timer = setTimeout(() => {
+        setCreditSubmitState(null)
+      }, 4000)
+      return () => clearTimeout(timer)
+    }
+  }, [creditSubmitState])
+
+  useEffect(() => {
+    // The original submitAction is for a different, non-credit/checkbook flow.
+    // If it needs auto-dismissal, this logic can be adapted.
+    // For now, assuming it's less critical or handled elsewhere.
+    // If it does need dismissal, it might look like:
+    // if (submitState) {
+    //   const timer = setTimeout(() => {
+    //     // This would require a way to reset submitState, perhaps via another state setter
+    //     // For example, if you had: const [genericSubmitState, setGenericSubmitState] = useState(null);
+    //     // And then used setGenericSubmitState(null);
+    //   }, 4000);
+    //   return () => clearTimeout(timer);
+    // }
+  }, [submitState]) // Dependency on submitState
 
   const loadCheckbookRequests = async () => {
     setIsLoadingCheckbookRequests(true)
@@ -774,499 +808,456 @@ export default function ServiceRequestsPage() {
   }
 
   const renderServiceForm = () => {
-    if (!selectedServiceData) return null
-
-    switch (selectedService) {
-      // COMMANDE CHEQUIER PAGE
-      case "checkbook":
-        return (
-          <form onSubmit={handleCheckbookSubmit} className="space-y-4">
-            {checkbookSubmitState?.success && (
+    // Move success/error messages between CardHeader and CardContent
+    if (selectedService === "checkbook") {
+      return (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <BookOpen className="w-5 h-5" />
+              <span>Demande de chéquier</span>
+            </CardTitle>
+            <CardDescription>Remplissez les informations pour commander un chéquier</CardDescription>
+          </CardHeader>
+          {checkbookSubmitState?.success && (
+            <div className="px-6 pb-4">
               <Alert className="border-green-200 bg-green-50">
                 <CheckCircle className="h-4 w-4 text-green-600" />
                 <AlertDescription className="text-green-800">
                   Votre demande de chéquier a été soumise avec succès ! Référence: {checkbookSubmitState.reference}
                 </AlertDescription>
               </Alert>
-            )}
+            </div>
+          )}
 
-            {checkbookSubmitState?.error && (
+          {checkbookSubmitState?.error && (
+            <div className="px-6 pb-4">
               <Alert variant="destructive">
                 <AlertCircle className="h-4 w-4" />
                 <AlertDescription>❌ {checkbookSubmitState.error}</AlertDescription>
               </Alert>
-            )}
-
-            <div className="space-y-2">
-              <Label htmlFor="intitulecompte">Sélectionner un compte *</Label>
-              <Select
-                value={formData.numcompteId || ""}
-                onValueChange={(value) => {
-                  const selectedAccount = accounts.find((acc) => acc.id === value)
-                  if (selectedAccount) {
-                    handleInputChange("accountId", selectedAccount.id)
-                    handleInputChange("intitulecompte", selectedAccount.name)
-                    handleInputChange("numcompte", selectedAccount.number)
-                  }
-                }}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder={isLoadingAccounts ? "Chargement..." : "Choisir un compte"} />
-                </SelectTrigger>
-                <SelectContent>
-                  {isLoadingAccounts ? (
-                    <SelectItem value="loading" disabled>
-                      Chargement des comptes...
-                    </SelectItem>
-                  ) : accounts.length === 0 ? (
-                    <SelectItem value="empty" disabled>
-                      Aucun compte courant trouvé
-                    </SelectItem>
-                  ) : (
-                    accounts.map((account) => (
-                      <SelectItem key={account.id} value={account.id}>
-                        <div className="flex flex-col">
-                          <span className="font-medium">{account.name}</span>
-                          <span className="text-sm text-gray-500">
-                            {account.number} •{" "}
-                            {new Intl.NumberFormat("fr-FR", {
-                              style: "currency",
-                              currency: account.currency === "GNF" ? "GNF" : account.currency,
-                              minimumFractionDigits: account.currency === "GNF" ? 0 : 2,
-                            }).format(account.balance)}
-                          </span>
-                        </div>
+            </div>
+          )}
+          <CardContent>
+            <form onSubmit={handleCheckbookSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="intitulecompte">Sélectionner un compte *</Label>
+                <Select
+                  value={formData.numcompteId || ""}
+                  onValueChange={(value) => {
+                    const selectedAccount = accounts.find((acc) => acc.id === value)
+                    if (selectedAccount) {
+                      handleInputChange("accountId", selectedAccount.id)
+                      handleInputChange("intitulecompte", selectedAccount.name)
+                      handleInputChange("numcompte", selectedAccount.number)
+                    }
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder={isLoadingAccounts ? "Chargement..." : "Choisir un compte"} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {isLoadingAccounts ? (
+                      <SelectItem value="loading" disabled>
+                        Chargement des comptes...
                       </SelectItem>
-                    ))
-                  )}
-                </SelectContent>
-              </Select>
-            </div>
+                    ) : accounts.length === 0 ? (
+                      <SelectItem value="empty" disabled>
+                        Aucun compte courant trouvé
+                      </SelectItem>
+                    ) : (
+                      accounts.map((account) => (
+                        <SelectItem key={account.id} value={account.id}>
+                          <div className="flex flex-col">
+                            <span className="font-medium">{account.name}</span>
+                            <span className="text-sm text-gray-500">
+                              {account.number} •{" "}
+                              {new Intl.NumberFormat("fr-FR", {
+                                style: "currency",
+                                currency: account.currency === "GNF" ? "GNF" : account.currency,
+                                minimumFractionDigits: account.currency === "GNF" ? 0 : 2,
+                              }).format(account.balance)}
+                            </span>
+                          </div>
+                        </SelectItem>
+                      ))
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
 
-            <div>
-              <Label htmlFor="numcompte">Numéro de compte *</Label>
-              <Input
-                id="numcompte"
-                name="numcompte"
-                type="text"
-                value={formData.numcompte || ""}
-                onChange={(e) => handleInputChange("numcompte", e.target.value)}
-                placeholder="Ex: 000123456789"
-                required
-                readOnly
-                className="bg-gray-50"
-              />
-            </div>
+              <div>
+                <Label htmlFor="numcompte">Numéro de compte *</Label>
+                <Input
+                  id="numcompte"
+                  name="numcompte"
+                  type="text"
+                  value={formData.numcompte || ""}
+                  onChange={(e) => handleInputChange("numcompte", e.target.value)}
+                  placeholder="Ex: 000123456789"
+                  required
+                  readOnly
+                  className="bg-gray-50"
+                />
+              </div>
 
-            <div>
-              <Label htmlFor="dateorder">Date de commande *</Label>
-              <Input
-                id="dateorder"
-                name="dateorder"
-                type="date"
-                value={formData.dateorder || new Date().toISOString().split("T")[0]}
-                onChange={(e) => handleInputChange("dateorder", e.target.value)}
-                required
-              />
-            </div>
+              <div>
+                <Label htmlFor="dateorder">Date de commande *</Label>
+                <Input
+                  id="dateorder"
+                  name="dateorder"
+                  type="date"
+                  value={formData.dateorder || new Date().toISOString().split("T")[0]}
+                  onChange={(e) => handleInputChange("dateorder", e.target.value)}
+                  required
+                />
+              </div>
 
-            <div>
-              <Label htmlFor="nbrechequier">Nombre de chéquiers *</Label>
-              <Input
-                id="nbrechequier"
-                name="nbrechequier"
-                type="number"
-                min="1"
-                max="10"
-                value={formData.nbrechequier || ""}
-                onChange={(e) => handleInputChange("nbrechequier", e.target.value)}
-                placeholder="Ex: 2"
-                required
-              />
-            </div>
+              <div>
+                <Label htmlFor="nbrechequier">Nombre de chéquiers *</Label>
+                <Input
+                  id="nbrechequier"
+                  name="nbrechequier"
+                  type="number"
+                  min="1"
+                  max="10"
+                  value={formData.nbrechequier || ""}
+                  onChange={(e) => handleInputChange("nbrechequier", e.target.value)}
+                  placeholder="Ex: 2"
+                  required
+                />
+              </div>
 
-            <div>
-              <Label htmlFor="nbrefeuille">Nombre de feuillets par chéquier *</Label>
-              <Select
-                value={formData.nbrefeuille || ""}
-                onValueChange={(value) => handleInputChange("nbrefeuille", value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Choisir le nombre de feuillets" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="25">25 feuillets</SelectItem>
-                  <SelectItem value="50">50 feuillets</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+              <div>
+                <Label htmlFor="nbrefeuille">Nombre de feuillets par chéquier *</Label>
+                <Select
+                  value={formData.nbrefeuille || ""}
+                  onValueChange={(value) => handleInputChange("nbrefeuille", value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choisir le nombre de feuillets" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="25">25 feuillets</SelectItem>
+                    <SelectItem value="50">50 feuillets</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
 
-            <div>
-              <Label htmlFor="typeCheque">Type de chèque *</Label>
-              <Select
-                value={formData.typeCheque || ""}
-                onValueChange={(value) => handleInputChange("typeCheque", value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Choisir le type de chèque" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Standard">Standard</SelectItem>
-                  <SelectItem value="Certifié">Certifié</SelectItem>
-                  <SelectItem value="Barré">Barré</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+              <div>
+                <Label htmlFor="typeCheque">Type de chèque *</Label>
+                <Select
+                  value={formData.typeCheque || ""}
+                  onValueChange={(value) => handleInputChange("typeCheque", value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choisir le type de chèque" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Standard">Standard</SelectItem>
+                    <SelectItem value="Certifié">Certifié</SelectItem>
+                    <SelectItem value="Barré">Barré</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
 
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="talonCheque"
-                checked={formData.talonCheque || false}
-                onCheckedChange={(checked) => handleInputChange("talonCheque", checked)}
-              />
-              <Label htmlFor="talonCheque" className="text-sm font-normal">
-                Avec talon de chèque
-              </Label>
-            </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="talonCheque"
+                  checked={formData.talonCheque || false}
+                  onCheckedChange={(checked) => handleInputChange("talonCheque", checked)}
+                />
+                <Label htmlFor="talonCheque" className="text-sm font-normal">
+                  Avec talon de chèque
+                </Label>
+              </div>
 
-            <div>
-              <Label htmlFor="commentaire">Commentaire</Label>
-              <Textarea
-                id="commentaire"
-                name="commentaire"
-                value={formData.commentaire || ""}
-                onChange={(e) => handleInputChange("commentaire", e.target.value)}
-                placeholder="Commentaire optionnel..."
-                rows={3}
-              />
-            </div>
+              <div>
+                <Label htmlFor="commentaire">Commentaire</Label>
+                <Textarea
+                  id="commentaire"
+                  name="commentaire"
+                  value={formData.commentaire || ""}
+                  onChange={(e) => handleInputChange("commentaire", e.target.value)}
+                  placeholder="Commentaire optionnel..."
+                  rows={3}
+                />
+              </div>
 
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="checkbook_terms"
-                checked={formData.terms || false}
-                onCheckedChange={(checked) => handleInputChange("terms", checked)}
-              />
-              <Label htmlFor="checkbook_terms" className="text-sm">
-                J'accepte les{" "}
-                <a href="#" className="text-blue-600 hover:underline">
-                  conditions générales
-                </a>{" "}
-                et autorise le traitement de ma demande
-              </Label>
-            </div>
-          </form>
-        )
-      // DEMANDE CREDIT PAGE
-      case "credit":
-        return (
-          <form onSubmit={handleCreditSubmit} className="space-y-4">
-            {creditSubmitState?.success && (
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="checkbook_terms"
+                  checked={formData.terms || false}
+                  onCheckedChange={(checked) => handleInputChange("terms", checked)}
+                />
+                <Label htmlFor="checkbook_terms" className="text-sm">
+                  J'accepte les{" "}
+                  <a href="#" className="text-blue-600 hover:underline">
+                    conditions générales
+                  </a>{" "}
+                  et autorise le traitement de ma demande
+                </Label>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+      )
+    }
+
+    if (selectedService === "credit") {
+      return (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <DollarSign className="w-5 h-5" /> {/* Changed icon to DollarSign */}
+              <span>Demande de crédit</span>
+            </CardTitle>
+            <CardDescription>Remplissez le formulaire pour une demande de crédit</CardDescription>
+          </CardHeader>
+          {creditSubmitState?.success && (
+            <div className="px-6 pb-4">
               <Alert className="border-green-200 bg-green-50">
                 <CheckCircle className="h-4 w-4 text-green-600" />
                 <AlertDescription className="text-green-800">
-                  Votre demande de crédit a été envoyée avec succès. Référence: {creditSubmitState.reference}.
-                  Réponse sous {selectedServiceData?.processingTime}.
+                  Votre demande de crédit a été envoyée avec succès. Référence: {creditSubmitState.reference}. Réponse
+                  sous {selectedServiceData?.processingTime}.
                 </AlertDescription>
               </Alert>
-            )}
+            </div>
+          )}
 
-            {creditSubmitState?.error && (
+          {creditSubmitState?.error && (
+            <div className="px-6 pb-4">
               <Alert className="border-red-200 bg-red-50">
                 <AlertCircle className="h-4 w-4 text-red-600" />
                 <AlertDescription className="text-red-800">
                   ❌ Une erreur est survenue: {creditSubmitState.error}. Veuillez réessayer.
                 </AlertDescription>
               </Alert>
-            )}
-
-            <div className="space-y-2">
-              <Label htmlFor="intitulecompte">Sélectionner un compte *</Label>
-              <Select
-                value={formData.accountId || ""}
-                onValueChange={(value) => {
-                  const selectedAccount = accounts.find((acc) => acc.id === value)
-                  if (selectedAccount) {
-                    handleInputChange("accountId", selectedAccount.id)
-                    handleInputChange("intitulecompte", selectedAccount.name)
-                    handleInputChange("numcompte", selectedAccount.number)
-                  }
-                }}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder={isLoadingAccounts ? "Chargement..." : "Choisir un compte"} />
-                </SelectTrigger>
-                <SelectContent>
-                  {isLoadingAccounts ? (
-                    <SelectItem value="loading" disabled>
-                      Chargement des comptes...
-                    </SelectItem>
-                  ) : accounts.length === 0 ? (
-                    <SelectItem value="empty" disabled>
-                      Aucun compte courant trouvé
-                    </SelectItem>
-                  ) : (
-                    accounts.map((account) => (
-                      <SelectItem key={account.id} value={account.id}>
-                        <div className="flex flex-col">
-                          <span className="font-medium">{account.name}</span>
-                          <span className="text-sm text-gray-500">
-                            {account.number} •{" "}
-                            {new Intl.NumberFormat("fr-FR", {
-                              style: "currency",
-                              currency: account.currency === "GNF" ? "GNF" : account.currency,
-                              minimumFractionDigits: account.currency === "GNF" ? 0 : 2,
-                            }).format(account.balance)}
-                          </span>
-                        </div>
+            </div>
+          )}
+          <CardContent>
+            <form onSubmit={handleCreditSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="intitulecompte">Sélectionner un compte *</Label>
+                <Select
+                  value={formData.accountId || ""}
+                  onValueChange={(value) => {
+                    const selectedAccount = accounts.find((acc) => acc.id === value)
+                    if (selectedAccount) {
+                      handleInputChange("accountId", selectedAccount.id)
+                      handleInputChange("intitulecompte", selectedAccount.name)
+                      handleInputChange("numcompte", selectedAccount.number)
+                    }
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder={isLoadingAccounts ? "Chargement..." : "Choisir un compte"} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {isLoadingAccounts ? (
+                      <SelectItem value="loading" disabled>
+                        Chargement des comptes...
                       </SelectItem>
-                    ))
-                  )}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <Label htmlFor="numcompte_credit">Numéro de compte *</Label>
-              <Input
-                id="numcompte_credit"
-                name="numcompte_credit"
-                type="text"
-                value={formData.numcompte || ""}
-                onChange={(e) => handleInputChange("numcompte", e.target.value)}
-                placeholder="Ex: 000123456789"
-                required
-                readOnly
-                className="bg-gray-50"
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="credit_type">Type de crédit *</Label>
-              <Select onValueChange={(value) => handleInputChange("credit_type", value)} required>
-                <SelectTrigger>
-                  <SelectValue placeholder="Sélectionnez le type de crédit" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="personnel">Crédit personnel</SelectItem>
-                  <SelectItem value="immobilier">Crédit immobilier</SelectItem>
-                  <SelectItem value="étudiant">Crédit étudiant</SelectItem>
-                  <SelectItem value="automobile">Crédit automobile</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="loan_amount">Montant du crédit (GNF) *</Label>
-                <Input
-                  id="loan_amount"
-                  type="number"
-                  placeholder="Ex: 10000000"
-                  value={formData.loan_amount || ""}
-                  onChange={(e) => handleInputChange("loan_amount", e.target.value)}
-                  required
-                />
-              </div>
-              <div>
-                <Label htmlFor="loan_duration">Durée (mois) *</Label>
-                <Select onValueChange={(value) => handleInputChange("loan_duration", value)} required>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Durée" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="12">12 mois</SelectItem>
-                    <SelectItem value="24">24 mois</SelectItem>
-                    <SelectItem value="36">36 mois</SelectItem>
-                    <SelectItem value="48">48 mois</SelectItem>
-                    <SelectItem value="60">60 mois</SelectItem>
+                    ) : accounts.length === 0 ? (
+                      <SelectItem value="empty" disabled>
+                        Aucun compte courant trouvé
+                      </SelectItem>
+                    ) : (
+                      accounts.map((account) => (
+                        <SelectItem key={account.id} value={account.id}>
+                          <div className="flex flex-col">
+                            <span className="font-medium">{account.name}</span>
+                            <span className="text-sm text-gray-500">
+                              {account.number} •{" "}
+                              {new Intl.NumberFormat("fr-FR", {
+                                style: "currency",
+                                currency: account.currency === "GNF" ? "GNF" : account.currency,
+                                minimumFractionDigits: account.currency === "GNF" ? 0 : 2,
+                              }).format(account.balance)}
+                            </span>
+                          </div>
+                        </SelectItem>
+                      ))
+                    )}
                   </SelectContent>
                 </Select>
               </div>
-            </div>
 
-            <div>
-              <Label htmlFor="loan_purpose">Objet du crédit *</Label>
-              <Select onValueChange={(value) => handleInputChange("loan_purpose", value)} required>
-                <SelectTrigger>
-                  <SelectValue placeholder="Sélectionnez l'objet" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Consommation">Consommation</SelectItem>
-                  <SelectItem value="Équipement">Équipement</SelectItem>
-                  <SelectItem value="Rénovation">Rénovation</SelectItem>
-                  <SelectItem value="Éducation">Éducation</SelectItem>
-                  <SelectItem value="Santé">Santé</SelectItem>
-                  <SelectItem value="Autre">Autre</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="monthly_income">Revenus mensuels (GNF) *</Label>
+                <Label htmlFor="numcompte_credit">Numéro de compte *</Label>
                 <Input
-                  id="monthly_income"
-                  type="number"
-                  placeholder="Ex: 2000000"
-                  value={formData.monthly_income || ""}
-                  onChange={(e) => handleInputChange("monthly_income", e.target.value)}
+                  id="numcompte_credit"
+                  name="numcompte_credit"
+                  type="text"
+                  value={formData.numcompte || ""}
+                  onChange={(e) => handleInputChange("numcompte", e.target.value)}
+                  placeholder="Ex: 000123456789"
                   required
+                  readOnly
+                  className="bg-gray-50"
                 />
               </div>
+
               <div>
-                <Label htmlFor="employment_type">Type d'emploi *</Label>
-                <Select onValueChange={(value) => handleInputChange("employment_type", value)} required>
+                <Label htmlFor="credit_type">Type de crédit *</Label>
+                <Select onValueChange={(value) => handleInputChange("credit_type", value)} required>
                   <SelectTrigger>
-                    <SelectValue placeholder="Type d'emploi" />
+                    <SelectValue placeholder="Sélectionnez le type de crédit" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="employee">Salarié</SelectItem>
-                    <SelectItem value="civil_servant">Fonctionnaire</SelectItem>
-                    <SelectItem value="self_employed">Indépendant</SelectItem>
-                    <SelectItem value="business_owner">Chef d'entreprise</SelectItem>
+                    <SelectItem value="personnel">Crédit personnel</SelectItem>
+                    <SelectItem value="immobilier">Crédit immobilier</SelectItem>
+                    <SelectItem value="étudiant">Crédit étudiant</SelectItem>
+                    <SelectItem value="automobile">Crédit automobile</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
-            </div>
 
-            <div>
-              <Label htmlFor="applicant_name">Nom du demandeur *</Label>
-              <Input
-                id="applicant_name"
-                placeholder="Nom du demandeur"
-                value={formData.applicant_name || ""}
-                onChange={(e) => handleInputChange("applicant_name", e.target.value)}
-                required
-              />
-            </div>
-
-            {/* Contact Information */}
-            <div className="space-y-4">
-              <h4 className="font-medium">Informations de contact</h4>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="contact_phone">Téléphone *</Label>
+                  <Label htmlFor="loan_amount">Montant du crédit (GNF) *</Label>
                   <Input
-                    id="contact_phone"
-                    placeholder="+224 6XX XXX XXX"
-                    value={formData.contact_phone || ""}
-                    onChange={(e) => handleInputChange("contact_phone", e.target.value)}
+                    id="loan_amount"
+                    type="number"
+                    placeholder="Ex: 10000000"
+                    value={formData.loan_amount || ""}
+                    onChange={(e) => handleInputChange("loan_amount", e.target.value)}
+                    required
                   />
                 </div>
                 <div>
-                  <Label htmlFor="contact_email">Email *</Label>
-                  <Input
-                    id="contact_email"
-                    type="email"
-                    placeholder="votre@email.com"
-                    value={formData.contact_email || ""}
-                    onChange={(e) => handleInputChange("contact_email", e.target.value)}
-                  />
+                  <Label htmlFor="loan_duration">Durée (mois) *</Label>
+                  <Select onValueChange={(value) => handleInputChange("loan_duration", value)} required>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Durée" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="12">12 mois</SelectItem>
+                      <SelectItem value="24">24 mois</SelectItem>
+                      <SelectItem value="36">36 mois</SelectItem>
+                      <SelectItem value="48">48 mois</SelectItem>
+                      <SelectItem value="60">60 mois</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
-            </div>
 
-            <div className="flex items-start space-x-2">
-              <Checkbox
-                id="credit_terms"
-                checked={formData.terms || false}
-                onCheckedChange={(checked) => handleInputChange("terms", checked)}
-              />
-              <Label htmlFor="credit_terms" className="text-sm">
-                J'accepte les{" "}
-                <a href="#" className="text-blue-600 hover:underline">
-                  conditions générales
-                </a>{" "}
-                et autorise le traitement de ma demande
-              </Label>
-            </div>
-          </form>
-        )
-      // E-DEMANDE PAGE
-      case "e-demande":
-        return (
-          <form onSubmit={handleEDemandeSubmit} className="space-y-4">
-            <div>
-              <Label htmlFor="demande_type">Type de demande *</Label>
-              <Select onValueChange={(value) => handleInputChange("demande_type", value)} required>
-                <SelectTrigger>
-                  <SelectValue placeholder="Sélectionnez le type de demande" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="attestation">Attestation bancaire</SelectItem>
-                  <SelectItem value="releve">Relevé de compte</SelectItem>
-                  <SelectItem value="certificat">Certificat de non-endettement</SelectItem>
-                  <SelectItem value="autre">Autre demande</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+              <div>
+                <Label htmlFor="loan_purpose">Objet du crédit *</Label>
+                <Select onValueChange={(value) => handleInputChange("loan_purpose", value)} required>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Sélectionnez l'objet" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Consommation">Consommation</SelectItem>
+                    <SelectItem value="Équipement">Équipement</SelectItem>
+                    <SelectItem value="Rénovation">Rénovation</SelectItem>
+                    <SelectItem value="Éducation">Éducation</SelectItem>
+                    <SelectItem value="Santé">Santé</SelectItem>
+                    <SelectItem value="Autre">Autre</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
 
-            <div>
-              <Label htmlFor="objet_demande">Objet de la demande *</Label>
-              <Input
-                id="objet_demande"
-                name="objet_demande"
-                type="text"
-                value={formData.objet_demande || ""}
-                onChange={(e) => handleInputChange("objet_demande", e.target.value)}
-                placeholder="Ex: Attestation pour visa"
-                required
-              />
-            </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="monthly_income">Revenus mensuels (GNF) *</Label>
+                  <Input
+                    id="monthly_income"
+                    type="number"
+                    placeholder="Ex: 2000000"
+                    value={formData.monthly_income || ""}
+                    onChange={(e) => handleInputChange("monthly_income", e.target.value)}
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="employment_type">Type d'emploi *</Label>
+                  <Select onValueChange={(value) => handleInputChange("employment_type", value)} required>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Type d'emploi" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="employee">Salarié</SelectItem>
+                      <SelectItem value="civil_servant">Fonctionnaire</SelectItem>
+                      <SelectItem value="self_employed">Indépendant</SelectItem>
+                      <SelectItem value="business_owner">Chef d'entreprise</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
 
-            <div>
-              <Label htmlFor="numcompte_edemande">Numéro de compte *</Label>
-              <Input
-                id="numcompte_edemande"
-                name="numcompte_edemande"
-                type="text"
-                value={formData.numcompte_edemande || ""}
-                onChange={(e) => handleInputChange("numcompte_edemande", e.target.value)}
-                placeholder="Ex: 123456789"
-                required
-              />
-            </div>
+              <div>
+                <Label htmlFor="applicant_name">Nom du demandeur *</Label>
+                <Input
+                  id="applicant_name"
+                  placeholder="Nom du demandeur"
+                  value={formData.applicant_name || ""}
+                  onChange={(e) => handleInputChange("applicant_name", e.target.value)}
+                  required
+                />
+              </div>
 
-            <div>
-              <Label htmlFor="motif_demande">Motif de la demande *</Label>
-              <textarea
-                id="motif_demande"
-                name="motif_demande"
-                className="w-full p-2 border border-gray-300 rounded-md"
-                rows={4}
-                value={formData.motif_demande || ""}
-                onChange={(e) => handleInputChange("motif_demande", e.target.value)}
-                placeholder="Expliquez le motif de votre demande..."
-                required
-              />
-            </div>
+              {/* Contact Information */}
+              <div className="space-y-4">
+                <h4 className="font-medium">Informations de contact</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="contact_phone">Téléphone *</Label>
+                    <Input
+                      id="contact_phone"
+                      placeholder="+224 6XX XXX XXX"
+                      value={formData.contact_phone || ""}
+                      onChange={(e) => handleInputChange("contact_phone", e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="contact_email">Email *</Label>
+                    <Input
+                      id="contact_email"
+                      type="email"
+                      placeholder="votre@email.com"
+                      value={formData.contact_email || ""}
+                      onChange={(e) => handleInputChange("contact_email", e.target.value)}
+                    />
+                  </div>
+                </div>
+              </div>
 
-            <div>
-              <Label htmlFor="date_besoin">Date de besoin</Label>
-              <Input
-                id="date_besoin"
-                name="date_besoin"
-                type="date"
-                value={formData.date_besoin || ""}
-                onChange={(e) => handleInputChange("date_besoin", e.target.value)}
-              />
-            </div>
+              <div className="flex items-start space-x-2">
+                <Checkbox
+                  id="credit_terms"
+                  checked={formData.terms || false}
+                  onCheckedChange={(checked) => handleInputChange("terms", checked)}
+                />
+                <Label htmlFor="credit_terms" className="text-sm">
+                  J'accepte les{" "}
+                  <a href="#" className="text-blue-600 hover:underline">
+                    conditions générales
+                  </a>{" "}
+                  et autorise le traitement de ma demande
+                </Label>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+      )
+    }
 
-            <div>
-              <Label htmlFor="contact_edemande">Téléphone de contact *</Label>
-              <Input
-                id="contact_edemande"
-                name="contact_edemande"
-                type="tel"
-                value={formData.contact_edemande || ""}
-                onChange={(e) => handleInputChange("contact_edemande", e.target.value)}
-                placeholder="+224 6XX XXX XXX"
-                required
-              />
-            </div>
-
-            {eDemandeSubmitState?.success && (
+    // E-DEMANDE PAGE
+    if (selectedService === "e-demande") {
+      return (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <FileText className="w-5 h-5" />
+              <span>E-Demande</span>
+            </CardTitle>
+            <CardDescription>Soumettez votre demande électronique</CardDescription>
+          </CardHeader>
+          {eDemandeSubmitState?.success && (
+            <div className="px-6 pb-4">
               <Alert className="border-green-200 bg-green-50">
                 <CheckCircle className="h-4 w-4 text-green-600" />
                 <AlertDescription className="text-green-800">
@@ -1274,22 +1265,121 @@ export default function ServiceRequestsPage() {
                   {selectedServiceData?.processingTime}.
                 </AlertDescription>
               </Alert>
-            )}
+            </div>
+          )}
 
-            {eDemandeSubmitState?.error && (
+          {eDemandeSubmitState?.error && (
+            <div className="px-6 pb-4">
               <Alert className="border-red-200 bg-red-50">
                 <AlertCircle className="h-4 w-4 text-red-600" />
                 <AlertDescription className="text-red-800">
                   ❌ Une erreur est survenue: {eDemandeSubmitState.error}. Veuillez réessayer.
                 </AlertDescription>
               </Alert>
-            )}
-          </form>
-        )
+            </div>
+          )}
+          <CardContent>
+            <form onSubmit={handleEDemandeSubmit} className="space-y-4">
+              <div>
+                <Label htmlFor="demande_type">Type de demande *</Label>
+                <Select onValueChange={(value) => handleInputChange("demande_type", value)} required>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Sélectionnez le type de demande" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="attestation">Attestation bancaire</SelectItem>
+                    <SelectItem value="releve">Relevé de compte</SelectItem>
+                    <SelectItem value="certificat">Certificat de non-endettement</SelectItem>
+                    <SelectItem value="autre">Autre demande</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
 
-      default:
-        return null
+              <div>
+                <Label htmlFor="objet_demande">Objet de la demande *</Label>
+                <Input
+                  id="objet_demande"
+                  name="objet_demande"
+                  type="text"
+                  value={formData.objet_demande || ""}
+                  onChange={(e) => handleInputChange("objet_demande", e.target.value)}
+                  placeholder="Ex: Attestation pour visa"
+                  required
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="numcompte_edemande">Numéro de compte *</Label>
+                <Input
+                  id="numcompte_edemande"
+                  name="numcompte_edemande"
+                  type="text"
+                  value={formData.numcompte_edemande || ""}
+                  onChange={(e) => handleInputChange("numcompte_edemande", e.target.value)}
+                  placeholder="Ex: 123456789"
+                  required
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="motif_demande">Motif de la demande *</Label>
+                <textarea
+                  id="motif_demande"
+                  name="motif_demande"
+                  className="w-full p-2 border border-gray-300 rounded-md"
+                  rows={4}
+                  value={formData.motif_demande || ""}
+                  onChange={(e) => handleInputChange("motif_demande", e.target.value)}
+                  placeholder="Expliquez le motif de votre demande..."
+                  required
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="date_besoin">Date de besoin</Label>
+                <Input
+                  id="date_besoin"
+                  name="date_besoin"
+                  type="date"
+                  value={formData.date_besoin || ""}
+                  onChange={(e) => handleInputChange("date_besoin", e.target.value)}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="contact_edemande">Téléphone de contact *</Label>
+                <Input
+                  id="contact_edemande"
+                  name="contact_edemande"
+                  type="tel"
+                  value={formData.contact_edemande || ""}
+                  onChange={(e) => handleInputChange("contact_edemande", e.target.value)}
+                  placeholder="+224 6XX XXX XXX"
+                  required
+                />
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="edemande_terms"
+                  checked={formData.edemande_terms || false}
+                  onCheckedChange={(checked) => handleInputChange("edemande_terms", checked)}
+                />
+                <Label htmlFor="edemande_terms" className="text-sm">
+                  J'accepte les{" "}
+                  <a href="#" className="text-blue-600 hover:underline">
+                    conditions générales
+                  </a>{" "}
+                  et autorise le traitement de ma demande
+                </Label>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+      )
     }
+
+    return null // Default case if selectedService is not recognized
   }
 
   return (
@@ -1452,24 +1542,7 @@ export default function ServiceRequestsPage() {
                 )}
 
                 {/* Feedback Messages */}
-                {submitState?.success && (
-                  <Alert className="border-green-200 bg-green-50">
-                    <CheckCircle className="h-4 w-4 text-green-600" />
-                    <AlertDescription className="text-green-800">
-                      Votre demande a été envoyée avec succès. Référence: {submitState.reference}. Réponse sous{" "}
-                      {selectedServiceData?.processingTime}.
-                    </AlertDescription>
-                  </Alert>
-                )}
-
-                {submitState?.error && (
-                  <Alert className="border-red-200 bg-red-50">
-                    <AlertCircle className="h-4 w-4 text-red-600" />
-                    <AlertDescription className="text-red-800">
-                      ❌ Une erreur est survenue: {submitState.error}. Veuillez réessayer.
-                    </AlertDescription>
-                  </Alert>
-                )}
+                {/* These are now handled within renderServiceForm */}
               </CardContent>
             </Card>
           )}
