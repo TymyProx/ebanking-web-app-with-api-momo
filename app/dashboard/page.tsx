@@ -185,11 +185,11 @@ export default async function Dashboard() {
       </Suspense>
 
       <Card className="border-0 shadow-sm bg-muted/30">
-        <CardContent className="pt-4 p-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <CardContent className="pt-3 p-3">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
             <Link href="/transfers/new">
-              <Button size="sm" className="h-14 flex flex-col space-y-1 w-full btn-primary group">
-                <Send className="h-4 w-4 group-hover:scale-110 transition-transform" />
+              <Button size="sm" className="h-11 flex flex-col space-y-0.5 w-full btn-primary group">
+                <Send className="h-3.5 w-3.5 group-hover:scale-110 transition-transform pt-1" />
                 <span className="text-xs font-medium">Virement</span>
               </Button>
             </Link>
@@ -197,9 +197,9 @@ export default async function Dashboard() {
               <Button
                 size="sm"
                 variant="outline"
-                className="h-14 flex flex-col space-y-1 w-full hover:bg-secondary/10 hover:border-secondary group bg-transparent"
+                className="h-11 flex flex-col space-y-0.5 w-full hover:bg-secondary/10 hover:border-secondary group bg-transparent"
               >
-                <Users className="h-4 w-4 group-hover:scale-110 transition-transform" />
+                <Users className="h-3.5 w-3.5 group-hover:scale-110 transition-transform pt-1" />
                 <span className="text-xs font-medium">Gestion des bénéficiaires</span>
               </Button>
             </Link>
@@ -207,9 +207,9 @@ export default async function Dashboard() {
               <Button
                 size="sm"
                 variant="outline"
-                className="h-14 flex flex-col space-y-1 w-full hover:bg-accent/10 hover:border-accent group bg-transparent"
+                className="h-11 flex flex-col space-y-0.5 w-full hover:bg-accent/10 hover:border-accent group bg-transparent"
               >
-                <Eye className="h-4 w-4 group-hover:scale-110 transition-transform" />
+                <Eye className="h-3.5 w-3.5 group-hover:scale-110 transition-transform pt-1" />
                 <span className="text-xs font-medium">Consultation de solde</span>
               </Button>
             </Link>
