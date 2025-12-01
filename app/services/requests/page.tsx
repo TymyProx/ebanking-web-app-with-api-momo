@@ -877,91 +877,92 @@ export default function ServiceRequestsPage() {
             </div>
 
             {/* Ligne 2: Date commande et Nombre de chéquiers */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="dateorder">Date de commande *</Label>
-                <Input
-                  id="dateorder"
-                  name="dateorder"
-                  type="date"
-                  value={formData.dateorder || new Date().toISOString().split("T")[0]}
-                  onChange={(e) => handleInputChange("dateorder", e.target.value)}
-                  required
-                  className="w-40"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="nbrechequier">Nombre de chéquiers *</Label>
-                <Input
-                  id="nbrechequier"
-                  name="nbrechequier"
-                  type="number"
-                  min="1"
-                  max="2"
-                  value={formData.nbrechequier || ""}
-                  onChange={(e) => {
-                    const value = Number.parseInt(e.target.value)
-                    if (value >= 1 && value <= 2) {
-                      handleInputChange("nbrechequier", value.toString())
-                    }
-                  }}
-                  placeholder="Ex: 2"
-                  required
-                  className="w-40"
-                />
-              </div>
+            <div className="grid grid-cols-3 gap-4">
+            <div className="space-y-2">
+            <Label htmlFor="nbrefeuille">Nombre de feuillets par chéquier *</Label>
+            <Select
+            value={formData.nbrefeuille || ""}
+            onValueChange={(value) => handleInputChange("nbrefeuille", value)}
+            >
+            <SelectTrigger className="w-full">
+            <SelectValue placeholder="Choisir le nombre de feuillets" />
+            </SelectTrigger>
+            <SelectContent>
+            <SelectItem value="25">25 feuillets</SelectItem>
+            <SelectItem value="50">50 feuillets</SelectItem>
+            <SelectItem value="100">100 feuillets</SelectItem>
+            </SelectContent>
+            </Select>
             </div>
+
+            <div className="space-y-2">
+            <Label htmlFor="nbrechequier">Nombre de chéquiers *</Label>
+            <Input
+            id="nbrechequier"
+            name="nbrechequier"
+            type="number"
+            min="1"
+            max="2"
+            value={formData.nbrechequier || ""}
+            onChange={(e) => {
+            const value = Number.parseInt(e.target.value);
+            if (value >= 1 && value <= 2) {
+            handleInputChange("nbrechequier", value.toString());
+            }
+            }}
+            placeholder="Ex: 2"
+            required
+            className="w-full"
+            />
+            </div>
+
+            <div className="space-y-2">
+            <Label htmlFor="typeCheque">Type de chèque *</Label>
+            <Select
+            value={formData.typeCheque || ""}
+            onValueChange={(value) => handleInputChange("typeCheque", value)}
+            >
+            <SelectTrigger className="w-full">
+            <SelectValue placeholder="Choisir le type de chèque" />
+            </SelectTrigger>
+            <SelectContent>
+            <SelectItem value="Standard barré">Standard barré</SelectItem>
+            <SelectItem value="Standard non barré">Standard non barré</SelectItem>
+            <SelectItem value="Certifié barré">Certifié barré</SelectItem>
+            <SelectItem value="Certifié non barré">Certifié non barré</SelectItem>
+            </SelectContent>
+            </Select>
+            </div>
+            </div>
+
 
             {/* Ligne 3: Nombre de feuillets et Type de chèque */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="nbrefeuille">Nombre de feuillets par chéquier *</Label>
-                <Select
-                  value={formData.nbrefeuille || ""}
-                  onValueChange={(value) => handleInputChange("nbrefeuille", value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Choisir le nombre de feuillets" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="25">25 feuillets</SelectItem>
-                    <SelectItem value="50">50 feuillets</SelectItem>
-                    <SelectItem value="100">100 feuillets</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="typeCheque">Type de chèque *</Label>
-                <Select
-                  value={formData.typeCheque || ""}
-                  onValueChange={(value) => handleInputChange("typeCheque", value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Choisir le type de chèque" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Standard barré">Standard barré</SelectItem>
-                    <SelectItem value="Standard non barré">Standard non barré</SelectItem>
-                    <SelectItem value="Certifié barré">Certifié barré</SelectItem>
-                    <SelectItem value="Certifié non barré">Certifié non barré</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+            <div className="grid grid-cols-3 gap-4">
+            <div className="flex h-10 items-center space-x-2 mt-6">
+            <Checkbox
+            id="talonCheque"
+            checked={formData.talonCheque || false}
+            onCheckedChange={(checked) => handleInputChange("talonCheque", checked)}
+            />
+            <Label htmlFor="talonCheque" className="text-sm font-normal">
+            Chèque à Talon
+            </Label>
+            </div>
+             <div className="space-y-2">
+            <Label htmlFor="dateorder">Date de commande *</Label>
+            <Input
+            id="dateorder"
+            name="dateorder"
+            type="date"
+            value={formData.dateorder || new Date().toISOString().split("T")[0]}
+            onChange={(e) => handleInputChange("dateorder", e.target.value)}
+            required
+            className="w-full"
+            />
             </div>
 
-            {/* Le reste du code reste inchangé */}
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="talonCheque"
-                checked={formData.talonCheque || false}
-                onCheckedChange={(checked) => handleInputChange("talonCheque", checked)}
-              />
-              <Label htmlFor="talonCheque" className="text-sm font-normal">
-                Chèque à Talon
-              </Label>
             </div>
+
 
             <div>
               <Label htmlFor="commentaire">Commentaire</Label>
@@ -1420,24 +1421,6 @@ export default function ServiceRequestsPage() {
               </CardHeader>
               <CardContent className="space-y-6">
                 {/* Service Info */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-gray-50 rounded-lg">
-                  {/*
-                  <div className="flex items-center space-x-2">
-                    <Clock className="w-4 h-4 text-gray-500" />
-                    <div>
-                      <p className="text-sm font-medium">Délai de traitement</p>
-                      <p className="text-xs text-gray-600">{selectedServiceData.processingTime}</p>
-                    </div>
-                  </div>
-                  */}
-                  <div className="flex items-center space-x-2">
-                    <Shield className="w-4 h-4 text-gray-500" />
-                    <div>
-                      <p className="text-sm font-medium">Sécurisé</p>
-                      <p className="text-xs text-gray-600">Traitement confidentiel</p>
-                    </div>
-                  </div>
-                </div>
 
                 {/* Dynamic Form */}
                 {renderServiceForm()}
