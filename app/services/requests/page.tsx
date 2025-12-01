@@ -661,7 +661,7 @@ export default function ServiceRequestsPage() {
 
     try {
       const creditData = {
-        applicantName: formData.applicantName, // Changed from applicant_name
+        applicant_name: formData.applicant_name, // Changed from applicant_name
         loan_amount: formData.loan_amount,
         loan_duration: formData.loan_duration,
         loan_purpose: formData.loan_purpose,
@@ -1179,27 +1179,6 @@ export default function ServiceRequestsPage() {
                 </div>
               </div>
             </div>
-
-            {/* Feedback Messages */}
-            {creditSubmitState?.success && (
-              <Alert className="border-green-200 bg-green-50">
-                <CheckCircle className="h-4 w-4 text-green-600" />
-                <AlertDescription className="text-green-800">
-                  ✅ Votre demande de crédit a été envoyée avec succès. Référence: {creditSubmitState.referenceDemande}.{" "}
-                  {/* Réponse sous {selectedServiceData?.processingTime}. */}
-                </AlertDescription>
-              </Alert>
-            )}
-
-            {creditSubmitState?.error && (
-              <Alert className="border-red-200 bg-red-50">
-                <AlertCircle className="h-4 w-4 text-red-600" />
-                <AlertDescription className="text-red-800">
-                  ❌ Une erreur est survenue: {creditSubmitState.error}. Veuillez réessayer.
-                </AlertDescription>
-              </Alert>
-            )}
-
             <div className="flex items-start space-x-2">
               <Checkbox
                 id="credit_terms"
@@ -1395,6 +1374,25 @@ export default function ServiceRequestsPage() {
               <AlertDescription>{checkbookSubmitState.error}</AlertDescription>
             </Alert>
           )}
+          {/* Feedback Messages */}
+            {creditSubmitState?.success && (
+              <Alert className="border-green-200 bg-green-50">
+                <CheckCircle className="h-4 w-4 text-green-600" />
+                <AlertDescription className="text-green-800">
+                  Votre demande de crédit a été envoyée avec succès. Référence: {creditSubmitState.referenceDemande}.{" "}
+                  {/* Réponse sous {selectedServiceData?.processingTime}. */}
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {creditSubmitState?.error && (
+              <Alert className="border-red-200 bg-red-50">
+                <AlertCircle className="h-4 w-4 text-red-600" />
+                <AlertDescription className="text-red-800">
+                  Une erreur est survenue: {creditSubmitState.error}. Veuillez réessayer.
+                </AlertDescription>
+              </Alert>
+            )}
           {/* Service Details & Form */}
           {selectedServiceData && (
             <Card>
