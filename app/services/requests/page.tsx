@@ -972,22 +972,6 @@ export default function ServiceRequestsPage() {
               />
             </div>
 
-            {checkbookSubmitState?.success && (
-              <Alert className="border-green-200 bg-green-50">
-                <CheckCircle className="h-4 w-4 text-green-600" />
-                <AlertDescription className="text-green-800">
-                  ✅ Votre demande de chéquier a été soumise avec succès ! Référence: {checkbookSubmitState.reference}
-                </AlertDescription>
-              </Alert>
-            )}
-
-            {checkbookSubmitState?.error && (
-              <Alert variant="destructive">
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>❌ {checkbookSubmitState.error}</AlertDescription>
-              </Alert>
-            )}
-
             <div className="flex items-center space-x-2">
               <Checkbox
                 id="checkbook_terms"
@@ -1406,7 +1390,21 @@ export default function ServiceRequestsPage() {
               </div>
             </CardContent>
           </Card>
+            {checkbookSubmitState?.success && (
+              <Alert className="border-green-200 bg-green-50">
+                <CheckCircle className="h-4 w-4 text-green-600" />
+                <AlertDescription className="text-green-800">
+                  Votre demande de chéquier a été soumise avec succès ! Référence: {checkbookSubmitState.reference}
+                </AlertDescription>
+              </Alert>
+            )}
 
+            {checkbookSubmitState?.error && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{checkbookSubmitState.error}</AlertDescription>
+              </Alert>
+            )}
           {/* Service Details & Form */}
           {selectedServiceData && (
             <Card>
