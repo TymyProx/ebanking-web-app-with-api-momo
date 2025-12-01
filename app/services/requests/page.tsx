@@ -49,8 +49,8 @@ const serviceTypes = [
     icon: BookOpen,
     description: "Commander un nouveau carnet de chèques",
     category: "banking",
-    processingTime: "3-5 jours ouvrables",
-    cost: "Gratuit",
+   // processingTime: "3-5 jours ouvrables",
+    //cost: "Gratuit",
     requirements: ["Compte actif", "Pas de chèques impayés"],
   },
   {
@@ -59,8 +59,8 @@ const serviceTypes = [
     icon: CreditCard,
     description: "Demande de crédit (personnel, immobilier, automobile, étudiant)",
     category: "credit",
-    processingTime: "3-30 jours ouvrables",
-    cost: "Gratuit",
+    //processingTime: "3-30 jours ouvrables",
+    //cost: "Gratuit",
     requirements: ["Revenus réguliers", "Garanties", "Dossier complet"],
   },
 ]
@@ -994,7 +994,7 @@ export default function ServiceRequestsPage() {
                 <CheckCircle className="h-4 w-4 text-green-600" />
                 <AlertDescription className="text-green-800">
                   Votre demande de crédit a été envoyée avec succès. Référence: {creditSubmitState.reference}. Réponse
-                  sous {selectedServiceData?.processingTime}.
+                  Une notification vous sera envoyée lorsque le statut de votre demande changera.
                 </AlertDescription>
               </Alert>
             </div>
@@ -1235,8 +1235,8 @@ export default function ServiceRequestsPage() {
               <Alert className="border-green-200 bg-green-50">
                 <CheckCircle className="h-4 w-4 text-green-600" />
                 <AlertDescription className="text-green-800">
-                  Votre e-demande a été envoyée avec succès. Référence: {eDemandeSubmitState.reference}. Réponse sous{" "}
-                  {selectedServiceData?.processingTime}.
+                  Votre e-demande a été envoyée avec succès. Référence: {eDemandeSubmitState.reference}.
+                  Une notification vous sera envoyée lorsque le statut de votre demande changera.
                 </AlertDescription>
               </Alert>
             </div>
@@ -1400,12 +1400,6 @@ export default function ServiceRequestsPage() {
                         <div className="flex-1">
                           <h3 className="font-medium text-sm">{service.name}</h3>
                           <p className="text-xs text-gray-500 mt-1">{service.description}</p>
-                          <div className="flex items-center justify-between mt-2">
-                            <Badge variant="outline" className="text-xs">
-                              {service.processingTime}
-                            </Badge>
-                            <span className="text-xs font-medium text-green-600">{service.cost}</span>
-                          </div>
                         </div>
                       </div>
                     </div>
