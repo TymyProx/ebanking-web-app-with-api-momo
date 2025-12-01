@@ -278,7 +278,7 @@ export default function ServiceRequestsPage() {
         total: allTransformedRequests.length,
         checkbook: allTransformedRequests.filter((req) => req.type === "checkbook").length,
         credit: allTransformedRequests.filter((req) => req.type === "credit").length,
-        card: allTransformedRequests.filter((req) => req.type === "card").length,
+        card: allTransformedRequests.filter((req) => req.type === "account").length,
         account: allTransformedRequests.filter((req) => req.type === "account").length,
       }
       console.log("[v0] Statistiques calculées:", stats)
@@ -373,8 +373,8 @@ export default function ServiceRequestsPage() {
         },
         { label: "Durée (mois)", value: details.loan_duration || details.durationMonths || "Non spécifié" },
         { label: "Objet du crédit", value: details.loan_purpose || details.purpose || "Non spécifié" },
-      //  { label: "Téléphone", value: details.contact_phone || "Non spécifié" },
-       // { label: "Commentaire", value: details.commentaire || "Aucun commentaire" },
+        //  { label: "Téléphone", value: details.contact_phone || "Non spécifié" },
+        // { label: "Commentaire", value: details.commentaire || "Aucun commentaire" },
       ]
     }
 
@@ -414,6 +414,15 @@ export default function ServiceRequestsPage() {
   useEffect(() => {
     loadAccounts()
   }, [])
+
+  useEffect(() => {
+    if (checkbookSubmitState?.success) {
+      const timer = setTimeout(() => {
+        setCheckbookSubmitState(null)
+      }, 4000)
+      return () => clearTimeout(timer)
+    }
+  }, [checkbookSubmitState?.success])
 
   const loadAccounts = async () => {
     try {
