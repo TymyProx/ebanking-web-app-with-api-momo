@@ -206,7 +206,7 @@ export async function completeSignup(token: string, password: string, emailFallb
               accountId: String(compteBng.numCompte || ""),
               accountNumber: String(compteBng.numCompte || ""),
               accountName: String(compteBng.accountName || "Compte"),
-              type: String(compteBng.typeCompte || "COURANT"),
+              type: String(compteBng.typeCompte || "CURRENT"),
               currency: String(compteBng.devise || "GNF"),
               bookBalance: String(compteBng.bookBalance || "0"),
               availableBalance: String(compteBng.availableBalance || "0"),
