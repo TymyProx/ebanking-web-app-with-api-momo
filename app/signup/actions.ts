@@ -277,7 +277,7 @@ export async function initiateExistingClientSignup(data: { clientCode: string })
 
     console.log("[v0] Step 2: Searching for client in BdClientBng table using numClient...")
 
-    const searchUrl = `${API_BASE_URL}/tenant/${TENANT_ID}/bd-client-bng/${data.clientCode}`
+    const searchUrl = `${API_BASE_URL}/tenant/${TENANT_ID}/bd-client-bng?numClient=${encodeURIComponent(data.clientCode)}`
     console.log("[v0] Fetching from URL:", searchUrl)
 
     const bdClientResponse = await fetch(searchUrl, {
@@ -304,8 +304,39 @@ export async function initiateExistingClientSignup(data: { clientCode: string })
       throw new Error("Erreur lors de la recherche du client dans la base BNG")
     }
 
-    const bdClientData = await bdClientResponse.json()
-    console.log("[v0] BdClientBng data received:", JSON.stringify(bdClientData, null, 2))
+    const bdClientResponseData = await bdClientResponse.json()
+    console.log("[v0] BdClientBng response received:", JSON.stringify(bdClientResponseData, null, 2))
+
+    let bdClientData
+    if (Array.isArray(bdClientResponseData)) {
+      if (bdClientResponseData.length === 0) {
+        return {
+          success: false,
+          message: "Racine du compte invalide. Veuillez vérifier votre racine et réessayer.",
+        }
+      }
+      bdClientData = bdClientResponseData[0]
+    } else if (bdClientResponseData.data && Array.isArray(bdClientResponseData.data)) {
+      if (bdClientResponseData.data.length === 0) {
+        return {
+          success: false,
+          message: "Racine du compte invalide. Veuillez vérifier votre racine et réessayer.",
+        }
+      }
+      bdClientData = bdClientResponseData.data[0]
+    } else if (bdClientResponseData.rows && Array.isArray(bdClientResponseData.rows)) {
+      if (bdClientResponseData.rows.length === 0) {
+        return {
+          success: false,
+          message: "Racine du compte invalide. Veuillez vérifier votre racine et réessayer.",
+        }
+      }
+      bdClientData = bdClientResponseData.rows[0]
+    } else {
+      bdClientData = bdClientResponseData
+    }
+
+    console.log("[v0] BdClientBng data extracted:", JSON.stringify(bdClientData, null, 2))
 
     const clientEmail = bdClientData.email
     const clientFullName = bdClientData.nomComplet || bdClientData.fullName || bdClientData.name || ""
