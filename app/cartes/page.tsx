@@ -188,7 +188,7 @@ export default function CardsPage() {
 
       const enhancedCards = decryptedRows.map((card) => ({
         ...card,
-        holder: "MAMADOU DIALLO", // Default holder name
+        holder: "MAMADOU DIAN BAH", // Default holder name
         dailyLimit: 500000,
         monthlyLimit: 2000000,
         balance: 1250000,
