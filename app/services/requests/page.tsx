@@ -21,8 +21,6 @@ import {
   AlertCircle,
   Send,
   Eye,
-  Banknote,
-  Shield,
   Plus,
   Search,
   DollarSign,
@@ -49,7 +47,7 @@ const serviceTypes = [
     icon: BookOpen,
     description: "Commander un nouveau carnet de chèques",
     category: "banking",
-   // processingTime: "3-5 jours ouvrables",
+    // processingTime: "3-5 jours ouvrables",
     //cost: "Gratuit",
     requirements: ["Compte actif", "Pas de chèques impayés"],
   },
@@ -319,7 +317,7 @@ export default function ServiceRequestsPage() {
         total: allTransformedRequests.length,
         checkbook: allTransformedRequests.filter((req) => req.type === "checkbook").length,
         credit: allTransformedRequests.filter((req) => req.type === "credit").length,
-        card: allTransformedRequests.filter((req) => req.type === "card").length,
+        card: allTransformedRequests.filter((req) => req.type === "account").length,
         account: allTransformedRequests.filter((req) => req.type === "account").length,
       }
       console.log("[v0] Statistiques calculées:", stats)
@@ -366,7 +364,10 @@ export default function ServiceRequestsPage() {
 
     const commonFields = [
       { label: "Référence", value: details.reference || "Non attribuée" },
-      { label: "Numéro de compte", value: details.accountNumber || details.numcompteId || "Non spécifié" },
+      {
+        label: "Numéro de compte",
+        value: details.numcompte || details.accountNumber || details.numcompteId || "Non spécifié",
+      },
     ]
 
     if (type === "credit") {
@@ -382,10 +383,10 @@ export default function ServiceRequestsPage() {
         ...commonFields,
         { label: "Date de commande", value: new Date(details.dateorder).toLocaleDateString("fr-FR") },
         { label: "Nombre de feuilles", value: details.nbrefeuille },
-        { label: "Nombre de chéquiers", value: details.nbrechequier },
+        { label: "Nombre de chéquiers", value: details.nbrechequier || "Non spécifié" }, // Added fallback
         { label: "Type de chèque", value: details.typeCheque || "Non spécifié" },
         { label: "Avec talon de chèque", value: details.talonCheque ? "Oui" : "Non" },
-        { label: "Intitulé du compte", value: details.intitulecompte },
+        { label: "Intitulé du compte", value: details.intitulecompte || "Non spécifié" }, // Added fallback
         { label: "Commentaire", value: details.commentaire || "Aucun commentaire" },
       ]
     }
@@ -428,6 +429,8 @@ export default function ServiceRequestsPage() {
           currency: apiAccount.currency || "GNF",
           status: apiAccount.status,
           type: apiAccount.accountType || apiAccount.type,
+          intitulecompte: apiAccount.accountName || apiAccount.name, // Add intitulecompte for display
+          numcompte: apiAccount.accountNumber || apiAccount.number, // Add numcompte for selection
         }))
 
         // Filtrer pour ne garder que les comptes courants actifs
@@ -694,12 +697,14 @@ export default function ServiceRequestsPage() {
   const handleCheckbookSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
+    console.log("[v0] Checkbook form data before submission:", formData)
+
     // Vérifier que tous les champs requis sont remplis
     if (
       !formData.nbrechequier ||
       !formData.nbrefeuille ||
       !formData.intitulecompte ||
-      !formData.numcompte ||
+      !formData.numcompteId ||
       !formData.terms
     ) {
       setCheckbookSubmitState({ error: "Veuillez remplir tous les champs obligatoires" })
@@ -718,11 +723,13 @@ export default function ServiceRequestsPage() {
         nbrefeuille: Number.parseInt(formData.nbrefeuille) || 0,
         nbrechequier: Number.parseInt(formData.nbrechequier) || 0,
         intitulecompte: formData.intitulecompte,
-        numcompteId: formData.numcompte,
+        numcompteId: formData.numcompteId, // Contains the account NUMBER (not ID)
         commentaire: formData.commentaire || "",
         typeCheque: formData.typeCheque || "Standard",
         talonCheque: formData.talonCheque === true,
       }
+
+      console.log("[v0] Checkbook payload to be sent:", basePayload)
 
       let result: any
       if (secureMode) {
@@ -737,8 +744,12 @@ export default function ServiceRequestsPage() {
         result = await submitCheckbookRequestSecure(secureData)
       } else {
         const nonSecure = { ...basePayload, stepflow: 0 }
+        console.log("[v0] Non-secure payload:", nonSecure)
         result = await submitCheckbookRequest(nonSecure as any)
       }
+
+      console.log("[v0] Checkbook submission result:", result)
+
       setCheckbookSubmitState({
         success: true,
         reference: result.reference || "CHQ-" + new Date().getFullYear() + "-" + String(Date.now()).slice(-3),
@@ -751,6 +762,7 @@ export default function ServiceRequestsPage() {
         loadAllRequests()
       }
     } catch (error: any) {
+      console.error("[v0] Checkbook submission error:", error)
       setCheckbookSubmitState({ error: error.message || "Une erreur s'est produite lors de la soumission" })
       window.scrollTo({ top: 0, behavior: "smooth" })
     } finally {
@@ -815,19 +827,21 @@ export default function ServiceRequestsPage() {
           <CardContent className="pt-6">
             <form onSubmit={handleCheckbookSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="intitulecompte">Sélectionner un compte *</Label>
+                <Label htmlFor="checkbook-account">
+                  Numéro de compte <span className="text-red-500">*</span>
+                </Label>
                 <Select
                   value={formData.numcompteId || ""}
                   onValueChange={(value) => {
-                    const selectedAccount = accounts.find((acc) => acc.id === value)
-                    if (selectedAccount) {
-                      handleInputChange("accountId", selectedAccount.id)
-                      handleInputChange("intitulecompte", selectedAccount.name)
-                      handleInputChange("numcompte", selectedAccount.number)
-                    }
+                    const selectedAccount = accounts.find((acc) => acc.numcompte === value)
+                    setFormData({
+                      ...formData,
+                      numcompteId: value, // Store account NUMBER in numcompteId
+                      intitulecompte: selectedAccount?.intitulecompte || "",
+                    })
                   }}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger id="checkbook-account">
                     <SelectValue placeholder={isLoadingAccounts ? "Chargement..." : "Choisir un compte"} />
                   </SelectTrigger>
                   <SelectContent>
@@ -841,18 +855,8 @@ export default function ServiceRequestsPage() {
                       </SelectItem>
                     ) : (
                       accounts.map((account) => (
-                        <SelectItem key={account.id} value={account.id}>
-                          <div className="flex flex-col">
-                            <span className="font-medium">{account.name}</span>
-                            <span className="text-sm text-gray-500">
-                              {account.number} •{" "}
-                              {new Intl.NumberFormat("fr-FR", {
-                                style: "currency",
-                                currency: account.currency === "GNF" ? "GNF" : account.currency,
-                                minimumFractionDigits: account.currency === "GNF" ? 0 : 2,
-                              }).format(account.balance)}
-                            </span>
-                          </div>
+                        <SelectItem key={account.id} value={account.numcompte}>
+                          {account.numcompte} - {account.intitulecompte}
                         </SelectItem>
                       ))
                     )}
@@ -861,14 +865,14 @@ export default function ServiceRequestsPage() {
               </div>
 
               <div>
-                <Label htmlFor="numcompte">Numéro de compte *</Label>
+                <Label htmlFor="numcompte">Compte libellé *</Label>
                 <Input
                   id="numcompte"
                   name="numcompte"
                   type="text"
-                  value={formData.numcompte || ""}
-                  onChange={(e) => handleInputChange("numcompte", e.target.value)}
-                  placeholder="Ex: 000123456789"
+                  value={formData.intitulecompte || ""}
+                  onChange={(e) => handleInputChange("intitulecompte", e.target.value)}
+                  placeholder="Ex: Compte Courant Principal"
                   required
                   readOnly
                   className="bg-gray-50"
@@ -887,52 +891,57 @@ export default function ServiceRequestsPage() {
                 />
               </div>
 
-              <div>
-                <Label htmlFor="nbrechequier">Nombre de chéquiers *</Label>
-                <Input
-                  id="nbrechequier"
-                  name="nbrechequier"
-                  type="number"
-                  min="1"
-                  max="10"
-                  value={formData.nbrechequier || ""}
-                  onChange={(e) => handleInputChange("nbrechequier", e.target.value)}
-                  placeholder="Ex: 2"
-                  required
-                />
-              </div>
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <Label htmlFor="nbrechequier">Nombre de chéquiers *</Label>
+                  <Input
+                    id="nbrechequier"
+                    name="nbrechequier"
+                    type="number"
+                    min="1"
+                    max="10"
+                    value={formData.nbrechequier || ""}
+                    onChange={(e) => handleInputChange("nbrechequier", e.target.value)}
+                    placeholder="Ex: 2"
+                    required
+                  />
+                </div>
 
-              <div>
-                <Label htmlFor="nbrefeuille">Nombre de feuillets par chéquier *</Label>
-                <Select
-                  value={formData.nbrefeuille || ""}
-                  onValueChange={(value) => handleInputChange("nbrefeuille", value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Choisir le nombre de feuillets" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="25">25 feuillets</SelectItem>
-                    <SelectItem value="50">50 feuillets</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+                <div>
+                  <Label htmlFor="nbrefeuille">Nombre de feuillets *</Label>
+                  <Select
+                    value={formData.nbrefeuille || ""}
+                    onValueChange={(value) => handleInputChange("nbrefeuille", value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Feuillets" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="25">25</SelectItem>
+                      <SelectItem value="50">50</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
 
-              <div>
-                <Label htmlFor="typeCheque">Type de chèque *</Label>
-                <Select
-                  value={formData.typeCheque || ""}
-                  onValueChange={(value) => handleInputChange("typeCheque", value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Choisir le type de chèque" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Standard">Standard</SelectItem>
-                    <SelectItem value="Certifié">Certifié</SelectItem>
-                    <SelectItem value="Barré">Barré</SelectItem>
-                  </SelectContent>
-                </Select>
+                <div>
+                  <Label htmlFor="typeCheque">Type de chèque *</Label>
+                  <Select
+                    value={formData.typeCheque || "Standard"}
+                    onValueChange={(value) => {
+                      handleInputChange("typeCheque", value)
+                      console.log("[v0] Type cheque selected:", value)
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Standard">Standard</SelectItem>
+                      <SelectItem value="Certifié">Certifié</SelectItem>
+                      <SelectItem value="Barré">Barré</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
 
               <div className="flex items-center space-x-2">
@@ -1235,8 +1244,8 @@ export default function ServiceRequestsPage() {
               <Alert className="border-green-200 bg-green-50">
                 <CheckCircle className="h-4 w-4 text-green-600" />
                 <AlertDescription className="text-green-800">
-                  Votre e-demande a été envoyée avec succès. Référence: {eDemandeSubmitState.reference}.
-                  Une notification vous sera envoyée lorsque le statut de votre demande changera.
+                  Votre e-demande a été envoyée avec succès. Référence: {eDemandeSubmitState.reference}. Une
+                  notification vous sera envoyée lorsque le statut de votre demande changera.
                 </AlertDescription>
               </Alert>
             </div>
@@ -1409,7 +1418,7 @@ export default function ServiceRequestsPage() {
             </CardContent>
           </Card>
 
-           {checkbookSubmitState?.success && (
+          {checkbookSubmitState?.success && (
             <div className="px-6 pb-4">
               <Alert className="border-green-200 bg-green-50">
                 <CheckCircle className="h-4 w-4 text-green-600" />
