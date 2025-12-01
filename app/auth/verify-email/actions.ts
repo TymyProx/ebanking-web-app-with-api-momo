@@ -188,10 +188,9 @@ export async function completeSignup(token: string, password: string, emailFallb
       }
 
       comptesArray = comptesArray.filter((compte: any) => {
-        const numCompte = String(compte.numCompte || "")
+        const compteClientId = String(compte.clientId || "")
         const racine = String(pendingData.numClient || "")
-        // Check if the account number starts with the racine followed by a dash
-        return numCompte.startsWith(racine + "-") || numCompte === racine
+        return compteClientId === racine
       })
 
       console.log("[v0] Found", comptesArray.length, "account(s) matching racine", pendingData.numClient)
@@ -208,7 +207,7 @@ export async function completeSignup(token: string, password: string, emailFallb
               currency: String(compteBng.devise || "XOF"),
               availableBalance: String(compteBng.availableBalance || "0"),
               bookBalance: String(compteBng.bookBalance || "0"),
-              clientId: String(clientId),
+              clientId: String(userId),
               status: "ACTIF",
             },
           }
