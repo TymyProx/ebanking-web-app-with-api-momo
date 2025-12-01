@@ -308,32 +308,36 @@ export async function initiateExistingClientSignup(data: { clientCode: string })
     console.log("[v0] BdClientBng response received:", JSON.stringify(bdClientResponseData, null, 2))
 
     let bdClientData
+    let clientArray: any[] = []
+
     if (Array.isArray(bdClientResponseData)) {
-      if (bdClientResponseData.length === 0) {
-        return {
-          success: false,
-          message: "Racine du compte invalide. Veuillez vérifier votre racine et réessayer.",
-        }
-      }
-      bdClientData = bdClientResponseData[0]
+      clientArray = bdClientResponseData
     } else if (bdClientResponseData.data && Array.isArray(bdClientResponseData.data)) {
-      if (bdClientResponseData.data.length === 0) {
-        return {
-          success: false,
-          message: "Racine du compte invalide. Veuillez vérifier votre racine et réessayer.",
-        }
-      }
-      bdClientData = bdClientResponseData.data[0]
+      clientArray = bdClientResponseData.data
     } else if (bdClientResponseData.rows && Array.isArray(bdClientResponseData.rows)) {
-      if (bdClientResponseData.rows.length === 0) {
-        return {
-          success: false,
-          message: "Racine du compte invalide. Veuillez vérifier votre racine et réessayer.",
-        }
-      }
-      bdClientData = bdClientResponseData.rows[0]
+      clientArray = bdClientResponseData.rows
     } else {
       bdClientData = bdClientResponseData
+    }
+
+    // Find the client with exact numClient match
+    if (clientArray.length > 0) {
+      bdClientData = clientArray.find((client) => client.numClient === data.clientCode)
+
+      if (!bdClientData) {
+        console.error("[v0] No client found with exact numClient match:", data.clientCode)
+        return {
+          success: false,
+          message: "Racine du compte invalide. Veuillez vérifier votre racine et réessayer.",
+        }
+      }
+    }
+
+    if (!bdClientData) {
+      return {
+        success: false,
+        message: "Racine du compte invalide. Veuillez vérifier votre racine et réessayer.",
+      }
     }
 
     console.log("[v0] BdClientBng data extracted:", JSON.stringify(bdClientData, null, 2))
