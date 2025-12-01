@@ -150,9 +150,9 @@ export async function completeSignup(token: string, password: string, emailFallb
       const clientId = clientData.id || clientData.data?.id
       console.log("[v0] Client profile created successfully, clientId:", clientId)
 
-      console.log("[v0] Step 4: Fetching accounts from CompteBng using clientId:", pendingData.numClient)
+      console.log("[v0] Step 4: Fetching accounts from CompteBng using numClient:", pendingData.numClient)
 
-      const compteBngUrl = `${API_BASE_URL}/tenant/${TENANT_ID}/compteBng?filter=clientId eq '${pendingData.numClient}'`
+      const compteBngUrl = `${API_BASE_URL}/tenant/${TENANT_ID}/compte-bng?filter=numClient||$eq||${pendingData.numClient}`
       console.log("[v0] CompteBng URL:", compteBngUrl)
 
       const compteBngResponse = await fetch(compteBngUrl, {
@@ -174,7 +174,7 @@ export async function completeSignup(token: string, password: string, emailFallb
       }
 
       const compteBngData = await compteBngResponse.json()
-      console.log("[v0] CompteBng data received")
+      console.log("[v0] CompteBng data received:", JSON.stringify(compteBngData, null, 2))
 
       let comptesArray = []
       if (Array.isArray(compteBngData)) {
