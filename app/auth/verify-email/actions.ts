@@ -204,6 +204,8 @@ export async function completeSignup(token: string, password: string, emailFallb
           const comptePayload = {
             data: {
               accountNumber: String(compteBng.numCompte || ""),
+              type: String(compteBng.typeCompte || ""),
+              accountName: String(compteBng.accountName || ""),
               currency: String(compteBng.devise || "XOF"),
               availableBalance: String(compteBng.availableBalance || "0"),
               bookBalance: String(compteBng.bookBalance || "0"),
