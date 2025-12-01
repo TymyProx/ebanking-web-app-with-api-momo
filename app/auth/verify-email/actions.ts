@@ -120,7 +120,7 @@ export async function completeSignup(token: string, password: string, emailFallb
           email: String(pendingData.email),
           telephone: String(pendingData.phone || ""),
           adresse: String(pendingData.address || ""),
-          codeClient: String(pendingData.clientCode || pendingData.numClient),
+          codeClient: String(pendingData.codeClient || pendingData.numClient),
           userid: String(userId), // userId from auth/me
         },
       }
