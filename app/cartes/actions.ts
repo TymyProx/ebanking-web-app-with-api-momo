@@ -1,41 +1,10 @@
 "use server"
-process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0"
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 import { cookies } from "next/headers"
 import { revalidatePath } from "next/cache"
 
 const API_BASE_URL = process.env.API_BASE_URL
-const TENANT_ID = process.env.TENANT_ID
-
-interface CurrentUserInfo {
-  id: string | null
-  fullName?: string
-}
-
-async function getCurrentUserInfo(token: string): Promise<CurrentUserInfo | null> {
-  try {
-    const response = await fetch(`${API_BASE_URL}/auth/me`, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-    })
-
-    if (!response.ok) {
-      console.error(`[v0] Impossible de récupérer les informations utilisateur: ${response.status}`)
-      return null
-    }
-
-    const data = await response.json()
-    return {
-      id: data?.id ?? null,
-      fullName: data?.fullName ?? data?.name ?? undefined,
-    }
-  } catch (error) {
-    console.error("[v0] Erreur lors de la récupération de l'utilisateur courant:", error)
-    return null
-  }
-}
+const TENANT_ID = process.env.TENANT_ID 
 
 interface CurrentUserInfo {
   id: string | null
@@ -385,66 +354,5 @@ function formatExpiryDate(dateExpiration: string): string {
     return `${month}/${year}`
   } catch {
     return "12/26"
-  }
-}
-
-export async function toggleCardStatus(cardId: string, currentStatus: string) {
-  const cookieToken = (await cookies()).get("token")?.value
-  const usertoken = cookieToken
-
-  try {
-    if (!usertoken) {
-      return {
-        success: false,
-        error: "Token d'authentification manquant",
-      }
-    }
-
-    const newStatus = currentStatus?.toUpperCase() === "ACTIF" ? "BLOCKED" : "ACTIF"
-
-    const response = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/card/${cardId}`, {
-      method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${usertoken}`,
-      },
-      body: JSON.stringify({
-        data: {
-          status: newStatus,
-        },
-      }),
-    })
-
-    if (!response.ok) {
-      const contentType = response.headers.get("content-type")
-      if (contentType && contentType.includes("application/json")) {
-        const errorData = await response.json()
-        return {
-          success: false,
-          error: errorData.message || "Erreur lors de la mise à jour du statut",
-        }
-      } else {
-        return {
-          success: false,
-          error: "Erreur de communication avec l'API",
-        }
-      }
-    }
-
-    const result = await response.json()
-
-    revalidatePath("/cartes")
-
-    return {
-      success: true,
-      message: newStatus === "ACTIF" ? "Carte débloquée avec succès" : "Carte bloquée avec succès",
-      data: result.data,
-    }
-  } catch (error) {
-    console.error("[v0] Erreur lors du changement de statut:", error)
-    return {
-      success: false,
-      error: "Erreur lors de la mise à jour du statut. Veuillez réessayer.",
-    }
   }
 }
