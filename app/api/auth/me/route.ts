@@ -1,6 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
 import axios from "axios"
-import https from "https"
 
 const API_BASE_URL = process.env.API_BASE_URL || "https://35.184.98.9:4000/api"
 
@@ -12,9 +11,6 @@ const serverAxios = axios.create({
     "Content-Type": "application/json",
     Accept: "application/json",
   },
-  httpsAgent: new https.Agent({
-    rejectUnauthorized: process.env.NODE_TLS_REJECT_UNAUTHORIZED !== "0",
-  }),
 })
 
 export async function GET(request: NextRequest) {
