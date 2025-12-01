@@ -412,6 +412,28 @@ export default function ServiceRequestsPage() {
     }
   }, [checkbookSubmitState?.success])
 
+  // AUTO-HIDE CREDIT SUCCESS/ERROR MESSAGE AFTER 4 SECONDS
+  useEffect(() => {
+    if (creditSubmitState?.success || creditSubmitState?.error) {
+      const timer = setTimeout(() => {
+        setCreditSubmitState(null)
+      }, 4000)
+
+      return () => clearTimeout(timer)
+    }
+  }, [creditSubmitState])
+
+  // AUTO-HIDE CHECKBOOK SUCCESS/ERROR MESSAGE AFTER 4 SECONDS
+  useEffect(() => {
+    if (checkbookSubmitState?.success || checkbookSubmitState?.error) {
+      const timer = setTimeout(() => {
+        setCheckbookSubmitState(null)
+      }, 4000)
+
+      return () => clearTimeout(timer)
+    }
+  }, [checkbookSubmitState])
+
   const loadAccounts = async () => {
     try {
       console.log("[v0] Chargement des comptes...")
@@ -653,6 +675,7 @@ export default function ServiceRequestsPage() {
     ) {
       console.log("[v0] Validation échouée - champs manquants")
       setCreditSubmitState({ error: "Veuillez remplir tous les champs obligatoires" })
+      window.scrollTo({ top: 0, behavior: "smooth" })
       return
     }
 
@@ -661,7 +684,7 @@ export default function ServiceRequestsPage() {
 
     try {
       const creditData = {
-        applicant_name: formData.applicant_name, // Changed from applicant_name
+        applicant_name: formData.applicantName, // Corrected from applicant_name to applicantName
         loan_amount: formData.loan_amount,
         loan_duration: formData.loan_duration,
         loan_purpose: formData.loan_purpose,
@@ -677,6 +700,7 @@ export default function ServiceRequestsPage() {
         referenceDemande:
           result.referenceDemande || "CRD-" + new Date().getFullYear() + "-" + String(Date.now()).slice(-3), // Utilisation de referenceDemande
       })
+      window.scrollTo({ top: 0, behavior: "smooth" })
       // Réinitialiser le formulaire après succès
       setFormData({})
       // Recharger les demandes
@@ -686,6 +710,7 @@ export default function ServiceRequestsPage() {
     } catch (error: any) {
       console.log("[v0] Erreur lors de la soumission:", error.message)
       setCreditSubmitState({ error: error.message || "Une erreur s'est produite lors de la soumission" })
+      window.scrollTo({ top: 0, behavior: "smooth" })
     } finally {
       setIsCreditSubmitting(false)
     }
@@ -805,7 +830,7 @@ export default function ServiceRequestsPage() {
               <div className="space-y-2">
                 <Label htmlFor="intitulecompte">Sélectionner un compte *</Label>
                 <Select
-                  value={formData.numcompteId || ""}
+                  value={formData.accountId || ""}
                   onValueChange={(value) => {
                     const selectedAccount = accounts.find((acc) => acc.id === value)
                     if (selectedAccount) {
@@ -1375,24 +1400,24 @@ export default function ServiceRequestsPage() {
             </Alert>
           )}
           {/* Feedback Messages */}
-            {creditSubmitState?.success && (
-              <Alert className="border-green-200 bg-green-50">
-                <CheckCircle className="h-4 w-4 text-green-600" />
-                <AlertDescription className="text-green-800">
-                  Votre demande de crédit a été envoyée avec succès. Référence: {creditSubmitState.referenceDemande}.{" "}
-                  {/* Réponse sous {selectedServiceData?.processingTime}. */}
-                </AlertDescription>
-              </Alert>
-            )}
+          {creditSubmitState?.success && (
+            <Alert className="border-green-200 bg-green-50">
+              <CheckCircle className="h-4 w-4 text-green-600" />
+              <AlertDescription className="text-green-800">
+                Votre demande de crédit a été envoyée avec succès. Référence: {creditSubmitState.referenceDemande}.{" "}
+                {/* Réponse sous {selectedServiceData?.processingTime}. */}
+              </AlertDescription>
+            </Alert>
+          )}
 
-            {creditSubmitState?.error && (
-              <Alert className="border-red-200 bg-red-50">
-                <AlertCircle className="h-4 w-4 text-red-600" />
-                <AlertDescription className="text-red-800">
-                  Une erreur est survenue: {creditSubmitState.error}. Veuillez réessayer.
-                </AlertDescription>
-              </Alert>
-            )}
+          {creditSubmitState?.error && (
+            <Alert className="border-red-200 bg-red-50">
+              <AlertCircle className="h-4 w-4 text-red-600" />
+              <AlertDescription className="text-red-800">
+                Une erreur est survenue: {creditSubmitState.error}. Veuillez réessayer.
+              </AlertDescription>
+            </Alert>
+          )}
           {/* Service Details & Form */}
           {selectedServiceData && (
             <Card>
