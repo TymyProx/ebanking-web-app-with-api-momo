@@ -692,6 +692,8 @@ export default function ServiceRequestsPage() {
   const handleCheckbookSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
+    console.log("[v0] Checkbook form data:", formData)
+
     // Vérifier que tous les champs requis sont remplis
     if (
       !formData.nbrechequier ||
@@ -719,8 +721,10 @@ export default function ServiceRequestsPage() {
         numcompteId: formData.numcompte,
         commentaire: formData.commentaire || "",
         typeCheque: formData.typeCheque || "Standard",
-        talonCheque: formData.talonCheque === true,
+        talonCheque: formData.talonCheque === true || formData.talonCheque === "true",
       }
+
+      console.log("[v0] Base payload:", basePayload)
 
       let result: any
       if (secureMode) {
@@ -735,8 +739,12 @@ export default function ServiceRequestsPage() {
         result = await submitCheckbookRequestSecure(secureData)
       } else {
         const nonSecure = { ...basePayload, stepflow: 0 }
+        console.log("[v0] Non-secure payload:", nonSecure)
         result = await submitCheckbookRequest(nonSecure as any)
       }
+
+      console.log("[v0] Submission result:", result)
+
       setCheckbookSubmitState({
         success: true,
         reference: result.reference || "CHQ-" + new Date().getFullYear() + "-" + String(Date.now()).slice(-3),
@@ -749,6 +757,7 @@ export default function ServiceRequestsPage() {
         loadAllRequests()
       }
     } catch (error: any) {
+      console.error("[v0] Checkbook submission error:", error)
       setCheckbookSubmitState({ error: error.message || "Une erreur s'est produite lors de la soumission" })
       window.scrollTo({ top: 0, behavior: "smooth" })
     } finally {
@@ -893,29 +902,40 @@ export default function ServiceRequestsPage() {
                   <Label htmlFor="typeCheque">Type de chèque *</Label>
                   <Select
                     value={formData.typeCheque || "Standard"}
-                    onValueChange={(value) => handleInputChange("typeCheque", value)}
+                    onValueChange={(value) => {
+                      console.log("[v0] Setting typeCheque to:", value)
+                      handleInputChange("typeCheque", value)
+                    }}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Type" />
+                      <SelectValue placeholder="Choisir le type" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="Standard">Standard</SelectItem>
                       <SelectItem value="Certifié">Certifié</SelectItem>
-                      <SelectItem value="Barré">Barré</SelectItem>
+                      <SelectItem value="De banque">De banque</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
               </div>
 
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="talonCheque"
-                  checked={formData.talonCheque || false}
-                  onCheckedChange={(checked) => handleInputChange("talonCheque", checked)}
-                />
-                <Label htmlFor="talonCheque" className="text-sm font-normal">
-                  Avec talon
-                </Label>
+              <div className="space-y-2">
+                <Label htmlFor="talonCheque">Avec talon</Label>
+                <Select
+                  value={formData.talonCheque ? "true" : "false"}
+                  onValueChange={(value) => {
+                    console.log("[v0] Setting talonCheque to:", value === "true")
+                    handleInputChange("talonCheque", value === "true")
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choisir" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="true">Oui</SelectItem>
+                    <SelectItem value="false">Non</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1623,6 +1643,16 @@ export default function ServiceRequestsPage() {
                         <div className="text-right text-sm text-gray-500">
                           <p>Soumise le</p>
                           <p className="font-medium">{new Date(request.submittedAt).toLocaleDateString("fr-FR")}</p>
+                          {request.expectedResponse && (
+                            <p className="text-xs">
+                              Réponse attendue: {new Date(request.expectedResponse).toLocaleDateString("fr-FR")}
+                            </p>
+                          )}
+                          {request.completedAt && (
+                            <p className="text-xs text-green-600">
+                              Complétée le: {new Date(request.completedAt).toLocaleDateString("fr-FR")}
+                            </p>
+                          )}
                         </div>
                       </div>
 
