@@ -203,18 +203,12 @@ export async function completeSignup(token: string, password: string, emailFallb
         for (const compteBng of comptesArray) {
           const comptePayload = {
             data: {
-              accountId: String(compteBng.numCompte || ""),
               accountNumber: String(compteBng.numCompte || ""),
-              accountName: String(compteBng.accountName || "Compte"),
-              type: String(compteBng.typeCompte || "CURRENT"),
-              currency: String(compteBng.devise || "GNF"),
-              bookBalance: String(compteBng.bookBalance || "0"),
+              currency: String(compteBng.devise || "XOF"),
               availableBalance: String(compteBng.availableBalance || "0"),
+              bookBalance: String(compteBng.bookBalance || "0"),
               clientId: String(userId),
               status: "ACTIF",
-              codeAgence: "N/A",
-              codeBanque: "N/A",
-              cleRib: "N/A",
             },
           }
 
