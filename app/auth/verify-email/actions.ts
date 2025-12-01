@@ -150,42 +150,9 @@ export async function completeSignup(token: string, password: string, emailFallb
       const clientId = clientData.id || clientData.data?.id
       console.log("[v0] Client profile created successfully, clientId:", clientId)
 
-      console.log("[v0] Step 4: Fetching client record from bd-client-bng using numClient:", pendingData.numClient)
+      console.log("[v0] Step 4: Fetching accounts from CompteBng using clientId:", pendingData.numClient)
 
-      const bdClientUrl = `${API_BASE_URL}/tenant/${TENANT_ID}/bd-client-bng/${pendingData.numClient}`
-      console.log("[v0] BdClientBng URL:", bdClientUrl)
-
-      const bdClientResponse = await fetch(bdClientUrl, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${authToken}`,
-        },
-      })
-
-      console.log("[v0] BdClientBng response status:", bdClientResponse.status)
-
-      if (!bdClientResponse.ok) {
-        const errorText = await bdClientResponse.text()
-        console.error("[v0] BdClientBng fetch failed:", errorText)
-        throw new Error("Erreur lors de la récupération du client BNG. Veuillez réessayer.")
-      }
-
-      const bdClientData = await bdClientResponse.json()
-      console.log("[v0] BdClientBng data received:", JSON.stringify(bdClientData, null, 2))
-
-      // Extract the actual client record
-      let clientRecord = bdClientData
-      if (bdClientData.data) {
-        clientRecord = bdClientData.data
-      }
-
-      const clientIdFromBng = clientRecord.numClient || clientRecord.id
-      console.log("[v0] Client ID from BNG:", clientIdFromBng)
-
-      console.log("[v0] Step 5: Fetching accounts from CompteBng where clientId =", clientIdFromBng)
-
-      const compteBngUrl = `${API_BASE_URL}/tenant/${TENANT_ID}/compte-bng?filter=clientId||$eq||${clientIdFromBng}`
+      const compteBngUrl = `${API_BASE_URL}/tenant/${TENANT_ID}/compte-bng?filter=clientId||$eq||${pendingData.numClient}`
       console.log("[v0] CompteBng URL:", compteBngUrl)
 
       const compteBngResponse = await fetch(compteBngUrl, {
@@ -201,6 +168,8 @@ export async function completeSignup(token: string, password: string, emailFallb
       if (!compteBngResponse.ok) {
         const errorText = await compteBngResponse.text()
         console.error("[v0] CompteBng fetch failed:", errorText)
+
+        console.log("[v0] ROLLBACK: CompteBng fetch failed, transaction incomplete...")
         throw new Error("Erreur lors de la récupération des comptes BNG. Veuillez réessayer.")
       }
 
@@ -218,17 +187,12 @@ export async function completeSignup(token: string, password: string, emailFallb
         comptesArray = compteBngData.value
       }
 
-      comptesArray = comptesArray.filter((compte) => {
-        const compteClientId = compte.clientId || compte.idClient
-        return compteClientId === clientIdFromBng
-      })
-
-      console.log("[v0] Found", comptesArray.length, "account(s) for clientId:", clientIdFromBng)
+      console.log("[v0] Found", comptesArray.length, "account(s) in CompteBng")
 
       if (comptesArray.length === 0) {
         console.warn("[v0] No accounts found in CompteBng for this client")
       } else {
-        console.log("[v0] Step 6: Creating accounts in compte table...")
+        console.log("[v0] Step 5: Creating accounts in compte table...")
 
         for (const compteBng of comptesArray) {
           const comptePayload = {
@@ -237,12 +201,12 @@ export async function completeSignup(token: string, password: string, emailFallb
               currency: String(compteBng.devise || "XOF"),
               availableBalance: String(compteBng.availableBalance || "0"),
               bookBalance: String(compteBng.bookBalance || "0"),
-              clientId: String(userId), // Using userId instead of clientId
+              clientId: String(clientId),
               status: "ACTIF",
             },
           }
 
-          console.log("[v0] Creating compte for userId:", userId, "numCompte:", compteBng.numCompte)
+          console.log("[v0] Creating compte:", comptePayload)
 
           const compteResponse = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/compte`, {
             method: "POST",
