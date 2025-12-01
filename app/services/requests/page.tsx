@@ -12,19 +12,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import {
-  BookOpen,
-  CreditCard,
-  FileText,
-  Clock,
-  CheckCircle,
-  AlertCircle,
-  Send,
-  Eye,
-  Shield,
-  Plus,
-  Search,
-} from "lucide-react"
+import { BookOpen, CreditCard, FileText, Clock, CheckCircle, AlertCircle, Send, Eye, Plus, Search } from "lucide-react"
 import {
   submitCreditRequest,
   submitCheckbookRequest,
@@ -146,7 +134,7 @@ export default function ServiceRequestsPage() {
     setIsLoadingCheckbookRequests(true)
     try {
       const requests = await getCheckbookRequest()
-      setCheckbookRequests(requests || [])
+      setCheckbookRequests((requests as any)?.rows || []) // Assuming GetCommandesResponse has a 'rows' property
     } catch (error) {
       console.error("Erreur lors du chargement des demandes de chéquier:", error)
       setCheckbookRequests([])
@@ -180,7 +168,7 @@ export default function ServiceRequestsPage() {
 
       let allTransformedRequests: any[] = []
 
-      if (checkbookResult && checkbookResult.rows && Array.isArray(checkbookResult.rows)) {
+      if (checkbookResult && "rows" in checkbookResult && checkbookResult.rows && Array.isArray(checkbookResult.rows)) {
         const checkbookData = checkbookResult.rows
         console.log("[v0] Données chéquier à traiter:", checkbookData)
 
@@ -223,7 +211,7 @@ export default function ServiceRequestsPage() {
         console.log("[v0] Aucune donnée de chéquier trouvée ou structure incorrecte")
       }
 
-      if (creditResult && creditResult.rows && Array.isArray(creditResult.rows)) {
+      if (creditResult && "rows" in creditResult && creditResult.rows && Array.isArray(creditResult.rows)) {
         const creditData = creditResult.rows
         console.log("[v0] Données crédit à traiter:", creditData)
 
@@ -303,7 +291,7 @@ export default function ServiceRequestsPage() {
       if (request.type === "credit") {
         details = await getDemandeCreditById(TENANT_ID, request.id)
         console.log("[v0] Détails crédit bruts:", details)
-        if (details && !details.applicant_name) {
+        if (details && !details.applicantName) {
           details = {
             ...details,
             ...request.details,
@@ -504,7 +492,7 @@ export default function ServiceRequestsPage() {
         return
       }
 
-      if (result && result.success && result.data) {
+      if (result && "success" in result && result.success && "data" in result && result.data) {
         const transformedRequests = Array.isArray(result.data)
           ? result.data.map((item: any, index: number) => {
               if (type === "checkbook") {
@@ -635,7 +623,7 @@ export default function ServiceRequestsPage() {
 
     console.log("[v0] FormData au moment de la soumission:", formData)
     console.log("[v0] Vérification des champs:")
-    console.log("[v0] applicant_name:", formData.applicant_name)
+    console.log("[v0] applicantName:", formData.applicantName)
     console.log("[v0] loan_amount:", formData.loan_amount)
     console.log("[v0] loan_duration:", formData.loan_duration)
     console.log("[v0] loan_purpose:", formData.loan_purpose)
@@ -650,7 +638,7 @@ export default function ServiceRequestsPage() {
 
     // Vérifier que tous les champs requis sont remplis
     if (
-      !formData.applicant_name ||
+      !formData.applicantName || // Changed from applicant_name
       !formData.loan_amount ||
       !formData.loan_duration ||
       !formData.loan_purpose ||
@@ -673,7 +661,7 @@ export default function ServiceRequestsPage() {
 
     try {
       const creditData = {
-        applicant_name: formData.applicant_name,
+        applicantName: formData.applicantName, // Changed from applicant_name
         loan_amount: formData.loan_amount,
         loan_duration: formData.loan_duration,
         loan_purpose: formData.loan_purpose,
@@ -878,91 +866,88 @@ export default function ServiceRequestsPage() {
 
             {/* Ligne 2: Date commande et Nombre de chéquiers */}
             <div className="grid grid-cols-3 gap-4">
-            <div className="space-y-2">
-            <Label htmlFor="nbrefeuille">Nombre de feuillets par chéquier *</Label>
-            <Select
-            value={formData.nbrefeuille || ""}
-            onValueChange={(value) => handleInputChange("nbrefeuille", value)}
-            >
-            <SelectTrigger className="w-full">
-            <SelectValue placeholder="Choisir le nombre de feuillets" />
-            </SelectTrigger>
-            <SelectContent>
-            <SelectItem value="25">25 feuillets</SelectItem>
-            <SelectItem value="50">50 feuillets</SelectItem>
-            <SelectItem value="100">100 feuillets</SelectItem>
-            </SelectContent>
-            </Select>
-            </div>
+              <div className="space-y-2">
+                <Label htmlFor="nbrefeuille">Nombre de feuillets par chéquier *</Label>
+                <Select
+                  value={formData.nbrefeuille || ""}
+                  onValueChange={(value) => handleInputChange("nbrefeuille", value)}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Choisir le nombre de feuillets" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="25">25 feuillets</SelectItem>
+                    <SelectItem value="50">50 feuillets</SelectItem>
+                    <SelectItem value="100">100 feuillets</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
 
-            <div className="space-y-2">
-            <Label htmlFor="nbrechequier">Nombre de chéquiers *</Label>
-            <Input
-            id="nbrechequier"
-            name="nbrechequier"
-            type="number"
-            min="1"
-            max="2"
-            value={formData.nbrechequier || ""}
-            onChange={(e) => {
-            const value = Number.parseInt(e.target.value);
-            if (value >= 1 && value <= 2) {
-            handleInputChange("nbrechequier", value.toString());
-            }
-            }}
-            placeholder="Ex: 2"
-            required
-            className="w-full"
-            />
-            </div>
+              <div className="space-y-2">
+                <Label htmlFor="nbrechequier">Nombre de chéquiers *</Label>
+                <Input
+                  id="nbrechequier"
+                  name="nbrechequier"
+                  type="number"
+                  min="1"
+                  max="2"
+                  value={formData.nbrechequier || ""}
+                  onChange={(e) => {
+                    const value = Number.parseInt(e.target.value)
+                    if (value >= 1 && value <= 2) {
+                      handleInputChange("nbrechequier", value.toString())
+                    }
+                  }}
+                  placeholder="Ex: 2"
+                  required
+                  className="w-full"
+                />
+              </div>
 
-            <div className="space-y-2">
-            <Label htmlFor="typeCheque">Type de chèque *</Label>
-            <Select
-            value={formData.typeCheque || ""}
-            onValueChange={(value) => handleInputChange("typeCheque", value)}
-            >
-            <SelectTrigger className="w-full">
-            <SelectValue placeholder="Choisir le type de chèque" />
-            </SelectTrigger>
-            <SelectContent>
-            <SelectItem value="Standard barré">Standard barré</SelectItem>
-            <SelectItem value="Standard non barré">Standard non barré</SelectItem>
-            <SelectItem value="Certifié barré">Certifié barré</SelectItem>
-            <SelectItem value="Certifié non barré">Certifié non barré</SelectItem>
-            </SelectContent>
-            </Select>
+              <div className="space-y-2">
+                <Label htmlFor="typeCheque">Type de chèque *</Label>
+                <Select
+                  value={formData.typeCheque || ""}
+                  onValueChange={(value) => handleInputChange("typeCheque", value)}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Choisir le type de chèque" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Standard barré">Standard barré</SelectItem>
+                    <SelectItem value="Standard non barré">Standard non barré</SelectItem>
+                    <SelectItem value="Certifié barré">Certifié barré</SelectItem>
+                    <SelectItem value="Certifié non barré">Certifié non barré</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
-            </div>
-
 
             {/* Ligne 3: Nombre de feuillets et Type de chèque */}
             <div className="grid grid-cols-3 gap-4">
-            <div className="flex h-10 items-center space-x-2 mt-6">
-            <Checkbox
-            id="talonCheque"
-            checked={formData.talonCheque || false}
-            onCheckedChange={(checked) => handleInputChange("talonCheque", checked)}
-            />
-            <Label htmlFor="talonCheque" className="text-sm font-normal">
-            Chèque à Talon
-            </Label>
+              <div className="flex h-10 items-center space-x-2 mt-6">
+                <Checkbox
+                  id="talonCheque"
+                  checked={formData.talonCheque || false}
+                  onCheckedChange={(checked) => handleInputChange("talonCheque", checked)}
+                />
+                <Label htmlFor="talonCheque" className="text-sm font-normal">
+                  Chèque à Talon
+                </Label>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="dateorder">Date de commande *</Label>
+                <Input
+                  id="dateorder"
+                  name="dateorder"
+                  type="date"
+                  value={formData.dateorder || new Date().toISOString().split("T")[0]}
+                  onChange={(e) => handleInputChange("dateorder", e.target.value)}
+                  required
+                  className="w-full"
+                />
+              </div>
             </div>
-             <div className="space-y-2">
-            <Label htmlFor="dateorder">Date de commande *</Label>
-            <Input
-            id="dateorder"
-            name="dateorder"
-            type="date"
-            value={formData.dateorder || new Date().toISOString().split("T")[0]}
-            onChange={(e) => handleInputChange("dateorder", e.target.value)}
-            required
-            className="w-full"
-            />
-            </div>
-
-            </div>
-
 
             <div>
               <Label htmlFor="commentaire">Commentaire</Label>
@@ -1158,12 +1143,13 @@ export default function ServiceRequestsPage() {
 
             {/* Nom du demandeur réduit */}
             <div className="max-w-md">
-              <Label htmlFor="applicant_name">Nom du demandeur *</Label>
+              {/* Fixed form field name from applicant_name to applicantName */}
+              <Label htmlFor="applicantName">Nom du demandeur *</Label>
               <Input
-                id="applicant_name"
+                id="applicantName"
                 placeholder="Nom du demandeur"
-                value={formData.applicant_name || ""}
-                onChange={(e) => handleInputChange("applicant_name", e.target.value)}
+                value={formData.applicantName || ""}
+                onChange={(e) => handleInputChange("applicantName", e.target.value)}
                 required
               />
             </div>
