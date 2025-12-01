@@ -715,6 +715,7 @@ export default function ServiceRequestsPage() {
       !formData.terms
     ) {
       setCheckbookSubmitState({ error: "Veuillez remplir tous les champs obligatoires" })
+      window.scrollTo({ top: 0, behavior: "smooth" })
       return
     }
 
@@ -739,6 +740,7 @@ export default function ServiceRequestsPage() {
         success: true,
         reference: result.reference || "CHQ-" + new Date().getFullYear() + "-" + String(Date.now()).slice(-3),
       })
+      window.scrollTo({ top: 0, behavior: "smooth" })
       // Réinitialiser le formulaire après succès
       setFormData({})
       // Recharger les demandes
@@ -747,6 +749,7 @@ export default function ServiceRequestsPage() {
       }
     } catch (error: any) {
       setCheckbookSubmitState({ error: error.message || "Une erreur s'est produite lors de la soumission" })
+      window.scrollTo({ top: 0, behavior: "smooth" })
     } finally {
       setIsCheckbookSubmitting(false)
     }
@@ -1390,21 +1393,21 @@ export default function ServiceRequestsPage() {
               </div>
             </CardContent>
           </Card>
-            {checkbookSubmitState?.success && (
-              <Alert className="border-green-200 bg-green-50">
-                <CheckCircle className="h-4 w-4 text-green-600" />
-                <AlertDescription className="text-green-800">
-                  Votre demande de chéquier a été soumise avec succès ! Référence: {checkbookSubmitState.reference}
-                </AlertDescription>
-              </Alert>
-            )}
+          {checkbookSubmitState?.success && (
+            <Alert className="border-green-200 bg-green-50">
+              <CheckCircle className="h-4 w-4 text-green-600" />
+              <AlertDescription className="text-green-800">
+                Votre demande de chéquier a été soumise avec succès ! Référence: {checkbookSubmitState.reference}
+              </AlertDescription>
+            </Alert>
+          )}
 
-            {checkbookSubmitState?.error && (
-              <Alert variant="destructive">
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>{checkbookSubmitState.error}</AlertDescription>
-              </Alert>
-            )}
+          {checkbookSubmitState?.error && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{checkbookSubmitState.error}</AlertDescription>
+            </Alert>
+          )}
           {/* Service Details & Form */}
           {selectedServiceData && (
             <Card>
@@ -1534,7 +1537,13 @@ export default function ServiceRequestsPage() {
           </div>
 
           <Card>
-            <CardContent className="pt-6">
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <FileText className="w-5 h-5 mr-2" />
+                Résumé des demandes
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
               <div className="flex flex-col sm:flex-row gap-4">
                 <div className="relative flex-1">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
