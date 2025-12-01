@@ -12,11 +12,22 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { BookOpen, CreditCard, FileText, Clock, CheckCircle, AlertCircle, Send, Eye, Banknote, Shield, Plus, Search } from 'lucide-react'
+import {
+  BookOpen,
+  CreditCard,
+  FileText,
+  Clock,
+  CheckCircle,
+  AlertCircle,
+  Send,
+  Eye,
+  Shield,
+  Plus,
+  Search,
+} from "lucide-react"
 import {
   submitCreditRequest,
   submitCheckbookRequest,
-  submitCheckbookRequestSecure,
   getCheckbookRequest,
   getCreditRequest,
   getDemandeCreditById,
@@ -25,8 +36,6 @@ import {
 import { useActionState } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { getAccounts } from "../../accounts/actions"
-import { buildCommandeSecurePayload } from "@/lib/secure-payload"
-import { importAesGcmKeyFromBase64, isEncryptedJson, decryptAesGcmFromJson } from "@/lib/crypto"
 
 const serviceTypes = [
   {
@@ -35,18 +44,16 @@ const serviceTypes = [
     icon: BookOpen,
     description: "Commander un nouveau carnet de chèques",
     category: "banking",
-    processingTime: "3-5 jours ouvrables",
-    cost: "Gratuit",
+    //processingTime: "3-5 jours ouvrables",
     requirements: ["Compte actif", "Pas de chèques impayés"],
   },
   {
     id: "credit",
     name: "Demande de crédit",
     icon: CreditCard,
-    description: "Demande de crédit (personnel, immobilier, automobile, étudiant)",
+    description: "Demande de crédit (personnel, immobilier,...etc)",
     category: "credit",
-    processingTime: "3-30 jours ouvrables",
-    cost: "Gratuit",
+    //processingTime: "3-30 jours ouvrables",
     requirements: ["Revenus réguliers", "Garanties", "Dossier complet"],
   },
 ]
@@ -109,6 +116,7 @@ export default function ServiceRequestsPage() {
     success?: boolean
     error?: string
     reference?: string
+    referenceDemande?: string // Ajouté pour stocker la référence spécifique du crédit
   } | null>(null)
   const [isCreditSubmitting, setIsCreditSubmitting] = useState(false)
   const [checkbookSubmitState, setCheckbookSubmitState] = useState<{
@@ -162,61 +170,60 @@ export default function ServiceRequestsPage() {
     try {
       console.log("[v0] Chargement des demandes depuis la base de données...")
 
-      const checkbookResult: any = await getCheckbookRequest()
+      // Récupération des demandes de chéquier
+      const checkbookResult = await getCheckbookRequest()
       console.log("[v0] Résultat API chéquier:", checkbookResult)
 
-      const creditResult: any = await getCreditRequest()
+      // Récupération des demandes de crédit
+      const creditResult = await getCreditRequest()
       console.log("[v0] Résultat API crédit:", creditResult)
 
       let allTransformedRequests: any[] = []
 
-      if (checkbookResult?.rows && Array.isArray(checkbookResult.rows)) {
+      if (checkbookResult && checkbookResult.rows && Array.isArray(checkbookResult.rows)) {
         const checkbookData = checkbookResult.rows
         console.log("[v0] Données chéquier à traiter:", checkbookData)
 
-        const checkbookRequests = checkbookData.map((item: any, index: number) => {
-          return {
-            id: item.id || `CHQ${String(index + 1).padStart(3, "0")}`,
-            type: "checkbook",
-            typeName: "Demande de chéquier",
-            status:
-              item.stepflow === 0
-                ? "En attente"
-                : item.stepflow === 1
+        const checkbookRequests = checkbookData.map((item: any, index: number) => ({
+          id: item.id || `CHQ${String(index + 1).padStart(3, "0")}`,
+          type: "checkbook",
+          typeName: "Demande de chéquier",
+          status:
+            item.stepflow === 0
+              ? "En attente"
+              : item.stepflow === 1
+                ? "En cours de traitement"
+                : item.stepflow === 2
                   ? "En cours de traitement"
-                  : item.stepflow === 2
-                    ? "En cours de traitement"
-                    : item.stepflow === 3
-                      ? "Disponible à l'agence"
-                      : item.stepflow === 4
-                        ? "Disponible"
-                        : item.stepflow === 5
-                          ? "Retiré"
-                          : "En attente",
-            submittedAt: item.dateorder || item.createdAt?.split("T")[0] || new Date().toISOString().split("T")[0],
-            expectedResponse: item.dateorder
-              ? new Date(new Date(item.dateorder).getTime() + 3 * 24 * 60 * 60 * 1000).toISOString().split("T")[0]
-              : new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
-            account: item.intitulecompte || "Compte non spécifié",
-            reference: item.reference || `CHQ-${new Date().getFullYear()}-${String(index + 1).padStart(3, "0")}`,
-            details: {
-              nbrechequier: item.nbrechequier || 0,
-              nbrefeuille: item.nbrefeuille || 0,
-              commentaire: item.commentaire || "",
-              numcompteId: item.numcompteId || "",
-              typeCheque: item.typeCheque,
-              talonCheque: item.talonCheque,
-            },
-          }
-        })
-
+                  : item.stepflow === 3
+                    ? "Disponible à l'agence"
+                    : item.stepflow === 4
+                      ? "Disponible"
+                      : item.stepflow === 5
+                        ? "Retiré"
+                        : "En attente",
+          submittedAt: item.dateorder || item.createdAt?.split("T")[0] || new Date().toISOString().split("T")[0],
+          expectedResponse: item.dateorder
+            ? new Date(new Date(item.dateorder).getTime() + 3 * 24 * 60 * 60 * 1000).toISOString().split("T")[0]
+            : new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+          account: item.numcompteId || "Compte non spécifié",
+          reference: item.referenceCommande || "Référence non disponible",
+          details: {
+            nbrechequier: item.nbrechequier || 0,
+            nbrefeuille: item.nbrefeuille || 0,
+            commentaire: item.commentaire || "",
+            numcompteId: item.numcompteId || "",
+            typeCheque: item.typeCheque,
+            talonCheque: item.talonCheque,
+          },
+        }))
         allTransformedRequests = [...allTransformedRequests, ...checkbookRequests]
         console.log("[v0] Demandes de chéquier transformées:", checkbookRequests)
       } else {
         console.log("[v0] Aucune donnée de chéquier trouvée ou structure incorrecte")
       }
 
-      if (creditResult?.rows && Array.isArray(creditResult.rows)) {
+      if (creditResult && creditResult.rows && Array.isArray(creditResult.rows)) {
         const creditData = creditResult.rows
         console.log("[v0] Données crédit à traiter:", creditData)
 
@@ -227,8 +234,8 @@ export default function ServiceRequestsPage() {
           status: item.status || "En attente",
           submittedAt: item.createdAt ? item.createdAt.split("T")[0] : new Date().toISOString().split("T")[0],
           expectedResponse: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
-          account: "Compte courant",
-          reference: item.reference || `CRD-${new Date().getFullYear()}-${String(index + 1).padStart(3, "0")}`,
+          account: item.numcompte || item.accountNumber || "Compte non spécifié",
+          reference: item.referenceDemande || "Référence non disponible",
           details: {
             applicantName: item.applicantName || "",
             creditAmount: item.creditAmount || "",
@@ -244,6 +251,26 @@ export default function ServiceRequestsPage() {
 
       console.log("[v0] Toutes les demandes transformées:", allTransformedRequests)
       console.log("[v0] Nombre total de demandes:", allTransformedRequests.length)
+
+      const checkbookRequests = allTransformedRequests
+        .filter((req) => req.type === "checkbook")
+        .sort((a, b) => {
+          const dateA = new Date(a.submittedAt).getTime()
+          const dateB = new Date(b.submittedAt).getTime()
+          return dateB - dateA // Plus récent en premier
+        })
+
+      const creditRequests = allTransformedRequests
+        .filter((req) => req.type === "credit")
+        .sort((a, b) => {
+          const dateA = new Date(a.submittedAt).getTime()
+          const dateB = new Date(b.submittedAt).getTime()
+          return dateB - dateA // Plus récent en premier
+        })
+
+      // Concaténer : chéquier d'abord, crédit ensuite
+      allTransformedRequests = [...checkbookRequests, ...creditRequests]
+      console.log("[v0] Demandes triées par type puis par date (décroissant):", allTransformedRequests)
 
       setAllRequests(allTransformedRequests)
 
@@ -275,14 +302,30 @@ export default function ServiceRequestsPage() {
 
       if (request.type === "credit") {
         details = await getDemandeCreditById(TENANT_ID, request.id)
+        console.log("[v0] Détails crédit bruts:", details)
+        if (details && !details.applicant_name) {
+          details = {
+            ...details,
+            ...request.details,
+            reference: request.reference,
+            numcompte: request.account,
+          }
+        }
       } else if (request.type === "checkbook") {
         details = await getCommandeById(TENANT_ID, request.id)
+        console.log("[v0] Détails chéquier bruts:", details)
       }
 
-      console.log("[v0] Détails récupérés:", details)
+      console.log("[v0] Détails récupérés après traitement:", details)
       setSelectedRequestDetails(details)
     } catch (error) {
       console.error("[v0] Erreur lors du chargement des détails:", error)
+      setSelectedRequestDetails({
+        ...request.details,
+        reference: request.reference,
+        numcompte: request.account,
+        id: request.id,
+      })
     } finally {
       setIsLoadingDetails(false)
     }
@@ -293,31 +336,60 @@ export default function ServiceRequestsPage() {
     setSelectedRequestDetails(null)
   }
 
+  // Affichage des modals
+
   const formatRequestDetails = (details: any, type: string) => {
     if (!details) return []
 
+    console.log("[v0] Formatage des détails pour type:", type, "données:", details)
+
     const commonFields = [
-      { label: "Référence", value: details.reference || "Non attribuée" },
-      { label: "Numéro de compte", value: details.accountNumber || details.numcompteId || "Non spécifié" },
+      {
+        label: "Référence",
+        value:
+          type === "checkbook"
+            ? details.referenceCommande || "Non attribuée"
+            : details.referenceDemande || "Non attribuée",
+      },
+      { label: "Numéro de compte", value: details.numcompte || details.numcompteId || "Non spécifié" },
+      { label: "Intitulé du compte", value: details.intitulecompte || "Non spécifié" },
     ]
 
     if (type === "credit") {
       return [
         ...commonFields,
-        { label: "Nom du demandeur", value: details.applicantName },
-        { label: "Montant du crédit", value: `${details.creditAmount} €` },
-        { label: "Durée (mois)", value: details.durationMonths },
-        { label: "Objet du crédit", value: details.purpose },
+        { label: "Nom du demandeur", value: details.applicant_name || details.applicantName || "Non spécifié" },
+        { label: "Type de crédit", value: details.credit_type || details.typedemande || "Non spécifié" },
+        {
+          label: "Montant du crédit",
+          value:
+            details.loan_amount || details.creditAmount
+              ? `${new Intl.NumberFormat("fr-FR", {
+                  style: "currency",
+                  currency: "GNF",
+                  minimumFractionDigits: 0,
+                }).format(Number(details.loan_amount || details.creditAmount))}`
+              : "Non spécifié",
+        },
+        { label: "Durée (mois)", value: details.loan_duration || details.durationMonths || "Non spécifié" },
+        { label: "Objet du crédit", value: details.loan_purpose || details.purpose || "Non spécifié" },
+      //  { label: "Téléphone", value: details.contact_phone || "Non spécifié" },
+       // { label: "Commentaire", value: details.commentaire || "Aucun commentaire" },
       ]
-    } else if (type === "checkbook") {
+    }
+
+    if (type === "checkbook") {
       return [
         ...commonFields,
-        { label: "Date de commande", value: new Date(details.dateorder).toLocaleDateString("fr-FR") },
-        { label: "Nombre de feuilles", value: details.nbrefeuille },
-        { label: "Nombre de chéquiers", value: details.nbrechequier },
+        {
+          label: "Date de commande",
+          value: details.dateorder ? new Date(details.dateorder).toLocaleDateString("fr-FR") : "Non spécifiée",
+        },
+        { label: "Nombre de feuilles", value: details.nbrefeuille || "Non spécifié" },
+        { label: "Nombre de chéquiers", value: details.nbrechequier || "Non spécifié" },
         { label: "Type de chèque", value: details.typeCheque || "Non spécifié" },
         { label: "Avec talon de chèque", value: details.talonCheque ? "Oui" : "Non" },
-        { label: "Intitulé du compte", value: details.intitulecompte },
+        { label: "Intitulé du compte", value: details.intitulecompte || "Non spécifié" },
         { label: "Commentaire", value: details.commentaire || "Aucun commentaire" },
       ]
     }
@@ -412,7 +484,7 @@ export default function ServiceRequestsPage() {
     console.log(`[v0] Chargement des demandes de type: ${type}`)
     setIsLoadingAllRequests(true)
     try {
-      let result: any
+      let result
       if (type === "checkbook") {
         result = await getCheckbookRequest()
       } else if (type === "credit") {
@@ -423,59 +495,60 @@ export default function ServiceRequestsPage() {
         return
       }
 
-      if (result?.rows && Array.isArray(result.rows)) {
-        const transformedRequests = result.rows.map((item: any, index: number) => {
-          if (type === "checkbook") {
-            return {
-              id: item.id || `CHQ${String(index + 1).padStart(3, "0")}`,
-              type: "checkbook",
-              typeName: "Demande de chéquier",
-              status:
-                item.stepflow === 0
-                  ? "En attente"
-                  : item.stepflow === 1
-                    ? "En cours de traitement"
-                    : item.stepflow === 2
-                      ? "En cours de traitement"
-                      : item.stepflow === 3
-                        ? "Disponible à l’agence"
-                        : item.stepflow === 4
-                          ? "Disponible"
-                          : item.stepflow === 5
-                            ? "Retiré"
-                            : "En attente",
-              submittedAt: item.dateorder || new Date().toISOString().split("T")[0],
-              expectedResponse: item.dateorder
-                ? new Date(new Date(item.dateorder).getTime() + 3 * 24 * 60 * 60 * 1000).toISOString().split("T")[0]
-                : new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
-              account: item.intitulecompte || "Compte non spécifié",
-              reference: item.reference || `CHQ-${new Date().getFullYear()}-${String(index + 1).padStart(3, "0")}`,
-              details: {
-                nbrechequier: item.nbrechequier || 0,
-                nbrefeuille: item.nbrefeuille || 0,
-                commentaire: item.commentaire || "",
-              },
-            }
-          } else {
-            // type === "credit"
-            return {
-              id: item.id || `CRD${String(index + 1).padStart(3, "0")}`,
-              type: "credit",
-              typeName: "Crédit",
-              status: "En cours",
-              submittedAt: item.createdAt ? item.createdAt.split("T")[0] : new Date().toISOString().split("T")[0],
-              expectedResponse: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
-              account: "Compte courant",
-              reference: item.reference || `CRD-${new Date().getFullYear()}-${String(index + 1).padStart(3, "0")}`,
-              details: {
-                applicantName: item.applicantName || "",
-                creditAmount: item.creditAmount || "",
-                durationMonths: item.durationMonths || "",
-                purpose: item.purpose || "",
-              },
-            }
-          }
-        })
+      if (result && result.success && result.data) {
+        const transformedRequests = Array.isArray(result.data)
+          ? result.data.map((item: any, index: number) => {
+              if (type === "checkbook") {
+                return {
+                  id: item.id || `CHQ${String(index + 1).padStart(3, "0")}`,
+                  type: "checkbook",
+                  typeName: "Demande de chéquier",
+                  status:
+                    item.stepflow === 0
+                      ? "En attente"
+                      : item.stepflow === 1
+                        ? "En cours de traitement"
+                        : item.stepflow === 2
+                          ? "En cours de traitement"
+                          : item.stepflow === 3
+                            ? "Disponible à l'agence"
+                            : item.stepflow === 4
+                              ? "Disponible"
+                              : item.stepflow === 5
+                                ? "Retiré"
+                                : "En attente",
+                  submittedAt: item.dateorder || new Date().toISOString().split("T")[0],
+                  expectedResponse: item.dateorder
+                    ? new Date(new Date(item.dateorder).getTime() + 3 * 24 * 60 * 60 * 1000).toISOString().split("T")[0]
+                    : new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+                  account: item.numcompteId || "Compte non spécifié",
+                  reference: item.referenceCommande || "Référence non disponible",
+                  details: {
+                    nbrechequier: item.nbrechequier || 0,
+                    nbrefeuille: item.nbrefeuille || 0,
+                    commentaire: item.commentaire || "",
+                  },
+                }
+              } else {
+                return {
+                  id: item.id || `CRD${String(index + 1).padStart(3, "0")}`,
+                  type: "credit",
+                  typeName: "Crédit",
+                  status: "En cours",
+                  submittedAt: item.createdAt ? item.createdAt.split("T")[0] : new Date().toISOString().split("T")[0],
+                  expectedResponse: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+                  account: item.numcompte || item.accountNumber || "Compte non spécifié",
+                  reference: item.referenceDemande || "Référence non disponible",
+                  details: {
+                    applicantName: item.applicantName || "",
+                    creditAmount: item.creditAmount || "",
+                    durationMonths: item.durationMonths || "",
+                    purpose: item.purpose || "",
+                  },
+                }
+              }
+            })
+          : []
         setAllRequests(transformedRequests)
       } else {
         setAllRequests([])
@@ -604,7 +677,8 @@ export default function ServiceRequestsPage() {
       const result = await submitCreditRequest(creditData)
       setCreditSubmitState({
         success: true,
-        reference: result.reference || "CRD-" + new Date().getFullYear() + "-" + String(Date.now()).slice(-3),
+        referenceDemande:
+          result.referenceDemande || "CRD-" + new Date().getFullYear() + "-" + String(Date.now()).slice(-3), // Utilisation de referenceDemande
       })
       // Réinitialiser le formulaire après succès
       setFormData({})
@@ -639,21 +713,19 @@ export default function ServiceRequestsPage() {
     setCheckbookSubmitState(null)
 
     try {
-      const basePayload = {
+      const checkbookData = {
         dateorder: formData.dateorder || new Date().toISOString().split("T")[0],
         nbrefeuille: Number.parseInt(formData.nbrefeuille) || 0,
         nbrechequier: Number.parseInt(formData.nbrechequier) || 0,
+        stepflow: 0,
         intitulecompte: formData.intitulecompte,
         numcompteId: formData.numcompte,
         commentaire: formData.commentaire || "",
         typeCheque: formData.typeCheque || "Standard",
         talonCheque: formData.talonCheque === true,
-        stepflow: 0,
       }
 
-      // Server action handles encryption if secure mode is enabled
-      const result = await submitCheckbookRequest(basePayload as any)
-      
+      const result = await submitCheckbookRequest(checkbookData)
       setCheckbookSubmitState({
         success: true,
         reference: result.reference || "CHQ-" + new Date().getFullYear() + "-" + String(Date.now()).slice(-3),
@@ -728,127 +800,146 @@ export default function ServiceRequestsPage() {
       case "checkbook":
         return (
           <form onSubmit={handleCheckbookSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="intitulecompte">Sélectionner un compte *</Label>
-              <Select
-                value={formData.numcompteId || ""}
-                onValueChange={(value) => {
-                  const selectedAccount = accounts.find((acc) => acc.id === value)
-                  if (selectedAccount) {
-                    handleInputChange("accountId", selectedAccount.id)
-                    handleInputChange("intitulecompte", selectedAccount.name)
-                    handleInputChange("numcompte", selectedAccount.number)
-                  }
-                }}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder={isLoadingAccounts ? "Chargement..." : "Choisir un compte"} />
-                </SelectTrigger>
-                <SelectContent>
-                  {isLoadingAccounts ? (
-                    <SelectItem value="loading" disabled>
-                      Chargement des comptes...
-                    </SelectItem>
-                  ) : accounts.length === 0 ? (
-                    <SelectItem value="empty" disabled>
-                      Aucun compte courant trouvé
-                    </SelectItem>
-                  ) : (
-                    accounts.map((account) => (
-                      <SelectItem key={account.id} value={account.id}>
-                        <div className="flex flex-col">
-                          <span className="font-medium">{account.name}</span>
-                          <span className="text-sm text-gray-500">
-                            {account.number} •{" "}
-                            {new Intl.NumberFormat("fr-FR", {
-                              style: "currency",
-                              currency: account.currency === "GNF" ? "GNF" : account.currency,
-                              minimumFractionDigits: account.currency === "GNF" ? 0 : 2,
-                            }).format(account.balance)}
-                          </span>
-                        </div>
+            {/* Ligne 1: Compte et Numéro de compte */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="intitulecompte">Sélectionner un compte *</Label>
+                <Select
+                  value={formData.numcompteId || ""}
+                  onValueChange={(value) => {
+                    const selectedAccount = accounts.find((acc) => acc.id === value)
+                    if (selectedAccount) {
+                      handleInputChange("accountId", selectedAccount.id)
+                      handleInputChange("intitulecompte", selectedAccount.name)
+                      handleInputChange("numcompte", selectedAccount.number)
+                    }
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder={isLoadingAccounts ? "Chargement..." : "Choisir un compte"} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {isLoadingAccounts ? (
+                      <SelectItem value="loading" disabled>
+                        Chargement des comptes...
                       </SelectItem>
-                    ))
-                  )}
-                </SelectContent>
-              </Select>
+                    ) : accounts.length === 0 ? (
+                      <SelectItem value="empty" disabled>
+                        Aucun compte courant trouvé
+                      </SelectItem>
+                    ) : (
+                      accounts.map((account) => (
+                        <SelectItem key={account.id} value={account.id}>
+                          <div className="flex flex-col">
+                            <span className="font-medium">{account.name}</span>
+                            <span className="text-sm text-gray-500">
+                              {account.number} •{" "}
+                              {new Intl.NumberFormat("fr-FR", {
+                                style: "currency",
+                                currency: account.currency === "GNF" ? "GNF" : account.currency,
+                                minimumFractionDigits: account.currency === "GNF" ? 0 : 2,
+                              }).format(account.balance)}
+                            </span>
+                          </div>
+                        </SelectItem>
+                      ))
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="numcompte">Numéro de compte *</Label>
+                <Input
+                  id="numcompte"
+                  name="numcompte"
+                  type="text"
+                  value={formData.numcompte || ""}
+                  onChange={(e) => handleInputChange("numcompte", e.target.value)}
+                  placeholder="Ex: 000123456789"
+                  required
+                  readOnly
+                  className="bg-gray-50"
+                />
+              </div>
             </div>
 
-            <div>
-              <Label htmlFor="numcompte">Numéro de compte *</Label>
-              <Input
-                id="numcompte"
-                name="numcompte"
-                type="text"
-                value={formData.numcompte || ""}
-                onChange={(e) => handleInputChange("numcompte", e.target.value)}
-                placeholder="Ex: 000123456789"
-                required
-                readOnly
-                className="bg-gray-50"
-              />
+            {/* Ligne 2: Date commande et Nombre de chéquiers */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="dateorder">Date de commande *</Label>
+                <Input
+                  id="dateorder"
+                  name="dateorder"
+                  type="date"
+                  value={formData.dateorder || new Date().toISOString().split("T")[0]}
+                  onChange={(e) => handleInputChange("dateorder", e.target.value)}
+                  required
+                  className="w-40"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="nbrechequier">Nombre de chéquiers *</Label>
+                <Input
+                  id="nbrechequier"
+                  name="nbrechequier"
+                  type="number"
+                  min="1"
+                  max="2"
+                  value={formData.nbrechequier || ""}
+                  onChange={(e) => {
+                    const value = Number.parseInt(e.target.value)
+                    if (value >= 1 && value <= 2) {
+                      handleInputChange("nbrechequier", value.toString())
+                    }
+                  }}
+                  placeholder="Ex: 2"
+                  required
+                  className="w-40"
+                />
+              </div>
             </div>
 
-            <div>
-              <Label htmlFor="dateorder">Date de commande *</Label>
-              <Input
-                id="dateorder"
-                name="dateorder"
-                type="date"
-                value={formData.dateorder || new Date().toISOString().split("T")[0]}
-                onChange={(e) => handleInputChange("dateorder", e.target.value)}
-                required
-              />
+            {/* Ligne 3: Nombre de feuillets et Type de chèque */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="nbrefeuille">Nombre de feuillets par chéquier *</Label>
+                <Select
+                  value={formData.nbrefeuille || ""}
+                  onValueChange={(value) => handleInputChange("nbrefeuille", value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choisir le nombre de feuillets" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="25">25 feuillets</SelectItem>
+                    <SelectItem value="50">50 feuillets</SelectItem>
+                    <SelectItem value="100">100 feuillets</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="typeCheque">Type de chèque *</Label>
+                <Select
+                  value={formData.typeCheque || ""}
+                  onValueChange={(value) => handleInputChange("typeCheque", value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choisir le type de chèque" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Standard barré">Standard barré</SelectItem>
+                    <SelectItem value="Standard non barré">Standard non barré</SelectItem>
+                    <SelectItem value="Certifié barré">Certifié barré</SelectItem>
+                    <SelectItem value="Certifié non barré">Certifié non barré</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
 
-            <div>
-              <Label htmlFor="nbrechequier">Nombre de chéquiers *</Label>
-              <Input
-                id="nbrechequier"
-                name="nbrechequier"
-                type="number"
-                min="1"
-                max="10"
-                value={formData.nbrechequier || ""}
-                onChange={(e) => handleInputChange("nbrechequier", e.target.value)}
-                placeholder="Ex: 2"
-                required
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="nbrefeuille">Nombre de feuillets par chéquier *</Label>
-              <Select
-                value={formData.nbrefeuille || ""}
-                onValueChange={(value) => handleInputChange("nbrefeuille", value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Choisir le nombre de feuillets" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="25">25 feuillets</SelectItem>
-                  <SelectItem value="50">50 feuillets</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <Label htmlFor="typeCheque">Type de chèque *</Label>
-              <Select
-                value={formData.typeCheque || ""}
-                onValueChange={(value) => handleInputChange("typeCheque", value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Choisir le type de chèque" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Standard">Standard</SelectItem>
-                  <SelectItem value="Certifié">Certifié</SelectItem>
-                  <SelectItem value="Barré">Barré</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
+            {/* Le reste du code reste inchangé */}
             <div className="flex items-center space-x-2">
               <Checkbox
                 id="talonCheque"
@@ -856,7 +947,7 @@ export default function ServiceRequestsPage() {
                 onCheckedChange={(checked) => handleInputChange("talonCheque", checked)}
               />
               <Label htmlFor="talonCheque" className="text-sm font-normal">
-                Avec talon de chèque
+                Chèque à Talon
               </Label>
             </div>
 
@@ -904,86 +995,93 @@ export default function ServiceRequestsPage() {
             </div>
           </form>
         )
+
       // DEMANDE CREDIT PAGE
       case "credit":
         return (
           <form onSubmit={handleCreditSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="intitulecompte">Sélectionner un compte *</Label>
-              <Select
-                value={formData.accountId || ""}
-                onValueChange={(value) => {
-                  const selectedAccount = accounts.find((acc) => acc.id === value)
-                  if (selectedAccount) {
-                    handleInputChange("accountId", selectedAccount.id)
-                    handleInputChange("intitulecompte", selectedAccount.name)
-                    handleInputChange("numcompte", selectedAccount.number)
-                  }
-                }}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder={isLoadingAccounts ? "Chargement..." : "Choisir un compte"} />
-                </SelectTrigger>
-                <SelectContent>
-                  {isLoadingAccounts ? (
-                    <SelectItem value="loading" disabled>
-                      Chargement des comptes...
-                    </SelectItem>
-                  ) : accounts.length === 0 ? (
-                    <SelectItem value="empty" disabled>
-                      Aucun compte courant trouvé
-                    </SelectItem>
-                  ) : (
-                    accounts.map((account) => (
-                      <SelectItem key={account.id} value={account.id}>
-                        <div className="flex flex-col">
-                          <span className="font-medium">{account.name}</span>
-                          <span className="text-sm text-gray-500">
-                            {account.number} •{" "}
-                            {new Intl.NumberFormat("fr-FR", {
-                              style: "currency",
-                              currency: account.currency === "GNF" ? "GNF" : account.currency,
-                              minimumFractionDigits: account.currency === "GNF" ? 0 : 2,
-                            }).format(account.balance)}
-                          </span>
-                        </div>
+            {/* Sélectionner un compte et Numéro de compte sur la même ligne sans décalage */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
+              <div className="space-y-2">
+                <Label htmlFor="intitulecompte">Sélectionner un compte *</Label>
+                <Select
+                  value={formData.accountId || ""}
+                  onValueChange={(value) => {
+                    const selectedAccount = accounts.find((acc) => acc.id === value)
+                    if (selectedAccount) {
+                      handleInputChange("accountId", selectedAccount.id)
+                      handleInputChange("intitulecompte", selectedAccount.name)
+                      handleInputChange("numcompte", selectedAccount.number)
+                    }
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder={isLoadingAccounts ? "Chargement..." : "Choisir un compte"} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {isLoadingAccounts ? (
+                      <SelectItem value="loading" disabled>
+                        Chargement des comptes...
                       </SelectItem>
-                    ))
-                  )}
-                </SelectContent>
-              </Select>
+                    ) : accounts.length === 0 ? (
+                      <SelectItem value="empty" disabled>
+                        Aucun compte courant trouvé
+                      </SelectItem>
+                    ) : (
+                      accounts.map((account) => (
+                        <SelectItem key={account.id} value={account.id}>
+                          <div className="flex flex-col">
+                            <span className="font-medium">{account.name}</span>
+                            <span className="text-sm text-gray-500">
+                              {account.number} •{" "}
+                              {new Intl.NumberFormat("fr-FR", {
+                                style: "currency",
+                                currency: account.currency === "GNF" ? "GNF" : account.currency,
+                                minimumFractionDigits: account.currency === "GNF" ? 0 : 2,
+                              }).format(account.balance)}
+                            </span>
+                          </div>
+                        </SelectItem>
+                      ))
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="numcompte_credit">Numéro de compte *</Label>
+                <Input
+                  id="numcompte_credit"
+                  name="numcompte_credit"
+                  type="text"
+                  value={formData.numcompte || ""}
+                  onChange={(e) => handleInputChange("numcompte", e.target.value)}
+                  placeholder="Ex: 000123456789"
+                  required
+                  readOnly
+                  className="bg-gray-50"
+                />
+              </div>
             </div>
 
-            <div>
-              <Label htmlFor="numcompte_credit">Numéro de compte *</Label>
-              <Input
-                id="numcompte_credit"
-                name="numcompte_credit"
-                type="text"
-                value={formData.numcompte || ""}
-                onChange={(e) => handleInputChange("numcompte", e.target.value)}
-                placeholder="Ex: 000123456789"
-                required
-                readOnly
-                className="bg-gray-50"
-              />
-            </div>
-
-            <div>
+            {/* Type de crédit seul sur sa ligne avec largeur réduite */}
+            <div className="max-w-md">
               <Label htmlFor="credit_type">Type de crédit *</Label>
               <Select onValueChange={(value) => handleInputChange("credit_type", value)} required>
                 <SelectTrigger>
                   <SelectValue placeholder="Sélectionnez le type de crédit" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="personnel">Crédit personnel</SelectItem>
-                  <SelectItem value="immobilier">Crédit immobilier</SelectItem>
-                  <SelectItem value="étudiant">Crédit étudiant</SelectItem>
-                  <SelectItem value="automobile">Crédit automobile</SelectItem>
+                  <SelectItem value="Personnel">Crédit personnel</SelectItem>
+                  <SelectItem value="Immobilier">Crédit immobilier</SelectItem>
+                  <SelectItem value="Etudiant">Crédit étudiant</SelectItem>
+                  <SelectItem value="Automobile">Crédit automobile</SelectItem>
+                  <SelectItem value="Autre">Autre</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
+            {/* Montant du crédit et Durée (inchangés) */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="loan_amount">Montant du crédit (GNF) *</Label>
@@ -1013,7 +1111,8 @@ export default function ServiceRequestsPage() {
               </div>
             </div>
 
-            <div>
+            {/* Objet du crédit seul sur sa ligne avec largeur réduite */}
+            <div className="max-w-md">
               <Label htmlFor="loan_purpose">Objet du crédit *</Label>
               <Select onValueChange={(value) => handleInputChange("loan_purpose", value)} required>
                 <SelectTrigger>
@@ -1030,6 +1129,7 @@ export default function ServiceRequestsPage() {
               </Select>
             </div>
 
+            {/* Revenus mensuels et Type d'emploi (inchangés) */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="monthly_income">Revenus mensuels (GNF) *</Label>
@@ -1049,16 +1149,18 @@ export default function ServiceRequestsPage() {
                     <SelectValue placeholder="Type d'emploi" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="employee">Salarié</SelectItem>
-                    <SelectItem value="civil_servant">Fonctionnaire</SelectItem>
-                    <SelectItem value="self_employed">Indépendant</SelectItem>
-                    <SelectItem value="business_owner">Chef d'entreprise</SelectItem>
+                    <SelectItem value="Salarié">Salarié</SelectItem>
+                    <SelectItem value="Fonctionnaire">Fonctionnaire</SelectItem>
+                    <SelectItem value="Indépendant">Indépendant</SelectItem>
+                    <SelectItem value="Chef dentreprise">Chef d'entreprise</SelectItem>
+                    <SelectItem value="Autre">Autre</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             </div>
 
-            <div>
+            {/* Nom du demandeur réduit */}
+            <div className="max-w-md">
               <Label htmlFor="applicant_name">Nom du demandeur *</Label>
               <Input
                 id="applicant_name"
@@ -1100,8 +1202,8 @@ export default function ServiceRequestsPage() {
               <Alert className="border-green-200 bg-green-50">
                 <CheckCircle className="h-4 w-4 text-green-600" />
                 <AlertDescription className="text-green-800">
-                  ✅ Votre demande de crédit a été envoyée avec succès. Référence: {creditSubmitState.reference}.
-                  Réponse sous {selectedServiceData?.processingTime}.
+                  ✅ Votre demande de crédit a été envoyée avec succès. Référence: {creditSubmitState.referenceDemande}.{" "}
+                  {/* Réponse sous {selectedServiceData?.processingTime}. */}
                 </AlertDescription>
               </Alert>
             )}
@@ -1131,6 +1233,7 @@ export default function ServiceRequestsPage() {
             </div>
           </form>
         )
+
       // E-DEMANDE PAGE
       case "e-demande":
         return (
@@ -1218,8 +1321,8 @@ export default function ServiceRequestsPage() {
               <Alert className="border-green-200 bg-green-50">
                 <CheckCircle className="h-4 w-4 text-green-600" />
                 <AlertDescription className="text-green-800">
-                  ✅ Votre e-demande a été envoyée avec succès. Référence: {eDemandeSubmitState.reference}. Réponse sous{" "}
-                  {selectedServiceData?.processingTime}.
+                  ✅ Votre e-demande a été envoyée avec succès. Référence: {eDemandeSubmitState.reference}.{" "}
+                  {/* Réponse sous {selectedServiceData?.processingTime}. */}
                 </AlertDescription>
               </Alert>
             )}
@@ -1241,12 +1344,12 @@ export default function ServiceRequestsPage() {
   }
 
   return (
-   <div className="mt-6 space-y-6">
+    <div className="space-y-6">
       <div className="space-y-2">
-        <h1 className="text-3xl font-bold text-primary">
+        <h1 className="text-3xl font-heading font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
           E-Services
         </h1>
-        <p className="text-sm text-muted-foreground">Faites vos demandes de services en ligne</p>
+        <p className="text-muted-foreground text-lg">Faites vos demandes de services en ligne</p>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -1286,12 +1389,6 @@ export default function ServiceRequestsPage() {
                         <div className="flex-1">
                           <h3 className="font-medium text-sm">{service.name}</h3>
                           <p className="text-xs text-gray-500 mt-1">{service.description}</p>
-                          <div className="flex items-center justify-between mt-2">
-                            <Badge variant="outline" className="text-xs">
-                              {service.processingTime}
-                            </Badge>
-                            <span className="text-xs font-medium text-green-600">{service.cost}</span>
-                          </div>
                         </div>
                       </div>
                     </div>
@@ -1314,6 +1411,7 @@ export default function ServiceRequestsPage() {
               <CardContent className="space-y-6">
                 {/* Service Info */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-gray-50 rounded-lg">
+                  {/*
                   <div className="flex items-center space-x-2">
                     <Clock className="w-4 h-4 text-gray-500" />
                     <div>
@@ -1321,13 +1419,7 @@ export default function ServiceRequestsPage() {
                       <p className="text-xs text-gray-600">{selectedServiceData.processingTime}</p>
                     </div>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <Banknote className="w-4 h-4 text-gray-500" />
-                    <div>
-                      <p className="text-sm font-medium">Coût</p>
-                      <p className="text-xs text-gray-600">{selectedServiceData.cost}</p>
-                    </div>
-                  </div>
+                  */}
                   <div className="flex items-center space-x-2">
                     <Shield className="w-4 h-4 text-gray-500" />
                     <div>
@@ -1406,8 +1498,9 @@ export default function ServiceRequestsPage() {
                   <Alert className="border-green-200 bg-green-50">
                     <CheckCircle className="h-4 w-4 text-green-600" />
                     <AlertDescription className="text-green-800">
-                      ✅ Votre demande a été envoyée avec succès. Référence: {submitState.reference}. Réponse sous{" "}
-                      {selectedServiceData?.processingTime}.
+                      ✅ Votre demande a été envoyée avec succès. Référence: {submitState.reference}.{" "}
+                      {/*Réponse sous{" "}
+                      {selectedServiceData?.processingTime}.*/}
                     </AlertDescription>
                   </Alert>
                 )}
@@ -1551,11 +1644,13 @@ export default function ServiceRequestsPage() {
                         <div className="text-right text-sm text-gray-500">
                           <p>Soumise le</p>
                           <p className="font-medium">{new Date(request.submittedAt).toLocaleDateString("fr-FR")}</p>
+                          {/*
                           {request.expectedResponse && (
                             <p className="text-xs">
                               Réponse attendue: {new Date(request.expectedResponse).toLocaleDateString("fr-FR")}
                             </p>
                           )}
+                          */}
                           {request.completedAt && (
                             <p className="text-xs text-green-600">
                               Complétée le: {new Date(request.completedAt).toLocaleDateString("fr-FR")}
