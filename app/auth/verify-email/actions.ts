@@ -201,6 +201,17 @@ export async function completeSignup(token: string, password: string, emailFallb
         console.log("[v0] Step 5: Creating accounts in compte table...")
 
         for (const compteBng of comptesArray) {
+          console.log("[v0] ===== Processing CompteBng Account =====")
+          console.log("[v0] Raw CompteBng data:", JSON.stringify(compteBng, null, 2))
+          console.log("[v0] Available fields:", Object.keys(compteBng))
+          console.log("[v0] - numCompte:", compteBng.numCompte)
+          console.log("[v0] - accountName:", compteBng.accountName)
+          console.log("[v0] - typeCompte:", compteBng.typeCompte)
+          console.log("[v0] - devise:", compteBng.devise)
+          console.log("[v0] - bookBalance:", compteBng.bookBalance)
+          console.log("[v0] - availableBalance:", compteBng.availableBalance)
+          console.log("[v0] - clientId:", compteBng.clientId)
+
           const comptePayload = {
             data: {
               accountId: String(compteBng.numCompte || ""),
@@ -218,9 +229,15 @@ export async function completeSignup(token: string, password: string, emailFallb
             },
           }
 
-          console.log("[v0] Creating compte:", comptePayload)
+          console.log("[v0] ===== Compte Payload to Send =====")
+          console.log("[v0] Full payload:", JSON.stringify(comptePayload, null, 2))
+          console.log("[v0] Payload size:", JSON.stringify(comptePayload).length, "bytes")
 
-          const compteResponse = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/compte`, {
+          const compteUrl = `${API_BASE_URL}/tenant/${TENANT_ID}/compte`
+          console.log("[v0] POST URL:", compteUrl)
+          console.log("[v0] Authorization token present:", authToken ? "YES" : "NO")
+
+          const compteResponse = await fetch(compteUrl, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -229,17 +246,41 @@ export async function completeSignup(token: string, password: string, emailFallb
             body: JSON.stringify(comptePayload),
           })
 
-          console.log("[v0] Compte creation response status:", compteResponse.status)
+          console.log("[v0] ===== Compte Creation Response =====")
+          console.log("[v0] Status:", compteResponse.status)
+          console.log("[v0] Status text:", compteResponse.statusText)
+          console.log("[v0] Headers:", JSON.stringify(Object.fromEntries(compteResponse.headers.entries()), null, 2))
+
+          const responseText = await compteResponse.text()
+          console.log("[v0] Response body:", responseText)
+
+          let responseData: any = null
+          try {
+            responseData = JSON.parse(responseText)
+            console.log("[v0] Parsed response:", JSON.stringify(responseData, null, 2))
+          } catch (e) {
+            console.log("[v0] Response is not JSON, raw text:", responseText)
+          }
 
           if (!compteResponse.ok) {
-            const errorText = await compteResponse.text()
-            console.error("[v0] Compte creation failed:", errorText)
+            console.error("[v0] ===== Compte Creation Failed =====")
+            console.error("[v0] Status:", compteResponse.status)
+            console.error("[v0] Error response:", responseText)
+
+            if (responseData && responseData.message) {
+              console.error("[v0] Error message:", responseData.message)
+            }
+            if (responseData && responseData.error) {
+              console.error("[v0] Error details:", JSON.stringify(responseData.error, null, 2))
+            }
 
             console.log("[v0] ROLLBACK: Compte creation failed, transaction incomplete...")
             throw new Error("Erreur lors de la création des comptes. Veuillez réessayer.")
           }
 
-          console.log("[v0] Compte created successfully for numCompte:", compteBng.numCompte)
+          console.log("[v0] ===== Compte Created Successfully =====")
+          console.log("[v0] Account number:", compteBng.numCompte)
+          console.log("[v0] Response data:", JSON.stringify(responseData, null, 2))
         }
       }
 
