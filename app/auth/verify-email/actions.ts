@@ -150,9 +150,9 @@ export async function completeSignup(token: string, password: string, emailFallb
       const clientId = clientData.id || clientData.data?.id
       console.log("[v0] Client profile created successfully, clientId:", clientId)
 
-      console.log("[v0] Step 4: Fetching accounts from CompteBng using numClient:", pendingData.numClient)
+      console.log("[v0] Step 4: Fetching accounts from CompteBng using clientId:", pendingData.numClient)
 
-      const compteBngUrl = `${API_BASE_URL}/tenant/${TENANT_ID}/compte-bng?filter=numClient||$eq||${pendingData.numClient}`
+      const compteBngUrl = `${API_BASE_URL}/tenant/${TENANT_ID}/compte-bng?filter=clientId||$eq||${pendingData.numClient}`
       console.log("[v0] CompteBng URL:", compteBngUrl)
 
       const compteBngResponse = await fetch(compteBngUrl, {
@@ -197,12 +197,12 @@ export async function completeSignup(token: string, password: string, emailFallb
         for (const compteBng of comptesArray) {
           const comptePayload = {
             data: {
-              numCompte: String(compteBng.numCompte || ""),
-              devise: String(compteBng.devise || "XOF"),
+              accountNumber: String(compteBng.numCompte || ""),
+              currency: String(compteBng.devise || "XOF"),
               availableBalance: String(compteBng.availableBalance || "0"),
               bookBalance: String(compteBng.bookBalance || "0"),
-              clientId: String(userId), // userId as clientId
-              statut: "ACTIF", // Default status
+              clientId: String(clientId),
+              status: "ACTIF",
             },
           }
 
