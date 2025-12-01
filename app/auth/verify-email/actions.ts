@@ -187,7 +187,14 @@ export async function completeSignup(token: string, password: string, emailFallb
         comptesArray = compteBngData.value
       }
 
-      console.log("[v0] Found", comptesArray.length, "account(s) in CompteBng")
+      comptesArray = comptesArray.filter((compte: any) => {
+        const numCompte = String(compte.numCompte || "")
+        const racine = String(pendingData.numClient || "")
+        // Check if the account number starts with the racine followed by a dash
+        return numCompte.startsWith(racine + "-") || numCompte === racine
+      })
+
+      console.log("[v0] Found", comptesArray.length, "account(s) matching racine", pendingData.numClient)
 
       if (comptesArray.length === 0) {
         console.warn("[v0] No accounts found in CompteBng for this client")
