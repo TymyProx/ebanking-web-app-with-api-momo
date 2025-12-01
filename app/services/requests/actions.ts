@@ -25,7 +25,7 @@ interface Commande {
   nbrechequier: number
   stepflow: number
   intitulecompte: string
-  numcompteId: string
+  numcompteId: string // Changed to account NUMBER (not ID)
   commentaire: string
   talonCheque: boolean
   typeCheque: string
@@ -79,14 +79,24 @@ async function generateReference(prefix: string): Promise<string> {
 
     if (prefix === "CHQ") {
       const checkbookRequests = await getCheckbookRequest()
-      if (checkbookRequests && typeof checkbookRequests === "object" && "rows" in checkbookRequests && Array.isArray((checkbookRequests as any).rows)) {
+      if (
+        checkbookRequests &&
+        typeof checkbookRequests === "object" &&
+        "rows" in checkbookRequests &&
+        Array.isArray((checkbookRequests as any).rows)
+      ) {
         existingCount = ((checkbookRequests as any).rows as any[]).length
       } else {
         existingCount = 0
       }
     } else if (prefix === "CRD") {
       const creditRequests = await getCreditRequest()
-      if (creditRequests && typeof creditRequests === "object" && "rows" in creditRequests && Array.isArray((creditRequests as any).rows)) {
+      if (
+        creditRequests &&
+        typeof creditRequests === "object" &&
+        "rows" in creditRequests &&
+        Array.isArray((creditRequests as any).rows)
+      ) {
         existingCount = ((creditRequests as any).rows as any[]).length
       } else {
         existingCount = 0
@@ -189,7 +199,7 @@ export async function submitCheckbookRequest(formData: {
   nbrechequier: number
   stepflow: number
   intitulecompte: string
-  numcompteId: string
+  numcompteId: string // Changed to account NUMBER (not ID)
   commentaire: string
   talonCheque?: boolean // NEW: Talon de chèque option
   typeCheque?: string // NEW: Type de chèque
@@ -229,7 +239,7 @@ export async function submitCheckbookRequest(formData: {
           nbrechequier: formData.nbrechequier,
           stepflow: formData.stepflow,
           intitulecompte: formData.intitulecompte,
-          numcompteId: formData.numcompteId,
+          numcompteId: formData.numcompteId, // Changed to account NUMBER (not ID)
           commentaire: formData.commentaire,
           talonCheque: formData.talonCheque ?? false, // Use form value, default to false if not provided
           typeCheque: formData.typeCheque || "Standard", // Use form value, default to "Standard"
@@ -310,7 +320,7 @@ export async function getCheckbookRequest(id?: string): Promise<GetCommandesResp
             nbrechequier: 1,
             stepflow: 0,
             intitulecompte: "Compte Courant Principal",
-            numcompteId: "ACC001",
+            numcompteId: "123456789", // Changed to account NUMBER (not ID)
             commentaire: "Demande de chéquier standard",
             talonCheque: true,
             typeCheque: "Standard",
@@ -331,7 +341,7 @@ export async function getCheckbookRequest(id?: string): Promise<GetCommandesResp
             nbrechequier: 2,
             stepflow: 0,
             intitulecompte: "Compte Épargne",
-            numcompteId: "ACC002",
+            numcompteId: "987654321", // Changed to account NUMBER (not ID)
             commentaire: "Demande urgente",
             talonCheque: false,
             typeCheque: "Certifié",
@@ -419,7 +429,7 @@ export async function getCheckbookRequest(id?: string): Promise<GetCommandesResp
           nbrechequier: 1,
           stepflow: 0,
           intitulecompte: "Compte Courant Principal",
-          numcompteId: "ACC001",
+          numcompteId: "123456789", // Changed to account NUMBER (not ID)
           commentaire: "Demande de chéquier standard",
           talonCheque: true,
           typeCheque: "Standard",
@@ -670,7 +680,7 @@ export async function getCommandeById(TENANT_ID: string, id: string): Promise<Co
         nbrechequier: 1,
         stepflow: 0,
         intitulecompte: "Compte Courant Principal",
-        numcompteId: "ACC001",
+        numcompteId: "123456789", // Changed to account NUMBER (not ID)
         commentaire: "Demande de chéquier standard",
         talonCheque: true,
         typeCheque: "Standard",
@@ -715,7 +725,7 @@ export async function getCommandeById(TENANT_ID: string, id: string): Promise<Co
       nbrechequier: 1,
       stepflow: 0,
       intitulecompte: "Compte Courant Principal",
-      numcompteId: "ACC001",
+      numcompteId: "123456789", // Changed to account NUMBER (not ID)
       commentaire: "Demande de chéquier standard",
       talonCheque: true,
       typeCheque: "Standard",

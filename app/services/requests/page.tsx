@@ -317,7 +317,7 @@ export default function ServiceRequestsPage() {
         total: allTransformedRequests.length,
         checkbook: allTransformedRequests.filter((req) => req.type === "checkbook").length,
         credit: allTransformedRequests.filter((req) => req.type === "credit").length,
-        card: allTransformedRequests.filter((req) => req.type === "card").length,
+        card: allTransformedRequests.filter((req) => req.type === "account").length,
         account: allTransformedRequests.filter((req) => req.type === "account").length,
       }
       console.log("[v0] Statistiques calculées:", stats)
@@ -364,7 +364,10 @@ export default function ServiceRequestsPage() {
 
     const commonFields = [
       { label: "Référence", value: details.reference || "Non attribuée" },
-      { label: "Numéro de compte", value: details.accountNumber || details.numcompteId || "Non spécifié" },
+      {
+        label: "Numéro de compte",
+        value: details.numcompte || details.accountNumber || details.numcompteId || "Non spécifié",
+      },
     ]
 
     if (type === "credit") {
@@ -380,10 +383,10 @@ export default function ServiceRequestsPage() {
         ...commonFields,
         { label: "Date de commande", value: new Date(details.dateorder).toLocaleDateString("fr-FR") },
         { label: "Nombre de feuilles", value: details.nbrefeuille },
-        { label: "Nombre de chéquiers", value: details.nbrechequier },
+        { label: "Nombre de chéquiers", value: details.nbrechequier || "Non spécifié" }, // Added fallback
         { label: "Type de chèque", value: details.typeCheque || "Non spécifié" },
         { label: "Avec talon de chèque", value: details.talonCheque ? "Oui" : "Non" },
-        { label: "Intitulé du compte", value: details.intitulecompte },
+        { label: "Intitulé du compte", value: details.intitulecompte || "Non spécifié" }, // Added fallback
         { label: "Commentaire", value: details.commentaire || "Aucun commentaire" },
       ]
     }
@@ -426,6 +429,8 @@ export default function ServiceRequestsPage() {
           currency: apiAccount.currency || "GNF",
           status: apiAccount.status,
           type: apiAccount.accountType || apiAccount.type,
+          intitulecompte: apiAccount.accountName || apiAccount.name, // Add intitulecompte for display
+          numcompte: apiAccount.accountNumber || apiAccount.number, // Add numcompte for selection
         }))
 
         // Filtrer pour ne garder que les comptes courants actifs
@@ -715,7 +720,7 @@ export default function ServiceRequestsPage() {
       !formData.nbrechequier ||
       !formData.nbrefeuille ||
       !formData.intitulecompte ||
-      !formData.numcompteId || // Utilisation de numcompteId ici
+      !formData.numcompteId ||
       !formData.terms
     ) {
       setCheckbookSubmitState({ error: "Veuillez remplir tous les champs obligatoires" })
@@ -734,7 +739,7 @@ export default function ServiceRequestsPage() {
         nbrefeuille: Number.parseInt(formData.nbrefeuille) || 0,
         nbrechequier: Number.parseInt(formData.nbrechequier) || 0,
         intitulecompte: formData.intitulecompte,
-        numcompteId: formData.numcompteId, // ID du compte
+        numcompteId: formData.numcompteId, // Contains the account NUMBER (not ID)
         commentaire: formData.commentaire || "",
         typeCheque: formData.typeCheque || "Standard",
         talonCheque: formData.talonCheque === true,
@@ -838,20 +843,21 @@ export default function ServiceRequestsPage() {
           <CardContent className="pt-6">
             <form onSubmit={handleCheckbookSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="intitulecompte">Sélectionner un compte *</Label>
+                <Label htmlFor="checkbook-account">
+                  Numéro de compte <span className="text-red-500">*</span>
+                </Label>
                 <Select
                   value={formData.numcompteId || ""}
                   onValueChange={(value) => {
-                    const selectedAccount = accounts.find((acc) => acc.id === value)
-                    if (selectedAccount) {
-                      handleInputChange("numcompteId", selectedAccount.id)
-                      handleInputChange("intitulecompte", selectedAccount.name)
-                      handleInputChange("numcompte", selectedAccount.number)
-                      console.log("[v0] Account selected:", selectedAccount)
-                    }
+                    const selectedAccount = accounts.find((acc) => acc.numcompte === value)
+                    setFormData({
+                      ...formData,
+                      numcompteId: value, // Store account NUMBER in numcompteId
+                      intitulecompte: selectedAccount?.intitulecompte || "",
+                    })
                   }}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger id="checkbook-account">
                     <SelectValue placeholder={isLoadingAccounts ? "Chargement..." : "Choisir un compte"} />
                   </SelectTrigger>
                   <SelectContent>
@@ -865,18 +871,8 @@ export default function ServiceRequestsPage() {
                       </SelectItem>
                     ) : (
                       accounts.map((account) => (
-                        <SelectItem key={account.id} value={account.id}>
-                          <div className="flex flex-col">
-                            <span className="font-medium">{account.name}</span>
-                            <span className="text-sm text-gray-500">
-                              {account.number} •{" "}
-                              {new Intl.NumberFormat("fr-FR", {
-                                style: "currency",
-                                currency: account.currency === "GNF" ? "GNF" : account.currency,
-                                minimumFractionDigits: account.currency === "GNF" ? 0 : 2,
-                              }).format(account.balance)}
-                            </span>
-                          </div>
+                        <SelectItem key={account.id} value={account.numcompte}>
+                          {account.numcompte} - {account.intitulecompte}
                         </SelectItem>
                       ))
                     )}
@@ -885,14 +881,14 @@ export default function ServiceRequestsPage() {
               </div>
 
               <div>
-                <Label htmlFor="numcompte">Numéro de compte *</Label>
+                <Label htmlFor="numcompte">Compte libellé *</Label>
                 <Input
                   id="numcompte"
                   name="numcompte"
                   type="text"
-                  value={formData.numcompte || ""}
-                  onChange={(e) => handleInputChange("numcompte", e.target.value)}
-                  placeholder="Ex: 000123456789"
+                  value={formData.intitulecompte || ""}
+                  onChange={(e) => handleInputChange("intitulecompte", e.target.value)}
+                  placeholder="Ex: Compte Courant Principal"
                   required
                   readOnly
                   className="bg-gray-50"
