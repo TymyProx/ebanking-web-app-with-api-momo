@@ -212,12 +212,20 @@ export async function completeSignup(token: string, password: string, emailFallb
           console.log("[v0] - availableBalance:", compteBng.availableBalance)
           console.log("[v0] - clientId:", compteBng.clientId)
 
+          const typeMapping: { [key: string]: string } = {
+            COURANT: "CURRENT",
+            EPARGNE: "SAVINGS",
+            CHEQUE: "CHECKING",
+          }
+          const mappedType = typeMapping[compteBng.typeCompte] || "CURRENT"
+          console.log("[v0] Mapped type from", compteBng.typeCompte, "to", mappedType)
+
           const comptePayload = {
             data: {
               accountId: String(compteBng.numCompte || ""),
               accountNumber: String(compteBng.numCompte || ""),
               accountName: String(compteBng.accountName || "Compte"),
-              type: String(compteBng.typeCompte || "CURRENT"),
+              type: mappedType, // Use mapped English type instead of French
               currency: String(compteBng.devise || "GNF"),
               bookBalance: String(compteBng.bookBalance || "0"),
               availableBalance: String(compteBng.availableBalance || "0"),
