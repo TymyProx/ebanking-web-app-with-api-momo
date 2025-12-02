@@ -206,12 +206,13 @@ export async function completeSignup(token: string, password: string, emailFallb
 
           const comptePayload = {
             clientId: String(userId),
-            numCompte: String(compteBng.numCompte || ""),
+            accountNumber: String(compteBng.numCompte || ""),
             accountName: String(compteBng.accountName || "Compte"),
-            typeCompte: String(compteBng.typeCompte || "COURANT"),
-            devise: String(compteBng.devise || "GNF"),
+            type: String(compteBng.typeCompte || "COURANT"),
+            currency: String(compteBng.devise || "GNF"),
             bookBalance: String(compteBng.bookBalance || "0"),
             availableBalance: String(compteBng.availableBalance || "0"),
+            status: "ACTIF",
           }
 
           console.log("[v0] ===== Compte Payload to Send =====")
