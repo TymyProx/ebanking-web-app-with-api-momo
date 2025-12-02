@@ -42,7 +42,7 @@ function maskEmail(email: string): string {
 
 export async function initiateSignup(data: InitialSignupData) {
   try {
-    console.log("[v0] Starting initial signup process...")
+    console.log("[v0] Starting initial signup process for NEW client...")
 
     if (!data.email) {
       return { success: false, message: "Email requis" }
@@ -63,7 +63,6 @@ export async function initiateSignup(data: InitialSignupData) {
     // Generate verification token
     const verificationToken = randomBytes(32).toString("hex")
 
-    // Store signup data with verification token
     const cookieStore = await cookies()
     const cookieConfig = getCookieConfig()
     cookieStore.set(
@@ -75,6 +74,7 @@ export async function initiateSignup(data: InitialSignupData) {
         address: data.address,
         codeClient: codeClient,
         verificationToken: verificationToken,
+        clientType: "new", // Explicitly mark as new client
       }),
       {
         ...cookieConfig,
@@ -371,7 +371,7 @@ export async function initiateExistingClientSignup(data: { clientCode: string })
         clientCode: data.clientCode,
         numClient: numClient,
         verificationToken: verificationToken,
-        isExistingClient: true,
+        clientType: "existing", // Explicitly mark as existing client
       }),
       {
         ...cookieConfig,

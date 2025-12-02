@@ -28,6 +28,7 @@ export async function completeSignup(token: string, password: string, emailFallb
         address: "",
         codeClient: `CLI-${Date.now()}`,
         verificationToken: token,
+        clientType: "new", // Default to new client
       }
     } else {
       pendingData = JSON.parse(pendingDataCookie.value)
@@ -41,10 +42,11 @@ export async function completeSignup(token: string, password: string, emailFallb
 
     console.log("[v0] Token verified successfully")
 
-    const isExistingClient = pendingData.isExistingClient === true
+    const clientType = pendingData.clientType || "new"
+    console.log("[v0] Client type:", clientType)
 
-    if (isExistingClient) {
-      console.log("[v0] Processing existing BNG client signup with transaction...")
+    if (clientType === "existing") {
+      console.log("[v0] Processing EXISTING BNG client signup...")
 
       console.log("[v0] Step 1: Creating auth account...")
 
@@ -112,7 +114,7 @@ export async function completeSignup(token: string, password: string, emailFallb
         userData.fullName = pendingData.fullName
       }
 
-      console.log("[v0] Step 3: Creating client profile...")
+      console.log("[v0] Step 3: Creating client profile for existing BNG client...")
 
       const clientPayload = {
         data: {
@@ -120,8 +122,8 @@ export async function completeSignup(token: string, password: string, emailFallb
           email: String(pendingData.email),
           telephone: String(pendingData.phone || ""),
           adresse: String(pendingData.address || ""),
-          codeClient: String(pendingData.codeClient || pendingData.numClient),
-          userid: String(userId), // userId from auth/me
+          codeClient: String(pendingData.numClient), // Use numClient as codeClient
+          userid: String(userId), // Link to auth user
         },
       }
 
@@ -141,8 +143,6 @@ export async function completeSignup(token: string, password: string, emailFallb
       if (!clientResponse.ok) {
         const errorText = await clientResponse.text()
         console.error("[v0] Client creation failed:", errorText)
-
-        console.log("[v0] ROLLBACK: Client creation failed, attempting to clean up user account...")
         throw new Error("Erreur lors de la création du profil client. Veuillez réessayer.")
       }
 
@@ -150,7 +150,7 @@ export async function completeSignup(token: string, password: string, emailFallb
       const clientId = clientData.id || clientData.data?.id
       console.log("[v0] Client profile created successfully, clientId:", clientId)
 
-      console.log("[v0] Step 4: Fetching accounts from CompteBng using clientId:", pendingData.numClient)
+      console.log("[v0] Step 4: Fetching accounts from CompteBng using numClient:", pendingData.numClient)
 
       const compteBngUrl = `${API_BASE_URL}/tenant/${TENANT_ID}/compte-bng?filter=clientId||$eq||${pendingData.numClient}`
       console.log("[v0] CompteBng URL:", compteBngUrl)
@@ -168,8 +168,6 @@ export async function completeSignup(token: string, password: string, emailFallb
       if (!compteBngResponse.ok) {
         const errorText = await compteBngResponse.text()
         console.error("[v0] CompteBng fetch failed:", errorText)
-
-        console.log("[v0] ROLLBACK: CompteBng fetch failed, transaction incomplete...")
         throw new Error("Erreur lors de la récupération des comptes BNG. Veuillez réessayer.")
       }
 
@@ -201,8 +199,7 @@ export async function completeSignup(token: string, password: string, emailFallb
         console.log("[v0] Step 5: Creating accounts in compte table...")
 
         for (const compteBng of comptesArray) {
-          console.log("[v0] ===== Processing CompteBng Account =====")
-          console.log("[v0] Raw CompteBng data:", JSON.stringify(compteBng, null, 2))
+          console.log("[v0] Processing CompteBng account:", compteBng.numCompte)
 
           const mappedType = compteBng.typeCompte || "CURRENT"
           const comptePayload = {
@@ -216,18 +213,15 @@ export async function completeSignup(token: string, password: string, emailFallb
               availableBalance: String(compteBng.availableBalance || "0"),
               status: "ACTIF",
               codeAgence: "N/A",
-              clientId: String(userId),
+              clientId: String(userId), // Link to auth userId
               codeBanque: "N/A",
               cleRib: "N/A",
             },
           }
 
-          console.log("[v0] ===== Compte Payload to Send =====")
-          console.log("[v0] Full payload:", JSON.stringify(comptePayload, null, 2))
+          console.log("[v0] Creating compte with payload:", JSON.stringify(comptePayload, null, 2))
 
           const compteUrl = `${API_BASE_URL}/tenant/${TENANT_ID}/compte`
-          console.log("[v0] POST URL:", compteUrl)
-
           const compteResponse = await fetch(compteUrl, {
             method: "POST",
             headers: {
@@ -237,31 +231,15 @@ export async function completeSignup(token: string, password: string, emailFallb
             body: JSON.stringify(comptePayload),
           })
 
-          console.log("[v0] ===== Compte Creation Response =====")
-          console.log("[v0] Status:", compteResponse.status)
-
-          const responseText = await compteResponse.text()
-          console.log("[v0] Response body:", responseText)
-
-          let responseData: any = null
-          try {
-            responseData = JSON.parse(responseText)
-            console.log("[v0] Parsed response:", JSON.stringify(responseData, null, 2))
-          } catch (e) {
-            console.log("[v0] Response is not JSON, raw text:", responseText)
-          }
+          console.log("[v0] Compte creation response status:", compteResponse.status)
 
           if (!compteResponse.ok) {
-            console.error("[v0] ===== Compte Creation Failed =====")
-            console.error("[v0] Status:", compteResponse.status)
-            console.error("[v0] Error response:", responseText)
-
-            console.log("[v0] ROLLBACK: Compte creation failed, transaction incomplete...")
+            const responseText = await compteResponse.text()
+            console.error("[v0] Compte creation failed:", responseText)
             throw new Error("Erreur lors de la création des comptes. Veuillez réessayer.")
           }
 
-          console.log("[v0] ===== Compte Created Successfully =====")
-          console.log("[v0] Account number:", compteBng.numCompte)
+          console.log("[v0] Compte created successfully for account:", compteBng.numCompte)
         }
       }
 
@@ -270,7 +248,7 @@ export async function completeSignup(token: string, password: string, emailFallb
 
       cookieStore.delete("pending_signup_data")
 
-      console.log("[v0] Existing BNG client signup completed successfully with transaction!")
+      console.log("[v0] Existing BNG client signup completed successfully!")
 
       return {
         success: true,
@@ -278,7 +256,7 @@ export async function completeSignup(token: string, password: string, emailFallb
       }
     }
 
-    console.log("[v0] Processing new client signup...")
+    console.log("[v0] Processing NEW client signup...")
 
     console.log("[v0] Step 1: Creating auth account via /auth/sign-up...")
 
@@ -300,7 +278,6 @@ export async function completeSignup(token: string, password: string, emailFallb
 
     console.log("[v0] Signup response status:", signupResponse.status)
     const signupResponseText = await signupResponse.text()
-    console.log("[v0] Signup response body:", signupResponseText.substring(0, 200) + "...")
 
     if (!signupResponse.ok) {
       let errorData: any = {}
@@ -357,7 +334,7 @@ export async function completeSignup(token: string, password: string, emailFallb
     await setSecureCookie("user", JSON.stringify(userData))
     console.log("[v0] User info stored in cookie")
 
-    console.log("[v0] Step 3: Creating client profile...")
+    console.log("[v0] Step 3: Creating client profile for new client...")
 
     if (pendingDataCookie) {
       const clientRequestBody = {
@@ -366,8 +343,8 @@ export async function completeSignup(token: string, password: string, emailFallb
           email: String(pendingData.email),
           telephone: String(pendingData.phone),
           adresse: String(pendingData.address),
-          codeClient: String(pendingData.codeClient),
-          userid: String(userId),
+          codeClient: String(pendingData.codeClient), // Generated code for new client
+          userid: String(userId), // Link to auth user
         },
       }
 
@@ -383,17 +360,18 @@ export async function completeSignup(token: string, password: string, emailFallb
       })
 
       console.log("[v0] Client response status:", clientResponse.status)
-      const clientResponseText = await clientResponse.text()
-      console.log("[v0] Client response body:", clientResponseText.substring(0, 200) + "...")
 
       if (!clientResponse.ok) {
+        const clientResponseText = await clientResponse.text()
+        console.error("[v0] Client creation failed:", clientResponseText)
+
         let errorData: any = {}
         try {
           errorData = JSON.parse(clientResponseText)
         } catch (e) {
           errorData = { message: clientResponseText || `HTTP ${clientResponse.status}` }
         }
-        console.error("[v0] Client creation failed:", errorData)
+
         throw new Error(errorData.message || "Erreur lors de la création du profil client")
       }
 
@@ -404,7 +382,7 @@ export async function completeSignup(token: string, password: string, emailFallb
       console.log("[v0] Skipping client profile creation due to missing pending signup data")
     }
 
-    console.log("[v0] Signup completion successful!")
+    console.log("[v0] New client signup completed successfully!")
 
     return {
       success: true,
