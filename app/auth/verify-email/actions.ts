@@ -17,10 +17,11 @@ export async function completeSignup(token: string, password: string, emailFallb
 
     let pendingData: any | null = null
     if (!pendingDataCookie) {
-      console.warn("[v0] No pending signup data found - using email fallback and skipping client profile creation")
+      console.warn("[v0] No pending signup data found")
       if (!emailFallback) {
         throw new Error("Données d'inscription manquantes ou expirées")
       }
+      // This is a new client without pending data - use fallback
       pendingData = {
         email: emailFallback,
         fullName: emailFallback.split("@")[0],
@@ -28,6 +29,7 @@ export async function completeSignup(token: string, password: string, emailFallb
         address: "",
         codeClient: `CLI-${Date.now()}`,
         verificationToken: token,
+        isExistingClient: false, // Explicitly mark as new client
       }
     } else {
       pendingData = JSON.parse(pendingDataCookie.value)
