@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { CheckCircle, XCircle, Loader2, Mail, Eye, EyeOff } from "lucide-react"
-import { completeSignup } from "./actions"
+import { completeExistingClientSignup, completeNewClientSignup } from "./actions"
 
 function VerifyEmailContent() {
   const [status, setStatus] = useState<"pending" | "setting-password" | "creating" | "success" | "error">("pending")
@@ -53,7 +53,31 @@ function VerifyEmailContent() {
 
     setStatus("creating")
 
-    const result = await completeSignup(token, password, email || undefined)
+    const pendingDataCookie = document.cookie
+      .split("; ")
+      .find((row) => row.startsWith("pending_signup_data="))
+      ?.split("=")[1]
+
+    let isExistingClient = false
+    if (pendingDataCookie) {
+      try {
+        const pendingData = JSON.parse(decodeURIComponent(pendingDataCookie))
+        isExistingClient = pendingData.isExistingClient === true
+      } catch (e) {
+        console.error("[v0] Failed to parse pending signup data cookie:", e)
+      }
+    }
+
+    console.log("[v0] Client type detected:", isExistingClient ? "Existing BNG Client" : "New Client")
+
+    let result
+    if (isExistingClient) {
+      console.log("[v0] Calling completeExistingClientSignup()...")
+      result = await completeExistingClientSignup(token, password, email || undefined)
+    } else {
+      console.log("[v0] Calling completeNewClientSignup()...")
+      result = await completeNewClientSignup(token, password, email || undefined)
+    }
 
     if (result.success) {
       setStatus("success")
@@ -99,25 +123,24 @@ function VerifyEmailContent() {
                 <div className="flex justify-center">
                   <Mail className="h-16 w-16 text-[hsl(123,38%,57%)]" />
                 </div>
-              <div className="text-center space-y-2">
-              <h1 className="text-3xl font-bold text-[hsl(220,13%,13%)]">
-              Vérifiez votre email
-              </h1>
-              <p className="text-[hsl(220,13%,46%)]">
-              Un email de vérification a été envoyé à <strong>{email}</strong>
-              </p>
-              <p className="text-sm text-[hsl(220,13%,46%)]">
-              Veuillez cliquer sur le lien dans l'email pour continuer votre inscription.
-              </p>
-              </div>
-
+                <div className="text-center space-y-2">
+                  <h1 className="text-3xl font-bold text-[hsl(220,13%,13%)]">Vérifiez votre email</h1>
+                  <p className="text-[hsl(220,13%,46%)]">
+                    Un email de vérification a été envoyé à <strong>{email}</strong>
+                  </p>
+                  <p className="text-sm text-[hsl(220,13%,46%)]">
+                    Veuillez cliquer sur le lien dans l'email pour continuer votre inscription.
+                  </p>
+                </div>
               </>
             )}
 
             {status === "setting-password" && (
               <>
                 <div className="space-y-2">
-                  <h1 className="text-3xl font-bold text-[hsl(45,93%,47%)]">Nous-y sommes presque ! Définissez votre mot de passe</h1>
+                  <h1 className="text-3xl font-bold text-[hsl(45,93%,47%)]">
+                    Nous-y sommes presque ! Définissez votre mot de passe
+                  </h1>
                   <p className="text-[hsl(220,13%,46%)]">Créez un mot de passe sécurisé pour votre compte</p>
                 </div>
 
