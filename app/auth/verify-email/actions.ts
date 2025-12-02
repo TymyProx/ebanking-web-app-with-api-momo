@@ -45,6 +45,12 @@ export async function completeSignup(token: string, password: string, emailFallb
 
     const isExistingClient = pendingData.isExistingClient === true
 
+    console.log("[v0] ===== FLOW DETERMINATION =====")
+    console.log("[v0] pendingData.isExistingClient:", pendingData.isExistingClient)
+    console.log("[v0] isExistingClient (evaluated):", isExistingClient)
+    console.log("[v0] Will use flow:", isExistingClient ? "EXISTING CLIENT (BNG)" : "NEW CLIENT")
+    console.log("[v0] ================================")
+
     if (isExistingClient) {
       console.log("[v0] Processing existing BNG client signup with transaction...")
 
@@ -274,12 +280,15 @@ export async function completeSignup(token: string, password: string, emailFallb
 
       console.log("[v0] Existing BNG client signup completed successfully with transaction!")
 
+      console.log("[v0] RETURNING from existing client flow - new client flow will NOT execute")
       return {
         success: true,
         message: "Votre accès en ligne a été activé avec succès !",
       }
     }
 
+    console.log("[v0] ===== ENTERING NEW CLIENT FLOW =====")
+    console.log("[v0] This indicates isExistingClient was FALSE or undefined")
     console.log("[v0] Processing new client signup...")
 
     console.log("[v0] Step 1: Creating auth account via /auth/sign-up...")
