@@ -9,6 +9,9 @@ const API_BASE_URL = `${normalize(config.API_BASE_URL)}/api`
 const TENANT_ID = config.TENANT_ID
 
 async function completeExistingClientSignup(pendingData: any, token: string, password: string) {
+  console.log("[v0] ========================================")
+  console.log("[v0] EXISTING CLIENT SIGNUP FLOW STARTED")
+  console.log("[v0] ========================================")
   console.log("[v0] Processing existing BNG client signup with transaction...")
 
   console.log("[v0] Step 1: Creating auth account...")
@@ -78,6 +81,8 @@ async function completeExistingClientSignup(pendingData: any, token: string, pas
   }
 
   console.log("[v0] Step 3: Creating client profile...")
+  console.log("[v0] !!!! CREATING CLIENT FOR EXISTING BNG CLIENT !!!!")
+  console.log("[v0] This should be the ONLY client creation for this user")
 
   const clientPayload = {
     data: {
@@ -114,6 +119,11 @@ async function completeExistingClientSignup(pendingData: any, token: string, pas
   const clientData = await clientResponse.json()
   const clientId = clientData.id || clientData.data?.id
   console.log("[v0] Client profile created successfully, clientId:", clientId)
+  console.log(
+    "[v0] !!!! CLIENT CREATED SUCCESSFULLY WITH codeClient:",
+    pendingData.codeClient || pendingData.numClient,
+    "!!!!",
+  )
 
   console.log("[v0] Step 4: Fetching accounts from CompteBng using clientId:", pendingData.numClient)
 
@@ -237,6 +247,10 @@ async function completeExistingClientSignup(pendingData: any, token: string, pas
   cookieStore.delete("pending_signup_data")
 
   console.log("[v0] Existing BNG client signup completed successfully with transaction!")
+  console.log("[v0] ========================================")
+  console.log("[v0] EXISTING CLIENT SIGNUP FLOW COMPLETED")
+  console.log("[v0] RETURNING NOW - NEW CLIENT FLOW SHOULD NOT EXECUTE")
+  console.log("[v0] ========================================")
 
   return {
     success: true,
