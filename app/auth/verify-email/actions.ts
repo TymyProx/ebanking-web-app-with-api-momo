@@ -204,16 +204,21 @@ export async function completeSignup(token: string, password: string, emailFallb
           console.log("[v0] ===== Processing CompteBng Account =====")
           console.log("[v0] Raw CompteBng data:", JSON.stringify(compteBng, null, 2))
 
+          const mappedType = compteBng.typeCompte || "CURRENT"
           const comptePayload = {
             data: {
-              clientId: String(userId),
+              accountId: String(compteBng.numCompte || ""),
               accountNumber: String(compteBng.numCompte || ""),
               accountName: String(compteBng.accountName || "Compte"),
-              type: String(compteBng.typeCompte || "CURRENT"),
+              type: mappedType,
               currency: String(compteBng.devise || "GNF"),
               bookBalance: String(compteBng.bookBalance || "0"),
               availableBalance: String(compteBng.availableBalance || "0"),
               status: "ACTIF",
+              codeAgence: "N/A",
+              clientId: String(userId),
+              codeBanque: "N/A",
+              cleRib: "N/A",
             },
           }
 
