@@ -39,7 +39,7 @@ export default function SignupPage() {
       })
 
       if (result.success) {
-        router.push(`/auth/verify-email?email=${encodeURIComponent(email)}`)
+        router.push(`/auth/verify-email?email=${encodeURIComponent(email)}&type=new`)
       } else {
         setError(result.message)
       }

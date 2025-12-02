@@ -371,7 +371,7 @@ export async function initiateExistingClientSignup(data: { clientCode: string })
         clientCode: data.clientCode,
         numClient: numClient,
         verificationToken: verificationToken,
-        isExistingClient: true,
+        isExistingClient: true, // Mark as existing client
       }),
       {
         ...cookieConfig,
@@ -385,7 +385,7 @@ export async function initiateExistingClientSignup(data: { clientCode: string })
     const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || "no-reply@bngebanking.com"
     const verificationUrl = `${APP_URL.replace(/\/$/, "")}/auth/verify-email?token=${verificationToken}&email=${encodeURIComponent(
       clientEmail,
-    )}`
+    )}&type=existing`
 
     const { data: resendData, error: resendError } = await resend.emails.send({
       from: FROM_EMAIL,
