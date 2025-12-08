@@ -99,7 +99,7 @@ export default function DemandeCartePage() {
       await createCardRequest({
         typCard: formData.cardType,
         accountNumber: selectedAccount?.accountNumber || "",
-        clientId: "AUTO",
+        clientId: "", // This will be overridden by the action
       })
 
       setSuccess(true)

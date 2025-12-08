@@ -201,10 +201,11 @@ export async function createCardRequest(cardData: NewCardRequest): Promise<Card>
     throw new Error("Token d'authentification manquant")
   }
 
-  // Get clientId from logged-in user
   const clientId = await getCurrentUserInfo(usertoken)
+  console.log("[v0] createCardRequest - clientId:", clientId)
 
   const titulaireCompletName = await getClientFullName(clientId, usertoken)
+  console.log("[v0] createCardRequest - titulaireCompletName:", titulaireCompletName)
 
   const today = new Date().toISOString().split("T")[0]
 
@@ -248,6 +249,8 @@ export async function createCardRequest(cardData: NewCardRequest): Promise<Card>
     }
   }
 
+  console.log("[v0] createCardRequest - requestBody:", JSON.stringify(requestBody, null, 2))
+
   const res = await fetch(`${BASE_URL}/tenant/${TENANT_ID}/card`, {
     method: "POST",
     headers: {
@@ -260,6 +263,9 @@ export async function createCardRequest(cardData: NewCardRequest): Promise<Card>
 
   const contentType = res.headers.get("content-type") || ""
   const bodyText = await res.text()
+
+  console.log("[v0] createCardRequest - response status:", res.status)
+  console.log("[v0] createCardRequest - response body:", bodyText)
 
   if (!res.ok) {
     throw new Error(`API ${res.status}: ${bodyText || "Erreur lors de la création"}`)
@@ -320,6 +326,9 @@ export async function toggleCardStatus(cardId: string, currentStatus: string) {
 
     const contentType = res.headers.get("content-type") || ""
     const bodyText = await res.text()
+
+    console.log("[v0] createCardRequest - response status:", res.status)
+    console.log("[v0] createCardRequest - response body:", bodyText)
 
     if (!res.ok) {
       return {
