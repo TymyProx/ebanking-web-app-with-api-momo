@@ -377,6 +377,7 @@ export default function ServiceRequestsPage() {
         { label: "Nombre de chéquiers", value: details.nbrechequier || "Non spécifié" },
         { label: "Type de chèque", value: details.typeCheque || "Non spécifié" },
         { label: "Avec talon de chèque", value: details.talonCheque ? "Oui" : "Non" },
+        { label: "Intitulé du compte", value: details.intitulecompte || "Non spécifié" },
         { label: "Commentaire", value: details.commentaire || "Aucun commentaire" },
       ]
     }

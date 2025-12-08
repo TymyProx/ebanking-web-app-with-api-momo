@@ -637,13 +637,13 @@ export default function CardsPage() {
                               </div>
 
                               {/* Holder and Expiry */}
-                             <div className="flex justify-end">
-                                {/* <div>
+                              <div className="flex justify-between items-end">
+                                <div>
                                   <div className="text-[10px] uppercase opacity-75 tracking-wider mb-1">Titulaire</div>
                                   <div className="font-medium uppercase tracking-wide text-sm">
                                     {currentCard.holder}
                                   </div>
-                                </div> */}
+                                </div>
                                 <div className="text-right">
                                   <div className="text-[10px] uppercase opacity-75 tracking-wider mb-1">Expire</div>
                                   <div className="font-medium tracking-wider text-sm">{currentCard.dateExpiration}</div>
