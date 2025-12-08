@@ -42,7 +42,7 @@ function maskEmail(email: string): string {
 
 export async function initiateSignup(data: InitialSignupData) {
   try {
-    console.log("[v0] Starting initial signup process...")
+    console.log("[v0] Starting initial signup process for NEW client...")
 
     if (!data.email) {
       return { success: false, message: "Email requis" }
@@ -63,7 +63,6 @@ export async function initiateSignup(data: InitialSignupData) {
     // Generate verification token
     const verificationToken = randomBytes(32).toString("hex")
 
-    // Store signup data with verification token
     const cookieStore = await cookies()
     const cookieConfig = getCookieConfig()
     cookieStore.set(
@@ -75,6 +74,7 @@ export async function initiateSignup(data: InitialSignupData) {
         address: data.address,
         codeClient: codeClient,
         verificationToken: verificationToken,
+        clientType: "new", // Explicitly mark as new client
       }),
       {
         ...cookieConfig,
@@ -232,13 +232,12 @@ export async function initiateExistingClientSignup(data: { clientCode: string })
 
   try {
     console.log("[v0] Starting existing client signup process...")
-    console.log("[v0] Client code:", data.clientCode)
+    console.log("[v0] Client code (numClient):", data.clientCode)
 
     if (!data.clientCode) {
       return { success: false, message: "Racine du compte requis" }
     }
 
-    // Use support account credentials instead of creating temporary user
     console.log("[v0] Step 1: Authenticating with support account...")
 
     const SUPPORT_EMAIL = "support@proxyma-technologies.net"
@@ -276,98 +275,90 @@ export async function initiateExistingClientSignup(data: { clientCode: string })
 
     console.log("[v0] Support account token obtained successfully")
 
-    // Step 2: Search for client in clientBNG table
-    console.log("[v0] Step 2: Searching for client in clientBNG table...")
+    console.log("[v0] Step 2: Searching for client in BdClientBng table using numClient...")
 
-    const searchUrl = `${API_BASE_URL}/tenant/${TENANT_ID}/client`
+    const searchUrl = `${API_BASE_URL}/tenant/${TENANT_ID}/bd-client-bng?numClient=${encodeURIComponent(data.clientCode)}`
     console.log("[v0] Fetching from URL:", searchUrl)
 
-    const clientBNGResponse = await fetch(searchUrl, {
+    const bdClientResponse = await fetch(searchUrl, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${supportToken}`,
       },
     })
-    console.log("Token used for clientBNG fetch:", supportToken)
-    console.log("[v0] ClientBNG search response status:", clientBNGResponse.status)
 
-    if (!clientBNGResponse.ok) {
-      const errorText = await clientBNGResponse.text()
-      console.error("[v0] ClientBNG fetch failed:", errorText)
+    console.log("[v0] BdClientBng search response status:", bdClientResponse.status)
 
-      if (clientBNGResponse.status === 404) {
-        throw new Error("La table clientBNG n'existe pas ou l'accès est refusé. Veuillez contacter l'administrateur.")
+    if (!bdClientResponse.ok) {
+      const errorText = await bdClientResponse.text()
+      console.error("[v0] BdClientBng fetch failed:", errorText)
+
+      if (bdClientResponse.status === 404) {
+        return {
+          success: false,
+          message: "Racine du compte invalide. Veuillez vérifier votre racine et réessayer.",
+        }
       }
 
       throw new Error("Erreur lors de la recherche du client dans la base BNG")
     }
 
-    const clientBNGData = await clientBNGResponse.json()
-    console.log("[v0] ClientBNG data received, parsing response...")
+    const bdClientResponseData = await bdClientResponse.json()
+    console.log("[v0] BdClientBng response received:", JSON.stringify(bdClientResponseData, null, 2))
 
-    // Handle different response formats
-    let clients = []
-    if (Array.isArray(clientBNGData)) {
-      clients = clientBNGData
-    } else if (clientBNGData.rows && Array.isArray(clientBNGData.rows)) {
-      clients = clientBNGData.rows
-    } else if (clientBNGData.data && Array.isArray(clientBNGData.data)) {
-      clients = clientBNGData.data
-    } else if (clientBNGData.value && Array.isArray(clientBNGData.value)) {
-      clients = clientBNGData.value
+    let bdClientData
+    let clientArray: any[] = []
+
+    if (Array.isArray(bdClientResponseData)) {
+      clientArray = bdClientResponseData
+    } else if (bdClientResponseData.data && Array.isArray(bdClientResponseData.data)) {
+      clientArray = bdClientResponseData.data
+    } else if (bdClientResponseData.rows && Array.isArray(bdClientResponseData.rows)) {
+      clientArray = bdClientResponseData.rows
+    } else {
+      bdClientData = bdClientResponseData
     }
 
-    console.log("[v0] Total clients found:", clients.length)
+    // Find the client with exact numClient match
+    if (clientArray.length > 0) {
+      bdClientData = clientArray.find((client) => client.numClient === data.clientCode)
 
-    if (clients.length > 0) {
-      const sampleCodes = clients.slice(0, 5).map((c: any) => ({
-        codeClient: c.codeClient,
-        code: c.code,
-        clientCode: c.clientCode,
-        numeroClient: c.numeroClient,
-        id: c.id,
-      }))
-      console.log("[v0] Sample client codes:", JSON.stringify(sampleCodes, null, 2))
+      if (!bdClientData) {
+        console.error("[v0] No client found with exact numClient match:", data.clientCode)
+        return {
+          success: false,
+          message: "Racine du compte invalide. Veuillez vérifier votre racine et réessayer.",
+        }
+      }
     }
 
-    // Find client with matching code
-    const matchingClient = clients.find((client: any) => {
-      const clientCodeValue = client.codeClient || client.code || client.clientCode || client.numeroClient || client.id
-      console.log("[v0] Comparing:", clientCodeValue, "with:", data.clientCode)
-      return String(clientCodeValue).toLowerCase() === String(data.clientCode).toLowerCase()
-    })
-
-    if (!matchingClient) {
-      console.log("[v0] No matching client found in clientBNG")
-      console.log("[v0] Searched for:", data.clientCode)
+    if (!bdClientData) {
       return {
         success: false,
         message: "Racine du compte invalide. Veuillez vérifier votre racine et réessayer.",
       }
     }
 
-    console.log("[v0] Matching client found in clientBNG!")
-    console.log("[v0] Matched client data:", JSON.stringify(matchingClient, null, 2))
+    console.log("[v0] BdClientBng data extracted:", JSON.stringify(bdClientData, null, 2))
 
-    // Extract client info from clientBNG
-    const clientEmail = matchingClient.email
-    const clientFullName = matchingClient.nomComplet || matchingClient.fullName || matchingClient.name
-    const clientId = matchingClient.id
-    const clientPhone = matchingClient.telephone || matchingClient.phone || ""
-    const clientAddress = matchingClient.adresse || matchingClient.address || ""
+    const clientEmail = bdClientData.email
+    const clientFullName = bdClientData.nomComplet || bdClientData.fullName || bdClientData.name || ""
+    const clientPhone = bdClientData.numTelephone || bdClientData.telephone || bdClientData.phone || ""
+    const numClient = bdClientData.numClient || data.clientCode
 
     if (!clientEmail) {
       throw new Error("Email du client non trouvé dans la base BNG")
     }
 
-    console.log("[v0] Client email:", clientEmail)
-    console.log("[v0] Client full name:", clientFullName)
+    console.log("[v0] Client found in BdClientBng:")
+    console.log("[v0] - Email:", clientEmail)
+    console.log("[v0] - Full name:", clientFullName)
+    console.log("[v0] - Phone:", clientPhone)
+    console.log("[v0] - NumClient:", numClient)
 
-    // Step 3: Generate verification token and send email
     const verificationToken = randomBytes(32).toString("hex")
 
-    // Store data in cookie with clientBNG information
     const cookieStore = await cookies()
     const cookieConfig = getCookieConfig()
     cookieStore.set(
@@ -376,11 +367,11 @@ export async function initiateExistingClientSignup(data: { clientCode: string })
         email: clientEmail,
         fullName: clientFullName,
         phone: clientPhone,
-        address: clientAddress,
+        address: "", // Not available in BdClientBng
         clientCode: data.clientCode,
-        clientBNGId: clientId,
+        numClient: numClient,
         verificationToken: verificationToken,
-        isExistingClient: true,
+        clientType: "existing", // Explicitly mark as existing client
       }),
       {
         ...cookieConfig,

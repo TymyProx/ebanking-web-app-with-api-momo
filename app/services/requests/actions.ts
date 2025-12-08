@@ -3,12 +3,13 @@
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0"
 import { cookies } from "next/headers"
 // Importation de la méthode cookies() pour accéder aux cookies côté serveur
+import { config } from "@/lib/config"
 
 // URL de base de l'API et ID du tenant (identifiant du client dans l'API)
 
 const normalize = (u?: string) => (u ? u.replace(/\/$/, "") : "")
-const API_BASE_URL = `${normalize(process.env.NEXT_PUBLIC_API_URL || "https://35.184.98.9:4000")}/api`
-const TENANT_ID = process.env.NEXT_PUBLIC_TENANT_ID || "aa1287f6-06af-45b7-a905-8c57363565c2"
+const API_BASE_URL = `${normalize(config.API_BASE_URL)}/api`
+const TENANT_ID = config.TENANT_ID
 
 interface Commande {
   id: string
@@ -78,10 +79,18 @@ async function generateReference(prefix: string): Promise<string> {
 
     if (prefix === "CHQ") {
       const checkbookRequests = await getCheckbookRequest()
-      existingCount = checkbookRequests?.rows?.length || 0
+      if (checkbookRequests && typeof checkbookRequests === "object" && "rows" in checkbookRequests && Array.isArray((checkbookRequests as any).rows)) {
+        existingCount = ((checkbookRequests as any).rows as any[]).length
+      } else {
+        existingCount = 0
+      }
     } else if (prefix === "CRD") {
       const creditRequests = await getCreditRequest()
-      existingCount = creditRequests?.rows?.length || 0
+      if (creditRequests && typeof creditRequests === "object" && "rows" in creditRequests && Array.isArray((creditRequests as any).rows)) {
+        existingCount = ((creditRequests as any).rows as any[]).length
+      } else {
+        existingCount = 0
+      }
     }
 
     const currentYear = new Date().getFullYear()
@@ -241,6 +250,35 @@ export async function submitCheckbookRequest(formData: {
       ...data,
       reference: reference,
     }
+  } catch (error: any) {
+    throw new Error(error.message)
+  }
+}
+
+// Secure path: submit already-encrypted payload to e-Portal endpoint
+export async function submitCheckbookRequestSecure(encryptedData: any) {
+  try {
+    const cookieToken = (await cookies()).get("token")?.value
+    const usertoken = cookieToken
+
+    if (!cookieToken) throw new Error("Token introuvable.")
+
+    // Backend will force stepflow=0 and clientId=req.currentUser.id
+    const response = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/me/commandes`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${usertoken}`,
+      },
+      body: JSON.stringify({ data: encryptedData }),
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json()
+      throw new Error(errorData.message || "Erreur lors de la soumission sécurisée")
+    }
+
+    return await response.json()
   } catch (error: any) {
     throw new Error(error.message)
   }

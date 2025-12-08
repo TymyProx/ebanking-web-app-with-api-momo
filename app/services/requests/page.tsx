@@ -12,19 +12,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import {
-  BookOpen,
-  CreditCard,
-  FileText,
-  Clock,
-  CheckCircle,
-  AlertCircle,
-  Send,
-  Eye,
-  Shield,
-  Plus,
-  Search,
-} from "lucide-react"
+import { BookOpen, CreditCard, FileText, Clock, CheckCircle, AlertCircle, Send, Eye, Plus, Search } from "lucide-react"
 import {
   submitCreditRequest,
   submitCheckbookRequest,
@@ -146,7 +134,7 @@ export default function ServiceRequestsPage() {
     setIsLoadingCheckbookRequests(true)
     try {
       const requests = await getCheckbookRequest()
-      setCheckbookRequests(requests || [])
+      setCheckbookRequests((requests as any)?.rows || []) // Assuming GetCommandesResponse has a 'rows' property
     } catch (error) {
       console.error("Erreur lors du chargement des demandes de chéquier:", error)
       setCheckbookRequests([])
@@ -180,7 +168,7 @@ export default function ServiceRequestsPage() {
 
       let allTransformedRequests: any[] = []
 
-      if (checkbookResult && checkbookResult.rows && Array.isArray(checkbookResult.rows)) {
+      if (checkbookResult && "rows" in checkbookResult && checkbookResult.rows && Array.isArray(checkbookResult.rows)) {
         const checkbookData = checkbookResult.rows
         console.log("[v0] Données chéquier à traiter:", checkbookData)
 
@@ -223,7 +211,7 @@ export default function ServiceRequestsPage() {
         console.log("[v0] Aucune donnée de chéquier trouvée ou structure incorrecte")
       }
 
-      if (creditResult && creditResult.rows && Array.isArray(creditResult.rows)) {
+      if (creditResult && "rows" in creditResult && creditResult.rows && Array.isArray(creditResult.rows)) {
         const creditData = creditResult.rows
         console.log("[v0] Données crédit à traiter:", creditData)
 
@@ -278,7 +266,7 @@ export default function ServiceRequestsPage() {
         total: allTransformedRequests.length,
         checkbook: allTransformedRequests.filter((req) => req.type === "checkbook").length,
         credit: allTransformedRequests.filter((req) => req.type === "credit").length,
-        card: allTransformedRequests.filter((req) => req.type === "card").length,
+        card: allTransformedRequests.filter((req) => req.type === "account").length,
         account: allTransformedRequests.filter((req) => req.type === "account").length,
       }
       console.log("[v0] Statistiques calculées:", stats)
@@ -303,7 +291,7 @@ export default function ServiceRequestsPage() {
       if (request.type === "credit") {
         details = await getDemandeCreditById(TENANT_ID, request.id)
         console.log("[v0] Détails crédit bruts:", details)
-        if (details && !details.applicant_name) {
+        if (details && !details.applicantName) {
           details = {
             ...details,
             ...request.details,
@@ -373,8 +361,8 @@ export default function ServiceRequestsPage() {
         },
         { label: "Durée (mois)", value: details.loan_duration || details.durationMonths || "Non spécifié" },
         { label: "Objet du crédit", value: details.loan_purpose || details.purpose || "Non spécifié" },
-      //  { label: "Téléphone", value: details.contact_phone || "Non spécifié" },
-       // { label: "Commentaire", value: details.commentaire || "Aucun commentaire" },
+        //  { label: "Téléphone", value: details.contact_phone || "Non spécifié" },
+        // { label: "Commentaire", value: details.commentaire || "Aucun commentaire" },
       ]
     }
 
@@ -414,6 +402,37 @@ export default function ServiceRequestsPage() {
   useEffect(() => {
     loadAccounts()
   }, [])
+
+  useEffect(() => {
+    if (checkbookSubmitState?.success) {
+      const timer = setTimeout(() => {
+        setCheckbookSubmitState(null)
+      }, 4000)
+      return () => clearTimeout(timer)
+    }
+  }, [checkbookSubmitState?.success])
+
+  // AUTO-HIDE CREDIT SUCCESS/ERROR MESSAGE AFTER 4 SECONDS
+  useEffect(() => {
+    if (creditSubmitState?.success || creditSubmitState?.error) {
+      const timer = setTimeout(() => {
+        setCreditSubmitState(null)
+      }, 4000)
+
+      return () => clearTimeout(timer)
+    }
+  }, [creditSubmitState])
+
+  // AUTO-HIDE CHECKBOOK SUCCESS/ERROR MESSAGE AFTER 4 SECONDS
+  useEffect(() => {
+    if (checkbookSubmitState?.success || checkbookSubmitState?.error) {
+      const timer = setTimeout(() => {
+        setCheckbookSubmitState(null)
+      }, 4000)
+
+      return () => clearTimeout(timer)
+    }
+  }, [checkbookSubmitState])
 
   const loadAccounts = async () => {
     try {
@@ -495,7 +514,7 @@ export default function ServiceRequestsPage() {
         return
       }
 
-      if (result && result.success && result.data) {
+      if (result && "success" in result && result.success && "data" in result && result.data) {
         const transformedRequests = Array.isArray(result.data)
           ? result.data.map((item: any, index: number) => {
               if (type === "checkbook") {
@@ -626,7 +645,7 @@ export default function ServiceRequestsPage() {
 
     console.log("[v0] FormData au moment de la soumission:", formData)
     console.log("[v0] Vérification des champs:")
-    console.log("[v0] applicant_name:", formData.applicant_name)
+    console.log("[v0] applicantName:", formData.applicantName)
     console.log("[v0] loan_amount:", formData.loan_amount)
     console.log("[v0] loan_duration:", formData.loan_duration)
     console.log("[v0] loan_purpose:", formData.loan_purpose)
@@ -641,7 +660,7 @@ export default function ServiceRequestsPage() {
 
     // Vérifier que tous les champs requis sont remplis
     if (
-      !formData.applicant_name ||
+      !formData.applicantName || // Changed from applicant_name
       !formData.loan_amount ||
       !formData.loan_duration ||
       !formData.loan_purpose ||
@@ -656,6 +675,7 @@ export default function ServiceRequestsPage() {
     ) {
       console.log("[v0] Validation échouée - champs manquants")
       setCreditSubmitState({ error: "Veuillez remplir tous les champs obligatoires" })
+      window.scrollTo({ top: 0, behavior: "smooth" })
       return
     }
 
@@ -664,7 +684,7 @@ export default function ServiceRequestsPage() {
 
     try {
       const creditData = {
-        applicant_name: formData.applicant_name,
+        applicant_name: formData.applicantName, // Corrected from applicant_name to applicantName
         loan_amount: formData.loan_amount,
         loan_duration: formData.loan_duration,
         loan_purpose: formData.loan_purpose,
@@ -680,6 +700,7 @@ export default function ServiceRequestsPage() {
         referenceDemande:
           result.referenceDemande || "CRD-" + new Date().getFullYear() + "-" + String(Date.now()).slice(-3), // Utilisation de referenceDemande
       })
+      window.scrollTo({ top: 0, behavior: "smooth" })
       // Réinitialiser le formulaire après succès
       setFormData({})
       // Recharger les demandes
@@ -689,6 +710,7 @@ export default function ServiceRequestsPage() {
     } catch (error: any) {
       console.log("[v0] Erreur lors de la soumission:", error.message)
       setCreditSubmitState({ error: error.message || "Une erreur s'est produite lors de la soumission" })
+      window.scrollTo({ top: 0, behavior: "smooth" })
     } finally {
       setIsCreditSubmitting(false)
     }
@@ -706,6 +728,7 @@ export default function ServiceRequestsPage() {
       !formData.terms
     ) {
       setCheckbookSubmitState({ error: "Veuillez remplir tous les champs obligatoires" })
+      window.scrollTo({ top: 0, behavior: "smooth" })
       return
     }
 
@@ -730,6 +753,7 @@ export default function ServiceRequestsPage() {
         success: true,
         reference: result.reference || "CHQ-" + new Date().getFullYear() + "-" + String(Date.now()).slice(-3),
       })
+      window.scrollTo({ top: 0, behavior: "smooth" })
       // Réinitialiser le formulaire après succès
       setFormData({})
       // Recharger les demandes
@@ -738,6 +762,7 @@ export default function ServiceRequestsPage() {
       }
     } catch (error: any) {
       setCheckbookSubmitState({ error: error.message || "Une erreur s'est produite lors de la soumission" })
+      window.scrollTo({ top: 0, behavior: "smooth" })
     } finally {
       setIsCheckbookSubmitting(false)
     }
@@ -805,7 +830,7 @@ export default function ServiceRequestsPage() {
               <div className="space-y-2">
                 <Label htmlFor="intitulecompte">Sélectionner un compte *</Label>
                 <Select
-                  value={formData.numcompteId || ""}
+                  value={formData.accountId || ""}
                   onValueChange={(value) => {
                     const selectedAccount = accounts.find((acc) => acc.id === value)
                     if (selectedAccount) {
@@ -865,18 +890,22 @@ export default function ServiceRequestsPage() {
             </div>
 
             {/* Ligne 2: Date commande et Nombre de chéquiers */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-3 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="dateorder">Date de commande *</Label>
-                <Input
-                  id="dateorder"
-                  name="dateorder"
-                  type="date"
-                  value={formData.dateorder || new Date().toISOString().split("T")[0]}
-                  onChange={(e) => handleInputChange("dateorder", e.target.value)}
-                  required
-                  className="w-40"
-                />
+                <Label htmlFor="nbrefeuille">Nombre de feuillets par chéquier *</Label>
+                <Select
+                  value={formData.nbrefeuille || ""}
+                  onValueChange={(value) => handleInputChange("nbrefeuille", value)}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Choisir le nombre de feuillets" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="25">25 feuillets</SelectItem>
+                    <SelectItem value="50">50 feuillets</SelectItem>
+                    <SelectItem value="100">100 feuillets</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="space-y-2">
@@ -896,28 +925,8 @@ export default function ServiceRequestsPage() {
                   }}
                   placeholder="Ex: 2"
                   required
-                  className="w-40"
+                  className="w-full"
                 />
-              </div>
-            </div>
-
-            {/* Ligne 3: Nombre de feuillets et Type de chèque */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="nbrefeuille">Nombre de feuillets par chéquier *</Label>
-                <Select
-                  value={formData.nbrefeuille || ""}
-                  onValueChange={(value) => handleInputChange("nbrefeuille", value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Choisir le nombre de feuillets" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="25">25 feuillets</SelectItem>
-                    <SelectItem value="50">50 feuillets</SelectItem>
-                    <SelectItem value="100">100 feuillets</SelectItem>
-                  </SelectContent>
-                </Select>
               </div>
 
               <div className="space-y-2">
@@ -926,7 +935,7 @@ export default function ServiceRequestsPage() {
                   value={formData.typeCheque || ""}
                   onValueChange={(value) => handleInputChange("typeCheque", value)}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="w-full">
                     <SelectValue placeholder="Choisir le type de chèque" />
                   </SelectTrigger>
                   <SelectContent>
@@ -939,16 +948,30 @@ export default function ServiceRequestsPage() {
               </div>
             </div>
 
-            {/* Le reste du code reste inchangé */}
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="talonCheque"
-                checked={formData.talonCheque || false}
-                onCheckedChange={(checked) => handleInputChange("talonCheque", checked)}
-              />
-              <Label htmlFor="talonCheque" className="text-sm font-normal">
-                Chèque à Talon
-              </Label>
+            {/* Ligne 3: Nombre de feuillets et Type de chèque */}
+            <div className="grid grid-cols-3 gap-4">
+              <div className="flex h-10 items-center space-x-2 mt-6">
+                <Checkbox
+                  id="talonCheque"
+                  checked={formData.talonCheque || false}
+                  onCheckedChange={(checked) => handleInputChange("talonCheque", checked)}
+                />
+                <Label htmlFor="talonCheque" className="text-sm font-normal">
+                  Chèque à Talon
+                </Label>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="dateorder">Date de commande *</Label>
+                <Input
+                  id="dateorder"
+                  name="dateorder"
+                  type="date"
+                  value={formData.dateorder || new Date().toISOString().split("T")[0]}
+                  onChange={(e) => handleInputChange("dateorder", e.target.value)}
+                  required
+                  className="w-full"
+                />
+              </div>
             </div>
 
             <div>
@@ -962,22 +985,6 @@ export default function ServiceRequestsPage() {
                 rows={3}
               />
             </div>
-
-            {checkbookSubmitState?.success && (
-              <Alert className="border-green-200 bg-green-50">
-                <CheckCircle className="h-4 w-4 text-green-600" />
-                <AlertDescription className="text-green-800">
-                  ✅ Votre demande de chéquier a été soumise avec succès ! Référence: {checkbookSubmitState.reference}
-                </AlertDescription>
-              </Alert>
-            )}
-
-            {checkbookSubmitState?.error && (
-              <Alert variant="destructive">
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>❌ {checkbookSubmitState.error}</AlertDescription>
-              </Alert>
-            )}
 
             <div className="flex items-center space-x-2">
               <Checkbox
@@ -1161,12 +1168,13 @@ export default function ServiceRequestsPage() {
 
             {/* Nom du demandeur réduit */}
             <div className="max-w-md">
-              <Label htmlFor="applicant_name">Nom du demandeur *</Label>
+              {/* Fixed form field name from applicant_name to applicantName */}
+              <Label htmlFor="applicantName">Nom du demandeur *</Label>
               <Input
-                id="applicant_name"
+                id="applicantName"
                 placeholder="Nom du demandeur"
-                value={formData.applicant_name || ""}
-                onChange={(e) => handleInputChange("applicant_name", e.target.value)}
+                value={formData.applicantName || ""}
+                onChange={(e) => handleInputChange("applicantName", e.target.value)}
                 required
               />
             </div>
@@ -1196,27 +1204,6 @@ export default function ServiceRequestsPage() {
                 </div>
               </div>
             </div>
-
-            {/* Feedback Messages */}
-            {creditSubmitState?.success && (
-              <Alert className="border-green-200 bg-green-50">
-                <CheckCircle className="h-4 w-4 text-green-600" />
-                <AlertDescription className="text-green-800">
-                  ✅ Votre demande de crédit a été envoyée avec succès. Référence: {creditSubmitState.referenceDemande}.{" "}
-                  {/* Réponse sous {selectedServiceData?.processingTime}. */}
-                </AlertDescription>
-              </Alert>
-            )}
-
-            {creditSubmitState?.error && (
-              <Alert className="border-red-200 bg-red-50">
-                <AlertCircle className="h-4 w-4 text-red-600" />
-                <AlertDescription className="text-red-800">
-                  ❌ Une erreur est survenue: {creditSubmitState.error}. Veuillez réessayer.
-                </AlertDescription>
-              </Alert>
-            )}
-
             <div className="flex items-start space-x-2">
               <Checkbox
                 id="credit_terms"
@@ -1397,7 +1384,40 @@ export default function ServiceRequestsPage() {
               </div>
             </CardContent>
           </Card>
+          {checkbookSubmitState?.success && (
+            <Alert className="border-green-200 bg-green-50">
+              <CheckCircle className="h-4 w-4 text-green-600" />
+              <AlertDescription className="text-green-800">
+                Votre demande de chéquier a été soumise avec succès ! Référence: {checkbookSubmitState.reference}
+              </AlertDescription>
+            </Alert>
+          )}
 
+          {checkbookSubmitState?.error && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{checkbookSubmitState.error}</AlertDescription>
+            </Alert>
+          )}
+          {/* Feedback Messages */}
+          {creditSubmitState?.success && (
+            <Alert className="border-green-200 bg-green-50">
+              <CheckCircle className="h-4 w-4 text-green-600" />
+              <AlertDescription className="text-green-800">
+                Votre demande de crédit a été envoyée avec succès. Référence: {creditSubmitState.referenceDemande}.{" "}
+                {/* Réponse sous {selectedServiceData?.processingTime}. */}
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {creditSubmitState?.error && (
+            <Alert className="border-red-200 bg-red-50">
+              <AlertCircle className="h-4 w-4 text-red-600" />
+              <AlertDescription className="text-red-800">
+                Une erreur est survenue: {creditSubmitState.error}. Veuillez réessayer.
+              </AlertDescription>
+            </Alert>
+          )}
           {/* Service Details & Form */}
           {selectedServiceData && (
             <Card>
@@ -1410,24 +1430,6 @@ export default function ServiceRequestsPage() {
               </CardHeader>
               <CardContent className="space-y-6">
                 {/* Service Info */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-gray-50 rounded-lg">
-                  {/*
-                  <div className="flex items-center space-x-2">
-                    <Clock className="w-4 h-4 text-gray-500" />
-                    <div>
-                      <p className="text-sm font-medium">Délai de traitement</p>
-                      <p className="text-xs text-gray-600">{selectedServiceData.processingTime}</p>
-                    </div>
-                  </div>
-                  */}
-                  <div className="flex items-center space-x-2">
-                    <Shield className="w-4 h-4 text-gray-500" />
-                    <div>
-                      <p className="text-sm font-medium">Sécurisé</p>
-                      <p className="text-xs text-gray-600">Traitement confidentiel</p>
-                    </div>
-                  </div>
-                </div>
 
                 {/* Dynamic Form */}
                 {renderServiceForm()}
@@ -1527,7 +1529,13 @@ export default function ServiceRequestsPage() {
           </div>
 
           <Card>
-            <CardContent className="pt-6">
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <FileText className="w-5 h-5 mr-2" />
+                Résumé des demandes
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
               <div className="flex flex-col sm:flex-row gap-4">
                 <div className="relative flex-1">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
