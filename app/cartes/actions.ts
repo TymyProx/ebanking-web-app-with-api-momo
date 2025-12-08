@@ -23,6 +23,7 @@ export type Card = {
   dateExpiration: string
   clientId: string
   accountNumber?: string
+  titulaire_name?: string
 }
 
 export type CardsResponse = {
@@ -34,6 +35,7 @@ export type NewCardRequest = {
   typCard: string
   accountNumber?: string
   clientId: string
+  titulaire_name?: string
 }
 
 async function getCurrentUserInfo(token: string) {
@@ -55,6 +57,29 @@ async function getCurrentUserInfo(token: string) {
   } catch (error) {
     console.error("[v0] Error fetching user info:", error)
     throw new Error("Unable to get user information")
+  }
+}
+
+async function getClientFullName(clientId: string, token: string): Promise<string> {
+  try {
+    const response = await fetch(`${BASE_URL}/tenant/${TENANT_ID}/client/${clientId}`, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    })
+
+    if (!response.ok) {
+      console.error("[v0] Failed to fetch client details:", response.status)
+      return ""
+    }
+
+    const clientData = await response.json()
+    return clientData.nomComplet || clientData.fullName || clientData.name || ""
+  } catch (error) {
+    console.error("[v0] Error fetching client name:", error)
+    return ""
   }
 }
 
@@ -179,6 +204,8 @@ export async function createCardRequest(cardData: NewCardRequest): Promise<Card>
   // Get clientId from logged-in user
   const clientId = await getCurrentUserInfo(usertoken)
 
+  const titulaireCompletName = await getClientFullName(clientId, usertoken)
+
   const today = new Date().toISOString().split("T")[0]
 
   const expirationDate = new Date()
@@ -202,6 +229,7 @@ export async function createCardRequest(cardData: NewCardRequest): Promise<Card>
         // keep plaintext clientId for server-side filtering and client list
         clientId: clientId,
         accountNumber_json: enc(cardData.accountNumber || ""),
+        titulaire_name_json: enc(titulaireCompletName),
         key_id: "k1-mobile-v1",
       },
     }
@@ -215,6 +243,7 @@ export async function createCardRequest(cardData: NewCardRequest): Promise<Card>
         dateExpiration: dateExpiration,
         clientId: clientId,
         accountNumber: cardData.accountNumber || "",
+        titulaire_name: titulaireCompletName,
       },
     }
   }

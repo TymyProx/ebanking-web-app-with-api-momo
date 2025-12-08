@@ -53,12 +53,8 @@ import { Badge } from "@/components/ui/badge"
 import { Label } from "@/components/ui/label"
 import cn from "classnames"
 
-type CardWithUI = CardType & {
+type CardWithVisibility = CardType & {
   holder?: string
-  dailyLimit?: number
-  monthlyLimit?: number
-  balance?: number
-  lastTransaction?: string
   isNumberVisible?: boolean
 }
 
@@ -75,8 +71,8 @@ type Account = {
 }
 
 export default function CardsPage() {
-  const [cards, setCards] = useState<CardWithUI[]>([])
-  const [filteredCards, setFilteredCards] = useState<CardWithUI[]>([]) // Use the updated type here
+  const [cards, setCards] = useState<CardWithVisibility[]>([])
+  const [filteredCards, setFilteredCards] = useState<CardWithVisibility[]>([]) // Use the updated type here
   const [total, setTotal] = useState<number>(0)
   const [loading, setLoading] = useState<boolean>(true) // Set initial loading to true
   const [error, setError] = useState<string | null>(null)
@@ -98,7 +94,7 @@ export default function CardsPage() {
   const [submitSuccess, setSubmitSuccess] = useState<string | null>(null)
 
   // Card management state
-  const [selectedCard, setSelectedCard] = useState<CardWithUI | null>(null)
+  const [selectedCard, setSelectedCard] = useState<CardWithVisibility | null>(null)
   const [showLimitsDialog, setShowLimitsDialog] = useState<boolean>(false)
   const [showHistoryDialog, setShowHistoryDialog] = useState<boolean>(false)
   const [showSecurityDialog, setShowSecurityDialog] = useState<boolean>(false)
@@ -186,21 +182,24 @@ export default function CardsPage() {
           )
         : response.rows
 
-      const enhancedCards = decryptedRows.map((card) => ({
-        ...card,
-        holder: "MAMADOU DIAN BAH", // Default holder name
-        dailyLimit: 500000,
-        monthlyLimit: 2000000,
-        balance: 1250000,
-        lastTransaction: "Achat chez Carrefour - 45,000 FCFA",
+      const mappedCards: CardWithVisibility[] = decryptedRows.map((card: any, index: number) => ({
+        id: card.id || `card-${index}`,
+        numCard: card.numCard || "",
+        typCard: card.typCard || "DEBIT",
+        status: card.status || "EN_ATTENTE",
+        dateExpiration: card.dateExpiration
+          ? new Date(card.dateExpiration).toLocaleDateString("fr-FR", { month: "2-digit", year: "2-digit" })
+          : "--/--",
+        holder: card.titulaire_name || "CLIENT NAME",
         isNumberVisible: false,
+        accountNumber: card.accountNumber,
       }))
-      if (logDebug) console.log("[CARDS/UI] final rows:", enhancedCards.length)
-      setCards(enhancedCards)
+
+      setCards(mappedCards)
       setTotal(response.count)
 
       // Apply status filter immediately after loading cards
-      const initialFiltered = enhancedCards.filter((card) => {
+      const initialFiltered = mappedCards.filter((card) => {
         if (statusFilter === "all") return true
         return card.status?.toUpperCase() === statusFilter.toUpperCase()
       })
@@ -412,11 +411,16 @@ export default function CardsPage() {
     }
   }
 
-  function formatCardNumber(number: string | number, isVisible: boolean) {
-    if (!number) return "****"
-    const numStr = String(number)
-    if (isVisible) return numStr
-    return "**** **** **** " + numStr.slice(-4)
+  const formatCardNumber = (num: string, visible: boolean): string => {
+    if (!num || num === "AUTO" || num === "") return "•••• •••• •••• ••••"
+
+    if (visible) {
+      const chunks = num.match(/.{1,4}/g) || []
+      return chunks.join(" ")
+    }
+
+    const last4 = num.slice(-4)
+    return `•••• •••• •••• ${last4}`
   }
 
   function formatAmount(amount: number) {
