@@ -62,7 +62,11 @@ async function getCurrentUserInfo(token: string) {
 
 async function getClientFullName(clientId: string, token: string): Promise<string> {
   try {
-    const response = await fetch(`${BASE_URL}/tenant/${TENANT_ID}/client/${clientId}`, {
+    // Use filter to find client by userid (which is the authenticated user's ID)
+    const filterUrl = `${BASE_URL}/tenant/${TENANT_ID}/client?filter=userid||$eq||${clientId}`
+    console.log("[v0] Fetching client from:", filterUrl)
+
+    const response = await fetch(filterUrl, {
       method: "GET",
       headers: {
         Authorization: `Bearer ${token}`,
@@ -76,7 +80,30 @@ async function getClientFullName(clientId: string, token: string): Promise<strin
     }
 
     const clientData = await response.json()
-    return clientData.nomComplet || clientData.fullName || clientData.name || ""
+    console.log("[v0] Client data received:", JSON.stringify(clientData, null, 2))
+
+    // Handle different response formats
+    let client = null
+    if (Array.isArray(clientData)) {
+      client = clientData[0]
+    } else if (clientData.rows && Array.isArray(clientData.rows)) {
+      client = clientData.rows[0]
+    } else if (clientData.data && Array.isArray(clientData.data)) {
+      client = clientData.data[0]
+    } else if (clientData.value && Array.isArray(clientData.value)) {
+      client = clientData.value[0]
+    } else {
+      client = clientData
+    }
+
+    if (!client) {
+      console.error("[v0] No client found for userid:", clientId)
+      return ""
+    }
+
+    const fullName = client.nomComplet || client.fullName || client.name || ""
+    console.log("[v0] Client full name:", fullName)
+    return fullName
   } catch (error) {
     console.error("[v0] Error fetching client name:", error)
     return ""
