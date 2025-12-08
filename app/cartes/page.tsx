@@ -44,9 +44,9 @@ import {
   Clock,
 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
-import { toggleCardStatus } from "@/actions/card"
+import { toggleCardStatus } from "@/app/cartes/actions"
 
-import { fetchAllCards, createCardRequest, type Card as CardType, type NewCardRequest } from "../../actions/card"
+import { fetchAllCards, createCardRequest, type Card as CardType, type NewCardRequest } from "../actions"
 import { importAesGcmKeyFromBase64, isEncryptedJson, decryptAesGcmFromJson } from "@/lib/crypto"
 import { getAccounts } from "../accounts/actions"
 import { Badge } from "@/components/ui/badge"

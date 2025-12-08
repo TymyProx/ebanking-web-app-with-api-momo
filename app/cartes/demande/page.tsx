@@ -20,7 +20,7 @@ import {
 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { getAccounts } from "@/app/accounts/actions"
-import { createCardRequest } from "@/actions/card"
+import { createCardRequest } from "@/app/cartes/actions"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 
 interface Account {
