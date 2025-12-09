@@ -7,9 +7,10 @@ import { useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Eye, EyeOff, User, Mail, UserCheck } from "lucide-react"
+import { Eye, EyeOff, User, Mail, UserCheck, AlertCircle } from "lucide-react"
 import axios from "axios"
 import { config } from "@/lib/config"
+import { validatePassword, getPasswordRequirements } from "@/lib/password-validation"
 
 const API_BASE_URL = config.API_BASE_URL
 
@@ -19,6 +20,7 @@ export default function AcceptInvitePage() {
   const [showPassword, setShowPassword] = useState(false)
   const [token, setToken] = useState<string | null>(null)
   const [invitedEmail, setInvitedEmail] = useState<string | null>(null)
+  const [passwordErrors, setPasswordErrors] = useState<string[]>([])
   const router = useRouter()
   const searchParams = useSearchParams()
 
@@ -43,10 +45,10 @@ export default function AcceptInvitePage() {
     }
 
     setToken(tokenParam)
-    
+
     if (emailParam) {
       setInvitedEmail(emailParam)
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
         email: emailParam,
         firstName: firstNameParam || "",
@@ -55,18 +57,25 @@ export default function AcceptInvitePage() {
     }
   }, [searchParams, router])
 
+  const handlePasswordChange = (newPassword: string) => {
+    setFormData({ ...formData, password: newPassword })
+    const validation = validatePassword(newPassword)
+    setPasswordErrors(validation.errors)
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError("")
 
-    // Validation
-    if (formData.password !== formData.confirmPassword) {
-      setError("Les mots de passe ne correspondent pas")
+    const validation = validatePassword(formData.password)
+    if (!validation.isValid) {
+      setError(validation.errors.join(", "))
       return
     }
 
-    if (formData.password.length < 6) {
-      setError("Le mot de passe doit contenir au moins 6 caractères")
+    // Validation
+    if (formData.password !== formData.confirmPassword) {
+      setError("Les mots de passe ne correspondent pas")
       return
     }
 
@@ -95,11 +104,11 @@ export default function AcceptInvitePage() {
       })
 
       const authToken = response.data
-      
+
       if (authToken) {
         // Stocker le token
         localStorage.setItem("token", authToken)
-        
+
         // Récupérer les informations utilisateur
         const userResponse = await axios.get(`${API_BASE_URL}/api/auth/me`, {
           headers: {
@@ -108,7 +117,7 @@ export default function AcceptInvitePage() {
         })
 
         localStorage.setItem("user", JSON.stringify(userResponse.data))
-        
+
         // Rediriger vers le tableau de bord
         router.push("/")
       } else {
@@ -117,13 +126,13 @@ export default function AcceptInvitePage() {
     } catch (err: any) {
       console.error("Erreur lors de l'activation:", err)
       let errorMessage = "Erreur lors de l'activation du compte"
-      
+
       if (err.response?.data) {
         errorMessage = err.response.data.message || err.response.data.error || errorMessage
       } else if (err.message) {
         errorMessage = err.message
       }
-      
+
       setError(errorMessage)
     } finally {
       setIsLoading(false)
@@ -176,6 +185,23 @@ export default function AcceptInvitePage() {
                   <p className="text-sm text-red-600">{error}</p>
                 </div>
               )}
+
+              <div className="p-3 rounded-lg bg-blue-50 border border-blue-200">
+                <div className="flex items-start space-x-2">
+                  <AlertCircle className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium text-blue-900">Le mot de passe doit contenir :</p>
+                    <ul className="text-xs text-blue-700 space-y-0.5">
+                      {getPasswordRequirements().map((req, index) => (
+                        <li key={index} className="flex items-center space-x-1">
+                          <span>•</span>
+                          <span>{req}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              </div>
 
               {/* Email Field */}
               <div className="space-y-2">
@@ -245,7 +271,7 @@ export default function AcceptInvitePage() {
                     id="password"
                     type={showPassword ? "text" : "password"}
                     value={formData.password}
-                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                    onChange={(e) => handlePasswordChange(e.target.value)}
                     className="h-12 pr-10 bg-white border-gray-300 focus:border-[hsl(123,38%,57%)] focus:ring-[hsl(123,38%,57%)]"
                     required
                     disabled={isLoading}
@@ -259,6 +285,13 @@ export default function AcceptInvitePage() {
                     {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                   </button>
                 </div>
+                {formData.password && passwordErrors.length > 0 && (
+                  <div className="text-xs text-red-600 space-y-0.5 mt-1">
+                    {passwordErrors.map((err, index) => (
+                      <p key={index}>• {err}</p>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* Confirm Password Field */}

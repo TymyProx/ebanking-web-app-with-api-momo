@@ -9,8 +9,9 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { CheckCircle, XCircle, Loader2, Mail, Eye, EyeOff } from "lucide-react"
+import { CheckCircle, XCircle, Loader2, Mail, Eye, EyeOff, AlertCircle } from "lucide-react"
 import { completeSignup } from "./actions"
+import { validatePassword, getPasswordRequirements } from "@/lib/password-validation"
 
 function VerifyEmailContent() {
   const [status, setStatus] = useState<"pending" | "setting-password" | "creating" | "success" | "error">("pending")
@@ -20,6 +21,7 @@ function VerifyEmailContent() {
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
   const [error, setError] = useState("")
+  const [passwordErrors, setPasswordErrors] = useState<string[]>([])
   const router = useRouter()
   const searchParams = useSearchParams()
   const token = searchParams.get("token")
@@ -31,18 +33,24 @@ function VerifyEmailContent() {
     }
   }, [token])
 
+  const handlePasswordChange = (newPassword: string) => {
+    setPassword(newPassword)
+    const validation = validatePassword(newPassword)
+    setPasswordErrors(validation.errors)
+  }
+
   const handlePasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError("")
 
-    // Validate passwords match
-    if (password !== confirmPassword) {
-      setError("Les mots de passe ne correspondent pas")
+    const validation = validatePassword(password)
+    if (!validation.isValid) {
+      setError(validation.errors.join(", "))
       return
     }
 
-    if (password.length < 8) {
-      setError("Le mot de passe doit contenir au moins 8 caractères")
+    if (password !== confirmPassword) {
+      setError("Les mots de passe ne correspondent pas")
       return
     }
 
@@ -99,25 +107,24 @@ function VerifyEmailContent() {
                 <div className="flex justify-center">
                   <Mail className="h-16 w-16 text-[hsl(123,38%,57%)]" />
                 </div>
-              <div className="text-center space-y-2">
-              <h1 className="text-3xl font-bold text-[hsl(220,13%,13%)]">
-              Vérifiez votre email
-              </h1>
-              <p className="text-[hsl(220,13%,46%)]">
-              Un email de vérification a été envoyé à <strong>{email}</strong>
-              </p>
-              <p className="text-sm text-[hsl(220,13%,46%)]">
-              Veuillez cliquer sur le lien dans l'email pour continuer votre inscription.
-              </p>
-              </div>
-
+                <div className="text-center space-y-2">
+                  <h1 className="text-3xl font-bold text-[hsl(220,13%,13%)]">Vérifiez votre email</h1>
+                  <p className="text-[hsl(220,13%,46%)]">
+                    Un email de vérification a été envoyé à <strong>{email}</strong>
+                  </p>
+                  <p className="text-sm text-[hsl(220,13%,46%)]">
+                    Veuillez cliquer sur le lien dans l'email pour continuer votre inscription.
+                  </p>
+                </div>
               </>
             )}
 
             {status === "setting-password" && (
               <>
                 <div className="space-y-2">
-                  <h1 className="text-3xl font-bold text-[hsl(45,93%,47%)]">Nous-y sommes presque ! Définissez votre mot de passe</h1>
+                  <h1 className="text-3xl font-bold text-[hsl(45,93%,47%)]">
+                    Nous-y sommes presque ! Définissez votre mot de passe
+                  </h1>
                   <p className="text-[hsl(220,13%,46%)]">Créez un mot de passe sécurisé pour votre compte</p>
                 </div>
 
@@ -127,6 +134,24 @@ function VerifyEmailContent() {
                       <p className="text-sm text-red-600">{error}</p>
                     </div>
                   )}
+
+                  {/* Password Requirements Info Box */}
+                  <div className="p-3 rounded-lg bg-blue-50 border border-blue-200">
+                    <div className="flex items-start space-x-2">
+                      <AlertCircle className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                      <div className="space-y-1">
+                        <p className="text-sm font-medium text-blue-900">Le mot de passe doit contenir :</p>
+                        <ul className="text-xs text-blue-700 space-y-0.5">
+                          {getPasswordRequirements().map((req, index) => (
+                            <li key={index} className="flex items-center space-x-1">
+                              <span>•</span>
+                              <span>{req}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
 
                   {/* Password Field */}
                   <div className="space-y-2">
@@ -143,7 +168,7 @@ function VerifyEmailContent() {
                         required
                         minLength={8}
                         value={password}
-                        onChange={(e) => setPassword(e.target.value)}
+                        onChange={(e) => handlePasswordChange(e.target.value)}
                       />
                       <button
                         type="button"
@@ -153,6 +178,14 @@ function VerifyEmailContent() {
                         {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                       </button>
                     </div>
+                    {/* Real-time Password Validation Errors */}
+                    {password && passwordErrors.length > 0 && (
+                      <div className="text-xs text-red-600 space-y-0.5 mt-1">
+                        {passwordErrors.map((err, index) => (
+                          <p key={index}>• {err}</p>
+                        ))}
+                      </div>
+                    )}
                   </div>
 
                   {/* Confirm Password Field */}
