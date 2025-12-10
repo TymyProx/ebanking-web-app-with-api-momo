@@ -30,6 +30,7 @@ import { getAccounts } from "../actions"
 import { toggleAccountStatus, getAccountDetails } from "./actions"
 import { getUserTransactions } from "@/app/transfers/mes-virements/actions"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import React from "react"
 
 interface Account {
   id: string
@@ -62,12 +63,12 @@ interface Transaction {
 }
 
 interface AccountDetailPageProps {
-  params: { id: string }
+  params: Promise<{ id: string }>
 }
 
 export default function AccountDetailsPage({ params }: AccountDetailPageProps) {
   const router = useRouter()
-  const { id: accountId } = params
+  const { id: accountId } = React.use(params)
   const [showBalance, setShowBalance] = useState(true)
   const [account, setAccount] = useState<Account | null>(null)
 
