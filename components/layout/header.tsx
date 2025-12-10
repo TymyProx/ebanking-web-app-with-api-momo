@@ -75,18 +75,18 @@ export function Header() {
   console.log("[v0] Display name in header:", displayName)
 
   return (
-    <header className="sticky top-0 z-50 flex h-16 shrink-0 items-center gap-2 border-b bg-background px-4">
-      <SidebarTrigger className="-ml-1" />
-      <Separator orientation="vertical" className="mr-2 h-4" />
+    <TooltipProvider>
+      <header className="sticky top-0 z-50 flex h-16 shrink-0 items-center gap-2 border-b bg-background px-4">
+        <SidebarTrigger className="-ml-1" />
+        <Separator orientation="vertical" className="mr-2 h-4" />
 
-      {!isCheckingAccounts && userData && (
-        <div className="flex flex-col gap-[2px]">
-          <span className="text-sm text-muted-foreground">Bonjour,</span>
-          <span className="text-xl font-bold text-primary">{displayName}</span>
-        </div>
-      )}
+        {!isCheckingAccounts && userData && (
+          <div className="flex flex-col gap-[2px]">
+            <span className="text-sm text-muted-foreground">Bonjour,</span>
+            <span className="text-xl font-bold text-primary">{displayName}</span>
+          </div>
+        )}
 
-      <TooltipProvider>
         <div className="ml-auto flex items-center gap-2">
           <Tooltip>
             <TooltipTrigger asChild>
@@ -136,7 +136,7 @@ export function Header() {
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
-      </TooltipProvider>
-    </header>
+      </header>
+    </TooltipProvider>
   )
 }

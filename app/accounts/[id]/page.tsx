@@ -1,13 +1,12 @@
 "use client"
 
-import { useParams, useRouter } from "next/navigation"
+import { useRouter } from "next/navigation"
 import { useState, useEffect, useTransition, useMemo } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import {
   ArrowLeft,
   Download,
@@ -30,6 +29,7 @@ import {
 import { getAccounts } from "../actions"
 import { toggleAccountStatus, getAccountDetails } from "./actions"
 import { getUserTransactions } from "@/app/transfers/mes-virements/actions"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 
 interface Account {
   id: string
@@ -61,10 +61,13 @@ interface Transaction {
   balanceAfter: number
 }
 
-export default function AccountDetailsPage() {
+interface AccountDetailPageProps {
+  params: { id: string }
+}
+
+export default function AccountDetailsPage({ params }: AccountDetailPageProps) {
   const router = useRouter()
-  const params = useParams()
-  const accountId = params.id as string
+  const { id: accountId } = params
   const [showBalance, setShowBalance] = useState(true)
   const [account, setAccount] = useState<Account | null>(null)
 
@@ -397,180 +400,181 @@ export default function AccountDetailsPage() {
 
   return (
     <TooltipProvider>
-      <div className="min-h-screen bg-background">
-        <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-secondary/10 to-primary/10 rounded-2xl blur-3xl -z-10" />
-        <div className="container mx-auto p-4 md:p-6 space-y-6 pb-8">
-          <div className="flex items-center gap-4">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => router.back()}
-                  className="bg-white/80 backdrop-blur-sm"
-                >
-                  <ArrowLeft className="h-5 w-5" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Retour</p>
-              </TooltipContent>
-            </Tooltip>
-            <div>
-              <h1 className="text-3xl font-bold tracking-tight">Détails du Compte</h1>
-              <p className="text-muted-foreground">Consultez et gérez votre compte bancaire</p>
-            </div>
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 space-y-8">
+        <div className="flex items-center gap-3">
+          <Button variant="outline" size="icon" onClick={() => router.back()} className="bg-white/80 backdrop-blur-sm">
+            <ArrowLeft className="w-4 h-4" />
+          </Button>
+          <div>
+            <h1 className="text-2xl font-bold text-primary">Détails du Compte</h1>
+            <p className="text-muted-foreground">
+              {account.name} • {account.number}
+            </p>
           </div>
+        </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
-            <Card className="lg:col-span-2 relative overflow-hidden border-2 hover:border-primary/50 transition-all duration-300 shadow-lg bg-gradient-to-br from-background via-background to-muted/20">
-              <CardContent className="p-6">
-                <div className="flex items-start justify-between mb-4">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+          {/* Main balance card */}
+          <Card className="lg:col-span-2 relative overflow-hidden border-2 hover:border-primary/50 transition-all duration-300 shadow-lg">
+            <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent" />
+
+            <CardHeader className="relative">
+              <CardTitle className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="p-3 rounded-xl bg-gradient-to-br from-primary/10 to-secondary/10">
+                    {getAccountIcon(account.type)}
+                  </div>
                   <div>
-                    <p className="text-sm font-medium text-muted-foreground mb-1">Solde Disponible</p>
-                    <div className="flex items-center gap-2">
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => setShowBalance(!showBalance)}
-                            className="h-6 w-6 p-0"
-                          >
-                            {showBalance ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>{showBalance ? "Masquer le solde" : "Afficher le solde"}</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </div>
-                    <div className="text-3xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">
-                      {showBalance ? (
-                        <>
-                          {formatAmount(account.availableBalance, account.currency)} {account.currency}
-                        </>
-                      ) : (
-                        "••••••••"
-                      )}
-                    </div>
+                    <h3 className="text-xl font-bold">{account.name}</h3>
+                    <p className="text-sm text-muted-foreground font-mono">{account.number}</p>
                   </div>
                 </div>
-                <Separator />
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2 p-4 rounded-xl bg-gradient-to-br from-primary/5 to-transparent">
-                    <p className="text-sm font-medium text-muted-foreground">Solde Comptable</p>
-                    <div className="text-2xl font-bold text-primary">
-                      {showBalance ? (
-                        <>
-                          {formatAmount(account.balance, account.currency)} {account.currency}
-                        </>
-                      ) : (
-                        "••••••••"
-                      )}
-                    </div>
-                  </div>
-                </div>
-                <Separator />
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <div className="space-y-4">
-                    <div className="flex items-start space-x-3 p-3 rounded-lg bg-muted/30">
-                      <Building className="h-5 w-5 text-primary mt-0.5" />
-                      <div>
-                        <p className="text-xs text-muted-foreground font-medium">Agence</p>
-                        <p className="text-sm font-semibold">{account.branch}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-start space-x-3 p-3 rounded-lg bg-muted/30">
-                      <Calendar className="h-5 w-5 text-secondary mt-0.5" />
-                      <div>
-                        <p className="text-xs text-muted-foreground font-medium">Date d'ouverture</p>
-                        <p className="text-sm font-semibold">{formatDate(account.openingDate)}</p>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="space-y-4">
-                    <div className="flex items-start space-x-3 p-3 rounded-lg bg-muted/30">
-                      <CreditCard className="h-5 w-5 text-primary mt-0.5" />
-                      <div>
-                        <p className="text-xs text-muted-foreground font-medium">IBAN</p>
-                        <p className="text-sm font-semibold font-mono">{account.iban}</p>
-                      </div>
-                    </div>
-                    {account.interestRate && (
-                      <div className="flex items-start space-x-3 p-3 rounded-lg bg-muted/30">
-                        <TrendingUp className="h-5 w-5 text-secondary mt-0.5" />
-                        <div>
-                          <p className="text-xs text-muted-foreground font-medium">Taux d'intérêt</p>
-                          <p className="text-sm font-semibold">{account.interestRate}% par an</p>
-                        </div>
-                      </div>
-                    )}
-                    {account.overdraftLimit && (
-                      <div className="flex items-start space-x-3 p-3 rounded-lg bg-muted/30">
-                        <Shield className="h-5 w-5 text-primary mt-0.5" />
-                        <div>
-                          <p className="text-xs text-muted-foreground font-medium">Découvert autorisé</p>
-                          <p className="text-sm font-semibold">
-                            {formatAmount(account.overdraftLimit, account.currency)} {account.currency}
-                          </p>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+                <div className="flex items-center space-x-2">{getStatusBadge(account.status)}</div>
+              </CardTitle>
+            </CardHeader>
 
-            <Card className="relative overflow-hidden border-2 shadow-lg">
-              <CardHeader className="relative">
-                <CardTitle className="flex items-center">
-                  <div className="p-2 rounded-lg bg-primary mr-2">
-                    <Info className="w-5 h-5 text-white" />
+            <CardContent className="relative space-y-6">
+              {/* Balance display */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2 p-4 rounded-xl bg-gradient-to-br from-primary/5 to-transparent">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm font-medium text-muted-foreground">Solde comptable</p>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setShowBalance(!showBalance)}
+                          className="h-6 w-6 p-0"
+                        >
+                          {showBalance ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>{showBalance ? "Masquer le solde" : "Afficher le solde"}</p>
+                      </TooltipContent>
+                    </Tooltip>
                   </div>
-                  Informations
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="relative space-y-6">
-                <div className="space-y-4">
-                  <div className="p-3 rounded-lg bg-white/50 backdrop-blur-sm">
-                    <p className="text-xs text-muted-foreground uppercase font-medium mb-1">Type de compte</p>
-                    <p className="font-semibold">{account.type}</p>
-                  </div>
-                  <div className="p-3 rounded-lg bg-white/50 backdrop-blur-sm">
-                    <p className="text-xs text-muted-foreground uppercase font-medium mb-1">Devise</p>
-                    <p className="font-semibold">{account.currency}</p>
-                  </div>
-                  <div className="p-3 rounded-lg bg-white/50 backdrop-blur-sm">
-                    <p className="text-xs text-muted-foreground uppercase font-medium mb-1">Statut</p>
-                    <Badge
-                      variant={account.status === "ACTIF" ? "default" : "secondary"}
-                      className={account.status === "ACTIF" ? "bg-primary text-white" : ""}
-                    >
-                      {account.status}
-                    </Badge>
+                  <div className="text-3xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">
+                    {showBalance ? (
+                      <>
+                        {formatAmount(account.balance, account.currency)} {account.currency}
+                      </>
+                    ) : (
+                      "••••••••"
+                    )}
                   </div>
                 </div>
-                <Separator />
-                <div className="flex gap-2 flex-wrap">
+                <div className="space-y-2 p-4 rounded-xl bg-gradient-to-br from-secondary/5 to-transparent">
+                  <p className="text-sm font-medium text-muted-foreground">Solde disponible</p>
+                  <div className="text-2xl font-bold text-primary">
+                    {showBalance ? (
+                      <>
+                        {formatAmount(account.availableBalance, account.currency)} {account.currency}
+                      </>
+                    ) : (
+                      "••••••••"
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* Account details grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className="space-y-4">
+                  <div className="flex items-start space-x-3 p-3 rounded-lg bg-muted/30">
+                    <Building className="h-5 w-5 text-primary mt-0.5" />
+                    <div>
+                      <p className="text-xs text-muted-foreground font-medium">Agence</p>
+                      <p className="text-sm font-semibold">{account.branch}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start space-x-3 p-3 rounded-lg bg-muted/30">
+                    <Calendar className="h-5 w-5 text-secondary mt-0.5" />
+                    <div>
+                      <p className="text-xs text-muted-foreground font-medium">Date d'ouverture</p>
+                      <p className="text-sm font-semibold">{formatDate(account.openingDate)}</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="space-y-4">
+                  <div className="flex items-start space-x-3 p-3 rounded-lg bg-muted/30">
+                    <CreditCard className="h-5 w-5 text-primary mt-0.5" />
+                    <div>
+                      <p className="text-xs text-muted-foreground font-medium">IBAN</p>
+                      <p className="text-sm font-semibold font-mono">{account.iban}</p>
+                    </div>
+                  </div>
+                  {account.interestRate && (
+                    <div className="flex items-start space-x-3 p-3 rounded-lg bg-muted/30">
+                      <TrendingUp className="h-5 w-5 text-secondary mt-0.5" />
+                      <div>
+                        <p className="text-xs text-muted-foreground font-medium">Taux d'intérêt</p>
+                        <p className="text-sm font-semibold">{account.interestRate}% par an</p>
+                      </div>
+                    </div>
+                  )}
+                  {account.overdraftLimit && (
+                    <div className="flex items-start space-x-3 p-3 rounded-lg bg-muted/30">
+                      <Shield className="h-5 w-5 text-primary mt-0.5" />
+                      <div>
+                        <p className="text-xs text-muted-foreground font-medium">Découvert autorisé</p>
+                        <p className="text-sm font-semibold">
+                          {formatAmount(account.overdraftLimit, account.currency)} {account.currency}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="relative overflow-hidden border-2 shadow-lg">
+            <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-secondary/5" />
+
+            <CardHeader className="relative">
+              <CardTitle className="flex items-center">
+                <div className="p-2 rounded-lg bg-primary mr-2">
+                  <Info className="w-5 h-5 text-white" />
+                </div>
+                Informations
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="relative space-y-6">
+              <div className="space-y-4">
+                <div className="p-3 rounded-lg bg-white/50 backdrop-blur-sm">
+                  <p className="text-xs text-muted-foreground uppercase font-medium mb-1">Type de compte</p>
+                  <p className="font-semibold">{account.type}</p>
+                </div>
+                <div className="p-3 rounded-lg bg-white/50 backdrop-blur-sm">
+                  <p className="text-xs text-muted-foreground uppercase font-medium mb-1">Devise</p>
+                  <p className="font-semibold">{account.currency}</p>
+                </div>
+                <div className="p-3 rounded-lg bg-white/50 backdrop-blur-sm">
+                  <p className="text-xs text-muted-foreground uppercase font-medium mb-1">Statut</p>
+                  {getStatusBadge(account.status)}
+                </div>
+              </div>
+
+              <Separator />
+
+              <div className="space-y-2">
+                <p className="text-sm font-semibold mb-3">Actions disponibles</p>
+                <div className="space-y-2">
                   {account.status === "ACTIF" && !!(account.number && String(account.number).trim()) && (
                     <>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="w-full justify-start bg-white/50 hover:bg-primary/10 hover:border-primary/50 transition-all"
-                            onClick={() => router.push(`/transfers/new?fromAccount=${accountId}`)}
-                          >
-                            <ArrowUpRight className="w-4 h-4 mr-2" />
-                            Effectuer un virement
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>Effectuer un virement</p>
-                        </TooltipContent>
-                      </Tooltip>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full justify-start bg-white/50 hover:bg-primary/10 hover:border-primary/50 transition-all"
+                        onClick={() => router.push(`/transfers/new?fromAccount=${accountId}`)}
+                      >
+                        <ArrowUpRight className="w-4 h-4 mr-2" />
+                        Effectuer un virement
+                      </Button>
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <Button
@@ -584,7 +588,7 @@ export default function AccountDetailsPage() {
                           </Button>
                         </TooltipTrigger>
                         <TooltipContent>
-                          <p>Télécharger votre relevé de compte</p>
+                          <p>Télécharger le relevé de compte</p>
                         </TooltipContent>
                       </Tooltip>
                       <Button
@@ -599,125 +603,137 @@ export default function AccountDetailsPage() {
                     </>
                   )}
                 </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          <Card className="relative overflow-hidden border-2 shadow-lg">
-            <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-secondary/5" />
-            <CardHeader className="relative">
-              <div className="flex items-center justify-between">
-                <CardTitle className="flex items-center">Transactions du compte</CardTitle>
-                <Button
-                  onClick={handleRefreshTransactions}
-                  disabled={isLoadingTransactions}
-                  variant="outline"
-                  size="sm"
-                >
-                  <RefreshCw className={`h-4 w-4 mr-2 ${isLoadingTransactions ? "animate-spin" : ""}`} />
-                  {isLoadingTransactions ? "Actualisation..." : "Actualiser"}
-                </Button>
               </div>
-            </CardHeader>
-            <CardContent className="relative">
-              {isLoadingTransactions ? (
-                <div className="space-y-4">
-                  {[1, 2, 3].map((i) => (
-                    <div key={i} className="flex items-center justify-between p-4 border rounded-xl bg-white/50">
+            </CardContent>
+          </Card>
+        </div>
+
+        <Card className="relative overflow-hidden border-2 shadow-lg">
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-secondary/5" />
+
+          <CardHeader className="relative">
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center">Transactions du compte</CardTitle>
+              <Button onClick={handleRefreshTransactions} disabled={isLoadingTransactions} variant="outline" size="sm">
+                <RefreshCw className={`h-4 w-4 mr-2 ${isLoadingTransactions ? "animate-spin" : ""}`} />
+                {isLoadingTransactions ? "Actualisation..." : "Actualiser"}
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent className="relative">
+            {isLoadingTransactions ? (
+              <div className="space-y-4">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="flex items-center justify-between p-4 border rounded-xl bg-white/50">
+                    <div className="flex items-center space-x-4">
+                      <Skeleton className="w-12 h-12 rounded-full" />
+                      <div className="space-y-2">
+                        <Skeleton className="h-4 w-32" />
+                        <Skeleton className="h-3 w-48" />
+                        <Skeleton className="h-3 w-24" />
+                      </div>
+                    </div>
+                    <div className="text-right space-y-2">
+                      <Skeleton className="h-6 w-24" />
+                      <Skeleton className="h-4 w-20" />
+                      <Skeleton className="h-3 w-32" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : transactions.length === 0 ? (
+              <div className="text-center py-12">
+                <div className="p-4 rounded-full bg-gradient-to-br from-primary/10 to-secondary/10 inline-block mb-4">
+                  <FileText className="h-12 w-12 text-primary" />
+                </div>
+                <p className="text-muted-foreground">Aucune transaction trouvée pour ce compte</p>
+              </div>
+            ) : (
+              <>
+                <div className="space-y-3">
+                  {paginatedTransactions.map((transaction) => (
+                    <div
+                      key={transaction.id}
+                      className="flex items-center justify-between p-4 border-2 rounded-xl hover:border-primary/50 hover:shadow-md transition-all duration-300 bg-white/50 backdrop-blur-sm group"
+                    >
                       <div className="flex items-center space-x-4">
-                        <Skeleton className="w-12 h-12 rounded-full" />
-                        <div className="space-y-2">
-                          <Skeleton className="h-4 w-32" />
-                          <Skeleton className="h-3 w-48" />
-                          <Skeleton className="h-3 w-24" />
+                        <div
+                          className={`w-12 h-12 rounded-full flex items-center justify-center ${
+                            transaction.amount > 0
+                              ? "bg-gradient-to-br from-primary/20 to-secondary/20"
+                              : "bg-gradient-to-br from-destructive/20 to-destructive/10"
+                          }`}
+                        >
+                          {transaction.amount > 0 ? (
+                            <ArrowDownRight className="w-5 h-5 text-primary" />
+                          ) : (
+                            <ArrowUpRight className="w-5 h-5 text-destructive" />
+                          )}
+                        </div>
+                        <div>
+                          <p className="font-semibold">{transaction.type}</p>
+                          <p className="text-sm text-muted-foreground">{transaction.description}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {transaction.counterparty} • Réf: {transaction.reference}
+                          </p>
                         </div>
                       </div>
-                      <div className="text-right space-y-2">
-                        <Skeleton className="h-6 w-24" />
-                        <Skeleton className="h-4 w-20" />
-                        <Skeleton className="h-3 w-32" />
+                      <div className="text-right">
+                        <p
+                          className={`text-lg font-bold ${transaction.amount > 0 ? "text-primary" : "text-destructive"}`}
+                        >
+                          {transaction.amount > 0 ? "+" : "-"}
+                          {formatAmount(Math.abs(transaction.amount), account?.currency || transaction.currency)}{" "}
+                          {account?.currency || transaction.currency}
+                        </p>
+                        <p className="text-sm text-muted-foreground">{formatDateTime(transaction.date)}</p>
+                        {/* <Badge
+                          variant={
+                            transaction.status === "Exécuté"
+                              ? "default"
+                              : transaction.status === "En attente"
+                                ? "secondary"
+                                : "destructive"
+                          }
+                          className={
+                            transaction.status === "Exécuté"
+                              ? "bg-gradient-to-r from-primary to-secondary text-white"
+                              : ""
+                          }
+                        >
+                          {transaction.status}
+                        </Badge> */}
                       </div>
                     </div>
                   ))}
                 </div>
-              ) : transactions.length === 0 ? (
-                <div className="text-center py-12">
-                  <div className="p-4 rounded-full bg-gradient-to-br from-primary/10 to-secondary/10 inline-block mb-4">
-                    <FileText className="h-12 w-12 text-primary" />
+                {totalPages > 1 && (
+                  <div className="mt-6 flex items-center justify-center gap-2">
+                    <Button
+                      variant="outline"
+                      onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                      disabled={currentPage === 1}
+                      className="bg-gradient-to-r from-primary/10 to-secondary/10 hover:from-primary/20 hover:to-secondary/20"
+                    >
+                      Précédent
+                    </Button>
+                    <span className="px-4 py-2 text-sm text-muted-foreground">
+                      Page {currentPage} sur {totalPages}
+                    </span>
+                    <Button
+                      variant="outline"
+                      onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                      disabled={currentPage === totalPages}
+                      className="bg-gradient-to-r from-primary/10 to-secondary/10 hover:from-primary/20 hover:to-secondary/20"
+                    >
+                      Suivant
+                    </Button>
                   </div>
-                  <p className="text-muted-foreground">Aucune transaction trouvée pour ce compte</p>
-                </div>
-              ) : (
-                <>
-                  <div className="space-y-3">
-                    {paginatedTransactions.map((transaction) => (
-                      <div
-                        key={transaction.id}
-                        className="flex items-center justify-between p-4 border-2 rounded-xl hover:border-primary/50 hover:shadow-md transition-all duration-300 bg-white/50 backdrop-blur-sm group"
-                      >
-                        <div className="flex items-center space-x-4">
-                          <div
-                            className={`w-12 h-12 rounded-full flex items-center justify-center ${
-                              transaction.amount > 0
-                                ? "bg-gradient-to-br from-primary/20 to-secondary/20"
-                                : "bg-gradient-to-br from-destructive/20 to-destructive/10"
-                            }`}
-                          >
-                            {transaction.amount > 0 ? (
-                              <ArrowDownRight className="w-5 h-5 text-primary" />
-                            ) : (
-                              <ArrowUpRight className="w-5 h-5 text-destructive" />
-                            )}
-                          </div>
-                          <div>
-                            <p className="font-semibold">{transaction.type}</p>
-                            <p className="text-sm text-muted-foreground">{transaction.description}</p>
-                            <p className="text-sm text-muted-foreground">
-                              {transaction.counterparty} • Réf: {transaction.reference}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <p
-                            className={`text-lg font-bold ${transaction.amount > 0 ? "text-primary" : "text-destructive"}`}
-                          >
-                            {transaction.amount > 0 ? "+" : "-"}
-                            {formatAmount(Math.abs(transaction.amount), account?.currency || transaction.currency)}{" "}
-                            {account?.currency || transaction.currency}
-                          </p>
-                          <p className="text-sm text-muted-foreground">{formatDateTime(transaction.date)}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                  {totalPages > 1 && (
-                    <div className="mt-6 flex items-center justify-center gap-2">
-                      <Button
-                        variant="outline"
-                        onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-                        disabled={currentPage === 1}
-                        className="bg-gradient-to-r from-primary/10 to-secondary/10 hover:from-primary/20 hover:to-secondary/20"
-                      >
-                        Précédent
-                      </Button>
-                      <span className="px-4 py-2 text-sm text-muted-foreground">
-                        Page {currentPage} sur {totalPages}
-                      </span>
-                      <Button
-                        variant="outline"
-                        onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-                        disabled={currentPage === totalPages}
-                        className="bg-gradient-to-r from-primary/10 to-secondary/10 hover:from-primary/20 hover:to-secondary/20"
-                      >
-                        Suivant
-                      </Button>
-                    </div>
-                  )}
-                </>
-              )}
-            </CardContent>
-          </Card>
-        </div>
+                )}
+              </>
+            )}
+          </CardContent>
+        </Card>
       </div>
     </TooltipProvider>
   )

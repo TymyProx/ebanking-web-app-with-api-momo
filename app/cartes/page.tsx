@@ -23,7 +23,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import {
   CreditCard,
   Eye,
@@ -53,6 +52,7 @@ import { getAccounts } from "../accounts/actions"
 import { Badge } from "@/components/ui/badge"
 import { Label } from "@/components/ui/label"
 import cn from "classnames"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 
 type CardWithVisibility = CardType & {
   holder?: string
@@ -479,7 +479,7 @@ export default function CardsPage() {
 
   return (
     <TooltipProvider>
-      <div className="container mx-auto p-4 space-y-6 max-w-7xl">
+      <div className="flex min-h-screen flex-col space-y-6">
         <div className="mt-6 space-y-6">
           <div className="space-y-2">
             <h1 className="text-3xl font-bold text-primary">Mes Cartes</h1>
@@ -597,7 +597,7 @@ export default function CardsPage() {
                           }}
                         >
                           {/* Front of Card */}
-                          <div
+                          <Card
                             className="overflow-hidden shadow-2xl hover:shadow-[0_25px_50px_-12px_rgba(0,0,0,0.5)] transition-shadow duration-300 backface-hidden"
                             style={{ backfaceVisibility: "hidden" }}
                           >
@@ -636,6 +636,7 @@ export default function CardsPage() {
                                         variant="ghost"
                                         size="sm"
                                         onClick={(e) => {
+                                          console.log("[v0] Eye button clicked")
                                           e.stopPropagation()
                                           e.preventDefault()
                                           toggleCardNumberVisibility(currentCard.id)
@@ -680,10 +681,10 @@ export default function CardsPage() {
                               {/* Shine effect on hover */}
                               <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/0 to-transparent opacity-0 hover:opacity-10 transition-opacity duration-500 pointer-events-none" />
                             </div>
-                          </div>
+                          </Card>
 
                           {/* Back of Card */}
-                          <div
+                          <Card
                             className="overflow-hidden shadow-2xl hover:shadow-[0_25px_50px_-12px_rgba(0,0,0,0.5)] transition-shadow duration-300 absolute top-0 left-0 w-full backface-hidden"
                             style={{
                               backfaceVisibility: "hidden",
@@ -719,7 +720,7 @@ export default function CardsPage() {
                               {/* Shine effect on hover for back side */}
                               <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/0 to-transparent opacity-0 hover:opacity-10 transition-opacity duration-500 pointer-events-none" />
                             </div>
-                          </div>
+                          </Card>
                         </div>
                       </div>
 
@@ -762,71 +763,69 @@ export default function CardsPage() {
                         ))}
                       </div>
                     )}
-                    <div className="max-w-md mx-auto">
-                      <div className="p-6 flex justify-center items-center h-40">
-                        <div className="space-y-4 pt-6 pb-6">
-                          <div className="flex gap-2">
-                            {currentCard.status?.toUpperCase() === "ACTIF" ? (
-                              <Button
-                                variant="destructive"
-                                size="sm"
-                                onClick={() => openConfirmDialog(currentCard.id, currentCard.status)}
-                                disabled={loadingCardId === currentCard.id}
-                                className="flex-1"
-                              >
-                                {loadingCardId === currentCard.id ? (
-                                  <Loader2 className="h-4 w-4 animate-spin" />
-                                ) : (
-                                  <>
-                                    <Lock className="mr-2 h-4 w-4" />
-                                    Bloquer
-                                  </>
-                                )}
+                    <Card className="max-w-md mx-auto">
+                      <CardContent className="space-y-4 pt-6 pb-6">
+                        <div className="flex gap-2">
+                          {currentCard.status?.toUpperCase() === "ACTIF" ? (
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => openConfirmDialog(currentCard.id, currentCard.status)}
+                              disabled={loadingCardId === currentCard.id}
+                              className="flex-1"
+                            >
+                              {loadingCardId === currentCard.id ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <>
+                                  <Lock className="mr-2 h-4 w-4" />
+                                  Bloquer
+                                </>
+                              )}
+                            </Button>
+                          ) : currentCard.status?.toUpperCase() === "BLOCKED" ||
+                            currentCard.status?.toUpperCase() === "BLOQUE" ? (
+                            <Button
+                              variant="default"
+                              size="sm"
+                              onClick={() => openConfirmDialog(currentCard.id, currentCard.status)}
+                              disabled={loadingCardId === currentCard.id}
+                              className="flex-1"
+                            >
+                              {loadingCardId === currentCard.id ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <>
+                                  <Unlock className="mr-2 h-4 w-4" />
+                                  Débloquer
+                                </>
+                              )}
+                            </Button>
+                          ) : null}
+
+                          <Dialog>
+                            <DialogTrigger asChild>
+                              <Button variant="outline" size="sm" onClick={() => setSelectedCard(currentCard)}>
+                                <Settings className="w-4 h-4" />
                               </Button>
-                            ) : currentCard.status?.toUpperCase() === "BLOCKED" ||
-                              currentCard.status?.toUpperCase() === "BLOQUE" ? (
-                              <Button
-                                variant="default"
-                                size="sm"
-                                onClick={() => openConfirmDialog(currentCard.id, currentCard.status)}
-                                disabled={loadingCardId === currentCard.id}
-                                className="flex-1"
-                              >
-                                {loadingCardId === currentCard.id ? (
-                                  <Loader2 className="h-4 w-4 animate-spin" />
-                                ) : (
-                                  <>
-                                    <Unlock className="mr-2 h-4 w-4" />
-                                    Débloquer
-                                  </>
-                                )}
-                              </Button>
-                            ) : null}
+                            </DialogTrigger>
 
-                            <Dialog>
-                              <DialogTrigger asChild>
-                                <Button variant="outline" size="sm" onClick={() => setSelectedCard(currentCard)}>
-                                  <Settings className="w-4 h-4" />
-                                </Button>
-                              </DialogTrigger>
+                            <DialogContent className="max-w-2xl">
+                              <DialogHeader>
+                                <DialogTitle>Gestion de la carte</DialogTitle>
+                                <DialogDescription>
+                                  {currentCard.typCard} - {formatCardNumber(currentCard.numCard, false)}
+                                </DialogDescription>
+                              </DialogHeader>
 
-                              <DialogContent className="max-w-2xl">
-                                <DialogHeader>
-                                  <DialogTitle>Gestion de la carte</DialogTitle>
-                                  <DialogDescription>
-                                    {currentCard.typCard} - {formatCardNumber(currentCard.numCard, false)}
-                                  </DialogDescription>
-                                </DialogHeader>
-
-                                <div className="p-4 flex justify-center items-center h-40">
-                                  <p className="text-muted-foreground">Options de gestion avancées à venir...</p>
-                                </div>
-                              </DialogContent>
-                            </Dialog>
-                          </div>
+                              <div className="p-4 flex justify-center items-center h-40">
+                                <p className="text-muted-foreground">Options de gestion avancées à venir...</p>
+                              </div>
+                            </DialogContent>
+                          </Dialog>
                         </div>
-                      </div>
-                    </div>
+                      </CardContent>
+                    </Card>
                   </div>
                 )
               })()}
@@ -902,7 +901,7 @@ export default function CardsPage() {
                       <Label>Types de cartes disponibles pour ce compte</Label>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                         {getAvailableCardTypes(newCardData.selectedAccount).map((cardType) => (
-                          <div
+                          <Card
                             key={cardType.type}
                             className={`cursor-pointer transition-all hover:scale-105 border-2 ${
                               newCardData.typCard === cardType.type
@@ -920,7 +919,7 @@ export default function CardsPage() {
                               </div>
                               <h3 className="font-bold text-lg">{cardType.name}</h3>
                             </div>
-                            <div className="p-4">
+                            <CardContent className="p-4">
                               <div className="space-y-2">
                                 <h4 className="font-medium text-sm text-gray-700">Avantages :</h4>
                                 <ul className="space-y-1">
@@ -932,8 +931,8 @@ export default function CardsPage() {
                                   ))}
                                 </ul>
                               </div>
-                            </div>
-                          </div>
+                            </CardContent>
+                          </Card>
                         ))}
                       </div>
 
@@ -991,7 +990,6 @@ export default function CardsPage() {
           open={confirmDialog.isOpen}
           onOpenChange={(open) => !open && setConfirmDialog({ ...confirmDialog, isOpen: false })}
         >
-          <div className="absolute inset-0 bg-black/50 flex justify-center items-center" />
           <AlertDialogContent onInteractOutside={() => setConfirmDialog({ ...confirmDialog, isOpen: false })}>
             <AlertDialogHeader>
               <AlertDialogTitle>
