@@ -385,8 +385,14 @@ export async function initiateExistingClientSignup(data: { clientCode: string })
         existingClients = existingClientData.value
       }
 
-      if (existingClients.length > 0) {
-        console.log("[v0] Client with this codeClient already exists")
+      console.log("[v0] Found existing clients count:", existingClients.length)
+      console.log(
+        "[v0] Exact match found:",
+        existingClients.find((client) => client.codeClient === numClient) ? "YES" : "NO",
+      )
+
+      if (existingClients.find((client) => client.codeClient === numClient)) {
+        console.log("[v0] Client with this codeClient already exists:", numClient)
         return {
           success: false,
           message: "Ce compte est déjà inscrit. Veuillez vous connecter avec vos identifiants.",
