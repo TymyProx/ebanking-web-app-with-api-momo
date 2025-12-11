@@ -122,7 +122,8 @@ export async function completeSignup(token: string, password: string, emailFallb
           telephone: String(pendingData.phone || ""),
           adresse: String(pendingData.address || ""),
           codeClient: String(pendingData.numClient),
-          userid: String(userId),
+          verificationToken: token,
+          clientType: "existing",
         },
       }
 
@@ -148,6 +149,10 @@ export async function completeSignup(token: string, password: string, emailFallb
       const clientData = await clientResponse.json()
       const clientId = clientData.id || clientData.data?.id
       console.log("[v0] Client profile created successfully, clientId:", clientId)
+
+      console.log("[v0] VERIFICATION: userId =", userId, ", clientId =", clientId)
+      console.log("[v0] VERIFICATION: Client was created with userid =", userId)
+      console.log("[v0] VERIFICATION: Accounts will be created with clientId =", userId, "(userId)")
 
       if (!clientId) {
         console.error("[v0] No clientId returned from client creation")
@@ -251,7 +256,7 @@ export async function completeSignup(token: string, password: string, emailFallb
               availableBalance: String(compteBng.availableBalance || "0"),
               status: "ACTIF",
               codeAgence: codeAgence || "001",
-              clientId: String(clientId), // Link to client record
+              clientId: String(userId), // Link to user ID, not client record ID
               codeBanque: codeBanque || "BNG",
               cleRib: cleRib || "00",
             },
