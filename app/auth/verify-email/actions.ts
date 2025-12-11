@@ -206,16 +206,16 @@ export async function completeSignup(token: string, password: string, emailFallb
             data: {
               accountId: String(compteBng.numCompte || ""),
               accountNumber: String(compteBng.numCompte || ""),
-              accountName: String(compteBng.accountName || "Compte"),
+              accountName: String(compteBng.accountName || compteBng.typeCompte || "Compte"),
               type: mappedType,
               currency: String(compteBng.devise || "GNF"),
               bookBalance: String(compteBng.bookBalance || "0"),
               availableBalance: String(compteBng.availableBalance || "0"),
               status: "ACTIF",
-              codeAgence: "N/A",
-              clientId: String(userId), // Link to auth userId
-              codeBanque: "N/A",
-              cleRib: "N/A",
+              codeAgence: String(compteBng.codeAgence || "N/A"),
+              clientId: String(clientId), // Link to the client record, not userId
+              codeBanque: String(compteBng.codeBanque || "N/A"),
+              cleRib: String(compteBng.cleRib || "N/A"),
             },
           }
 
@@ -236,10 +236,17 @@ export async function completeSignup(token: string, password: string, emailFallb
           if (!compteResponse.ok) {
             const responseText = await compteResponse.text()
             console.error("[v0] Compte creation failed:", responseText)
-            throw new Error("Erreur lors de la création des comptes. Veuillez réessayer.")
+            console.warn("[v0] Skipping account creation for:", compteBng.numCompte)
+            continue
           }
 
-          console.log("[v0] Compte created successfully for account:", compteBng.numCompte)
+          const compteCreatedData = await compteResponse.json()
+          console.log(
+            "[v0] Compte created successfully for account:",
+            compteBng.numCompte,
+            "- ID:",
+            compteCreatedData.id || compteCreatedData.data?.id,
+          )
         }
       }
 

@@ -357,6 +357,80 @@ export async function initiateExistingClientSignup(data: { clientCode: string })
     console.log("[v0] - Phone:", clientPhone)
     console.log("[v0] - NumClient:", numClient)
 
+    console.log("[v0] Step 2.5: Checking if client already exists with codeClient:", numClient)
+
+    const existingClientUrl = `${API_BASE_URL}/tenant/${TENANT_ID}/client?filter=codeClient||$eq||${encodeURIComponent(numClient)}`
+    console.log("[v0] Checking existing client URL:", existingClientUrl)
+
+    const existingClientResponse = await fetch(existingClientUrl, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${supportToken}`,
+      },
+    })
+
+    if (existingClientResponse.ok) {
+      const existingClientData = await existingClientResponse.json()
+      console.log("[v0] Existing client check response:", JSON.stringify(existingClientData, null, 2))
+
+      let existingClients: any[] = []
+      if (Array.isArray(existingClientData)) {
+        existingClients = existingClientData
+      } else if (existingClientData.data && Array.isArray(existingClientData.data)) {
+        existingClients = existingClientData.data
+      } else if (existingClientData.rows && Array.isArray(existingClientData.rows)) {
+        existingClients = existingClientData.rows
+      } else if (existingClientData.value && Array.isArray(existingClientData.value)) {
+        existingClients = existingClientData.value
+      }
+
+      if (existingClients.length > 0) {
+        console.log("[v0] Client with this codeClient already exists")
+        return {
+          success: false,
+          message: "Ce compte est déjà inscrit. Veuillez vous connecter avec vos identifiants.",
+        }
+      }
+    }
+
+    console.log("[v0] Step 2.6: Checking if email already exists:", clientEmail)
+
+    const existingUsersUrl = `${API_BASE_URL}/tenant/${TENANT_ID}/users?filter=email||$eq||${encodeURIComponent(clientEmail)}`
+    console.log("[v0] Checking existing users URL:", existingUsersUrl)
+
+    const existingUsersResponse = await fetch(existingUsersUrl, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${supportToken}`,
+      },
+    })
+
+    if (existingUsersResponse.ok) {
+      const existingUsersData = await existingUsersResponse.json()
+      console.log("[v0] Existing users check response:", JSON.stringify(existingUsersData, null, 2))
+
+      let existingUsers: any[] = []
+      if (Array.isArray(existingUsersData)) {
+        existingUsers = existingUsersData
+      } else if (existingUsersData.data && Array.isArray(existingUsersData.data)) {
+        existingUsers = existingUsersData.data
+      } else if (existingUsersData.rows && Array.isArray(existingUsersData.rows)) {
+        existingUsers = existingUsersData.rows
+      } else if (existingUsersData.value && Array.isArray(existingUsersData.value)) {
+        existingUsers = existingUsersData.value
+      }
+
+      if (existingUsers.length > 0) {
+        console.log("[v0] User with this email already exists")
+        return {
+          success: false,
+          message: "Ce compte est déjà inscrit. Veuillez vous connecter avec vos identifiants.",
+        }
+      }
+    }
+
     const verificationToken = randomBytes(32).toString("hex")
 
     const cookieStore = await cookies()

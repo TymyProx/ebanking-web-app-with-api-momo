@@ -42,6 +42,7 @@ interface Account {
   type: string
   status: string
   iban: string
+  rib?: string
   openingDate: string
   branch: string
   interestRate?: number
@@ -121,6 +122,7 @@ export default function AccountDetailsPage({ params }: AccountDetailPageProps) {
 
         if (accountDetails) {
           const iban = `${accountDetails.codeBanque || ""}${accountDetails.codeAgence || ""}${accountDetails.accountNumber || ""}${accountDetails.cleRib || ""}`
+          const rib = `${accountDetails.codeBanque || ""}${accountDetails.codeAgence || ""}${accountDetails.accountNumber || ""}${accountDetails.cleRib || ""}`
 
           const adaptedAccount: Account = {
             id: accountDetails.id || accountDetails.accountId,
@@ -132,6 +134,7 @@ export default function AccountDetailsPage({ params }: AccountDetailPageProps) {
             type: accountDetails.type,
             status: accountDetails.status,
             iban: iban,
+            rib: rib,
             openingDate: accountDetails.createdAt || "2020-01-01",
             branch: accountDetails.codeAgence || "Agence Kaloum",
             overdraftLimit: accountDetails.currency === "GNF" ? 500000 : undefined,
@@ -146,6 +149,7 @@ export default function AccountDetailsPage({ params }: AccountDetailPageProps) {
 
             if (foundAccount) {
               const iban = `${foundAccount.codeBanque || ""}${foundAccount.codeAgence || ""}${foundAccount.accountNumber || ""}${foundAccount.cleRib || ""}`
+              const rib = `${foundAccount.codeBanque || ""}${foundAccount.codeAgence || ""}${foundAccount.accountNumber || ""}${foundAccount.cleRib || ""}`
 
               const adaptedAccount: Account = {
                 id: foundAccount.id || foundAccount.accountId,
@@ -157,6 +161,7 @@ export default function AccountDetailsPage({ params }: AccountDetailPageProps) {
                 type: foundAccount.type,
                 status: foundAccount.status,
                 iban: iban,
+                rib: rib,
                 openingDate: foundAccount.createdAt || "2020-01-01",
                 branch: foundAccount.codeAgence || "Agence Kaloum",
                 overdraftLimit: foundAccount.currency === "GNF" ? 500000 : undefined,
@@ -508,6 +513,15 @@ export default function AccountDetailsPage({ params }: AccountDetailPageProps) {
                       <p className="text-sm font-semibold font-mono">{account.iban}</p>
                     </div>
                   </div>
+                  {account.rib && (
+                    <div className="flex items-start space-x-3 p-3 rounded-lg bg-muted/30">
+                      <CreditCard className="h-5 w-5 text-secondary mt-0.5" />
+                      <div>
+                        <p className="text-xs text-muted-foreground font-medium">RIB</p>
+                        <p className="text-sm font-semibold font-mono">{account.rib}</p>
+                      </div>
+                    </div>
+                  )}
                   {account.interestRate && (
                     <div className="flex items-start space-x-3 p-3 rounded-lg bg-muted/30">
                       <TrendingUp className="h-5 w-5 text-secondary mt-0.5" />
