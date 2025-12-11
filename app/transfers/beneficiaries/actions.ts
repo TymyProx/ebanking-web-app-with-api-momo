@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache"
 import { cookies } from "next/headers"
 import { encryptAesGcmNode } from "../../transfers/new/secure"
 import { config } from "@/lib/config"
+import { decryptDataServer } from "@/lib/server-encryption"
 
 interface ActionResult {
   success?: boolean
@@ -126,16 +127,20 @@ export async function getBeneficiaries(): Promise<ApiBeneficiary[]> {
 
     const data: GetBeneficiariesResponse = await response.json()
 
-    // Handle new response structure with rows array
+    let beneficiaries: ApiBeneficiary[] = []
     if (data.rows && Array.isArray(data.rows)) {
       if (currentUserId) {
-        return data.rows.filter((beneficiary) => beneficiary.clientId === currentUserId)
+        beneficiaries = data.rows.filter((beneficiary) => beneficiary.clientId === currentUserId)
+      } else {
+        beneficiaries = data.rows
       }
-      return data.rows
     }
 
-    // Fallback for unexpected response format
-    return []
+    const decryptedBeneficiaries = await Promise.all(
+      beneficiaries.map((beneficiary) => decryptDataServer(beneficiary as any)),
+    )
+
+    return decryptedBeneficiaries as ApiBeneficiary[]
   } catch (error) {
     console.error("Erreur lors de la récupération des bénéficiaires:", error)
     return []
@@ -274,8 +279,8 @@ export async function addBeneficiaryAndActivate(
     const clientId = await getCurrentClientId()
 
     const secureMode = (process.env.NEXT_PUBLIC_PORTAL_SECURE_MODE || "false").toLowerCase() === "true"
-    const keyB64 = process.env.NEXT_PUBLIC_PORTAL_KEY_B64 || ""
-    const keyId = process.env.NEXT_PUBLIC_PORTAL_KEY_ID || "k1-mobile-v1"
+    const keyB64 = process.env.PORTAL_KEY_B64 || ""
+    const keyId = process.env.PORTAL_KEY_ID || "k1-mobile-v1"
 
     console.log("[addBeneficiaryAndActivate] Form values", {
       name,
@@ -451,8 +456,8 @@ export async function addBeneficiary(prevState: ActionResult | null, formData: F
     const clientId = await getCurrentClientId()
 
     const secureMode = (process.env.NEXT_PUBLIC_PORTAL_SECURE_MODE || "false").toLowerCase() === "true"
-    const keyB64 = process.env.NEXT_PUBLIC_PORTAL_KEY_B64 || ""
-    const keyId = process.env.NEXT_PUBLIC_PORTAL_KEY_ID || "k1-mobile-v1"
+    const keyB64 = process.env.PORTAL_KEY_B64 || ""
+    const keyId = process.env.PORTAL_KEY_ID || "k1-mobile-v1"
 
     const base = {
       beneficiaryId: `BEN_${Date.now()}`,

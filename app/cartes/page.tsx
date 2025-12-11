@@ -45,9 +45,7 @@ import {
 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { toggleCardStatus } from "@/app/cartes/actions"
-
 import { fetchAllCards, createCardRequest, type Card as CardType, type NewCardRequest } from "../actions"
-import { importAesGcmKeyFromBase64, isEncryptedJson, decryptAesGcmFromJson } from "@/lib/crypto"
 import { getAccounts } from "../accounts/actions"
 import { Badge } from "@/components/ui/badge"
 import { Label } from "@/components/ui/label"
@@ -75,7 +73,7 @@ export default function CardsPage() {
   const [cards, setCards] = useState<CardWithVisibility[]>([])
   const [filteredCards, setFilteredCards] = useState<CardWithVisibility[]>([]) // Use the updated type here
   const [total, setTotal] = useState<number>(0)
-  const [loading, setLoading] = useState<boolean>(true) // Set initial loading to true
+  const [loading, setIsLoading] = useState<boolean>(true) // Set initial loading to true
   const [error, setError] = useState<string | null>(null)
   const [statusFilter, setStatusFilter] = useState<string>("ACTIF")
   const [currentCardIndex, setCurrentCardIndex] = useState<number>(0)
@@ -133,88 +131,48 @@ export default function CardsPage() {
     }
   }
 
-  async function loadCards() {
-    setLoading(true)
-    setError(null)
-
-    try {
-      const response = await fetchAllCards()
-      const secureMode = (process.env.NEXT_PUBLIC_PORTAL_SECURE_MODE || "false").toLowerCase() === "true"
-      const keyB64 = process.env.NEXT_PUBLIC_PORTAL_KEY_B64 || ""
-      const logDebug = (process.env.NEXT_PUBLIC_LOG_LEVEL || "").toLowerCase() === "debug"
-      let key: CryptoKey | null = null
+  useEffect(() => {
+    async function loadCards() {
       try {
-        if (secureMode && keyB64) key = await importAesGcmKeyFromBase64(keyB64)
-      } catch (_) {
-        key = null
+        setIsLoading(true)
+        const response = await fetchAllCards()
+        const cards = response.rows
+
+        const mappedCards: CardWithVisibility[] = cards.map((card: any, index: number) => ({
+          id: card.id || `card-${index}`,
+          numCard: card.numCard || "",
+          typCard: card.typCard || "DEBIT",
+          status: card.status || "EN_ATTENTE",
+          dateExpiration: card.dateExpiration
+            ? new Date(card.dateExpiration).toLocaleDateString("fr-FR", { month: "2-digit", year: "2-digit" })
+            : "--/--",
+          holder: card.titulaire_name || "CLIENT NAME",
+          isNumberVisible: false,
+          accountNumber: card.accountNumber,
+        }))
+
+        setCards(mappedCards)
+        setTotal(response.count)
+
+        // Apply status filter immediately after loading cards
+        const initialFiltered = mappedCards.filter((card) => {
+          if (statusFilter === "all") return true
+          return card.status?.toUpperCase() === statusFilter.toUpperCase()
+        })
+        setFilteredCards(initialFiltered)
+      } catch (e: any) {
+        setError(e?.message ?? String(e))
+        setCards([])
+        setFilteredCards([]) // Clear filtered cards on error
+        setTotal(0)
+      } finally {
+        setIsLoading(false)
+        setIsRefreshing(false) // Ensure isRefreshing is false when done
       }
-      if (logDebug) console.log("[CARDS/UI] secure:", secureMode, "key:", !!key, "rows:", response.rows.length)
-
-      const decryptedRows = key
-        ? await Promise.all(
-            response.rows.map(async (c: any) => {
-              const out: any = { ...c }
-              try {
-                if (isEncryptedJson(out.numCard))
-                  out.numCard = await decryptAesGcmFromJson(out.numCard, key as CryptoKey)
-                if (isEncryptedJson(out.accountNumber))
-                  out.accountNumber = await decryptAesGcmFromJson(out.accountNumber, key as CryptoKey)
-                if (isEncryptedJson(out.typCard))
-                  out.typCard = await decryptAesGcmFromJson(out.typCard, key as CryptoKey)
-                if (isEncryptedJson(out.status)) out.status = await decryptAesGcmFromJson(out.status, key as CryptoKey)
-                if (isEncryptedJson(out.dateEmission))
-                  out.dateEmission = await decryptAesGcmFromJson(out.dateEmission, key as CryptoKey)
-                if (isEncryptedJson(out.dateExpiration))
-                  out.dateExpiration = await decryptAesGcmFromJson(out.dateExpiration, key as CryptoKey)
-              } catch (_) {}
-              if (logDebug)
-                console.log("[CARDS/UI] row:", {
-                  id: out.id,
-                  clientId: out.clientId,
-                  numType: typeof out.numCard,
-                  accType: typeof out.accountNumber,
-                })
-              out.numCard = typeof out.numCard === "string" ? out.numCard : ""
-              out.accountNumber = typeof out.accountNumber === "string" ? out.accountNumber : ""
-              out.typCard = typeof out.typCard === "string" ? out.typCard : ""
-              out.status = typeof out.status === "string" ? out.status : ""
-              return out
-            }),
-          )
-        : response.rows
-
-      const mappedCards: CardWithVisibility[] = decryptedRows.map((card: any, index: number) => ({
-        id: card.id || `card-${index}`,
-        numCard: card.numCard || "",
-        typCard: card.typCard || "DEBIT",
-        status: card.status || "EN_ATTENTE",
-        dateExpiration: card.dateExpiration
-          ? new Date(card.dateExpiration).toLocaleDateString("fr-FR", { month: "2-digit", year: "2-digit" })
-          : "--/--",
-        holder: card.titulaire_name || "CLIENT NAME",
-        isNumberVisible: false,
-        accountNumber: card.accountNumber,
-      }))
-
-      setCards(mappedCards)
-      setTotal(response.count)
-
-      // Apply status filter immediately after loading cards
-      const initialFiltered = mappedCards.filter((card) => {
-        if (statusFilter === "all") return true
-        return card.status?.toUpperCase() === statusFilter.toUpperCase()
-      })
-      setFilteredCards(initialFiltered)
-    } catch (e: any) {
-      setError(e?.message ?? String(e))
-      setCards([])
-      setFilteredCards([]) // Clear filtered cards on error
-      setTotal(0)
-    } finally {
-      setLoading(false)
-      setIsRefreshing(false) // Ensure isRefreshing is false when done
     }
-  }
+
+    loadCards()
+  }, []) // Empty dependency array ensures this runs only once on mount
 
   async function handleNewCardRequest() {
     if (!newCardData.selectedAccount) {
@@ -242,7 +200,7 @@ export default function CardsPage() {
       setSubmitSuccess("Demande de carte créée avec succès !")
       setNewCardData({ typCard: "", selectedAccount: "" })
       setShowNewCardForm(false)
-      await loadCards()
+      await fetchAllCards() // Corrected variable name
     } catch (e: any) {
       setSubmitError(e?.message ?? "Erreur lors de la création de la demande")
     } finally {
@@ -261,7 +219,7 @@ export default function CardsPage() {
           description: result.message,
         })
         // Refresh the cards list
-        await loadCards()
+        await fetchAllCards() // Corrected variable name
       } else {
         toast.toast({
           title: "Erreur",
@@ -444,7 +402,7 @@ export default function CardsPage() {
 
   const handleRefresh = async () => {
     setIsRefreshing(true)
-    await loadCards()
+    await fetchAllCards() // Corrected variable name
   }
 
   // Effect to filter cards when statusFilter changes
@@ -473,7 +431,6 @@ export default function CardsPage() {
   }, [submitSuccess])
 
   useEffect(() => {
-    loadCards()
     loadAccounts()
   }, []) // Empty dependency array ensures this runs only once on mount
 

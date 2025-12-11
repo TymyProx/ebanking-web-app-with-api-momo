@@ -38,7 +38,6 @@ import {
 import { useActionState } from "react"
 import type React from "react"
 import { useRef } from "react"
-import { importAesGcmKeyFromBase64, decryptAesGcmFromJson, isEncryptedJson } from "@/lib/crypto"
 import { toast } from "@/hooks/use-toast"
 import { OtpModal } from "@/components/otp-modal"
 
@@ -116,7 +115,7 @@ export default function BeneficiariesPage() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [editingBeneficiary, setEditingBeneficiary] = useState<Beneficiary | null>(null)
   const [beneficiaries, setBeneficiaries] = useState<Beneficiary[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+  const [isLoading, setIsLoading] = useState(true) // Renamed from setLoading
   const [isPending, startTransition] = useTransition()
 
   // ✅ NEW: Ajout état pour la modale de détails
@@ -166,58 +165,41 @@ export default function BeneficiariesPage() {
     setIsLoading(true)
     try {
       const apiBeneficiaries = await getBeneficiaries()
-      const secureMode = (process.env.NEXT_PUBLIC_PORTAL_SECURE_MODE || "false").toLowerCase() === "true"
-      const keyB64 = process.env.NEXT_PUBLIC_PORTAL_KEY_B64 || ""
-      const key = secureMode && keyB64 ? await importAesGcmKeyFromBase64(keyB64) : null
 
-      async function resolveField(value: any): Promise<string> {
-        if (!value) return ""
-        if (secureMode && key && (isEncryptedJson(value) || typeof value === "string")) {
+      const transformedBeneficiaries: Beneficiary[] = apiBeneficiaries.map((apiB: any) => {
+        // Data is already decrypted server-side
+        const name = apiB.name ?? ""
+        const accountNumber = apiB.accountNumber ?? ""
+        const bankNamePlain = apiB.bankName ?? ""
+        const bankResolved = bankNamePlain || getBankNameFromCode(apiB.bankCode)
+        const codagence = apiB.codagence ?? ""
+        const clerib = apiB.clerib ?? ""
+        const workflowStatus = toWorkflowStatus(apiB.workflowStatus)
+        let workflowMetadata = apiB.workflowMetadata || null
+        if (workflowMetadata && typeof workflowMetadata === "string") {
           try {
-            return await decryptAesGcmFromJson(value, key)
+            workflowMetadata = JSON.parse(workflowMetadata)
           } catch {
-            // Fallback to string if decrypt fails
+            workflowMetadata = null
           }
         }
-        return typeof value === "string" ? value : JSON.stringify(value)
-      }
 
-      const transformedBeneficiaries: Beneficiary[] = await Promise.all(
-        apiBeneficiaries.map(async (apiB: any) => {
-          const name = await resolveField(apiB.name ?? apiB.name_json)
-          const accountNumber = await resolveField(apiB.accountNumber ?? apiB.accountNumber_json)
-          const bankNamePlain = await resolveField(apiB.bankName ?? apiB.bankName_json)
-          const bankCodePlain = await resolveField(apiB.bankCode ?? apiB.bankCode_json)
-          const bankResolved = bankNamePlain || getBankNameFromCode(bankCodePlain)
-          const codagence = await resolveField(apiB.codagence ?? apiB.codagence_json)
-          const clerib = await resolveField(apiB.clerib ?? apiB.clerib_json)
-          const workflowStatus = toWorkflowStatus(apiB.workflowStatus)
-          let workflowMetadata = apiB.workflowMetadata || null
-          if (workflowMetadata && typeof workflowMetadata === "string") {
-            try {
-              workflowMetadata = JSON.parse(workflowMetadata)
-            } catch {
-              workflowMetadata = null
-            }
-          }
-
-          return {
-            id: apiB.id,
-            name,
-            account: accountNumber,
-            bank: bankResolved,
-            type: apiB.typeBeneficiary,
-            favorite: Boolean(apiB.favoris),
-            lastUsed: "Jamais",
-            addedDate: new Date(apiB.createdAt).toLocaleDateString("fr-FR"),
-            status: apiB.status,
-            codagence,
-            clerib,
-            workflowStatus,
-            workflowMetadata,
-          } as Beneficiary
-        }),
-      )
+        return {
+          id: apiB.id,
+          name,
+          account: accountNumber,
+          bank: bankResolved,
+          type: apiB.typeBeneficiary,
+          favorite: Boolean(apiB.favoris),
+          lastUsed: "Jamais", // This might need to be fetched or calculated differently if available
+          addedDate: apiB.createdAt ? new Date(apiB.createdAt).toLocaleDateString("fr-FR") : "",
+          status: apiB.status,
+          codagence,
+          clerib,
+          workflowStatus,
+          workflowMetadata,
+        } as Beneficiary
+      })
       setBeneficiaries(transformedBeneficiaries)
     } catch (error) {
       console.error("Erreur lors du chargement des bénéficiaires:", error)
@@ -1184,23 +1166,21 @@ export default function BeneficiariesPage() {
                   </div>
 
                   <div className="flex items-center space-x-2">
-                    {beneficiary.status === 0 && beneficiary.workflowStatus === WORKFLOW_STATUS.AVAILABLE && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        // ✅ NEW: Empêche l'ouverture de la modale de détails lors du clic sur l'icône favori
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          toggleFavorite(beneficiary.id)
-                        }}
-                      >
-                        {beneficiary.favorite ? (
-                          <Star className="w-4 h-4 text-yellow-500 fill-current" />
-                        ) : (
-                          <StarOff className="w-4 h-4 text-gray-400" />
-                        )}
-                      </Button>
-                    )}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      // ✅ NEW: Empêche l'ouverture de la modale de détails lors du clic sur l'icône favori
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        toggleFavorite(beneficiary.id)
+                      }}
+                    >
+                      {beneficiary.favorite ? (
+                        <Star className="w-4 h-4 text-yellow-500 fill-current" />
+                      ) : (
+                        <StarOff className="w-4 h-4 text-gray-400" />
+                      )}
+                    </Button>
 
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>

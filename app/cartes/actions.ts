@@ -2,6 +2,7 @@
 
 import { cookies } from "next/headers"
 import { config } from "@/lib/config"
+import { decryptDataServer } from "@/lib/server-encryption"
 
 const normalize = (u?: string) => (u ? u.replace(/\/$/, "") : "")
 const BASE_URL = `${normalize(config.API_BASE_URL)}/api`
@@ -182,9 +183,11 @@ export async function fetchAllCards(): Promise<CardsResponse> {
     if (logDebug) console.log("[CARDS] filtered by clientId/createdById:", before, "->", filteredRows.length)
   }
 
+  const decryptedRows = await Promise.all(filteredRows.map((card) => decryptDataServer(card as any)))
+
   return {
-    rows: filteredRows,
-    count: filteredRows.length,
+    rows: decryptedRows as Card[],
+    count: decryptedRows.length,
   }
 }
 
@@ -240,8 +243,8 @@ export async function createCardRequest(cardData: NewCardRequest): Promise<Card>
   expirationDate.setFullYear(expirationDate.getFullYear() + 4)
   const dateExpiration = expirationDate.toISOString().split("T")[0]
 
-  const secure = (process.env.NEXT_PUBLIC_PORTAL_SECURE_MODE || "false").toLowerCase() === "false"
-  const keyB64 = process.env.NEXT_PUBLIC_PORTAL_KEY_B64 || ""
+  const secure = (process.env.NEXT_PUBLIC_PORTAL_SECURE_MODE || "false").toLowerCase() === "true"
+  const keyB64 = process.env.PORTAL_KEY_B64 || ""
   let requestBody: any
   if (secure && keyB64) {
     const { encryptAesGcmNode } = await import("../transfers/new/secure")
@@ -254,7 +257,6 @@ export async function createCardRequest(cardData: NewCardRequest): Promise<Card>
         dateEmission_json: enc(today),
         dateExpiration_json: enc(dateExpiration),
         clientId_json: enc(clientId),
-        // keep plaintext clientId for server-side filtering and client list
         clientId: clientId,
         accountNumber_json: enc(cardData.accountNumber || ""),
         titulaire_name_json: enc(titulaireCompletName),
@@ -317,11 +319,10 @@ export async function toggleCardStatus(cardId: string, currentStatus: string) {
   }
 
   try {
-    // Determine new status based on current status
     const newStatus = currentStatus?.toUpperCase() === "ACTIF" ? "BLOCKED" : "ACTIF"
 
-    const secure = (process.env.NEXT_PUBLIC_PORTAL_SECURE_MODE || "false").toLowerCase() === "false"
-    const keyB64 = process.env.NEXT_PUBLIC_PORTAL_KEY_B64 || ""
+    const secure = (process.env.NEXT_PUBLIC_PORTAL_SECURE_MODE || "false").toLowerCase() === "true"
+    const keyB64 = process.env.PORTAL_KEY_B64 || ""
     let requestBody: any
 
     if (secure && keyB64) {
@@ -353,9 +354,6 @@ export async function toggleCardStatus(cardId: string, currentStatus: string) {
 
     const contentType = res.headers.get("content-type") || ""
     const bodyText = await res.text()
-
-    console.log("[v0] createCardRequest - response status:", res.status)
-    console.log("[v0] createCardRequest - response body:", bodyText)
 
     if (!res.ok) {
       return {

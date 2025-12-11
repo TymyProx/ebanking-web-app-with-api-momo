@@ -218,20 +218,42 @@ export async function completeSignup(token: string, password: string, emailFallb
           console.log("[v0] CompteBng account data:", JSON.stringify(compteBng, null, 2))
 
           const mappedType = compteBng.typeCompte || "CURRENT"
+
+          const accountNumber = String(compteBng.numCompte || "")
+          let codeBanque = String(compteBng.codeBanque || "")
+          let codeAgence = String(compteBng.codeAgence || "")
+          let cleRib = String(compteBng.cleRib || "")
+
+          // Extract from account number format: BBBAAAAACCCCCCCCCCCCK (B=banque, A=agence, C=compte, K=clé)
+          if (!codeBanque && accountNumber.length >= 3) {
+            codeBanque = accountNumber.substring(0, 3)
+            console.log("[v0] Extracted codeBanque from account number:", codeBanque)
+          }
+
+          if (!codeAgence && accountNumber.length >= 9) {
+            codeAgence = accountNumber.substring(3, 9)
+            console.log("[v0] Extracted codeAgence from account number:", codeAgence)
+          }
+
+          if (!cleRib && accountNumber.length >= 14) {
+            cleRib = accountNumber.substring(13, 15)
+            console.log("[v0] Extracted cleRib from account number:", cleRib)
+          }
+
           const comptePayload = {
             data: {
-              accountId: String(compteBng.numCompte || ""),
-              accountNumber: String(compteBng.numCompte || ""),
+              accountId: accountNumber,
+              accountNumber: accountNumber,
               accountName: String(compteBng.accountName || compteBng.typeCompte || "Compte"),
               type: mappedType,
               currency: String(compteBng.devise || "GNF"),
               bookBalance: String(compteBng.bookBalance || "0"),
               availableBalance: String(compteBng.availableBalance || "0"),
               status: "ACTIF",
-              codeAgence: String(compteBng.codeAgence || "N/A"),
+              codeAgence: codeAgence || "001",
               clientId: String(clientId), // Link to client record
-              codeBanque: String(compteBng.codeBanque || "N/A"),
-              cleRib: String(compteBng.cleRib || "N/A"),
+              codeBanque: codeBanque || "BNG",
+              cleRib: cleRib || "00",
             },
           }
 
