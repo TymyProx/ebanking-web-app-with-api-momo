@@ -28,13 +28,12 @@ export async function completeSignup(token: string, password: string, emailFallb
         address: "",
         codeClient: `CLI-${Date.now()}`,
         verificationToken: token,
-        clientType: "new", // Default to new client
+        clientType: "new",
       }
     } else {
       pendingData = JSON.parse(pendingDataCookie.value)
     }
 
-    // Verify the token matches
     if (pendingData.verificationToken !== token) {
       console.error("[v0] Token mismatch")
       throw new Error("Token de vérification invalide")
@@ -122,8 +121,8 @@ export async function completeSignup(token: string, password: string, emailFallb
           email: String(pendingData.email),
           telephone: String(pendingData.phone || ""),
           adresse: String(pendingData.address || ""),
-          codeClient: String(pendingData.numClient), // Use numClient as codeClient
-          userid: String(userId), // Link to auth user
+          codeClient: String(pendingData.numClient),
+          userid: String(userId),
         },
       }
 
@@ -150,9 +149,14 @@ export async function completeSignup(token: string, password: string, emailFallb
       const clientId = clientData.id || clientData.data?.id
       console.log("[v0] Client profile created successfully, clientId:", clientId)
 
+      if (!clientId) {
+        console.error("[v0] No clientId returned from client creation")
+        throw new Error("Erreur lors de la récupération de l'ID client")
+      }
+
       console.log("[v0] Step 4: Fetching accounts from CompteBng using numClient:", pendingData.numClient)
 
-      const compteBngUrl = `${API_BASE_URL}/tenant/${TENANT_ID}/compte-bng?filter=clientId||$eq||${pendingData.numClient}`
+      const compteBngUrl = `${API_BASE_URL}/tenant/${TENANT_ID}/compte-bng?filter=clientId||$eq||${encodeURIComponent(pendingData.numClient)}`
       console.log("[v0] CompteBng URL:", compteBngUrl)
 
       const compteBngResponse = await fetch(compteBngUrl, {
@@ -172,7 +176,7 @@ export async function completeSignup(token: string, password: string, emailFallb
       }
 
       const compteBngData = await compteBngResponse.json()
-      console.log("[v0] CompteBng data received:", JSON.stringify(compteBngData, null, 2))
+      console.log("[v0] CompteBng raw data:", JSON.stringify(compteBngData, null, 2))
 
       let comptesArray = []
       if (Array.isArray(compteBngData)) {
@@ -185,21 +189,33 @@ export async function completeSignup(token: string, password: string, emailFallb
         comptesArray = compteBngData.value
       }
 
+      console.log("[v0] Total accounts found in CompteBng:", comptesArray.length)
+
       comptesArray = comptesArray.filter((compte: any) => {
         const compteClientId = String(compte.clientId || "")
         const racine = String(pendingData.numClient || "")
-        return compteClientId === racine
+        const matches = compteClientId === racine
+        console.log(
+          `[v0] Checking account ${compte.numCompte}: clientId=${compteClientId}, racine=${racine}, matches=${matches}`,
+        )
+        return matches
       })
 
       console.log("[v0] Found", comptesArray.length, "account(s) matching racine", pendingData.numClient)
 
       if (comptesArray.length === 0) {
-        console.warn("[v0] No accounts found in CompteBng for this client")
+        console.warn("[v0] ⚠️ WARNING: No accounts found in CompteBng for numClient:", pendingData.numClient)
+        console.warn("[v0] User will be created but will have no accounts linked")
       } else {
         console.log("[v0] Step 5: Creating accounts in compte table...")
 
+        let accountsCreated = 0
+        let accountsFailed = 0
+
         for (const compteBng of comptesArray) {
+          console.log("[v0] =====================================")
           console.log("[v0] Processing CompteBng account:", compteBng.numCompte)
+          console.log("[v0] CompteBng account data:", JSON.stringify(compteBng, null, 2))
 
           const mappedType = compteBng.typeCompte || "CURRENT"
           const comptePayload = {
@@ -213,15 +229,17 @@ export async function completeSignup(token: string, password: string, emailFallb
               availableBalance: String(compteBng.availableBalance || "0"),
               status: "ACTIF",
               codeAgence: String(compteBng.codeAgence || "N/A"),
-              clientId: String(clientId), // Link to the client record, not userId
+              clientId: String(clientId), // Link to client record
               codeBanque: String(compteBng.codeBanque || "N/A"),
               cleRib: String(compteBng.cleRib || "N/A"),
             },
           }
 
-          console.log("[v0] Creating compte with payload:", JSON.stringify(comptePayload, null, 2))
+          console.log("[v0] Compte creation payload:", JSON.stringify(comptePayload, null, 2))
 
           const compteUrl = `${API_BASE_URL}/tenant/${TENANT_ID}/compte`
+          console.log("[v0] Compte creation URL:", compteUrl)
+
           const compteResponse = await fetch(compteUrl, {
             method: "POST",
             headers: {
@@ -235,19 +253,22 @@ export async function completeSignup(token: string, password: string, emailFallb
 
           if (!compteResponse.ok) {
             const responseText = await compteResponse.text()
-            console.error("[v0] Compte creation failed:", responseText)
-            console.warn("[v0] Skipping account creation for:", compteBng.numCompte)
+            console.error("[v0] ❌ Compte creation FAILED for account:", compteBng.numCompte)
+            console.error("[v0] Error response:", responseText)
+            accountsFailed++
             continue
           }
 
           const compteCreatedData = await compteResponse.json()
-          console.log(
-            "[v0] Compte created successfully for account:",
-            compteBng.numCompte,
-            "- ID:",
-            compteCreatedData.id || compteCreatedData.data?.id,
-          )
+          const createdAccountId = compteCreatedData.id || compteCreatedData.data?.id
+          console.log("[v0] ✅ Compte created successfully!")
+          console.log("[v0] Account number:", compteBng.numCompte)
+          console.log("[v0] Created compte ID:", createdAccountId)
+          accountsCreated++
         }
+
+        console.log("[v0] =====================================")
+        console.log(`[v0] Account creation summary: ${accountsCreated} succeeded, ${accountsFailed} failed`)
       }
 
       await setSecureCookie("user", JSON.stringify(userData))
@@ -350,8 +371,8 @@ export async function completeSignup(token: string, password: string, emailFallb
           email: String(pendingData.email),
           telephone: String(pendingData.phone),
           adresse: String(pendingData.address),
-          codeClient: String(pendingData.codeClient), // Generated code for new client
-          userid: String(userId), // Link to auth user
+          codeClient: String(pendingData.codeClient),
+          userid: String(userId),
         },
       }
 
