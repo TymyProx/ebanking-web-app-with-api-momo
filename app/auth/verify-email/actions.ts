@@ -121,7 +121,7 @@ export async function completeSignup(token: string, password: string, emailFallb
           email: String(pendingData.email),
           telephone: String(pendingData.phone || ""),
           adresse: String(pendingData.address || ""),
-          codeClient: String(pendingData.numClient),
+          codeClient: String(pendingData.numClient), // Using numClient from BdClientBng (not CLI-...)
           verificationToken: token,
           clientType: "existing",
         },
