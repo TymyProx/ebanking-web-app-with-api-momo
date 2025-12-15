@@ -18,16 +18,39 @@ const safeJson = async (res: Response) => {
 }
 
 const normalizeClientType = (pendingData: any) => {
+  console.log("[v0] ===== CLIENT TYPE NORMALIZATION =====")
+  console.log("[v0] pendingData received:", JSON.stringify(pendingData, null, 2))
+
   // 1) si le front a déjà mis "existing"/"new"
   const raw = String(pendingData?.clientType ?? "")
     .toLowerCase()
     .trim()
-  if (raw === "existing" || raw === "new") return raw
+
+  console.log("[v0] clientType from cookie:", raw)
+
+  if (raw === "existing" || raw === "new") {
+    console.log("[v0] Using explicit clientType from cookie:", raw)
+    return raw
+  }
 
   // 2) fallback fiable: un "existing BNG" a un numClient BdClientBng (pas CLI-...)
   const numClient = String(pendingData?.numClient ?? "").trim()
-  if (numClient && !numClient.startsWith("CLI-")) return "existing"
+  const codeClient = String(pendingData?.codeClient ?? "").trim()
 
+  console.log("[v0] numClient from cookie:", numClient)
+  console.log("[v0] codeClient from cookie:", codeClient)
+
+  if (numClient && !numClient.startsWith("CLI-")) {
+    console.log("[v0] Detected EXISTING client via numClient:", numClient)
+    return "existing"
+  }
+
+  if (codeClient && !codeClient.startsWith("CLI-")) {
+    console.log("[v0] Detected EXISTING client via codeClient:", codeClient)
+    return "existing"
+  }
+
+  console.log("[v0] Defaulting to NEW client")
   return "new"
 }
 
