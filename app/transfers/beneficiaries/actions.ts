@@ -2,9 +2,7 @@
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0"
 import { revalidatePath } from "next/cache"
 import { cookies } from "next/headers"
-import { encryptAesGcmNode } from "../../transfers/new/secure"
 import { config } from "@/lib/config"
-import { decryptDataServer } from "@/lib/server-encryption"
 
 interface ActionResult {
   success?: boolean
@@ -44,7 +42,6 @@ interface GetBeneficiariesResponse {
 
 const normalize = (u?: string) => (u ? u.replace(/\/$/, "") : "")
 const API_BASE_URL = `${normalize(config.API_BASE_URL)}/api`
-const TENANT_ID = config.TENANT_ID
 
 const WORKFLOW_STATUS = {
   CREATED: "cree",
@@ -109,7 +106,7 @@ export async function getBeneficiaries(): Promise<ApiBeneficiary[]> {
     }
     queryParams.set("limit", "200")
 
-    const endpoint = `${API_BASE_URL}/tenant/${TENANT_ID}/beneficiaire${queryParams.toString() ? `?${queryParams.toString()}` : ""}`
+    const endpoint = `${API_BASE_URL}/tenant/${config.TENANT_ID}/beneficiaire${queryParams.toString() ? `?${queryParams.toString()}` : ""}`
 
     const response = await fetch(endpoint, {
       method: "GET",
@@ -136,11 +133,39 @@ export async function getBeneficiaries(): Promise<ApiBeneficiary[]> {
       }
     }
 
-    const decryptedBeneficiaries = await Promise.all(
-      beneficiaries.map((beneficiary) => decryptDataServer(beneficiary as any)),
-    )
+    return beneficiaries as ApiBeneficiary[]
+  } catch (error) {
+    console.error("Erreur lors de la récupération des bénéficiaires:", error)
+    return []
+  }
+}
 
-    return decryptedBeneficiaries as ApiBeneficiary[]
+export async function fetchAllBeneficiaries(): Promise<ApiBeneficiary[]> {
+  const cookieToken = (await cookies()).get("token")?.value
+  const usertoken = cookieToken
+  try {
+    const response = await fetch(`${API_BASE_URL}/tenant/${config.TENANT_ID}/beneficiaire`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${usertoken}`,
+      },
+      cache: "no-store",
+    })
+
+    if (!response.ok) {
+      console.error(`Erreur API: ${response.status} ${response.statusText}`)
+      return []
+    }
+
+    const data: GetBeneficiariesResponse = await response.json()
+
+    let beneficiaries: ApiBeneficiary[] = []
+    if (data.rows && Array.isArray(data.rows)) {
+      beneficiaries = data.rows
+    }
+
+    return beneficiaries as ApiBeneficiary[]
   } catch (error) {
     console.error("Erreur lors de la récupération des bénéficiaires:", error)
     return []
@@ -157,7 +182,7 @@ export async function getBeneficiaryDetails(beneficiaryId: string): Promise<ApiB
   }
 
   try {
-    const response = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/beneficiaire/${beneficiaryId}`, {
+    const response = await fetch(`${API_BASE_URL}/tenant/${config.TENANT_ID}/beneficiaire/${beneficiaryId}`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -278,20 +303,6 @@ export async function addBeneficiaryAndActivate(
 
     const clientId = await getCurrentClientId()
 
-    const secureMode = (process.env.NEXT_PUBLIC_PORTAL_SECURE_MODE || "false").toLowerCase() === "true"
-    const keyB64 = process.env.PORTAL_KEY_B64 || ""
-    const keyId = process.env.PORTAL_KEY_ID || "k1-mobile-v1"
-
-    console.log("[addBeneficiaryAndActivate] Form values", {
-      name,
-      account,
-      type,
-      codeBanque,
-      bankname,
-      codeAgence,
-      cleRib,
-    })
-
     const base = {
       beneficiaryId: `BEN_${Date.now()}`,
       clientId: clientId,
@@ -301,7 +312,6 @@ export async function addBeneficiaryAndActivate(
       favoris: false,
     }
 
-    let apiData: any
     const plainFields = {
       name,
       accountNumber: account,
@@ -311,46 +321,32 @@ export async function addBeneficiaryAndActivate(
       clerib: type === "BNG-INTERNATIONAL" ? "N/A" : cleRib || "N/A",
     }
 
-    if (secureMode && keyB64) {
-      const enc = (v: any) => ({ ...encryptAesGcmNode(v, keyB64), key_id: keyId })
-      apiData = {
-        data: {
-          ...base,
-          ...plainFields,
-          name_json: enc(name),
-          accountNumber_json: enc(account),
-          bankCode_json: enc(codeBanque || ""),
-          bankName_json: enc(bankname || ""),
-          codagence_json: enc(type === "BNG-INTERNATIONAL" ? "N/A" : codeAgence || "N/A"),
-          clerib_json: enc(type === "BNG-INTERNATIONAL" ? "N/A" : cleRib || "N/A"),
-          key_id: keyId,
-        },
-      }
-    } else {
-      apiData = {
-        data: {
-          ...base,
-          ...plainFields,
-        },
-      }
+    const apiData = {
+      data: {
+        ...base,
+        ...plainFields,
+        name: name,
+        accountNumber: account,
+        bankCode: codeBanque || "",
+        bankName: bankname || "",
+        codagence: type === "BNG-INTERNATIONAL" ? "N/A" : codeAgence || "N/A",
+        clerib: type === "BNG-INTERNATIONAL" ? "N/A" : cleRib || "N/A",
+      },
     }
 
-    const payloadToSend = apiData.data ?? apiData
-
-    console.log("[addBeneficiaryAndActivate] API payload (secureMode:", secureMode, ")", apiData)
-    console.log("[addBeneficiaryAndActivate] Payload sent to API", payloadToSend)
+    console.log("[addBeneficiaryAndActivate] API payload:", apiData)
 
     const cookieToken = (await cookies()).get("token")?.value
     const usertoken = cookieToken
 
     // ✅ Use new streamlined endpoint
-    const response = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/beneficiaire/create-and-activate`, {
+    const response = await fetch(`${API_BASE_URL}/tenant/${config.TENANT_ID}/beneficiaire/create-and-activate`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${usertoken}`,
       },
-      body: JSON.stringify(payloadToSend),
+      body: JSON.stringify(apiData),
     })
 
     if (!response.ok) {
@@ -455,10 +451,6 @@ export async function addBeneficiary(prevState: ActionResult | null, formData: F
 
     const clientId = await getCurrentClientId()
 
-    const secureMode = (process.env.NEXT_PUBLIC_PORTAL_SECURE_MODE || "false").toLowerCase() === "true"
-    const keyB64 = process.env.PORTAL_KEY_B64 || ""
-    const keyId = process.env.PORTAL_KEY_ID || "k1-mobile-v1"
-
     const base = {
       beneficiaryId: `BEN_${Date.now()}`,
       clientId: clientId,
@@ -468,40 +460,31 @@ export async function addBeneficiary(prevState: ActionResult | null, formData: F
       favoris: false,
     }
 
-    let apiData: any
-    if (secureMode && keyB64) {
-      const enc = (v: any) => ({ ...encryptAesGcmNode(v, keyB64), key_id: keyId })
-      apiData = {
-        data: {
-          ...base,
-          name_json: enc(name),
-          accountNumber_json: enc(account),
-          bankCode_json: enc(codeBanque || ""),
-          bankName_json: enc(bankname || ""),
-          codagence_json: enc(type === "BNG-INTERNATIONAL" ? "N/A" : codeAgence || "N/A"),
-          clerib_json: enc(type === "BNG-INTERNATIONAL" ? "N/A" : cleRib || "N/A"),
-          key_id: keyId,
-          workflowStatus: WORKFLOW_STATUS.CREATED,
-        },
-      }
-    } else {
-      apiData = {
-        data: {
-          ...base,
-          name: name,
-          accountNumber: account,
-          bankCode: codeBanque || "",
-          bankName: bankname || "",
-          codagence: type === "BNG-INTERNATIONAL" ? "N/A" : codeAgence || "N/A",
-          clerib: type === "BNG-INTERNATIONAL" ? "N/A" : cleRib || "N/A",
-          workflowStatus: WORKFLOW_STATUS.CREATED,
-        },
-      }
+    const plainFields = {
+      name,
+      accountNumber: account,
+      bankCode: codeBanque || "",
+      bankName: bankname || "",
+      codagence: type === "BNG-INTERNATIONAL" ? "N/A" : codeAgence || "N/A",
+      clerib: type === "BNG-INTERNATIONAL" ? "N/A" : cleRib || "N/A",
+    }
+
+    const apiData = {
+      data: {
+        ...base,
+        name: name,
+        accountNumber: account,
+        bankCode: codeBanque || "",
+        bankName: bankname || "",
+        codagence: type === "BNG-INTERNATIONAL" ? "N/A" : codeAgence || "N/A",
+        clerib: type === "BNG-INTERNATIONAL" ? "N/A" : cleRib || "N/A",
+        workflowStatus: WORKFLOW_STATUS.CREATED,
+      },
     }
 
     const cookieToken = (await cookies()).get("token")?.value
     const usertoken = cookieToken
-    const response = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/beneficiaire`, {
+    const response = await fetch(`${API_BASE_URL}/tenant/${config.TENANT_ID}/beneficiaire`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -605,7 +588,7 @@ export async function updateBeneficiary(prevState: ActionResult | null, formData
 
     const cookieToken = (await cookies()).get("token")?.value
     const usertoken = cookieToken
-    const response = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/beneficiaire/${id}`, {
+    const response = await fetch(`${API_BASE_URL}/tenant/${config.TENANT_ID}/beneficiaire/${id}`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
@@ -655,7 +638,7 @@ export async function deleteBeneficiary(prevState: ActionResult | null, formData
     const cookieToken = (await cookies()).get("token")?.value
     const usertoken = cookieToken
 
-    const response = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/beneficiaire`, {
+    const response = await fetch(`${API_BASE_URL}/tenant/${config.TENANT_ID}/beneficiaire`, {
       method: "DELETE",
       headers: {
         "Content-Type": "application/json",
@@ -704,7 +687,7 @@ export async function toggleBeneficiaryFavorite(
       },
     }
 
-    const response = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/beneficiaire/${beneficiaryId}`, {
+    const response = await fetch(`${API_BASE_URL}/tenant/${config.TENANT_ID}/beneficiaire/${beneficiaryId}`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
@@ -762,7 +745,7 @@ export async function deactivateBeneficiary(prevState: ActionResult | null, form
       },
     }
 
-    const response = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/beneficiaire/${id}`, {
+    const response = await fetch(`${API_BASE_URL}/tenant/${config.TENANT_ID}/beneficiaire/${id}`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
@@ -819,7 +802,7 @@ export async function reactivateBeneficiary(prevState: ActionResult | null, form
       },
     }
 
-    const response = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/beneficiaire/${id}`, {
+    const response = await fetch(`${API_BASE_URL}/tenant/${config.TENANT_ID}/beneficiaire/${id}`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
@@ -859,7 +842,7 @@ export async function getBanks() {
   const usertoken = cookieToken
 
   try {
-    const response = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/banque`, {
+    const response = await fetch(`${API_BASE_URL}/tenant/${config.TENANT_ID}/banque`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",

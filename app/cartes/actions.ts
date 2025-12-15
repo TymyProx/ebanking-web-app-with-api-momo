@@ -2,7 +2,6 @@
 
 import { cookies } from "next/headers"
 import { config } from "@/lib/config"
-import { decryptDataServer } from "@/lib/server-encryption"
 
 const normalize = (u?: string) => (u ? u.replace(/\/$/, "") : "")
 const BASE_URL = `${normalize(config.API_BASE_URL)}/api`
@@ -183,11 +182,9 @@ export async function fetchAllCards(): Promise<CardsResponse> {
     if (logDebug) console.log("[CARDS] filtered by clientId/createdById:", before, "->", filteredRows.length)
   }
 
-  const decryptedRows = await Promise.all(filteredRows.map((card) => decryptDataServer(card as any)))
-
   return {
-    rows: decryptedRows as Card[],
-    count: decryptedRows.length,
+    rows: filteredRows as Card[],
+    count: filteredRows.length,
   }
 }
 
@@ -243,39 +240,17 @@ export async function createCardRequest(cardData: NewCardRequest): Promise<Card>
   expirationDate.setFullYear(expirationDate.getFullYear() + 4)
   const dateExpiration = expirationDate.toISOString().split("T")[0]
 
-  const secure = (process.env.NEXT_PUBLIC_PORTAL_SECURE_MODE || "false").toLowerCase() === "true"
-  const keyB64 = process.env.PORTAL_KEY_B64 || ""
-  let requestBody: any
-  if (secure && keyB64) {
-    const { encryptAesGcmNode } = await import("../transfers/new/secure")
-    const enc = (v: any) => ({ ...encryptAesGcmNode(v, keyB64), key_id: "k1-mobile-v1" })
-    requestBody = {
-      data: {
-        numCard_json: enc("AUTO"),
-        typCard_json: enc(cardData.typCard),
-        status_json: enc("EN_ATTENTE"),
-        dateEmission_json: enc(today),
-        dateExpiration_json: enc(dateExpiration),
-        clientId_json: enc(clientId),
-        clientId: clientId,
-        accountNumber_json: enc(cardData.accountNumber || ""),
-        titulaire_name_json: enc(titulaireCompletName),
-        key_id: "k1-mobile-v1",
-      },
-    }
-  } else {
-    requestBody = {
-      data: {
-        numCard: "",
-        typCard: cardData.typCard,
-        status: "EN_ATTENTE",
-        dateEmission: today,
-        dateExpiration: dateExpiration,
-        clientId: clientId,
-        accountNumber: cardData.accountNumber || "",
-        titulaire_name: titulaireCompletName,
-      },
-    }
+  const requestBody = {
+    data: {
+      numCard: "",
+      typCard: cardData.typCard,
+      status: "EN_ATTENTE",
+      dateEmission: today,
+      dateExpiration: dateExpiration,
+      clientId: clientId,
+      accountNumber: cardData.accountNumber || "",
+      titulaire_name: titulaireCompletName,
+    },
   }
 
   console.log("[v0] createCardRequest - requestBody:", JSON.stringify(requestBody, null, 2))
@@ -321,25 +296,10 @@ export async function toggleCardStatus(cardId: string, currentStatus: string) {
   try {
     const newStatus = currentStatus?.toUpperCase() === "ACTIF" ? "BLOCKED" : "ACTIF"
 
-    const secure = (process.env.NEXT_PUBLIC_PORTAL_SECURE_MODE || "false").toLowerCase() === "true"
-    const keyB64 = process.env.PORTAL_KEY_B64 || ""
-    let requestBody: any
-
-    if (secure && keyB64) {
-      const { encryptAesGcmNode } = await import("../transfers/new/secure")
-      const enc = (v: any) => ({ ...encryptAesGcmNode(v, keyB64), key_id: "k1-mobile-v1" })
-      requestBody = {
-        data: {
-          status_json: enc(newStatus),
-          key_id: "k1-mobile-v1",
-        },
-      }
-    } else {
-      requestBody = {
-        data: {
-          status: newStatus,
-        },
-      }
+    const requestBody = {
+      data: {
+        status: newStatus,
+      },
     }
 
     const res = await fetch(`${BASE_URL}/tenant/${TENANT_ID}/card/${cardId}`, {
