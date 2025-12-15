@@ -17,22 +17,11 @@ export async function completeSignup(token: string, password: string, emailFallb
 
     let pendingData: any | null = null
     if (!pendingDataCookie) {
-      console.warn("[v0] No pending signup data found - using email fallback and skipping client profile creation")
-      if (!emailFallback) {
-        throw new Error("Données d'inscription manquantes ou expirées")
-      }
-      pendingData = {
-        email: emailFallback,
-        fullName: emailFallback.split("@")[0],
-        phone: "",
-        address: "",
-        codeClient: `CLI-${Date.now()}`,
-        verificationToken: token,
-        clientType: "new",
-      }
-    } else {
-      pendingData = JSON.parse(pendingDataCookie.value)
+      console.error("[v0] No pending signup data found in cookie")
+      throw new Error("Données d'inscription manquantes ou expirées. Veuillez recommencer le processus d'inscription.")
     }
+
+    pendingData = JSON.parse(pendingDataCookie.value)
 
     if (pendingData.verificationToken !== token) {
       console.error("[v0] Token mismatch")
