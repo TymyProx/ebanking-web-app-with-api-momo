@@ -18,6 +18,7 @@ import { ArrowRight, Plus, User, Building, Check, AlertCircle } from "lucide-rea
 import { useActionState } from "react"
 import Link from "next/link"
 import { OtpModal } from "@/components/otp-modal"
+import { safeString } from "@/lib/safe-render"
 
 // Types
 interface Beneficiary {
@@ -677,9 +678,9 @@ export default function NewTransferPage() {
                                 <User className="h-4 w-4 text-purple-600 dark:text-purple-400" />
                               </div>
                               <div className="flex flex-col">
-                                <span className="font-semibold text-base">{beneficiary.name}</span>
-                                <span className="text-sm text-muted-foreground">{beneficiary.account}</span>
-                                <span className="text-sm text-muted-foreground">{beneficiary.bank}</span>
+                                <span className="font-semibold text-base">{safeString(beneficiary.name)}</span>
+                                <span className="text-sm text-muted-foreground">{safeString(beneficiary.account)}</span>
+                                <span className="text-sm text-muted-foreground">{safeString(beneficiary.bank)}</span>
                               </div>
                             </div>
                           </SelectItem>
@@ -821,9 +822,9 @@ export default function NewTransferPage() {
                 <div>
                   <h4 className="font-semibold text-sm text-muted-foreground mb-2">Bénéficiaire</h4>
                   <div className="p-3 bg-gradient-to-r from-purple-50 to-purple-100/50 dark:from-purple-950/30 dark:to-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-800">
-                    <p className="font-semibold">{selectedBeneficiaryData.name}</p>
-                    <p className="text-sm text-muted-foreground">{selectedBeneficiaryData.account}</p>
-                    <p className="text-sm text-muted-foreground">{selectedBeneficiaryData.bank}</p>
+                    <p className="font-semibold">{safeString(selectedBeneficiaryData.name)}</p>
+                    <p className="text-sm text-muted-foreground">{safeString(selectedBeneficiaryData.account)}</p>
+                    <p className="text-sm text-muted-foreground">{safeString(selectedBeneficiaryData.bank)}</p>
                     <Badge variant="outline" className="mt-2 border-purple-300 dark:border-purple-700">
                       {selectedBeneficiaryData.type}
                     </Badge>
