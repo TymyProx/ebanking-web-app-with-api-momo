@@ -138,19 +138,32 @@ export default function CardsPage() {
         const response = await fetchAllCards()
         const cards = response.rows
 
-        const mappedCards: CardWithVisibility[] = cards.map((card: any, index: number) => ({
-          id: card.id || `card-${index}`,
-          numCard: card.numCard || "",
-          typCard: card.typCard || "DEBIT",
-          status: card.status || "EN_ATTENTE",
-          dateExpiration: card.dateExpiration
-            ? new Date(card.dateExpiration).toLocaleDateString("fr-FR", { month: "2-digit", year: "2-digit" })
-            : "--/--",
-          holder: card.titulaire_name || "CLIENT NAME",
-          isNumberVisible: false,
-          accountNumber: card.accountNumber,
-        }))
+        const mappedCards: CardWithVisibility[] = cards.map((card: any, index: number) => {
+          // If fields are still encrypted objects, convert them to strings
+          const safeString = (value: any): string => {
+            if (value === null || value === undefined) return ""
+            if (typeof value === "string") return value
+            if (typeof value === "object" && value.ct) {
+              // This is an encrypted object that wasn't decrypted - log error and return placeholder
+              console.error("[v0] Encrypted field not decrypted:", value)
+              return "[Encrypted]"
+            }
+            return String(value)
+          }
 
+          return {
+            id: card.id || `card-${index}`,
+            numCard: safeString(card.numCard),
+            typCard: safeString(card.typCard),
+            status: safeString(card.status) || "EN_ATTENTE",
+            dateExpiration: card.dateExpiration
+              ? new Date(card.dateExpiration).toLocaleDateString("fr-FR", { month: "2-digit", year: "2-digit" })
+              : "--/--",
+            holder: safeString(card.titulaire_name) || "CLIENT NAME",
+            isNumberVisible: false,
+            accountNumber: safeString(card.accountNumber),
+          }
+        })
         setCards(mappedCards)
         setTotal(response.count)
 

@@ -6,7 +6,10 @@ export async function decryptDataServer(data: Record<string, any>): Promise<Reco
   const secureMode = (process.env.NEXT_PUBLIC_PORTAL_SECURE_MODE || "false").toLowerCase() === "true"
   const keyB64 = process.env.PORTAL_KEY_B64 || ""
 
+  console.log("[v0] decryptDataServer called - secureMode:", secureMode, "hasKey:", !!keyB64)
+
   if (!secureMode || !keyB64) {
+    console.log("[v0] Skipping decryption - returning data as-is")
     return data
   }
 
@@ -20,17 +23,24 @@ export async function decryptDataServer(data: Record<string, any>): Promise<Reco
           const originalField = fieldName.replace(/_json$/, "")
           decrypted[originalField] = await decryptAesGcmFromJson(value, key)
           delete decrypted[fieldName]
+          console.log(`[v0] Successfully decrypted field: ${fieldName} -> ${originalField}`)
         } catch (error) {
           console.error(`[v0] Failed to decrypt field ${fieldName}:`, error)
         }
       } else if (isEncryptedJson(value)) {
         try {
           decrypted[fieldName] = await decryptAesGcmFromJson(value, key)
+          console.log(`[v0] Successfully decrypted field: ${fieldName}`)
         } catch (error) {
           console.error(`[v0] Failed to decrypt field ${fieldName}:`, error)
         }
       }
     }
+
+    console.log(
+      "[v0] decryptDataServer completed - decrypted fields:",
+      Object.keys(decrypted).filter((k) => !k.endsWith("_json")),
+    )
 
     return decrypted
   } catch (error) {
