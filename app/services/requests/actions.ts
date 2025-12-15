@@ -79,24 +79,14 @@ async function generateReference(prefix: string): Promise<string> {
 
     if (prefix === "CHQ") {
       const checkbookRequests = await getCheckbookRequest()
-      if (
-        checkbookRequests &&
-        typeof checkbookRequests === "object" &&
-        "rows" in checkbookRequests &&
-        Array.isArray((checkbookRequests as any).rows)
-      ) {
+      if (checkbookRequests && typeof checkbookRequests === "object" && "rows" in checkbookRequests && Array.isArray((checkbookRequests as any).rows)) {
         existingCount = ((checkbookRequests as any).rows as any[]).length
       } else {
         existingCount = 0
       }
     } else if (prefix === "CRD") {
       const creditRequests = await getCreditRequest()
-      if (
-        creditRequests &&
-        typeof creditRequests === "object" &&
-        "rows" in creditRequests &&
-        Array.isArray((creditRequests as any).rows)
-      ) {
+      if (creditRequests && typeof creditRequests === "object" && "rows" in creditRequests && Array.isArray((creditRequests as any).rows)) {
         existingCount = ((creditRequests as any).rows as any[]).length
       } else {
         existingCount = 0
@@ -260,6 +250,35 @@ export async function submitCheckbookRequest(formData: {
       ...data,
       reference: reference,
     }
+  } catch (error: any) {
+    throw new Error(error.message)
+  }
+}
+
+// Secure path: submit already-encrypted payload to e-Portal endpoint
+export async function submitCheckbookRequestSecure(encryptedData: any) {
+  try {
+    const cookieToken = (await cookies()).get("token")?.value
+    const usertoken = cookieToken
+
+    if (!cookieToken) throw new Error("Token introuvable.")
+
+    // Backend will force stepflow=0 and clientId=req.currentUser.id
+    const response = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/me/commandes`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${usertoken}`,
+      },
+      body: JSON.stringify({ data: encryptedData }),
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json()
+      throw new Error(errorData.message || "Erreur lors de la soumission sécurisée")
+    }
+
+    return await response.json()
   } catch (error: any) {
     throw new Error(error.message)
   }
