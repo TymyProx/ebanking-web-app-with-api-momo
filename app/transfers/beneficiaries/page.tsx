@@ -40,7 +40,6 @@ import type React from "react"
 import { useRef } from "react"
 import { toast } from "@/hooks/use-toast"
 import { OtpModal } from "@/components/otp-modal"
-import { safeString } from "@/lib/safe-render"
 
 interface Beneficiary {
   id: string
@@ -1141,23 +1140,21 @@ export default function BeneficiariesPage() {
 
                     <div className="flex-1">
                       <div className="flex items-center space-x-2">
-                        <h3 className="font-semibold text-gray-900">{safeString(beneficiary.name)}</h3>
+                        <h3 className="font-semibold text-gray-900">{beneficiary.name}</h3>
                         {beneficiary.favorite && <Star className="w-4 h-4 text-yellow-500 fill-current" />}
                         {getTypeBadge(beneficiary.type)}
                         {getstatutBadge(beneficiary.status)}
                       </div>
 
                       <div className="text-sm text-gray-600 space-y-1">
-                        <p className="font-mono">{safeString(beneficiary.account)}</p>
-                        <p className="font-medium">{safeString(beneficiary.bank)}</p>
+                        <p className="font-mono">{beneficiary.account}</p>
+                        <p className="font-medium">{beneficiary.bank}</p>
                         {beneficiary.workflowStatus !== WORKFLOW_STATUS.AVAILABLE && (
                           <p className="text-xs text-amber-700 bg-amber-50 px-2 py-1 rounded inline-block">
                             ⏳ En attente de validation manuelle
                           </p>
                         )}
-                        {beneficiary.country && (
-                          <p className="text-xs text-gray-500">{safeString(beneficiary.country)}</p>
-                        )}
+                        {beneficiary.country && <p className="text-xs text-gray-500">{beneficiary.country}</p>}
                       </div>
                     </div>
 
@@ -1280,7 +1277,7 @@ export default function BeneficiariesPage() {
               <div className="space-y-4">
                 <div>
                   <Label className="text-xs text-muted-foreground">Nom complet</Label>
-                  <p className="text-lg font-semibold">{safeString(selectedBeneficiary.name)}</p>
+                  <p className="text-lg font-semibold">{selectedBeneficiary.name}</p>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
@@ -1297,7 +1294,7 @@ export default function BeneficiariesPage() {
 
                   <div>
                     <Label className="text-xs text-muted-foreground">Banque</Label>
-                    <p className="font-medium">{safeString(selectedBeneficiary.bank)}</p>
+                    <p className="font-medium">{selectedBeneficiary.bank}</p>
                   </div>
                 </div>
 
@@ -1307,7 +1304,7 @@ export default function BeneficiariesPage() {
                     {selectedBeneficiary.type === "BNG-INTERNATIONAL" ? "IBAN" : "Numéro de compte"}
                   </Label>
                   <p className="font-mono text-base font-semibold bg-gray-50 p-3 rounded border">
-                    {safeString(selectedBeneficiary.account)}
+                    {selectedBeneficiary.account}
                   </p>
                 </div>
 
@@ -1317,13 +1314,13 @@ export default function BeneficiariesPage() {
                     {selectedBeneficiary.codagence && (
                       <div>
                         <Label className="text-xs text-muted-foreground">Code agence</Label>
-                        <p className="font-mono font-medium">{safeString(selectedBeneficiary.codagence)}</p>
+                        <p className="font-mono font-medium">{selectedBeneficiary.codagence}</p>
                       </div>
                     )}
                     {selectedBeneficiary.clerib && (
                       <div>
                         <Label className="text-xs text-muted-foreground">Clé RIB</Label>
-                        <p className="font-mono font-medium">{safeString(selectedBeneficiary.clerib)}</p>
+                        <p className="font-mono font-medium">{selectedBeneficiary.clerib}</p>
                       </div>
                     )}
                   </div>
