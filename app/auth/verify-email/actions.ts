@@ -97,7 +97,7 @@ export async function completeSignup(token: string, password: string, emailFallb
 
       // Step 0.3: Fetch accounts from CompteBng
       console.log("[v0] Step 0.3: Fetching accounts from CompteBng...")
-      const compteBngUrl = `${API_BASE_URL}/tenant/${TENANT_ID}/comptebng?filter=numClient||$eq||${encodeURIComponent(codeClientFromBd)}`
+      const compteBngUrl = `${API_BASE_URL}/tenant/${TENANT_ID}/compte-bng?filter=numClient||$eq||${encodeURIComponent(codeClientFromBd)}`
       console.log("[v0] CompteBng URL:", compteBngUrl)
       const compteBngResponse = await fetch(compteBngUrl, {
         method: "GET",
