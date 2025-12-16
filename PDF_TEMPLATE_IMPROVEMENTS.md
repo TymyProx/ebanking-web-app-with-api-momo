@@ -29,14 +29,14 @@ Le template PDF du RIB a été complètement redesigné pour un rendu **professi
 
 ### 1. **Palette de Couleurs Professionnelle**
 
-\`\`\`javascript
+```javascript
 // Couleurs utilisées:
 - Bleu Bancaire Primaire: RGB(0, 102, 204) - #0066CC
 - Gris Foncé: RGB(44, 62, 80) - #2C3E50  
 - Gris Clair (fond): RGB(240, 245, 250) - #F0F5FA
 - Orange Accent: RGB(230, 126, 34) - #E67E22
 - Gris Bordure: RGB(189, 195, 199) - #BDC3C7
-\`\`\`
+```
 
 **Avantages**:
 - Cohérent avec l'identité bancaire
@@ -47,7 +47,7 @@ Le template PDF du RIB a été complètement redesigné pour un rendu **professi
 
 ### 2. **En-Tête Redesigné**
 
-\`\`\`
+```
 ┌─────────────────────────────────────────────────────────┐
 │  [Fond Bleu Bancaire]                                   │
 │                                                         │
@@ -57,7 +57,7 @@ Le template PDF du RIB a été complètement redesigné pour un rendu **professi
 │  ═══════════════════════════════════════════════════   │
 │  (Ligne orange accent)                                  │
 └─────────────────────────────────────────────────────────┘
-\`\`\`
+```
 
 **Améliorations**:
 - Titre plus grand et impactant (26pt au lieu de 24pt)
@@ -70,17 +70,17 @@ Le template PDF du RIB a été complètement redesigné pour un rendu **professi
 ### 3. **Organisation en 4 Sections**
 
 #### Section 1: TITULAIRE DU COMPTE
-\`\`\`
+```
 ┌─ Nom et Prénom ────────┐
 │ Jean DUPONT            │ (Grande police, 14pt)
 └────────────────────────┘
-\`\`\`
+```
 - Mise en avant du titulaire
 - Police agrandie (14pt)
 - Cadre bleu distinctif
 
 #### Section 2: IDENTIFIANTS BANCAIRES
-\`\`\`
+```
 ┌─ NUMÉRO DE COMPTE ─────────────────────┐
 │ 0001-234567-89                         │
 ├─ CODE BANQUE ──────────────────────────┤
@@ -88,29 +88,29 @@ Le template PDF du RIB a été complètement redesigné pour un rendu **professi
 ├─ CODE AGENCE ──────────────────────────┤
 │ 001                                    │
 └────────────────────────────────────────┘
-\`\`\`
+```
 - Champs alterné gris/blanc pour lisibilité
 - Labels en bleu, valeurs en noir
 - Bordures nettes
 
 #### Section 3: CODES INTERNATIONAUX
-\`\`\`
+```
 ╔═ IBAN (International Bank Account Number) ═╗
 ║ GN82 BNG 001 0001234567890                 ║
 ╚════════════════════════════════════════════╝
-\`\`\`
+```
 - Fond crème avec bordure orange
 - Police monospace pour clarté
 - Support des IBAN longs (2 lignes si nécessaire)
 
 #### Section 4: INFORMATIONS SUPPLÉMENTAIRES
-\`\`\`
+```
 ┌─ TYPE DE COMPTE ─┬─ DEVISE ─────┐
 │ Courant          │ GNF           │
 ├──────────────────┴───────────────┤
 │ AGENCE BANCAIRE: Agence Kaloum   │
 └──────────────────────────────────┘
-\`\`\`
+```
 - Disposition en colonnes
 - Alternance de couleurs pour différenciation
 
@@ -127,14 +127,14 @@ L'IBAN est le champ **le plus important** pour les virements internationaux.
 - Support automatique des IBAN longs
 - Label explicite "IBAN (International Bank Account Number)"
 
-\`\`\`
+```
 Avant: Une ligne dans un tableau
 Après: Boîte spéciale avec:
   ✓ Bordure orange 0.8pt
   ✓ Fond crème
   ✓ Police 12pt monospace
   ✓ Espacement optimal
-\`\`\`
+```
 
 ---
 
@@ -155,20 +155,20 @@ Après: Boîte spéciale avec:
 ### 6. **Informations Légales Enrichies**
 
 **Avant** (2 lignes):
-\`\`\`
+```
 Ce document est valable pour tous vos échanges bancaires et 
 opérations financières. Conservez-le précieusement...
-\`\`\`
+```
 
 **Après** (4 lignes complètes):
-\`\`\`
+```
 Ce document est un relevé d'identité bancaire officiel. Il est 
 valable pour tous vos échanges bancaires, virements nationaux 
 et internationaux, prélèvements automatiques et domiciliations 
 de salaire. Conservez-le précieusement et ne le communiquez 
 qu'aux organismes autorisés. Toute utilisation frauduleuse est 
 passible de poursuites pénales en vertu de la législation en vigueur.
-\`\`\`
+```
 
 **Avantages**:
 - Plus complet et légalement rigoureux
@@ -181,16 +181,16 @@ passible de poursuites pénales en vertu de la législation en vigueur.
 ### 7. **Pied de Page Amélioré**
 
 **Avant**:
-\`\`\`
+```
 Page 1/1                    Réf: RIB-0001234567890-1234567890
-\`\`\`
+```
 
 **Après**:
-\`\`\`
+```
 Généré le 3 novembre 2024 à 14:30:45     Réf: RIB-000123-1234567890
                                                            Page 1/1
 [DOCUMENT OFFICIEL] (en haut à droite, orange)
-\`\`\`
+```
 
 **Améliorations**:
 - Date formatée lisible (locale fr-FR)
@@ -217,7 +217,7 @@ Généré le 3 novembre 2024 à 14:30:45     Réf: RIB-000123-1234567890
 
 ## 📐 Dimensions et Proportions
 
-\`\`\`
+```
 Page A4 (210 x 297 mm)
 
 ┌─────────────────────────────────┐
@@ -238,28 +238,28 @@ Page A4 (210 x 297 mm)
 ├─────────────────────────────────┤
 │ Pied de page (5mm)              │
 └─────────────────────────────────┘
-\`\`\`
+```
 
 ---
 
 ## 🎨 Code Improvements
 
 ### Avant
-\`\`\`typescript
+```typescript
 // Fonction monolithique de 130+ lignes
 // Couleurs en gris neutre
 // Une seule table pour tout
 // Pas de sections
-\`\`\`
+```
 
 ### Après
-\`\`\`typescript
+```typescript
 // Fonction structurée et lisible
 // Palette professionnelle
 // 4 sections logiques
 // Fonction helper createKeyValueRow()
 // Commentaires ASCII art pour clarté
-\`\`\`
+```
 
 ---
 
@@ -282,7 +282,7 @@ Page A4 (210 x 297 mm)
 ## 📊 Avant/Après Visuellement
 
 ### AVANT (Basique)
-\`\`\`
+```
 ═══════════════════════════════════════════
                     RELEVÉ D'IDENTITÉ BANCAIRE
                     Document officiel
@@ -301,10 +301,10 @@ BANQUE NATIONALE...         Généré le...
 
 Ce document est valable...
 Page 1/1                    Réf: RIB-...
-\`\`\`
+```
 
 ### APRÈS (Professionnel)
-\`\`\`
+```
 ╔════════════════════════════════════════════════════════╗
 ║ [BLEU BANCAIRE - EN-TÊTE PROFESSIONNEL]               ║
 ║                                                        ║
@@ -350,7 +350,7 @@ Page 1/1                    Réf: RIB-...
 Ce document est un relevé d'identité bancaire officiel...
 Généré le 3 novembre 2024 à 14:30:45  Réf: RIB-...  Page 1/1
 [DOCUMENT OFFICIEL]
-\`\`\`
+```
 
 ---
 
@@ -390,30 +390,30 @@ Généré le 3 novembre 2024 à 14:30:45  Réf: RIB-...  Page 1/1
 ### Améliorations Techniques
 
 1. **Fonction Helper**:
-   \`\`\`typescript
+   ```typescript
    const createKeyValueRow = (label, value, startY, bgColor?) => {
      // Gestion automatique des couleurs alternées
      // Espacement cohérent
      // Retourne la nouvelle position Y
    }
-   \`\`\`
+   ```
 
 2. **Gestion IBAN Long**:
-   \`\`\`typescript
+   ```typescript
    const ibanParts = account.iban.match(/.{1,35}/g)
    ibanParts.forEach((part, index) => {
      doc.text(part, 18, yPos + 9 + index * 5)
    })
-   \`\`\`
+   ```
 
 3. **Dates Localisées**:
-   \`\`\`typescript
+   ```typescript
    const formattedDate = generatedDate.toLocaleDateString("fr-FR", {
      year: "numeric",
      month: "long",
      day: "numeric"
    })
-   \`\`\`
+   ```
 
 ---
 

@@ -63,7 +63,7 @@ Open the browser console (F12) and look for any JavaScript errors that might be 
 
 You can also test by setting the value directly in the console:
 
-\`\`\`javascript
+```javascript
 // Open console (F12) and run:
 document.querySelectorAll('input[type="text"]').forEach((input, i) => {
   const code = '813625';
@@ -72,7 +72,7 @@ document.querySelectorAll('input[type="text"]').forEach((input, i) => {
     input.dispatchEvent(new Event('input', { bubbles: true }));
   }
 });
-\`\`\`
+```
 
 This will fill the OTP inputs automatically.
 

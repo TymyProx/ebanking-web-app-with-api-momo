@@ -11,46 +11,46 @@ A complete, production-ready OTP (One-Time Password) verification system for sec
 ### Backend (backendebanking/)
 
 #### Database Layer
-\`\`\`
+```
 src/database/models/otp.ts                    - OTP data model (Sequelize)
 src/database/repositories/otpRepository.ts    - Data access layer
-\`\`\`
+```
 
 #### Business Logic
-\`\`\`
+```
 src/services/otpService.ts                    - OTP generation & verification logic
-\`\`\`
+```
 
 #### API Layer
-\`\`\`
+```
 src/api/otp/otpGenerate.ts                    - POST /api/otp/generate
 src/api/otp/otpVerify.ts                      - POST /api/otp/verify
 src/api/otp/otpResend.ts                      - POST /api/otp/resend
 src/api/otp/otpList.ts                        - GET /api/otp
 src/api/otp/index.ts                          - Route registration
 src/api/index.ts                              - UPDATED (registered OTP routes)
-\`\`\`
+```
 
 ### Frontend (ebanking-web-app-with-api-momo/)
 
 #### Services
-\`\`\`
+```
 lib/otp-service.ts                            - OTP API client service
-\`\`\`
+```
 
 #### UI Components
-\`\`\`
+```
 components/ui/otp-input.tsx                   - 6-digit OTP input component
 components/otp-modal.tsx                      - Complete OTP modal with flow
-\`\`\`
+```
 
 #### Examples & Documentation
-\`\`\`
+```
 app/transfers/new-with-otp/page.tsx           - Complete integration example
 docs/OTP_MODULE_GUIDE.md                      - Detailed documentation
 OTP_QUICK_START.md                            - Quick start guide
 OTP_MODULE_SUMMARY.md                         - This file
-\`\`\`
+```
 
 ---
 
@@ -97,7 +97,7 @@ OTP_MODULE_SUMMARY.md                         - This file
 
 ### The Flow
 
-\`\`\`
+```
 1. User fills form (transfer, payment, etc.)
 2. User clicks "Submit"
 3. OTP Modal opens automatically
@@ -107,11 +107,11 @@ OTP_MODULE_SUMMARY.md                         - This file
 7. Backend verifies code
 8. On success: action is executed
 9. On failure: user can retry (max 3 times)
-\`\`\`
+```
 
 ### Technical Flow
 
-\`\`\`typescript
+```typescript
 // 1. User action triggers OTP modal
 handleSubmit() → setShowOtpModal(true)
 
@@ -126,7 +126,7 @@ Auto-verify → OtpService.verify()
 
 // 5. Success callback
 onVerified() → executeAction()
-\`\`\`
+```
 
 ---
 
@@ -134,14 +134,14 @@ onVerified() → executeAction()
 
 ### 1. Run Migration
 
-\`\`\`bash
+```bash
 cd backendebanking
 npm run migrate
-\`\`\`
+```
 
 ### 2. Integrate into Your Form
 
-\`\`\`tsx
+```tsx
 import { OtpModal } from '@/components/otp-modal'
 
 function YourForm() {
@@ -162,7 +162,7 @@ function YourForm() {
     </>
   )
 }
-\`\`\`
+```
 
 ### 3. Test It!
 
@@ -174,7 +174,7 @@ Visit: `http://localhost:3000/transfers/new-with-otp`
 
 ### OtpModal
 
-\`\`\`typescript
+```typescript
 interface OtpModalProps {
   open: boolean                    // Modal visibility
   onOpenChange: (open) => void     // Close handler
@@ -186,11 +186,11 @@ interface OtpModalProps {
   deliveryMethod?: 'SMS' | 'EMAIL' | 'BOTH'
   autoGenerate?: boolean           // Auto-generate on open (default: true)
 }
-\`\`\`
+```
 
 ### OtpInput
 
-\`\`\`typescript
+```typescript
 interface OtpInputProps {
   length?: number                  // Number of digits (default: 6)
   value: string                    // Current OTP value
@@ -199,14 +199,14 @@ interface OtpInputProps {
   onComplete?: (value) => void     // Called when complete
   autoFocus?: boolean              // Auto-focus first input
 }
-\`\`\`
+```
 
 ---
 
 ## 🔌 API Endpoints
 
 ### Generate OTP
-\`\`\`
+```
 POST /api/otp/generate
 
 Body:
@@ -224,10 +224,10 @@ Response:
   "otpId": "uuid",
   "expiresAt": "2024-01-01T12:05:00Z"
 }
-\`\`\`
+```
 
 ### Verify OTP
-\`\`\`
+```
 POST /api/otp/verify
 
 Body:
@@ -243,10 +243,10 @@ Response:
   "verified": true,
   "message": "OTP verified successfully"
 }
-\`\`\`
+```
 
 ### Resend OTP
-\`\`\`
+```
 POST /api/otp/resend
 
 Body:
@@ -261,7 +261,7 @@ Response:
   "otpId": "new-uuid",
   "expiresAt": "2024-01-01T12:10:00Z"
 }
-\`\`\`
+```
 
 ---
 
@@ -297,32 +297,32 @@ Response:
 ### Backend Configuration
 
 **Expiration Time:**
-\`\`\`typescript
+```typescript
 // In otpService.ts or when calling generate
 expiresInMinutes: 5  // Default
-\`\`\`
+```
 
 **Max Attempts:**
-\`\`\`typescript
+```typescript
 maxAttempts: 3  // Default
-\`\`\`
+```
 
 **Delivery Method:**
-\`\`\`typescript
+```typescript
 deliveryMethod: 'SMS' | 'EMAIL' | 'BOTH'
-\`\`\`
+```
 
 ### Frontend Configuration
 
 **OTP Length:**
-\`\`\`tsx
+```tsx
 <OtpInput length={6} />  // Can be 4, 5, 6, etc.
-\`\`\`
+```
 
 **Auto-Generate:**
-\`\`\`tsx
+```tsx
 <OtpModal autoGenerate={true} />  // Default
-\`\`\`
+```
 
 ---
 
@@ -332,13 +332,13 @@ deliveryMethod: 'SMS' | 'EMAIL' | 'BOTH'
 
 OTP codes are logged to console in development:
 
-\`\`\`bash
+```bash
 [OTP SMS] Sending OTP 123456 to +224621234567 for purpose: TRANSFER
-\`\`\`
+```
 
 ### Check Database
 
-\`\`\`sql
+```sql
 -- View recent OTPs
 SELECT 
   id, 
@@ -351,23 +351,23 @@ SELECT
 FROM otps 
 ORDER BY "createdAt" DESC 
 LIMIT 10;
-\`\`\`
+```
 
 ### Check Logs
 
-\`\`\`bash
+```bash
 # Backend logs
 tail -f logs/app.log | grep OTP
 
 # Frontend console
 # Open browser DevTools → Console tab
-\`\`\`
+```
 
 ---
 
 ## 📊 Database Schema
 
-\`\`\`sql
+```sql
 CREATE TABLE otps (
   id UUID PRIMARY KEY,
   code VARCHAR(255) NOT NULL,          -- Hashed OTP
@@ -392,7 +392,7 @@ CREATE TABLE otps (
   "updatedAt" TIMESTAMP,
   "deletedAt" TIMESTAMP
 );
-\`\`\`
+```
 
 ---
 

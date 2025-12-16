@@ -18,7 +18,7 @@ Cela causait un conflit car :
 
 **Fichier modifié** : `/Users/gib/Documents/project/backendebanking/src/api/otp/index.ts`
 
-\`\`\`typescript
+```typescript
 // AVANT (incorrect)
 export default (app) => {
   app.post(`/api/otp/generate`, ...);
@@ -32,7 +32,7 @@ export default (routes) => {
   routes.post(`/otp/verify`, ...);
   // ...
 };
-\`\`\`
+```
 
 ### Changements apportés :
 1. ✅ Paramètre renommé de `app` à `routes` pour plus de clarté
@@ -45,54 +45,54 @@ export default (routes) => {
 
 Le backend doit tourner sur le port **8080** (par défaut) :
 
-\`\`\`bash
+```bash
 cd /Users/gib/Documents/project/backendebanking
 npm start
-\`\`\`
+```
 
 Le serveur démarre et affiche :
-\`\`\`
+```
 Listening on port 8080
-\`\`\`
+```
 
 ### 2. Frontend (ebanking-web-app-with-api-momo)
 
 Pour pointer vers le backend local, créez un fichier `.env.local` :
 
-\`\`\`bash
+```bash
 cd /Users/gib/Documents/project/ebanking-web-app-with-api-momo
-\`\`\`
+```
 
 Créez `.env.local` avec le contenu suivant :
 
-\`\`\`env
+```env
 # Configuration locale pour le développement
 NEXT_PUBLIC_API_URL=http://localhost:8080
 NEXT_PUBLIC_TENANT_ID=aa1287f6-06af-45b7-a905-8c57363565c2
 NEXT_PUBLIC_EBANKING_URL=http://localhost:3000
-\`\`\`
+```
 
 **Note** : Si `.env.local` existe déjà, modifiez simplement `NEXT_PUBLIC_API_URL` :
-\`\`\`env
+```env
 NEXT_PUBLIC_API_URL=http://localhost:8080
-\`\`\`
+```
 
 ### 3. Démarrer le frontend
 
-\`\`\`bash
+```bash
 cd /Users/gib/Documents/project/ebanking-web-app-with-api-momo
 npm run dev
-\`\`\`
+```
 
 ## 🧪 Test de validation
 
 ### Test 1 : Endpoint OTP accessible
 
-\`\`\`bash
+```bash
 curl -X POST http://localhost:8080/api/otp/verify \
   -H "Content-Type: application/json" \
   -d '{"code": "123456", "purpose": "TRANSFER"}'
-\`\`\`
+```
 
 **Résultat attendu** : Erreur d'authentification (normal sans token), mais pas "Cannot POST"
 
@@ -111,7 +111,7 @@ curl -X POST http://localhost:8080/api/otp/verify \
 
 Si SendGrid n'est pas configuré, les codes OTP s'affichent dans la console backend :
 
-\`\`\`
+```
 ============================================================
 🔐 OTP GÉNÉRÉ (MODE DÉVELOPPEMENT)
 ============================================================
@@ -121,18 +121,18 @@ Opération: TRANSFER
 Expire dans: 5 minutes
 Méthode: EMAIL
 ============================================================
-\`\`\`
+```
 
 ### Mode Production (SendGrid)
 
 Pour envoyer de vrais emails, configurez dans `/backendebanking/.env` :
 
-\`\`\`env
+```env
 # Configuration SendGrid
 SENDGRID_API_KEY=SG.xxxxxxxxxxxxxxxxxx
 SENDGRID_EMAIL_FROM=noreply@votredomaine.com
 SENDGRID_TEMPLATE_OTP_VERIFICATION=d-xxxxxxxxxxxxxxxxxxxxxx
-\`\`\`
+```
 
 Voir `/backendebanking/CONFIGURATION_EMAIL_OTP.md` pour plus de détails.
 
@@ -150,17 +150,17 @@ Tous les endpoints sont maintenant accessibles via `/api/otp/` :
 ## ✅ Vérification du fix
 
 ### Avant le fix
-\`\`\`
+```
 ❌ Cannot POST /api/otp/verify
-\`\`\`
+```
 
 ### Après le fix
-\`\`\`
+```
 ✅ L'endpoint répond correctement
 ✅ Le modal OTP s'affiche
 ✅ Les codes sont générés
 ✅ La vérification fonctionne
-\`\`\`
+```
 
 ## 🎯 Résumé
 
@@ -177,13 +177,13 @@ Le problème était une erreur de configuration des routes dans le backend. La c
 
 ## 📚 Fichiers modifiés
 
-\`\`\`
+```
 backendebanking/
 └── src/
     └── api/
         └── otp/
             └── index.ts  ← MODIFIÉ
-\`\`\`
+```
 
 ## 🔄 Prochaines étapes
 

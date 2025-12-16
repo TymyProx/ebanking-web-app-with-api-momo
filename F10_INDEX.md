@@ -69,7 +69,7 @@ Bienvenue! Cette page vous aide à naviguer dans la documentation de la Feature 
 
 ## 🗂️ Structure des Fichiers
 
-\`\`\`
+```
 ebanking-web-app-with-api-momo/
 │
 ├── 📑 F10_INDEX.md                     ← Vous êtes ici
@@ -83,7 +83,7 @@ ebanking-web-app-with-api-momo/
     ├── 🆕 RIB_TESTING.md               ← 12 test cases
     ├── ✏️ page.tsx                      ← Page (modifiée)
     └── loading.tsx                     ← Existant
-\`\`\`
+```
 
 ---
 
@@ -112,14 +112,14 @@ ebanking-web-app-with-api-momo/
 ## 🚀 Accès Rapide
 
 ### URL de la Feature
-\`\`\`
+```
 http://localhost:3000/services/rib
-\`\`\`
+```
 
 ### Avec Pré-sélection
-\`\`\`
+```
 http://localhost:3000/services/rib?accountId=xxx
-\`\`\`
+```
 
 ### Console Logs
 Chercher `[RIB]` dans DevTools Console pour les logs

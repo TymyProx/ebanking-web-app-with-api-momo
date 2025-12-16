@@ -5,9 +5,9 @@ User reported that they couldn't enter the OTP code in the modal - the cursor sh
 
 ## Root Cause
 The `success` state was being set to `true` immediately after OTP generation (in `handleGenerateOtp`), which caused the input fields to be disabled because of this condition:
-\`\`\`typescript
+```typescript
 disabled={isVerifying || success || isGenerating}
-\`\`\`
+```
 
 This meant that as soon as the OTP was sent, the input fields became disabled and the user couldn't enter the code.
 
@@ -18,7 +18,7 @@ This meant that as soon as the OTP was sent, the input fields became disabled an
 
 Removed the `setSuccess(true)` call from `handleGenerateOtp`. The `success` state should only be `true` after successful verification, not after generation:
 
-\`\`\`typescript
+```typescript
 const handleGenerateOtp = async () => {
   setIsGenerating(true)
   setError("")
@@ -41,13 +41,13 @@ const handleGenerateOtp = async () => {
     setIsGenerating(false)
   }
 }
-\`\`\`
+```
 
 ### 2. Improved Input Disabled Logic
 **File:** `/ebanking-web-app-with-api-momo/components/otp-modal.tsx`
 
 Updated the disabled prop to only disable during verification or after successful verification:
-\`\`\`typescript
+```typescript
 <OtpInput
   length={6}
   value={otpValue}
@@ -56,14 +56,14 @@ Updated the disabled prop to only disable during verification or after successfu
   autoFocus={true}
   onComplete={handleVerifyOtp}
 />
-\`\`\`
+```
 
 ### 3. Enhanced UI Feedback
 **File:** `/ebanking-web-app-with-api-momo/components/otp-modal.tsx`
 
 Added clear visual feedback to guide the user:
 
-\`\`\`typescript
+```typescript
 {isGenerating ? (
   <div className="flex items-center gap-2 text-muted-foreground">
     <Loader2 className="w-4 h-4 animate-spin" />
@@ -88,13 +88,13 @@ Added clear visual feedback to guide the user:
     )}
   </>
 )}
-\`\`\`
+```
 
 ### 4. Improved CSS for Input States
 **File:** `/ebanking-web-app-with-api-momo/components/ui/otp-input.tsx`
 
 Made the cursor styles more explicit:
-\`\`\`typescript
+```typescript
 className={cn(
   "w-12 h-14 text-center text-2xl font-semibold",
   "border-2 rounded-lg",
@@ -105,7 +105,7 @@ className={cn(
     ? "opacity-50 cursor-not-allowed bg-gray-100" 
     : "cursor-text bg-white hover:border-primary",
 )}
-\`\`\`
+```
 
 ## State Flow Now
 

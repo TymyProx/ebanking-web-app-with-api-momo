@@ -21,10 +21,10 @@
 - Interfaces TypeScript: `UserProfile`, `RibInfo`
 
 **Imports Clés**:
-\`\`\`typescript
+```typescript
 import { cookies } from "next/headers"
 import { config } from "@/lib/config"
-\`\`\`
+```
 
 ---
 
@@ -71,17 +71,17 @@ import { config } from "@/lib/config"
 **Modifications Principales**:
 
 1. **Import des Server Actions**:
-\`\`\`typescript
+```typescript
 import { getUserProfile, getAccountForRib, generateRibData } from "./actions"
-\`\`\`
+```
 
 2. **État Utilisateur Ajouté**:
-\`\`\`typescript
+```typescript
 const [userProfile, setUserProfile] = useState<any>(null)
-\`\`\`
+```
 
 3. **Chargement des Données**:
-\`\`\`typescript
+```typescript
 // Avant: loadAccounts()
 // Après: loadData()
 const loadData = async () => {
@@ -102,22 +102,22 @@ const loadData = async () => {
     })
   )
 }
-\`\`\`
+```
 
 4. **Affichage Dynamique du Titulaire**:
-\`\`\`typescript
+```typescript
 // Avant: accountHolder: "DIALLO Mamadou" (codé en dur)
 // Après: accountHolder: ribData?.accountHolder || 
 //        (profile ? `${profile.firstName} ${profile.lastName}` : "TITULAIRE")
-\`\`\`
+```
 
 5. **Fallback en Cas d'Erreur**:
-\`\`\`typescript
+```typescript
 // Utilise now le profil utilisateur en fallback
 accountHolder: userProfile 
   ? `${userProfile.firstName || ""} ${userProfile.lastName || ""}`
   : "DIALLO Mamadou"
-\`\`\`
+```
 
 ---
 
@@ -142,21 +142,21 @@ accountHolder: userProfile
 ### Changements de Comportement
 
 #### Avant (Données Codées en Dur)
-\`\`\`
+```
 Titulaire du compte: DIALLO Mamadou  ← Toujours la même personne
 Code agence: 001                      ← Codé en dur
 Code banque: BNG                      ← Codé en dur
 IBAN: GN82 BNG 001 [NUMERO]          ← Construction basique
-\`\`\`
+```
 
 #### Après (Données Réelles)
-\`\`\`
+```
 Titulaire du compte: Jean DUPONT     ← Vrai utilisateur
 Code agence: 001                      ← De l'API
 Code banque: BNG                      ← De l'API
 IBAN: GN82 BNG 001 0001234567890     ← Généré avec vraies données
 cleRib: [VALEUR]                      ← De l'API
-\`\`\`
+```
 
 ### Nouvelles Fonctionnalités
 

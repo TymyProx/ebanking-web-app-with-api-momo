@@ -17,7 +17,7 @@ Le système OTP a été configuré pour **envoyer les codes par email** par déf
 
 ### Par défaut - Email automatique
 
-\`\`\`tsx
+```tsx
 // Le composant OTP utilise maintenant EMAIL par défaut
 <OtpModal
   open={showOtp}
@@ -26,11 +26,11 @@ Le système OTP a été configuré pour **envoyer les codes par email** par déf
   purpose="TRANSFER"
   // deliveryMethod="EMAIL" est déjà par défaut
 />
-\`\`\`
+```
 
 ### Options de livraison
 
-\`\`\`tsx
+```tsx
 // Email uniquement (défaut)
 <OtpModal deliveryMethod="EMAIL" ... />
 
@@ -39,7 +39,7 @@ Le système OTP a été configuré pour **envoyer les codes par email** par déf
 
 // Les deux
 <OtpModal deliveryMethod="BOTH" ... />
-\`\`\`
+```
 
 ---
 
@@ -71,10 +71,10 @@ Le système OTP a été configuré pour **envoyer les codes par email** par déf
 
 Éditez `.env` dans `backendebanking/`:
 
-\`\`\`env
+```env
 SENDGRID_KEY=SG.votre_cle_api_ici
 SENDGRID_EMAIL_FROM=noreply@votredomaine.com
-\`\`\`
+```
 
 **C'est tout!** Le système utilisera automatiquement le template HTML intégré.
 
@@ -86,7 +86,7 @@ SENDGRID_EMAIL_FROM=noreply@votredomaine.com
 
 Quand vous générez un OTP, le **code s'affiche dans la console** backend:
 
-\`\`\`
+```
 ============================================================
 🔐 OTP GÉNÉRÉ (MODE DÉVELOPPEMENT)
 ============================================================
@@ -96,13 +96,13 @@ Opération: Virement bancaire
 Expire dans: 5 minutes
 Méthode: EMAIL
 ============================================================
-\`\`\`
+```
 
 **Avantage:** Vous pouvez tester sans configurer SendGrid!
 
 ### Tester l'exemple:
 
-\`\`\`bash
+```bash
 # Terminal 1 - Backend
 cd backendebanking
 npm run dev
@@ -112,7 +112,7 @@ cd ebanking-web-app-with-api-momo
 npm run dev
 
 # Ouvrir: http://localhost:3000/transfers/new-with-otp
-\`\`\`
+```
 
 1. Remplissez le formulaire
 2. Cliquez "Valider le virement"
@@ -136,7 +136,7 @@ L'email OTP comprend:
 
 ### Exemple de code:
 
-\`\`\`html
+```html
 [Header avec logo]
 
 🔐 Code de vérification OTP
@@ -159,7 +159,7 @@ Vous avez demandé un code de vérification pour:
 
 ⚠️ Si vous n'avez pas demandé ce code, 
 contactez notre support.
-\`\`\`
+```
 
 ### Personnalisation:
 
@@ -194,7 +194,7 @@ Les codes d'opération sont automatiquement traduits en français:
 
 ### Vérifier que SendGrid est configuré:
 
-\`\`\`bash
+```bash
 # Démarrer le backend
 cd backendebanking
 npm run dev
@@ -202,11 +202,11 @@ npm run dev
 # Dans les logs, vous devriez voir:
 ✓ SendGrid configured
 ✓ Email sender initialized
-\`\`\`
+```
 
 ### Vérifier l'envoi d'email:
 
-\`\`\`bash
+```bash
 # Générer un OTP (remplacez TOKEN par votre token)
 curl -X POST http://localhost:8080/api/otp/generate \
   -H "Content-Type: application/json" \
@@ -218,7 +218,7 @@ curl -X POST http://localhost:8080/api/otp/generate \
 
 # Dans les logs:
 [OTP EMAIL] ✉️ Code OTP envoyé à user@example.com pour Test
-\`\`\`
+```
 
 ---
 
@@ -234,10 +234,10 @@ curl -X POST http://localhost:8080/api/otp/generate \
 ### "Email provider is not configured"
 
 1. Vérifiez `.env`:
-   \`\`\`env
+   ```env
    SENDGRID_KEY=SG.xxxxx
    SENDGRID_EMAIL_FROM=xxx@xxx.com
-   \`\`\`
+   ```
 2. Redémarrez le backend
 3. **En développement:** le code s'affiche quand même dans la console
 
@@ -258,7 +258,7 @@ Le système utilise un fallback automatique. Si vous n'avez pas de template Send
 
 ### Dans votre base de données:
 
-\`\`\`sql
+```sql
 -- OTPs envoyés par email aujourd'hui
 SELECT COUNT(*) 
 FROM otps 
@@ -272,7 +272,7 @@ SELECT
   ROUND(SUM(CASE WHEN verified THEN 1 ELSE 0 END)::numeric / COUNT(*) * 100, 2) as success_rate
 FROM otps
 WHERE delivery_method IN ('EMAIL', 'BOTH');
-\`\`\`
+```
 
 ---
 

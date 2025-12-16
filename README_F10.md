@@ -2,7 +2,7 @@
 
 ## 📁 Fichiers de la Feature
 
-\`\`\`
+```
 ebanking-web-app-with-api-momo/
 ├── 📄 README_F10.md                    ← Vous êtes ici
 ├── 📄 F10_RIB_SUMMARY.md               ← Résumé complet
@@ -14,21 +14,21 @@ ebanking-web-app-with-api-momo/
     ├── 🆕 RIB_TESTING.md               ← 12 test cases
     ├── ✏️ page.tsx                      ← Page RIB (modifiée)
     └── loading.tsx                     ← Component loading (existant)
-\`\`\`
+```
 
 ---
 
 ## 🚀 Quick Start
 
 ### Accéder à la Feature
-\`\`\`
+```
 http://localhost:3000/services/rib
-\`\`\`
+```
 
 ### Avec Pré-sélection de Compte
-\`\`\`
+```
 http://localhost:3000/services/rib?accountId=xxx
-\`\`\`
+```
 
 ---
 
@@ -50,7 +50,7 @@ http://localhost:3000/services/rib?accountId=xxx
 ## 🔌 API Endpoints Utilisés
 
 ### 1. Récupération du Profil
-\`\`\`bash
+```bash
 GET /api/auth/me
 Authorization: Bearer {TOKEN}
 
@@ -62,10 +62,10 @@ Response:
   "email": "jean@test.com",
   "phoneNumber": "+224..."
 }
-\`\`\`
+```
 
 ### 2. Récupération des Comptes
-\`\`\`bash
+```bash
 GET /api/tenant/{TENANT_ID}/compte
 Authorization: Bearer {TOKEN}
 
@@ -83,27 +83,27 @@ Response:
     "cleRib": "12"
   }]
 }
-\`\`\`
+```
 
 ### 3. Récupération d'un Compte Spécifique
-\`\`\`bash
+```bash
 GET /api/tenant/{TENANT_ID}/compte/{ACCOUNT_ID}
 Authorization: Bearer {TOKEN}
 
 Response: [Même structure que un compte dans la liste]
-\`\`\`
+```
 
 ---
 
 ## 🧪 Tests Rapides
 
 ### Test 1: Page Charge Correctement
-\`\`\`bash
+```bash
 # Logs attendus en console
 [RIB] Profil utilisateur récupéré: jean@test.com
 [RIB] Comptes récupérés: 2
 [RIB] Comptes actifs avec données complètes: 2
-\`\`\`
+```
 
 ### Test 2: Affichage du Profil
 - Ouvrir DevTools (F12)
@@ -125,7 +125,7 @@ Response: [Même structure que un compte dans la liste]
 ## 💻 Code Examples
 
 ### Utilisation dans un Composant
-\`\`\`typescript
+```typescript
 import { getUserProfile, getAccountForRib } from "@/app/services/rib/actions"
 
 // Récupérer le profil
@@ -139,40 +139,40 @@ console.log(account.codeBanque) // "BNG"
 // Générer le RIB
 const rib = generateRibData(account, profile)
 console.log(rib.iban) // "GN82 BNG 001 0001234567890"
-\`\`\`
+```
 
 ---
 
 ## 🐛 Dépannage Rapide
 
 ### Problème: "Aucun compte disponible"
-\`\`\`
+```
 ✓ Vérifier que l'utilisateur a des comptes
 ✓ Vérifier status = 'ACTIF'
 ✓ Vérifier accountNumber n'est pas vide
 ✓ Vérifier le token n'est pas expiré
-\`\`\`
+```
 
 ### Problème: Titulaire = "Titulaire du compte"
-\`\`\`
+```
 ✓ API /auth/me ne retourne pas firstName/lastName
 ✓ Vérifier que la DB a ces champs
 ✓ Vérifier le profil utilisateur dans la DB
-\`\`\`
+```
 
 ### Problème: Impossible de télécharger PDF
-\`\`\`
+```
 ✓ Vérifier que jsPDF est installé
 ✓ Voir console pour les erreurs jsPDF
 ✓ Fallback TXT devrait fonctionner
-\`\`\`
+```
 
 ### Problème: IBAN mal formaté
-\`\`\`
+```
 ✓ Vérifier que codeBanque existe dans l'API
 ✓ Vérifier que codeAgence existe dans l'API
 ✓ Format attendu: GN82 [CODE_BANQUE] [CODE_AGENCE] [NUMERO]
-\`\`\`
+```
 
 ---
 
@@ -211,16 +211,16 @@ console.log(rib.iban) // "GN82 BNG 001 0001234567890"
 ## 📞 Commandes Utiles
 
 ### Voir les Logs RIB
-\`\`\`javascript
+```javascript
 // Dans la console du navigateur
 console.log("Chercher [RIB]")
 // Logs:
 // [RIB] Profil utilisateur récupéré: ...
 // [RIB] Comptes récupérés: ...
-\`\`\`
+```
 
 ### Tester l'API
-\`\`\`bash
+```bash
 # Profil utilisateur
 curl -H "Authorization: Bearer TOKEN" \
   https://api.example.com/api/auth/me
@@ -232,13 +232,13 @@ curl -H "Authorization: Bearer TOKEN" \
 # Un compte spécifique
 curl -H "Authorization: Bearer TOKEN" \
   https://api.example.com/api/tenant/TENANT_ID/compte/ACCOUNT_ID
-\`\`\`
+```
 
 ---
 
 ## 🎯 Architecture Résumée
 
-\`\`\`
+```
 Client (page.tsx)
     ↓
     ├─→ getUserProfile() → /api/auth/me
@@ -249,7 +249,7 @@ Client (page.tsx)
 generateRibData() → Format RIB
     ↓
 Display → Affichage + Téléchargement
-\`\`\`
+```
 
 ---
 
