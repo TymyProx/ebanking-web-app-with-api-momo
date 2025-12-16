@@ -98,6 +98,7 @@ export async function completeSignup(token: string, password: string, emailFallb
       // Step 0.3: Fetch accounts from CompteBng
       console.log("[v0] Step 0.3: Fetching accounts from CompteBng...")
       const compteBngUrl = `${API_BASE_URL}/tenant/${TENANT_ID}/comptebng?filter=numClient||$eq||${encodeURIComponent(codeClientFromBd)}`
+      console.log("[v0] CompteBng URL:", compteBngUrl)
       const compteBngResponse = await fetch(compteBngUrl, {
         method: "GET",
         headers: {
@@ -105,8 +106,14 @@ export async function completeSignup(token: string, password: string, emailFallb
         },
       })
 
+      console.log("[v0] CompteBng response status:", compteBngResponse.status)
+
       if (!compteBngResponse.ok) {
-        throw new Error("Impossible de récupérer les comptes depuis CompteBng")
+        const errorText = await compteBngResponse.text()
+        console.error("[v0] CompteBng error response:", errorText)
+        throw new Error(
+          `Impossible de récupérer les comptes depuis CompteBng (Status: ${compteBngResponse.status}). Détails: ${errorText}`,
+        )
       }
 
       const compteBngData = await compteBngResponse.json()
