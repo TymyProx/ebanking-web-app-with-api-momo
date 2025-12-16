@@ -18,39 +18,14 @@ const safeJson = async (res: Response) => {
 }
 
 const normalizeClientType = (pendingData: any) => {
-  console.log("[v0] ===== CLIENT TYPE NORMALIZATION =====")
-  console.log("[v0] pendingData received:", JSON.stringify(pendingData, null, 2))
-
   // 1) si le front a déjà mis "existing"/"new"
-  const raw = String(pendingData?.clientType ?? "")
-    .toLowerCase()
-    .trim()
-
-  console.log("[v0] clientType from cookie:", raw)
-
-  if (raw === "existing" || raw === "new") {
-    console.log("[v0] Using explicit clientType from cookie:", raw)
-    return raw
-  }
+  const raw = String(pendingData?.clientType ?? "").toLowerCase().trim()
+  if (raw === "existing" || raw === "new") return raw
 
   // 2) fallback fiable: un "existing BNG" a un numClient BdClientBng (pas CLI-...)
   const numClient = String(pendingData?.numClient ?? "").trim()
-  const codeClient = String(pendingData?.codeClient ?? "").trim()
+  if (numClient && !numClient.startsWith("CLI-")) return "existing"
 
-  console.log("[v0] numClient from cookie:", numClient)
-  console.log("[v0] codeClient from cookie:", codeClient)
-
-  if (numClient && !numClient.startsWith("CLI-")) {
-    console.log("[v0] Detected EXISTING client via numClient:", numClient)
-    return "existing"
-  }
-
-  if (codeClient && !codeClient.startsWith("CLI-")) {
-    console.log("[v0] Detected EXISTING client via codeClient:", codeClient)
-    return "existing"
-  }
-
-  console.log("[v0] Defaulting to NEW client")
   return "new"
 }
 
@@ -62,6 +37,7 @@ const extractRows = (data: any) => {
   if (Array.isArray(data.value)) return data.value
   return []
 }
+
 
 export async function completeSignup(token: string, password: string, emailFallback?: string) {
   try {
@@ -89,6 +65,7 @@ export async function completeSignup(token: string, password: string, emailFallb
     // console.log("[v0] Client type:", clientType)
     const clientType = normalizeClientType(pendingData)
     console.log("[v0] Client type (normalized):", clientType)
+
 
     if (clientType === "existing") {
       console.log("[v0] Processing EXISTING BNG client signup...")
@@ -159,149 +136,149 @@ export async function completeSignup(token: string, password: string, emailFallb
         userData.fullName = pendingData.fullName
       }
 
+      // console.log("[v0] Step 3: Creating client profile for existing BNG client...")
+
+      // const clientPayload = {
+      //   data: {
+      //     nomComplet: String(pendingData.fullName || pendingData.email),
+      //     email: String(pendingData.email),
+      //     telephone: String(pendingData.phone || ""),
+      //     adresse: String(pendingData.address || ""),
+      //     codeClient: String(pendingData.numClient), // Using numClient from BdClientBng (not CLI-...)
+      //     verificationToken: token,
+      //     clientType: "existing",
+      //   },
+      // }
+
+      // console.log("[v0] Client payload:", JSON.stringify(clientPayload, null, 2))
+
+      // const clientResponse = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/client`, {
+      //   method: "POST",
+      //   headers: {
+      //     "Content-Type": "application/json",
+      //     Authorization: `Bearer ${authToken}`,
+      //   },
+      //   body: JSON.stringify(clientPayload),
+      // })
+
+      // console.log("[v0] Client response status:", clientResponse.status)
+
+      // if (!clientResponse.ok) {
+      //   const errorText = await clientResponse.text()
+      //   console.error("[v0] Client creation failed:", errorText)
+      //   throw new Error("Erreur lors de la création du profil client. Veuillez réessayer.")
+      // }
+
+      // const clientData = await clientResponse.json()
+      // const clientId = clientData.id || clientData.data?.id
+      // console.log("[v0] Client profile created successfully, clientId:", clientId)
+
+      // console.log("[v0] VERIFICATION: userId =", userId, ", clientId =", clientId)
+      // console.log("[v0] VERIFICATION: Client was created with userid =", userId)
+      // console.log("[v0] VERIFICATION: Accounts will be created with clientId =", userId, "(userId)")
+
+      // if (!clientId) {
+      //   console.error("[v0] No clientId returned from client creation")
+      //   throw new Error("Erreur lors de la récupération de l'ID client")
+      // }
       console.log("[v0] Step 3: Upserting client profile for existing BNG client...")
 
-      const numClientBng = String(pendingData.numClient || "").trim()
-      if (!numClientBng || numClientBng.startsWith("CLI-")) {
-        throw new Error("Code client BNG invalide (numClient attendu depuis BdClientBng).")
-      }
+const codeClientFromBd = String(pendingData.numClient || "").trim()
+if (!codeClientFromBd || codeClientFromBd.startsWith("CLI-")) {
+  throw new Error("Code client BNG invalide (numClient attendu depuis BdClientBng).")
+}
 
-      console.log("[v0] Fetching client data from BdClientBng using numClient:", numClientBng)
+// 1) Chercher si un client existe déjà (priorité: codeClient BdClientBng)
+const findByCodeUrl =
+  `${API_BASE_URL}/tenant/${TENANT_ID}/client?filter=codeClient||$eq||${encodeURIComponent(codeClientFromBd)}`
 
-      const bdClientBngUrl = `${API_BASE_URL}/tenant/${TENANT_ID}/bd-client-bng?filter=numClient||$eq||${encodeURIComponent(numClientBng)}`
-      const bdClientBngResponse = await fetch(bdClientBngUrl, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${authToken}`,
-        },
-      })
+const existingByCodeRes = await fetch(findByCodeUrl, {
+  method: "GET",
+  headers: { Authorization: `Bearer ${authToken}` },
+})
 
-      if (!bdClientBngResponse.ok) {
-        const errorText = await bdClientBngResponse.text()
-        console.error("[v0] BdClientBng fetch failed:", errorText)
-        throw new Error("Erreur lors de la récupération des données client BNG. Veuillez réessayer.")
-      }
+let existingClient: any = null
+if (existingByCodeRes.ok) {
+  const data = await safeJson(existingByCodeRes)
+  existingClient = extractRows(data)[0] ?? null
+}
 
-      const bdClientBngData = await bdClientBngResponse.json()
-      console.log("[v0] BdClientBng raw data:", JSON.stringify(bdClientBngData, null, 2))
+// 2) Fallback: chercher par userid (si ton API supporte) sinon par email
+if (!existingClient) {
+  const findByUserUrl =
+    `${API_BASE_URL}/tenant/${TENANT_ID}/client?filter=userid||$eq||${encodeURIComponent(String(userId))}`
+  const byUserRes = await fetch(findByUserUrl, {
+    method: "GET",
+    headers: { Authorization: `Bearer ${authToken}` },
+  })
 
-      // Extract the client data from response
-      let bdClientBng: any = null
-      if (Array.isArray(bdClientBngData)) {
-        bdClientBng = bdClientBngData[0]
-      } else if (bdClientBngData.rows && Array.isArray(bdClientBngData.rows)) {
-        bdClientBng = bdClientBngData.rows[0]
-      } else if (bdClientBngData.data && Array.isArray(bdClientBngData.data)) {
-        bdClientBng = bdClientBngData.data[0]
-      } else if (bdClientBngData.value && Array.isArray(bdClientBngData.value)) {
-        bdClientBng = bdClientBngData.value[0]
-      }
+  if (byUserRes.ok) {
+    const data = await safeJson(byUserRes)
+    existingClient = extractRows(data)[0] ?? null
+  }
+}
 
-      if (!bdClientBng) {
-        throw new Error("Aucune donnée trouvée dans BdClientBng pour ce numéro client.")
-      }
+if (!existingClient) {
+  const findByEmailUrl =
+    `${API_BASE_URL}/tenant/${TENANT_ID}/client?filter=email||$eq||${encodeURIComponent(String(pendingData.email))}`
+  const byEmailRes = await fetch(findByEmailUrl, {
+    method: "GET",
+    headers: { Authorization: `Bearer ${authToken}` },
+  })
 
-      console.log("[v0] BdClientBng client found:", JSON.stringify(bdClientBng, null, 2))
+  if (byEmailRes.ok) {
+    const data = await safeJson(byEmailRes)
+    existingClient = extractRows(data)[0] ?? null
+  }
+}
 
-      // Extract the correct field names from BdClientBng
-      const fullNameFromBd = String(bdClientBng.nomComplet || bdClientBng.fullName || "")
-      const emailFromBd = String(bdClientBng.email || pendingData.email || "")
-      const phoneFromBd = String(bdClientBng.numTelephone || bdClientBng.telephone || bdClientBng.phone || "")
-      const addressFromBd = String(bdClientBng.adresse || bdClientBng.address || "")
+// 3) Si existe déjà => on ne POST PAS (zéro double insertion)
+let clientId: string | null = null
 
-      console.log("[v0] Extracted from BdClientBng:")
-      console.log("[v0] - nomComplet:", fullNameFromBd)
-      console.log("[v0] - email:", emailFromBd)
-      console.log("[v0] - numTelephone:", phoneFromBd)
-      console.log("[v0] - numClient:", numClientBng)
+if (existingClient?.id) {
+  clientId = String(existingClient.id)
+  console.log("[v0] Client already exists -> skipping creation. clientId:", clientId)
+} else {
+  // Important: on met userid pour lier proprement et éviter d'autres créations ailleurs
+  const clientPayload = {
+    data: {
+      nomComplet: String(pendingData.fullName || pendingData.email),
+      email: String(pendingData.email),
+      telephone: String(pendingData.phone || ""),
+      adresse: String(pendingData.address || ""),
+      codeClient: codeClientFromBd,     // ✅ BdClientBng (pas CLI-...)
+      userid: String(userId),           // ✅ lien explicite
+      verificationToken: token,
+      clientType: "existing",
+    },
+  }
 
-      // 1) Chercher si un client existe déjà (priorité: codeClient BdClientBng)
-      const findByCodeUrl = `${API_BASE_URL}/tenant/${TENANT_ID}/client?filter=codeClient||$eq||${encodeURIComponent(numClientBng)}`
+  console.log("[v0] Creating client (not found). payload:", JSON.stringify(clientPayload, null, 2))
 
-      const existingByCodeRes = await fetch(findByCodeUrl, {
-        method: "GET",
-        headers: { Authorization: `Bearer ${authToken}` },
-      })
+  const clientResponse = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/client`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${authToken}`,
+    },
+    body: JSON.stringify(clientPayload),
+  })
 
-      let existingClient: any = null
-      if (existingByCodeRes.ok) {
-        const data = await safeJson(existingByCodeRes)
-        existingClient = extractRows(data)[0] ?? null
-      }
+  if (!clientResponse.ok) {
+    const err = await clientResponse.text()
+    console.error("[v0] Client creation failed:", err)
+    throw new Error("Erreur lors de la création du profil client. Veuillez réessayer.")
+  }
 
-      // 2) Fallback: chercher par userid (si ton API supporte) sinon par email
-      if (!existingClient) {
-        const findByUserUrl = `${API_BASE_URL}/tenant/${TENANT_ID}/client?filter=userid||$eq||${encodeURIComponent(String(userId))}`
-        const byUserRes = await fetch(findByUserUrl, {
-          method: "GET",
-          headers: { Authorization: `Bearer ${authToken}` },
-        })
+  const created = await safeJson(clientResponse)
+  clientId = String(created?.id || created?.data?.id || "")
+  console.log("[v0] Client created successfully, clientId:", clientId)
+}
 
-        if (byUserRes.ok) {
-          const data = await safeJson(byUserRes)
-          existingClient = extractRows(data)[0] ?? null
-        }
-      }
+if (!clientId) {
+  throw new Error("Impossible de déterminer l'ID client (créé ou existant).")
+}
 
-      if (!existingClient) {
-        const findByEmailUrl = `${API_BASE_URL}/tenant/${TENANT_ID}/client?filter=email||$eq||${encodeURIComponent(emailFromBd)}`
-        const byEmailRes = await fetch(findByEmailUrl, {
-          method: "GET",
-          headers: { Authorization: `Bearer ${authToken}` },
-        })
-
-        if (byEmailRes.ok) {
-          const data = await safeJson(byEmailRes)
-          existingClient = extractRows(data)[0] ?? null
-        }
-      }
-
-      // 3) Si existe déjà => on ne POST PAS (zéro double insertion)
-      let clientId: string | null = null
-
-      if (existingClient?.id) {
-        clientId = String(existingClient.id)
-        console.log("[v0] Client already exists -> skipping creation. clientId:", clientId)
-      } else {
-        const clientPayload = {
-          data: {
-            nomComplet: fullNameFromBd, // ✅ from BdClientBng.nomComplet
-            email: emailFromBd, // ✅ from BdClientBng.email
-            telephone: phoneFromBd, // ✅ from BdClientBng.numTelephone
-            adresse: addressFromBd, // ✅ from BdClientBng.adresse (if available)
-            codeClient: numClientBng, // ✅ from BdClientBng.numClient
-            userid: String(userId), // ✅ lien explicite
-            verificationToken: token,
-            clientType: "existing",
-          },
-        }
-
-        console.log("[v0] Creating client with BdClientBng data. payload:", JSON.stringify(clientPayload, null, 2))
-
-        const clientResponse = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/client`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${authToken}`,
-          },
-          body: JSON.stringify(clientPayload),
-        })
-
-        if (!clientResponse.ok) {
-          const err = await clientResponse.text()
-          console.error("[v0] Client creation failed:", err)
-          throw new Error("Erreur lors de la création du profil client. Veuillez réessayer.")
-        }
-
-        const created = await safeJson(clientResponse)
-        clientId = String(created?.id || created?.data?.id || "")
-        console.log("[v0] Client created successfully with BdClientBng data, clientId:", clientId)
-      }
-
-      if (!clientId) {
-        throw new Error("Impossible de déterminer l'ID client (créé ou existant).")
-      }
 
       console.log("[v0] Step 4: Fetching accounts from CompteBng using numClient:", pendingData.numClient)
 
