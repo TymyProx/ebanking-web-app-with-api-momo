@@ -19,9 +19,7 @@ const safeJson = async (res: Response) => {
 
 const normalizeClientType = (pendingData: any) => {
   // 1) si le front a déjà mis "existing"/"new"
-  const raw = String(pendingData?.clientType ?? "")
-    .toLowerCase()
-    .trim()
+  const raw = String(pendingData?.clientType ?? "").toLowerCase().trim()
   if (raw === "existing" || raw === "new") return raw
 
   // 2) fallback fiable: un "existing BNG" a un numClient BdClientBng (pas CLI-...)
@@ -39,6 +37,7 @@ const extractRows = (data: any) => {
   if (Array.isArray(data.value)) return data.value
   return []
 }
+
 
 export async function completeSignup(token: string, password: string, emailFallback?: string) {
   try {
@@ -62,117 +61,14 @@ export async function completeSignup(token: string, password: string, emailFallb
 
     console.log("[v0] Token verified successfully")
 
+    // const clientType = pendingData.clientType || "new"
+    // console.log("[v0] Client type:", clientType)
     const clientType = normalizeClientType(pendingData)
     console.log("[v0] Client type (normalized):", clientType)
 
+
     if (clientType === "existing") {
       console.log("[v0] Processing EXISTING BNG client signup...")
-
-      console.log("[v0] Step 0: Running all verification checks...")
-
-      // Step 0.1: Verify user doesn't exist
-      console.log("[v0] Step 0.1: Checking if user with this email already exists...")
-      const checkUserUrl = `${API_BASE_URL}/auth/check-email?email=${encodeURIComponent(pendingData.email)}`
-      const checkUserResponse = await fetch(checkUserUrl, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      })
-
-      if (checkUserResponse.ok) {
-        const userData = await checkUserResponse.json()
-        if (userData.exists || userData.available === false) {
-          throw new Error("Ce compte existe déjà. Veuillez vous connecter avec vos identifiants.")
-        }
-      }
-      console.log("[v0] ✅ User email available")
-
-      // Step 0.2: Verify codeClient is valid
-      const codeClientFromBd = String(pendingData.numClient || "").trim()
-      if (!codeClientFromBd || codeClientFromBd.startsWith("CLI-")) {
-        throw new Error("Code client BNG invalide (numClient attendu depuis BdClientBng).")
-      }
-      console.log("[v0] ✅ Valid numClient from BdClientBng:", codeClientFromBd)
-
-      // Step 0.3: Fetch accounts from CompteBng
-      console.log("[v0] Step 0.3: Fetching accounts from CompteBng...")
-      const compteBngUrl = `${API_BASE_URL}/tenant/${TENANT_ID}/compte-bng?filter=numClient||$eq||${encodeURIComponent(codeClientFromBd)}`
-      console.log("[v0] CompteBng URL:", compteBngUrl)
-      const compteBngResponse = await fetch(compteBngUrl, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      })
-
-      console.log("[v0] CompteBng response status:", compteBngResponse.status)
-
-      if (!compteBngResponse.ok) {
-        const errorText = await compteBngResponse.text()
-        console.error("[v0] CompteBng error response:", errorText)
-        throw new Error(
-          `Impossible de récupérer les comptes depuis CompteBng (Status: ${compteBngResponse.status}). Détails: ${errorText}`,
-        )
-      }
-
-      const compteBngData = await compteBngResponse.json()
-      let comptesArray = []
-
-      if (Array.isArray(compteBngData)) {
-        comptesArray = compteBngData
-      } else if (compteBngData.rows && Array.isArray(compteBngData.rows)) {
-        comptesArray = compteBngData.rows
-      } else if (compteBngData.data && Array.isArray(compteBngData.data)) {
-        comptesArray = compteBngData.data
-      }
-
-      if (comptesArray.length === 0) {
-        throw new Error("Aucun compte trouvé pour ce client BNG")
-      }
-
-      console.log("[v0] Found", comptesArray.length, "accounts in CompteBng")
-
-      // Step 0.4: Check if any accountNumber already exists in compte table
-      console.log("[v0] Step 0.4: Checking for duplicate account numbers in compte table...")
-      const accountNumbersToCreate = comptesArray.map((compte: any) => String(compte.numCompte || "")).filter(Boolean)
-      console.log("[v0] Account numbers to verify:", accountNumbersToCreate)
-
-      for (const accountNumber of accountNumbersToCreate) {
-        const checkDuplicateUrl = `${API_BASE_URL}/tenant/${TENANT_ID}/compte?filter=accountNumber||$eq||${encodeURIComponent(accountNumber)}`
-        console.log("[v0] Checking for existing account:", accountNumber)
-
-        const checkResponse = await fetch(checkDuplicateUrl, {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-          },
-        })
-
-        if (checkResponse.ok) {
-          const existingData = await checkResponse.json()
-          let existingAccounts = []
-
-          if (Array.isArray(existingData)) {
-            existingAccounts = existingData
-          } else if (existingData.rows && Array.isArray(existingData.rows)) {
-            existingAccounts = existingData.rows
-          } else if (existingData.data && Array.isArray(existingData.data)) {
-            existingAccounts = existingData.data
-          }
-
-          if (existingAccounts.length > 0) {
-            console.error("[v0] ❌ DUPLICATE ACCOUNT DETECTED!")
-            console.error("[v0] Account number:", accountNumber, "already exists in database")
-            throw new Error(
-              `Ce compte bancaire (${accountNumber}) existe déjà dans le système. L'inscription a été annulée.`,
-            )
-          }
-        }
-      }
-
-      console.log("[v0] ✅ No duplicate accounts found")
-      console.log("[v0] ✅ All verification checks passed! Proceeding with account creation...")
 
       console.log("[v0] Step 1: Creating auth account...")
 
@@ -219,115 +115,225 @@ export async function completeSignup(token: string, password: string, emailFallb
 
       console.log("[v0] Auth account created successfully")
 
-      let shouldRollback = false
-      let rollbackReason = ""
+      console.log("[v0] Step 2: Getting user info...")
 
-      try {
-        console.log("[v0] Step 2: Getting user info...")
+      const meResponse = await fetch(`${API_BASE_URL}/auth/me`, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${authToken}`,
+        },
+      })
 
-        const meResponse = await fetch(`${API_BASE_URL}/auth/me`, {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${authToken}`,
-          },
-        })
+      if (!meResponse.ok) {
+        throw new Error("Erreur lors de la récupération des informations utilisateur")
+      }
 
-        if (!meResponse.ok) {
-          throw new Error("Erreur lors de la récupération des informations utilisateur")
-        }
+      const userData = await meResponse.json()
+      const userId = userData.id
+      console.log("[v0] User info retrieved, userId:", userId)
 
-        const userData = await meResponse.json()
-        const userId = userData.id
-        console.log("[v0] User info retrieved, userId:", userId)
+      if (pendingData.fullName) {
+        userData.fullName = pendingData.fullName
+      }
 
-        if (pendingData.fullName) {
-          userData.fullName = pendingData.fullName
-        }
+      // console.log("[v0] Step 3: Creating client profile for existing BNG client...")
 
-        console.log("[v0] Step 3: Checking if client already exists...")
+      // const clientPayload = {
+      //   data: {
+      //     nomComplet: String(pendingData.fullName || pendingData.email),
+      //     email: String(pendingData.email),
+      //     telephone: String(pendingData.phone || ""),
+      //     adresse: String(pendingData.address || ""),
+      //     codeClient: String(pendingData.numClient), // Using numClient from BdClientBng (not CLI-...)
+      //     verificationToken: token,
+      //     clientType: "existing",
+      //   },
+      // }
 
-        const findByCodeUrl = `${API_BASE_URL}/tenant/${TENANT_ID}/client?filter=codeClient||$eq||${encodeURIComponent(codeClientFromBd)}`
-        const existingByCodeRes = await fetch(findByCodeUrl, {
-          method: "GET",
-          headers: { Authorization: `Bearer ${authToken}` },
-        })
+      // console.log("[v0] Client payload:", JSON.stringify(clientPayload, null, 2))
 
-        let existingClient: any = null
-        if (existingByCodeRes.ok) {
-          const data = await safeJson(existingByCodeRes)
-          existingClient = extractRows(data)[0] ?? null
-        }
+      // const clientResponse = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/client`, {
+      //   method: "POST",
+      //   headers: {
+      //     "Content-Type": "application/json",
+      //     Authorization: `Bearer ${authToken}`,
+      //   },
+      //   body: JSON.stringify(clientPayload),
+      // })
 
-        if (!existingClient) {
-          const findByEmailUrl = `${API_BASE_URL}/tenant/${TENANT_ID}/client?filter=email||$eq||${encodeURIComponent(String(pendingData.email))}`
-          const byEmailRes = await fetch(findByEmailUrl, {
-            method: "GET",
-            headers: { Authorization: `Bearer ${authToken}` },
-          })
+      // console.log("[v0] Client response status:", clientResponse.status)
 
-          if (byEmailRes.ok) {
-            const data = await safeJson(byEmailRes)
-            existingClient = extractRows(data)[0] ?? null
-          }
-        }
+      // if (!clientResponse.ok) {
+      //   const errorText = await clientResponse.text()
+      //   console.error("[v0] Client creation failed:", errorText)
+      //   throw new Error("Erreur lors de la création du profil client. Veuillez réessayer.")
+      // }
 
-        if (existingClient) {
-          console.log("[v0] ❌ Client already exists with codeClient:", codeClientFromBd)
-          shouldRollback = true
-          rollbackReason = "Un client existe déjà avec ce numéro client BNG."
-          throw new Error(rollbackReason)
-        }
+      // const clientData = await clientResponse.json()
+      // const clientId = clientData.id || clientData.data?.id
+      // console.log("[v0] Client profile created successfully, clientId:", clientId)
 
-        console.log("[v0] Step 4: Fetching data from BdClientBng...")
+      // console.log("[v0] VERIFICATION: userId =", userId, ", clientId =", clientId)
+      // console.log("[v0] VERIFICATION: Client was created with userid =", userId)
+      // console.log("[v0] VERIFICATION: Accounts will be created with clientId =", userId, "(userId)")
 
-        console.log("[v0] Step 5: Creating client profile...")
+      // if (!clientId) {
+      //   console.error("[v0] No clientId returned from client creation")
+      //   throw new Error("Erreur lors de la récupération de l'ID client")
+      // }
+      console.log("[v0] Step 3: Upserting client profile for existing BNG client...")
 
-        const clientPayload = {
-          data: {
-            nomComplet: String(pendingData.fullName || pendingData.email),
-            email: String(pendingData.email),
-            telephone: String(pendingData.phone || ""),
-            adresse: String(pendingData.address || ""),
-            codeClient: codeClientFromBd,
-            userid: String(userId),
-            verificationToken: token,
-            clientType: "existing",
-          },
-        }
+const codeClientFromBd = String(pendingData.numClient || "").trim()
+if (!codeClientFromBd || codeClientFromBd.startsWith("CLI-")) {
+  throw new Error("Code client BNG invalide (numClient attendu depuis BdClientBng).")
+}
 
-        console.log("[v0] Client payload:", JSON.stringify(clientPayload, null, 2))
+// 1) Chercher si un client existe déjà (priorité: codeClient BdClientBng)
+const findByCodeUrl =
+  `${API_BASE_URL}/tenant/${TENANT_ID}/client?filter=codeClient||$eq||${encodeURIComponent(codeClientFromBd)}`
 
-        const clientResponse = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/client`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${authToken}`,
-          },
-          body: JSON.stringify(clientPayload),
-        })
+const existingByCodeRes = await fetch(findByCodeUrl, {
+  method: "GET",
+  headers: { Authorization: `Bearer ${authToken}` },
+})
 
-        console.log("[v0] Client response status:", clientResponse.status)
+let existingClient: any = null
+if (existingByCodeRes.ok) {
+  const data = await safeJson(existingByCodeRes)
+  existingClient = extractRows(data)[0] ?? null
+}
 
-        if (!clientResponse.ok) {
-          const errorText = await clientResponse.text()
-          console.error("[v0] Client creation failed:", errorText)
-          shouldRollback = true
-          rollbackReason = "Erreur lors de la création du profil client."
-          throw new Error(rollbackReason)
-        }
+// 2) Fallback: chercher par userid (si ton API supporte) sinon par email
+if (!existingClient) {
+  const findByUserUrl =
+    `${API_BASE_URL}/tenant/${TENANT_ID}/client?filter=userid||$eq||${encodeURIComponent(String(userId))}`
+  const byUserRes = await fetch(findByUserUrl, {
+    method: "GET",
+    headers: { Authorization: `Bearer ${authToken}` },
+  })
 
-        const clientData = await clientResponse.json()
-        const clientId = clientData.id || clientData.data?.id
-        console.log("[v0] Client profile created successfully, clientId:", clientId)
+  if (byUserRes.ok) {
+    const data = await safeJson(byUserRes)
+    existingClient = extractRows(data)[0] ?? null
+  }
+}
 
-        if (!clientId) {
-          console.error("[v0] No clientId returned from client creation")
-          shouldRollback = true
-          rollbackReason = "Erreur lors de la récupération de l'ID client"
-          throw new Error(rollbackReason)
-        }
+if (!existingClient) {
+  const findByEmailUrl =
+    `${API_BASE_URL}/tenant/${TENANT_ID}/client?filter=email||$eq||${encodeURIComponent(String(pendingData.email))}`
+  const byEmailRes = await fetch(findByEmailUrl, {
+    method: "GET",
+    headers: { Authorization: `Bearer ${authToken}` },
+  })
 
-        console.log("[v0] Step 6: Creating compte records from CompteBng...")
+  if (byEmailRes.ok) {
+    const data = await safeJson(byEmailRes)
+    existingClient = extractRows(data)[0] ?? null
+  }
+}
+
+// 3) Si existe déjà => on ne POST PAS (zéro double insertion)
+let clientId: string | null = null
+
+if (existingClient?.id) {
+  clientId = String(existingClient.id)
+  console.log("[v0] Client already exists -> skipping creation. clientId:", clientId)
+} else {
+  // Important: on met userid pour lier proprement et éviter d'autres créations ailleurs
+  const clientPayload = {
+    data: {
+      nomComplet: String(pendingData.fullName || pendingData.email),
+      email: String(pendingData.email),
+      telephone: String(pendingData.phone || ""),
+      adresse: String(pendingData.address || ""),
+      codeClient: codeClientFromBd,     // ✅ BdClientBng (pas CLI-...)
+      userid: String(userId),           // ✅ lien explicite
+      verificationToken: token,
+      clientType: "existing",
+    },
+  }
+
+  console.log("[v0] Creating client (not found). payload:", JSON.stringify(clientPayload, null, 2))
+
+  const clientResponse = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/client`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${authToken}`,
+    },
+    body: JSON.stringify(clientPayload),
+  })
+
+  if (!clientResponse.ok) {
+    const err = await clientResponse.text()
+    console.error("[v0] Client creation failed:", err)
+    throw new Error("Erreur lors de la création du profil client. Veuillez réessayer.")
+  }
+
+  const created = await safeJson(clientResponse)
+  clientId = String(created?.id || created?.data?.id || "")
+  console.log("[v0] Client created successfully, clientId:", clientId)
+}
+
+if (!clientId) {
+  throw new Error("Impossible de déterminer l'ID client (créé ou existant).")
+}
+
+
+      console.log("[v0] Step 4: Fetching accounts from CompteBng using numClient:", pendingData.numClient)
+
+      const compteBngUrl = `${API_BASE_URL}/tenant/${TENANT_ID}/compte-bng?filter=clientId||$eq||${encodeURIComponent(pendingData.numClient)}`
+      console.log("[v0] CompteBng URL:", compteBngUrl)
+
+      const compteBngResponse = await fetch(compteBngUrl, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${authToken}`,
+        },
+      })
+
+      console.log("[v0] CompteBng response status:", compteBngResponse.status)
+
+      if (!compteBngResponse.ok) {
+        const errorText = await compteBngResponse.text()
+        console.error("[v0] CompteBng fetch failed:", errorText)
+        throw new Error("Erreur lors de la récupération des comptes BNG. Veuillez réessayer.")
+      }
+
+      const compteBngData = await compteBngResponse.json()
+      console.log("[v0] CompteBng raw data:", JSON.stringify(compteBngData, null, 2))
+
+      let comptesArray = []
+      if (Array.isArray(compteBngData)) {
+        comptesArray = compteBngData
+      } else if (compteBngData.rows && Array.isArray(compteBngData.rows)) {
+        comptesArray = compteBngData.rows
+      } else if (compteBngData.data && Array.isArray(compteBngData.data)) {
+        comptesArray = compteBngData.data
+      } else if (compteBngData.value && Array.isArray(compteBngData.value)) {
+        comptesArray = compteBngData.value
+      }
+
+      console.log("[v0] Total accounts found in CompteBng:", comptesArray.length)
+
+      comptesArray = comptesArray.filter((compte: any) => {
+        const compteClientId = String(compte.clientId || "")
+        const racine = String(pendingData.numClient || "")
+        const matches = compteClientId === racine
+        console.log(
+          `[v0] Checking account ${compte.numCompte}: clientId=${compteClientId}, racine=${racine}, matches=${matches}`,
+        )
+        return matches
+      })
+
+      console.log("[v0] Found", comptesArray.length, "account(s) matching racine", pendingData.numClient)
+
+      if (comptesArray.length === 0) {
+        console.warn("[v0] ⚠️ WARNING: No accounts found in CompteBng for numClient:", pendingData.numClient)
+        console.warn("[v0] User will be created but will have no accounts linked")
+      } else {
+        console.log("[v0] Step 5: Creating accounts in compte table...")
 
         let accountsCreated = 0
         let accountsFailed = 0
@@ -335,23 +341,29 @@ export async function completeSignup(token: string, password: string, emailFallb
         for (const compteBng of comptesArray) {
           console.log("[v0] =====================================")
           console.log("[v0] Processing CompteBng account:", compteBng.numCompte)
+          console.log("[v0] CompteBng account data:", JSON.stringify(compteBng, null, 2))
 
           const mappedType = compteBng.typeCompte || "CURRENT"
+
           const accountNumber = String(compteBng.numCompte || "")
           let codeBanque = String(compteBng.codeBanque || "")
           let codeAgence = String(compteBng.codeAgence || "")
           let cleRib = String(compteBng.cleRib || "")
 
+          // Extract from account number format: BBBAAAAACCCCCCCCCCCCK (B=banque, A=agence, C=compte, K=clé)
           if (!codeBanque && accountNumber.length >= 3) {
             codeBanque = accountNumber.substring(0, 3)
+            console.log("[v0] Extracted codeBanque from account number:", codeBanque)
           }
 
           if (!codeAgence && accountNumber.length >= 9) {
             codeAgence = accountNumber.substring(3, 9)
+            console.log("[v0] Extracted codeAgence from account number:", codeAgence)
           }
 
           if (!cleRib && accountNumber.length >= 14) {
             cleRib = accountNumber.substring(13, 15)
+            console.log("[v0] Extracted cleRib from account number:", cleRib)
           }
 
           const comptePayload = {
@@ -365,7 +377,7 @@ export async function completeSignup(token: string, password: string, emailFallb
               availableBalance: String(compteBng.availableBalance || "0"),
               status: "ACTIF",
               codeAgence: codeAgence || "001",
-              clientId: String(userId),
+              clientId: String(userId), // Link to user ID, not client record ID
               codeBanque: codeBanque || "BNG",
               cleRib: cleRib || "00",
             },
@@ -405,53 +417,18 @@ export async function completeSignup(token: string, password: string, emailFallb
 
         console.log("[v0] =====================================")
         console.log(`[v0] Account creation summary: ${accountsCreated} succeeded, ${accountsFailed} failed`)
+      }
 
-        await setSecureCookie("user", JSON.stringify(userData))
-        console.log("[v0] User info stored in cookie")
+      await setSecureCookie("user", JSON.stringify(userData))
+      console.log("[v0] User info stored in cookie")
 
-        cookieStore.delete("pending_signup_data")
+      cookieStore.delete("pending_signup_data")
 
-        console.log("[v0] Existing BNG client signup completed successfully!")
+      console.log("[v0] Existing BNG client signup completed successfully!")
 
-        return {
-          success: true,
-          message: "Votre accès en ligne a été activé avec succès !",
-        }
-      } catch (error) {
-        console.error("[v0] Signup completion error:", error)
-        if (shouldRollback) {
-          console.log("[v0] Rolling back due to:", rollbackReason)
-
-          // Delete the auth user that was just created
-          try {
-            await fetch(`${API_BASE_URL}/auth/users/${pendingData.userId}`, {
-              method: "DELETE",
-              headers: {
-                Authorization: `Bearer ${pendingData.authToken}`,
-              },
-            })
-            console.log("[v0] Auth user deleted due to duplicate account")
-          } catch (deleteError) {
-            console.error("[v0] Failed to delete auth user:", deleteError)
-          }
-
-          // Delete the client record if it was created
-          if (pendingData.clientId) {
-            try {
-              await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/client/${pendingData.clientId}`, {
-                method: "DELETE",
-                headers: {
-                  Authorization: `Bearer ${pendingData.authToken}`,
-                },
-              })
-              console.log("[v0] Client record deleted due to duplicate account")
-            } catch (deleteError) {
-              console.error("[v0] Failed to delete client:", deleteError)
-            }
-          }
-        }
-
-        throw error
+      return {
+        success: true,
+        message: "Votre accès en ligne a été activé avec succès !",
       }
     } else {
       console.log("[v0] Processing NEW client signup...")
