@@ -823,6 +823,11 @@ export default function StatementsPage() {
           },
         ]
 
+        // Bordure extérieure du tableau
+        doc.setDrawColor(82, 166, 94) // Couleur verte pour les bordures
+        doc.setLineWidth(0.5)
+        doc.rect(infoBlockX, infoBlockY, infoBlockWidth, infoRows.length * rowHeightInfo)
+
         infoRows.forEach((row, index) => {
           const rowY = infoBlockY + index * rowHeightInfo
 
@@ -833,14 +838,27 @@ export default function StatementsPage() {
           // Label en blanc
           doc.setTextColor(255, 255, 255)
           doc.setFontSize(8)
-          doc.setFont("helvetica", "normal")
+          doc.setFont("helvetica", "bold")
           doc.text(row.label, infoBlockX + 2, rowY + 4)
 
           // Valeur en noir sur fond blanc
           doc.setFillColor(255, 255, 255)
           doc.rect(infoBlockX + labelWidth, rowY, infoBlockWidth - labelWidth, rowHeightInfo, "F")
           doc.setTextColor(...blackText)
+          doc.setFont("helvetica", "normal")
           doc.text(row.value, infoBlockX + labelWidth + 2, rowY + 4)
+
+          // Ligne horizontale de séparation (sauf pour la dernière ligne)
+          if (index < infoRows.length - 1) {
+            doc.setDrawColor(82, 166, 94)
+            doc.setLineWidth(0.3)
+            doc.line(infoBlockX, rowY + rowHeightInfo, infoBlockX + infoBlockWidth, rowY + rowHeightInfo)
+          }
+
+          // Ligne verticale de séparation entre label et valeur
+          doc.setDrawColor(82, 166, 94)
+          doc.setLineWidth(0.3)
+          doc.line(infoBlockX + labelWidth, rowY, infoBlockX + labelWidth, rowY + rowHeightInfo)
         })
 
         yPos = infoBlockY + infoRows.length * rowHeightInfo + 10
@@ -923,7 +941,7 @@ export default function StatementsPage() {
         doc.setFont("helvetica", "normal")
         doc.setFontSize(8)
 
-        let currentBalance = Number(openingBalance)
+        let currentBalance = Number.parseFloat(String(openingBalance)) || 0
 
         transactions.forEach((txn) => {
           if (yPos > 260) {
@@ -1013,7 +1031,8 @@ export default function StatementsPage() {
             )
           }
 
-          currentBalance += txn.montantOperation
+          const montantOperation = Number.parseFloat(String(txn.montantOperation)) || 0
+          currentBalance += montantOperation
           const soldeText = formatAmount(currentBalance)
           doc.text(
             soldeText,
