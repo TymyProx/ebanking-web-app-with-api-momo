@@ -89,6 +89,7 @@ export default function StatementsPage() {
   const [emailState, emailAction, isSending] = useActionState(sendStatementByEmail, null)
   const [isPending, startTransition] = useTransition()
   const [hasSearched, setHasSearched] = useState(false) // Track if user has initiated a search
+  const [hasGeneratedStatement, setHasGeneratedStatement] = useState(false)
 
   useEffect(() => {
     const loadAccounts = async () => {
@@ -137,21 +138,45 @@ export default function StatementsPage() {
   }, [])
 
   useEffect(() => {
-    if (selectedAccount && startDate && endDate && new Date(startDate) <= new Date(endDate)) {
-      handleGenerateStatement()
-    }
-  }, [selectedAccount, startDate, endDate])
+    const loadTransactionsPreview = async () => {
+      if (!selectedAccount || !startDate || !endDate) {
+        setFilteredTransactions([])
+        setTransactionCount(0)
+        setShowDownloadLink(false)
+        setHasGeneratedStatement(false)
+        return
+      }
 
-  useEffect(() => {
-    const loadTransactionsData = async () => {
+      if (new Date(startDate) > new Date(endDate)) {
+        return
+      }
+
+      setIsLoadingTransactions(true)
+      setErrorMessage("")
+      setShowDownloadLink(false)
+      setHasGeneratedStatement(false)
+
       try {
-        setIsLoadingTransactions(true)
-        setErrorMessage("")
+        const result = await getTransactionsByNumCompte(selectedAccount.number)
 
-        if (!selectedAccount) {
-          if (hasSearched) {
-            setErrorMessage("Veuillez sélectionner un compte")
-          }
+        if (!result.success) {
+          setErrorMessage(result.error || "Impossible de récupérer les transactions")
+          setIsLoadingTransactions(false)
+          return
+        }
+
+        const allTransactions = result.data
+
+        const filteredTxns = allTransactions.filter((txn: any) => {
+          if (!txn.valueDate) return false
+          const txnDate = new Date(txn.valueDate)
+          const start = new Date(startDate)
+          const end = new Date(endDate)
+          return txnDate >= start && txnDate <= end
+        })
+
+        if (filteredTxns.length === 0) {
+          setErrorMessage("Aucune transaction trouvée pour cette période.")
           setIsLoadingTransactions(false)
           return
         }
@@ -159,43 +184,15 @@ export default function StatementsPage() {
         const accountDetails = await getAccountById(selectedAccount.id)
         if (!accountDetails.data) {
           setErrorMessage("Impossible de récupérer les informations du compte")
+          setIsLoadingTransactions(false)
           return
         }
-
-        const transactionsResponse = await getTransactionsByNumCompte(selectedAccount.number)
-
-        if (!transactionsResponse.success) {
-          alert(`❌ ${transactionsResponse.error || "Impossible de récupérer les transactions"}`)
-          return
-        }
-
-        const allTransactions = transactionsResponse.data
-
-        console.log("[v0] Total transactions reçues:", allTransactions.length)
-
-        const filteredTxns = allTransactions.filter((txn: any) => {
-          if (!txn.valueDate) return false
-
-          const txnDate = new Date(txn.valueDate)
-          const start = new Date(startDate)
-          const end = new Date(endDate)
-
-          const isInRange = txnDate >= start && txnDate <= end
-
-          return isInRange
-        })
-
-        console.log("[v0] Transactions filtrées:", filteredTxns.length)
 
         const closingBalance = Number.parseFloat(accountDetails.data.bookBalance || "0")
         const transactionsSum = filteredTxns.reduce((sum: number, txn: any) => {
           return sum + Number.parseFloat(txn.montantOperation || "0")
         }, 0)
         const openingBalance = closingBalance - transactionsSum
-
-        console.log("[v0] Solde de fermeture (bookBalance):", closingBalance)
-        console.log("[v0] Somme algébrique des transactions:", transactionsSum)
-        console.log("[v0] Solde d'ouverture calculé:", openingBalance)
 
         const sortedTransactions = filteredTxns.sort((a: any, b: any) => {
           const dateA = new Date(a.valueDate || 0).getTime()
@@ -214,8 +211,6 @@ export default function StatementsPage() {
           ...(index === sortedTransactions.length - 1 && { balanceFermeture: closingBalance }),
         }))
 
-        console.log("[v0] Transactions nettoyées et triées:", cleanedTransactions.length)
-
         setFilteredTransactions(cleanedTransactions)
         setTransactionCount(cleanedTransactions.length)
         setShowDownloadLink(true)
@@ -227,8 +222,8 @@ export default function StatementsPage() {
       }
     }
 
-    loadTransactionsData()
-  }, [selectedAccount])
+    loadTransactionsPreview()
+  }, [selectedAccount, startDate, endDate])
 
   useEffect(() => {
     // User must now manually select an account before generating statements
@@ -250,112 +245,21 @@ export default function StatementsPage() {
   }
 
   const handleGenerateStatement = async () => {
-    if (!selectedAccount || !startDate || !endDate) return
+    if (!selectedAccount || !startDate || !endDate || filteredTransactions.length === 0) return
 
-    setHasSearched(true)
-    setIsLoadingTransactions(true)
-    setErrorMessage("")
-    setShowDownloadLink(false)
-    setFilteredTransactions([])
-    setTransactionCount(0)
+    const balanceOuverture = filteredTransactions[0]?.balanceOuverture || selectedAccount.balance
+    const balanceFermeture =
+      filteredTransactions[filteredTransactions.length - 1]?.balanceFermeture || selectedAccount.balance
 
-    const accountNumber = selectedAccount.number
-
-    try {
-      const result = await getTransactionsByNumCompte(accountNumber)
-
-      if (!result.success) {
-        setErrorMessage(result.error || "Impossible de récupérer les transactions")
-        setIsLoadingTransactions(false)
-        return
-      }
-
-      const allTransactions = result.data
-
-      console.log("[v0] Total transactions reçues:", allTransactions.length)
-
-      const filteredTxns = allTransactions.filter((txn: any) => {
-        if (!txn.valueDate) return false
-
-        const txnDate = new Date(txn.valueDate)
-        const start = new Date(startDate)
-        const end = new Date(endDate)
-
-        const isInRange = txnDate >= start && txnDate <= end
-
-        return isInRange
-      })
-
-      console.log("[v0] Transactions après filtre par valueDate:", filteredTxns.length)
-
-      if (filteredTxns.length === 0) {
-        setErrorMessage("Aucune transaction trouvée pour cette période.")
-        setIsLoadingTransactions(false)
-        return
-      }
-
-      const accountDetails = await getAccountById(selectedAccount.id)
-      if (!accountDetails.data) {
-        setErrorMessage("Impossible de récupérer les informations du compte")
-        setIsLoadingTransactions(false)
-        return
-      }
-
-      const closingBalance = Number.parseFloat(accountDetails.data.bookBalance || "0")
-      const transactionsSum = filteredTxns.reduce((sum: number, txn: any) => {
-        return sum + Number.parseFloat(txn.montantOperation || "0")
-      }, 0)
-      const openingBalance = closingBalance - transactionsSum
-
-      console.log("[v0] Solde de fermeture (bookBalance):", closingBalance)
-      console.log("[v0] Somme algébrique des transactions:", transactionsSum)
-      console.log("[v0] Solde d'ouverture calculé:", openingBalance)
-
-      const sortedTransactions = filteredTxns.sort((a: any, b: any) => {
-        const dateA = new Date(a.valueDate || 0).getTime()
-        const dateB = new Date(b.valueDate || 0).getTime()
-        return dateB - dateA
-      })
-
-      const cleanedTransactions = sortedTransactions.map((txn: any, index: number) => ({
-        referenceOperation: txn.referenceOperation || "",
-        montantOperation: txn.montantOperation || 0,
-        description: txn.description || "",
-        valueDate: txn.valueDate || "",
-        dateEcriture: txn.dateEcriture || "",
-        txnType: txn.txnType || "",
-        ...(index === 0 && { balanceOuverture: openingBalance }),
-        ...(index === sortedTransactions.length - 1 && { balanceFermeture: closingBalance }),
-      }))
-
-      console.log("[v0] Transactions nettoyées et triées:", cleanedTransactions.length)
-
-      setFilteredTransactions(cleanedTransactions)
-      setTransactionCount(cleanedTransactions.length)
-      setShowDownloadLink(true)
-
-      console.log("[v0] Generating PDF with opening balance:", openingBalance, "closing balance:", closingBalance)
-      console.log(
-        "[v0] Type of openingBalance:",
-        typeof openingBalance,
-        "Type of closingBalance:",
-        typeof closingBalance,
-      )
-
-      await generatePDFStatement(
-        cleanedTransactions,
-        selectedAccount,
-        startDate,
-        endDate,
-        openingBalance,
-        closingBalance,
-      )
-    } catch (error) {
-      console.error("[v0] Erreur lors de la récupération des transactions:", error)
-      setErrorMessage("Erreur lors de la récupération des transactions")
-    } finally {
-      setIsLoadingTransactions(false)
-    }
+    await generatePDFStatement(
+      filteredTransactions,
+      selectedAccount,
+      startDate,
+      endDate,
+      balanceOuverture,
+      balanceFermeture,
+    )
+    setHasGeneratedStatement(true)
   }
 
   const handleDownloadPDF = () => {
@@ -389,9 +293,9 @@ export default function StatementsPage() {
       case "Épargne":
         return <PiggyBank className="h-4 w-4" />
       case "Devise":
-        return <DollarSign className="h-4 w-4" />
+        return <DollarSign className="w-4 h-4" />
       default:
-        return <CreditCard className="h-4 w-4" />
+        return <CreditCard className="w-4 h-4" />
     }
   }
 
@@ -692,7 +596,7 @@ export default function StatementsPage() {
                 <div className="flex flex-col sm:flex-row gap-2">
                   <Button
                     onClick={handleGenerateStatement}
-                    disabled={!isFormValid || isLoadingTransactions}
+                    disabled={!isFormValid || isLoadingTransactions || filteredTransactions.length === 0}
                     className="flex-1 h-9"
                   >
                     {isLoadingTransactions ? (
@@ -700,10 +604,15 @@ export default function StatementsPage() {
                         <Clock className="w-4 h-4 mr-2 animate-spin" />
                         Recherche en cours...
                       </>
+                    ) : hasGeneratedStatement ? (
+                      <>
+                        <Download className="w-4 h-4 mr-2" />
+                        Télécharger relevé
+                      </>
                     ) : (
                       <>
                         <Download className="w-4 h-4 mr-2" />
-                        Demander relevé
+                        Télécharger relevé
                       </>
                     )}
                   </Button>
