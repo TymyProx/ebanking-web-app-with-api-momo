@@ -759,6 +759,10 @@ export default function StatementsPage() {
 
       img.onload = () => {
         doc.addImage(img, "PNG", 15, yPos, 35, 12)
+        doc.setTextColor(...primaryGreen)
+        doc.setFontSize(11)
+        doc.setFont("helvetica", "bold")
+        doc.text("RELEVÉ DE COMPTE", 32.5, yPos + 15, { align: "center" })
         continueGeneratingPDF()
       }
 
@@ -848,21 +852,32 @@ export default function StatementsPage() {
         })
 
         const rightInfoX = tableX + tableWidth + 10
-        let rightInfoY = tableY
+        const rightInfoWidth = pageWidth - rightInfoX - 15
+        const centerX = rightInfoX + rightInfoWidth / 2
+        let rightInfoY = tableY + 10
 
-        doc.setTextColor(...blackText)
-        doc.setFontSize(10)
+        // Account designation with emphasis
+        doc.setTextColor(...primaryGreen)
+        doc.setFontSize(12)
         doc.setFont("helvetica", "bold")
-        doc.text("RELEVÉ DE COMPTE", rightInfoX, rightInfoY)
-        rightInfoY += 7
+        const intitule = account.designation || account.name || ""
+        doc.text(intitule, centerX, rightInfoY, { align: "center" })
+        rightInfoY += 8
 
-        doc.setFontSize(8)
+        // Account type with styling
+        doc.setFontSize(10)
         doc.setFont("helvetica", "normal")
-        doc.text(`Intitulé: ${account.designation || account.name || ""}`, rightInfoX, rightInfoY)
-        rightInfoY += 5
-        doc.text(`Type: ${account.accountTypeLabel || account.type || ""}`, rightInfoX, rightInfoY)
-        rightInfoY += 5
-        doc.text(`Agence: ${account.branch || ""}`, rightInfoX, rightInfoY)
+        const typeLabel = account.accountTypeLabel || account.type || ""
+        doc.text(typeLabel, centerX, rightInfoY, { align: "center" })
+        rightInfoY += 10
+
+        // Branch info with subtle styling
+        doc.setTextColor(...blackText)
+        doc.setFontSize(8)
+        doc.setFont("helvetica", "italic")
+        doc.text(`Agence: ${account.branch || ""}`, centerX, rightInfoY, {
+          align: "center",
+        })
 
         // Mettre à jour yPos après le tableau
         yPos = tableY + rowHeight * tableData.length + 15
