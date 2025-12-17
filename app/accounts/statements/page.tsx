@@ -585,18 +585,18 @@ export default function StatementsPage() {
               </CardContent>
             </Card>
 
-             {sixMonthsWarning && (
+            {sixMonthsWarning && (
               <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-4">
-              <div className="flex items-start gap-2">
-              <AlertCircle className="h-4 w-4 text-amber-600 mt-0.5" />
-              <p className="text-amber-800 text-sm leading-relaxed">
-              Les transactions de plus de <span className="font-medium">6 mois</span> ne sont pas affichées dans l’aperçu et ne figureront pas sur le relevé.
-              Pour les consulter, veuillez vous rendre dans votre agence.
-              </p>
+                <div className="flex items-start gap-2">
+                  <AlertCircle className="h-4 w-4 text-amber-600 mt-0.5" />
+                  <p className="text-amber-800 text-sm leading-relaxed">
+                    Les transactions de plus de <span className="font-medium">6 mois</span> ne sont pas affichées dans
+                    l’aperçu et ne figureront pas sur le relevé. Pour les consulter, veuillez vous rendre dans votre
+                    agence.
+                  </p>
+                </div>
               </div>
-              </div>
-
-        )}
+            )}
 
             {/* Actions */}
             <Card>
@@ -676,7 +676,7 @@ export default function StatementsPage() {
         </Tabs>
 
         {showDownloadLink && filteredTransactions.length > 0 && (
-         <Card className="mt-4">
+          <Card className="mt-4">
             <CardHeader>
               <CardTitle className="flex items-center text-base">
                 <CreditCard className="w-4 h-4 mr-2" />
@@ -838,23 +838,27 @@ export default function StatementsPage() {
 
         const tableStartX = 15
         const col1Width = 25 // Date Valeur
-        const col2Width = 50 // Description
-        const col3Width = 35 // Reference
-        const col4Width = 30 // Date Operation (dateEcriture)
-        const col5Width = 30 // Montant
+        const col2Width = 45 // Description (réduit pour faire de la place)
+        const col3Width = 30 // Reference (réduit)
+        const col4Width = 25 // Date Operation (réduit)
+        const col5Width = 25 // Débit
+        const col6Width = 25 // Crédit
         const rowHeight = 9
-        const tableWidth = col1Width + col2Width + col3Width + col4Width + col5Width
+        const tableWidth = col1Width + col2Width + col3Width + col4Width + col5Width + col6Width
 
-        // EN-TÊTES AVEC CADRE
         doc.setFontSize(9)
         doc.setFont("helvetica", "bold")
 
-        // Dessiner le rectangle pour l'en-tête
-        doc.setDrawColor(0)
-        doc.setLineWidth(0.5)
-        doc.rect(tableStartX, yPos, tableWidth, rowHeight)
+        // Appliquer le fond vert (couleur primaire du projet: RGB 82, 166, 94)
+        doc.setFillColor(82, 166, 94)
+        doc.rect(tableStartX, yPos, tableWidth, rowHeight, "F")
 
-        // Lignes verticales de l'en-tête
+        // Texte blanc pour les en-têtes
+        doc.setTextColor(255, 255, 255)
+
+        // Dessiner les séparateurs verticaux uniquement dans l'en-tête
+        doc.setDrawColor(255, 255, 255) // Lignes blanches pour contraste
+        doc.setLineWidth(0.3)
         doc.line(tableStartX + col1Width, yPos, tableStartX + col1Width, yPos + rowHeight)
         doc.line(tableStartX + col1Width + col2Width, yPos, tableStartX + col1Width + col2Width, yPos + rowHeight)
         doc.line(
@@ -869,15 +873,24 @@ export default function StatementsPage() {
           tableStartX + col1Width + col2Width + col3Width + col4Width,
           yPos + rowHeight,
         )
+        doc.line(
+          tableStartX + col1Width + col2Width + col3Width + col4Width + col5Width,
+          yPos,
+          tableStartX + col1Width + col2Width + col3Width + col4Width + col5Width,
+          yPos + rowHeight,
+        )
 
+        // Textes de l'en-tête
         doc.text("Date Valeur", tableStartX + 2, yPos + 6)
         doc.text("Description", tableStartX + col1Width + 2, yPos + 6)
         doc.text("Référence", tableStartX + col1Width + col2Width + 2, yPos + 6)
-        doc.text("Date Opération", tableStartX + col1Width + col2Width + col3Width + 2, yPos + 6)
-        doc.text("Montant", tableStartX + col1Width + col2Width + col3Width + col4Width + 2, yPos + 6)
+        doc.text("Date Op.", tableStartX + col1Width + col2Width + col3Width + 2, yPos + 6)
+        doc.text("Débit", tableStartX + col1Width + col2Width + col3Width + col4Width + 2, yPos + 6)
+        doc.text("Crédit", tableStartX + col1Width + col2Width + col3Width + col4Width + col5Width + 2, yPos + 6)
 
         yPos += rowHeight
 
+        doc.setTextColor(0, 0, 0)
         doc.setFont("helvetica", "normal")
         doc.setFontSize(8)
 
@@ -886,11 +899,15 @@ export default function StatementsPage() {
             doc.addPage()
             yPos = 30
 
-            // Réécrire les entêtes sur la nouvelle page avec cadre
             doc.setFontSize(9)
             doc.setFont("helvetica", "bold")
 
-            doc.rect(tableStartX, yPos, tableWidth, rowHeight)
+            doc.setFillColor(82, 166, 94)
+            doc.rect(tableStartX, yPos, tableWidth, rowHeight, "F")
+
+            doc.setTextColor(255, 255, 255)
+            doc.setDrawColor(255, 255, 255)
+            doc.setLineWidth(0.3)
             doc.line(tableStartX + col1Width, yPos, tableStartX + col1Width, yPos + rowHeight)
             doc.line(tableStartX + col1Width + col2Width, yPos, tableStartX + col1Width + col2Width, yPos + rowHeight)
             doc.line(
@@ -905,56 +922,54 @@ export default function StatementsPage() {
               tableStartX + col1Width + col2Width + col3Width + col4Width,
               yPos + rowHeight,
             )
+            doc.line(
+              tableStartX + col1Width + col2Width + col3Width + col4Width + col5Width,
+              yPos,
+              tableStartX + col1Width + col2Width + col3Width + col4Width + col5Width,
+              yPos + rowHeight,
+            )
 
             doc.text("Date Valeur", tableStartX + 2, yPos + 6)
             doc.text("Description", tableStartX + col1Width + 2, yPos + 6)
             doc.text("Référence", tableStartX + col1Width + col2Width + 2, yPos + 6)
-            doc.text("Date Opération", tableStartX + col1Width + col2Width + col3Width + 2, yPos + 6)
-            doc.text("Montant", tableStartX + col1Width + col2Width + col3Width + col4Width + 2, yPos + 6)
+            doc.text("Date Op.", tableStartX + col1Width + col2Width + col3Width + 2, yPos + 6)
+            doc.text("Débit", tableStartX + col1Width + col2Width + col3Width + col4Width + 2, yPos + 6)
+            doc.text("Crédit", tableStartX + col1Width + col2Width + col3Width + col4Width + col5Width + 2, yPos + 6)
 
             yPos += rowHeight
+            doc.setTextColor(0, 0, 0)
             doc.setFont("helvetica", "normal")
             doc.setFontSize(8)
           }
-
-          // Dessiner le rectangle pour la ligne
-          doc.rect(tableStartX, yPos, tableWidth, rowHeight)
-
-          // Lignes verticales pour chaque cellule
-          doc.line(tableStartX + col1Width, yPos, tableStartX + col1Width, yPos + rowHeight)
-          doc.line(tableStartX + col1Width + col2Width, yPos, tableStartX + col1Width + col2Width, yPos + rowHeight)
-          doc.line(
-            tableStartX + col1Width + col2Width + col3Width,
-            yPos,
-            tableStartX + col1Width + col2Width + col3Width,
-            yPos + rowHeight,
-          )
-          doc.line(
-            tableStartX + col1Width + col2Width + col3Width + col4Width,
-            yPos,
-            tableStartX + col1Width + col2Width + col3Width + col4Width,
-            yPos + rowHeight,
-          )
 
           // Date Valeur
           const dateValeur = txn.valueDate ? new Date(txn.valueDate).toLocaleDateString("fr-FR") : "N/A"
           doc.text(dateValeur, tableStartX + 2, yPos + 6)
 
           // Description (tronquée)
-          const description = (txn.description || "N/A").substring(0, 30)
+          const description = (txn.description || "N/A").substring(0, 28)
           doc.text(description, tableStartX + col1Width + 2, yPos + 6)
 
           // Reference (tronquée)
-          const reference = (txn.referenceOperation || "N/A").substring(0, 20)
+          const reference = (txn.referenceOperation || "N/A").substring(0, 18)
           doc.text(reference, tableStartX + col1Width + col2Width + 2, yPos + 6)
 
           // Date Operation (dateEcriture)
           const dateOperation = txn.dateEcriture ? new Date(txn.dateEcriture).toLocaleDateString("fr-FR") : "N/A"
           doc.text(dateOperation, tableStartX + col1Width + col2Width + col3Width + 2, yPos + 6)
 
-          // Montant
-          const montant = formatAmount(txn.montantOperation)
-          doc.text(`${montant}`, tableStartX + col1Width + col2Width + col3Width + col4Width + 2, yPos + 6)
+          const montant = formatAmount(Math.abs(txn.montantOperation))
+          if (txn.montantOperation < 0) {
+            // Débit (négatif)
+            doc.text(`${montant}`, tableStartX + col1Width + col2Width + col3Width + col4Width + 2, yPos + 6)
+          } else {
+            // Crédit (positif)
+            doc.text(
+              `${montant}`,
+              tableStartX + col1Width + col2Width + col3Width + col4Width + col5Width + 2,
+              yPos + 6,
+            )
+          }
 
           yPos += rowHeight
         })
