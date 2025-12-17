@@ -338,10 +338,13 @@ export default function StatementsPage() {
             Consultez et téléchargez vos relevés de compte pour la période de votre choix
           </p>
         </div>
-        {/* </CHANGE> */}
+
         {hasSearched && errorMessage && !isLoadingTransactions && (
-          <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-4">
-            <p className="text-red-800">{errorMessage}</p>
+          <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-4">
+            <div className="flex items-start gap-2">
+              <AlertCircle className="h-5 w-5 text-amber-600 mt-0.5" />
+              <p className="text-amber-800 font-medium">{errorMessage}</p>
+            </div>
           </div>
         )}
 
