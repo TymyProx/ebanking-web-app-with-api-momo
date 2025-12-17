@@ -37,6 +37,9 @@ interface Account {
   type: "Courant" | "Épargne" | "Devise"
   status: "Actif" | "Bloqué" | "Fermé" | "ACTIF"
   iban: string
+  designation?: string
+  accountTypeLabel?: string
+  branch?: string
 }
 
 interface StatementRequest {
@@ -108,6 +111,9 @@ export default function StatementsPage() {
             type: acc.type,
             status: acc.status,
             iban: `GN82BNG001${acc.accountNumber}`,
+            designation: acc.designation,
+            accountTypeLabel: acc.accountTypeLabel,
+            branch: acc.branch,
           }))
 
           const activeAccounts = adaptedAccounts.filter(
@@ -766,10 +772,10 @@ export default function StatementsPage() {
 
         const tableX = 15
         const tableY = yPos
-        const labelColWidth = 70
-        const valueColWidth = 65
+        const labelColWidth = 50 // Réduit de 70 à 50
+        const valueColWidth = 50 // Réduit de 65 à 50
         const tableWidth = labelColWidth + valueColWidth
-        const rowHeight = 7
+        const rowHeight = 6 // Réduit de 7 à 6
 
         // Calculer les totaux débit et crédit
         let totalDebit = 0
@@ -811,30 +817,52 @@ export default function StatementsPage() {
           doc.setFillColor(...primaryGreen)
           doc.rect(tableX, rowY, labelColWidth, rowHeight, "F")
 
-          // Ligne horizontale entre les lignes (sauf la dernière)
           if (index < tableData.length - 1) {
-            doc.setDrawColor(...primaryGreen)
+            doc.setDrawColor(255, 255, 255)
             doc.setLineWidth(0.3)
-            doc.line(tableX, rowY + rowHeight, tableX + tableWidth, rowY + rowHeight)
+            doc.line(tableX, rowY + rowHeight, tableX + labelColWidth, rowY + rowHeight)
+          }
+
+          if (index < tableData.length - 1) {
+            doc.setDrawColor(200, 200, 200)
+            doc.setLineWidth(0.3)
+            doc.line(tableX + labelColWidth, rowY + rowHeight, tableX + tableWidth, rowY + rowHeight)
           }
 
           // Ligne verticale séparant les colonnes
           doc.setDrawColor(...primaryGreen)
-          doc.setLineWidth(0.3)
+          doc.setLineWidth(0.5)
           doc.line(tableX + labelColWidth, rowY, tableX + labelColWidth, rowY + rowHeight)
 
           // Texte du label (blanc sur fond vert)
           doc.setTextColor(255, 255, 255)
-          doc.setFontSize(8)
+          doc.setFontSize(7) // Réduit de 8 à 7
           doc.setFont("helvetica", "normal")
-          doc.text(row.label, tableX + 2, rowY + 5)
+          doc.text(row.label, tableX + 2, rowY + 4)
 
           // Texte de la valeur (noir sur fond blanc)
           doc.setTextColor(...blackText)
-          doc.setFontSize(8)
+          doc.setFontSize(7) // Réduit de 8 à 7
           doc.setFont("helvetica", "normal")
-          doc.text(row.value, tableX + labelColWidth + 2, rowY + 5)
+          doc.text(row.value, tableX + labelColWidth + 2, rowY + 4)
         })
+
+        const rightInfoX = tableX + tableWidth + 10
+        let rightInfoY = tableY
+
+        doc.setTextColor(...blackText)
+        doc.setFontSize(10)
+        doc.setFont("helvetica", "bold")
+        doc.text("RELEVÉ DE COMPTE", rightInfoX, rightInfoY)
+        rightInfoY += 7
+
+        doc.setFontSize(8)
+        doc.setFont("helvetica", "normal")
+        doc.text(`Intitulé: ${account.designation || account.name || ""}`, rightInfoX, rightInfoY)
+        rightInfoY += 5
+        doc.text(`Type: ${account.accountTypeLabel || account.type || ""}`, rightInfoX, rightInfoY)
+        rightInfoY += 5
+        doc.text(`Agence: ${account.branch || ""}`, rightInfoX, rightInfoY)
 
         // Mettre à jour yPos après le tableau
         yPos = tableY + rowHeight * tableData.length + 15
