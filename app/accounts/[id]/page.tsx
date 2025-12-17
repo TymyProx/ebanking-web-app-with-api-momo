@@ -122,7 +122,7 @@ export default function AccountDetailsPage({ params }: AccountDetailPageProps) {
 
         if (accountDetails) {
           const iban = `${accountDetails.codeBanque || ""}${accountDetails.codeAgence || ""}${accountDetails.accountNumber || ""}${accountDetails.cleRib || ""}`
-          const rib = `${accountDetails.codeBanque || ""}${accountDetails.codeAgence || ""}${accountDetails.accountNumber || ""}${accountDetails.cleRib || ""}`
+          const rib = `${accountDetails.codeAgence || ""}${accountDetails.accountNumber || ""}${accountDetails.cleRib || ""}`
 
           const adaptedAccount: Account = {
             id: accountDetails.id || accountDetails.accountId,
