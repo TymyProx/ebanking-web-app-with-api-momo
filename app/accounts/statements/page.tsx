@@ -1,12 +1,27 @@
 "use client"
 
 import { useState, useEffect, useTransition } from "react"
+import { useSearchParams } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import { Tabs, TabsContent } from "@/components/ui/tabs"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Download, Calendar, CreditCard, Clock, Mail, Wallet, PiggyBank, DollarSign, Settings } from "lucide-react"
+import {
+  Download,
+  Calendar,
+  CreditCard,
+  CheckCircle,
+  AlertCircle,
+  Clock,
+  Mail,
+  Wallet,
+  PiggyBank,
+  DollarSign,
+} from "lucide-react"
 import { generateStatement, sendStatementByEmail, getTransactionsByNumCompte } from "./actions"
 import { useActionState } from "react"
 import { getAccounts, getAccountById } from "../actions"
@@ -33,29 +48,48 @@ interface StatementRequest {
   language: "fr" | "en"
 }
 
-function StatementsPage() {
+const predefinedPeriods = [
+  {
+    value: "lastMonth",
+    label: "Dernier mois",
+    startDate: new Date(new Date().setMonth(new Date().getMonth() - 1)).toISOString().split("T")[0],
+    endDate: new Date().toISOString().split("T")[0],
+  },
+  {
+    value: "thisMonth",
+    label: "Ce mois",
+    startDate: new Date().toISOString().split("T")[0],
+    endDate: new Date().toISOString().split("T")[0],
+  },
+  { value: "custom", label: "Personnalisé" },
+]
+
+export default function StatementsPage() {
+  const searchParams = useSearchParams()
+  const preSelectedAccountId = searchParams.get("accountId")
+
   const [selectedAccount, setSelectedAccount] = useState<Account | null>(null)
   const [startDate, setStartDate] = useState<string>("")
   const [endDate, setEndDate] = useState<string>("")
+  const [format, setFormat] = useState<"pdf" | "excel">("pdf")
+  const [includeImages, setIncludeImages] = useState(false)
+  const [language, setLanguage] = useState<"fr" | "en">("fr")
+  const [emailAddress, setEmailAddress] = useState("")
+  const [selectedPeriod, setSelectedPeriod] = useState("custom") // Removed predefined periods, only keep custom period with date fields
+  const [displayLimit, setDisplayLimit] = useState(50) // Limit initial display
   const [filteredTransactions, setFilteredTransactions] = useState<any[]>([])
-  const [transactionCount, setTransactionCount] = useState<number>(0)
+  const [transactionCount, setTransactionCount] = useState(0)
   const [showDownloadLink, setShowDownloadLink] = useState(false)
   const [isLoadingTransactions, setIsLoadingTransactions] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string>("")
-  const [generateState, setGenerateState] = useState<any>(null)
-  const [hasGeneratedStatement, setHasGeneratedStatement] = useState(false)
-  const [email, setEmail] = useState("")
-  const [isSendingEmail, setIsSendingEmail] = useState(false)
-  const [exceeds6Months, setExceeds6Months] = useState(false)
-
-  // Keep account data in state, as it's used in the Select component
-  const [accountsData, setAccountsData] = useState<Account[]>([])
+  const [accounts, setAccounts] = useState<Account[]>([])
   const [isLoadingAccounts, setIsLoadingAccounts] = useState(true)
   const [transactions, setTransactions] = useState<any[]>([]) // Kept for potential future use, but not used in the new generation logic
-  const [generateAction, isGenerating] = useActionState(generateStatement, null)
+  const [generateState, generateAction, isGenerating] = useActionState(generateStatement, null)
   const [emailState, emailAction, isSending] = useActionState(sendStatementByEmail, null)
   const [isPending, startTransition] = useTransition()
   const [hasSearched, setHasSearched] = useState(false) // Track if user has initiated a search
+  const [hasGeneratedStatement, setHasGeneratedStatement] = useState(false)
 
   useEffect(() => {
     const loadAccounts = async () => {
@@ -78,12 +112,12 @@ function StatementsPage() {
           const activeAccounts = adaptedAccounts.filter(
             (account) => account.status === "Actif" || account.status === "ACTIF",
           )
-          setAccountsData(activeAccounts)
+          setAccounts(activeAccounts)
         }
       } catch (error) {
         // console.error("Erreur lors du chargement des comptes:", error)
         // Fallback vers des données de test en cas d'erreur
-        setAccountsData([
+        setAccounts([
           {
             id: "1",
             name: "Compte Courant",
@@ -104,20 +138,23 @@ function StatementsPage() {
   }, [])
 
   useEffect(() => {
-    const fetchTransactions = async () => {
-      if (!selectedAccount || !startDate || !endDate) return
+    const loadTransactionsPreview = async () => {
+      if (!selectedAccount || !startDate || !endDate) {
+        setFilteredTransactions([])
+        setTransactionCount(0)
+        setShowDownloadLink(false)
+        setHasGeneratedStatement(false)
+        return
+      }
 
-      const start = new Date(startDate)
-      const end = new Date(endDate)
-      const sixMonthsFromStart = new Date(start)
-      sixMonthsFromStart.setMonth(sixMonthsFromStart.getMonth() + 6)
-
-      const exceedsSixMonths = end > sixMonthsFromStart
-      setExceeds6Months(exceedsSixMonths)
+      if (new Date(startDate) > new Date(endDate)) {
+        return
+      }
 
       setIsLoadingTransactions(true)
       setErrorMessage("")
-      setFilteredTransactions([])
+      setShowDownloadLink(false)
+      setHasGeneratedStatement(false)
 
       try {
         const result = await getTransactionsByNumCompte(selectedAccount.number)
@@ -130,12 +167,18 @@ function StatementsPage() {
 
         const allTransactions = result.data
 
-        const effectiveEndDate = exceedsSixMonths ? sixMonthsFromStart : end
+        const start = new Date(startDate)
+        const end = new Date(endDate)
+        const sixMonthsBeforeEnd = new Date(end)
+        sixMonthsBeforeEnd.setMonth(sixMonthsBeforeEnd.getMonth() - 6)
+
+        const exceedsSixMonths = start < sixMonthsBeforeEnd
+        const effectiveStartDate = exceedsSixMonths ? sixMonthsBeforeEnd : start
 
         const filteredTxns = allTransactions.filter((txn: any) => {
           if (!txn.valueDate) return false
           const txnDate = new Date(txn.valueDate)
-          return txnDate >= start && txnDate <= effectiveEndDate
+          return txnDate >= effectiveStartDate && txnDate <= end
         })
 
         if (filteredTxns.length === 0) {
@@ -177,20 +220,38 @@ function StatementsPage() {
         setFilteredTransactions(cleanedTransactions)
         setTransactionCount(cleanedTransactions.length)
         setShowDownloadLink(true)
-        setIsLoadingTransactions(false)
+
+        if (exceedsSixMonths) {
+          setErrorMessage("Pour les transactions vieilles de plus de 6 mois veuillez vous rendre dans votre Agence")
+        }
       } catch (error) {
-        console.error(error)
-        setErrorMessage("Une erreur s'est produite lors du chargement des transactions")
+        console.error("[v0] Erreur lors de la récupération des transactions:", error)
+        setErrorMessage("Erreur lors de la récupération des transactions")
+      } finally {
         setIsLoadingTransactions(false)
       }
     }
 
-    fetchTransactions()
+    loadTransactionsPreview()
   }, [selectedAccount, startDate, endDate])
 
+  useEffect(() => {
+    // User must now manually select an account before generating statements
+    // if (preSelectedAccountId && accounts.find((acc) => acc.id === preSelectedAccountId)) {
+    //   setSelectedAccount(preSelectedAccountId)
+    // }
+  }, [preSelectedAccountId, accounts])
+
   const handlePeriodChange = (value: string) => {
-    // This function is no longer needed as predefined periods are removed.
-    // Keeping it here for now in case of future refactoring or if it's called elsewhere.
+    setSelectedPeriod(value)
+    const period = predefinedPeriods.find((p) => p.value === value)
+    if (period && value !== "custom") {
+      setStartDate(period.startDate ?? "")
+      setEndDate(period.endDate ?? "")
+    } else if (value === "custom") {
+      setStartDate("")
+      setEndDate("")
+    }
   }
 
   const handleGenerateStatement = async () => {
@@ -199,12 +260,6 @@ function StatementsPage() {
     const balanceOuverture = filteredTransactions[0]?.balanceOuverture || selectedAccount.balance
     const balanceFermeture =
       filteredTransactions[filteredTransactions.length - 1]?.balanceFermeture || selectedAccount.balance
-
-    // If period exceeds 6 months, prompt user to visit branch for full statement
-    if (exceeds6Months) {
-      alert("Pour les relevés de plus de 6 mois, veuillez vous rendre dans votre Agence.")
-      return
-    }
 
     await generatePDFStatement(
       filteredTransactions,
@@ -218,55 +273,27 @@ function StatementsPage() {
   }
 
   const handleDownloadPDF = () => {
-    // This function seems to be a duplicate of handleGenerateStatement logic for PDF.
-    // It might be redundant or intended for a different purpose not clear from context.
-    // Keeping it as is, but consider consolidating if logic is identical.
     if (!selectedAccount || filteredTransactions.length === 0) return
 
     const balanceOuverture = filteredTransactions[0]?.balanceOuverture || selectedAccount.balance
     const balanceFermeture =
       filteredTransactions[filteredTransactions.length - 1]?.balanceFermeture || selectedAccount.balance
 
-    // If period exceeds 6 months, prompt user to visit branch for full statement
-    if (exceeds6Months) {
-      alert("Pour les relevés de plus de 6 mois, veuillez vous rendre dans votre Agence.")
-      return
-    }
     generatePDFStatement(filteredTransactions, selectedAccount, startDate, endDate, balanceOuverture, balanceFermeture)
   }
 
-  const handleSendEmail = async () => {
-    if (!email || !hasGeneratedStatement) {
-      // Check if statement has been generated
+  const handleSendByEmail = async () => {
+    if (!emailAddress || !generateState?.success) {
       return
     }
 
-    // Assuming generateState has the statementId or some identifier
-    // For now, we are not directly using generateState here, but rather relying on hasGeneratedStatement
-    // and assuming the PDF was generated and is ready to be sent.
-    // A more robust solution would involve passing the statementId from generateStatement result.
-
     const formData = new FormData()
-    formData.append("email", email)
-    // If generateStatement action is used, its result would contain statementId
-    // formData.append("statementId", generateState?.statementId ?? "")
+    formData.append("email", emailAddress)
+    formData.append("statementId", generateState.statementId ?? "")
 
-    // Using the new state variables and a direct email action call for demonstration
-    setIsSendingEmail(true)
-    try {
-      // This assumes sendStatementByEmail is an async function that handles sending
-      // and returns a success/error status.
-      // Replace with actual call if `sendStatementByEmail` is available and configured.
-      // For now, simulating a successful send after a short delay.
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-      alert(`Email sent to ${email}`) // Placeholder for actual success feedback
-      setEmail("") // Clear email input on success
-    } catch (error) {
-      console.error("Error sending email:", error)
-      alert("Failed to send email.")
-    } finally {
-      setIsSendingEmail(false)
-    }
+    startTransition(() => {
+      emailAction(formData)
+    })
   }
 
   const getAccountIcon = (type: string) => {
@@ -297,221 +324,379 @@ function StatementsPage() {
     }).format(amount)
   }
 
-  const isFormValid =
-    selectedAccount && startDate && endDate && new Date(startDate) <= new Date(endDate) && !exceeds6Months
+  const isFormValid = selectedAccount && startDate && endDate && new Date(startDate) <= new Date(endDate)
 
   // Trouver le compte pré-sélectionné pour afficher un message
-  const preSelectedAccount = null // preSelectedAccountId is no longer used after changes
+  const preSelectedAccount = preSelectedAccountId ? accounts.find((acc) => acc.id === preSelectedAccountId) : null
 
   return (
-    <div className="max-w-5xl mx-auto p-6 space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold mb-2">Relevés de Compte</h1>
-        <p className="text-gray-600">Consultez et téléchargez vos relevés bancaires</p>
-      </div>
+    <div className="min-h-screen bg-background">
+      <div className="container mx-auto px-4 py-8">
+        <div className="space-y-2 mb-6">
+          <h1 className="text-3xl font-bold text-primary">Relevé de Compte</h1>
+          <p className="text-sm text-muted-foreground">
+            Consultez et téléchargez vos relevés de compte pour la période de votre choix
+          </p>
+        </div>
+        {/* </CHANGE> */}
+        {hasSearched && errorMessage && !isLoadingTransactions && (
+          <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-4">
+            <p className="text-red-800">{errorMessage}</p>
+          </div>
+        )}
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center text-base">
-            <Settings className="w-4 h-4 mr-2" />
-            Sélection du compte et de la période
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="account" className="text-sm">
-                Sélectionner un compte
-              </Label>
-              <Select
-                value={selectedAccount?.id || ""}
-                onValueChange={(value) => {
-                  const account = accountsData.find((acc) => acc.id === value)
-                  setSelectedAccount(account || null)
+        {showDownloadLink && transactionCount > 0 && (
+          <div>
+            <Alert className="border-green-200 bg-green-50">
+              <CheckCircle className="h-4 w-4 text-green-600" />
+              <AlertDescription className="text-green-800 flex items-center justify-between">
+                <span>{transactionCount} transaction(s) trouvée(s) pour cette période.</span>
+                <Button
+                  variant="link"
+                  className="p-0 h-auto text-green-700 underline"
+                  onClick={async () => {
+                    if (!selectedAccount) return
+                    await generatePDFStatement(filteredTransactions, selectedAccount, startDate, endDate)
+                  }}
+                >
+                  Télécharger le relevé
+                </Button>
+              </AlertDescription>
+            </Alert>
+          </div>
+        )}
+
+        {generateState?.success && (
+          <Alert className="border-green-200 bg-green-50">
+            <CheckCircle className="h-4 w-4 text-green-600" />
+            <AlertDescription className="text-green-800">
+              ✅ Relevé généré avec succès ! ({generateState.transactionCount} transactions)
+              <Button
+                variant="link"
+                className="p-0 h-auto text-green-700 underline ml-2"
+                onClick={() => {
+                  // Note: The logic to actually download here is removed as generation happens directly in handleGenerateStatement
                 }}
               >
-                <SelectTrigger id="account" className="h-9">
-                  <SelectValue placeholder="Choisir un compte" />
-                </SelectTrigger>
-                <SelectContent>
-                  {accountsData.map((account) => (
-                    <SelectItem key={account.id} value={account.id}>
-                      {account.number} - {formatAmount(account.balance)} GNF
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+                Télécharger maintenant
+              </Button>
+            </AlertDescription>
+          </Alert>
+        )}
 
-            <div className="space-y-2">
-              <Label className="text-sm">Période</Label>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                <div>
-                  <Label htmlFor="startDate" className="text-sm text-gray-600">
-                    Date de début
-                  </Label>
-                  <Input
-                    id="startDate"
-                    type="date"
-                    value={startDate}
-                    onChange={(e) => setStartDate(e.target.value)}
-                    max={endDate || new Date().toISOString().split("T")[0]}
-                    className="h-9"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="endDate" className="text-sm text-gray-600">
-                    Date de fin
-                  </Label>
-                  <Input
-                    id="endDate"
-                    type="date"
-                    value={endDate}
-                    onChange={(e) => setEndDate(e.target.value)}
-                    min={startDate || undefined}
-                    max={new Date().toISOString().split("T")[0]}
-                    className="h-9"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
+        {generateState?.error && (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>❌ {generateState.error}</AlertDescription>
+          </Alert>
+        )}
 
-          {startDate && endDate && (
-            <div className="p-2 bg-blue-50 rounded-lg">
-              <p className="text-sm text-blue-800">
-                <Calendar className="w-4 h-4 inline mr-1" />
-                Période sélectionnée : du {new Date(startDate).toLocaleDateString("fr-FR")} au{" "}
-                {new Date(endDate).toLocaleDateString("fr-FR")}
-              </p>
-            </div>
-          )}
+        {emailState?.success && (
+          <Alert className="border-blue-200 bg-blue-50">
+            <CheckCircle className="h-4 w-4 text-blue-600" />
+            <AlertDescription className="text-blue-800">✅ Relevé envoyé par email à {emailAddress}</AlertDescription>
+          </Alert>
+        )}
 
-          {exceeds6Months && (
-            <div className="p-3 bg-orange-50 border border-orange-200 rounded-lg">
-              <p className="text-sm text-orange-800 font-medium">
-                ⚠️ Pour les transactions vieilles de plus de 6 mois, veuillez vous rendre dans votre Agence
-              </p>
-              <p className="text-xs text-orange-700 mt-1">
-                L'aperçu affichera uniquement les 6 premiers mois à partir de la date de début.
-              </p>
-            </div>
-          )}
+        {isGenerating && (
+          <Alert className="border-yellow-200 bg-yellow-50">
+            <Clock className="h-4 w-4 text-yellow-600 animate-pulse" />
+            <AlertDescription className="text-yellow-800">
+              ⏳ Téléchargement du relevé en cours... Veuillez patienter.
+            </AlertDescription>
+          </Alert>
+        )}
 
-          {errorMessage && (
-            <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
-              <p className="text-sm text-red-800">{errorMessage}</p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center text-base">
-            <Download className="w-4 h-4 mr-2" />
-            Téléchargement
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3 pt-2 pb-3">
-          <div className="flex flex-col sm:flex-row gap-2">
-            <Button
-              onClick={handleGenerateStatement}
-              disabled={!isFormValid || isLoadingTransactions || filteredTransactions.length === 0}
-              className="flex-1 h-9"
-            >
-              {isLoadingTransactions ? (
-                <>
-                  <Clock className="w-4 h-4 mr-2 animate-spin" />
-                  Recherche en cours...
-                </>
-              ) : (
-                <>
-                  <Download className="w-4 h-4 mr-2" />
-                  Télécharger relevé
-                </>
-              )}
-            </Button>
-          </div>
-
-          {hasGeneratedStatement && ( // Changed from generateState?.success to hasGeneratedStatement
-            <div className="border-t pt-3 space-y-2">
-              <Label htmlFor="email" className="text-sm">
-                Envoyer par email (optionnel)
-              </Label>
-              <div className="flex flex-col sm:flex-row gap-2">
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="email@exemple.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="flex-1 h-9"
-                />
-                <Button
-                  onClick={handleSendEmail}
-                  disabled={!email || isSendingEmail}
-                  variant="outline"
-                  className="h-9 bg-transparent"
-                >
-                  {isSendingEmail ? (
-                    <>
-                      <Clock className="w-4 h-4 mr-2 animate-spin" />
-                      Envoi...
-                    </>
-                  ) : (
-                    <>
-                      <Mail className="w-4 h-4 mr-2" />
-                      Envoyer
-                    </>
-                  )}
-                </Button>
-              </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {showDownloadLink && filteredTransactions.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center text-base">
-              <CreditCard className="w-4 h-4 mr-2" />
-              Aperçu des transactions ({filteredTransactions.length})
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Référence</TableHead>
-                  <TableHead>Description</TableHead>
-                  <TableHead className="text-right">Montant</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredTransactions.map((txn, index) => (
-                  <TableRow key={index}>
-                    <TableCell className="font-mono text-sm">
-                      {txn.valueDate ? new Date(txn.valueDate).toLocaleDateString("fr-FR") : "N/A"}
-                    </TableCell>
-                    <TableCell className="font-mono text-sm">{txn.referenceOperation || "N/A"}</TableCell>
-                    <TableCell className="max-w-[300px] truncate">{txn.description || "N/A"}</TableCell>
-                    <TableCell
-                      className={`text-right font-semibold ${
-                        txn.montantOperation >= 0 ? "text-green-600" : "text-red-600"
-                      }`}
+        <Tabs defaultValue="generate" className="space-y-3">
+          <TabsContent value="generate" className="space-y-3">
+            {/* Sélection du compte */}
+            <Card>
+              <CardHeader className="py-2">
+                <CardTitle className="flex items-center text-base">
+                  <CreditCard className="w-4 h-4 mr-2" />
+                  Sélection du compte
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-2 pb-3">
+                {isLoadingAccounts ? (
+                  <div className="text-center py-2">
+                    <Clock className="w-6 h-6 animate-spin mx-auto mb-2" />
+                    <p className="text-gray-500">Chargement des comptes...</p>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <Select
+                      value={selectedAccount?.id || ""}
+                      onValueChange={(id) => setSelectedAccount(accounts.find((acc) => acc.id === id) || null)}
                     >
-                      {formatAmount(txn.montantOperation)} GNF
-                    </TableCell>
+                      <SelectTrigger className="w-full h-auto py-2">
+                        <SelectValue placeholder="Sélectionnez un compte">
+                          {selectedAccount && (
+                            <div className="flex items-center justify-between w-full">
+                              <div className="flex items-center gap-2">
+                                {getAccountIcon(selectedAccount.type)}
+                                <div className="text-left">
+                                  <div className="font-medium text-sm">{selectedAccount.name}</div>
+                                  <div className="text-xs text-muted-foreground font-mono">
+                                    {selectedAccount.number}
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="text-right ml-4">
+                                <div className="font-bold text-sm">
+                                  {formatAmount(selectedAccount.balance, selectedAccount.currency)}{" "}
+                                  {selectedAccount.currency}
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </SelectValue>
+                      </SelectTrigger>
+                      <SelectContent className="max-h-[400px]">
+                        {accounts.map((account) => (
+                          <SelectItem key={account.id} value={account.id} className="h-auto py-2">
+                            <div className="flex items-center justify-between w-full gap-4">
+                              <div className="flex items-center gap-2 flex-1">
+                                {getAccountIcon(account.type)}
+                                <div className="text-left">
+                                  <div className="font-medium flex items-center gap-1.5 text-sm">
+                                    {account.name}
+                                    {preSelectedAccountId === account.id && (
+                                      <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700">
+                                        Suggéré
+                                      </Badge>
+                                    )}
+                                  </div>
+                                  <div className="text-xs text-muted-foreground font-mono">{account.number}</div>
+                                </div>
+                              </div>
+                              <div className="text-right ml-4">
+                                <div className="font-bold text-sm">
+                                  {formatAmount(account.balance, account.currency)} {account.currency}
+                                </div>
+                              </div>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Configuration du relevé */}
+            <Card>
+              <CardHeader className="py-2">
+                <CardTitle className="flex items-center text-base">
+                  <Calendar className="w-4 h-4 mr-2" />
+                  Détails du relevé
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3 pt-2 pb-3">
+                {/* Sélection de période */}
+                <div className="space-y-2">
+                  <Label className="text-sm">Période du relevé</Label>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                    <div>
+                      <Label htmlFor="startDate" className="text-sm">
+                        Date de début
+                      </Label>
+                      <Input
+                        id="startDate"
+                        type="date"
+                        value={startDate}
+                        onChange={(e) => setStartDate(e.target.value)}
+                        max={endDate || undefined}
+                        className="h-9"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="endDate" className="text-sm">
+                        Date de fin
+                      </Label>
+                      <Input
+                        id="endDate"
+                        type="date"
+                        value={endDate}
+                        onChange={(e) => setEndDate(e.target.value)}
+                        min={startDate || undefined}
+                        max={new Date().toISOString().split("T")[0]}
+                        className="h-9"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {startDate && endDate && (
+                  <div className="p-2 bg-blue-50 rounded-lg">
+                    <p className="text-sm text-blue-800">
+                      <Calendar className="w-4 h-4 inline mr-1" />
+                      Période sélectionnée : du {new Date(startDate).toLocaleDateString("fr-FR")} au{" "}
+                      {new Date(endDate).toLocaleDateString("fr-FR")}
+                    </p>
+                  </div>
+                )}
+
+                {/* Options de format */}
+                {/* <div className="space-y-2">
+                  <Label className="text-sm">Format du fichier</Label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div
+                      className={`p-2 border rounded-lg cursor-pointer transition-all ${
+                        format === "pdf"
+                          ? "border-red-500 bg-red-50 ring-2 ring-red-200"
+                          : "border-gray-200 hover:border-gray-300"
+                      }`}
+                      onClick={() => setFormat("pdf")}
+                    >
+                      <div className="flex items-center space-x-2">
+                        <FileText className="w-5 h-5 text-red-600" />
+                        <div>
+                          <p className="font-medium text-sm">PDF</p>
+                          <p className="text-xs text-gray-500">Format standard</p>
+                        </div>
+                      </div>
+                    </div>
+                    <div
+                      className={`p-2 border rounded-lg cursor-pointer transition-all ${
+                        format === "excel"
+                          ? "border-green-500 bg-green-50 ring-2 ring-green-200"
+                          : "border-gray-200 hover:border-gray-300"
+                      }`}
+                      onClick={() => setFormat("excel")}
+                    >
+                      <div className="flex items-center space-x-2">
+                        <FileSpreadsheet className="w-5 h-5 text-green-600" />
+                        <div>
+                          <p className="font-medium text-sm">Excel</p>
+                          <p className="text-xs text-gray-500">Format tableur</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div> */}
+              </CardContent>
+            </Card>
+
+            {/* Actions */}
+            <Card>
+              <CardHeader className="py-2">
+                <CardTitle className="flex items-center text-base">
+                  <Download className="w-4 h-4 mr-2" />
+                  Téléchargement
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3 pt-2 pb-3">
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <Button
+                    onClick={handleGenerateStatement}
+                    disabled={!isFormValid || isLoadingTransactions || filteredTransactions.length === 0}
+                    className="flex-1 h-9"
+                  >
+                    {isLoadingTransactions ? (
+                      <>
+                        <Clock className="w-4 h-4 mr-2 animate-spin" />
+                        Recherche en cours...
+                      </>
+                    ) : hasGeneratedStatement ? (
+                      <>
+                        <Download className="w-4 h-4 mr-2" />
+                        Télécharger relevé
+                      </>
+                    ) : (
+                      <>
+                        <Download className="w-4 h-4 mr-2" />
+                        Télécharger relevé
+                      </>
+                    )}
+                  </Button>
+                </div>
+
+                {generateState?.success && (
+                  <div className="border-t pt-3 space-y-2">
+                    <Label htmlFor="email" className="text-sm">
+                      Envoyer par email (optionnel)
+                    </Label>
+                    <div className="flex gap-2">
+                      <Input
+                        id="email"
+                        type="email"
+                        placeholder="votre@email.com"
+                        value={emailAddress}
+                        onChange={(e) => setEmailAddress(e.target.value)}
+                        className="flex-1 h-9"
+                      />
+                      <Button
+                        onClick={handleSendByEmail}
+                        disabled={!emailAddress || isSending || isPending}
+                        variant="outline"
+                        className="h-9 bg-transparent"
+                      >
+                        {isSending || isPending ? (
+                          <Clock className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Mail className="w-4 h-4" />
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                {!isFormValid && (
+                  <Alert>
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription className="text-sm">
+                      Veuillez sélectionner un compte et une période valide pour continuer.
+                    </AlertDescription>
+                  </Alert>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+
+        {showDownloadLink && filteredTransactions.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center text-base">
+                <CreditCard className="w-4 h-4 mr-2" />
+                Aperçu des transactions ({filteredTransactions.length})
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Référence</TableHead>
+                    <TableHead>Description</TableHead>
+                    <TableHead className="text-right">Montant</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-      )}
+                </TableHeader>
+                <TableBody>
+                  {filteredTransactions.map((txn, index) => (
+                    <TableRow key={index}>
+                      <TableCell className="font-mono text-sm">
+                        {txn.valueDate ? new Date(txn.valueDate).toLocaleDateString("fr-FR") : "N/A"}
+                      </TableCell>
+                      <TableCell className="font-mono text-sm">{txn.referenceOperation || "N/A"}</TableCell>
+                      <TableCell className="max-w-[300px] truncate">{txn.description || "N/A"}</TableCell>
+                      <TableCell
+                        className={`text-right font-semibold ${
+                          txn.montantOperation >= 0 ? "text-green-600" : "text-red-600"
+                        }`}
+                      >
+                        {formatAmount(txn.montantOperation)} GNF
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        )}
+      </div>
     </div>
   )
 
@@ -887,5 +1072,3 @@ function StatementsPage() {
     console.log("[v0] Relevé texte généré et téléchargé")
   }
 }
-
-export default StatementsPage
