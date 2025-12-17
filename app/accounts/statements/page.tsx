@@ -342,17 +342,6 @@ export default function StatementsPage() {
           </p>
         </div>
 
-        {sixMonthsWarning && (
-          <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-4">
-            <div className="flex items-start gap-2">
-              <AlertCircle className="h-5 w-5 text-amber-600 mt-0.5" />
-              <p className="text-amber-800 font-medium">
-                Pour les transactions vieilles de plus de 6 mois veuillez vous rendre dans votre Agence
-              </p>
-            </div>
-          </div>
-        )}
-
         {errorMessage && !isLoadingTransactions && (
           <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-4">
             <div className="flex items-start gap-2">
@@ -362,7 +351,7 @@ export default function StatementsPage() {
           </div>
         )}
 
-        {showDownloadLink && transactionCount > 0 && (
+        {/* {showDownloadLink && transactionCount > 0 && (
           <div>
             <Alert className="border-green-200 bg-green-50">
               <CheckCircle className="h-4 w-4 text-green-600" />
@@ -381,7 +370,7 @@ export default function StatementsPage() {
               </AlertDescription>
             </Alert>
           </div>
-        )}
+        )} */}
 
         {generateState?.success && (
           <Alert className="border-green-200 bg-green-50">
@@ -596,6 +585,19 @@ export default function StatementsPage() {
               </CardContent>
             </Card>
 
+             {sixMonthsWarning && (
+              <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-4">
+              <div className="flex items-start gap-2">
+              <AlertCircle className="h-4 w-4 text-amber-600 mt-0.5" />
+              <p className="text-amber-800 text-sm leading-relaxed">
+              Les transactions de plus de <span className="font-medium">6 mois</span> ne sont pas affichées dans l’aperçu et ne figureront pas sur le relevé.
+              Pour les consulter, veuillez vous rendre dans votre agence.
+              </p>
+              </div>
+              </div>
+
+        )}
+
             {/* Actions */}
             <Card>
               <CardHeader className="py-2">
@@ -674,7 +676,7 @@ export default function StatementsPage() {
         </Tabs>
 
         {showDownloadLink && filteredTransactions.length > 0 && (
-          <Card>
+         <Card className="mt-4">
             <CardHeader>
               <CardTitle className="flex items-center text-base">
                 <CreditCard className="w-4 h-4 mr-2" />
