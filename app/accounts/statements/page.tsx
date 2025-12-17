@@ -137,6 +137,12 @@ export default function StatementsPage() {
   }, [])
 
   useEffect(() => {
+    if (selectedAccount && startDate && endDate && new Date(startDate) <= new Date(endDate)) {
+      handleGenerateStatement()
+    }
+  }, [selectedAccount, startDate, endDate])
+
+  useEffect(() => {
     const loadTransactionsData = async () => {
       try {
         setIsLoadingTransactions(true)
