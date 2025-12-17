@@ -82,6 +82,7 @@ export default function StatementsPage() {
   const [showDownloadLink, setShowDownloadLink] = useState(false)
   const [isLoadingTransactions, setIsLoadingTransactions] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string>("")
+  const [sixMonthsWarning, setSixMonthsWarning] = useState(false)
   const [accounts, setAccounts] = useState<Account[]>([])
   const [isLoadingAccounts, setIsLoadingAccounts] = useState(true)
   const [transactions, setTransactions] = useState<any[]>([]) // Kept for potential future use, but not used in the new generation logic
@@ -144,6 +145,7 @@ export default function StatementsPage() {
         setTransactionCount(0)
         setShowDownloadLink(false)
         setHasGeneratedStatement(false)
+        setSixMonthsWarning(false)
         return
       }
 
@@ -153,6 +155,7 @@ export default function StatementsPage() {
 
       setIsLoadingTransactions(true)
       setErrorMessage("")
+      setSixMonthsWarning(false)
       setShowDownloadLink(false)
       setHasGeneratedStatement(false)
 
@@ -222,7 +225,7 @@ export default function StatementsPage() {
         setShowDownloadLink(true)
 
         if (exceedsSixMonths) {
-          setErrorMessage("Pour les transactions vieilles de plus de 6 mois veuillez vous rendre dans votre Agence")
+          setSixMonthsWarning(true)
         }
       } catch (error) {
         console.error("[v0] Erreur lors de la récupération des transactions:", error)
@@ -339,11 +342,22 @@ export default function StatementsPage() {
           </p>
         </div>
 
-        {hasSearched && errorMessage && !isLoadingTransactions && (
+        {sixMonthsWarning && (
           <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-4">
             <div className="flex items-start gap-2">
               <AlertCircle className="h-5 w-5 text-amber-600 mt-0.5" />
-              <p className="text-amber-800 font-medium">{errorMessage}</p>
+              <p className="text-amber-800 font-medium">
+                Pour les transactions vieilles de plus de 6 mois veuillez vous rendre dans votre Agence
+              </p>
+            </div>
+          </div>
+        )}
+
+        {errorMessage && !isLoadingTransactions && (
+          <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-4">
+            <div className="flex items-start gap-2">
+              <AlertCircle className="h-5 w-5 text-red-600 mt-0.5" />
+              <p className="text-red-800 font-medium">{errorMessage}</p>
             </div>
           </div>
         )}
