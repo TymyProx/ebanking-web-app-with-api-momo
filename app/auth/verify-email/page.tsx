@@ -136,7 +136,7 @@ function VerifyEmailContent() {
                   )}
 
                   {/* Password Requirements Info Box */}
-                  <div className="p-3 rounded-lg bg-blue-50 border border-blue-200">
+                  {/* <div className="p-3 rounded-lg bg-blue-50 border border-blue-200">
                     <div className="flex items-start space-x-2">
                       <AlertCircle className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
                       <div className="space-y-1">
@@ -151,7 +151,7 @@ function VerifyEmailContent() {
                         </ul>
                       </div>
                     </div>
-                  </div>
+                  </div> */}
 
                   {/* Password Field */}
                   <div className="space-y-2">
