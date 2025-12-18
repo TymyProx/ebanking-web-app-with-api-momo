@@ -206,11 +206,14 @@ export default function StatementsPage() {
           return
         }
 
-        const openingBalance = Number.parseFloat(accountDetails.data.bookBalance || "0")
+        const closingBalance = Number.parseFloat(accountDetails.data.bookBalance || "0")
         const transactionsSum = filteredTxns.reduce((sum: number, txn: any) => {
           return sum + Number.parseFloat(txn.montantOperation || "0")
         }, 0)
-        const closingBalance = openingBalance + transactionsSum
+        // Puisque les transactions sont par ordre décroissant (plus récentes en premier),
+        // le solde de clôture correspond au solde actuel (bookBalance)
+        // et le solde d'ouverture est le solde avant ces transactions
+        const openingBalance = closingBalance - transactionsSum
 
         const sortedTransactions = filteredTxns.sort((a: any, b: any) => {
           const dateA = new Date(a.valueDate || 0).getTime()
@@ -776,6 +779,8 @@ export default function StatementsPage() {
       // =========================
       // TABLE HEADER TRANSACTIONS
       // =========================
+      const tableStartX = 15
+      const tableRowHeight = 9
       const drawTransactionHeader = (x: number, y: number, w: number, h: number, cols: number[]) => {
         doc.setFillColor(...lightGray)
         doc.setDrawColor(...borderGray)
@@ -802,6 +807,7 @@ export default function StatementsPage() {
         doc.text("Date Op.", x + cols[0] + cols[1] + cols[2] + 2, y + 6)
         doc.text("Débit", x + cols[0] + cols[1] + cols[2] + cols[3] + 2, y + 6)
         doc.text("Crédit", x + cols[0] + cols[1] + cols[2] + cols[3] + cols[4] + 2, y + 6)
+        doc.text("Solde", x + cols[0] + cols[1] + cols[2] + cols[3] + cols[4] + cols[5] + 2, y + 6)
       }
       // =========================
       // TOP HEADER (logo + titre + ligne)
@@ -950,21 +956,22 @@ export default function StatementsPage() {
         doc.setLineWidth(1.0)
         doc.line(contentLeft, yPos + 2.5, contentLeft + 55, yPos + 2.5)
         yPos += 8
-        const tableStartX = contentLeft
-        const col1Width = 25
-        const col2Width = 45
-        const col3Width = 30
-        const col4Width = 25
-        const col5Width = 25
-        const col6Width = 25
-        const cols = [col1Width, col2Width, col3Width, col4Width, col5Width, col6Width]
-        const tableRowHeight = 9
-        const transTableWidth = cols.reduce((a, b) => a + b, 0)
+        const col1Width = 25 // Date Valeur
+        const col2Width = 55 // Description
+        const col3Width = 30 // Référence
+        const col4Width = 25 // Date Op.
+        const col5Width = 25 // Débit
+        const col6Width = 25 // Crédit
+        const col7Width = 25 // Solde (nouvelle colonne)
+        const cols = [col1Width, col2Width, col3Width, col4Width, col5Width, col6Width, col7Width]
+        const transTableWidth = cols.reduce((sum, w) => sum + w, 0)
         drawTransactionHeader(tableStartX, yPos, transTableWidth, tableRowHeight, cols)
         yPos += tableRowHeight
         doc.setTextColor(...blackText)
         doc.setFont("helvetica", "normal")
         doc.setFontSize(8)
+        let currentBalance = Number.parseFloat(String(openingBalance)) || 0
+
         transactions.forEach((txn, idx) => {
           if (yPos > 260) {
             doc.addPage()
@@ -997,6 +1004,10 @@ export default function StatementsPage() {
           doc.text(dateOperation, tableStartX + col1Width + col2Width + col3Width + 2, yPos + 6)
           const m = Number(txn?.montantOperation ?? 0)
           const montant = formatAmount(Math.abs(m))
+
+          currentBalance += m
+          const solde = formatAmount(currentBalance)
+
           if (m < 0) {
             doc.setTextColor(...blackText)
             doc.text(montant, tableStartX + col1Width + col2Width + col3Width + col4Width + 2, yPos + 6)
@@ -1007,6 +1018,16 @@ export default function StatementsPage() {
             doc.setFont("helvetica", "normal")
             doc.setTextColor(...blackText)
           }
+
+          doc.setTextColor(...blackText)
+          doc.setFont("helvetica", "bold")
+          doc.text(
+            solde,
+            tableStartX + col1Width + col2Width + col3Width + col4Width + col5Width + col6Width + 2,
+            yPos + 6,
+          )
+          doc.setFont("helvetica", "normal")
+
           yPos += tableRowHeight
         })
         // =========================
@@ -1121,7 +1142,7 @@ export default function StatementsPage() {
         "Date Opération",
         "Débit",
         "Crédit",
-        "Solde",
+        "Solde", // Added Solde column
       ]
 
       // Reset balance for calculation
@@ -1143,7 +1164,7 @@ export default function StatementsPage() {
           txn?.dateEcriture ? new Date(txn.dateEcriture).toLocaleDateString("fr-FR") : "",
           debit,
           credit,
-          solde,
+          solde, // Add Solde value
         ]
       })
 
