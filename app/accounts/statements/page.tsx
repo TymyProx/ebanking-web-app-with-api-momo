@@ -210,9 +210,8 @@ export default function StatementsPage() {
         const transactionsSum = filteredTxns.reduce((sum: number, txn: any) => {
           return sum + Number.parseFloat(txn.montantOperation || "0")
         }, 0)
-        // Puisque les transactions sont par ordre décroissant (plus récentes en premier),
-        // le solde de clôture correspond au solde actuel (bookBalance)
-        // et le solde d'ouverture est le solde avant ces transactions
+        // Since transactions are sorted by date descending (most recent first),
+        // we need to calculate backwards from the current balance
         const openingBalance = closingBalance - transactionsSum
 
         const sortedTransactions = filteredTxns.sort((a: any, b: any) => {
@@ -221,15 +220,12 @@ export default function StatementsPage() {
           return dateB - dateA
         })
 
-        // --- UPDATE START ---
-        // Initial closingBalance is not directly used here, it will be calculated per row
-        // but we will store the balance of the first transaction row as the closingBalance.
-        // The openingBalance is calculated correctly.
-        let calculatedClosingBalance = openingBalance // Temporary variable to track closing balance
+        // The first row should show the closing balance (current account balance)
+        let calculatedBalance = openingBalance
 
         const cleanedTransactions = sortedTransactions.map((txn: any, index: number) => {
           const amount = Number.parseFloat(String(txn?.montantOperation ?? 0))
-          const transactionBalance = calculatedClosingBalance + amount
+          calculatedBalance += amount // Add transaction to get new balance
 
           const transactionData = {
             referenceOperation: txn.referenceOperation || "",
@@ -238,22 +234,14 @@ export default function StatementsPage() {
             valueDate: txn.valueDate || "",
             dateEcriture: txn.dateEcriture || "",
             txnType: txn.txnType || "",
-            balanceOuverture: index === 0 ? openingBalance : undefined, // Only set for the first transaction
-            balanceFermeture: index === sortedTransactions.length - 1 ? transactionBalance : undefined, // Only set for the last transaction
-            currentTransactionBalance: transactionBalance, // Store the balance after this transaction
+            balanceOuverture: index === 0 ? openingBalance : undefined,
+            balanceFermeture: index === sortedTransactions.length - 1 ? calculatedBalance : undefined,
+            currentTransactionBalance: calculatedBalance, // Balance after this transaction
           }
 
-          calculatedClosingBalance = transactionBalance // Update for the next iteration
           return transactionData
         })
-
-        // Ensure the closing balance for the last transaction is captured correctly
-        if (cleanedTransactions.length > 0) {
-          const finalClosingBalance = cleanedTransactions[cleanedTransactions.length - 1].currentTransactionBalance
-          // This is not strictly needed here if `openingBalance` and `closingBalance` are passed to generation functions correctly.
-          // However, if the UI needs to reflect the *final* closing balance from the transactions, this can be used.
-        }
-        // --- UPDATE END ---
+        // </CHANGE>
 
         setFilteredTransactions(cleanedTransactions)
         setTransactionCount(cleanedTransactions.length)
@@ -297,11 +285,9 @@ export default function StatementsPage() {
 
     setErrorMessage("") // Clear previous errors
 
-    // Use the opening balance from the first transaction, or default to account balance if no transactions
     const balanceOuverture = filteredTransactions[0]?.balanceOuverture || selectedAccount.balance
-    // The closing balance is the balance after the last transaction
-    const balanceFermeture =
-      filteredTransactions[filteredTransactions.length - 1]?.currentTransactionBalance || selectedAccount.balance
+    const balanceFermeture = filteredTransactions[0]?.currentTransactionBalance || selectedAccount.balance
+    // </CHANGE>
 
     // Call the appropriate generation function based on the selected format
     if (format === "pdf") {
@@ -986,13 +972,14 @@ export default function StatementsPage() {
         doc.line(contentLeft, yPos + 2.5, contentLeft + 55, yPos + 2.5)
         yPos += 8
         // --- UPDATE START ---
-        const col1Width = 22 // Date Valeur (reduced from 25)
-        const col2Width = 45 // Description (reduced from 55)
-        const col3Width = 28 // Référence (reduced from 30)
-        const col4Width = 22 // Date Op. (reduced from 25)
-        const col5Width = 23 // Débit (reduced from 25)
-        const col6Width = 23 // Crédit (reduced from 25)
-        const col7Width = 27 // Solde (increased from 25)
+        const col1Width = 19 // Date Valeur (reduced from 20)
+        const col2Width = 40 // Description (reduced from 45)
+        const col3Width = 26 // Référence (reduced from 28)
+        const col4Width = 20 // Date Op. (reduced from 22)
+        const col5Width = 21 // Débit (reduced from 23)
+        const col6Width = 21 // Crédit (reduced from 23)
+        const col7Width = 33 // Solde (increased from 27 for better visibility)
+        // </CHANGE>
         const cols = [col1Width, col2Width, col3Width, col4Width, col5Width, col6Width, col7Width]
         // --- UPDATE END ---
         const transTableWidth = cols.reduce((sum, w) => sum + w, 0)
