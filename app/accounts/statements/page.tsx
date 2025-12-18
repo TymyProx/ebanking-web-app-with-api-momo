@@ -972,13 +972,13 @@ export default function StatementsPage() {
         doc.line(contentLeft, yPos + 2.5, contentLeft + 55, yPos + 2.5)
         yPos += 8
         // --- UPDATE START ---
-        const col1Width = 19 // Date Valeur (reduced from 20)
-        const col2Width = 40 // Description (reduced from 45)
-        const col3Width = 26 // Référence (reduced from 28)
-        const col4Width = 20 // Date Op. (reduced from 22)
-        const col5Width = 21 // Débit (reduced from 23)
-        const col6Width = 21 // Crédit (reduced from 23)
-        const col7Width = 33 // Solde (increased from 27 for better visibility)
+        const col1Width = 18 // Date Valeur (reduced from 19)
+        const col2Width = 38 // Description (reduced from 40)
+        const col3Width = 32 // Référence (increased from 26 to prevent overflow)
+        const col4Width = 20 // Date Op.
+        const col5Width = 21 // Débit
+        const col6Width = 21 // Crédit
+        const col7Width = 30 // Solde (slightly reduced to compensate)
         // </CHANGE>
         const cols = [col1Width, col2Width, col3Width, col4Width, col5Width, col6Width, col7Width]
         // --- UPDATE END ---
@@ -1013,13 +1013,14 @@ export default function StatementsPage() {
             doc.line(cx, yPos, cx, yPos + tableRowHeight)
           }
           const dateValeur = txn?.valueDate ? new Date(txn.valueDate).toLocaleDateString("fr-FR") : "N/A"
-          doc.text(dateValeur, tableStartX + 2, yPos + 6)
+          doc.text(dateValeur, tableStartX + 3, yPos + 6)
           const description = safe(txn?.description || "N/A").substring(0, 28)
-          doc.text(description, tableStartX + col1Width + 2, yPos + 6)
-          const reference = safe(txn?.referenceOperation || "N/A").substring(0, 18)
-          doc.text(reference, tableStartX + col1Width + col2Width + 2, yPos + 6)
+          doc.text(description, tableStartX + col1Width + 3, yPos + 6)
+          const reference = safe(txn?.referenceOperation || "N/A").substring(0, 22) // Increased from 18 to 22 chars
+          doc.text(reference, tableStartX + col1Width + col2Width + 3, yPos + 6)
           const dateOperation = txn?.dateEcriture ? new Date(txn.dateEcriture).toLocaleDateString("fr-FR") : "N/A"
-          doc.text(dateOperation, tableStartX + col1Width + col2Width + col3Width + 2, yPos + 6)
+          doc.text(dateOperation, tableStartX + col1Width + col2Width + col3Width + 3, yPos + 6)
+          // </CHANGE>
           const m = Number(txn?.montantOperation ?? 0)
           const montant = formatAmount(Math.abs(m))
 
@@ -1030,11 +1031,13 @@ export default function StatementsPage() {
 
           if (m < 0) {
             doc.setTextColor(...blackText)
-            doc.text(montant, tableStartX + col1Width + col2Width + col3Width + col4Width + 2, yPos + 6)
+            doc.text(montant, tableStartX + col1Width + col2Width + col3Width + col4Width + 3, yPos + 6)
+            // </CHANGE>
           } else {
             doc.setTextColor(...blackText)
             doc.setFont("helvetica", "bold")
-            doc.text(montant, tableStartX + col1Width + col2Width + col3Width + col4Width + col5Width + 2, yPos + 6)
+            doc.text(montant, tableStartX + col1Width + col2Width + col3Width + col4Width + col5Width + 3, yPos + 6)
+            // </CHANGE>
             doc.setFont("helvetica", "normal")
             doc.setTextColor(...blackText)
           }
@@ -1044,11 +1047,11 @@ export default function StatementsPage() {
           // --- UPDATE START ---
           doc.text(
             solde,
-            tableStartX + col1Width + col2Width + col3Width + col4Width + col5Width + col6Width + 2,
+            tableStartX + col1Width + col2Width + col3Width + col4Width + col5Width + col6Width + 3,
             yPos + 6,
           )
+          // </CHANGE>
           // --- UPDATE END ---
-          doc.setFont("helvetica", "normal")
 
           yPos += tableRowHeight
         })
@@ -1203,12 +1206,13 @@ export default function StatementsPage() {
       worksheet["!cols"] = [
         { wch: 15 }, // Date Valeur
         { wch: 40 }, // Description
-        { wch: 20 }, // Référence
+        { wch: 25 }, // Référence (increased from 20 to match PDF)
         { wch: 15 }, // Date Opération
         { wch: 15 }, // Débit
         { wch: 15 }, // Crédit
         { wch: 15 }, // Solde
       ]
+      // </CHANGE>
       // --- UPDATE END ---
 
       // Add worksheet to workbook
