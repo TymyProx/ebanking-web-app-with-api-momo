@@ -206,11 +206,11 @@ export default function StatementsPage() {
           return
         }
 
-        const closingBalance = Number.parseFloat(accountDetails.data.bookBalance || "0")
+        const openingBalance = Number.parseFloat(accountDetails.data.bookBalance || "0")
         const transactionsSum = filteredTxns.reduce((sum: number, txn: any) => {
           return sum + Number.parseFloat(txn.montantOperation || "0")
         }, 0)
-        const openingBalance = closingBalance - transactionsSum
+        const closingBalance = openingBalance + transactionsSum
 
         const sortedTransactions = filteredTxns.sort((a: any, b: any) => {
           const dateA = new Date(a.valueDate || 0).getTime()
