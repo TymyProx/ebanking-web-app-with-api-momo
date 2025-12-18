@@ -814,15 +814,18 @@ export default function StatementsPage() {
           cursor += cols[i]
           doc.line(cursor, y, cursor, y + h)
         }
-        // --- UPDATE START ---
-        doc.text("Date Valeur", x + 2, y + 6)
-        doc.text("Description", x + cols[0] + 2, y + 6)
-        doc.text("Référence", x + cols[0] + cols[1] + 2, y + 6)
-        doc.text("Date Op.", x + cols[0] + cols[1] + cols[2] + 2, y + 6)
-        doc.text("Débit", x + cols[0] + cols[1] + cols[2] + cols[3] + 2, y + 6)
-        doc.text("Crédit", x + cols[0] + cols[1] + cols[2] + cols[3] + cols[4] + 2, y + 6)
-        doc.text("Solde", x + cols[0] + cols[1] + cols[2] + cols[3] + cols[4] + cols[5] + 2, y + 6)
-        // --- UPDATE END ---
+        doc.text("Date Valeur", x + cols[0] / 2, y + 6, { align: "center" })
+        doc.text("Description", x + cols[0] + cols[1] / 2, y + 6, { align: "center" })
+        doc.text("Référence", x + cols[0] + cols[1] + cols[2] / 2, y + 6, { align: "center" })
+        doc.text("Date Op.", x + cols[0] + cols[1] + cols[2] + cols[3] / 2, y + 6, { align: "center" })
+        doc.text("Débit", x + cols[0] + cols[1] + cols[2] + cols[3] + cols[4] / 2, y + 6, { align: "center" })
+        doc.text("Crédit", x + cols[0] + cols[1] + cols[2] + cols[3] + cols[4] + cols[5] / 2, y + 6, {
+          align: "center",
+        })
+        doc.text("Solde", x + cols[0] + cols[1] + cols[2] + cols[3] + cols[4] + cols[5] + cols[6] / 2, y + 6, {
+          align: "center",
+        })
+        // </CHANGE>
       }
       // =========================
       // TOP HEADER (logo + titre + ligne)
@@ -1012,46 +1015,52 @@ export default function StatementsPage() {
             cx += cols[i]
             doc.line(cx, yPos, cx, yPos + tableRowHeight)
           }
-          const dateValeur = txn?.valueDate ? new Date(txn.valueDate).toLocaleDateString("fr-FR") : "N/A"
-          doc.text(dateValeur, tableStartX + 3, yPos + 6)
-          const description = safe(txn?.description || "N/A").substring(0, 28)
-          doc.text(description, tableStartX + col1Width + 3, yPos + 6)
-          const reference = safe(txn?.referenceOperation || "N/A").substring(0, 22) // Increased from 18 to 22 chars
-          doc.text(reference, tableStartX + col1Width + col2Width + 3, yPos + 6)
-          const dateOperation = txn?.dateEcriture ? new Date(txn.dateEcriture).toLocaleDateString("fr-FR") : "N/A"
-          doc.text(dateOperation, tableStartX + col1Width + col2Width + col3Width + 3, yPos + 6)
+          doc.setFont("helvetica", "normal")
+          doc.setTextColor(...blackText)
           // </CHANGE>
+
+          const dateValeur = txn?.valueDate ? new Date(txn.valueDate).toLocaleDateString("fr-FR") : "N/A"
+          doc.text(dateValeur, tableStartX + col1Width / 2, yPos + 6, { align: "center" })
+
+          const description = safe(txn?.description || "N/A").substring(0, 28)
+          doc.text(description, tableStartX + col1Width + col2Width / 2, yPos + 6, { align: "center" })
+
+          const reference = safe(txn?.referenceOperation || "N/A").substring(0, 22)
+          doc.text(reference, tableStartX + col1Width + col2Width + col3Width / 2, yPos + 6, { align: "center" })
+
+          const dateOperation = txn?.dateEcriture ? new Date(txn.dateEcriture).toLocaleDateString("fr-FR") : "N/A"
+          doc.text(dateOperation, tableStartX + col1Width + col2Width + col3Width + col4Width / 2, yPos + 6, {
+            align: "center",
+          })
+          // </CHANGE>
+
           const m = Number(txn?.montantOperation ?? 0)
           const montant = formatAmount(Math.abs(m))
 
-          // --- UPDATE START ---
-          currentBalance += m // Calculate balance after this transaction
-          const solde = formatAmount(Math.round(currentBalance)) // Format the calculated balance
-          // --- UPDATE END ---
+          currentBalance += m
+          const solde = formatAmount(Math.round(currentBalance))
 
           if (m < 0) {
-            doc.setTextColor(...blackText)
-            doc.text(montant, tableStartX + col1Width + col2Width + col3Width + col4Width + 3, yPos + 6)
-            // </CHANGE>
+            doc.text(montant, tableStartX + col1Width + col2Width + col3Width + col4Width + col5Width / 2, yPos + 6, {
+              align: "center",
+            })
           } else {
-            doc.setTextColor(...blackText)
-            doc.setFont("helvetica", "bold")
-            doc.text(montant, tableStartX + col1Width + col2Width + col3Width + col4Width + col5Width + 3, yPos + 6)
-            // </CHANGE>
-            doc.setFont("helvetica", "normal")
-            doc.setTextColor(...blackText)
+            doc.text(
+              montant,
+              tableStartX + col1Width + col2Width + col3Width + col4Width + col5Width + col6Width / 2,
+              yPos + 6,
+              { align: "center" },
+            )
           }
 
-          doc.setTextColor(...blackText)
-          doc.setFont("helvetica", "bold")
-          // --- UPDATE START ---
+          // Center solde value, remove bold styling
           doc.text(
             solde,
-            tableStartX + col1Width + col2Width + col3Width + col4Width + col5Width + col6Width + 3,
+            tableStartX + col1Width + col2Width + col3Width + col4Width + col5Width + col6Width + col7Width / 2,
             yPos + 6,
+            { align: "center" },
           )
           // </CHANGE>
-          // --- UPDATE END ---
 
           yPos += tableRowHeight
         })
