@@ -260,7 +260,7 @@ export default function BalancesPage() {
 
   const formatAmount = (amount: number, currency = "GNF") => {
     if (currency === "GNF") {
-      return new Intl.NumberFormat("fr-FR").format(amount)
+      return new Intl.NumberFormat("fr-FR").format(Math.trunc(amount))
     }
     return new Intl.NumberFormat("en-US", {
       style: "currency",
