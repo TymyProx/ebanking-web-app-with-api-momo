@@ -725,371 +725,331 @@ export default function StatementsPage() {
     </div>
   )
 
-  async function generatePDFStatement(
-    transactions: any[],
-    account: Account,
-    startDate: string,
-    endDate: string,
-    openingBalance: number,
-    closingBalance: number,
-  ) {
-    try {
-      console.log("[v0] PDF generation - openingBalance:", openingBalance, "type:", typeof openingBalance)
-      console.log("[v0] PDF generation - closingBalance:", closingBalance, "type:", typeof closingBalance)
-      console.log("[v0] PDF generation - formatted opening:", formatAmount(openingBalance))
-      console.log("[v0] PDF generation - formatted closing:", formatAmount(closingBalance))
+async function generatePDFStatement(
+transactions: any[],
+account: Account,
+startDate: string,
+endDate: string,
+openingBalance: number,
+closingBalance: number,
+) {
+try {
+console.log("[v0] PDF generation - openingBalance:", openingBalance, "type:", typeof
+openingBalance)
+console.log("[v0] PDF generation - closingBalance:", closingBalance, "type:", typeof
+closingBalance)
+console.log("[v0] PDF generation - formatted opening:", formatAmount(openingBalance))
+console.log("[v0] PDF generation - formatted closing:", formatAmount(closingBalance))
+const doc = new jsPDF()
+const pageWidth = 210
+const pageHeight = 297
+// =========================
+// PALETTE
+// =========================
+const blackText: [number, number, number] = [15, 23, 42]
+const grayText: [number, number, number] = [100, 116, 139]
+const lightGray: [number, number, number] = [248, 250, 252]
+const borderGray: [number, number, number] = [226, 232, 240]
+const white: [number, number, number] = [255, 255, 255]
+// Vert BNG exact: #0B8338
+const primaryGreen: [number, number, number] = [11, 132, 56]
+const softGreenBg: [number, number, number] = [236, 247, 238]
+const softGreenText: [number, number, number] = [34, 120, 68]
+// Jaunes
+const brandYellow: [number, number, number] = [244, 230, 120] // jaune doux
+const brandYellowSepar: [number, number, number] = [255, 235, 0] // #FFEB00 (accent fort)
+const brandYellowDark: [number, number, number] = [120, 105, 30] // texte lisible sur jaune
+const safe = (v: any) => (v === null || v === undefined ? "" : String(v))
+// =========================
+// TABLE HEADER TRANSACTIONS
+// =========================
+const drawTransactionHeader = (x: number, y: number, w: number, h: number, cols: 
+number[]) => {
+doc.setFillColor(...lightGray)
+doc.setDrawColor(...borderGray)
+doc.setLineWidth(0.4)
+doc.rect(x, y, w, h, "FD")
+// Ligne au-dessus des colonnes en VERT (primaryGreen)
+doc.setDrawColor(...primaryGreen)
+doc.setLineWidth(1.0)
+doc.line(x, y, x + w, y)
+doc.setFont("helvetica", "bold")
+doc.setFontSize(8.8)
+doc.setTextColor(...blackText)
+// séparateurs verticaux
+doc.setDrawColor(...borderGray)
+doc.setLineWidth(0.35)
+let cursor = x
+for (let i = 0; i < cols.length - 1; i++) {
+cursor += cols[i]
+doc.line(cursor, y, cursor, y + h)
+}
+doc.text("Date Valeur", x + 2, y + 6)
+doc.text("Description", x + cols[0] + 2, y + 6)
+doc.text("Référence", x + cols[0] + cols[1] + 2, y + 6)
+doc.text("Date Op.", x + cols[0] + cols[1] + cols[2] + 2, y + 6)
+doc.text("Débit", x + cols[0] + cols[1] + cols[2] + cols[3] + 2, y + 6)
+doc.text("Crédit", x + cols[0] + cols[1] + cols[2] + cols[3] + cols[4] + 2, y + 6)
+}
+// =========================
+// TOP HEADER (logo + titre + ligne)
+// =========================
+const drawTopHeader = (hasLogo: boolean, img?: HTMLImageElement) => {
+const headerY = 10
+if (hasLogo && img) {
+doc.addImage(img, "PNG", 15, headerY, 30, 12)
+}
+doc.setTextColor(...blackText)
+doc.setFont("helvetica", "bold")
+doc.setFontSize(15)
+doc.text("RELEVÉ DE COMPTE", pageWidth / 2, headerY + 16, { align: "center" })
+// Ligne sous le titre (vert)
+doc.setDrawColor(...primaryGreen)
+doc.setLineWidth(1.4)
+doc.line(60, headerY + 20, pageWidth - 60, headerY + 20)
+}
+// =========================
+// BODY
+// =========================
+const continueGeneratingPDF = () => {
+const contentLeft = 15
+const contentRight = pageWidth - 15
+// Période
+let yPos = 38
+doc.setTextColor(...grayText)
+doc.setFont("helvetica", "normal")
+doc.setFontSize(9)
+doc.text(
+`Période : ${new Date(startDate).toLocaleDateString("fr-FR")} - ${new
+Date(endDate).toLocaleDateString("fr-FR")}`,
+pageWidth / 2,
+yPos,
+{ align: "center" },
+)
+// -------------------------
+// SECTION TOP (alignée L/R)
+// -------------------------
+yPos = 46
+const gapBetween = 10
+const dividerThickness = 3
+const gapAfterDivider = 10
+const leftWidth = 100
+const leftX = contentLeft
+const leftY = yPos
+const dividerX = leftX + leftWidth + gapBetween
+const rightX = dividerX + gapAfterDivider
+const rightWidth = contentRight - rightX
+const labelColWidth = 55
+const valueColWidth = leftWidth - labelColWidth
+const rowHeight = 6
+const rows = 6
+const leftHeight = rowHeight * rows
+// Totaux débit/crédit
+let totalDebit = 0
+let totalCredit = 0
+transactions.forEach((txn) => {
+const m = Number(txn?.montantOperation ?? 0)
+if (m < 0) totalDebit += Math.abs(m)
+else totalCredit += m
+})
+const leftData = [
+{ label: "Numéro de compte", value: safe(account.number) },
+{ label: "Devise", value: safe(account.currency) },
+{ label: "Solde d'ouverture", value: `${formatAmount(Number(openingBalance))}
+${safe(account.currency)}` },
+{ label: "Solde de clôture", value: `${formatAmount(Number(closingBalance))}
+${safe(account.currency)}` },
+{ label: "Total débit", value: `${formatAmount(totalDebit)} ${safe(account.currency)}` },
+{ label: "Total crédit", value: `${formatAmount(totalCredit)} ${safe(account.currency)}` },
+]
+// Carte gauche
+doc.setDrawColor(...borderGray)
+doc.setLineWidth(0.8)
+doc.setFillColor(...softGreenBg)
+doc.roundedRect(leftX, leftY, leftWidth, leftHeight, 3, 3, "FD")
+// Colonne valeurs blanche
+doc.setFillColor(...white)
+doc.rect(leftX + labelColWidth, leftY, valueColWidth, leftHeight, "F")
+// Séparateur interne
+doc.setDrawColor(...borderGray)
+doc.setLineWidth(0.6)
+doc.line(leftX + labelColWidth, leftY, leftX + labelColWidth, leftY + leftHeight)
+leftData.forEach((row, i) => {
+const rowY = leftY + i * rowHeight
+if (i > 0) {
+doc.setDrawColor(...borderGray)
+doc.setLineWidth(0.35)
+doc.line(leftX, rowY, leftX + leftWidth, rowY)
+}
+doc.setTextColor(...softGreenText)
+doc.setFont("helvetica", "bold")
+doc.setFontSize(7.6)
+doc.text(row.label, leftX + 3, rowY + 4.2)
+doc.setTextColor(...blackText)
+doc.setFont("helvetica", "normal")
+doc.setFontSize(7.6)
+const maxValWidth = valueColWidth - 6
+const valLines = doc.splitTextToSize(safe(row.value), maxValWidth)
+doc.text(valLines[0] || "", leftX + labelColWidth + 3, rowY + 4.2)
+})
+// Séparateur vertical (vert)
+doc.setDrawColor(...primaryGreen)
+doc.setLineWidth(dividerThickness)
+doc.line(dividerX, leftY + 1.5, dividerX, leftY + leftHeight - 1.5)
+// Bloc droit
+doc.setTextColor(...blackText)
+doc.setFont("helvetica", "bold")
+doc.setFontSize(10.5)
+doc.text("BANQUE NATIONALE DE GUINÉE", rightX, leftY + 6)
+doc.setTextColor(...grayText)
+doc.setFont("helvetica", "normal")
+doc.setFontSize(7.5)
+doc.text(doc.splitTextToSize("6ème Avenue Boulevard DIALLO Télly BP: 1781 Conakry", 
+rightWidth), rightX, leftY + 11)
+// Ligne sous adresse (jaune fort)
+doc.setDrawColor(...brandYellowSepar)
+doc.setLineWidth(0.6)
+doc.line(rightX, leftY + 15, rightX + rightWidth, leftY + 15)
+doc.setTextColor(...blackText)
+doc.setFont("helvetica", "bold")
+doc.setFontSize(16)
+const accountLabel = safe(account.designation || account.name || "-")
+doc.text(doc.splitTextToSize(accountLabel, rightWidth), rightX, leftY + 32)
+// =========================
+// TRANSACTIONS
+// =========================
+yPos = leftY + leftHeight + 22
+doc.setTextColor(...blackText)
+doc.setFontSize(10.5)
+doc.setFont("helvetica", "bold")
+doc.text(`TRANSACTIONS (${transactions.length})`, contentLeft, yPos)
+// Ligne sous le titre (vert)
+doc.setDrawColor(...primaryGreen)
+doc.setLineWidth(1.0)
+doc.line(contentLeft, yPos + 2.5, contentLeft + 55, yPos + 2.5)
+yPos += 8
+const tableStartX = contentLeft
+const col1Width = 25
+const col2Width = 45
+const col3Width = 30
+const col4Width = 25
+const col5Width = 25
+const col6Width = 25
+const cols = [col1Width, col2Width, col3Width, col4Width, col5Width, col6Width]
+const tableRowHeight = 9
+const transTableWidth = cols.reduce((a, b) => a + b, 0)
+drawTransactionHeader(tableStartX, yPos, transTableWidth, tableRowHeight, cols)
+yPos += tableRowHeight
+doc.setTextColor(...blackText)
+doc.setFont("helvetica", "normal")
+doc.setFontSize(8)
+transactions.forEach((txn, idx) => {
+if (yPos > 260) {
+doc.addPage()
+yPos = 30
+drawTransactionHeader(tableStartX, yPos, transTableWidth, tableRowHeight, cols)
+yPos += tableRowHeight
+doc.setTextColor(...blackText)
+doc.setFont("helvetica", "normal")
+doc.setFontSize(8)
+}
+if (idx % 2 === 1) {
+doc.setFillColor(...lightGray)
+doc.rect(tableStartX, yPos, transTableWidth, tableRowHeight, "F")
+}
+doc.setDrawColor(...borderGray)
+doc.setLineWidth(0.3)
+doc.rect(tableStartX, yPos, transTableWidth, tableRowHeight, "S")
+let cx = tableStartX
+for (let i = 0; i < cols.length - 1; i++) {
+cx += cols[i]
+doc.line(cx, yPos, cx, yPos + tableRowHeight)
+}
+const dateValeur = txn?.valueDate ? new Date(txn.valueDate).toLocaleDateString("fr-FR") : "N/A"
+doc.text(dateValeur, tableStartX + 2, yPos + 6)
+const description = safe(txn?.description || "N/A").substring(0, 28)
+doc.text(description, tableStartX + col1Width + 2, yPos + 6)
+const reference = safe(txn?.referenceOperation || "N/A").substring(0, 18)
+doc.text(reference, tableStartX + col1Width + col2Width + 2, yPos + 6)
+const dateOperation = txn?.dateEcriture ? new
+Date(txn.dateEcriture).toLocaleDateString("fr-FR") : "N/A"
+doc.text(dateOperation, tableStartX + col1Width + col2Width + col3Width + 2, yPos + 6)
+const m = Number(txn?.montantOperation ?? 0)
+const montant = formatAmount(Math.abs(m))
+if (m < 0) {
+doc.setTextColor(...blackText)
+doc.text(montant, tableStartX + col1Width + col2Width + col3Width + col4Width + 2, 
+yPos + 6)
+} else {
+doc.setTextColor(...blackText)
+doc.setFont("helvetica", "bold")
+doc.text(montant, tableStartX + col1Width + col2Width + col3Width + col4Width + 
+col5Width + 2, yPos + 6)
+doc.setFont("helvetica", "normal")
+doc.setTextColor(...blackText)
+}
+yPos += tableRowHeight
+})
+// =========================
+// FOOTER
+// =========================
+const addFooter = (pageNum: number, totalPages: number) => {
+const footerY = pageHeight - 20
+doc.setDrawColor(...borderGray)
+doc.setLineWidth(0.5)
+doc.line(contentLeft, footerY, contentRight, footerY)
+let footerTextY = footerY + 5
+doc.setTextColor(...grayText)
+doc.setFontSize(7)
+doc.setFont("helvetica", "normal")
+const footerLines = [
+"Banque Nationale de Guinée SA - Agrément par décision N° 06/019/93/CAB/PE 06/06/1993",
+"Capital : 60.000.000.000 GNF",
+"Boulevard Tidiani Kaba - Quartier Boulbinet/Almamya, Kaloum, Conakry, Guinée",
+"Tél: +224 - 622 454 049 - B.P 1781 - mail: contact@bng.gn",
+]
+footerLines.forEach((line) => {
+doc.text(line, contentLeft, footerTextY)
+footerTextY += 3
+})
+doc.setTextColor(...brandYellowDark)
+doc.text(`Page ${pageNum} / ${totalPages}`, contentRight - 20, footerY + 5, { align: 
+"right" })
+doc.setTextColor(...grayText)
+}
+const pageCount = doc.internal.getNumberOfPages()
+for (let i = 1; i <= pageCount; i++) {
+doc.setPage(i)
+addFooter(i, pageCount)
+}
+const fileName = `Releve_Compte_${safe(account.number).replace(/-/g, "_")}_${new
+Date()
+.toISOString()
+.split("T")[0]}.pdf`
+doc.save(fileName)
+console.log("[v0] PDF généré et téléchargé:", fileName)
+}
+// =========================
+// LOGO LOAD + RENDER
+// =========================
+const img = new Image()
+img.src = "/images/logo-bng.png"
+img.crossOrigin = "anonymous"
+img.onload = () => {
+drawTopHeader(true, img)
+continueGeneratingPDF()
+}
+img.onerror = () => {
+console.warn("[v0] Logo BNG non trouvé, génération sans logo")
+drawTopHeader(false)
+continueGeneratingPDF()
+}
+} catch (error) {
+console.error("[v0] Erreur génération PDF:", error)
+alert(" Erreur lors de la génération du PDF")
+}
+}
 
-      const doc = new jsPDF()
-
-      const pageWidth = 210
-      const pageHeight = 297
-
-      // Couleurs
-      const blackText: [number, number, number] = [0, 0, 0]
-      const grayText: [number, number, number] = [100, 100, 100]
-      const primaryGreen: [number, number, number] = [82, 166, 94]
-
-      // Charger le logo BNG
-      let yPos = 15
-
-      // Logo BNG (même position que dans le RIB)
-      const img = new Image()
-      img.src = "/images/logo-bng.png"
-      img.crossOrigin = "anonymous"
-
-      img.onload = () => {
-        doc.addImage(img, "PNG", 15, yPos, 35, 12)
-        doc.setTextColor(...primaryGreen)
-        doc.setFontSize(11)
-        doc.setFont("helvetica", "bold")
-        doc.text("RELEVÉ DE COMPTE", 32.5, yPos + 15, { align: "center" })
-        continueGeneratingPDF()
-      }
-
-      img.onerror = () => {
-        console.warn("[v0] Logo BNG non trouvé, génération sans logo")
-        continueGeneratingPDF()
-      }
-
-      const continueGeneratingPDF = () => {
-        yPos = 40
-
-        const tableX = 15
-        const tableY = yPos
-        const labelColWidth = 50 // Réduit de 70 à 50
-        const valueColWidth = 50 // Réduit de 65 à 50
-        const tableWidth = labelColWidth + valueColWidth
-        const rowHeight = 6 // Réduit de 7 à 6
-
-        // Calculer les totaux débit et crédit
-        let totalDebit = 0
-        let totalCredit = 0
-        transactions.forEach((txn) => {
-          if (txn.montantOperation < 0) {
-            totalDebit += Math.abs(txn.montantOperation)
-          } else {
-            totalCredit += txn.montantOperation
-          }
-        })
-
-        const tableData = [
-          { label: "Numéro de compte", value: account.number },
-          { label: "Devise", value: account.currency },
-          { label: "Solde d'ouverture", value: `${formatAmount(Number(openingBalance))} ${account.currency}` },
-          { label: "Solde de clôture", value: `${formatAmount(Number(closingBalance))} ${account.currency}` },
-          { label: "Solde disponible", value: `${formatAmount(Number(closingBalance))} ${account.currency}` },
-          { label: "Effets en instance", value: "0" },
-          { label: "Total débit", value: `${formatAmount(totalDebit)} ${account.currency}` },
-          { label: "Total Crédit", value: `${formatAmount(totalCredit)} ${account.currency}` },
-          {
-            label: "Période de",
-            value: `${new Date(startDate).toLocaleDateString("fr-FR")} à ${new Date(endDate).toLocaleDateString("fr-FR")}`,
-          },
-        ]
-
-        // Dessiner le tableau avec bordures
-        doc.setDrawColor(...primaryGreen)
-        doc.setLineWidth(0.5)
-
-        // Bordure extérieure du tableau
-        doc.rect(tableX, tableY, tableWidth, rowHeight * tableData.length)
-
-        tableData.forEach((row, index) => {
-          const rowY = tableY + index * rowHeight
-
-          // Fond vert pour la colonne des labels
-          doc.setFillColor(...primaryGreen)
-          doc.rect(tableX, rowY, labelColWidth, rowHeight, "F")
-
-          if (index < tableData.length - 1) {
-            doc.setDrawColor(255, 255, 255)
-            doc.setLineWidth(0.3)
-            doc.line(tableX, rowY + rowHeight, tableX + labelColWidth, rowY + rowHeight)
-          }
-
-          if (index < tableData.length - 1) {
-            doc.setDrawColor(200, 200, 200)
-            doc.setLineWidth(0.3)
-            doc.line(tableX + labelColWidth, rowY + rowHeight, tableX + tableWidth, rowY + rowHeight)
-          }
-
-          // Ligne verticale séparant les colonnes
-          doc.setDrawColor(...primaryGreen)
-          doc.setLineWidth(0.5)
-          doc.line(tableX + labelColWidth, rowY, tableX + labelColWidth, rowY + rowHeight)
-
-          // Texte du label (blanc sur fond vert)
-          doc.setTextColor(255, 255, 255)
-          doc.setFontSize(7) // Réduit de 8 à 7
-          doc.setFont("helvetica", "normal")
-          doc.text(row.label, tableX + 2, rowY + 4)
-
-          // Texte de la valeur (noir sur fond blanc)
-          doc.setTextColor(...blackText)
-          doc.setFontSize(7) // Réduit de 8 à 7
-          doc.setFont("helvetica", "normal")
-          doc.text(row.value, tableX + labelColWidth + 2, rowY + 4)
-        })
-
-        const rightInfoX = tableX + tableWidth + 10
-        const rightInfoWidth = pageWidth - rightInfoX - 15
-        const centerX = rightInfoX + rightInfoWidth / 2
-        let rightInfoY = tableY + 10
-
-        // Account designation with emphasis
-        doc.setTextColor(...primaryGreen)
-        doc.setFontSize(12)
-        doc.setFont("helvetica", "bold")
-        const intitule = account.designation || account.name || ""
-        doc.text(intitule, centerX, rightInfoY, { align: "center" })
-        rightInfoY += 8
-
-        // Account type with styling
-        doc.setFontSize(10)
-        doc.setFont("helvetica", "normal")
-        const typeLabel = account.accountTypeLabel || account.type || ""
-        doc.text(typeLabel, centerX, rightInfoY, { align: "center" })
-        rightInfoY += 10
-
-        // Branch info with subtle styling
-        doc.setTextColor(...blackText)
-        doc.setFontSize(8)
-        doc.setFont("helvetica", "italic")
-        doc.text(`Agence: ${account.branch || ""}`, centerX, rightInfoY, {
-          align: "center",
-        })
-
-        // Mettre à jour yPos après le tableau
-        yPos = tableY + rowHeight * tableData.length + 15
-
-        doc.setTextColor(...blackText)
-        doc.setFontSize(12)
-        doc.setFont("helvetica", "bold")
-        doc.text("RELEVÉ DE COMPTE", 15, yPos)
-
-        yPos += 10
-
-        // TABLEAU DES TRANSACTIONS (AVEC GRILLES VISIBLES)
-        doc.setFontSize(10)
-        doc.setFont("helvetica", "bold")
-        doc.text(`TRANSACTIONS (${transactions.length})`, 15, yPos)
-
-        yPos += 8
-
-        const tableStartX = 15
-        const col1Width = 25 // Date Valeur
-        const col2Width = 45 // Description (réduit pour faire de la place)
-        const col3Width = 30 // Reference (réduit)
-        const col4Width = 25 // Date Operation (réduit)
-        const col5Width = 25 // Débit
-        const col6Width = 25 // Crédit
-        const tableRowHeight = 9
-        const transTableWidth = col1Width + col2Width + col3Width + col4Width + col5Width + col6Width
-
-        doc.setFontSize(9)
-        doc.setFont("helvetica", "bold")
-
-        // Appliquer le fond vert (couleur primaire du projet: RGB 82, 166, 94)
-        doc.setFillColor(82, 166, 94)
-        doc.rect(tableStartX, yPos, transTableWidth, tableRowHeight, "F")
-
-        // Texte blanc pour les en-têtes
-        doc.setTextColor(255, 255, 255)
-
-        // Dessiner les séparateurs verticaux uniquement dans l'en-tête
-        doc.setDrawColor(255, 255, 255) // Lignes blanches pour contraste
-        doc.setLineWidth(0.3)
-        doc.line(tableStartX + col1Width, yPos, tableStartX + col1Width, yPos + tableRowHeight)
-        doc.line(tableStartX + col1Width + col2Width, yPos, tableStartX + col1Width + col2Width, yPos + tableRowHeight)
-        doc.line(
-          tableStartX + col1Width + col2Width + col3Width,
-          yPos,
-          tableStartX + col1Width + col2Width + col3Width,
-          yPos + tableRowHeight,
-        )
-        doc.line(
-          tableStartX + col1Width + col2Width + col3Width + col4Width,
-          yPos,
-          tableStartX + col1Width + col2Width + col3Width + col4Width,
-          yPos + tableRowHeight,
-        )
-        doc.line(
-          tableStartX + col1Width + col2Width + col3Width + col4Width + col5Width,
-          yPos,
-          tableStartX + col1Width + col2Width + col3Width + col4Width + col5Width,
-          yPos + tableRowHeight,
-        )
-
-        // Textes de l'en-tête
-        doc.text("Date Valeur", tableStartX + 2, yPos + 6)
-        doc.text("Description", tableStartX + col1Width + 2, yPos + 6)
-        doc.text("Référence", tableStartX + col1Width + col2Width + 2, yPos + 6)
-        doc.text("Date Op.", tableStartX + col1Width + col2Width + col3Width + 2, yPos + 6)
-        doc.text("Débit", tableStartX + col1Width + col2Width + col3Width + col4Width + 2, yPos + 6)
-        doc.text("Crédit", tableStartX + col1Width + col2Width + col3Width + col4Width + col5Width + 2, yPos + 6)
-
-        yPos += tableRowHeight
-
-        doc.setTextColor(0, 0, 0)
-        doc.setFont("helvetica", "normal")
-        doc.setFontSize(8)
-
-        transactions.forEach((txn) => {
-          if (yPos > 260) {
-            doc.addPage()
-            yPos = 30
-
-            doc.setFontSize(9)
-            doc.setFont("helvetica", "bold")
-
-            doc.setFillColor(82, 166, 94)
-            doc.rect(tableStartX, yPos, transTableWidth, tableRowHeight, "F")
-
-            doc.setTextColor(255, 255, 255)
-            doc.setDrawColor(255, 255, 255)
-            doc.setLineWidth(0.3)
-            doc.line(tableStartX + col1Width, yPos, tableStartX + col1Width, yPos + tableRowHeight)
-            doc.line(
-              tableStartX + col1Width + col2Width,
-              yPos,
-              tableStartX + col1Width + col2Width,
-              yPos + tableRowHeight,
-            )
-            doc.line(
-              tableStartX + col1Width + col2Width + col3Width,
-              yPos,
-              tableStartX + col1Width + col2Width + col3Width,
-              yPos + tableRowHeight,
-            )
-            doc.line(
-              tableStartX + col1Width + col2Width + col3Width + col4Width,
-              yPos,
-              tableStartX + col1Width + col2Width + col3Width + col4Width,
-              yPos + tableRowHeight,
-            )
-            doc.line(
-              tableStartX + col1Width + col2Width + col3Width + col4Width + col5Width,
-              yPos,
-              tableStartX + col1Width + col2Width + col3Width + col4Width + col5Width,
-              yPos + tableRowHeight,
-            )
-
-            doc.text("Date Valeur", tableStartX + 2, yPos + 6)
-            doc.text("Description", tableStartX + col1Width + 2, yPos + 6)
-            doc.text("Référence", tableStartX + col1Width + col2Width + 2, yPos + 6)
-            doc.text("Date Op.", tableStartX + col1Width + col2Width + col3Width + 2, yPos + 6)
-            doc.text("Débit", tableStartX + col1Width + col2Width + col3Width + col4Width + 2, yPos + 6)
-            doc.text("Crédit", tableStartX + col1Width + col2Width + col3Width + col4Width + col5Width + 2, yPos + 6)
-
-            yPos += tableRowHeight
-            doc.setTextColor(0, 0, 0)
-            doc.setFont("helvetica", "normal")
-            doc.setFontSize(8)
-          }
-
-          // Date Valeur
-          const dateValeur = txn.valueDate ? new Date(txn.valueDate).toLocaleDateString("fr-FR") : "N/A"
-          doc.text(dateValeur, tableStartX + 2, yPos + 6)
-
-          // Description (tronquée)
-          const description = (txn.description || "N/A").substring(0, 28)
-          doc.text(description, tableStartX + col1Width + 2, yPos + 6)
-
-          // Reference (tronquée)
-          const reference = (txn.referenceOperation || "N/A").substring(0, 18)
-          doc.text(reference, tableStartX + col1Width + col2Width + 2, yPos + 6)
-
-          // Date Operation (dateEcriture)
-          const dateOperation = txn.dateEcriture ? new Date(txn.dateEcriture).toLocaleDateString("fr-FR") : "N/A"
-          doc.text(dateOperation, tableStartX + col1Width + col2Width + col3Width + 2, yPos + 6)
-
-          const montant = formatAmount(Math.abs(txn.montantOperation))
-          if (txn.montantOperation < 0) {
-            // Débit (négatif)
-            doc.text(`${montant}`, tableStartX + col1Width + col2Width + col3Width + col4Width + 2, yPos + 6)
-          } else {
-            // Crédit (positif)
-            doc.text(
-              `${montant}`,
-              tableStartX + col1Width + col2Width + col3Width + col4Width + col5Width + 2,
-              yPos + 6,
-            )
-          }
-
-          yPos += tableRowHeight
-        })
-
-        yPos += 10
-
-        // PIED DE PAGE
-        const addFooter = (pageNum: number, totalPages: number) => {
-          const footerY = pageHeight - 20
-
-          doc.setDrawColor(150, 150, 150)
-          doc.setLineWidth(0.3)
-          doc.line(15, footerY, pageWidth - 15, footerY)
-
-          let footerTextY = footerY + 5
-
-          doc.setTextColor(...grayText)
-          doc.setFontSize(7)
-          doc.setFont("helvetica", "normal")
-
-          const footerLines = [
-            "Banque Nationale de Guinée SA - Agrément par décision N° 06/019/93/CAB/PE 06/06/1993",
-            "Capital : 60.000.000.000 GNF",
-            "Boulevard Tidiani Kaba - Quartier Boulbinet/Almamya, Kaloum, Conakry, Guinée",
-            "Tél: +224 - 622 454 049 - B.P 1781 - mail: contact@bng.gn",
-          ]
-
-          footerLines.forEach((line) => {
-            doc.text(line, 15, footerTextY)
-            footerTextY += 3
-          })
-
-          // Numéro de page
-          doc.setFontSize(7)
-          doc.text(`Page ${pageNum} sur ${totalPages}`, pageWidth - 35, footerY + 5)
-        }
-
-        const pageCount = doc.internal.getNumberOfPages()
-        for (let i = 1; i <= pageCount; i++) {
-          doc.setPage(i)
-          addFooter(i, pageCount)
-        }
-
-        const fileName = `Releve_Compte_${account.number.replace(/-/g, "_")}_${
-          new Date().toISOString().split("T")[0]
-        }.pdf`
-        doc.save(fileName)
-
-        console.log("[v0] PDF généré et téléchargé:", fileName)
-      }
-    } catch (error) {
-      console.error("[v0] Erreur génération PDF:", error)
-      alert("❌ Erreur lors de la génération du PDF")
-    }
-  }
 
   function generateAndDownloadExcelWithTransactions(account: Account, transactions: any[]) {
     try {
