@@ -210,9 +210,10 @@ export default function StatementsPage() {
         const transactionsSum = filteredTxns.reduce((sum: number, txn: any) => {
           return sum + Number.parseFloat(txn.montantOperation || "0")
         }, 0)
-        // Puisque les transactions sont par ordre décroissant (plus récentes en premier),
-        // le solde de clôture correspond au solde actuel (bookBalance)
-        // et le solde d'ouverture est le solde avant ces transactions
+
+        // Since transactions are in descending order (most recent first),
+        // opening balance = current balance - sum of transactions
+        // closing balance = current balance (balance after all transactions)
         const openingBalance = closingBalance - transactionsSum
 
         const sortedTransactions = filteredTxns.sort((a: any, b: any) => {
@@ -274,29 +275,15 @@ export default function StatementsPage() {
 
     setErrorMessage("") // Clear previous errors
 
-    const balanceOuverture = filteredTransactions[0]?.balanceOuverture || selectedAccount.balance
-    const balanceFermeture =
+    const openingBalance = filteredTransactions[0]?.balanceOuverture || selectedAccount.balance
+    const closingBalance =
       filteredTransactions[filteredTransactions.length - 1]?.balanceFermeture || selectedAccount.balance
 
     // Call the appropriate generation function based on the selected format
     if (format === "pdf") {
-      generatePDFStatement(
-        filteredTransactions,
-        selectedAccount,
-        startDate,
-        endDate,
-        balanceOuverture,
-        balanceFermeture,
-      )
+      generatePDFStatement(filteredTransactions, selectedAccount, startDate, endDate, openingBalance, closingBalance)
     } else if (format === "excel") {
-      generateExcelStatement(
-        filteredTransactions,
-        selectedAccount,
-        startDate,
-        endDate,
-        balanceOuverture,
-        balanceFermeture,
-      )
+      generateExcelStatement(filteredTransactions, selectedAccount, startDate, endDate, openingBalance, closingBalance)
     }
 
     setHasGeneratedStatement(true)
@@ -342,10 +329,10 @@ export default function StatementsPage() {
   const formatAmount = (amount: number, currency = "GNF") => {
     if (currency === "GNF") {
       return new Intl.NumberFormat("fr-FR", {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0,
       })
-        .format(amount)
+        .format(Math.round(amount))
         .replace(/\s/g, " ")
     }
     return new Intl.NumberFormat("en-US", {
@@ -956,13 +943,13 @@ export default function StatementsPage() {
         doc.setLineWidth(1.0)
         doc.line(contentLeft, yPos + 2.5, contentLeft + 55, yPos + 2.5)
         yPos += 8
-        const col1Width = 25 // Date Valeur
-        const col2Width = 55 // Description
-        const col3Width = 30 // Référence
-        const col4Width = 25 // Date Op.
-        const col5Width = 25 // Débit
-        const col6Width = 25 // Crédit
-        const col7Width = 25 // Solde (nouvelle colonne)
+        const col1Width = 22 // Date Valeur (reduced)
+        const col2Width = 45 // Description (reduced)
+        const col3Width = 28 // Référence (reduced)
+        const col4Width = 22 // Date Op. (reduced)
+        const col5Width = 23 // Débit (reduced)
+        const col6Width = 23 // Crédit (reduced)
+        const col7Width = 27 // Solde (increased for visibility)
         const cols = [col1Width, col2Width, col3Width, col4Width, col5Width, col6Width, col7Width]
         const transTableWidth = cols.reduce((sum, w) => sum + w, 0)
         drawTransactionHeader(tableStartX, yPos, transTableWidth, tableRowHeight, cols)
@@ -970,7 +957,8 @@ export default function StatementsPage() {
         doc.setTextColor(...blackText)
         doc.setFont("helvetica", "normal")
         doc.setFontSize(8)
-        let currentBalance = Number.parseFloat(String(openingBalance)) || 0
+
+        let currentBalance = Number.parseFloat(String(closingBalance)) || 0
 
         transactions.forEach((txn, idx) => {
           if (yPos > 260) {
@@ -1005,7 +993,6 @@ export default function StatementsPage() {
           const m = Number(txn?.montantOperation ?? 0)
           const montant = formatAmount(Math.abs(m))
 
-          currentBalance += m
           const solde = formatAmount(currentBalance)
 
           if (m < 0) {
@@ -1027,6 +1014,8 @@ export default function StatementsPage() {
             yPos + 6,
           )
           doc.setFont("helvetica", "normal")
+
+          currentBalance -= m
 
           yPos += tableRowHeight
         })
@@ -1100,7 +1089,7 @@ export default function StatementsPage() {
       // Calculate totals
       let totalDebit = 0
       let totalCredit = 0
-      let currentBalance = Number.parseFloat(String(openingBalance)) || 0
+      let currentBalance = Number.parseFloat(String(closingBalance)) || 0
 
       transactions.forEach((txn) => {
         const amount = Number.parseFloat(String(txn?.montantOperation ?? 0))
@@ -1145,8 +1134,7 @@ export default function StatementsPage() {
         "Solde", // Added Solde column
       ]
 
-      // Reset balance for calculation
-      currentBalance = Number.parseFloat(String(openingBalance)) || 0
+      currentBalance = Number.parseFloat(String(closingBalance)) || 0
 
       // Transaction rows
       const transactionRows = transactions.map((txn) => {
@@ -1154,8 +1142,8 @@ export default function StatementsPage() {
         const debit = amount < 0 ? formatAmount(Math.abs(amount)) : ""
         const credit = amount >= 0 ? formatAmount(amount) : ""
 
-        currentBalance += amount
         const solde = formatAmount(currentBalance)
+        currentBalance -= amount
 
         return [
           txn?.valueDate ? new Date(txn.valueDate).toLocaleDateString("fr-FR") : "",
