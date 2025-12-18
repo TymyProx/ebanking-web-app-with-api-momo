@@ -57,7 +57,7 @@ export function AccountsCarousel({ accounts }: AccountsCarouselProps) {
   const formatAmount = (amount: number | string, currency = "GNF") => {
     const numAmount = typeof amount === "string" ? Number.parseFloat(amount) : amount
     if (currency === "GNF") {
-      return new Intl.NumberFormat("fr-FR").format(numAmount)
+      return new Intl.NumberFormat("fr-FR").format(Math.trunc(numAmount))
     }
     return new Intl.NumberFormat("en-US", {
       style: "currency",
