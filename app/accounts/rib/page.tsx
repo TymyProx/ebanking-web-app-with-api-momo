@@ -881,7 +881,7 @@ export default function RIBPage() {
     return new Intl.NumberFormat("en-US", {
       style: "currency",
       currency: currency,
-    }).format(amount)
+    }).format(Math.trunc(amount))
   }
 
   const loadFullRibData = async () => {

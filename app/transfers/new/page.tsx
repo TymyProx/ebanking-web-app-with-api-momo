@@ -108,7 +108,7 @@ export default function NewTransferPage() {
       style: "currency",
       currency: currency === "GNF" ? "GNF" : currency,
       minimumFractionDigits: currency === "GNF" ? 0 : 2,
-    }).format(currency === "GNF" ? Math.trunc(amount) : amount)
+    }).format(Math.trunc(amount))
   }
 
   const validateRIB = (account: string, type: string): boolean => {
