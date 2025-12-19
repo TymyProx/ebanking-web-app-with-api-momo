@@ -118,7 +118,7 @@ export async function getUserProfileData(): Promise<{ success: boolean; data?: P
       firstName: userData.firstName || "",
       lastName: userData.lastName || "",
       email: userData.email || "",
-      phone: userData.phoneNumber || "",
+      phone: clientData?.telephone || "",
 
       // From client table
       nomComplet: clientData?.nomComplet || "",

@@ -200,7 +200,7 @@ export default function ProfilePage() {
     <div className="container mx-auto p-6 max-w-6xl">
       <div className="flex items-center justify-between mb-6">
         <div className="space-y-2">
-          <h1 className="text-3xl font-heading font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+          <h1 className="text-3xl font-bold text-primary">
             Mon Profil
           </h1>
           <p className="text-sm text-muted-foreground">Gérez vos informations personnelles</p>
