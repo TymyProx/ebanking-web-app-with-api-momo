@@ -990,6 +990,38 @@ export default function StatementsPage() {
   //       doc.setDrawColor(...primaryGreen)
   //       doc.setLineWidth(1.0)
   //       doc.line(contentLeft, y + 2.5, contentLeft + 70, y + 2.5)
+  //       // </CHANGE>
+  //       //
+  //       // Calculate totals first
+  //       let totalDebit = 0
+  //       let totalCredit = 0
+  //       transactions.forEach((txn) => {
+  //         const m = Number(txn?.montantOperation ?? 0)
+  //         if (m < 0) totalDebit += Math.abs(m)
+  //         else totalCredit += m
+  //       })
+
+  //       // Prepare data for the left card (summary)
+  //       const leftData = [
+  //         { label: "Devise", value: safe(account.currency) },
+  //         {
+  //           label: "Solde d'ouverture",
+  //           value: `${formatAmount(Number(openingBalance))} ${safe(account.currency)}`,
+  //         },
+  //         // </CHANGE>
+  //         //
+  //         {
+  //           label: "Solde de clôture",
+  //           value: `${formatAmount(Math.round(closingBalance))} ${safe(account.currency)}`,
+  //         },
+  //         // </CHANGE>
+  //         //
+  //         { label: "Total débit", value: `${formatAmount(totalDebit)} ${safe(account.currency)}` },
+  //         { label: "Total crédit", value: `${formatAmount(totalCredit)} ${safe(account.currency)}` },
+  //       ]
+  //       // </CHANGE>
+  //       // </CHANGE>
+  //       doc.line(contentLeft, y + 4.2, contentLeft + 28, y + 4.2)
   //       y += 10
   //       const tableX = contentLeft
   //       const col1 = 22 // Date Valeur (reduced from 25)
