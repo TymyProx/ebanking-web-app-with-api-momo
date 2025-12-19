@@ -224,7 +224,7 @@ Devenir la référence en matière de banque digitale en Afrique de l'Ouest, en 
 ## 🏗️ Architecture Technique
 
 ### Frontend
-```
+\`\`\`
 Next.js 15 (App Router)
 ├── TypeScript (Typage statique)
 ├── React 18 (Composants modernes)
@@ -232,10 +232,10 @@ Next.js 15 (App Router)
 ├── shadcn/ui (Composants UI)
 ├── Framer Motion (Animations)
 └── PWA (Progressive Web App)
-```
+\`\`\`
 
 ### Backend & Services
-```
+\`\`\`
 API RESTful
 ├── Authentification JWT
 ├── Chiffrement AES-256
@@ -243,10 +243,10 @@ API RESTful
 ├── Monitoring temps réel
 ├── Cache Redis
 └── Base de données sécurisée
-```
+\`\`\`
 
 ### Sécurité
-```
+\`\`\`
 Sécurité Multi-Niveaux
 ├── HTTPS/TLS 1.3
 ├── 2FA par SMS
@@ -254,7 +254,7 @@ Sécurité Multi-Niveaux
 ├── Audit trails
 ├── Détection de fraude
 └── Conformité PCI DSS
-```
+\`\`\`
 
 ## 📱 Compatibilité & Accessibilité
 

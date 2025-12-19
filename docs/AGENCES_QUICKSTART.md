@@ -6,7 +6,7 @@
 
 Créer ou modifier le fichier `.env.local` :
 
-```env
+\`\`\`env
 # URL du backend API (obligatoire)
 NEXT_PUBLIC_API_URL=https://35.184.98.9:4000
 
@@ -15,7 +15,7 @@ NEXT_PUBLIC_TENANT_ID=aa1287f6-06af-45b7-a905-8c57363565c2
 
 # URL du back-office (optionnel, défaut: https://back-office.bng.cm)
 NEXT_PUBLIC_BACK_OFFICE_URL=https://back-office.bng.cm
-```
+\`\`\`
 
 ### 2. Fichier backup
 
@@ -137,7 +137,7 @@ Une agence peut être fermée exceptionnellement pour diverses raisons:
 - Message dans la liste des fermetures à venir
 
 **Configuration dans le Back-Office:**
-```json
+\`\`\`json
 {
   "exceptionalClosures": [
     {
@@ -146,7 +146,7 @@ Une agence peut être fermée exceptionnellement pour diverses raisons:
     }
   ]
 }
-```
+\`\`\`
 
 ### Jour férié
 
@@ -157,14 +157,14 @@ Les agences peuvent être fermées pour les jours fériés nationaux.
 - Marqueur jaune sur la carte
 
 **Configuration dans le Back-Office:**
-```json
+\`\`\`json
 {
   "publicHolidays": [
     "2025-12-25",
     "2026-01-01"
   ]
 }
-```
+\`\`\`
 
 ### Fermeture temporaire
 
@@ -175,11 +175,11 @@ Une agence peut être temporairement fermée pour une durée indéterminée.
 - Marqueur gris sur la carte
 
 **Configuration dans le Back-Office:**
-```json
+\`\`\`json
 {
   "isTemporarilyClosed": true
 }
-```
+\`\`\`
 
 ## Fallback et cache
 
@@ -206,9 +206,9 @@ Si l'API est indisponible, le système bascule automatiquement sur le backup JSO
 4. Les données du backup sont également mises en cache
 
 **Message affiché:**
-```
+\`\`\`
 ℹ️ Mode hors ligne - Données de sauvegarde
-```
+\`\`\`
 
 ## Accessibilité
 

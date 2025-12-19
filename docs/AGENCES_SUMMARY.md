@@ -258,22 +258,22 @@ La page de localisation des agences a été entièrement implémentée dans l'e-
 ## 🚀 Utilisation
 
 ### Développement
-```bash
+\`\`\`bash
 cd /Users/gib/Documents/project/ebanking-web-app-with-api-momo
 npm run dev
 # ou
 yarn dev
 # ou
 pnpm dev
-```
+\`\`\`
 
 Ouvrir http://localhost:3000/agences
 
 ### Production
-```bash
+\`\`\`bash
 npm run build
 npm start
-```
+\`\`\`
 
 ### Configuration
 1. Copier `.env.example` vers `.env.local`

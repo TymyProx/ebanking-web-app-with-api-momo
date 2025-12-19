@@ -28,10 +28,10 @@ A complete OTP (One-Time Password) verification system for securing transactions
 
 Run the migration to create the OTP table:
 
-```bash
+\`\`\`bash
 cd backendebanking
 npm run migrate  # or your migration command
-```
+\`\`\`
 
 The OTP table will be created with these fields:
 - code (hashed)
@@ -62,14 +62,14 @@ The OTP components are ready to use. Just import and integrate into your forms.
 
 ### Step 1: Import Components
 
-```tsx
+\`\`\`tsx
 import { OtpModal } from '@/components/otp-modal'
 import { useState } from 'react'
-```
+\`\`\`
 
 ### Step 2: Add State and Modal
 
-```tsx
+\`\`\`tsx
 function YourForm() {
   const [showOtpModal, setShowOtpModal] = useState(false)
   
@@ -103,7 +103,7 @@ function YourForm() {
     </>
   )
 }
-```
+\`\`\`
 
 ### Step 3: Done! 🎉
 
@@ -120,25 +120,25 @@ The OTP modal will:
 ## 📱 Test the Example
 
 1. Start the backend server:
-```bash
+\`\`\`bash
 cd backendebanking
 npm run dev
-```
+\`\`\`
 
 2. Start the frontend:
-```bash
+\`\`\`bash
 cd ebanking-web-app-with-api-momo
 npm run dev
-```
+\`\`\`
 
 3. Visit: `http://localhost:3000/transfers/new-with-otp`
 
 4. Fill the form and submit - OTP modal will appear!
 
 **Check Console:** In development, OTP codes are logged:
-```
+\`\`\`
 [OTP SMS] Sending OTP 123456 to +224621234567 for purpose: TRANSFER
-```
+\`\`\`
 
 ---
 
@@ -146,7 +146,7 @@ npm run dev
 
 ### Pattern 1: Transfer Confirmation
 
-```tsx
+\`\`\`tsx
 const handleTransferSubmit = () => {
   setTransferData(formData)
   setShowOtpModal(true)
@@ -162,11 +162,11 @@ const handleOtpVerified = async () => {
   onVerified={handleOtpVerified}
   ...
 />
-```
+\`\`\`
 
 ### Pattern 2: Payment Confirmation
 
-```tsx
+\`\`\`tsx
 <OtpModal
   purpose="PAYMENT"
   referenceId={paymentId}
@@ -176,18 +176,18 @@ const handleOtpVerified = async () => {
   onVerified={handlePayment}
   ...
 />
-```
+\`\`\`
 
 ### Pattern 3: Add Beneficiary
 
-```tsx
+\`\`\`tsx
 <OtpModal
   purpose="BENEFICIARY_ADD"
   title="Ajouter un bénéficiaire"
   onVerified={handleAddBeneficiary}
   ...
 />
-```
+\`\`\`
 
 ---
 
@@ -195,38 +195,38 @@ const handleOtpVerified = async () => {
 
 ### Change OTP Length
 
-```tsx
+\`\`\`tsx
 // Edit /components/ui/otp-input.tsx
 <OtpInput length={4} />  // Default is 6
-```
+\`\`\`
 
 ### Change Expiration Time
 
-```tsx
+\`\`\`tsx
 // In your component
 await OtpService.generate({
   purpose: 'TRANSFER',
   expiresInMinutes: 10,  // Default is 5
 })
-```
+\`\`\`
 
 ### Change Delivery Method
 
-```tsx
+\`\`\`tsx
 <OtpModal
   deliveryMethod="EMAIL"   // SMS, EMAIL, or BOTH
   ...
 />
-```
+\`\`\`
 
 ### Change Max Attempts
 
-```tsx
+\`\`\`tsx
 await OtpService.generate({
   purpose: 'TRANSFER',
   maxAttempts: 5,  // Default is 3
 })
-```
+\`\`\`
 
 ---
 
@@ -249,13 +249,13 @@ Use clear, descriptive purposes:
 ### Backend Logs
 
 Check OTP generation and verification:
-```bash
+\`\`\`bash
 tail -f logs/app.log | grep OTP
-```
+\`\`\`
 
 ### Database Queries
 
-```sql
+\`\`\`sql
 -- Recent OTPs
 SELECT * FROM otps ORDER BY "createdAt" DESC LIMIT 10;
 
@@ -264,7 +264,7 @@ SELECT * FROM otps WHERE attempts >= "maxAttempts";
 
 -- Verified OTPs
 SELECT * FROM otps WHERE verified = true;
-```
+\`\`\`
 
 ---
 
@@ -286,10 +286,10 @@ SELECT * FROM otps WHERE verified = true;
 - Check max attempts not reached (default 3)
 
 ### TypeScript Errors?
-```bash
+\`\`\`bash
 # Update types
 npm install --save-dev @types/react @types/node
-```
+\`\`\`
 
 ---
 

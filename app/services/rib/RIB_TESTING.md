@@ -15,11 +15,11 @@
 - ✓ Premier compte sélectionné par défaut
 
 **Logs Attendus**:
-```
+\`\`\`
 [RIB] Profil utilisateur récupéré: [email_de_l'utilisateur]
 [RIB] Comptes récupérés: [nombre_de_comptes]
 [RIB] Comptes actifs avec données complètes: [nombre_de_comptes_actifs]
-```
+\`\`\`
 
 ---
 
@@ -36,9 +36,9 @@
 - ✓ Email disponible dans le profil récupéré
 
 **Exemple**:
-```
+\`\`\`
 Titulaire du compte: Jean DUPONT  ← Au lieu de "DIALLO Mamadou"
-```
+\`\`\`
 
 ---
 
@@ -55,7 +55,7 @@ Titulaire du compte: Jean DUPONT  ← Au lieu de "DIALLO Mamadou"
 - [ ] Code SWIFT : `BNGNGNCX`
 
 **Exemple de RIB Complet**:
-```
+\`\`\`
 Titulaire: Jean DUPONT
 Numéro: 0001234567890
 Code Banque: BNG
@@ -63,7 +63,7 @@ Code Agence: 001
 RIB: BNG 001 0001234567890
 IBAN: GN82 BNG 001 0001234567890
 SWIFT: BNGNGNCX
-```
+\`\`\`
 
 ---
 
@@ -114,7 +114,7 @@ SWIFT: BNGNGNCX
 - ✓ Exemple : `RIB_0001234567890_2024-11-03.pdf`
 
 **Contenu PDF Attendu**:
-```
+\`\`\`
 === En-tête ===
 RELEVÉ D'IDENTITÉ BANCAIRE
 Banque Nationale de Guinée
@@ -132,7 +132,7 @@ Devise: GNF
 
 === Pied de page ===
 Document valide pour les échanges bancaires
-```
+\`\`\`
 
 ---
 
@@ -143,9 +143,9 @@ Document valide pour les échanges bancaires
 1. Ouvrir DevTools (F12)
 2. Aller dans Console
 3. Exécuter:
-```javascript
+\`\`\`javascript
 window.jsPDF = undefined; // Simuler l'absence de jsPDF
-```
+\`\`\`
 4. Cliquer sur "Télécharger PDF"
 
 **Résultats Attendus**:
@@ -203,7 +203,7 @@ window.jsPDF = undefined; // Simuler l'absence de jsPDF
 1. Vérifier le "Solde actuel" en bas à droite
 
 **Résultats Attendus**:
-```
+\`\`\`
 Montants GNF:
 - Affichage français : "2 500 000 GNF"
 - Séparateur : espace
@@ -212,7 +212,7 @@ Montants USD/autres:
 - Format international
 - Symbole monétaire
 - Exemple: "$1,234.50"
-```
+\`\`\`
 
 ---
 
@@ -228,7 +228,7 @@ Montants USD/autres:
 
 ## Données de Test Recommandées
 
-```sql
+\`\`\`sql
 -- Créer un utilisateur de test avec infos complètes
 INSERT INTO users (
   id, firstName, lastName, email, phoneNumber, createdAt, updatedAt
@@ -252,7 +252,7 @@ INSERT INTO comptes (
   '5000000', '5000000', 'ACTIF', 'SAVINGS',
   '001', 'BNG', '23', 'test-user-1', 'tenant-1'
 );
-```
+\`\`\`
 
 ---
 
@@ -279,16 +279,16 @@ INSERT INTO comptes (
 ## Commandes Utiles
 
 ### Logs en Console
-```javascript
+\`\`\`javascript
 // Voir les logs RIB
 console.log("Chercher 'RIB' dans la console");
 
 // Vérifier les données chargées
 localStorage.getItem('user'); // Infos utilisateur
-```
+\`\`\`
 
 ### Requêtes API à Tester
-```bash
+\`\`\`bash
 # Récupérer le profil utilisateur
 curl -H "Authorization: Bearer TOKEN" \
   https://api.example.com/api/auth/me
@@ -300,7 +300,7 @@ curl -H "Authorization: Bearer TOKEN" \
 # Récupérer un compte spécifique
 curl -H "Authorization: Bearer TOKEN" \
   https://api.example.com/api/tenant/TENANT_ID/compte/ACCOUNT_ID
-```
+\`\`\`
 
 ---
 

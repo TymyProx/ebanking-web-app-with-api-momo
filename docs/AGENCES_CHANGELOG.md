@@ -175,7 +175,7 @@ et ce projet adhère au [Semantic Versioning](https://semver.org/lang/fr/).
    - `Sécurité`: Corrections de vulnérabilités
 
 3. **Format:**
-```markdown
+\`\`\`markdown
 ## [X.Y.Z] - YYYY-MM-DD
 
 ### Ajouté
@@ -189,7 +189,7 @@ et ce projet adhère au [Semantic Versioning](https://semver.org/lang/fr/).
 ### Corrigé
 - Correction du bug #123
 - Correction du problème avec Z
-```
+\`\`\`
 
 ### Versioning
 

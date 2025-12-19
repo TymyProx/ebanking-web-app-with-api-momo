@@ -4,7 +4,7 @@ Ce document liste tous les fichiers créés pour la page Localisation des Agence
 
 ## 📂 Structure des fichiers
 
-```
+\`\`\`
 ebanking-web-app-with-api-momo/
 ├── app/
 │   └── agences/
@@ -26,7 +26,7 @@ ebanking-web-app-with-api-momo/
     ├── AGENCES_SUMMARY.md                    # Résumé complet
     ├── AGENCES_CHANGELOG.md                  # Journal des modifications
     └── AGENCES_INDEX.md                      # Ce fichier
-```
+\`\`\`
 
 ## 📝 Fichiers créés
 
@@ -66,12 +66,12 @@ ebanking-web-app-with-api-momo/
 - Accessibilité AA
 
 **Props:**
-```typescript
+\`\`\`typescript
 interface AgenceCardProps {
   agence: Agence
   onGetDirections?: (agence: Agence) => void
 }
-```
+\`\`\`
 
 **Exports:**
 - `AgenceCard` (composant)
@@ -89,7 +89,7 @@ interface AgenceCardProps {
 - Clustering visuel
 
 **Props:**
-```typescript
+\`\`\`typescript
 interface AgenceMapProps {
   agences: Agence[]
   selectedAgence?: Agence | null
@@ -97,7 +97,7 @@ interface AgenceMapProps {
   onGetDirections?: (agence: Agence) => void
   className?: string
 }
-```
+\`\`\`
 
 **Exports:**
 - `AgenceMap` (composant principal)
@@ -117,7 +117,7 @@ interface AgenceMapProps {
 - Calcul du statut en temps réel
 
 **Interface:**
-```typescript
+\`\`\`typescript
 interface Agence {
   id: string
   agenceName: string
@@ -150,7 +150,7 @@ interface UseAgencesResult {
   refetch: () => void
   setQuery: (query: AgencesQuery) => void
 }
-```
+\`\`\`
 
 **Exports:**
 - `useAgences` (hook)
@@ -194,7 +194,7 @@ interface UseAgencesResult {
 - Fermetures exceptionnelles et jours fériés
 
 **Structure:**
-```json
+\`\`\`json
 {
   "agences": [
     {
@@ -219,7 +219,7 @@ interface UseAgencesResult {
     ...
   ]
 }
-```
+\`\`\`
 
 **Villes incluses:**
 - Yaoundé (Agence Centrale)
@@ -376,22 +376,22 @@ interface UseAgencesResult {
 
 ### Répartition par type
 
-```
+\`\`\`
 Code source:     33.5%  (1,365 lignes)
 Documentation:   61.5%  (2,500 lignes)
 Données:          5.0%  (199 lignes)
-```
+\`\`\`
 
 ### Fichiers par répertoire
 
-```
+\`\`\`
 /app/agences/              1 fichier   (448 lignes)
 /components/               2 fichiers  (509 lignes)
 /components/ui/            1 fichier   (120 lignes)
 /hooks/                    1 fichier   (288 lignes)
 /public/data/              1 fichier   (199 lignes)
 /docs/                     6 fichiers  (~2,500 lignes)
-```
+\`\`\`
 
 ## 🔗 Liens rapides
 
@@ -414,34 +414,34 @@ Données:          5.0%  (199 lignes)
 ## 🎯 Points d'entrée
 
 ### Pour consulter les agences
-```
+\`\`\`
 URL: http://localhost:3000/agences
 Fichier: /app/agences/page.tsx
-```
+\`\`\`
 
 ### Pour modifier les données de backup
-```
+\`\`\`
 Fichier: /public/data/agences-backup.json
 Pas de redémarrage nécessaire
-```
+\`\`\`
 
 ### Pour comprendre l'architecture
-```
+\`\`\`
 Fichier: /docs/AGENCES_IMPLEMENTATION.md
 Section: Architecture
-```
+\`\`\`
 
 ### Pour configurer l'environnement
-```
+\`\`\`
 Fichier: /docs/ENV_CONFIGURATION.md
 Variables: NEXT_PUBLIC_API_URL, NEXT_PUBLIC_TENANT_ID, NEXT_PUBLIC_BACK_OFFICE_URL
-```
+\`\`\`
 
 ## ✅ Vérification de l'installation
 
 Pour vérifier que tous les fichiers sont présents:
 
-```bash
+\`\`\`bash
 # Depuis la racine du projet ebanking-web-app-with-api-momo
 ls -la app/agences/page.tsx
 ls -la components/agence-card.tsx
@@ -450,7 +450,7 @@ ls -la components/ui/pagination.tsx
 ls -la hooks/use-agences.ts
 ls -la public/data/agences-backup.json
 ls -la docs/AGENCES_*.md
-```
+\`\`\`
 
 Tous les fichiers doivent être présents.
 
@@ -465,7 +465,7 @@ Aucune nouvelle dépendance npm n'a été ajoutée. Tous les composants utilisen
 
 ## 🚀 Commandes utiles
 
-```bash
+\`\`\`bash
 # Développement
 npm run dev
 
@@ -477,7 +477,7 @@ npm run lint
 
 # Vérifier les types
 npx tsc --noEmit
-```
+\`\`\`
 
 ## 📝 Notes importantes
 

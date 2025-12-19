@@ -2,9 +2,9 @@
 
 ## ❌ Erreur Actuelle
 
-```
+\`\`\`
 Request failed with status code 403 (Forbidden)
-```
+\`\`\`
 
 ## 🔍 Cause
 
@@ -24,13 +24,13 @@ L'erreur 403 signifie que le backend ne trouve pas de token d'authentification v
 
 **Ouvrez la console du navigateur (F12) et tapez:**
 
-```javascript
+\`\`\`javascript
 // Vérifier le token
 console.log("Token:", localStorage.getItem("token"));
 
 // Vérifier l'utilisateur
 console.log("User:", localStorage.getItem("user"));
-```
+\`\`\`
 
 **Résultats attendus:**
 - ✅ **Token existe** → Devrait commencer par "eyJ" (JWT)
@@ -45,16 +45,16 @@ console.log("User:", localStorage.getItem("user"));
 ### Solution 2: Se Connecter
 
 **Page de connexion:**
-```
+\`\`\`
 http://localhost:3000/login
-```
+\`\`\`
 
 **Après connexion:**
 1. Vérifiez que vous êtes bien sur la page d'accueil/dashboard
 2. Vérifiez le token dans la console:
-   ```javascript
+   \`\`\`javascript
    localStorage.getItem("token")
-   ```
+   \`\`\`
 3. Essayez à nouveau l'OTP
 
 ---
@@ -64,10 +64,10 @@ http://localhost:3000/login
 Si vous n'avez pas de compte, créez-en un:
 
 **Endpoint API pour test:**
-```javascript
+\`\`\`javascript
 // Créer un utilisateur test (en console backend)
 // Ou via l'interface de signup
-```
+\`\`\`
 
 **Credentials de test (si configuré):**
 - Email: `test@example.com`
@@ -79,7 +79,7 @@ Si vous n'avez pas de compte, créez-en un:
 
 **Script de debug à copier dans la console navigateur:**
 
-```javascript
+\`\`\`javascript
 // Debug OTP - Vérifier l'authentification
 (function debugOTP() {
   console.log("=".repeat(60));
@@ -116,7 +116,7 @@ Si vous n'avez pas de compte, créez-en un:
   }
   console.log("=".repeat(60));
 })();
-```
+\`\`\`
 
 ---
 
@@ -127,9 +127,9 @@ Si vous n'avez pas de compte, créez-en un:
 1. **Ouvrir la console (F12)**
 
 2. **Vérifier l'authentification:**
-   ```javascript
+   \`\`\`javascript
    localStorage.getItem("token") // Doit retourner une chaîne
-   ```
+   \`\`\`
 
 3. **Si pas de token → Se connecter:**
    - Aller sur `/login`
@@ -148,14 +148,14 @@ Si vous n'avez pas de compte, créez-en un:
 
 J'ai amélioré le service OTP pour mieux logger les erreurs:
 
-```typescript
+\`\`\`typescript
 // Maintenant, si pas de token:
 console.warn("⚠️ [OTP Service] Pas de token trouvé dans localStorage");
 
 // Si erreur 403/401:
 console.error("❌ [OTP Service] Erreur d'authentification");
 // + redirection automatique vers /login
-```
+\`\`\`
 
 ---
 
@@ -186,7 +186,7 @@ Avant d'utiliser l'OTP:
 
 **Dans la console navigateur:**
 
-```javascript
+\`\`\`javascript
 // Test 1: Vérifier connexion
 if (localStorage.getItem("token")) {
   console.log("✅ CONNECTÉ - OTP devrait fonctionner");
@@ -203,20 +203,20 @@ fetch('/api/auth/me', {
 .then(r => r.json())
 .then(data => console.log("✅ User connecté:", data))
 .catch(err => console.log("❌ Pas connecté ou token invalide"));
-```
+\`\`\`
 
 ---
 
 ## 🚀 Workflow Correct
 
-```
+\`\`\`
 1. Démarrer backend ✅
 2. Démarrer frontend ✅
 3. Ouvrir http://localhost:3000 ✅
 4. Se CONNECTER via /login ✅ ← IMPORTANT!
 5. Aller sur /transfers/new-with-otp ✅
 6. Utiliser l'OTP ✅
-```
+\`\`\`
 
 ---
 
@@ -235,10 +235,10 @@ Si vous avez déjà un compte mais l'erreur 403 persiste:
 Après avoir vérifié que vous êtes bien connecté:
 
 1. **Redémarrer le backend:**
-   ```bash
+   \`\`\`bash
    # Ctrl+C puis
    npm run dev
-   ```
+   \`\`\`
 
 2. **Vider le cache navigateur:**
    - F12 → Application → Storage → Clear all
