@@ -12,7 +12,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { BookOpen, CreditCard, FileText, Clock, CheckCircle, AlertCircle, Send, Eye, Plus, Search } from "lucide-react"
+import { BookOpen, CreditCard, FileText, Clock, CheckCircle, AlertCircle, Send, Plus, Search } from "lucide-react"
 import {
   submitCreditRequest,
   submitCheckbookRequest,
@@ -660,7 +660,7 @@ export default function ServiceRequestsPage() {
 
     // Vérifier que tous les champs requis sont remplis
     if (
-      !formData.applicantName || // Changed from applicant_name
+      !formData.applicantName || // Changed from applicant_name to applicantName
       !formData.loan_amount ||
       !formData.loan_duration ||
       !formData.loan_purpose ||
@@ -1630,7 +1630,8 @@ export default function ServiceRequestsPage() {
                   {filteredRequests.map((request) => (
                     <div
                       key={request.id}
-                      className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors"
+                      className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
+                      onClick={() => handleViewDetails(request)}
                     >
                       <div className="flex items-center space-x-4">
                         <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center">
@@ -1665,12 +1666,6 @@ export default function ServiceRequestsPage() {
                             </p>
                           )}
                         </div>
-                      </div>
-
-                      <div className="flex items-center space-x-2">
-                        <Button variant="ghost" size="sm" onClick={() => handleViewDetails(request)}>
-                          <Eye className="w-4 h-4" />
-                        </Button>
                       </div>
                     </div>
                   ))}
