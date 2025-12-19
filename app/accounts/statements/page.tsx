@@ -874,7 +874,8 @@ doc.addImage(img, "PNG", contentRight - 32, 10, 30, 12)
 // doc.setFont("helvetica", "bold")
 // doc.setFontSize(8.5)
 // doc.text(safe(account.currency || "-"), chipX + chipW / 2, chipY + 6.2, { align: "center" 
-// })
+// }) 
+
 }
 const drawTopCards = (yStart: number) => {
 // Totaux
