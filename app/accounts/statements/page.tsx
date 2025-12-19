@@ -957,11 +957,12 @@ export default function StatementsPage() {
         doc.setFont("helvetica", "bold")
         doc.setFontSize(16)
         const accountLabel = safe(account.designation || account.name || "-")
-        doc.text(doc.splitTextToSize(accountLabel, rightWidth), rightX, leftY + 32)
+        doc.text(doc.splitTextToSize(accountLabel, rightWidth), rightX, leftY + 20)
+        const accountNumberY = leftY + leftHeight - 2 // Align with bottom of left table
         doc.setTextColor(...grayText)
         doc.setFont("helvetica", "normal")
         doc.setFontSize(9)
-        doc.text(`N° de compte : ${safe(account.number)}`, rightX, leftY + 38)
+        doc.text(`N° de compte : ${safe(account.number)}`, rightX, accountNumberY)
 
         // =========================
         // TRANSACTIONS
