@@ -214,9 +214,6 @@ export default function StatementsPage() {
         // we need to calculate backwards from the current balance
         const openingBalance = closingBalance - transactionsSum
 
-        // Calculate what the closing balance should be (balance after all transactions)
-        const calculatedClosingBalance = openingBalance + transactionsSum
-
         const sortedTransactions = filteredTxns.sort((a: any, b: any) => {
           const dateA = new Date(a.valueDate || 0).getTime()
           const dateB = new Date(b.valueDate || 0).getTime()
@@ -288,11 +285,9 @@ export default function StatementsPage() {
 
     setErrorMessage("") // Clear previous errors
 
-    // Use the actual opening balance from the filtered transactions or the account's initial balance if no transactions
-    const balanceOuverture = filteredTransactions[0]?.balanceOuverture ?? selectedAccount.balance
-    // The closing balance is the balance after the last transaction
-    const balanceFermeture =
-      filteredTransactions[filteredTransactions.length - 1]?.currentTransactionBalance ?? selectedAccount.balance
+    const balanceOuverture = filteredTransactions[0]?.balanceOuverture || selectedAccount.balance
+    const balanceFermeture = filteredTransactions[0]?.currentTransactionBalance || selectedAccount.balance
+    // </CHANGE>
 
     // Call the appropriate generation function based on the selected format
     if (format === "pdf") {
@@ -301,19 +296,18 @@ export default function StatementsPage() {
         selectedAccount,
         startDate,
         endDate,
-        balanceOuverture, // Pass the calculated opening balance
-        balanceFermeture, // Pass the calculated closing balance
+        balanceOuverture,
+        balanceFermeture,
       )
     } else if (format === "excel") {
       generateExcelStatement(
-        selectedAccount,
         filteredTransactions,
+        selectedAccount,
         startDate,
         endDate,
         balanceOuverture,
-        balanceFermeture, // Use calculated closing balance
+        balanceFermeture,
       )
-      // </CHANGE>
     }
 
     setHasGeneratedStatement(true)
@@ -322,9 +316,9 @@ export default function StatementsPage() {
   const handleDownloadPDF = () => {
     if (!selectedAccount || filteredTransactions.length === 0) return
 
-    const balanceOuverture = filteredTransactions[0]?.balanceOuverture ?? selectedAccount.balance
+    const balanceOuverture = filteredTransactions[0]?.balanceOuverture || selectedAccount.balance
     const balanceFermeture =
-      filteredTransactions[filteredTransactions.length - 1]?.currentTransactionBalance ?? selectedAccount.balance
+      filteredTransactions[filteredTransactions.length - 1]?.currentTransactionBalance || selectedAccount.balance
 
     generatePDFStatement(filteredTransactions, selectedAccount, startDate, endDate, balanceOuverture, balanceFermeture)
   }
@@ -962,20 +956,21 @@ export default function StatementsPage() {
   //       doc.setLineWidth(0.8)
   //       doc.line(rightX + 6, y + 25, rightX + cardW - 6, y + 25)
 
-  //     doc.setTextColor(...blackText)
-  //     doc.setFont("helvetica", "bold")
-  //     doc.setFontSize(12)
-  //     const label = safe(account.designation || account.name || "-")
-  //     doc.text(doc.splitTextToSize(label, cardW - 12), rightX + 6, y + 32)
+  //       doc.setTextColor(...blackText)
+  //       doc.setFont("helvetica", "bold")
+  //       doc.setFontSize(12)
+  //       const label = safe(account.designation || account.name || "-")
+  //       doc.text(doc.splitTextToSize(label, cardW - 12), rightX + 6, y + 32)
 
-  //   doc.setTextColor(...grayText)
-  //   doc.setFont("helvetica", "normal")
-  //   doc.setFontSize(9)
-  //   doc.text(
-  //   safe(account.number),
-  //   rightX + 6,
-  //   y + 38
-  //   )
+  //     doc.setTextColor(...grayText)
+  //     doc.setFont("helvetica", "normal")
+  //     doc.setFontSize(9)
+  //     doc.text(
+  //     safe(account.number),
+  //     rightX + 6,
+  //     y + 38
+  //     )
+
 
   //       return y + cardH + 14
   //     }
@@ -990,38 +985,6 @@ export default function StatementsPage() {
   //       doc.setDrawColor(...primaryGreen)
   //       doc.setLineWidth(1.0)
   //       doc.line(contentLeft, y + 2.5, contentLeft + 70, y + 2.5)
-  //       // </CHANGE>
-  //       //
-  //       // Calculate totals first
-  //       let totalDebit = 0
-  //       let totalCredit = 0
-  //       transactions.forEach((txn) => {
-  //         const m = Number(txn?.montantOperation ?? 0)
-  //         if (m < 0) totalDebit += Math.abs(m)
-  //         else totalCredit += m
-  //       })
-
-  //       // Prepare data for the left card (summary)
-  //       const leftData = [
-  //         { label: "Devise", value: safe(account.currency) },
-  //         {
-  //           label: "Solde d'ouverture",
-  //           value: `${formatAmount(Number(openingBalance))} ${safe(account.currency)}`,
-  //         },
-  //         // </CHANGE>
-  //         //
-  //         {
-  //           label: "Solde de clôture",
-  //           value: `${formatAmount(Math.round(closingBalance))} ${safe(account.currency)}`,
-  //         },
-  //         // </CHANGE>
-  //         //
-  //         { label: "Total débit", value: `${formatAmount(totalDebit)} ${safe(account.currency)}` },
-  //         { label: "Total crédit", value: `${formatAmount(totalCredit)} ${safe(account.currency)}` },
-  //       ]
-  //       // </CHANGE>
-  //       // </CHANGE>
-  //       doc.line(contentLeft, y + 4.2, contentLeft + 28, y + 4.2)
   //       y += 10
   //       const tableX = contentLeft
   //       const col1 = 22 // Date Valeur (reduced from 25)
@@ -1180,458 +1143,798 @@ export default function StatementsPage() {
   // }
   //Version1
 
-  // Debut Version23
-  async function generatePDFStatement(
-    transactions: any[],
-    account: Account,
-    startDate: string,
-    endDate: string,
-    openingBalance: number,
-    closingBalance: number, // This parameter is now derived from the last transaction balance
-  ) {
-    try {
-      const doc = new jsPDF()
-      const pageWidth = 210
-      const pageHeight = 297
-      // =========================
-      // PALETTE (BNG)
-      // =========================
-      const blackText: [number, number, number] = [15, 23, 42]
-      const grayText: [number, number, number] = [100, 116, 139]
-      const lightGray: [number, number, number] = [248, 250, 252]
-      const borderGray: [number, number, number] = [226, 232, 240]
-      const white: [number, number, number] = [255, 255, 255]
-      // Vert BNG exact: #0B8338
-      const primaryGreen: [number, number, number] = [11, 132, 56]
-      const primaryGreenDark: [number, number, number] = [8, 96, 41]
-      const greenSoftBg: [number, number, number] = [236, 247, 238]
-      // Jaunes
-      const brandYellowSoft: [number, number, number] = [244, 230, 120] // doux
-      const brandYellowStrong: [number, number, number] = [255, 235, 0] // #FFEB00 (accent fort)
-      const yellowTextDark: [number, number, number] = [120, 105, 30]
-      // Layout
-      const contentLeft = 15
-      const contentRight = pageWidth - 15
-      const contentWidth = contentRight - contentLeft
-      // Helpers
-      const safe = (v: any) => (v === null || v === undefined ? "" : String(v))
-      const fmtDate = (d: any) => (d ? new Date(d).toLocaleDateString("fr-FR") : "N/A")
-      // =========================
-      // HEADER PREMIUM
-      // =========================
-      const drawHeader = (hasLogo: boolean, img?: HTMLImageElement) => {
-        const headerH = 34
-        // Bandeau vert
-        doc.setFillColor(...primaryGreen)
-        doc.rect(0, 0, pageWidth, headerH, "F")
-        // Ligne jaune ultra fine (accent)
-        doc.setDrawColor(...brandYellowSoft)
-        doc.setLineWidth(0.8)
-        doc.line(0, headerH, pageWidth, headerH)
-        // Logo (gauche)
-        if (hasLogo && img) {
-          // petit fond blanc derrière le logo pour lisibilité
-          doc.setFillColor(...white)
-          doc.roundedRect(contentLeft, 8, 34, 14, 2.5, 2.5, "F")
-          doc.addImage(img, "PNG", contentLeft + 2, 9.5, 30, 11)
-        }
-        // Titre (blanc)
-        doc.setTextColor(255, 255, 255)
-        doc.setFont("helvetica", "bold")
-        doc.setFontSize(15)
-        doc.text("RELEVÉ DE COMPTE", pageWidth / 2, 14, { align: "center" })
-        // Sous-titre période (blanc légèrement atténué)
-        doc.setTextColor(235, 243, 238)
-        doc.setFont("helvetica", "normal")
-        doc.setFontSize(9)
-        doc.text(
-          `Période : ${new Date(startDate).toLocaleDateString("fr-FR")} - ${new Date(endDate).toLocaleDateString("fr-FR")}`,
-          pageWidth / 2,
-          24,
-          { align: "center" },
-        )
-        // “chip” à droite (devise)
-        // const chipW = 34
-        // const chipH = 10
-        // const chipX = contentRight - chipW
-        // const chipY = 10
-        // doc.setFillColor(255, 255, 255)
-        // doc.roundedRect(chipX, chipY, chipW, chipH, 4, 4, "F")
-        // doc.setTextColor(...primaryGreenDark)
-        // doc.setFont("helvetica", "bold")
-        // doc.setFontSize(9)
-        // doc.text(safe(account.currency || "-"), chipX + chipW / 2, chipY + 7, { align: "center" })
-      }
-      // =========================
-      // TOP SECTION (Résumé + bloc droit)
-      // =========================
-      const drawTopSection = (yStart: number) => {
-        // Totaux
-        let totalDebit = 0
-        let totalCredit = 0
-        transactions.forEach((txn) => {
-          const m = Number(txn?.montantOperation ?? 0)
-          if (m < 0) totalDebit += Math.abs(m)
-          else totalCredit += m
-        })
-        // mêmes champs que ton tableau
-        const leftData = [
-          { label: "Devise", value: safe(account.currency) },
-          {
-            label: "Solde d'ouverture",
-            value: `${formatAmount(Number(openingBalance))} ${safe(account.currency)}`,
-          },
-          {
-            label: "Solde de clôture",
-            value: `${formatAmount(Math.round(closingBalance))} ${safe(account.currency)}`,
-          },
-          // </CHANGE>
-          { label: "Total débit", value: `${formatAmount(totalDebit)} ${safe(account.currency)}` },
-          { label: "Total crédit", value: `${formatAmount(totalCredit)} ${safe(account.currency)}` },
-        ]
-        const gapBetween = 10
-        const dividerThickness = 3
-        const gapAfterDivider = 10
-        const leftWidth = 100
-        const leftX = contentLeft
-        const leftY = yStart
-        const dividerX = leftX + leftWidth + gapBetween
-        const rightX = dividerX + gapAfterDivider
-        const rightWidth = contentRight - rightX
-        const labelColWidth = 55
-        const valueColWidth = leftWidth - labelColWidth
-        const rowHeight = 6.2
-        const rows = 5 // Reduced from 6 to 5 since we removed "Numéro de compte"
-        const leftHeight = rowHeight * rows
-        // Card gauche (blanche + bordure + header mini)
-        doc.setFillColor(...white)
-        doc.setDrawColor(...borderGray)
-        doc.setLineWidth(0.8)
-        doc.roundedRect(leftX, leftY, leftWidth, leftHeight + 10, 4, 4, "FD")
-        // mini header vert (dans la card)
-        doc.setFillColor(...greenSoftBg)
-        doc.roundedRect(leftX, leftY, leftWidth, 10, 4, 4, "F")
-        doc.setTextColor(...primaryGreenDark)
-        doc.setFont("helvetica", "bold")
-        doc.setFontSize(8.5)
-        doc.text("RÉSUMÉ DU COMPTE", leftX + 3, leftY + 7)
-        // grille data
-        const gridY = leftY + 10
-        // colonne labels (fond très léger)
-        doc.setFillColor(...greenSoftBg)
-        doc.rect(leftX, gridY, labelColWidth, leftHeight, "F")
-        // colonne values blanche (déjà blanche mais on sécurise)
-        doc.setFillColor(...white)
-        doc.rect(leftX + labelColWidth, gridY, valueColWidth, leftHeight, "F")
-        // séparateur vertical
-        doc.setDrawColor(...borderGray)
-        doc.setLineWidth(0.6)
-        doc.line(leftX + labelColWidth, gridY, leftX + labelColWidth, gridY + leftHeight)
-        leftData.forEach((row, i) => {
-          const rowY = gridY + i * rowHeight
-          if (i > 0) {
-            doc.setDrawColor(...borderGray)
-            doc.setLineWidth(0.3)
-            doc.line(leftX, rowY, leftX + leftWidth, rowY)
-          }
-          doc.setTextColor(...primaryGreenDark)
-          doc.setFont("helvetica", "bold")
-          doc.setFontSize(7.4)
-          doc.text(row.label, leftX + 3, rowY + 4.4)
-          doc.setTextColor(...blackText)
-          doc.setFont("helvetica", "normal")
-          doc.setFontSize(7.4)
-          const valLines = doc.splitTextToSize(safe(row.value), valueColWidth - 6)
-          doc.text(valLines[0] || "", leftX + labelColWidth + 3, rowY + 4.4)
-        })
-        // Séparateur central (vert) + micro accent jaune au dessus
-        doc.setDrawColor(...primaryGreen)
-        doc.setLineWidth(dividerThickness)
-        doc.line(dividerX, leftY + 2, dividerX, leftY + leftHeight + 8)
-        doc.setDrawColor(...brandYellowSoft)
-        doc.setLineWidth(1.2)
-        doc.line(dividerX - 1.2, leftY + 2, dividerX + 1.2, leftY + 2)
-        // Bloc droit (texte propre, sans "table", style premium)
-        doc.setTextColor(...blackText)
-        doc.setFont("helvetica", "bold")
-        doc.setFontSize(11)
-        doc.text("BANQUE NATIONALE DE GUINÉE", rightX, leftY + 10)
-        doc.setTextColor(...grayText)
-        doc.setFont("helvetica", "normal")
-        doc.setFontSize(7.8)
-        doc.text(
-          doc.splitTextToSize("6ème Avenue Boulevard DIALLO Télly BP: 1781 Conakry", rightWidth),
-          rightX,
-          leftY + 15,
-        )
-        // Ligne signature (jaune fort) comme ta maquette
-        doc.setDrawColor(...brandYellowStrong)
-        doc.setLineWidth(0.8)
-        doc.line(rightX, leftY + 20, rightX + rightWidth, leftY + 20)
-        // Libellé compte (gros)
-        doc.setTextColor(...blackText)
-        doc.setFont("helvetica", "bold")
-        doc.setFontSize(16)
-        const accountLabel = safe(account.designation || account.name || "-")
-        doc.text(doc.splitTextToSize(accountLabel, rightWidth), rightX, leftY + 38)
+// Debut Version23 
+// async function generatePDFStatement(
+//     transactions: any[],
+//     account: Account,
+//     startDate: string,
+//     endDate: string,
+//     openingBalance: number,
+//     closingBalance: number, // This parameter is now derived from the last transaction balance
+//   ) {
+//     try {
+//       console.log("[v0] PDF generation - openingBalance:", openingBalance, "type:", typeof openingBalance)
+//       console.log("[v0] PDF generation - closingBalance:", closingBalance, "type:", typeof closingBalance)
+//       console.log("[v0] PDF generation - formatted opening:", formatAmount(openingBalance))
+//       console.log("[v0] PDF generation - formatted closing:", formatAmount(closingBalance))
+//       const doc = new jsPDF()
+//       const pageWidth = 210
+//       const pageHeight = 297
+//       // =========================
+//       // PALETTE
+//       // =========================
+//       const blackText: [number, number, number] = [15, 23, 42]
+//       const grayText: [number, number, number] = [100, 116, 139]
+//       const lightGray: [number, number, number] = [248, 250, 252]
+//       const borderGray: [number, number, number] = [226, 232, 240]
+//       const white: [number, number, number] = [255, 255, 255]
+//       // Vert BNG exact: #0B8338
+//       const primaryGreen: [number, number, number] = [11, 132, 56]
+//       const softGreenBg: [number, number, number] = [236, 247, 238]
+//       const softGreenText: [number, number, number] = [34, 120, 68]
+//       // Jaunes
+//       const brandYellow: [number, number, number] = [244, 230, 120] // jaune doux
+//       const brandYellowSepar: [number, number, number] = [255, 235, 0] // #FFEB00 (accent fort)
+//       const brandYellowDark: [number, number, number] = [120, 105, 30] // texte lisible sur jaune
+//       const safe = (v: any) => (v === null || v === undefined ? "" : String(v))
+//       // =========================
+//       // TABLE HEADER TRANSACTIONS
+//       // =========================
+//       const tableStartX = 15
+//       const tableRowHeight = 9
+//       const drawTransactionHeader = (x: number, y: number, w: number, h: number, cols: number[]) => {
+//         doc.setFillColor(...lightGray)
+//         doc.setDrawColor(...borderGray)
+//         doc.setLineWidth(0.4)
+//         doc.rect(x, y, w, h, "FD")
+//         // Ligne au-dessus des colonnes en VERT (primaryGreen)
+//         doc.setDrawColor(...primaryGreen)
+//         doc.setLineWidth(1.0)
+//         doc.line(x, y, x + w, y)
+//         doc.setFont("helvetica", "bold")
+//         doc.setFontSize(8.8)
+//         doc.setTextColor(...blackText)
+//         // séparateurs verticaux
+//         doc.setDrawColor(...borderGray)
+//         doc.setLineWidth(0.35)
+//         let cursor = x
+//         for (let i = 0; i < cols.length - 1; i++) {
+//           cursor += cols[i]
+//           doc.line(cursor, y, cursor, y + h)
+//         }
+//         doc.text("Date Valeur", x + cols[0] / 2, y + 6, { align: "center" })
+//         doc.text("Description", x + cols[0] + cols[1] / 2, y + 6, { align: "center" })
+//         doc.text("Référence", x + cols[0] + cols[1] + cols[2] / 2, y + 6, { align: "center" })
+//         doc.text("Date Op.", x + cols[0] + cols[1] + cols[2] + cols[3] / 2, y + 6, { align: "center" })
+//         doc.text("Débit", x + cols[0] + cols[1] + cols[2] + cols[3] + cols[4] / 2, y + 6, { align: "center" })
+//         doc.text("Crédit", x + cols[0] + cols[1] + cols[2] + cols[3] + cols[4] + cols[5] / 2, y + 6, {
+//           align: "center",
+//         })
+//         doc.text("Solde", x + cols[0] + cols[1] + cols[2] + cols[3] + cols[4] + cols[5] + cols[6] / 2, y + 6, {
+//           align: "center",
+//         })
+//         // </CHANGE>
+//       }
+//       // =========================
+//       // TOP HEADER (logo + titre + ligne)
+//       // =========================
+//       const drawTopHeader = (hasLogo: boolean, img?: HTMLImageElement) => {
+//         const headerY = 10
+//         if (hasLogo && img) {
+//           doc.addImage(img, "PNG", 15, headerY, 30, 12)
+//         }
+//         doc.setTextColor(...blackText)
+//         doc.setFont("helvetica", "bold")
+//         doc.setFontSize(15)
+//         doc.text("RELEVÉ DE COMPTE", pageWidth / 2, headerY + 16, { align: "center" })
+//         // Ligne sous le titre (vert)
+//         doc.setDrawColor(...primaryGreen)
+//         doc.setLineWidth(1.4)
+//         doc.line(60, headerY + 20, pageWidth - 60, headerY + 20)
+//       }
+//       // =========================
+//       // BODY
+//       // =========================
+//       const continueGeneratingPDF = () => {
+//         const contentLeft = 15
+//         const contentRight = pageWidth - 15
+//         // Période
+//         let yPos = 38
+//         doc.setTextColor(...grayText)
+//         doc.setFont("helvetica", "normal")
+//         doc.setFontSize(9)
+//         doc.text(
+//           `Période : ${new Date(startDate).toLocaleDateString("fr-FR")} - ${new Date(endDate).toLocaleDateString(
+//             "fr-FR",
+//           )}`,
+//           pageWidth / 2,
+//           yPos,
+//           { align: "center" },
+//         )
+//         // -------------------------
+//         // SECTION TOP (alignée L/R)
+//         // -------------------------
+//         yPos = 46
+//         const gapBetween = 10
+//         const dividerThickness = 3
+//         const gapAfterDivider = 10
+//         const leftWidth = 100
+//         const leftX = contentLeft
+//         const leftY = yPos
+//         const dividerX = leftX + leftWidth + gapBetween
+//         const rightX = dividerX + gapAfterDivider
+//         const rightWidth = contentRight - rightX
+//         const labelColWidth = 55
+//         const valueColWidth = leftWidth - labelColWidth
+//         const rowHeight = 6
+//         const rows = 5
+//         const leftHeight = rowHeight * rows
+//         // Totaux débit/crédit
+//         let totalDebit = 0
+//         let totalCredit = 0
+//         transactions.forEach((txn) => {
+//           const m = Number(txn?.montantOperation ?? 0)
+//           if (m < 0) totalDebit += Math.abs(m)
+//           else totalCredit += m
+//         })
+//         const leftData = [
+//           { label: "Devise", value: safe(account.currency) },
+//           {
+//             label: "Solde d'ouverture",
+//             value: `${formatAmount(Number(openingBalance))} ${safe(account.currency)}`,
+//           },
+//           {
+//             label: "Solde de clôture",
+//             value: `${formatAmount(Number(closingBalance))} ${safe(account.currency)}`,
+//           },
+//           { label: "Total débit", value: `${formatAmount(totalDebit)} ${safe(account.currency)}` },
+//           { label: "Total crédit", value: `${formatAmount(totalCredit)} ${safe(account.currency)}` },
+//         ]
+//         // Carte gauche
+//         doc.setDrawColor(...borderGray)
+//         doc.setLineWidth(0.8)
+//         doc.setFillColor(...softGreenBg)
+//         doc.roundedRect(leftX, leftY, leftWidth, leftHeight, 3, 3, "FD")
+//         // Colonne valeurs blanche
+//         doc.setFillColor(...white)
+//         doc.rect(leftX + labelColWidth, leftY, valueColWidth, leftHeight, "F")
+//         // Séparateur interne
+//         doc.setDrawColor(...borderGray)
+//         doc.setLineWidth(0.6)
+//         doc.line(leftX + labelColWidth, leftY, leftX + labelColWidth, leftY + leftHeight)
+//         leftData.forEach((row, i) => {
+//           const rowY = leftY + i * rowHeight
+//           if (i > 0) {
+//             doc.setDrawColor(...borderGray)
+//             doc.setLineWidth(0.35)
+//             doc.line(leftX, rowY, leftX + leftWidth, rowY)
+//           }
+//           doc.setTextColor(...softGreenText)
+//           doc.setFont("helvetica", "bold")
+//           doc.setFontSize(7.6)
+//           doc.text(row.label, leftX + 3, rowY + 4.2)
+//           doc.setTextColor(...blackText)
+//           doc.setFont("helvetica", "normal")
+//           doc.setFontSize(7.6)
+//           const maxValWidth = valueColWidth - 6
+//           const valLines = doc.splitTextToSize(safe(row.value), maxValWidth)
+//           doc.text(valLines[0] || "", leftX + labelColWidth + 3, rowY + 4.2)
+//         })
+//         // Séparateur vertical (vert)
+//         doc.setDrawColor(...primaryGreen)
+//         doc.setLineWidth(dividerThickness)
+//         doc.line(dividerX, leftY + 1.5, dividerX, leftY + leftHeight - 1.5)
+//         // Bloc droit
+//         doc.setTextColor(...blackText)
+//         doc.setFont("helvetica", "bold")
+//         doc.setFontSize(10.5)
+//         doc.text("BANQUE NATIONALE DE GUINÉE", rightX, leftY + 6)
+//         doc.setTextColor(...grayText)
+//         doc.setFont("helvetica", "normal")
+//         doc.setFontSize(7.5)
+//         doc.text(
+//           doc.splitTextToSize("6ème Avenue Boulevard DIALLO Télly BP: 1781 Conakry", rightWidth),
+//           rightX,
+//           leftY + 11,
+//         )
+//         // Ligne sous adresse (jaune fort)
+//           doc.setDrawColor(...brandYellowSepar)
+//           doc.setLineWidth(0.6)
+//           doc.line(rightX, leftY + 15, rightX + rightWidth, leftY + 15)
 
-        // Add account number below account name
-        doc.setTextColor(...blackText)
-        doc.setFont("helvetica", "normal")
-        doc.setFontSize(11)
-        doc.text(safe(account.number), rightX, leftY + leftHeight + 2)
+//           const accountNameTopMargin = 2
 
-        return leftY + leftHeight + 16
-      }
-      // =========================
-      // TRANSACTIONS TABLE (plus moderne)
-      // =========================
-      const drawTransactionTable = (yStart: number) => {
-        let yPos = yStart
-        // Titre section
-        doc.setTextColor(...blackText)
-        doc.setFont("helvetica", "bold")
-        doc.setFontSize(11)
-        doc.text(`TRANSACTIONS (${transactions.length})`, contentLeft, yPos)
-        // underline vert + accent jaune court
-        doc.setDrawColor(...primaryGreen)
-        doc.setLineWidth(1.0)
-        doc.line(contentLeft, yPos + 2.5, contentLeft + 60, yPos + 2.5)
-        doc.setDrawColor(...brandYellowSoft)
-        doc.setLineWidth(1.0)
-        doc.line(contentLeft, yPos + 4.2, contentLeft + 28, yPos + 4.2)
-        yPos += 10
-        const tableStartX = contentLeft
-        const col1Width = 18 // Date Valeur
-        const col2Width = 38 // Description
-        const col3Width = 32 // Référence
-        const col4Width = 20 // Date Op.
-        const col5Width = 21 // Débit
-        const col6Width = 21 // Crédit
-        const col7Width = 30 // Solde
-        const cols = [col1Width, col2Width, col3Width, col4Width, col5Width, col6Width, col7Width]
-        const tableRowHeight = 9
-        const tableWidth = cols.reduce((a, b) => a + b, 0)
-        const drawHeaderRow = () => {
-          // Header vert foncé + texte blanc
-          doc.setFillColor(...primaryGreen)
-          doc.setDrawColor(...primaryGreen)
-          doc.setLineWidth(0.4)
-          doc.rect(tableStartX, yPos, tableWidth, tableRowHeight, "FD")
-          // fine ligne jaune en bas du header
-          doc.setDrawColor(...brandYellowSoft)
-          doc.setLineWidth(1.0)
-          doc.line(tableStartX, yPos + tableRowHeight, tableStartX + tableWidth, yPos + tableRowHeight)
-          doc.setTextColor(255, 255, 255)
-          doc.setFont("helvetica", "bold")
-          doc.setFontSize(8.6)
+//           // Nom du compte
+//           doc.setTextColor(...blackText)
+//           doc.setFont("helvetica", "bold")
+//           doc.setFontSize(16)
 
-          doc.text("Date Valeur", tableStartX + col1Width / 2, yPos + 6, { align: "center" })
-          doc.text("Description", tableStartX + col1Width + col2Width / 2, yPos + 6, { align: "center" })
-          doc.text("Référence", tableStartX + col1Width + col2Width + col3Width / 2, yPos + 6, { align: "center" })
-          doc.text("Date Op.", tableStartX + col1Width + col2Width + col3Width + col4Width / 2, yPos + 6, {
-            align: "center",
-          })
-          doc.text("Débit", tableStartX + col1Width + col2Width + col3Width + col4Width + col5Width / 2, yPos + 6, {
-            align: "center",
-          })
-          doc.text(
-            "Crédit",
-            tableStartX + col1Width + col2Width + col3Width + col4Width + col5Width + col6Width / 2,
-            yPos + 6,
-            { align: "center" },
-          )
-          doc.text(
-            "Solde",
-            tableStartX + col1Width + col2Width + col3Width + col4Width + col5Width + col6Width + col7Width / 2,
-            yPos + 6,
-            { align: "center" },
-          )
+//           const accountLabel = safe(account.designation || account.name || "-")
+//           doc.text(
+//           doc.splitTextToSize(accountLabel, rightWidth),
+//           rightX,
+//           leftY + 20 + accountNameTopMargin
+//           )
 
-          yPos += tableRowHeight
-        }
-        drawHeaderRow()
-        doc.setFont("helvetica", "normal")
-        doc.setFontSize(8)
-        doc.setTextColor(...blackText)
+//           // Numéro de compte (valeur seule, plus imposante)
+//           const accountNumberY = leftY + leftHeight - 1
 
-        // Initialize balance calculation starting from opening balance
-        let currentBalance = Number.parseFloat(String(openingBalance)) || 0
+//           doc.setTextColor(...blackText)
+//           doc.setFont("helvetica", "normal")
+//           doc.setFontSize(11) // plus imposant mais toujours élégant
+//           doc.text(
+//           safe(account.number),
+//           rightX,
+//           accountNumberY
+//           )
 
-        transactions.forEach((txn: any, idx: number) => {
-          if (yPos > 260) {
-            doc.addPage()
-            // Header de page
-            drawSmallPageHeader()
-            yPos = 40
-            drawHeaderRow()
-            doc.setFont("helvetica", "normal")
-            doc.setFontSize(8)
-            doc.setTextColor(...blackText)
-          }
-          // Alternance
-          if (idx % 2 === 1) {
-            doc.setFillColor(...lightGray)
-            doc.rect(tableStartX, yPos, tableWidth, tableRowHeight, "F")
-          }
-          // Bordure externe légère
-          doc.setDrawColor(...borderGray)
-          doc.setLineWidth(0.3)
-          doc.rect(tableStartX, yPos, tableWidth, tableRowHeight, "S")
 
-          // Separators between columns
-          let cx = tableStartX
-          for (let i = 0; i < cols.length - 1; i++) {
-            cx += cols[i]
-            doc.line(cx, yPos, cx, yPos + tableRowHeight)
-          }
+//         // =========================
+//         // TRANSACTIONS
+//         // =========================
+//         yPos = leftY + leftHeight + 22
+//         doc.setTextColor(...blackText)
+//         doc.setFontSize(10.5)
+//         doc.setFont("helvetica", "bold")
+//         doc.text(`TRANSACTIONS (${transactions.length})`, contentLeft, yPos)
+//         // Ligne sous le titre (vert)
+//         doc.setDrawColor(...primaryGreen)
+//         doc.setLineWidth(1.0)
+//         doc.line(contentLeft, yPos + 2.5, contentLeft + 55, yPos + 2.5)
+//         yPos += 8
+//         // --- UPDATE START ---
+//         const col1Width = 18 // Date Valeur (reduced from 19)
+//         const col2Width = 38 // Description (reduced from 40)
+//         const col3Width = 32 // Référence (increased from 26 to prevent overflow)
+//         const col4Width = 20 // Date Op.
+//         const col5Width = 21 // Débit
+//         const col6Width = 21 // Crédit
+//         const col7Width = 30 // Solde (slightly reduced to compensate)
+//         // </CHANGE>
+//         const cols = [col1Width, col2Width, col3Width, col4Width, col5Width, col6Width, col7Width]
+//         // --- UPDATE END ---
+//         const transTableWidth = cols.reduce((sum, w) => sum + w, 0)
+//         drawTransactionHeader(tableStartX, yPos, transTableWidth, tableRowHeight, cols)
+//         yPos += tableRowHeight
+//         doc.setTextColor(...blackText)
+//         doc.setFont("helvetica", "normal")
+//         doc.setFontSize(8)
+//         let currentBalance = Number.parseFloat(String(openingBalance)) || 0 // Ensure this is initialized correctly
 
-          doc.setFont("helvetica", "normal")
-          doc.setTextColor(...blackText)
+//         transactions.forEach((txn, idx) => {
+//           if (yPos > 260) {
+//             doc.addPage()
+//             yPos = 30
+//             drawTransactionHeader(tableStartX, yPos, transTableWidth, tableRowHeight, cols)
+//             yPos += tableRowHeight
+//             doc.setTextColor(...blackText)
+//             doc.setFont("helvetica", "normal")
+//             doc.setFontSize(8)
+//           }
+//           if (idx % 2 === 1) {
+//             doc.setFillColor(...lightGray)
+//             doc.rect(tableStartX, yPos, transTableWidth, tableRowHeight, "F")
+//           }
+//           doc.setDrawColor(...borderGray)
+//           doc.setLineWidth(0.3)
+//           doc.rect(tableStartX, yPos, transTableWidth, tableRowHeight, "S")
+//           let cx = tableStartX
+//           for (let i = 0; i < cols.length - 1; i++) {
+//             cx += cols[i]
+//             doc.line(cx, yPos, cx, yPos + tableRowHeight)
+//           }
+//           doc.setFont("helvetica", "normal")
+//           doc.setTextColor(...blackText)
+//           // </CHANGE>
 
-          const dateValeur = txn?.valueDate ? new Date(txn.valueDate).toLocaleDateString("fr-FR") : "N/A"
-          doc.text(dateValeur, tableStartX + col1Width / 2, yPos + 6, { align: "center" })
+//           const dateValeur = txn?.valueDate ? new Date(txn.valueDate).toLocaleDateString("fr-FR") : "N/A"
+//           doc.text(dateValeur, tableStartX + col1Width / 2, yPos + 6, { align: "center" })
 
-          const description = safe(txn?.description || "N/A").substring(0, 28)
-          doc.text(description, tableStartX + col1Width + col2Width / 2, yPos + 6, { align: "center" })
+//           const description = safe(txn?.description || "N/A").substring(0, 28)
+//           doc.text(description, tableStartX + col1Width + col2Width / 2, yPos + 6, { align: "center" })
 
-          const reference = safe(txn?.referenceOperation || "N/A").substring(0, 22)
-          doc.text(reference, tableStartX + col1Width + col2Width + col3Width / 2, yPos + 6, { align: "center" })
+//           const reference = safe(txn?.referenceOperation || "N/A").substring(0, 22)
+//           doc.text(reference, tableStartX + col1Width + col2Width + col3Width / 2, yPos + 6, { align: "center" })
 
-          const dateOperation = txn?.dateEcriture ? new Date(txn.dateEcriture).toLocaleDateString("fr-FR") : "N/A"
-          doc.text(dateOperation, tableStartX + col1Width + col2Width + col3Width + col4Width / 2, yPos + 6, {
-            align: "center",
-          })
+//           const dateOperation = txn?.dateEcriture ? new Date(txn.dateEcriture).toLocaleDateString("fr-FR") : "N/A"
+//           doc.text(dateOperation, tableStartX + col1Width + col2Width + col3Width + col4Width / 2, yPos + 6, {
+//             align: "center",
+//           })
+//           // </CHANGE>
 
-          const m = Number(txn?.montantOperation ?? 0)
-          const montant = formatAmount(Math.abs(m))
+//           const m = Number(txn?.montantOperation ?? 0)
+//           const montant = formatAmount(Math.abs(m))
 
-          // Add transaction amount to current balance
-          currentBalance += m
-          const solde = formatAmount(Math.round(currentBalance))
+//           currentBalance += m
+//           const solde = formatAmount(Math.round(currentBalance))
 
-          if (m < 0) {
-            doc.text(montant, tableStartX + col1Width + col2Width + col3Width + col4Width + col5Width / 2, yPos + 6, {
-              align: "center",
-            })
-          } else {
-            doc.text(
-              montant,
-              tableStartX + col1Width + col2Width + col3Width + col4Width + col5Width + col6Width / 2,
-              yPos + 6,
-              { align: "center" },
-            )
-          }
+//           if (m < 0) {
+//             doc.text(montant, tableStartX + col1Width + col2Width + col3Width + col4Width + col5Width / 2, yPos + 6, {
+//               align: "center",
+//             })
+//           } else {
+//             doc.text(
+//               montant,
+//               tableStartX + col1Width + col2Width + col3Width + col4Width + col5Width + col6Width / 2,
+//               yPos + 6,
+//               { align: "center" },
+//             )
+//           }
 
-          // Display balance (centered, normal font weight)
-          doc.text(
-            solde,
-            tableStartX + col1Width + col2Width + col3Width + col4Width + col5Width + col6Width + col7Width / 2,
-            yPos + 6,
-            { align: "center" },
-          )
+//           // Center solde value, remove bold styling
+//           doc.text(
+//             solde,
+//             tableStartX + col1Width + col2Width + col3Width + col4Width + col5Width + col6Width + col7Width / 2,
+//             yPos + 6,
+//             { align: "center" },
+//           )
+//           // </CHANGE>
 
-          yPos += tableRowHeight
-        })
-        return yPos
-      }
-      // =========================
-      // SMALL PAGE HEADER (for pages > 1)
-      // =========================
-      const drawSmallPageHeader = () => {
-        doc.setFillColor(...primaryGreen)
-        doc.rect(0, 0, pageWidth, 18, "F")
-        doc.setTextColor(255, 255, 255)
-        doc.setFont("helvetica", "bold")
-        doc.setFontSize(10)
-        doc.text("RELEVÉ DE COMPTE", contentLeft, 11)
-        doc.setTextColor(235, 243, 238)
-        doc.setFont("helvetica", "normal")
-        doc.setFontSize(8)
-        doc.text(
-          `${new Date(startDate).toLocaleDateString("fr-FR")} - ${new Date(endDate).toLocaleDateString("fr-FR")}`,
-          contentRight,
-          11,
-          { align: "right" },
-        )
-        doc.setDrawColor(...brandYellowSoft)
-        doc.setLineWidth(0.8)
-        doc.line(0, 18, pageWidth, 18)
-      }
-      // =========================
-      // FOOTER
-      // =========================
-      const addFooter = (pageNum: number, totalPages: number) => {
-        const footerY = pageHeight - 20
-        doc.setDrawColor(...borderGray)
-        doc.setLineWidth(0.4)
-        doc.line(contentLeft, footerY, contentRight, footerY)
-        doc.setTextColor(...grayText)
-        doc.setFont("helvetica", "normal")
-        doc.setFontSize(7)
-        const footerLines = [
-          "Banque Nationale de Guinée SA - Agrément par décision N° 06/019/93/CAB/PE 06/06/1993",
-          "Capital : 60.000.000.000 GNF",
-          "Boulevard Tidiani Kaba - Quartier Boulbinet/Almamya, Kaloum, Conakry, Guinée",
-          "Tél: +224 - 622 454 049 - B.P 1781 - mail: contact@bng.gn",
-        ]
-        let y = footerY + 4
-        footerLines.forEach((line) => {
-          doc.text(line, contentLeft, y)
-          y += 3
-        })
-        // pagination (vert + micro accent jaune)
-        doc.setTextColor(...primaryGreenDark)
-        doc.setFont("helvetica", "bold")
-        doc.text(`Page ${pageNum} / ${totalPages}`, contentRight, footerY + 4, { align: "right" })
-        doc.setDrawColor(...brandYellowSoft)
-        doc.setLineWidth(1.2)
-        doc.line(contentRight - 20, footerY + 6, contentRight, footerY + 6)
-      }
-      // =========================
-      // RENDER FLOW
-      // =========================
-      const render = () => {
-        // Page 1 header premium
-        // (si page > 1 : drawSmallPageHeader sera utilisé)
-        let y = 40
-        y = drawTopSection(y)
-        y = drawTransactionTable(y + 6)
-        // footers
-        const pageCount = doc.internal.getNumberOfPages()
-        for (let i = 1; i <= pageCount; i++) {
-          doc.setPage(i)
-          if (i > 1) drawSmallPageHeader()
-          addFooter(i, pageCount)
-        }
-        const fileName = `Releve_Compte_${safe(account.number).replace(/-/g, "_")}_${
-          new Date().toISOString().split("T")[0]
-        }.pdf`
-        doc.save(fileName)
-        console.log("[v0] PDF généré et téléchargé:", fileName)
-      }
-      // Logo
-      const img = new Image()
-      img.src = "/images/logo-bng.png"
-      img.crossOrigin = "anonymous"
-      img.onload = () => {
-        drawHeader(true, img)
-        render()
-      }
-      img.onerror = () => {
-        console.warn("[v0] Logo BNG non trouvé, génération sans logo")
-        drawHeader(false)
-        render()
-      }
-    } catch (error) {
-      console.error("[v0] Erreur génération PDF:", error)
-      alert(" Erreur lors de la génération du PDF")
-    }
-  }
+//           yPos += tableRowHeight
+//         })
+//         // =========================
+//         // FOOTER
+//         // =========================
+//         const addFooter = (pageNum: number, totalPages: number) => {
+//           const footerY = pageHeight - 20
+//           doc.setDrawColor(...borderGray)
+//           doc.setLineWidth(0.5)
+//           doc.line(contentLeft, footerY, contentRight, footerY)
+//           let footerTextY = footerY + 5
+//           doc.setTextColor(...grayText)
+//           doc.setFontSize(7)
+//           doc.setFont("helvetica", "normal")
+//           const footerLines = [
+//             "Banque Nationale de Guinée SA - Agrément par décision N° 06/019/93/CAB/PE 06/06/1993",
+//             "Capital : 60.000.000.000 GNF",
+//             "Boulevard Tidiani Kaba - Quartier Boulbinet/Almamya, Kaloum, Conakry, Guinée",
+//             "Tél: +224 - 622 454 049 - B.P 1781 - mail: contact@bng.gn",
+//           ]
+//           footerLines.forEach((line) => {
+//             doc.text(line, contentLeft, footerTextY)
+//             footerTextY += 3
+//           })
+//           doc.setTextColor(...brandYellowDark)
+//           doc.text(`Page ${pageNum} / ${totalPages}`, contentRight - 20, footerY + 5, { align: "right" })
+//           doc.setTextColor(...grayText)
+//         }
+//         const pageCount = doc.internal.getNumberOfPages()
+//         for (let i = 1; i <= pageCount; i++) {
+//           doc.setPage(i)
+//           addFooter(i, pageCount)
+//         }
+//         const fileName = `Releve_Compte_${safe(account.number).replace(/-/g, "_")}_${
+//           new Date().toISOString().split("T")[0]
+//         }.pdf`
+//         doc.save(fileName)
+//         console.log("[v0] PDF généré et téléchargé:", fileName)
+//       }
+//       // =========================
+//       // LOGO LOAD + RENDER
+//       // =========================
+//       const img = new Image()
+//       img.src = "/images/logo-bng.png"
+//       img.crossOrigin = "anonymous"
+//       img.onload = () => {
+//         drawTopHeader(true, img)
+//         continueGeneratingPDF()
+//       }
+//       img.onerror = () => {
+//         console.warn("[v0] Logo BNG non trouvé, génération sans logo")
+//         drawTopHeader(false)
+//         continueGeneratingPDF()
+//       }
+//     } catch (error) {
+//       console.error("[v0] Erreur génération PDF:", error)
+//       alert(" Erreur lors de la génération du PDF")
+//     }
+// }
+//Version23
+
+async function generatePDFStatement(
+transactions: any[],
+account: Account,
+startDate: string,
+endDate: string,
+openingBalance: number,
+closingBalance: number,
+) {
+try {
+const doc = new jsPDF()
+const pageWidth = 210
+const pageHeight = 297
+// =========================
+// PALETTE (BNG)
+// =========================
+const blackText: [number, number, number] = [15, 23, 42]
+const grayText: [number, number, number] = [100, 116, 139]
+const lightGray: [number, number, number] = [248, 250, 252]
+const borderGray: [number, number, number] = [226, 232, 240]
+const white: [number, number, number] = [255, 255, 255]
+// Vert BNG exact: #0B8338
+const primaryGreen: [number, number, number] = [11, 132, 56]
+const primaryGreenDark: [number, number, number] = [8, 96, 41]
+const greenSoftBg: [number, number, number] = [236, 247, 238]
+// Jaunes
+const brandYellowSoft: [number, number, number] = [244, 230, 120] // doux
+const brandYellowStrong: [number, number, number] = [255, 235, 0] // #FFEB00 (accent fort)
+const yellowTextDark: [number, number, number] = [120, 105, 30]
+// Layout
+const contentLeft = 15
+const contentRight = pageWidth - 15
+const contentWidth = contentRight - contentLeft
+// Helpers
+const safe = (v: any) => (v === null || v === undefined ? "" : String(v))
+const fmtDate = (d: any) => (d ? new Date(d).toLocaleDateString("fr-FR") : "N/A")
+// =========================
+// HEADER PREMIUM
+// =========================
+const drawHeader = (hasLogo: boolean, img?: HTMLImageElement) => {
+const headerH = 34
+// Bandeau vert
+doc.setFillColor(...primaryGreen)
+doc.rect(0, 0, pageWidth, headerH, "F")
+// Ligne jaune ultra fine (accent)
+doc.setDrawColor(...brandYellowSoft)
+doc.setLineWidth(0.8)
+doc.line(0, headerH, pageWidth, headerH)
+// Logo (gauche)
+if (hasLogo && img) {
+// petit fond blanc derrière le logo pour lisibilité
+doc.setFillColor(...white)
+doc.roundedRect(contentLeft, 8, 34, 14, 2.5, 2.5, "F")
+doc.addImage(img, "PNG", contentLeft + 2, 9.5, 30, 11)
+}
+// Titre (blanc)
+doc.setTextColor(255, 255, 255)
+doc.setFont("helvetica", "bold")
+doc.setFontSize(15)
+doc.text("RELEVÉ DE COMPTE", pageWidth / 2, 14, { align: "center" })
+// Sous-titre période (blanc légèrement atténué)
+doc.setTextColor(235, 243, 238)
+doc.setFont("helvetica", "normal")
+doc.setFontSize(9)
+doc.text(
+`Période : ${new Date(startDate).toLocaleDateString("fr-FR")} - ${new
+Date(endDate).toLocaleDateString("fr-FR")}`,
+pageWidth / 2,
+24,
+{ align: "center" },
+)
+// “chip” à droite (devise)
+// const chipW = 34
+// const chipH = 10
+// const chipX = contentRight - chipW
+// const chipY = 10
+// doc.setFillColor(255, 255, 255)
+// doc.roundedRect(chipX, chipY, chipW, chipH, 4, 4, "F")
+// doc.setTextColor(...primaryGreenDark)
+// doc.setFont("helvetica", "bold")
+// doc.setFontSize(9)
+// doc.text(safe(account.currency || "-"), chipX + chipW / 2, chipY + 7, { align: "center" })
+}
+// =========================
+// TOP SECTION (Résumé + bloc droit)
+// =========================
+const drawTopSection = (yStart: number) => {
+// Totaux
+let totalDebit = 0
+let totalCredit = 0
+transactions.forEach((txn) => {
+const m = Number(txn?.montantOperation ?? 0)
+if (m < 0) totalDebit += Math.abs(m)
+else totalCredit += m
+})
+// mêmes champs que ton tableau
+const leftData = [
+{ label: "Numéro de compte", value: safe(account.number) },
+{ label: "Devise", value: safe(account.currency) },
+{ label: "Solde d'ouverture", value: `${formatAmount(Number(openingBalance))}
+${safe(account.currency)}` },
+{ label: "Solde de clôture", value: `${formatAmount(Number(closingBalance))}
+${safe(account.currency)}` },
+{ label: "Total débit", value: `${formatAmount(totalDebit)} ${safe(account.currency)}` },
+{ label: "Total crédit", value: `${formatAmount(totalCredit)} ${safe(account.currency)}` },
+]
+const gapBetween = 10
+const dividerThickness = 3
+const gapAfterDivider = 10
+const leftWidth = 100
+const leftX = contentLeft
+const leftY = yStart
+const dividerX = leftX + leftWidth + gapBetween
+const rightX = dividerX + gapAfterDivider
+const rightWidth = contentRight - rightX
+const labelColWidth = 55
+const valueColWidth = leftWidth - labelColWidth
+const rowHeight = 6.2
+const rows = 6
+const leftHeight = rowHeight * rows
+// Card gauche (blanche + bordure + header mini)
+doc.setFillColor(...white)
+doc.setDrawColor(...borderGray)
+doc.setLineWidth(0.8)
+doc.roundedRect(leftX, leftY, leftWidth, leftHeight + 10, 4, 4, "FD")
+// mini header vert (dans la card)
+doc.setFillColor(...greenSoftBg)
+doc.roundedRect(leftX, leftY, leftWidth, 10, 4, 4, "F")
+doc.setTextColor(...primaryGreenDark)
+doc.setFont("helvetica", "bold")
+doc.setFontSize(8.5)
+doc.text("RÉSUMÉ DU COMPTE", leftX + 3, leftY + 7)
+// grille data
+const gridY = leftY + 10
+// colonne labels (fond très léger)
+doc.setFillColor(...greenSoftBg)
+doc.rect(leftX, gridY, labelColWidth, leftHeight, "F")
+// colonne values blanche (déjà blanche mais on sécurise)
+doc.setFillColor(...white)
+doc.rect(leftX + labelColWidth, gridY, valueColWidth, leftHeight, "F")
+// séparateur vertical
+doc.setDrawColor(...borderGray)
+doc.setLineWidth(0.6)
+doc.line(leftX + labelColWidth, gridY, leftX + labelColWidth, gridY + leftHeight)
+leftData.forEach((row, i) => {
+const rowY = gridY + i * rowHeight
+if (i > 0) {
+doc.setDrawColor(...borderGray)
+doc.setLineWidth(0.3)
+doc.line(leftX, rowY, leftX + leftWidth, rowY)
+}
+doc.setTextColor(...primaryGreenDark)
+doc.setFont("helvetica", "bold")
+doc.setFontSize(7.4)
+doc.text(row.label, leftX + 3, rowY + 4.4)
+doc.setTextColor(...blackText)
+doc.setFont("helvetica", "normal")
+doc.setFontSize(7.4)
+const valLines = doc.splitTextToSize(safe(row.value), valueColWidth - 6)
+doc.text(valLines[0] || "", leftX + labelColWidth + 3, rowY + 4.4)
+})
+// Séparateur central (vert) + micro accent jaune au dessus
+doc.setDrawColor(...primaryGreen)
+doc.setLineWidth(dividerThickness)
+doc.line(dividerX, leftY + 2, dividerX, leftY + leftHeight + 8)
+doc.setDrawColor(...brandYellowSoft)
+doc.setLineWidth(1.2)
+doc.line(dividerX - 1.2, leftY + 2, dividerX + 1.2, leftY + 2)
+// Bloc droit (texte propre, sans "table", style premium)
+doc.setTextColor(...blackText)
+doc.setFont("helvetica", "bold")
+doc.setFontSize(11)
+doc.text("BANQUE NATIONALE DE GUINÉE", rightX, leftY + 10)
+doc.setTextColor(...grayText)
+doc.setFont("helvetica", "normal")
+doc.setFontSize(7.8)
+doc.text(doc.splitTextToSize("6ème Avenue Boulevard DIALLO Télly BP: 1781 Conakry", 
+rightWidth), rightX, leftY + 15)
+// Ligne signature (jaune fort) comme ta maquette
+doc.setDrawColor(...brandYellowStrong)
+doc.setLineWidth(0.8)
+doc.line(rightX, leftY + 20, rightX + rightWidth, leftY + 20)
+// Libellé compte (gros)
+doc.setTextColor(...blackText)
+doc.setFont("helvetica", "bold")
+doc.setFontSize(16)
+const accountLabel = safe(account.designation || account.name || "-")
+doc.text(doc.splitTextToSize(accountLabel, rightWidth), rightX, leftY + 38)
+return leftY + leftHeight + 16
+}
+// =========================
+// TRANSACTIONS TABLE (plus moderne)
+// =========================
+const drawTransactionTable = (yStart: number) => {
+let yPos = yStart
+// Titre section
+doc.setTextColor(...blackText)
+doc.setFont("helvetica", "bold")
+doc.setFontSize(11)
+doc.text(`TRANSACTIONS (${transactions.length})`, contentLeft, yPos)
+// underline vert + accent jaune court
+doc.setDrawColor(...primaryGreen)
+doc.setLineWidth(1.0)
+doc.line(contentLeft, yPos + 2.5, contentLeft + 60, yPos + 2.5)
+doc.setDrawColor(...brandYellowSoft)
+doc.setLineWidth(1.0)
+doc.line(contentLeft, yPos + 4.2, contentLeft + 28, yPos + 4.2)
+yPos += 10
+const tableStartX = contentLeft
+const col1Width = 25
+const col2Width = 45
+const col3Width = 30
+const col4Width = 25
+const col5Width = 25
+const col6Width = 25
+const cols = [col1Width, col2Width, col3Width, col4Width, col5Width, col6Width]
+const tableRowHeight = 9
+const tableWidth = cols.reduce((a, b) => a + b, 0)
+const drawHeaderRow = () => {
+// Header vert foncé + texte blanc
+doc.setFillColor(...primaryGreen)
+doc.setDrawColor(...primaryGreen)
+doc.setLineWidth(0.4)
+doc.rect(tableStartX, yPos, tableWidth, tableRowHeight, "FD")
+// fine ligne jaune en bas du header
+doc.setDrawColor(...brandYellowSoft)
+doc.setLineWidth(1.0)
+doc.line(tableStartX, yPos + tableRowHeight, tableStartX + tableWidth, yPos + 
+tableRowHeight)
+doc.setTextColor(255, 255, 255)
+doc.setFont("helvetica", "bold")
+doc.setFontSize(8.6)
+let x = tableStartX
+doc.text("Date Valeur", x + 2, yPos + 6)
+x += col1Width
+doc.text("Description", x + 2, yPos + 6)
+x += col2Width
+doc.text("Référence", x + 2, yPos + 6)
+x += col3Width
+doc.text("Date Op.", x + 2, yPos + 6)
+x += col4Width
+doc.text("Débit", x + 2, yPos + 6)
+x += col5Width
+doc.text("Crédit", x + 2, yPos + 6)
+yPos += tableRowHeight
+}
+drawHeaderRow()
+doc.setFont("helvetica", "normal")
+doc.setFontSize(8)
+doc.setTextColor(...blackText)
+transactions.forEach((txn: any, idx: number) => {
+if (yPos > 260) {
+doc.addPage()
+// Header de page
+drawSmallPageHeader()
+yPos = 40
+drawHeaderRow()
+doc.setFont("helvetica", "normal")
+doc.setFontSize(8)
+doc.setTextColor(...blackText)
+}
+// Alternance
+if (idx % 2 === 1) {
+doc.setFillColor(...lightGray)
+doc.rect(tableStartX, yPos, tableWidth, tableRowHeight, "F")
+}
+// Bordure externe légère
+doc.setDrawColor(...borderGray)
+doc.setLineWidth(0.25)
+doc.rect(tableStartX, yPos, tableWidth, tableRowHeight, "S")
+// séparateurs verticaux
+let cx = tableStartX
+for (let i = 0; i < cols.length - 1; i++) {
+cx += cols[i]
+doc.line(cx, yPos, cx, yPos + tableRowHeight)
+}
+const dateValeur = fmtDate(txn?.valueDate)
+const description = safe(txn?.description || "N/A").substring(0, 30)
+const reference = safe(txn?.referenceOperation || "N/A").substring(0, 18)
+const dateOperation = fmtDate(txn?.dateEcriture)
+const m = Number(txn?.montantOperation ?? 0)
+const montant = formatAmount(Math.abs(m))
+// cellules
+doc.setTextColor(...blackText)
+doc.text(dateValeur, tableStartX + 2, yPos + 6)
+doc.text(description, tableStartX + col1Width + 2, yPos + 6)
+doc.text(reference, tableStartX + col1Width + col2Width + 2, yPos + 6)
+doc.text(dateOperation, tableStartX + col1Width + col2Width + col3Width + 2, yPos + 6)
+if (m < 0) {
+doc.setTextColor(...blackText)
+doc.text(montant, tableStartX + col1Width + col2Width + col3Width + col4Width + 2, 
+yPos + 6)
+} else {
+doc.setTextColor(...primaryGreen)
+doc.setFont("helvetica", "bold")
+doc.text(montant, tableStartX + col1Width + col2Width + col3Width + col4Width + 
+col5Width + 2, yPos + 6)
+doc.setFont("helvetica", "normal")
+doc.setTextColor(...blackText)
+}
+yPos += tableRowHeight
+})
+return yPos
+}
+// =========================
+// SMALL PAGE HEADER (for pages > 1)
+// =========================
+const drawSmallPageHeader = () => {
+doc.setFillColor(...primaryGreen)
+doc.rect(0, 0, pageWidth, 18, "F")
+doc.setTextColor(255, 255, 255)
+doc.setFont("helvetica", "bold")
+doc.setFontSize(10)
+doc.text("RELEVÉ DE COMPTE", contentLeft, 11)
+doc.setTextColor(235, 243, 238)
+doc.setFont("helvetica", "normal")
+doc.setFontSize(8)
+doc.text(
+`${new Date(startDate).toLocaleDateString("fr-FR")} - ${new
+Date(endDate).toLocaleDateString("fr-FR")}`,
+contentRight,
+11,
+{ align: "right" },
+)
+doc.setDrawColor(...brandYellowSoft)
+doc.setLineWidth(0.8)
+doc.line(0, 18, pageWidth, 18)
+}
+// =========================
+// FOOTER
+// =========================
+const addFooter = (pageNum: number, totalPages: number) => {
+const footerY = pageHeight - 18
+doc.setDrawColor(...borderGray)
+doc.setLineWidth(0.4)
+doc.line(contentLeft, footerY, contentRight, footerY)
+doc.setTextColor(...grayText)
+doc.setFont("helvetica", "normal")
+doc.setFontSize(7)
+const footerLines = [
+"Banque Nationale de Guinée SA - Agrément par décision N° 06/019/93/CAB/PE 06/06/1993",
+"Capital : 60.000.000.000 GNF",
+"Boulevard Tidiani Kaba - Quartier Boulbinet/Almamya, Kaloum, Conakry, Guinée",
+"Tél: +224 - 622 454 049 - B.P 1781 - mail: contact@bng.gn",
+]
+let y = footerY + 4
+footerLines.forEach((line) => {
+doc.text(line, contentLeft, y)
+y += 3
+})
+// pagination (vert + micro accent jaune)
+doc.setTextColor(...primaryGreenDark)
+doc.setFont("helvetica", "bold")
+doc.text(`Page ${pageNum} / ${totalPages}`, contentRight, footerY + 4, { align: "right" })
+doc.setDrawColor(...brandYellowSoft)
+doc.setLineWidth(1.2)
+doc.line(contentRight - 20, footerY + 6, contentRight, footerY + 6)
+}
+// =========================
+// RENDER FLOW
+// =========================
+const render = () => {
+// Page 1 header premium
+// (si page > 1 : drawSmallPageHeader sera utilisé)
+let y = 40
+y = drawTopSection(y)
+y = drawTransactionTable(y + 6)
+// footers
+const pageCount = doc.internal.getNumberOfPages()
+for (let i = 1; i <= pageCount; i++) {
+doc.setPage(i)
+if (i > 1) drawSmallPageHeader()
+addFooter(i, pageCount)
+}
+const fileName = `Releve_Compte_${safe(account.number).replace(/-/g, "_")}_${new
+Date()
+.toISOString()
+.split("T")[0]}.pdf`
+doc.save(fileName)
+}
+// Logo
+const img = new Image()
+img.src = "/images/logo-bng.png"
+img.crossOrigin = "anonymous"
+img.onload = () => {
+drawHeader(true, img)
+render()
+}
+img.onerror = () => {
+console.warn("[v0] Logo BNG non trouvé, génération sans logo")
+drawHeader(false)
+render()
+}
+} catch (error) {
+console.error("[v0] Erreur génération PDF:", error)
+alert(" Erreur lors de la génération du PDF")
+}
+}
+
+
+
 
   async function generateExcelStatement(
-    account: Account,
     transactions: any[],
+    account: Account,
     startDate: string,
     endDate: string,
     openingBalance: number,
