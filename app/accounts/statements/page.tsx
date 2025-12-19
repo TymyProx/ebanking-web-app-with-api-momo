@@ -214,6 +214,9 @@ export default function StatementsPage() {
         // we need to calculate backwards from the current balance
         const openingBalance = closingBalance - transactionsSum
 
+        // Calculate what the closing balance should be (balance after all transactions)
+        const calculatedClosingBalance = openingBalance + transactionsSum
+
         const sortedTransactions = filteredTxns.sort((a: any, b: any) => {
           const dateA = new Date(a.valueDate || 0).getTime()
           const dateB = new Date(b.valueDate || 0).getTime()
@@ -303,13 +306,14 @@ export default function StatementsPage() {
       )
     } else if (format === "excel") {
       generateExcelStatement(
-        filteredTransactions,
         selectedAccount,
+        filteredTransactions,
         startDate,
         endDate,
-        balanceOuverture, // Pass the calculated opening balance
-        balanceFermeture, // Pass the calculated closing balance
+        balanceOuverture,
+        balanceFermeture, // Use calculated closing balance
       )
+      // </CHANGE>
     }
 
     setHasGeneratedStatement(true)
@@ -1247,8 +1251,9 @@ export default function StatementsPage() {
           },
           {
             label: "Solde de clôture",
-            value: `${formatAmount(Number(closingBalance))} ${safe(account.currency)}`,
+            value: `${formatAmount(Math.round(closingBalance))} ${safe(account.currency)}`,
           },
+          // </CHANGE>
           { label: "Total débit", value: `${formatAmount(totalDebit)} ${safe(account.currency)}` },
           { label: "Total crédit", value: `${formatAmount(totalCredit)} ${safe(account.currency)}` },
         ]
@@ -1593,8 +1598,8 @@ export default function StatementsPage() {
   }
 
   async function generateExcelStatement(
-    transactions: any[],
     account: Account,
+    transactions: any[],
     startDate: string,
     endDate: string,
     openingBalance: number,
