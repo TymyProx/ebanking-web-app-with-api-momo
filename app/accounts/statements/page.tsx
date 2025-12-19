@@ -983,13 +983,14 @@ ${safe(account.currency)}`,
         doc.line(contentLeft, y + 2.5, contentLeft + 70, y + 2.5)
         y += 10
         const tableX = contentLeft
-        const col1 = 25
-        const col2 = 45
-        const col3 = 30
-        const col4 = 25
-        const col5 = 25
-        const col6 = 25
-        const cols = [col1, col2, col3, col4, col5, col6]
+        const col1 = 22 // Date Valeur (reduced from 25)
+        const col2 = 38 // Description (reduced from 45)
+        const col3 = 28 // Référence (reduced from 30)
+        const col4 = 22 // Date Op. (reduced from 25)
+        const col5 = 22 // Débit (reduced from 25)
+        const col6 = 22 // Crédit (reduced from 25)
+        const col7 = 33 // Solde (new column)
+        const cols = [col1, col2, col3, col4, col5, col6, col7]
         const w = cols.reduce((a, b) => a + b, 0)
         const h = 9
         const headerRow = () => {
@@ -1018,6 +1019,7 @@ ${safe(account.currency)}`,
           doc.text("Date Op.", tableX + col1 + col2 + col3 + 2, y + 6)
           doc.text("Débit", tableX + col1 + col2 + col3 + col4 + 2, y + 6)
           doc.text("Crédit", tableX + col1 + col2 + col3 + col4 + col5 + 2, y + 6)
+          doc.text("Solde", tableX + col1 + col2 + col3 + col4 + col5 + col6 + 2, y + 6)
           y += h
         }
         const ensurePage = () => {
@@ -1053,6 +1055,7 @@ ${safe(account.currency)}`,
         doc.setFont("helvetica", "normal")
         doc.setFontSize(8)
         doc.setTextColor(...blackText)
+        let runningBalance = Number.parseFloat(String(closingBalance)) || 0
         transactions.forEach((txn: any, idx: number) => {
           ensurePage()
           // alternance
@@ -1070,26 +1073,35 @@ ${safe(account.currency)}`,
             doc.line(cx, y, cx, y + h)
           }
           const dateValeur = fmtDate(txn?.valueDate)
-          const description = safe(txn?.description || "N/A").substring(0, 30)
+          const description = safe(txn?.description || "N/A").substring(0, 25)
           const reference = safe(txn?.referenceOperation || "N/A").substring(0, 18)
           const dateOp = fmtDate(txn?.dateEcriture)
           const m = Number(txn?.montantOperation ?? 0)
           const montant = money(Math.abs(m))
+
           doc.setTextColor(...blackText)
-          doc.text(dateValeur, tableX + 2, y + 6)
-          doc.text(description, tableX + col1 + 2, y + 6)
-          doc.text(reference, tableX + col1 + col2 + 2, y + 6)
-          doc.text(dateOp, tableX + col1 + col2 + col3 + 2, y + 6)
+          doc.text(dateValeur, tableX + 2, y + 6, { align: "center" })
+          doc.text(description, tableX + col1 + col2 / 2, y + 6, { align: "center" })
+          doc.text(reference, tableX + col1 + col2 + col3 / 2, y + 6, { align: "center" })
+          doc.text(dateOp, tableX + col1 + col2 + col3 + col4 / 2, y + 6, { align: "center" })
+
           if (m < 0) {
             doc.setTextColor(...blackText)
-            doc.text(montant, tableX + col1 + col2 + col3 + col4 + 2, y + 6)
+            doc.text(montant, tableX + col1 + col2 + col3 + col4 + col5 / 2, y + 6, { align: "center" })
           } else {
             doc.setTextColor(...primaryGreen)
-            doc.setFont("helvetica", "bold")
-            doc.text(montant, tableX + col1 + col2 + col3 + col4 + col5 + 2, y + 6)
-            doc.setFont("helvetica", "normal")
+            doc.text(montant, tableX + col1 + col2 + col3 + col4 + col5 + col6 / 2, y + 6, { align: "center" })
             doc.setTextColor(...blackText)
           }
+
+          const soldeText = money(Math.trunc(runningBalance))
+          doc.setTextColor(...blackText)
+          doc.setFont("helvetica", "bold")
+          doc.text(soldeText, tableX + col1 + col2 + col3 + col4 + col5 + col6 + col7 / 2, y + 6, { align: "center" })
+          doc.setFont("helvetica", "normal")
+
+          runningBalance -= m
+
           y += h
         })
       }
