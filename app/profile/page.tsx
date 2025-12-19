@@ -10,7 +10,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { User, MapPin, Briefcase, Shield, CheckCircle, AlertCircle, Edit, Save, X } from "lucide-react"
-import { updateProfile } from "./actions"
+import { updateProfile, getUserProfileData } from "./actions"
 import { AuthService, type User as AuthUser } from "@/lib/auth-service"
 
 interface ProfileData {
@@ -26,6 +26,9 @@ interface ProfileData {
   profession: string
   employer: string
   monthlyIncome: string
+  codeClient: string
+  nomComplet: string
+  clientType: string
 }
 
 const defaultData: ProfileData = {
@@ -41,6 +44,9 @@ const defaultData: ProfileData = {
   profession: "",
   employer: "",
   monthlyIncome: "",
+  codeClient: "",
+  nomComplet: "",
+  clientType: "",
 }
 
 const countries = ["Guinée", "Sénégal", "Mali", "Côte d'Ivoire", "Burkina Faso", "Niger", "France", "Autre"]
@@ -62,27 +68,38 @@ export default function ProfilePage() {
   const [isPending, startTransition] = useTransition()
 
   useEffect(() => {
-    const loadUserData = () => {
+    const loadUserData = async () => {
       try {
         const user = AuthService.getCurrentUser()
-        //console.log("[v0] Données utilisateur récupérées:", user)
 
         if (user) {
           setCurrentUser(user)
-          setFormData({
-            firstName: user.firstName || "",
-            lastName: user.lastName || "",
-            email: user.email || "",
-            phone: user.phoneNumber || "",
-            dateOfBirth: "",
-            address: "",
-            city: "",
-            postalCode: "",
-            country: "Guinée",
-            profession: "",
-            employer: "",
-            monthlyIncome: "",
-          })
+        }
+
+        const result = await getUserProfileData()
+
+        if (result.success && result.data) {
+          setFormData(result.data)
+        } else {
+          if (user) {
+            setFormData({
+              firstName: user.firstName || "",
+              lastName: user.lastName || "",
+              email: user.email || "",
+              phone: user.phoneNumber || "",
+              dateOfBirth: "",
+              address: "",
+              city: "",
+              postalCode: "",
+              country: "Guinée",
+              profession: "",
+              employer: "",
+              monthlyIncome: "",
+              codeClient: "",
+              nomComplet: "",
+              clientType: "",
+            })
+          }
         }
       } catch (error) {
         console.error("[v0] Erreur lors du chargement des données utilisateur:", error)
@@ -155,22 +172,13 @@ export default function ProfilePage() {
   }
 
   const handleCancel = () => {
-    if (currentUser) {
-      setFormData({
-        firstName: currentUser.firstName || "",
-        lastName: currentUser.lastName || "",
-        email: currentUser.email || "",
-        phone: currentUser.phoneNumber || "",
-        dateOfBirth: "",
-        address: "",
-        city: "",
-        postalCode: "",
-        country: "Guinée",
-        profession: "",
-        employer: "",
-        monthlyIncome: "",
-      })
-    }
+    setIsLoading(true)
+    getUserProfileData().then((result) => {
+      if (result.success && result.data) {
+        setFormData(result.data)
+      }
+      setIsLoading(false)
+    })
     setIsEditing(false)
     setMessage(null)
   }
@@ -233,6 +241,13 @@ export default function ProfilePage() {
               <CardDescription>Vos informations de base (* champs obligatoires)</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+              {formData.codeClient && (
+                <div>
+                  <Label htmlFor="codeClient">Code Client</Label>
+                  <Input id="codeClient" value={formData.codeClient} disabled className="bg-gray-50" />
+                </div>
+              )}
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="firstName">Prénom *</Label>
@@ -464,6 +479,20 @@ export default function ProfilePage() {
                   <span>ID Utilisateur</span>
                   <span className="font-mono">{currentUser?.id?.slice(0, 8) || "N/A"}</span>
                 </div>
+                {formData.codeClient && (
+                  <div className="flex justify-between">
+                    <span>Code Client</span>
+                    <span className="font-mono">{formData.codeClient}</span>
+                  </div>
+                )}
+                {formData.clientType && (
+                  <div className="flex justify-between">
+                    <span>Type de Client</span>
+                    <Badge variant="outline" className="capitalize">
+                      {formData.clientType === "existing" ? "Existant" : "Nouveau"}
+                    </Badge>
+                  </div>
+                )}
                 <div className="flex justify-between">
                   <span>Email</span>
                   <span>{currentUser?.email || "N/A"}</span>
