@@ -1055,8 +1055,13 @@ ${safe(account.currency)}`,
         doc.setFont("helvetica", "normal")
         doc.setFontSize(8)
         doc.setTextColor(...blackText)
-        let runningBalance = Number.parseFloat(String(closingBalance)) || 0
-        transactions.forEach((txn: any, idx: number) => {
+        let runningBalance = Number.parseFloat(String(openingBalance)) || 0
+        // Reverse transactions to process from oldest to newest (bottom to top)
+        const reversedTransactions = [...transactions].reverse()
+
+        reversedTransactions.forEach((txn: any, reverseIdx: number) => {
+          const idx = transactions.length - 1 - reverseIdx // Get original index for alternating colors
+
           ensurePage()
           // alternance
           if (idx % 2 === 1) {
@@ -1079,6 +1084,9 @@ ${safe(account.currency)}`,
           const m = Number(txn?.montantOperation ?? 0)
           const montant = money(Math.abs(m))
 
+          // Add transaction amount to running balance
+          runningBalance += m
+
           doc.setTextColor(...blackText)
           doc.text(dateValeur, tableX + 2, y + 6, { align: "center" })
           doc.text(description, tableX + col1 + col2 / 2, y + 6, { align: "center" })
@@ -1099,8 +1107,6 @@ ${safe(account.currency)}`,
           doc.setFont("helvetica", "bold")
           doc.text(soldeText, tableX + col1 + col2 + col3 + col4 + col5 + col6 + col7 / 2, y + 6, { align: "center" })
           doc.setFont("helvetica", "normal")
-
-          runningBalance -= m
 
           y += h
         })
