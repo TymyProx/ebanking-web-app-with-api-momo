@@ -383,7 +383,7 @@ export default function CardsPage() {
   }
 
   function formatAmount(amount: number) {
-    return new Intl.NumberFormat("fr-FR").format(amount)
+    return new Intl.NumberFormat("fr-FR").format(Math.trunc(amount))
   }
 
   const toggleFlip = () => {

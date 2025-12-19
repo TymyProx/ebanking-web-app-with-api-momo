@@ -267,7 +267,7 @@ export default function DemandeCartePage() {
                   <SelectContent>
                     {accounts.map((account) => (
                       <SelectItem key={account.id} value={account.id}>
-                        {account.name} - {account.accountNumber} ({(account.balance ?? 0).toLocaleString()}{" "}
+                        {account.name} - {account.accountNumber} ({Math.trunc(account.balance ?? 0).toLocaleString()}{" "}
                         {account.currency})
                       </SelectItem>
                     ))}
