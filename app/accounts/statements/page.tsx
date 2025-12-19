@@ -879,7 +879,7 @@ export default function StatementsPage() {
         const labelColWidth = 55
         const valueColWidth = leftWidth - labelColWidth
         const rowHeight = 6
-        const rows = 6
+        const rows = 5
         const leftHeight = rowHeight * rows
         // Totaux débit/crédit
         let totalDebit = 0
@@ -890,17 +890,14 @@ export default function StatementsPage() {
           else totalCredit += m
         })
         const leftData = [
-          { label: "Numéro de compte", value: safe(account.number) },
           { label: "Devise", value: safe(account.currency) },
           {
             label: "Solde d'ouverture",
-            value: `${formatAmount(Number(openingBalance))}
-        ${safe(account.currency)}`,
+            value: `${formatAmount(Number(openingBalance))} ${safe(account.currency)}`,
           },
           {
             label: "Solde de clôture",
-            value: `${formatAmount(Number(closingBalance))}
-        ${safe(account.currency)}`,
+            value: `${formatAmount(Number(closingBalance))} ${safe(account.currency)}`,
           },
           { label: "Total débit", value: `${formatAmount(totalDebit)} ${safe(account.currency)}` },
           { label: "Total crédit", value: `${formatAmount(totalCredit)} ${safe(account.currency)}` },
@@ -961,6 +958,11 @@ export default function StatementsPage() {
         doc.setFontSize(16)
         const accountLabel = safe(account.designation || account.name || "-")
         doc.text(doc.splitTextToSize(accountLabel, rightWidth), rightX, leftY + 32)
+        doc.setTextColor(...grayText)
+        doc.setFont("helvetica", "normal")
+        doc.setFontSize(9)
+        doc.text(`N° de compte : ${safe(account.number)}`, rightX, leftY + 38)
+
         // =========================
         // TRANSACTIONS
         // =========================
