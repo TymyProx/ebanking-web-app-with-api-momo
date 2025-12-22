@@ -771,10 +771,10 @@ export default function CardsPage() {
 
                             <DialogContent className="max-w-2xl">
                               <DialogHeader>
-                                <DialogTitle>Gestion de la carte</DialogTitle>
-                                <DialogDescription>
+                                <DialogTitle>Détails de la carte</DialogTitle>
+                                {/* <DialogDescription>
                                   {currentCard.typCard} - {formatCardNumber(currentCard.numCard, false)}
-                                </DialogDescription>
+                                </DialogDescription> */}
                               </DialogHeader>
 
                               <div className="space-y-4 p-4">
