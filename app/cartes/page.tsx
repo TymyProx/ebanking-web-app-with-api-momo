@@ -19,12 +19,10 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
 import {
   CreditCard,
   Eye,
@@ -44,7 +42,6 @@ import {
   Shield,
   AlertTriangle,
   Clock,
-  AlertCircle,
 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { toggleCardStatus } from "@/app/cartes/actions"
@@ -58,7 +55,6 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 type CardWithVisibility = CardType & {
   holder?: string
   isNumberVisible?: boolean
-  plafond?: number
 }
 
 type Account = {
@@ -120,10 +116,6 @@ export default function CardsPage() {
     action: "block",
   })
 
-  const [showPlafondDialog, setShowPlafondDialog] = useState(false)
-  const [newPlafond, setNewPlafond] = useState<number>(0)
-  const [plafondError, setPlafondError] = useState<string>("")
-
   const toast = useToast()
 
   async function loadAccounts() {
@@ -157,7 +149,8 @@ export default function CardsPage() {
           holder: card.titulaire_name || "CLIENT NAME",
           isNumberVisible: false,
           accountNumber: card.accountNumber,
-          plafond: card.plafond || 0,
+          dateEmission: card.dateEmission || "",
+          plafond: card.plafond || null,
         }))
 
         setCards(mappedCards)
@@ -214,39 +207,6 @@ export default function CardsPage() {
       setSubmitError(e?.message ?? "Erreur lors de la création de la demande")
     } finally {
       setSubmitting(false)
-    }
-  }
-
-  async function handlePlafondChangeRequest() {
-    if (!selectedCard) return
-
-    setPlafondError("")
-
-    if (newPlafond <= 0) {
-      setPlafondError("Le plafond doit être supérieur à 0")
-      return
-    }
-
-    const currentPlafond = selectedCard.plafond || 0
-
-    if (newPlafond === currentPlafond) {
-      setPlafondError("Le nouveau plafond doit être différent du plafond actuel")
-      return
-    }
-
-    try {
-      const result = await submitPlafondChangeRequest(selectedCard.id, currentPlafond, newPlafond)
-
-      if (result.success) {
-        setSubmitSuccess(result.message || "Demande soumise avec succès")
-        setShowPlafondDialog(false)
-        setNewPlafond(0)
-      } else {
-        setPlafondError(result.error || "Erreur lors de la soumission")
-      }
-    } catch (err) {
-      console.error("Error submitting plafond change:", err)
-      setPlafondError("Une erreur est survenue. Veuillez réessayer.")
     }
   }
 
@@ -817,52 +777,62 @@ export default function CardsPage() {
                                 </DialogDescription>
                               </DialogHeader>
 
-                              <div className="space-y-6 p-4">
-                                <div className="space-y-4">
-                                  <h3 className="text-lg font-semibold">Informations de la carte</h3>
-
-                                  <div className="grid grid-cols-2 gap-4">
-                                    <div className="space-y-1">
-                                      <p className="text-sm text-muted-foreground">Type de carte</p>
-                                      <p className="font-medium">{currentCard.typCard}</p>
-                                    </div>
-
-                                    <div className="space-y-1">
-                                      <p className="text-sm text-muted-foreground">Statut</p>
-                                      <p className="font-medium">{currentCard.status}</p>
-                                    </div>
-
-                                    <div className="space-y-1">
-                                      <p className="text-sm text-muted-foreground">Date d'expiration</p>
-                                      <p className="font-medium">
-                                        {currentCard.dateExpiration &&
-                                          new Date(currentCard.dateExpiration).toLocaleDateString("fr-FR")}
-                                      </p>
-                                    </div>
-
-                                    <div className="space-y-1">
-                                      <p className="text-sm text-muted-foreground">Plafond actuel</p>
-                                      <p className="font-medium">
-                                        {currentCard.plafond
-                                          ? `${Math.trunc(currentCard.plafond).toLocaleString("fr-FR")} GNF`
-                                          : "Non défini"}
-                                      </p>
-                                    </div>
+                              <div className="space-y-4 p-4">
+                                <div className="grid grid-cols-2 gap-4">
+                                  <div className="space-y-2">
+                                    <Label className="text-sm font-medium text-muted-foreground">Type de carte</Label>
+                                    <p className="text-base font-semibold">{currentCard.typCard}</p>
                                   </div>
-                                </div>
 
-                                <div className="pt-4 border-t">
-                                  <Button
-                                    onClick={() => {
-                                      setNewPlafond(currentCard.plafond || 0)
-                                      setShowPlafondDialog(true)
-                                      setPlafondError("")
-                                    }}
-                                    variant="outline"
-                                    className="w-full"
-                                  >
-                                    Demander une modification de plafond
-                                  </Button>
+                                  <div className="space-y-2">
+                                    <Label className="text-sm font-medium text-muted-foreground">Statut</Label>
+                                    <Badge
+                                      variant={
+                                        currentCard.status?.toUpperCase() === "ACTIF"
+                                          ? "default"
+                                          : currentCard.status?.toUpperCase() === "BLOCKED" ||
+                                              currentCard.status?.toUpperCase() === "BLOQUE"
+                                            ? "destructive"
+                                            : "secondary"
+                                      }
+                                    >
+                                      {currentCard.status}
+                                    </Badge>
+                                  </div>
+
+                                  <div className="space-y-2">
+                                    <Label className="text-sm font-medium text-muted-foreground">Date d'émission</Label>
+                                    <p className="text-base">
+                                      {new Date(currentCard.dateEmission).toLocaleDateString("fr-FR")}
+                                    </p>
+                                  </div>
+
+                                  <div className="space-y-2">
+                                    <Label className="text-sm font-medium text-muted-foreground">
+                                      Date d'expiration
+                                    </Label>
+                                    <p className="text-base">
+                                      {new Date(currentCard.dateExpiration).toLocaleDateString("fr-FR")}
+                                    </p>
+                                  </div>
+
+                                  <div className="space-y-2 col-span-2">
+                                    <Label className="text-sm font-medium text-muted-foreground">Plafond</Label>
+                                    <p className="text-lg font-bold text-primary">
+                                      {currentCard.plafond
+                                        ? `${Math.trunc(currentCard.plafond).toLocaleString("fr-FR")} GNF`
+                                        : "Non défini"}
+                                    </p>
+                                  </div>
+
+                                  {currentCard.accountNumber && (
+                                    <div className="space-y-2 col-span-2">
+                                      <Label className="text-sm font-medium text-muted-foreground">
+                                        Compte associé
+                                      </Label>
+                                      <p className="text-base font-mono">{currentCard.accountNumber}</p>
+                                    </div>
+                                  )}
                                 </div>
                               </div>
                             </DialogContent>
@@ -1028,59 +998,6 @@ export default function CardsPage() {
               </div>
             </DialogContent>
           </Dialog>
-
-          {/* Plafond Change Request Dialog */}
-          <Dialog open={showPlafondDialog} onOpenChange={setShowPlafondDialog}>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Demande de modification de plafond</DialogTitle>
-                <DialogDescription>
-                  Cette demande sera soumise pour validation. Le changement sera effectué après approbation.
-                </DialogDescription>
-              </DialogHeader>
-
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label>Plafond actuel</Label>
-                  <Input
-                    value={
-                      selectedCard?.plafond
-                        ? `${Math.trunc(selectedCard.plafond).toLocaleString("fr-FR")} GNF`
-                        : "Non défini"
-                    }
-                    disabled
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="newPlafond">Nouveau plafond (GNF) *</Label>
-                  <Input
-                    id="newPlafond"
-                    type="number"
-                    value={newPlafond || ""}
-                    onChange={(e) => setNewPlafond(Number(e.target.value))}
-                    placeholder="Ex: 10000000"
-                    min="0"
-                  />
-                  {plafondError && <p className="text-sm text-destructive">{plafondError}</p>}
-                </div>
-
-                <Alert>
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertDescription>
-                    Votre demande sera examinée par l'équipe de gestion. Vous serez notifié une fois la demande traitée.
-                  </AlertDescription>
-                </Alert>
-              </div>
-
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setShowPlafondDialog(false)}>
-                  Annuler
-                </Button>
-                <Button onClick={handlePlafondChangeRequest}>Soumettre la demande</Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
         </div>
 
         <AlertDialog
@@ -1107,13 +1024,4 @@ export default function CardsPage() {
       </div>
     </TooltipProvider>
   )
-}
-
-// Dummy function for demonstration purposes
-async function submitPlafondChangeRequest(cardId: string, currentPlafond: number, newPlafond: number) {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve({ success: true, message: "Plafond modifié avec succès" })
-    }, 1000)
-  })
 }
