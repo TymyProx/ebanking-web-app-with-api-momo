@@ -41,6 +41,17 @@ export type NewCardRequest = {
   plafond?: number
 }
 
+export type PlafondChangeRequest = {
+  cardId: string
+  cardNumber: string
+  cardType: string
+  currentPlafond: number
+  requestedPlafond: number
+  clientId: string
+  status: string
+  submittedAt: string
+}
+
 async function getCurrentUserInfo(token: string) {
   try {
     const response = await fetch(`${BASE_URL}/auth/me`, {
@@ -412,6 +423,70 @@ export async function toggleCardStatus(cardId: string, currentStatus: string) {
     return {
       success: false,
       error: "Erreur lors de la mise à jour du statut. Veuillez réessayer.",
+    }
+  }
+}
+
+export async function submitPlafondChangeRequest(cardId: string, currentPlafond: number, newPlafond: number) {
+  const cookieToken = (await cookies()).get("token")?.value
+  const usertoken = cookieToken
+
+  if (!usertoken) {
+    return {
+      success: false,
+      error: "Token d'authentification manquant",
+    }
+  }
+
+  try {
+    const clientId = await getCurrentUserInfo(usertoken)
+
+    // Get card details to include in request
+    const card = await getCardDetails(cardId)
+
+    const requestData = {
+      type: "plafond_change",
+      cardId: cardId,
+      cardNumber: card.numCard,
+      cardType: card.typCard,
+      currentPlafond: currentPlafond,
+      requestedPlafond: newPlafond,
+      clientId: clientId,
+      status: "En attente",
+      submittedAt: new Date().toISOString(),
+    }
+
+    // For now, we'll store this as a generic service request
+    // You can create a dedicated table later if needed
+    const res = await fetch(`${BASE_URL}/tenant/${TENANT_ID}/service-request`, {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${usertoken}`,
+      },
+      body: JSON.stringify({ data: requestData }),
+    })
+
+    const contentType = res.headers.get("content-type") || ""
+    const bodyText = await res.text()
+
+    if (!res.ok) {
+      return {
+        success: false,
+        error: `Erreur ${res.status}: ${bodyText || "Erreur lors de la soumission"}`,
+      }
+    }
+
+    return {
+      success: true,
+      message: "Demande de modification de plafond soumise avec succès. Elle sera traitée dans les plus brefs délais.",
+    }
+  } catch (error) {
+    console.error("[v0] Error submitting plafond change request:", error)
+    return {
+      success: false,
+      error: "Erreur lors de la soumission de la demande. Veuillez réessayer.",
     }
   }
 }
