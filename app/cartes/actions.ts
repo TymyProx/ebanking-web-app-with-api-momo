@@ -25,6 +25,7 @@ export type Card = {
   clientId: string
   accountNumber?: string
   titulaire_name?: string
+  plafond?: number
 }
 
 export type CardsResponse = {
@@ -37,6 +38,7 @@ export type NewCardRequest = {
   accountNumber?: string
   clientId: string
   titulaire_name?: string
+  plafond?: number
 }
 
 async function getCurrentUserInfo(token: string) {
@@ -126,6 +128,17 @@ async function getClientFullName(clientId: string, token: string): Promise<strin
     console.error("[v0] Error fetching client name:", error)
     return ""
   }
+}
+
+function getDefaultPlafond(cardType: string): number {
+  const plafondDefaults: { [key: string]: number } = {
+    DEBIT: 5000000, // 5,000,000 GNF per day
+    CREDIT: 10000000, // 10,000,000 GNF per month
+    PREPAID: 3000000, // 3,000,000 GNF (loaded amount)
+    VIRTUAL: 2000000, // 2,000,000 GNF per transaction
+  }
+
+  return plafondDefaults[cardType] || 5000000 // Default to 5M GNF if type not found
 }
 
 export async function fetchAllCards(): Promise<CardsResponse> {
@@ -254,6 +267,9 @@ export async function createCardRequest(cardData: NewCardRequest): Promise<Card>
   const titulaireCompletName = await getClientFullName(clientId, usertoken)
   console.log("[v0] createCardRequest - titulaireCompletName:", titulaireCompletName)
 
+  const plafond = cardData.plafond || getDefaultPlafond(cardData.typCard)
+  console.log("[v0] createCardRequest - plafond:", plafond)
+
   const today = new Date().toISOString().split("T")[0]
 
   const expirationDate = new Date()
@@ -277,6 +293,7 @@ export async function createCardRequest(cardData: NewCardRequest): Promise<Card>
         clientId: clientId,
         accountNumber_json: enc(cardData.accountNumber || ""),
         titulaire_name_json: enc(titulaireCompletName),
+        plafond_json: enc(plafond), // Added plafond to encrypted payload
         key_id: "k1-mobile-v1",
       },
     }
@@ -291,6 +308,7 @@ export async function createCardRequest(cardData: NewCardRequest): Promise<Card>
         clientId: clientId,
         accountNumber: cardData.accountNumber || "",
         titulaire_name: titulaireCompletName,
+        plafond: plafond, // Added plafond to unencrypted payload
       },
     }
   }
