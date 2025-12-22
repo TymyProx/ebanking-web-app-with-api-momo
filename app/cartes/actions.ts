@@ -83,18 +83,35 @@ async function getClientFullName(clientId: string, token: string): Promise<strin
     const clientData = await response.json()
     console.log("[v0] Client data received:", JSON.stringify(clientData, null, 2))
 
-    // Handle different response formats
     let client = null
+    let clients: any[] = []
+
+    // Handle different response formats
     if (Array.isArray(clientData)) {
-      client = clientData[0]
+      clients = clientData
     } else if (clientData.rows && Array.isArray(clientData.rows)) {
-      client = clientData.rows[0]
+      clients = clientData.rows
     } else if (clientData.data && Array.isArray(clientData.data)) {
-      client = clientData.data[0]
+      clients = clientData.data
     } else if (clientData.value && Array.isArray(clientData.value)) {
-      client = clientData.value[0]
+      clients = clientData.value
     } else {
+      // Single client object
       client = clientData
+    }
+
+    // If we have an array, find the client with matching userid
+    if (clients.length > 0) {
+      client = clients.find((c: any) => c.userid === clientId)
+
+      if (!client) {
+        console.error("[v0] No client found with matching userid:", clientId)
+        console.log(
+          "[v0] Available clients:",
+          clients.map((c: any) => ({ id: c.id, userid: c.userid, name: c.nomComplet })),
+        )
+        return ""
+      }
     }
 
     if (!client) {
