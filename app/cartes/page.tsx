@@ -404,7 +404,39 @@ export default function CardsPage() {
 
   const handleRefresh = async () => {
     setIsRefreshing(true)
-    await fetchAllCards() // Corrected variable name
+    try {
+      const response = await fetchAllCards()
+      const cards = response.rows
+
+      const mappedCards: CardWithVisibility[] = cards.map((card: any, index: number) => ({
+        id: card.id || `card-${index}`,
+        numCard: card.numCard || "",
+        typCard: card.typCard || "DEBIT",
+        status: card.status || "EN_ATTENTE",
+        dateExpiration: card.dateExpiration
+          ? new Date(card.dateExpiration).toLocaleDateString("fr-FR", { month: "2-digit", year: "2-digit" })
+          : "--/--",
+        holder: card.titulaire_name || "CLIENT NAME",
+        isNumberVisible: false,
+        accountNumber: card.accountNumber,
+        dateEmission: card.dateEmission || "",
+        plafond: card.plafond || null,
+      }))
+
+      setCards(mappedCards)
+      setTotal(response.count)
+
+      // Apply status filter after refresh
+      const filtered = mappedCards.filter((card) => {
+        if (statusFilter === "all") return true
+        return card.status?.toUpperCase() === statusFilter.toUpperCase()
+      })
+      setFilteredCards(filtered)
+    } catch (e: any) {
+      setError(e?.message ?? String(e))
+    } finally {
+      setIsRefreshing(false)
+    }
   }
 
   // Effect to filter cards when statusFilter changes
