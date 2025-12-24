@@ -80,6 +80,11 @@ export async function initiateSignup(data: InitialSignupData) {
     // Generate verification token
     const verificationToken = randomBytes(32).toString("hex")
 
+    console.log("[v0] Step 1: Saving pending signup data (client will be created by backend during signup)...")
+
+    // ============================================================
+    // SAVE DATA IN COOKIE FOR LATER VERIFICATION
+    // ============================================================
     const cookieStore = await cookies()
     const cookieConfig = getCookieConfig()
     cookieStore.set(
@@ -99,7 +104,10 @@ export async function initiateSignup(data: InitialSignupData) {
       },
     )
 
-    console.log("[v0] Sending verification email via Resend (server action)...")
+    // ============================================================
+    // SEND VERIFICATION EMAIL
+    // ============================================================
+    console.log("[v0] Step 3: Sending verification email via Resend...")
 
     const resend = new Resend(process.env.RESEND_API_KEY)
     const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || "no-reply@bngebanking.com"
@@ -456,6 +464,8 @@ export async function initiateExistingClientSignup(data: { clientCode: string })
 
     const verificationToken = randomBytes(32).toString("hex")
 
+    console.log("[v0] Step 2.7: Saving pending signup data (client will be created by backend during signup)...")
+
     const cookieStore = await cookies()
     const cookieConfig = getCookieConfig()
     cookieStore.set(
@@ -464,7 +474,7 @@ export async function initiateExistingClientSignup(data: { clientCode: string })
         email: clientEmail,
         fullName: clientFullName,
         phone: clientPhone,
-        address: "", // Not available in BdClientBng
+        address: bdClientData.adresse || bdClientData.address || "",
         clientCode: data.clientCode,
         numClient: numClient,
         verificationToken: verificationToken,

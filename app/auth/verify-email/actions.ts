@@ -229,76 +229,163 @@ export async function completeSignup(token: string, password: string) {
     if (!userId) throw new Error("userId introuvable")
 
     // ============================================================
-    // ✅ CLIENT: créer UNE SEULE FOIS pour existing
-    //    et payload doit venir de BdClientBng
+    // ✅ CLIENT: Update existing client created during initiateSignup
     // ============================================================
-    if (clientType === "existing") {
-      // 1) Re-check post-signup si client existe déjà (codeClient) => si oui, on ne post pas
-      const clientsAfter = await getAll(CLIENT_ENDPOINT, supportToken)
-      const existingClient = clientsAfter.find((c: any) => String(c.codeClient || "").trim() === codeClient)
+    const clientId = pending.clientId
+    
+    if (clientId) {
+      // Client was already created during signup, just update it
+      console.log("[completeSignup] Updating existing client:", clientId)
+      
+      const updateClientRes = await fetch(`${CLIENT_ENDPOINT}/${clientId}`, {
+        method: "PATCH",
+        headers: {
+          Authorization: `Bearer ${authToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          userid: String(userId),
+          emailVerified: true,
+          status: 1, // Activate the client
+        }),
+      })
 
-      if (!existingClient) {
-        // 2) Récupérer BdClientBng (source de vérité)
-        const bd = await fetchBdClientBngByNumClient(supportToken, codeClient)
-        if (!bd) throw new Error("BdClientBng introuvable pour ce numClient (impossible de créer le client).")
+      if (!updateClientRes.ok) {
+        const t = await updateClientRes.text().catch(() => "")
+        console.warn("[completeSignup] Failed to update client, will try to create:", t)
+        
+        // Fallback: create if update fails
+        if (clientType === "existing") {
+          const bd = await fetchBdClientBngByNumClient(supportToken, codeClient)
+          if (!bd) throw new Error("BdClientBng introuvable pour ce numClient (impossible de créer le client).")
 
-        // 3) Construire payload *depuis BdClientBng* (et non pending)
-        const clientBody = {
-          data: {
-            nomComplet: String(bd.nomComplet || bd.fullName || pending.fullName || pending.email),
-            email: String(bd.email || pending.email),
-            telephone: String(bd.telephone || bd.phone || pending.phone || ""),
-            adresse: String(bd.adresse || bd.address || pending.address || ""),
-            codeClient: codeClient,      // ✅ numClient BdClientBng
-            userid: String(userId),      // ✅ lien au user créé
-            clientType: "existing",
-            verificationToken: token,
-          },
+          const clientBody = {
+            data: {
+              nomComplet: String(bd.nomComplet || bd.fullName || pending.fullName || pending.email),
+              email: String(bd.email || pending.email),
+              telephone: String(bd.telephone || bd.phone || pending.phone || ""),
+              adresse: String(bd.adresse || bd.address || pending.address || ""),
+              codeClient: codeClient,
+              userid: String(userId),
+              clientType: "existing",
+              verificationToken: token,
+              emailVerified: true,
+              status: 1,
+            },
+          }
+
+          const clientRes = await fetch(CLIENT_ENDPOINT, {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${authToken}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(clientBody),
+          })
+
+          if (!clientRes.ok) {
+            const t = await clientRes.text().catch(() => "")
+            throw new Error(`Erreur création client (existing): ${t}`)
+          }
+        } else {
+          const clientRes = await fetch(CLIENT_ENDPOINT, {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${authToken}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              data: {
+                nomComplet: pending.fullName || pending.email,
+                email: pending.email,
+                telephone: pending.phone || "",
+                adresse: pending.address || "",
+                codeClient: String(pending.codeClient || "").trim(),
+                userid: String(userId),
+                clientType: "new",
+                verificationToken: token,
+                emailVerified: true,
+                status: 1,
+              },
+            }),
+          })
+
+          if (!clientRes.ok) {
+            const t = await clientRes.text().catch(() => "")
+            throw new Error(`Erreur création client (new): ${t}`)
+          }
         }
+      } else {
+        console.log("[completeSignup] Client updated successfully")
+      }
+    } else {
+      // Fallback for old flow (no clientId in cookie)
+      console.log("[completeSignup] No clientId in cookie, using old flow")
+      
+      if (clientType === "existing") {
+        const clientsAfter = await getAll(CLIENT_ENDPOINT, supportToken)
+        const existingClient = clientsAfter.find((c: any) => String(c.codeClient || "").trim() === codeClient)
 
+        if (!existingClient) {
+          const bd = await fetchBdClientBngByNumClient(supportToken, codeClient)
+          if (!bd) throw new Error("BdClientBng introuvable pour ce numClient (impossible de créer le client).")
+
+          const clientBody = {
+            data: {
+              nomComplet: String(bd.nomComplet || bd.fullName || pending.fullName || pending.email),
+              email: String(bd.email || pending.email),
+              telephone: String(bd.telephone || bd.phone || pending.phone || ""),
+              adresse: String(bd.adresse || bd.address || pending.address || ""),
+              codeClient: codeClient,
+              userid: String(userId),
+              clientType: "existing",
+              verificationToken: token,
+              emailVerified: true,
+              status: 1,
+            },
+          }
+
+          const clientRes = await fetch(CLIENT_ENDPOINT, {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${authToken}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(clientBody),
+          })
+
+          if (!clientRes.ok) {
+            const t = await clientRes.text().catch(() => "")
+            throw new Error(`Erreur création client (existing): ${t}`)
+          }
+        }
+      } else {
         const clientRes = await fetch(CLIENT_ENDPOINT, {
           method: "POST",
           headers: {
             Authorization: `Bearer ${authToken}`,
             "Content-Type": "application/json",
           },
-          body: JSON.stringify(clientBody),
+          body: JSON.stringify({
+            data: {
+              nomComplet: pending.fullName || pending.email,
+              email: pending.email,
+              telephone: pending.phone || "",
+              adresse: pending.address || "",
+              codeClient: String(pending.codeClient || "").trim(),
+              userid: String(userId),
+              clientType: "new",
+              verificationToken: token,
+              emailVerified: true,
+              status: 1,
+            },
+          }),
         })
 
         if (!clientRes.ok) {
           const t = await clientRes.text().catch(() => "")
-          throw new Error(`Erreur création client (existing): ${t}`)
+          throw new Error(`Erreur création client (new): ${t}`)
         }
-      } else {
-        // client existe déjà => on ne crée pas
-        // optionnel: tu peux PATCH ici pour lier userid si ton API le supporte
-        // mais tu n'as pas demandé, donc on skip.
-      }
-    } else {
-      // NEW: créer client depuis pending (comme avant)
-      const clientRes = await fetch(CLIENT_ENDPOINT, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${authToken}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          data: {
-            nomComplet: pending.fullName || pending.email,
-            email: pending.email,
-            telephone: pending.phone || "",
-            adresse: pending.address || "",
-            codeClient: String(pending.codeClient || "").trim(),
-            userid: String(userId),
-            clientType: "new",
-            verificationToken: token,
-          },
-        }),
-      })
-
-      if (!clientRes.ok) {
-        const t = await clientRes.text().catch(() => "")
-        throw new Error(`Erreur création client (new): ${t}`)
       }
     }
 
