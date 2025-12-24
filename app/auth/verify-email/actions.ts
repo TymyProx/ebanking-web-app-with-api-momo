@@ -91,6 +91,9 @@ const normalizeClientType = (pending: any) => {
 // BdClientBng fetch (payload de référence)
 const fetchBdClientBngByNumClient = async (supportToken: string, numClient: string) => {
   const url = `${BDCLIENT_BNG_ENDPOINT}?filter=numClient||$eq||${encodeURIComponent(numClient)}`
+  console.log("[fetchBdClientBng] Fetching URL:", url)
+  console.log("[fetchBdClientBng] Searching for numClient:", numClient)
+  
   const res = await fetch(url, {
     method: "GET",
     headers: {
@@ -99,15 +102,41 @@ const fetchBdClientBngByNumClient = async (supportToken: string, numClient: stri
     },
   })
 
-  if (res.status === 404 || res.status === 204) return null
+  if (res.status === 404 || res.status === 204) {
+    console.log("[fetchBdClientBng] No results (404/204)")
+    return null
+  }
+  
   if (!res.ok) {
     const t = await res.text().catch(() => "")
+    console.error("[fetchBdClientBng] Error:", t)
     throw new Error(`Erreur récupération BdClientBng: ${t || res.status}`)
   }
 
   const payload = await safeJson(res)
   const rows = getRows(payload)
-  return rows[0] ?? null
+  
+  console.log("[fetchBdClientBng] Total rows received:", rows.length)
+  console.log("[fetchBdClientBng] Available numClients:", rows.map((r: any) => r.numClient))
+  
+  // ⚠️ IMPORTANT : Trouver la correspondance EXACTE avec le numClient recherché
+  const searchCode = String(numClient).trim()
+  const exactMatch = rows.find((row: any) => 
+    String(row.numClient || "").trim() === searchCode
+  )
+  
+  if (exactMatch) {
+    console.log("[fetchBdClientBng] ✅ Exact match found:", exactMatch.numClient)
+    console.log("[fetchBdClientBng] Client data:", {
+      numClient: exactMatch.numClient,
+      email: exactMatch.email,
+      nomComplet: exactMatch.nomComplet || exactMatch.fullName
+    })
+    return exactMatch
+  }
+  
+  console.log("[fetchBdClientBng] ❌ No exact match found for:", searchCode)
+  return null
 }
 
 export async function completeSignup(token: string, password: string) {
