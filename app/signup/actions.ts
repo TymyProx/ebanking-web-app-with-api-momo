@@ -302,8 +302,9 @@ export async function initiateExistingClientSignup(data: { clientCode: string })
 
     console.log("[v0] Step 2: Searching for client in BdClientBng table using numClient...")
 
-    const searchUrl = `${API_BASE_URL}/tenant/${TENANT_ID}/bd-client-bng?numClient=${encodeURIComponent(data.clientCode)}`
+    const searchUrl = `${API_BASE_URL}/tenant/${TENANT_ID}/bd-client-bng?filter=numClient||$eq||${encodeURIComponent(data.clientCode)}`
     console.log("[v0] Fetching from URL:", searchUrl)
+    console.log("[v0] Searching for exact numClient:", data.clientCode)
 
     const bdClientResponse = await fetch(searchUrl, {
       method: "GET",
@@ -341,21 +342,45 @@ export async function initiateExistingClientSignup(data: { clientCode: string })
       clientArray = bdClientResponseData.data
     } else if (bdClientResponseData.rows && Array.isArray(bdClientResponseData.rows)) {
       clientArray = bdClientResponseData.rows
+    } else if (bdClientResponseData.value && Array.isArray(bdClientResponseData.value)) {
+      clientArray = bdClientResponseData.value
     } else {
       bdClientData = bdClientResponseData
     }
 
-    // Find the client with exact numClient match
+    console.log("[v0] Total clients retrieved:", clientArray.length)
+
+    // Find the client with exact numClient match (with type conversion and trimming)
     if (clientArray.length > 0) {
-      bdClientData = clientArray.find((client) => client.numClient === data.clientCode)
+      const searchCode = String(data.clientCode).trim()
+      console.log("[v0] Searching for client with numClient:", searchCode)
+      
+      // Log all available numClient values for debugging
+      console.log("[v0] Available numClient values:", clientArray.map(c => String(c.numClient || "").trim()))
+      
+      bdClientData = clientArray.find((client) => {
+        const clientNumClient = String(client.numClient || "").trim()
+        const match = clientNumClient === searchCode
+        if (match) {
+          console.log("[v0] ✅ EXACT MATCH FOUND:", clientNumClient)
+        }
+        return match
+      })
 
       if (!bdClientData) {
-        console.error("[v0] No client found with exact numClient match:", data.clientCode)
+        console.error("[v0] ❌ No client found with exact numClient match:", searchCode)
+        console.error("[v0] Available clients:", clientArray.map(c => ({
+          numClient: c.numClient,
+          email: c.email,
+          nomComplet: c.nomComplet || c.fullName
+        })))
         return {
           success: false,
           message: "Racine du compte invalide. Veuillez vérifier votre racine et réessayer.",
         }
       }
+      
+      console.log("[v0] ✅ Client found with numClient:", bdClientData.numClient)
     }
 
     if (!bdClientData) {
