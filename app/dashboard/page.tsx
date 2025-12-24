@@ -1,7 +1,7 @@
 import Link from "next/link"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Eye, Send, Receipt, ArrowUpRight, ArrowDownRight, Users } from 'lucide-react'
+import { Eye, Send, Receipt, ArrowUpRight, ArrowDownRight, Users } from "lucide-react"
 import { getUserTransactions } from "@/app/transfers/mes-virements/actions"
 import { getAccounts } from "@/app/accounts/actions"
 import { AccountsCarousel } from "@/components/accounts-carousel"
@@ -48,7 +48,7 @@ async function RecentTransactions() {
   const formatAmount = (amount: number | string, currency = "GNF") => {
     const numAmount = typeof amount === "string" ? Number.parseFloat(amount) : amount
     if (currency === "GNF") {
-      return new Intl.NumberFormat("fr-FR").format(numAmount)
+      return new Intl.NumberFormat("fr-FR").format(Math.trunc(numAmount))
     }
     return new Intl.NumberFormat("en-US", {
       style: "currency",
@@ -100,7 +100,6 @@ async function RecentTransactions() {
               return (
                 <div
                   key={transaction.txnId || index}
-                
                   className="flex items-center justify-between p-3 bg-gradient-to-r from-muted/50 to-muted/30 rounded-xl border border-border/50 hover:shadow-md transition-all duration-200"
                 >
                   {/* Reduced space between icon and text */}

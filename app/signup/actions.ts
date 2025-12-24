@@ -27,6 +27,23 @@ interface InitialSignupData {
   address: string
 }
 
+interface SignupExistingClientData {
+  numClient: string
+  email: string
+  phone: string
+  password: string
+  fullName: string
+  address: string
+}
+
+interface SignupResult {
+  success: boolean
+  message: string
+  requiresVerification?: boolean
+  email?: string
+  maskedEmail?: string
+}
+
 function maskEmail(email: string): string {
   const [localPart, domain] = email.split("@")
   if (!localPart || !domain) return email
@@ -277,8 +294,9 @@ export async function initiateExistingClientSignup(data: { clientCode: string })
 
     console.log("[v0] Step 2: Searching for client in BdClientBng table using numClient...")
 
-    const searchUrl = `${API_BASE_URL}/tenant/${TENANT_ID}/bd-client-bng?numClient=${encodeURIComponent(data.clientCode)}`
+    const searchUrl = `${API_BASE_URL}/tenant/${TENANT_ID}/bd-client-bng?filter=numClient||$eq||${encodeURIComponent(data.clientCode)}`
     console.log("[v0] Fetching from URL:", searchUrl)
+    console.log("[v0] Searching for exact numClient:", data.clientCode)
 
     const bdClientResponse = await fetch(searchUrl, {
       method: "GET",
@@ -316,21 +334,45 @@ export async function initiateExistingClientSignup(data: { clientCode: string })
       clientArray = bdClientResponseData.data
     } else if (bdClientResponseData.rows && Array.isArray(bdClientResponseData.rows)) {
       clientArray = bdClientResponseData.rows
+    } else if (bdClientResponseData.value && Array.isArray(bdClientResponseData.value)) {
+      clientArray = bdClientResponseData.value
     } else {
       bdClientData = bdClientResponseData
     }
 
-    // Find the client with exact numClient match
+    console.log("[v0] Total clients retrieved:", clientArray.length)
+
+    // Find the client with exact numClient match (with type conversion and trimming)
     if (clientArray.length > 0) {
-      bdClientData = clientArray.find((client) => client.numClient === data.clientCode)
+      const searchCode = String(data.clientCode).trim()
+      console.log("[v0] Searching for client with numClient:", searchCode)
+      
+      // Log all available numClient values for debugging
+      console.log("[v0] Available numClient values:", clientArray.map(c => String(c.numClient || "").trim()))
+      
+      bdClientData = clientArray.find((client) => {
+        const clientNumClient = String(client.numClient || "").trim()
+        const match = clientNumClient === searchCode
+        if (match) {
+          console.log("[v0] ✅ EXACT MATCH FOUND:", clientNumClient)
+        }
+        return match
+      })
 
       if (!bdClientData) {
-        console.error("[v0] No client found with exact numClient match:", data.clientCode)
+        console.error("[v0] ❌ No client found with exact numClient match:", searchCode)
+        console.error("[v0] Available clients:", clientArray.map(c => ({
+          numClient: c.numClient,
+          email: c.email,
+          nomComplet: c.nomComplet || c.fullName
+        })))
         return {
           success: false,
           message: "Racine du compte invalide. Veuillez vérifier votre racine et réessayer.",
         }
       }
+      
+      console.log("[v0] ✅ Client found with numClient:", bdClientData.numClient)
     }
 
     if (!bdClientData) {
@@ -356,6 +398,86 @@ export async function initiateExistingClientSignup(data: { clientCode: string })
     console.log("[v0] - Full name:", clientFullName)
     console.log("[v0] - Phone:", clientPhone)
     console.log("[v0] - NumClient:", numClient)
+
+    console.log("[v0] Step 2.5: Checking if client already exists with codeClient:", numClient)
+
+    const existingClientUrl = `${API_BASE_URL}/tenant/${TENANT_ID}/client?filter=codeClient||$eq||${encodeURIComponent(numClient)}`
+    console.log("[v0] Checking existing client URL:", existingClientUrl)
+
+    const existingClientResponse = await fetch(existingClientUrl, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${supportToken}`,
+      },
+    })
+
+    if (existingClientResponse.ok) {
+      const existingClientData = await existingClientResponse.json()
+      console.log("[v0] Existing client check response:", JSON.stringify(existingClientData, null, 2))
+
+      let existingClients: any[] = []
+      if (Array.isArray(existingClientData)) {
+        existingClients = existingClientData
+      } else if (existingClientData.data && Array.isArray(existingClientData.data)) {
+        existingClients = existingClientData.data
+      } else if (existingClientData.rows && Array.isArray(existingClientData.rows)) {
+        existingClients = existingClientData.rows
+      } else if (existingClientData.value && Array.isArray(existingClientData.value)) {
+        existingClients = existingClientData.value
+      }
+
+      console.log("[v0] Found existing clients count:", existingClients.length)
+      console.log(
+        "[v0] Exact match found:",
+        existingClients.find((client) => client.codeClient === numClient) ? "YES" : "NO",
+      )
+
+      if (existingClients.find((client) => client.codeClient === numClient)) {
+        console.log("[v0] Client with this codeClient already exists:", numClient)
+        return {
+          success: false,
+          message: "Ce compte est déjà inscrit. Veuillez vous connecter avec vos identifiants.",
+        }
+      }
+    }
+
+    console.log("[v0] Step 2.6: Checking if email already exists:", clientEmail)
+
+    const existingUsersUrl = `${API_BASE_URL}/tenant/${TENANT_ID}/users?filter=email||$eq||${encodeURIComponent(clientEmail)}`
+    console.log("[v0] Checking existing users URL:", existingUsersUrl)
+
+    const existingUsersResponse = await fetch(existingUsersUrl, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${supportToken}`,
+      },
+    })
+
+    if (existingUsersResponse.ok) {
+      const existingUsersData = await existingUsersResponse.json()
+      console.log("[v0] Existing users check response:", JSON.stringify(existingUsersData, null, 2))
+
+      let existingUsers: any[] = []
+      if (Array.isArray(existingUsersData)) {
+        existingUsers = existingUsersData
+      } else if (existingUsersData.data && Array.isArray(existingUsersData.data)) {
+        existingUsers = existingUsersData.data
+      } else if (existingUsersData.rows && Array.isArray(existingUsersData.rows)) {
+        existingUsers = existingUsersData.rows
+      } else if (existingUsersData.value && Array.isArray(existingUsersData.value)) {
+        existingUsers = existingUsersData.value
+      }
+
+      if (existingUsers.length > 0) {
+        console.log("[v0] User with this email already exists")
+        return {
+          success: false,
+          message: "Ce compte est déjà inscrit. Veuillez vous connecter avec vos identifiants.",
+        }
+      }
+    }
 
     const verificationToken = randomBytes(32).toString("hex")
 
@@ -418,3 +540,147 @@ export async function initiateExistingClientSignup(data: { clientCode: string })
     }
   }
 }
+
+// export async function signupExistingClient(data: SignupExistingClientData): Promise<SignupResult> {
+//   try {
+//     if (!data.numClient) {
+//       return { success: false, message: "Numéro client requis" }
+//     }
+//     if (!data.email) {
+//       return { success: false, message: "Email requis" }
+//     }
+//     if (!data.password) {
+//       return { success: false, message: "Mot de passe requis" }
+//     }
+//     if (!data.fullName) {
+//       return { success: false, message: "Nom complet requis" }
+//     }
+//     if (!data.phone) {
+//       return { success: false, message: "Téléphone requis" }
+//     }
+//     if (!data.address) {
+//       return { success: false, message: "Adresse requise" }
+//     }
+
+//     // Split full name into first and last name
+//     const nameParts = data.fullName.trim().split(" ")
+//     const firstName = nameParts[0] || ""
+//     const lastName = nameParts.slice(1).join(" ") || nameParts[0] || ""
+
+//     console.log("[v0] Step 1: Creating auth account via /auth/sign-up...")
+
+//     const signupPayload = {
+//       email: String(data.email),
+//       password: String(data.password),
+//       tenantId: String(TENANT_ID),
+//     }
+
+//     console.log("[v0] Signup payload:", JSON.stringify({ ...signupPayload, password: "***" }))
+
+//     const signupResponse = await fetch(`${API_BASE_URL}/auth/sign-up`, {
+//       method: "POST",
+//       headers: {
+//         "Content-Type": "application/json",
+//       },
+//       body: JSON.stringify(signupPayload),
+//     })
+
+//     console.log("[v0] Signup response status:", signupResponse.status)
+//     const signupResponseText = await signupResponse.text()
+//     console.log("[v0] Signup response body:", signupResponseText.substring(0, 200) + "...")
+
+//     if (!signupResponse.ok) {
+//       let errorData: any = {}
+//       try {
+//         errorData = JSON.parse(signupResponseText)
+//       } catch (e) {
+//         errorData = { message: signupResponseText || `HTTP ${signupResponse.status}` }
+//       }
+//       console.error("[v0] Signup failed:", errorData)
+
+//       if (errorData.message?.includes("Email is already in use") || errorData.message?.includes("already exists")) {
+//         return {
+//           success: false,
+//           message: "Ce compte existe déjà. Veuillez vous connecter avec vos identifiants.",
+//         }
+//       }
+
+//       throw new Error(errorData.message || "Erreur lors de la création du compte")
+//     }
+
+//     let token: string
+//     if (signupResponseText.startsWith("eyJ")) {
+//       token = signupResponseText
+//       console.log("[v0] Received JWT token directly")
+//     } else {
+//       const signupData = JSON.parse(signupResponseText)
+//       token = signupData.token || signupData.data?.token || signupData
+//       console.log("[v0] Extracted token from JSON response")
+//     }
+
+//     if (!token) {
+//       console.error("[v0] No token received from server")
+//       return { success: false, message: "Aucun token reçu du serveur" }
+//     }
+
+//     console.log("[v0] Auth account created successfully")
+
+//     const verificationToken = randomBytes(32).toString("hex")
+
+//     const cookieStore = await cookies()
+//     const cookieConfig = getCookieConfig()
+//     cookieStore.set(
+//       "pending_signup_data",
+//       JSON.stringify({
+//         fullName: data.fullName,
+//         email: data.email,
+//         phone: data.phone,
+//         address: data.address,
+//         numClient: data.numClient, // Store numClient, not CLI- code
+//         verificationToken: verificationToken,
+//         clientType: "existing", // Mark as existing BNG client
+//       }),
+//       {
+//         ...cookieConfig,
+//         maxAge: 60 * 60 * 24, // 24 hours
+//       },
+//     )
+
+//     console.log("[v0] Sending verification email via Resend...")
+
+//     const resend = new Resend(process.env.RESEND_API_KEY)
+//     const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || "no-reply@bngebanking.com"
+//     const verificationUrl = `${APP_URL.replace(/\/$/, "")}/auth/verify-email?token=${verificationToken}&email=${encodeURIComponent(
+//       data.email,
+//     )}`
+
+//     const { data: resendData, error: resendError } = await resend.emails.send({
+//       from: FROM_EMAIL,
+//       to: data.email,
+//       subject: "Vérifiez votre adresse email - BNG E-Banking",
+//       react: VerificationEmail({
+//         userName: data.fullName || data.email.split("@")[0],
+//         verificationLink: verificationUrl,
+//       }),
+//     })
+
+//     if (resendError) {
+//       console.error("[v0] Resend error:", resendError)
+//       throw new Error(resendError.message || "Erreur lors de l'envoi de l'email de vérification")
+//     }
+//     console.log("[v0] Email sent successfully:", resendData)
+
+//     return {
+//       success: true,
+//       message: "Un email de vérification a été envoyé à votre adresse email.",
+//       requiresVerification: true,
+//       email: data.email,
+//     }
+//   } catch (error: any) {
+//     console.error("[v0] Signup existing client error:", error)
+//     return {
+//       success: false,
+//       message: error.message || "Une erreur est survenue lors de l'inscription",
+//     }
+//   }
+// }

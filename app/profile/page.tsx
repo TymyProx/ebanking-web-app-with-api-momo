@@ -9,8 +9,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
-import { User, MapPin, Briefcase, Shield, CheckCircle, AlertCircle, Edit, Save, X } from "lucide-react"
-import { updateProfile } from "./actions"
+import { User, MapPin, Shield, CheckCircle, AlertCircle } from "lucide-react"
+import { getUserProfileData } from "./actions"
 import { AuthService, type User as AuthUser } from "@/lib/auth-service"
 
 interface ProfileData {
@@ -26,6 +26,9 @@ interface ProfileData {
   profession: string
   employer: string
   monthlyIncome: string
+  codeClient: string
+  nomComplet: string
+  clientType: string
 }
 
 const defaultData: ProfileData = {
@@ -41,6 +44,9 @@ const defaultData: ProfileData = {
   profession: "",
   employer: "",
   monthlyIncome: "",
+  codeClient: "",
+  nomComplet: "",
+  clientType: "",
 }
 
 const countries = ["Guinée", "Sénégal", "Mali", "Côte d'Ivoire", "Burkina Faso", "Niger", "France", "Autre"]
@@ -54,7 +60,6 @@ const incomeRanges = [
 ]
 
 export default function ProfilePage() {
-  const [isEditing, setIsEditing] = useState(false)
   const [formData, setFormData] = useState<ProfileData>(defaultData)
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -62,27 +67,38 @@ export default function ProfilePage() {
   const [isPending, startTransition] = useTransition()
 
   useEffect(() => {
-    const loadUserData = () => {
+    const loadUserData = async () => {
       try {
         const user = AuthService.getCurrentUser()
-        //console.log("[v0] Données utilisateur récupérées:", user)
 
         if (user) {
           setCurrentUser(user)
-          setFormData({
-            firstName: user.firstName || "",
-            lastName: user.lastName || "",
-            email: user.email || "",
-            phone: user.phoneNumber || "",
-            dateOfBirth: "",
-            address: "",
-            city: "",
-            postalCode: "",
-            country: "Guinée",
-            profession: "",
-            employer: "",
-            monthlyIncome: "",
-          })
+        }
+
+        const result = await getUserProfileData()
+
+        if (result.success && result.data) {
+          setFormData(result.data)
+        } else {
+          if (user) {
+            setFormData({
+              firstName: user.firstName || "",
+              lastName: user.lastName || "",
+              email: user.email || "",
+              phone: user.phoneNumber || "",
+              dateOfBirth: "",
+              address: "",
+              city: "",
+              postalCode: "",
+              country: "Guinée",
+              profession: "",
+              employer: "",
+              monthlyIncome: "",
+              codeClient: "",
+              nomComplet: "",
+              clientType: "",
+            })
+          }
         }
       } catch (error) {
         console.error("[v0] Erreur lors du chargement des données utilisateur:", error)
@@ -93,87 +109,6 @@ export default function ProfilePage() {
 
     loadUserData()
   }, [])
-
-  const handleInputChange = (field: keyof ProfileData, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }))
-  }
-
-  const validateForm = (): string | null => {
-    const required = ["firstName", "lastName", "email", "phone", "address", "city", "country"]
-
-    for (const field of required) {
-      if (!formData[field as keyof ProfileData].trim()) {
-        return `Le champ ${
-          field === "firstName"
-            ? "Prénom"
-            : field === "lastName"
-              ? "Nom"
-              : field === "email"
-                ? "Email"
-                : field === "phone"
-                  ? "Téléphone"
-                  : field === "address"
-                    ? "Adresse"
-                    : field === "city"
-                      ? "Ville"
-                      : field === "country"
-                        ? "Pays"
-                        : field
-        } est obligatoire`
-      }
-    }
-
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    if (!emailRegex.test(formData.email)) {
-      return "Format d'email invalide"
-    }
-
-    return null
-  }
-
-  const handleSave = () => {
-    const error = validateForm()
-    if (error) {
-      setMessage({ type: "error", text: error })
-      return
-    }
-
-    startTransition(async () => {
-      try {
-        const result = await updateProfile(formData)
-        if (result.success) {
-          setMessage({ type: "success", text: result.message })
-          setIsEditing(false)
-          setTimeout(() => setMessage(null), 5000)
-        } else {
-          setMessage({ type: "error", text: result.message })
-        }
-      } catch (error) {
-        setMessage({ type: "error", text: "Erreur lors de la sauvegarde. Veuillez réessayer." })
-      }
-    })
-  }
-
-  const handleCancel = () => {
-    if (currentUser) {
-      setFormData({
-        firstName: currentUser.firstName || "",
-        lastName: currentUser.lastName || "",
-        email: currentUser.email || "",
-        phone: currentUser.phoneNumber || "",
-        dateOfBirth: "",
-        address: "",
-        city: "",
-        postalCode: "",
-        country: "Guinée",
-        profession: "",
-        employer: "",
-        monthlyIncome: "",
-      })
-    }
-    setIsEditing(false)
-    setMessage(null)
-  }
 
   if (isLoading) {
     return (
@@ -192,17 +127,9 @@ export default function ProfilePage() {
     <div className="container mx-auto p-6 max-w-6xl">
       <div className="flex items-center justify-between mb-6">
         <div className="space-y-2">
-          <h1 className="text-3xl font-heading font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-            Mon Profil
-          </h1>
+          <h1 className="text-3xl font-bold text-primary">Mon Profil</h1>
           <p className="text-sm text-muted-foreground">Gérez vos informations personnelles</p>
         </div>
-        {!isEditing && (
-          <Button onClick={() => setIsEditing(true)} className="flex items-center gap-2">
-            <Edit className="w-4 h-4" />
-            Modifier
-          </Button>
-        )}
       </div>
 
       {message && (
@@ -233,63 +160,38 @@ export default function ProfilePage() {
               <CardDescription>Vos informations de base (* champs obligatoires)</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+              {formData.codeClient && (
+                <div>
+                  <Label htmlFor="codeClient">Code Client</Label>
+                  <Input id="codeClient" value={formData.codeClient} disabled className="bg-gray-50" />
+                </div>
+              )}
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="firstName">Prénom *</Label>
-                  <Input
-                    id="firstName"
-                    value={formData.firstName}
-                    onChange={(e) => handleInputChange("firstName", e.target.value)}
-                    disabled={!isEditing}
-                    className={!isEditing ? "bg-gray-50" : ""}
-                  />
+                  <Input id="firstName" value={formData.firstName} disabled className="bg-gray-50" />
                 </div>
                 <div>
                   <Label htmlFor="lastName">Nom *</Label>
-                  <Input
-                    id="lastName"
-                    value={formData.lastName}
-                    onChange={(e) => handleInputChange("lastName", e.target.value)}
-                    disabled={!isEditing}
-                    className={!isEditing ? "bg-gray-50" : ""}
-                  />
+                  <Input id="lastName" value={formData.lastName} disabled className="bg-gray-50" />
                 </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="email">Email *</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => handleInputChange("email", e.target.value)}
-                    disabled={!isEditing}
-                    className={!isEditing ? "bg-gray-50" : ""}
-                  />
+                  <Input id="email" type="email" value={formData.email} disabled className="bg-gray-50" />
                 </div>
                 <div>
                   <Label htmlFor="phone">Téléphone *</Label>
-                  <Input
-                    id="phone"
-                    value={formData.phone}
-                    onChange={(e) => handleInputChange("phone", e.target.value)}
-                    disabled={!isEditing}
-                    className={!isEditing ? "bg-gray-50" : ""}
-                  />
+                  <Input id="phone" value={formData.phone} disabled className="bg-gray-50" />
                 </div>
               </div>
 
               <div>
                 <Label htmlFor="dateOfBirth">Date de naissance</Label>
-                <Input
-                  id="dateOfBirth"
-                  type="date"
-                  value={formData.dateOfBirth}
-                  onChange={(e) => handleInputChange("dateOfBirth", e.target.value)}
-                  disabled={!isEditing}
-                  className={!isEditing ? "bg-gray-50" : ""}
-                />
+                <Input id="dateOfBirth" type="date" value={formData.dateOfBirth} disabled className="bg-gray-50" />
               </div>
             </CardContent>
           </Card>
@@ -309,9 +211,8 @@ export default function ProfilePage() {
                 <Input
                   id="address"
                   value={formData.address}
-                  onChange={(e) => handleInputChange("address", e.target.value)}
-                  disabled={!isEditing}
-                  className={!isEditing ? "bg-gray-50" : ""}
+                  disabled
+                  className="bg-gray-50"
                   placeholder="Quartier, rue, numéro..."
                 />
               </div>
@@ -319,32 +220,16 @@ export default function ProfilePage() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                   <Label htmlFor="city">Ville *</Label>
-                  <Input
-                    id="city"
-                    value={formData.city}
-                    onChange={(e) => handleInputChange("city", e.target.value)}
-                    disabled={!isEditing}
-                    className={!isEditing ? "bg-gray-50" : ""}
-                  />
+                  <Input id="city" value={formData.city} disabled className="bg-gray-50" />
                 </div>
                 <div>
                   <Label htmlFor="postalCode">Code postal</Label>
-                  <Input
-                    id="postalCode"
-                    value={formData.postalCode}
-                    onChange={(e) => handleInputChange("postalCode", e.target.value)}
-                    disabled={!isEditing}
-                    className={!isEditing ? "bg-gray-50" : ""}
-                  />
+                  <Input id="postalCode" value={formData.postalCode} disabled className="bg-gray-50" />
                 </div>
                 <div>
                   <Label htmlFor="country">Pays *</Label>
-                  <Select
-                    value={formData.country}
-                    onValueChange={(value) => handleInputChange("country", value)}
-                    disabled={!isEditing}
-                  >
-                    <SelectTrigger className={!isEditing ? "bg-gray-50" : ""}>
+                  <Select value={formData.country} disabled>
+                    <SelectTrigger className="bg-gray-50">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -359,80 +244,6 @@ export default function ProfilePage() {
               </div>
             </CardContent>
           </Card>
-
-          {/* Informations Professionnelles */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Briefcase className="w-5 h-5" />
-                Informations Professionnelles
-              </CardTitle>
-              <CardDescription>Vos informations professionnelles (optionnel)</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="profession">Profession</Label>
-                  <Input
-                    id="profession"
-                    value={formData.profession}
-                    onChange={(e) => handleInputChange("profession", e.target.value)}
-                    disabled={!isEditing}
-                    className={!isEditing ? "bg-gray-50" : ""}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="employer">Employeur</Label>
-                  <Input
-                    id="employer"
-                    value={formData.employer}
-                    onChange={(e) => handleInputChange("employer", e.target.value)}
-                    disabled={!isEditing}
-                    className={!isEditing ? "bg-gray-50" : ""}
-                  />
-                </div>
-              </div>
-
-              <div>
-                <Label htmlFor="monthlyIncome">Revenus mensuels</Label>
-                <Select
-                  value={formData.monthlyIncome}
-                  onValueChange={(value) => handleInputChange("monthlyIncome", value)}
-                  disabled={!isEditing}
-                >
-                  <SelectTrigger className={!isEditing ? "bg-gray-50" : ""}>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {incomeRanges.map((range) => (
-                      <SelectItem key={range.value} value={range.value}>
-                        {range.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Action Buttons */}
-          {isEditing && (
-            <div className="flex gap-4">
-              <Button onClick={handleSave} disabled={isPending} className="flex items-center gap-2">
-                <Save className="w-4 h-4" />
-                {isPending ? "Enregistrement..." : "Enregistrer"}
-              </Button>
-              <Button
-                variant="outline"
-                onClick={handleCancel}
-                disabled={isPending}
-                className="flex items-center gap-2 bg-transparent"
-              >
-                <X className="w-4 h-4" />
-                Annuler
-              </Button>
-            </div>
-          )}
         </div>
 
         {/* Sidebar */}
@@ -464,6 +275,20 @@ export default function ProfilePage() {
                   <span>ID Utilisateur</span>
                   <span className="font-mono">{currentUser?.id?.slice(0, 8) || "N/A"}</span>
                 </div>
+                {formData.codeClient && (
+                  <div className="flex justify-between">
+                    <span>Code Client</span>
+                    <span className="font-mono">{formData.codeClient}</span>
+                  </div>
+                )}
+                {formData.clientType && (
+                  <div className="flex justify-between">
+                    <span>Type de Client</span>
+                    <Badge variant="outline" className="capitalize">
+                      {formData.clientType === "existing" ? "Existant" : "Nouveau"}
+                    </Badge>
+                  </div>
+                )}
                 <div className="flex justify-between">
                   <span>Email</span>
                   <span>{currentUser?.email || "N/A"}</span>

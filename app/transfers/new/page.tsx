@@ -17,7 +17,6 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { ArrowRight, Plus, User, Building, Check, AlertCircle } from "lucide-react"
 import { useActionState } from "react"
 import Link from "next/link"
-import { importAesGcmKeyFromBase64, decryptAesGcmFromJson, isEncryptedJson } from "@/lib/crypto"
 import { OtpModal } from "@/components/otp-modal"
 
 // Types
@@ -109,7 +108,7 @@ export default function NewTransferPage() {
       style: "currency",
       currency: currency === "GNF" ? "GNF" : currency,
       minimumFractionDigits: currency === "GNF" ? 0 : 2,
-    }).format(amount)
+    }).format(Math.trunc(amount))
   }
 
   const validateRIB = (account: string, type: string): boolean => {
@@ -298,97 +297,22 @@ export default function NewTransferPage() {
       setIsLoadingBeneficiaries(true)
       const result = await getBeneficiaries()
 
-      const secureMode = (process.env.NEXT_PUBLIC_PORTAL_SECURE_MODE || "false").toLowerCase() === "true"
-      const keyB64 = process.env.NEXT_PUBLIC_PORTAL_KEY_B64 || ""
-      let cryptoKey: CryptoKey | null = null
-
-      if (secureMode && keyB64 && typeof window !== "undefined" && window.crypto?.subtle) {
-        try {
-          cryptoKey = await importAesGcmKeyFromBase64(keyB64)
-        } catch (error) {
-          console.error("[v0] Échec de l'import de la clé de déchiffrement des bénéficiaires:", error)
-        }
-      }
-
-      const resolveField = async (value: any, fallback?: any): Promise<string> => {
-        const candidate = value ?? fallback
-        if (candidate === null || candidate === undefined) {
-          return ""
-        }
-
-        const tryDecrypt = async (payload: any): Promise<string | null> => {
-          if (!secureMode || !cryptoKey) return null
-          try {
-            return await decryptAesGcmFromJson(payload, cryptoKey)
-          } catch (err) {
-            // Tentative de parsing si payload est une chaîne JSONifiée
-            if (typeof payload === "string") {
-              try {
-                const parsed = JSON.parse(payload)
-                return await decryptAesGcmFromJson(parsed, cryptoKey)
-              } catch (_) {
-                return null
-              }
-            }
-            return null
-          }
-        }
-
-        const decrypted = await tryDecrypt(candidate)
-        if (decrypted !== null) {
-          return decrypted
-        }
-
-        if (typeof candidate === "string") {
-          return candidate
-        }
-
-        if (secureMode && !cryptoKey && isEncryptedJson(candidate)) {
-          return "[donnée chiffrée]"
-        }
-
-        try {
-          return JSON.stringify(candidate)
-        } catch (err) {
-          return String(candidate)
-        }
-      }
+      // No need for client-side decryption, data is already decrypted
 
       if (Array.isArray(result) && result.length > 0) {
-        const adaptedBeneficiaries = await Promise.all(
-          result.map(async (apiBeneficiary: any) => {
-            const name = await resolveField(apiBeneficiary.name, apiBeneficiary.name_json)
-            const accountNumber = await resolveField(
-              apiBeneficiary.accountNumber,
-              apiBeneficiary.accountNumber_json,
-            )
-            const bankName = await resolveField(apiBeneficiary.bankName, apiBeneficiary.bankName_json)
-            const workflowStatus = apiBeneficiary.workflowStatus || "disponible"
-            const rawType = apiBeneficiary.beneficiaryType || apiBeneficiary.typeBeneficiary || "BNG-BNG"
-            const normalizedType: Beneficiary["type"] =
-              rawType === "BNG-INTERNATIONAL" ? "International" : (rawType as Beneficiary["type"])
-
-            return {
-              id: apiBeneficiary.id,
-              name,
-              account: accountNumber,
-              bank: bankName,
-              type: normalizedType,
-              workflowStatus,
-              status: Number.parseInt(String(apiBeneficiary.status ?? "0"), 10),
-            } as Beneficiary
-          }),
-        )
+        const adaptedBeneficiaries = result.map((apiBeneficiary: any) => ({
+          id: apiBeneficiary.id,
+          name: apiBeneficiary.name,
+          account: apiBeneficiary.accountNumber,
+          bank: apiBeneficiary.bankName,
+          type: apiBeneficiary.type,
+          workflowStatus: apiBeneficiary.workflowStatus,
+          status: apiBeneficiary.status,
+        }))
 
         const activeBeneficiaries = adaptedBeneficiaries.filter((beneficiary: any) => {
-          const originalBeneficiary = result.find((api: any) => api.id === beneficiary.id)
-          if (!originalBeneficiary) {
-            return false
-          }
-
-          const workflow = (originalBeneficiary.workflowStatus || beneficiary.workflowStatus || "").toLowerCase()
-          const statusRaw = originalBeneficiary.status ?? beneficiary.status
-          const statusValue = Number(statusRaw)
+          const workflow = (beneficiary.workflowStatus || "").toLowerCase()
+          const statusValue = Number(beneficiary.status)
           const normalizedStatus = Number.isNaN(statusValue) ? 0 : statusValue
 
           const isStatusActive = normalizedStatus === 0 || normalizedStatus === 1
@@ -500,9 +424,7 @@ export default function NewTransferPage() {
   return (
     <div className="mt-6 space-y-6">
       <div className="space-y-2">
-        <h1 className="text-3xl font-bold text-primary">
-          Effectuer un virement
-        </h1>
+        <h1 className="text-3xl font-bold text-primary">Effectuer un virement</h1>
         <p className="text-sm text-muted-foreground">Effectuer un virement vers un bénéficiaire ou un autre compte</p>
       </div>
 

@@ -12,6 +12,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { Search, Settings, User } from "lucide-react"
 import { LogoutButton } from "@/components/auth/logout-button"
 import { NotificationDropdown } from "@/components/notifications/notification-dropdown"
@@ -74,59 +75,68 @@ export function Header() {
   console.log("[v0] Display name in header:", displayName)
 
   return (
-    <header className="sticky top-0 z-50 flex h-16 shrink-0 items-center gap-2 border-b bg-background px-4">
-      <SidebarTrigger className="-ml-1" />
-      <Separator orientation="vertical" className="mr-2 h-4" />
+    <TooltipProvider>
+      <header className="sticky top-0 z-50 flex h-16 shrink-0 items-center gap-2 border-b bg-background px-4">
+        <SidebarTrigger className="-ml-1" />
+        <Separator orientation="vertical" className="mr-2 h-4" />
 
-      {!isCheckingAccounts && userData && (
-        <div className="flex flex-col gap-[2px]">
-          <span className="text-sm text-muted-foreground">Bonjour,</span>
-          <span className="text-xl font-bold text-primary">{displayName}</span>
+        {!isCheckingAccounts && userData && (
+          <div className="flex flex-col gap-[2px]">
+            <span className="text-sm text-muted-foreground">Bonjour,</span>
+            <span className="text-xl font-bold text-primary">{displayName}</span>
+          </div>
+        )}
+
+        <div className="ml-auto flex items-center gap-2">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-8 w-8">
+                <Search className="h-4 w-4" />
+                <span className="sr-only">Rechercher</span>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Rechercher</p>
+            </TooltipContent>
+          </Tooltip>
+
+          <NotificationDropdown />
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                <Avatar className="h-8 w-8">
+                  <AvatarImage src="/placeholder-user.jpg" alt="Avatar" />
+                  <AvatarFallback>{getInitials(displayName)}</AvatarFallback>
+                </Avatar>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-56" align="end" forceMount>
+              <DropdownMenuLabel className="font-normal">
+                <div className="flex flex-col space-y-1">
+                  <p className="text-sm font-medium leading-none">{displayName}</p>
+                  <p className="text-xs leading-none text-muted-foreground">{userData?.email || "email@example.com"}</p>
+                </div>
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem>
+                <User className="mr-2 h-4 w-4" />
+                <span>Profil</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <Settings className="mr-2 h-4 w-4" />
+                <span>Paramètres</span>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem asChild>
+                <LogoutButton variant="ghost" size="sm" showIcon={true}>
+                  Déconnexion
+                </LogoutButton>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
-      )}
-
-      <div className="ml-auto flex items-center gap-2">
-        <Button variant="ghost" size="icon" className="h-8 w-8">
-          <Search className="h-4 w-4" />
-          <span className="sr-only">Rechercher</span>
-        </Button>
-
-        <NotificationDropdown />
-
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-              <Avatar className="h-8 w-8">
-                <AvatarImage src="/placeholder-user.jpg" alt="Avatar" />
-                <AvatarFallback>{getInitials(displayName)}</AvatarFallback>
-              </Avatar>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent className="w-56" align="end" forceMount>
-            <DropdownMenuLabel className="font-normal">
-              <div className="flex flex-col space-y-1">
-                <p className="text-sm font-medium leading-none">{displayName}</p>
-                <p className="text-xs leading-none text-muted-foreground">{userData?.email || "email@example.com"}</p>
-              </div>
-            </DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem>
-              <User className="mr-2 h-4 w-4" />
-              <span>Profil</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem>
-              <Settings className="mr-2 h-4 w-4" />
-              <span>Paramètres</span>
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem asChild>
-              <LogoutButton variant="ghost" size="sm" showIcon={true}>
-                Déconnexion
-              </LogoutButton>
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
-    </header>
+      </header>
+    </TooltipProvider>
   )
 }

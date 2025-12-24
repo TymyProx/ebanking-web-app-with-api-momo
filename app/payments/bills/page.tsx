@@ -425,7 +425,7 @@ export default function UnifiedPaymentPage() {
   const totalAmount = paymentAmount + (selectedProvider?.fee || 0)
 
   const formatAmount = (amount: number) => {
-    return new Intl.NumberFormat("fr-FR").format(amount)
+    return new Intl.NumberFormat("fr-FR").format(Math.trunc(amount))
   }
 
   const validatePayment = async (billNumber: string, providerId: string) => {

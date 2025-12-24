@@ -284,9 +284,9 @@ const generatePDF = async (account: Account) => {
   doc.rect(table2StartX, yPos, table2Col1 + table2Col2 + table2Col3 + table2Col4 + table2Col5, rowHeight)
   doc.text("Banque Correspondante", table2StartX + 2, yPos + 5)
   doc.text("SWIFT", table2StartX + table2Col1 + 2, yPos + 4)
-  doc.text("Code", table2StartX + table2Col1 + 2, yPos + 7)
-  doc.text("Notre", table2StartX + table2Col1 + table2Col2 + 2, yPos + 4)
-  doc.text("Compte USD", table2StartX + table2Col1 + table2Col2 + 2, yPos + 7)
+  doc.text("Code", table2StartX + table2Col1 + table2Col2 + 2, yPos + 7)
+  doc.text("Notre", table2StartX + table2Col1 + table2Col2 + table2Col3 + 2, yPos + 4)
+  doc.text("Compte USD", table2StartX + table2Col1 + table2Col2 + table2Col3 + 2, yPos + 7)
   doc.text("Banque Intermédiaire", table2StartX + table2Col1 + table2Col2 + table2Col3 + 2, yPos + 5)
   doc.text("SWIFT", table2StartX + table2Col1 + table2Col2 + table2Col3 + table2Col4 + 2, yPos + 4)
   doc.text("CODE", table2StartX + table2Col1 + table2Col2 + table2Col3 + table2Col4 + 2, yPos + 7)
@@ -346,9 +346,9 @@ const generatePDF = async (account: Account) => {
   doc.rect(table2StartX, yPos, table2Col1 + table2Col2 + table2Col3 + table2Col4 + table2Col5, rowHeight)
   doc.text("Banque Correspondante", table2StartX + 2, yPos + 5)
   doc.text("SWIFT", table2StartX + table2Col1 + 2, yPos + 4)
-  doc.text("Code", table2StartX + table2Col1 + 2, yPos + 7)
-  doc.text("Notre", table2StartX + table2Col1 + table2Col2 + 2, yPos + 4)
-  doc.text("Compte Euro", table2StartX + table2Col1 + table2Col2 + 2, yPos + 7)
+  doc.text("Code", table2StartX + table2Col1 + table2Col2 + 2, yPos + 7)
+  doc.text("Notre", table2StartX + table2Col1 + table2Col2 + table2Col3 + 2, yPos + 4)
+  doc.text("Compte Euro", table2StartX + table2Col1 + table2Col2 + table2Col3 + 2, yPos + 7)
   doc.text("Banque Intermédiaire", table2StartX + table2Col1 + table2Col2 + table2Col3 + 2, yPos + 5)
   doc.text("SWIFT", table2StartX + table2Col1 + table2Col2 + table2Col3 + table2Col4 + 2, yPos + 4)
   doc.text("CODE", table2StartX + table2Col1 + table2Col2 + table2Col3 + table2Col4 + 2, yPos + 7)
@@ -876,12 +876,12 @@ export default function RIBPage() {
 
   const formatAmount = (amount: number, currency = "GNF") => {
     if (currency === "GNF") {
-      return new Intl.NumberFormat("fr-FR").format(amount)
+      return new Intl.NumberFormat("fr-FR").format(Math.trunc(amount))
     }
     return new Intl.NumberFormat("en-US", {
       style: "currency",
       currency: currency,
-    }).format(amount)
+    }).format(Math.trunc(amount))
   }
 
   const loadFullRibData = async () => {
