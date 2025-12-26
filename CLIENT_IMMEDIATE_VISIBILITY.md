@@ -38,7 +38,7 @@ Les clients apparaissent maintenant **immédiatement** dans le back office dès 
 
 ### Nouveau Client
 
-```
+\`\`\`
 1. Client s'inscrit sur le e-portal
    ↓
 2. [NOUVEAU] Client créé immédiatement dans la base
@@ -58,11 +58,11 @@ Les clients apparaissent maintenant **immédiatement** dans le back office dès 
    - userid: [ID de l'utilisateur créé]
    ↓
 7. Badge "Email non vérifié" disparaît dans le back office
-```
+\`\`\`
 
 ### Client Existant (BNG)
 
-```
+\`\`\`
 1. Client s'inscrit avec son numClient
    ↓
 2. Données récupérées depuis BdClientBng
@@ -79,20 +79,20 @@ Les clients apparaissent maintenant **immédiatement** dans le back office dès 
 6. Client vérifie son email
    ↓
 7. Client activé (status: 1, emailVerified: true)
-```
+\`\`\`
 
 ## 🎨 Interface Back Office
 
 ### Avant
-```
+\`\`\`
 Code Client | Nom | Email | Téléphone | Statut | Date création | Actions
-```
+\`\`\`
 
 ### Après
-```
+\`\`\`
 Code Client | Nom | Email | Téléphone | Statut | Vérification | Date création | Actions
                                                     [Email non vérifié]  ← Badge jaune
-```
+\`\`\`
 
 ## 🔐 Sécurité
 
@@ -141,4 +141,3 @@ Le backend doit supporter:
 1. Les clients non vérifiés ont `status: 0` (Restreint)
 2. Le `userid` est mis à jour uniquement après vérification
 3. Les erreurs de création de client sont loggées mais n'empêchent pas l'envoi de l'email
-

@@ -46,7 +46,7 @@ Le e-portal ne crée **PLUS AUCUN CLIENT**. Il se contente de :
 
 ### Pour un nouveau client
 
-```
+\`\`\`
 1. Utilisateur remplit le formulaire
    ↓
 2. initiateSignup()
@@ -63,11 +63,11 @@ Le e-portal ne crée **PLUS AUCUN CLIENT**. Il se contente de :
    - Crée le client automatiquement ✅
    ↓
 6. Connexion automatique
-```
+\`\`\`
 
 ### Pour un client BNG existant
 
-```
+\`\`\`
 1. Utilisateur entre son numClient
    ↓
 2. initiateExistingClientSignup()
@@ -90,13 +90,13 @@ Le e-portal ne crée **PLUS AUCUN CLIENT**. Il se contente de :
    - Crée les comptes bancaires depuis CompteBng
    ↓
 7. Connexion automatique
-```
+\`\`\`
 
 ## Backend (authService.ts)
 
 Le backend **crée automatiquement le client** dans la méthode `signup()` :
 
-```typescript
+\`\`\`typescript
 // Pour un utilisateur existant (lignes ~90-127)
 const existingClientCount = await ClientRepository.count(
   { userid: existingUser.id }, 
@@ -114,14 +114,14 @@ if (!existingClientCount || existingClientCount === 0) {
 }
 
 // Même logique pour un nouvel utilisateur (lignes ~180-217)
-```
+\`\`\`
 
 ## ⚠️ Point d'attention
 
 Le backend génère actuellement un `codeClient` aléatoire :
-```typescript
+\`\`\`typescript
 const codeClient = `CLI-${Date.now()}`
-```
+\`\`\`
 
 Pour les **clients BNG existants**, il faudrait idéalement utiliser le `numClient` stocké dans le cookie au lieu de générer un nouveau code. Cela pourrait être une amélioration future si nécessaire.
 
@@ -147,4 +147,3 @@ Pour les **clients BNG existants**, il faudrait idéalement utiliser le `numClie
    - Doublon d'email
    - Token de vérification invalide
    - Session expirée
-
