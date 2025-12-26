@@ -111,6 +111,7 @@ export async function initiateSignup(data: InitialSignupData) {
 
     const { data: resendData, error: resendError } = await resend.emails.send({
       from: FROM_EMAIL,
+      
       to: data.email,
       subject: "Vérifiez votre adresse email - BNG E-Banking",
       react: VerificationEmail({

@@ -202,11 +202,21 @@ export async function completeSignup(token: string, password: string) {
     // POST FLOW (aucun doublon user ; new client validé ; comptes validés)
     // ============================================================
 
-    // SIGN-UP
+    // SIGN-UP with extra client data
     const signupRes = await fetch(`${API_BASE_URL}/auth/sign-up`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email: pending.email, password, tenantId: TENANT_ID }),
+      body: JSON.stringify({ 
+        email: pending.email, 
+        password, 
+        tenantId: TENANT_ID,
+        // Extra client data
+        fullName: pending.fullName,
+        phone: pending.phone,
+        address: pending.address,
+        clientType: clientType,
+        numClient: clientType === "existing" ? codeClient : undefined,
+      }),
     })
 
     if (!signupRes.ok) {
