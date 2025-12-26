@@ -284,7 +284,7 @@ export async function initiateExistingClientSignup(data: { clientCode: string })
     if (!supportToken) {
       throw new Error("Token système non reçu")
     }
-
+    
     console.log("[v0] Step 2: Searching for client in BdClientBng...")
 
     const searchUrl = `${API_BASE_URL}/tenant/${TENANT_ID}/bd-client-bng?numClient=${encodeURIComponent(data.clientCode)}`
