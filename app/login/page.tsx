@@ -121,14 +121,14 @@ export default function LoginPage() {
         </div>
 
         {/* Hero Image - Woman with phone */}
-        <div className="relative z-10 flex items-center justify-center w-full px-12">
-          <div className="relative w-full max-w-md">
+        <div className="relative z-10 flex items-end justify-center w-full h-full pb-0">
+          <div className="relative w-full max-w-2xl flex justify-center">
             <Image
               src="/images/welcom2.png"
               alt="Welcome"
-              width={500}
-              height={600}
-              className="object-contain drop-shadow-2xl"
+              width={900}
+              height={1000}
+              className="object-contain object-bottom drop-shadow-2xl"
               priority
             />
           </div>
