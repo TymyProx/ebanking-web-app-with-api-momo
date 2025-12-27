@@ -124,7 +124,7 @@ export default function LoginPage() {
         <div className="relative z-10 flex items-center justify-center w-full px-12">
           <div className="relative w-full max-w-md">
             <Image
-              src="/images/welcom.png"
+              src="/images/welcom2.png"
               alt="Welcome"
               width={500}
               height={600}
