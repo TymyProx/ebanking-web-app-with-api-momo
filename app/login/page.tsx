@@ -120,14 +120,14 @@ export default function LoginPage() {
           </div>
         </div>
 
-        <div className="relative z-10 flex items-end justify-center w-full h-full pt-24">
-          <div className="relative flex justify-center items-end">
+        <div className="relative z-10 flex items-end justify-center w-full h-screen">
+          <div className="relative h-full w-full flex justify-center items-end">
             <Image
               src="/images/happy.png"
               alt="Welcome"
-              width={2600}
-              height={2800}
-              className="object-contain object-bottom drop-shadow-2xl"
+              width={5000}
+              height={5500}
+              className="object-contain object-bottom h-[95vh] w-auto drop-shadow-2xl scale-110"
               priority
             />
           </div>
