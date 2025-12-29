@@ -90,13 +90,13 @@ export default function LoginPage() {
           </div>
 
           {/* Floating money/card graphics */}
-          <div className="absolute top-[15%] right-[20%] opacity-40 animate-float">
+          <div className="absolute top-[20%] right-[20%]">
           <img
           src="/images/billet.png"
           alt="billet"
-          className="w-16 h-10 object-contain rotate-12 drop-shadow-lg"
+          className="w-[320px] h-auto object-contain rotate-12 drop-shadow-lg"
           />
-          </div> 
+          </div>
 
           {/* Dotted pattern overlay */}
           <div
@@ -109,17 +109,15 @@ export default function LoginPage() {
         </div>
 
         {/* Logo */}
-        <div className="absolute top-8 left-8 z-20">
-          <div className="bg-white px-4 py-2 rounded shadow-lg">
-            <Image
-              src="/images/logo-bng.png"
-              alt="BNG Logo"
-              width={120}
-              height={40}
-              className="object-contain"
-              priority
-            />
-          </div>
+        <div className="absolute bg-white top-8 left-28 z-20 pl-6 pr-6">
+          <Image
+            src="/images/logo-bng.png"
+            alt="BNG Logo"
+            width={160}
+            height={30}
+            className="object-contain"
+            priority
+          />
         </div>
 
         <div className="relative z-10 flex items-end justify-start w-full h-full pb-0">
@@ -127,8 +125,8 @@ export default function LoginPage() {
             <Image
               src="/images/image.png"
               alt="Welcome"
-              width={420}
-              height={550}
+              width={400}
+              height={500}
               className="object-contain object-bottom drop-shadow-2xl"
               priority
             />
