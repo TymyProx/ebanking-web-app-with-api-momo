@@ -66,15 +66,17 @@ import { getAccounts } from "@/app/accounts/actions"
 const navigationData = {
   main: [
     {
-      title: "Tableau de bord",
+      title: "Dashboard",
       url: "/dashboard",
       icon: Home,
+      description: "Vue d'ensemble",
     },
     {
       title: "Fonctionnalités",
       url: "/fonctionnalites",
       icon: Sparkles,
       badge: "Nouveau",
+      description: "Nouvelles options",
     },
   ],
   accounts: [
@@ -203,8 +205,9 @@ const SidebarGroupLabel = React.forwardRef<HTMLDivElement, React.ComponentProps<
         ref={ref}
         data-sidebar="group-label"
         className={cn(
-          "duration-200 flex h-9 shrink-0 items-center rounded-md px-2.5 text-xs font-semibold uppercase tracking-wider text-sidebar-foreground/60 outline-none ring-sidebar-ring transition-[margin,opacity] ease-linear focus-visible:ring-2 [&>svg]:size-4 [&>svg]:shrink-0",
+          "duration-200 flex h-8 shrink-0 items-center rounded-md px-3 text-[10px] font-bold uppercase tracking-widest text-white/70 outline-none ring-sidebar-ring transition-[margin,opacity] ease-linear focus-visible:ring-2 [&>svg]:size-4 [&>svg]:shrink-0",
           "group-data-[collapsible=icon]:-mt-8 group-data-[collapsible=icon]:opacity-0",
+          "border-l-2 border-white/30 pl-2.5",
           className,
         )}
         {...props}
@@ -264,19 +267,19 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>): 
       return (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <SidebarMenuButton tooltip={item.title}>
-              <item.icon />
-              <span>{item.title}</span>
+            <SidebarMenuButton tooltip={item.title} className="text-white">
+              <item.icon className="text-white" />
+              <span className="text-white">{item.title}</span>
             </SidebarMenuButton>
           </DropdownMenuTrigger>
-          <DropdownMenuContent side="right" align="start" className="w-48">
-            <DropdownMenuLabel>{item.title}</DropdownMenuLabel>
+          <DropdownMenuContent side="right" align="start" className="w-48 bg-white">
+            <DropdownMenuLabel className="text-gray-900">{item.title}</DropdownMenuLabel>
             <DropdownMenuSeparator />
             {item.items?.map((subItem: any) => (
               <DropdownMenuItem key={subItem.title} asChild>
                 <Link href={subItem.url} className="flex items-center gap-2">
-                  <subItem.icon className="h-4 w-4" />
-                  <span>{subItem.title}</span>
+                  <subItem.icon className="h-4 w-4 text-gray-900" />
+                  <span className="text-gray-900">{subItem.title}</span>
                   {subItem.badge && (
                     <Badge variant="outline" className="ml-auto">
                       {subItem.badge}
@@ -294,22 +297,31 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>): 
       <Collapsible asChild defaultOpen className="group/collapsible">
         <div>
           <CollapsibleTrigger asChild>
-            <SidebarMenuButton tooltip={item.title}>
-              <item.icon />
-              <span>{item.title}</span>
-              <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+            <SidebarMenuButton 
+              tooltip={item.title}
+              className="h-11 rounded-xl text-white hover:bg-white/20 transition-all duration-200"
+            >
+              <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-white/10 text-white">
+                <item.icon className="h-5 w-5 text-white" />
+              </div>
+              <span className="font-semibold text-white">{item.title}</span>
+              <ChevronRight className="ml-auto h-4 w-4 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90 text-white" />
             </SidebarMenuButton>
           </CollapsibleTrigger>
           <CollapsibleContent>
-            <SidebarMenuSub>
+            <SidebarMenuSub className="ml-4 mt-1 space-y-1 border-l-2 border-white/20 pl-3">
               {item.items?.map((subItem: any) => (
                 <SidebarMenuSubItem key={subItem.title}>
-                  <SidebarMenuSubButton asChild isActive={pathname === subItem.url}>
-                    <Link href={subItem.url}>
-                      <subItem.icon />
-                      <span>{subItem.title}</span>
+                  <SidebarMenuSubButton 
+                    asChild 
+                    isActive={pathname === subItem.url}
+                    className="h-10 rounded-lg text-white/90 hover:bg-white/15 hover:text-white data-[active=true]:bg-white/25 data-[active=true]:text-white data-[active=true]:font-semibold data-[active=true]:border-l-2 data-[active=true]:border-[#f4c430] transition-all duration-200"
+                  >
+                    <Link href={subItem.url} className="flex items-center gap-2.5">
+                      <subItem.icon className="h-4 w-4 text-white" />
+                      <span className="text-sm text-white">{subItem.title}</span>
                       {subItem.badge && (
-                        <Badge variant="outline" className="ml-auto">
+                        <Badge variant="outline" className="ml-auto text-[10px] px-1.5 border-white/30 text-white">
                           {subItem.badge}
                         </Badge>
                       )}
@@ -325,30 +337,41 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>): 
   }
 
   return (
-    <Sidebar collapsible="icon" variant="inset" {...props}>
-      <SidebarHeader>
-        <div className="flex items-center gap-2 px-4 py-2">
+    <Sidebar 
+      collapsible="icon" 
+      variant="inset" 
+      {...props} 
+      style={{
+        backgroundImage: "url('/images/background.png')",
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        backgroundRepeat: "no-repeat"
+      }}
+      className="border-r border-white/10"
+    >
+      <SidebarHeader className="border-b border-white/10 bg-[#34763E]/20 backdrop-blur-sm">
+        <div className="flex items-center gap-2 px-4 py-3">
           {state === "collapsed" ? (
-            <div className="flex min-h-[64px] w-full items-center justify-center">
-              <div className="h-14 w-14 flex-shrink-0">
+            <div className="flex min-h-[56px] w-full items-center justify-center">
+              <div className="h-12 w-12 flex-shrink-0 rounded-lg bg-white/95 p-1.5 shadow-lg border border-white/20">
                 <Image
                   src="/images/portrait-logo.png"
                   alt="BNG Logo"
-                  width={56}
-                  height={56}
+                  width={48}
+                  height={48}
                   className="h-full w-full object-contain"
                   priority
                 />
               </div>
             </div>
           ) : (
-            <div className="flex min-h-[120px] w-full items-center justify-center">
-              <div className="h-[120px] w-[120px] flex-shrink-0">
+            <div className="flex min-h-[80px] w-full items-center justify-center py-2">
+              <div className="h-[70px] w-[160px] flex-shrink-0 rounded-lg bg-white/95 px-4 py-3 shadow-lg border border-white/20">
                 <Image
                   src="/images/logo-bng.png"
                   alt="BNG Logo"
-                  width={120}
-                  height={120}
+                  width={140}
+                  height={60}
                   className="h-full w-full object-contain"
                   priority
                 />
@@ -361,8 +384,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>): 
       <SidebarContent>
         {isCheckingAccounts ? (
           <div className="flex flex-col items-center justify-center py-8 space-y-3">
-            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-            <p className="text-sm text-muted-foreground">Chargement...</p>
+            <Loader2 className="h-6 w-6 animate-spin text-white/70" />
+            <p className="text-sm text-white/70">Chargement...</p>
           </div>
         ) : !hasActiveAccount ? (
           <>
@@ -371,38 +394,44 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>): 
                 <TooltipProvider>
                   <Tooltip delayDuration={0}>
                     <TooltipTrigger asChild>
-                      <div className="flex items-center justify-center rounded-md border border-amber-500/50 bg-amber-50 p-2 dark:bg-amber-950/20 cursor-help">
-                        <AlertCircle className="h-5 w-5 text-amber-600 dark:text-amber-500" />
+                      <div className="flex items-center justify-center rounded-md border border-[#f4c430] bg-[#f4c430]/20 p-2 cursor-help backdrop-blur-sm">
+                        <AlertCircle className="h-5 w-5 text-[#f4c430]" />
                       </div>
                     </TooltipTrigger>
-                    <TooltipContent side="right" className="max-w-xs">
-                      <p className="text-sm">
+                    <TooltipContent side="right" className="max-w-xs bg-white border-[#f4c430]">
+                      <p className="text-sm text-gray-900">
                         Veuillez initier la demande d'ouverture de compte pour accéder à toutes les fonctionnalités
                       </p>
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
               ) : (
-                <Alert className="border-amber-500/50 bg-amber-50 dark:bg-amber-950/20">
-                  <AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-500" />
-                  <AlertDescription className="text-xs text-amber-800 dark:text-amber-300">
+                <Alert className="border-[#f4c430] bg-[#f4c430]/20 backdrop-blur-sm">
+                  <AlertCircle className="h-4 w-4 text-[#f4c430]" />
+                  <AlertDescription className="text-xs text-white font-medium">
                     Veuillez initier la demande d'ouverture de compte pour accéder à toutes les fonctionnalités
                   </AlertDescription>
                 </Alert>
               )}
             </div>
 
-            <SidebarGroup>
+            <SidebarGroup className="mt-4">
               <SidebarGroupLabel asChild>
                 <div>Comptes</div>
               </SidebarGroupLabel>
               <SidebarGroupContent>
-                <SidebarMenu>
+                <SidebarMenu className="space-y-1">
                   <SidebarMenuItem>
-                    <SidebarMenuButton asChild isActive={pathname === "/accounts/new"}>
-                      <Link href="/accounts/new">
-                        <PlusCircle />
-                        <span>Ouverture compte</span>
+                    <SidebarMenuButton 
+                      asChild 
+                      isActive={pathname === "/accounts/new"}
+                      className="h-11 rounded-xl text-white hover:bg-white/20 data-[active=true]:bg-white/30 data-[active=true]:text-white data-[active=true]:shadow-lg data-[active=true]:border-l-4 data-[active=true]:border-[#f4c430] transition-all duration-200"
+                    >
+                      <Link href="/accounts/new" className="flex items-center gap-3">
+                        <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-white/10 group-data-[active=true]:bg-white/20">
+                          <PlusCircle className="h-5 w-5 text-white" />
+                        </div>
+                        <span className="font-semibold text-white">Ouverture compte</span>
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
@@ -413,20 +442,26 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>): 
         ) : (
           <>
             {/* Navigation principale */}
-            <SidebarGroup>
+            <SidebarGroup className="mt-2">
               <SidebarGroupLabel asChild>
                 <div>Principal</div>
               </SidebarGroupLabel>
               <SidebarGroupContent>
-                <SidebarMenu>
+                <SidebarMenu className="space-y-1">
                   {navigationData.main.map((item) => (
                     <SidebarMenuItem key={item.title}>
-                      <SidebarMenuButton asChild isActive={pathname === item.url}>
-                        <Link href={item.url}>
-                          <item.icon />
-                          <span>{item.title}</span>
+                      <SidebarMenuButton 
+                        asChild 
+                        isActive={pathname === item.url}
+                        className="h-11 rounded-xl text-white hover:bg-white/20 data-[active=true]:bg-white/30 data-[active=true]:text-white data-[active=true]:shadow-lg data-[active=true]:border-l-4 data-[active=true]:border-[#f4c430] transition-all duration-200"
+                      >
+                        <Link href={item.url} className="flex items-center gap-3">
+                          <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-white/10 group-data-[active=true]:bg-white/20">
+                            <item.icon className="h-5 w-5 text-white" />
+                          </div>
+                          <span className="font-semibold text-white">{item.title}</span>
                           {item.badge && (
-                            <Badge variant="secondary" className="ml-auto">
+                            <Badge className="ml-auto bg-gradient-to-r from-[#f4c430] to-[#e0b020] text-gray-900 border-0 font-bold text-[10px] px-2 shadow-sm">
                               {item.badge}
                             </Badge>
                           )}
@@ -439,12 +474,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>): 
             </SidebarGroup>
 
             {/* Comptes */}
-            <SidebarGroup>
+            <SidebarGroup className="mt-4">
               <SidebarGroupLabel asChild>
                 <div>Comptes</div>
               </SidebarGroupLabel>
               <SidebarGroupContent>
-                <SidebarMenu>
+                <SidebarMenu className="space-y-1">
                   {navigationData.accounts.map((item) => (
                     <SidebarMenuItem key={item.title}>
                       <MenuItemWithSubmenu item={item} />
@@ -455,29 +490,15 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>): 
             </SidebarGroup>
 
             {/* Opérations */}
-            <SidebarGroup>
+            <SidebarGroup className="mt-4">
               <SidebarGroupLabel asChild>
                 <div>Opérations</div>
               </SidebarGroupLabel>
               <SidebarGroupContent>
-                <SidebarMenu>
+                <SidebarMenu className="space-y-1">
                   {navigationData.operations.map((item) => (
                     <SidebarMenuItem key={item.title}>
-                      {item.items ? (
-                        <MenuItemWithSubmenu item={item} />
-                      ) : (
-                        <SidebarMenuButton asChild isActive={pathname === item.url}>
-                          <Link href={item.url!}>
-                            <item.icon />
-                            <span>{item.title}</span>
-                            {item.badge && (
-                              <Badge variant="secondary" className="ml-auto">
-                                {item.badge}
-                              </Badge>
-                            )}
-                          </Link>
-                        </SidebarMenuButton>
-                      )}
+                      <MenuItemWithSubmenu item={item} />
                     </SidebarMenuItem>
                   ))}
                 </SidebarMenu>
@@ -485,19 +506,25 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>): 
             </SidebarGroup>
 
             {/* Services */}
-            <SidebarGroup>
+            <SidebarGroup className="mt-4">
               <SidebarGroupLabel asChild>
                 <div>Services</div>
               </SidebarGroupLabel>
               <SidebarGroupContent>
-                <SidebarMenu>
+                <SidebarMenu className="space-y-1">
                   {navigationData.services.map((item) => (
                     <SidebarMenuItem key={item.title}>
                       {item.url ? (
-                        <SidebarMenuButton asChild isActive={pathname === item.url}>
-                          <Link href={item.url}>
-                            <item.icon />
-                            <span>{item.title}</span>
+                        <SidebarMenuButton 
+                          asChild 
+                          isActive={pathname === item.url}
+                          className="h-11 rounded-xl text-white hover:bg-white/20 data-[active=true]:bg-white/30 data-[active=true]:text-white data-[active=true]:shadow-lg data-[active=true]:border-l-4 data-[active=true]:border-[#f4c430] transition-all duration-200"
+                        >
+                          <Link href={item.url} className="flex items-center gap-3">
+                            <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-white/10 group-data-[active=true]:bg-white/20">
+                              <item.icon className="h-5 w-5 text-white" />
+                            </div>
+                            <span className="font-semibold text-white">{item.title}</span>
                           </Link>
                         </SidebarMenuButton>
                       ) : null}
@@ -508,21 +535,27 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>): 
             </SidebarGroup>
 
             {/* Support */}
-            <SidebarGroup>
+            <SidebarGroup className="mt-4">
               <SidebarGroupLabel asChild>
                 <div>Support</div>
               </SidebarGroupLabel>
               <SidebarGroupContent>
-                <SidebarMenu>
+                <SidebarMenu className="space-y-1">
                   {navigationData.support.map((item) => (
                     <SidebarMenuItem key={item.title}>
                       {"items" in item ? (
                         <MenuItemWithSubmenu item={item} />
                       ) : "url" in item ? (
-                        <SidebarMenuButton asChild isActive={pathname === item.url}>
-                          <Link href={item.url}>
-                            <item.icon />
-                            <span>{item.title}</span>
+                        <SidebarMenuButton 
+                          asChild 
+                          isActive={pathname === item.url}
+                          className="h-11 rounded-xl text-white hover:bg-white/20 data-[active=true]:bg-white/30 data-[active=true]:text-white data-[active=true]:shadow-lg data-[active=true]:border-l-4 data-[active=true]:border-[#f4c430] transition-all duration-200"
+                        >
+                          <Link href={item.url} className="flex items-center gap-3">
+                            <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-white/10 group-data-[active=true]:bg-white/20">
+                              <item.icon className="h-5 w-5 text-white" />
+                            </div>
+                            <span className="font-semibold text-white">{item.title}</span>
                           </Link>
                         </SidebarMenuButton>
                       ) : null}
@@ -533,20 +566,26 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>): 
             </SidebarGroup>
 
             {/* Autres */}
-            <SidebarGroup>
+            <SidebarGroup className="mt-4">
               <SidebarGroupLabel asChild>
                 <div>Autres</div>
               </SidebarGroupLabel>
               <SidebarGroupContent>
-                <SidebarMenu>
+                <SidebarMenu className="space-y-1">
                   {navigationData.other.map((item) => (
                     <SidebarMenuItem key={item.title}>
-                      <SidebarMenuButton asChild isActive={pathname === item.url}>
-                        <Link href={item.url}>
-                          <item.icon />
-                          <span>{item.title}</span>
+                      <SidebarMenuButton 
+                        asChild 
+                        isActive={pathname === item.url}
+                        className="h-11 rounded-xl text-white hover:bg-white/20 data-[active=true]:bg-white/30 data-[active=true]:text-white data-[active=true]:shadow-lg data-[active=true]:border-l-4 data-[active=true]:border-[#f4c430] transition-all duration-200"
+                      >
+                        <Link href={item.url} className="flex items-center gap-3">
+                          <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-white/10 group-data-[active=true]:bg-white/20">
+                            <item.icon className="h-5 w-5 text-white" />
+                          </div>
+                          <span className="font-semibold">{item.title}</span>
                           {item.badge && (
-                            <Badge variant="destructive" className="ml-auto">
+                            <Badge className="ml-auto bg-red-500 text-white border-0 font-bold text-[10px] px-2 shadow-sm animate-pulse">
                               {item.badge}
                             </Badge>
                           )}
@@ -561,73 +600,85 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>): 
         )}
       </SidebarContent>
 
-      <SidebarFooter>
+      <SidebarFooter className="border-t border-white/10 bg-[#34763E]/20 backdrop-blur-sm">
         <SidebarMenu>
           <SidebarMenuItem>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <SidebarMenuButton
                   size="lg"
-                  className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+                  className="data-[state=open]:bg-white/30 data-[state=open]:text-white hover:bg-white/20 transition-all duration-200 rounded-xl border border-transparent hover:border-white/30 shadow-sm hover:shadow-md text-white"
                 >
-                  <Avatar className="h-8 w-8 rounded-lg">
+                  <Avatar className="h-10 w-10 rounded-xl ring-2 ring-white/30 ring-offset-2 ring-offset-transparent">
                     <AvatarImage src="/placeholder-user.jpg" alt={userData?.fullName || "Utilisateur"} />
-                    <AvatarFallback className="rounded-lg bg-gradient-to-br from-blue-600 to-blue-800 text-white">
+                    <AvatarFallback className="rounded-xl bg-gradient-to-br from-white/90 to-white/70 text-[#34763E] font-bold text-sm">
                       {userData?.fullName ? getInitials(userData.fullName) : "U"}
                     </AvatarFallback>
                   </Avatar>
                   <div className="grid flex-1 text-left text-sm leading-tight">
-                    <span className="truncate font-semibold">{userData?.fullName || "Utilisateur"}</span>
-                    <span className="truncate text-xs text-muted-foreground">
+                    <span className="truncate font-bold text-white">{userData?.fullName || "Utilisateur"}</span>
+                    <span className="truncate text-xs text-white/70 font-medium">
                       {userData?.email || "Client Particulier"}
                     </span>
                   </div>
-                  <ChevronRight className="ml-auto size-4" />
+                  <ChevronRight className="ml-auto size-4 text-white/70" />
                 </SidebarMenuButton>
               </DropdownMenuTrigger>
               <DropdownMenuContent
-                className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-lg"
+                className="w-[--radix-dropdown-menu-trigger-width] min-w-64 rounded-2xl shadow-2xl border-gray-200 bg-white/95 backdrop-blur-xl"
                 side="bottom"
                 align="end"
-                sideOffset={4}
+                sideOffset={8}
               >
                 <DropdownMenuLabel className="p-0 font-normal">
-                  <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
-                    <Avatar className="h-8 w-8 rounded-lg">
+                  <div className="flex items-center gap-3 px-3 py-3 text-left bg-gradient-to-r from-[#34763E]/5 to-transparent rounded-t-2xl">
+                    <Avatar className="h-12 w-12 rounded-xl ring-2 ring-[#34763E]/30 ring-offset-2">
                       <AvatarImage src="/placeholder-user.jpg" alt={userData?.fullName || "Utilisateur"} />
-                      <AvatarFallback className="rounded-lg bg-gradient-to-br from-blue-600 to-blue-800 text-white">
+                      <AvatarFallback className="rounded-xl bg-gradient-to-br from-[#34763E] to-[#2a5f32] text-white font-bold">
                         {userData?.fullName ? getInitials(userData.fullName) : "U"}
                       </AvatarFallback>
                     </Avatar>
-                    <div className="grid flex-1 text-left text-sm leading-tight">
-                      <span className="truncate font-semibold">{userData?.fullName || "Utilisateur"}</span>
-                      <span className="truncate text-xs text-muted-foreground">
+                    <div className="grid flex-1 text-left leading-tight">
+                      <span className="truncate font-bold text-gray-900 text-sm">{userData?.fullName || "Utilisateur"}</span>
+                      <span className="truncate text-xs text-gray-500 font-medium mt-0.5">
                         {userData?.email || "email@example.com"}
                       </span>
                     </div>
                   </div>
                 </DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem asChild>
-                  <Link href="/profile" className="flex items-center">
-                    <User className="mr-2 h-4 w-4" />
-                    <span>Mon profil</span>
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <Settings className="mr-2 h-4 w-4" />
-                  <span>Paramètres</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <HelpCircle className="mr-2 h-4 w-4" />
-                  <span>Aide</span>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem asChild>
-                  <LogoutButton variant="ghost" size="sm" showIcon={true}>
-                    Se déconnecter
-                  </LogoutButton>
-                </DropdownMenuItem>
+                <DropdownMenuSeparator className="bg-gray-200/50" />
+                <div className="py-1">
+                  <DropdownMenuItem asChild className="mx-1 rounded-lg hover:bg-[#34763E]/5 focus:bg-[#34763E]/10 transition-colors cursor-pointer">
+                    <Link href="/profile" className="flex items-center px-2 py-2.5">
+                      <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-[#34763E]/10 text-[#34763E] mr-3">
+                        <User className="h-4 w-4" />
+                      </div>
+                      <span className="font-medium text-sm">Mon profil</span>
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem className="mx-1 rounded-lg hover:bg-[#34763E]/5 focus:bg-[#34763E]/10 transition-colors cursor-pointer px-2 py-2.5">
+                    <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-gray-100 text-gray-600 mr-3">
+                      <Settings className="h-4 w-4" />
+                    </div>
+                    <span className="font-medium text-sm">Paramètres</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem className="mx-1 rounded-lg hover:bg-[#34763E]/5 focus:bg-[#34763E]/10 transition-colors cursor-pointer px-2 py-2.5">
+                    <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-gray-100 text-gray-600 mr-3">
+                      <HelpCircle className="h-4 w-4" />
+                    </div>
+                    <span className="font-medium text-sm">Aide</span>
+                  </DropdownMenuItem>
+                </div>
+                <DropdownMenuSeparator className="bg-gray-200/50" />
+                <div className="py-1">
+                  <DropdownMenuItem asChild className="mx-1 rounded-lg hover:bg-red-50 focus:bg-red-50 transition-colors cursor-pointer px-2 py-2.5">
+                    <div className="w-full">
+                      <LogoutButton variant="ghost" size="sm" showIcon={true}>
+                        <span className="text-red-600 hover:text-red-700 font-medium">Se déconnecter</span>
+                      </LogoutButton>
+                    </div>
+                  </DropdownMenuItem>
+                </div>
               </DropdownMenuContent>
             </DropdownMenu>
           </SidebarMenuItem>
