@@ -69,15 +69,20 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex bg-[#34763E]">
+    <div className="min-h-screen flex" style={{
+      backgroundImage: "url('/images/background.png')",
+      backgroundSize: "cover",
+      backgroundPosition: "center",
+      backgroundRepeat: "no-repeat"
+    }}>
       {/* Left side - Hero Image with Green Background */}
-      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-[#34763E]">
-        <div className="absolute inset-0 bg-[#34763E]">
-          <div className="absolute -top-16 -left-16 w-32 h-32">
+      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden">
+        <div className="absolute inset-0">
+          <div className="absolute -top-24 -left-40 w-64 h-64">
             <div className="w-full h-full bg-[#B9E3A8] rounded-full opacity-40" />
           </div>
 
-          <div className="absolute left-[-35%] top-[25%] w-[800px] h-[800px]">
+          <div className="absolute left-[-60%] top-[35%] w-[1000px] h-[1000px]">
             <div className="w-full h-full bg-[#B9E3A8] rounded-full opacity-60" />
           </div>
 
@@ -118,9 +123,7 @@ export default function LoginPage() {
       </div>
 
       {/* Right side - Login Form */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-8 bg-[#34763E] relative overflow-hidden">
-      <div className="absolute top-0 right-0 w-24 h-full bg-gradient-to-r from-transparent  via-[#34763E]/80  to-[#34763E]/200 pointer-events-none z-0" />
-
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-8 relative overflow-hidden">
         <div className="absolute -bottom-20 -right-20 w-40 h-40">
           <div className="w-full h-full bg-[#B9E3A8] rounded-full opacity-30" />
         </div>
