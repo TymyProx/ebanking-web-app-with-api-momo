@@ -73,6 +73,10 @@ export default function LoginPage() {
       {/* Left side - Hero Image with Green Background */}
       <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-[#34763E]">
         <div className="absolute inset-0 bg-[#34763E]">
+          <div className="absolute -top-16 -left-16 w-32 h-32">
+            <div className="w-full h-full bg-[#B9E3A8] rounded-full opacity-40" />
+          </div>
+
           <div className="absolute left-[-35%] top-[25%] w-[800px] h-[800px]">
             <div className="w-full h-full bg-[#B9E3A8] rounded-full opacity-60" />
           </div>
@@ -115,6 +119,12 @@ export default function LoginPage() {
 
       {/* Right side - Login Form */}
       <div className="w-full lg:w-1/2 flex items-center justify-center p-8 bg-[#34763E] relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-32 h-full bg-gradient-to-r from-transparent via-[#2d5a35] to-[#1a1a1a] pointer-events-none z-0" />
+
+        <div className="absolute -bottom-20 -right-20 w-40 h-40">
+          <div className="w-full h-full bg-[#B9E3A8] rounded-full opacity-30" />
+        </div>
+
         <div className="w-full max-w-md space-y-6 relative z-10">
           {/* Mobile Logo */}
           <div className="lg:hidden flex justify-center mb-8">
