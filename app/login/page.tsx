@@ -73,6 +73,10 @@ export default function LoginPage() {
       {/* Left side - Hero Image with Green Background */}
       <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-[#6dd47e] via-[#0a8f4f] to-[#0a8f4f]">
+          <div className="absolute left-[-50%] top-[25%] w-[800px] h-[800px]">
+            <div className="w-full h-full bg-[#9ee5a8] rounded-full opacity-60" />
+          </div>
+
           {/* Decorative curved shape */}
           <div className="absolute right-0 top-0 bottom-0 w-[60%]">
             <svg viewBox="0 0 500 800" className="absolute right-0 h-full w-auto" preserveAspectRatio="xMaxYMid slice">
@@ -138,7 +142,7 @@ export default function LoginPage() {
       <div className="w-full lg:w-1/2 flex items-center justify-center p-8 bg-[#0a8f4f] relative overflow-hidden">
         {/* Demi-cercle vert en arrière-plan */}
         <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-[#6dd47e]/30 rounded-full translate-x-1/3 -translate-y-1/3 blur-3xl"></div>
-        
+
         {/* Motif de points en arrière-plan */}
         <div
           className="absolute inset-0 opacity-10"
@@ -147,7 +151,7 @@ export default function LoginPage() {
             backgroundSize: "25px 25px",
           }}
         />
-        
+
         <div className="w-full max-w-md space-y-6 relative z-10">
           {/* Mobile Logo */}
           <div className="lg:hidden flex justify-center mb-8">
