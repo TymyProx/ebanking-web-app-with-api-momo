@@ -91,14 +91,12 @@ export default function LoginPage() {
 
           {/* Floating money/card graphics */}
           <div className="absolute top-[15%] right-[20%] opacity-40 animate-float">
-            <div className="w-16 h-10 bg-white/20 rounded backdrop-blur-sm rotate-12 shadow-lg" />
-          </div>
-          <div className="absolute top-[35%] right-[15%] opacity-30 animate-float-delayed">
-            <div className="w-20 h-12 bg-white/15 rounded backdrop-blur-sm -rotate-6 shadow-lg" />
-          </div>
-          <div className="absolute top-[25%] right-[35%] opacity-25 animate-float">
-            <div className="w-12 h-8 bg-white/20 rounded backdrop-blur-sm rotate-[-20deg] shadow-lg" />
-          </div>
+          <img
+          src="/images/billet.png"
+          alt="billet"
+          className="w-16 h-10 object-contain rotate-12 drop-shadow-lg"
+          />
+          </div> 
 
           {/* Dotted pattern overlay */}
           <div
