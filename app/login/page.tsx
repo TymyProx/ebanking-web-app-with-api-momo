@@ -73,32 +73,8 @@ export default function LoginPage() {
       {/* Left side - Hero Image with Green Background */}
       <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-[#6dd47e] via-[#0a8f4f] to-[#0a8f4f]">
-          <div className="absolute top-[15%] right-[20%] opacity-50 animate-float">
-            <Image
-              src="/images/billet.PNG"
-              alt="Billet"
-              width={80}
-              height={50}
-              className="object-contain rotate-12 drop-shadow-lg"
-            />
-          </div>
-          <div className="absolute top-[35%] right-[15%] opacity-40 animate-float-delayed">
-            <Image
-              src="/images/billet.PNG"
-              alt="Billet"
-              width={100}
-              height={60}
-              className="object-contain -rotate-6 drop-shadow-lg"
-            />
-          </div>
-          <div className="absolute top-[25%] right-[35%] opacity-35 animate-float">
-            <Image
-              src="/images/billet.PNG"
-              alt="Billet"
-              width={60}
-              height={40}
-              className="object-contain rotate-[-20deg] drop-shadow-lg"
-            />
+          <div className="absolute left-[-35%] top-[25%] w-[800px] h-[800px]">
+            <div className="w-full h-full bg-[#9ee5a8] rounded-full opacity-60" />
           </div>
 
           {/* Decorative curved shape */}
@@ -111,6 +87,17 @@ export default function LoginPage() {
                 style={{ animationDuration: "4s" }}
               />
             </svg>
+          </div>
+
+          {/* Floating money/card graphics */}
+          <div className="absolute top-[15%] right-[20%] opacity-40 animate-float">
+            <div className="w-16 h-10 bg-white/20 rounded backdrop-blur-sm rotate-12 shadow-lg" />
+          </div>
+          <div className="absolute top-[35%] right-[15%] opacity-30 animate-float-delayed">
+            <div className="w-20 h-12 bg-white/15 rounded backdrop-blur-sm -rotate-6 shadow-lg" />
+          </div>
+          <div className="absolute top-[25%] right-[35%] opacity-25 animate-float">
+            <div className="w-12 h-8 bg-white/20 rounded backdrop-blur-sm rotate-[-20deg] shadow-lg" />
           </div>
 
           {/* Dotted pattern overlay */}
