@@ -297,7 +297,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>): 
       <Collapsible asChild defaultOpen className="group/collapsible">
         <div>
           <CollapsibleTrigger asChild>
-            <SidebarMenuButton 
+            <SidebarMenuButton
               tooltip={item.title}
               className="h-11 rounded-xl text-white hover:bg-white/20 transition-all duration-200"
             >
@@ -312,8 +312,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>): 
             <SidebarMenuSub className="ml-4 mt-1 space-y-1 border-l-2 border-white/20 pl-3">
               {item.items?.map((subItem: any) => (
                 <SidebarMenuSubItem key={subItem.title}>
-                  <SidebarMenuSubButton 
-                    asChild 
+                  <SidebarMenuSubButton
+                    asChild
                     isActive={pathname === subItem.url}
                     className="h-10 rounded-lg text-white/90 hover:bg-white/15 hover:text-white data-[active=true]:bg-white/25 data-[active=true]:text-white data-[active=true]:font-semibold data-[active=true]:border-l-2 data-[active=true]:border-[#f4c430] transition-all duration-200"
                   >
@@ -337,15 +337,15 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>): 
   }
 
   return (
-    <Sidebar 
-      collapsible="icon" 
-      variant="inset" 
-      {...props} 
+    <Sidebar
+      collapsible="icon"
+      variant="inset"
+      {...props}
       style={{
         backgroundImage: "url('/images/background.png')",
         backgroundSize: "cover",
         backgroundPosition: "center",
-        backgroundRepeat: "no-repeat"
+        backgroundRepeat: "no-repeat",
       }}
       className="border-r border-white/10"
     >
@@ -422,8 +422,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>): 
               <SidebarGroupContent>
                 <SidebarMenu className="space-y-1">
                   <SidebarMenuItem>
-                    <SidebarMenuButton 
-                      asChild 
+                    <SidebarMenuButton
+                      asChild
                       isActive={pathname === "/accounts/new"}
                       className="h-11 rounded-xl text-white hover:bg-white/20 data-[active=true]:bg-white/30 data-[active=true]:text-white data-[active=true]:shadow-lg data-[active=true]:border-l-4 data-[active=true]:border-[#f4c430] transition-all duration-200"
                     >
@@ -450,8 +450,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>): 
                 <SidebarMenu className="space-y-1">
                   {navigationData.main.map((item) => (
                     <SidebarMenuItem key={item.title}>
-                      <SidebarMenuButton 
-                        asChild 
+                      <SidebarMenuButton
+                        asChild
                         isActive={pathname === item.url}
                         className="h-11 rounded-xl text-white hover:bg-white/20 data-[active=true]:bg-white/30 data-[active=true]:text-white data-[active=true]:shadow-lg data-[active=true]:border-l-4 data-[active=true]:border-[#f4c430] transition-all duration-200"
                       >
@@ -515,8 +515,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>): 
                   {navigationData.services.map((item) => (
                     <SidebarMenuItem key={item.title}>
                       {item.url ? (
-                        <SidebarMenuButton 
-                          asChild 
+                        <SidebarMenuButton
+                          asChild
                           isActive={pathname === item.url}
                           className="h-11 rounded-xl text-white hover:bg-white/20 data-[active=true]:bg-white/30 data-[active=true]:text-white data-[active=true]:shadow-lg data-[active=true]:border-l-4 data-[active=true]:border-[#f4c430] transition-all duration-200"
                         >
@@ -546,8 +546,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>): 
                       {"items" in item ? (
                         <MenuItemWithSubmenu item={item} />
                       ) : "url" in item ? (
-                        <SidebarMenuButton 
-                          asChild 
+                        <SidebarMenuButton
+                          asChild
                           isActive={pathname === item.url}
                           className="h-11 rounded-xl text-white hover:bg-white/20 data-[active=true]:bg-white/30 data-[active=true]:text-white data-[active=true]:shadow-lg data-[active=true]:border-l-4 data-[active=true]:border-[#f4c430] transition-all duration-200"
                         >
@@ -574,8 +574,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>): 
                 <SidebarMenu className="space-y-1">
                   {navigationData.other.map((item) => (
                     <SidebarMenuItem key={item.title}>
-                      <SidebarMenuButton 
-                        asChild 
+                      <SidebarMenuButton
+                        asChild
                         isActive={pathname === item.url}
                         className="h-11 rounded-xl text-white hover:bg-white/20 data-[active=true]:bg-white/30 data-[active=true]:text-white data-[active=true]:shadow-lg data-[active=true]:border-l-4 data-[active=true]:border-[#f4c430] transition-all duration-200"
                       >
@@ -639,7 +639,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>): 
                       </AvatarFallback>
                     </Avatar>
                     <div className="grid flex-1 text-left leading-tight">
-                      <span className="truncate font-bold text-gray-900 text-sm">{userData?.fullName || "Utilisateur"}</span>
+                      <span className="truncate font-bold text-gray-900 text-sm">
+                        {userData?.fullName || "Utilisateur"}
+                      </span>
                       <span className="truncate text-xs text-gray-500 font-medium mt-0.5">
                         {userData?.email || "email@example.com"}
                       </span>
@@ -648,7 +650,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>): 
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator className="bg-gray-200/50" />
                 <div className="py-1">
-                  <DropdownMenuItem asChild className="mx-1 rounded-lg hover:bg-[#34763E]/5 focus:bg-[#34763E]/10 transition-colors cursor-pointer">
+                  <DropdownMenuItem
+                    asChild
+                    className="mx-1 rounded-lg hover:bg-[#34763E]/5 focus:bg-[#34763E]/10 transition-colors cursor-pointer"
+                  >
                     <Link href="/profile" className="flex items-center px-2 py-2.5">
                       <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-[#34763E]/10 text-[#34763E] mr-3">
                         <User className="h-4 w-4" />
@@ -671,7 +676,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>): 
                 </div>
                 <DropdownMenuSeparator className="bg-gray-200/50" />
                 <div className="py-1">
-                  <DropdownMenuItem asChild className="mx-1 rounded-lg hover:bg-red-50 focus:bg-red-50 transition-colors cursor-pointer px-2 py-2.5">
+                  <DropdownMenuItem
+                    asChild
+                    className="mx-1 rounded-lg hover:bg-red-50 focus:bg-red-50 transition-colors cursor-pointer px-2 py-2.5"
+                  >
                     <div className="w-full">
                       <LogoutButton variant="ghost" size="sm" showIcon={true}>
                         <span className="text-red-600 hover:text-red-700 font-medium">Se déconnecter</span>
