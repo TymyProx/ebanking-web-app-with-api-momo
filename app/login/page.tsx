@@ -73,7 +73,7 @@ export default function LoginPage() {
       {/* Left side - Hero Image with Green Background */}
       <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-[#6dd47e] via-[#0a8f4f] to-[#0a8f4f]">
-          <div className="absolute left-[-50%] top-[25%] w-[800px] h-[800px]">
+          <div className="absolute left-[-35%] top-[25%] w-[800px] h-[800px]">
             <div className="w-full h-full bg-[#9ee5a8] rounded-full opacity-60" />
           </div>
 
