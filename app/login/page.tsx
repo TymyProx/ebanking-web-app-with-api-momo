@@ -119,7 +119,7 @@ export default function LoginPage() {
 
       {/* Right side - Login Form */}
       <div className="w-full lg:w-1/2 flex items-center justify-center p-8 bg-[#34763E] relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-32 h-full bg-gradient-to-r from-transparent via-[#2d5a35] to-[#1a1a1a] pointer-events-none z-0" />
+      <div className="absolute top-0 right-0 w-24 h-full bg-gradient-to-r from-transparent  via-[#34763E]/80  to-[#34763E]/200 pointer-events-none z-0" />
 
         <div className="absolute -bottom-20 -right-20 w-40 h-40">
           <div className="w-full h-full bg-[#B9E3A8] rounded-full opacity-30" />
