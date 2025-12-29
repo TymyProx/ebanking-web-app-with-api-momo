@@ -69,43 +69,22 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex bg-[#0a8f4f]">
+    <div className="min-h-screen flex bg-[#3F7F4A]">
       {/* Left side - Hero Image with Green Background */}
-      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-[#6dd47e] via-[#0a8f4f] to-[#0a8f4f]">
+      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-[#3F7F4A]">
+        <div className="absolute inset-0 bg-[#3F7F4A]">
           <div className="absolute left-[-35%] top-[25%] w-[800px] h-[800px]">
-            <div className="w-full h-full bg-[#9ee5a8] rounded-full opacity-60" />
-          </div>
-
-          {/* Decorative curved shape */}
-          <div className="absolute right-0 top-0 bottom-0 w-[60%]">
-            <svg viewBox="0 0 500 800" className="absolute right-0 h-full w-auto" preserveAspectRatio="xMaxYMid slice">
-              <path
-                d="M0,0 Q150,400 0,800 L500,800 L500,0 Z"
-                fill="rgba(255,255,255,0.03)"
-                className="animate-pulse"
-                style={{ animationDuration: "4s" }}
-              />
-            </svg>
+            <div className="w-full h-full bg-[#B9E3A8] rounded-full opacity-60" />
           </div>
 
           {/* Floating money/card graphics */}
           <div className="absolute top-[20%] right-[20%]">
-          <img
-          src="/images/billet.png"
-          alt="billet"
-          className="w-[320px] h-auto object-contain rotate-12 drop-shadow-lg"
-          />
+            <img
+              src="/images/billet.png"
+              alt="billet"
+              className="w-[320px] h-auto object-contain rotate-12 drop-shadow-lg"
+            />
           </div>
-
-          {/* Dotted pattern overlay */}
-          <div
-            className="absolute inset-0 opacity-10"
-            style={{
-              backgroundImage: "radial-gradient(circle, white 1px, transparent 1px)",
-              backgroundSize: "30px 30px",
-            }}
-          />
         </div>
 
         {/* Logo */}
@@ -135,19 +114,7 @@ export default function LoginPage() {
       </div>
 
       {/* Right side - Login Form */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-8 bg-[#0a8f4f] relative overflow-hidden">
-        {/* Demi-cercle vert en arrière-plan */}
-        <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-[#6dd47e]/30 rounded-full translate-x-1/3 -translate-y-1/3 blur-3xl"></div>
-
-        {/* Motif de points en arrière-plan */}
-        <div
-          className="absolute inset-0 opacity-10"
-          style={{
-            backgroundImage: "radial-gradient(circle, white 1px, transparent 1px)",
-            backgroundSize: "25px 25px",
-          }}
-        />
-
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-8 bg-[#3F7F4A] relative overflow-hidden">
         <div className="w-full max-w-md space-y-6 relative z-10">
           {/* Mobile Logo */}
           <div className="lg:hidden flex justify-center mb-8">
