@@ -120,14 +120,14 @@ export default function LoginPage() {
           </div>
         </div>
 
-        <div className="relative z-10 flex items-end justify-center w-full h-screen">
-          <div className="relative h-full w-full flex justify-center items-end">
+        <div className="relative z-10 flex items-end justify-start w-full h-full pb-0">
+          <div className="relative flex justify-start items-end max-w-[420px] w-full">
             <Image
-              src="/images/happy.png"
+              src="/images/image.png"
               alt="Welcome"
-              width={5000}
-              height={5500}
-              className="object-contain object-bottom h-[95vh] w-auto drop-shadow-2xl scale-110"
+              width={420}
+              height={550}
+              className="object-contain object-bottom drop-shadow-2xl"
               priority
             />
           </div>
@@ -135,8 +135,20 @@ export default function LoginPage() {
       </div>
 
       {/* Right side - Login Form */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-8 bg-[#0a8f4f]">
-        <div className="w-full max-w-md space-y-6">
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-8 bg-[#0a8f4f] relative overflow-hidden">
+        {/* Demi-cercle vert en arrière-plan */}
+        <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-[#6dd47e]/30 rounded-full translate-x-1/3 -translate-y-1/3 blur-3xl"></div>
+        
+        {/* Motif de points en arrière-plan */}
+        <div
+          className="absolute inset-0 opacity-10"
+          style={{
+            backgroundImage: "radial-gradient(circle, white 1px, transparent 1px)",
+            backgroundSize: "25px 25px",
+          }}
+        />
+        
+        <div className="w-full max-w-md space-y-6 relative z-10">
           {/* Mobile Logo */}
           <div className="lg:hidden flex justify-center mb-8">
             <div className="bg-white px-6 py-3 rounded shadow-lg">
@@ -167,7 +179,7 @@ export default function LoginPage() {
                 name="email"
                 type="email"
                 placeholder=""
-                className="h-11 bg-white/90 border-0 text-gray-900 placeholder:text-gray-500 focus:bg-white focus:ring-2 focus:ring-white/50"
+                className="h-11 bg-[#6dd47e]/30 border border-[#6dd47e]/50 text-white placeholder:text-white/60 focus:bg-[#6dd47e]/40 focus:border-[#6dd47e] focus:ring-0 backdrop-blur-sm"
                 required
                 disabled={isLoading}
               />
@@ -184,14 +196,14 @@ export default function LoginPage() {
                   name="password"
                   type={showPassword ? "text" : "password"}
                   placeholder=""
-                  className="h-11 bg-white/90 border-0 text-gray-900 pr-10 placeholder:text-gray-500 focus:bg-white focus:ring-2 focus:ring-white/50"
+                  className="h-11 bg-[#6dd47e]/30 border border-[#6dd47e]/50 text-white pr-10 placeholder:text-white/60 focus:bg-[#6dd47e]/40 focus:border-[#6dd47e] focus:ring-0 backdrop-blur-sm"
                   required
                   disabled={isLoading}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-white/70 hover:text-white"
                   disabled={isLoading}
                 >
                   {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
