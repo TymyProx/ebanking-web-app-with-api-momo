@@ -366,12 +366,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>): 
             </div>
           ) : (
             <div className="flex min-h-[80px] w-full items-center justify-center py-2">
-              <div className="h-[70px] w-[160px] flex-shrink-0 rounded-lg bg-white/95 px-4 py-3 shadow-lg border border-white/20">
+              <div className="h-[160px] w-[360px] flex-shrink-0 rounded-lg px-4 py-3 ">
                 <Image
-                  src="/images/logo-bng.png"
+                  src="/images/logowhite.png"
                   alt="BNG Logo"
-                  width={140}
-                  height={60}
+                  width={340}
+                  height={160}
                   className="h-full w-full object-contain"
                   priority
                 />
