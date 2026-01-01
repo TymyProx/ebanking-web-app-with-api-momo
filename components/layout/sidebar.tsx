@@ -196,6 +196,10 @@ const navigationData = {
   ],
 }
 
+// ✅ Force toutes les icônes Lucide en blanc (stroke & fill via currentColor)
+const ICON_WHITE = "h-4 w-4 text-white stroke-white"
+const ICON_WHITE_MD = "h-5 w-5 text-white stroke-white"
+
 const SidebarGroupLabel = React.forwardRef<HTMLDivElement, React.ComponentProps<"div"> & { asChild?: boolean }>(
   ({ className, asChild = false, ...props }, ref) => {
     const Comp = asChild ? Slot : "div"
@@ -235,9 +239,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>): 
       try {
         setIsCheckingAccounts(true)
         const accounts = await getAccounts()
-
         const hasActive = accounts.some((account) => account.status === "ACTIF")
-
         setHasActiveAccount(hasActive)
       } catch (error) {
         console.error("Error checking accounts:", error)
@@ -268,17 +270,19 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>): 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <SidebarMenuButton tooltip={item.title} className="text-white">
-              <item.icon className="text-white" />
+              <item.icon className={ICON_WHITE_MD} />
               <span className="text-white">{item.title}</span>
             </SidebarMenuButton>
           </DropdownMenuTrigger>
-          <DropdownMenuContent side="right" align="start" className="w-48 bg-white">
+
+          {/* NOTE: dropdown bg white => on force les icônes en blanc quand même */}
+          <DropdownMenuContent side="right" align="start" className="w-56 bg-white">
             <DropdownMenuLabel className="text-gray-900">{item.title}</DropdownMenuLabel>
             <DropdownMenuSeparator />
             {item.items?.map((subItem: any) => (
               <DropdownMenuItem key={subItem.title} asChild>
                 <Link href={subItem.url} className="flex items-center gap-2">
-                  <subItem.icon className="h-4 w-4 text-white" />
+                  <subItem.icon className={ICON_WHITE} />
                   <span className="text-gray-900">{subItem.title}</span>
                   {subItem.badge && (
                     <Badge variant="outline" className="ml-auto">
@@ -302,12 +306,13 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>): 
               className="h-11 rounded-xl text-white hover:bg-white/20 transition-all duration-200"
             >
               <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-white/10 text-white">
-                <item.icon className="h-5 w-5 text-white" />
+                <item.icon className={ICON_WHITE_MD} />
               </div>
               <span className="font-semibold text-white">{item.title}</span>
-              <ChevronRight className="ml-auto h-4 w-4 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90 text-white" />
+              <ChevronRight className="ml-auto h-4 w-4 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90 text-white stroke-white" />
             </SidebarMenuButton>
           </CollapsibleTrigger>
+
           <CollapsibleContent>
             <SidebarMenuSub className="ml-4 mt-1 space-y-1 border-l-2 border-white/20 pl-3">
               {item.items?.map((subItem: any) => (
@@ -318,7 +323,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>): 
                     className="h-10 rounded-lg text-white/90 hover:bg-white/15 hover:text-white data-[active=true]:bg-white/25 data-[active=true]:text-white data-[active=true]:font-semibold data-[active=true]:border-l-2 data-[active=true]:border-[#f4c430] transition-all duration-200"
                   >
                     <Link href={subItem.url} className="flex items-center gap-2.5">
-                      <subItem.icon className="h-4 w-4 text-white" />
+                      <subItem.icon className={ICON_WHITE} />
                       <span className="text-sm text-white">{subItem.title}</span>
                       {subItem.badge && (
                         <Badge variant="outline" className="ml-auto text-[10px] px-1.5 border-white/30 text-white">
@@ -347,7 +352,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>): 
         backgroundPosition: "center",
         backgroundRepeat: "no-repeat",
       }}
-      className="border-r border-white/10"
+      // ✅ Force tous les svg (lucide) à être blancs, même si un parent met text-gray
+      className="border-r border-white/10 text-white [&_svg]:text-white [&_svg]:stroke-white"
     >
       <SidebarHeader className="border-b border-white/10 bg-[#34763E]/20 backdrop-blur-sm">
         <div className="flex items-center gap-2 px-4 py-3">
@@ -366,7 +372,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>): 
             </div>
           ) : (
             <div className="flex min-h-[80px] w-full items-center justify-center py-2">
-              <div className="h-[160px] w-[360px] flex-shrink-0 rounded-lg px-4 py-3 ">
+              <div className="h-[160px] w-[360px] flex-shrink-0 rounded-lg px-4 py-3">
                 <Image
                   src="/images/logowhite.png"
                   alt="BNG Logo"
@@ -395,7 +401,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>): 
                   <Tooltip delayDuration={0}>
                     <TooltipTrigger asChild>
                       <div className="flex items-center justify-center rounded-md border border-[#f4c430] bg-[#f4c430]/20 p-2 cursor-help backdrop-blur-sm">
-                        <AlertCircle className="h-5 w-5 text-[#f4c430]" />
+                        <AlertCircle className={ICON_WHITE_MD + " text-[#f4c430] stroke-[#f4c430]"} />
                       </div>
                     </TooltipTrigger>
                     <TooltipContent side="right" className="max-w-xs bg-white border-[#f4c430]">
@@ -407,7 +413,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>): 
                 </TooltipProvider>
               ) : (
                 <Alert className="border-[#f4c430] bg-[#f4c430]/20 backdrop-blur-sm">
-                  <AlertCircle className="h-4 w-4 text-[#f4c430]" />
+                  <AlertCircle className="h-4 w-4 text-[#f4c430] stroke-[#f4c430]" />
                   <AlertDescription className="text-xs text-white font-medium">
                     Veuillez initier la demande d'ouverture de compte pour accéder à toutes les fonctionnalités
                   </AlertDescription>
@@ -429,7 +435,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>): 
                     >
                       <Link href="/accounts/new" className="flex items-center gap-3">
                         <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-white/10 group-data-[active=true]:bg-white/20">
-                          <PlusCircle className="h-5 w-5 text-white" />
+                          <PlusCircle className={ICON_WHITE_MD} />
                         </div>
                         <span className="font-semibold text-white">Ouverture compte</span>
                       </Link>
@@ -457,7 +463,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>): 
                       >
                         <Link href={item.url} className="flex items-center gap-3">
                           <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-white/10 group-data-[active=true]:bg-white/20">
-                            <item.icon className="h-5 w-5 text-white" />
+                            <item.icon className={ICON_WHITE_MD} />
                           </div>
                           <span className="font-semibold text-white">{item.title}</span>
                           {item.badge && (
@@ -522,7 +528,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>): 
                         >
                           <Link href={item.url} className="flex items-center gap-3">
                             <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-white/10 group-data-[active=true]:bg-white/20">
-                              <item.icon className="h-5 w-5 text-white" />
+                              <item.icon className={ICON_WHITE_MD} />
                             </div>
                             <span className="font-semibold text-white">{item.title}</span>
                           </Link>
@@ -553,7 +559,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>): 
                         >
                           <Link href={item.url} className="flex items-center gap-3">
                             <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-white/10 group-data-[active=true]:bg-white/20">
-                              <item.icon className="h-5 w-5 text-white" />
+                              <item.icon className={ICON_WHITE_MD} />
                             </div>
                             <span className="font-semibold text-white">{item.title}</span>
                           </Link>
@@ -581,7 +587,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>): 
                       >
                         <Link href={item.url} className="flex items-center gap-3">
                           <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-white/10 group-data-[active=true]:bg-white/20">
-                            <item.icon className="h-5 w-5 text-white" />
+                            <item.icon className={ICON_WHITE_MD} />
                           </div>
                           <span className="font-semibold">{item.title}</span>
                           {item.badge && (
@@ -621,9 +627,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>): 
                       {userData?.email || "Client Particulier"}
                     </span>
                   </div>
-                  <ChevronRight className="ml-auto size-4 text-white/70" />
+                  <ChevronRight className="ml-auto size-4 text-white/70 stroke-white" />
                 </SidebarMenuButton>
               </DropdownMenuTrigger>
+
               <DropdownMenuContent
                 className="w-[--radix-dropdown-menu-trigger-width] min-w-64 rounded-2xl shadow-2xl border-gray-200 bg-white/95 backdrop-blur-xl"
                 side="bottom"
@@ -648,7 +655,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>): 
                     </div>
                   </div>
                 </DropdownMenuLabel>
+
                 <DropdownMenuSeparator className="bg-gray-200/50" />
+
                 <div className="py-1">
                   <DropdownMenuItem
                     asChild
@@ -661,12 +670,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>): 
                       <span className="font-medium text-sm">Mon profil</span>
                     </Link>
                   </DropdownMenuItem>
+
                   <DropdownMenuItem className="mx-1 rounded-lg hover:bg-[#34763E]/5 focus:bg-[#34763E]/10 transition-colors cursor-pointer px-2 py-2.5">
                     <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-gray-100 text-gray-600 mr-3">
                       <Settings className="h-4 w-4" />
                     </div>
                     <span className="font-medium text-sm">Paramètres</span>
                   </DropdownMenuItem>
+
                   <DropdownMenuItem className="mx-1 rounded-lg hover:bg-[#34763E]/5 focus:bg-[#34763E]/10 transition-colors cursor-pointer px-2 py-2.5">
                     <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-gray-100 text-gray-600 mr-3">
                       <HelpCircle className="h-4 w-4" />
@@ -674,7 +685,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>): 
                     <span className="font-medium text-sm">Aide</span>
                   </DropdownMenuItem>
                 </div>
+
                 <DropdownMenuSeparator className="bg-gray-200/50" />
+
                 <div className="py-1">
                   <DropdownMenuItem
                     asChild
@@ -692,6 +705,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>): 
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarFooter>
+
       <SidebarRail />
     </Sidebar>
   )
