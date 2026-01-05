@@ -78,12 +78,12 @@ export default function LoginPage() {
       {/* Left side - Hero Image with Green Background */}
       <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden">
         <div className="absolute inset-0">
-          <div className="absolute -top-24 -left-40 w-64 h-64">
+          <div className="absolute -top-24 -left-40 w-72 h-72">
             <div className="w-full h-full bg-[#B9E3A8] rounded-full opacity-40" />
           </div>
 
-          <div className="absolute left-[-60%] top-[35%] w-[1000px] h-[1000px]">
-            <div className="w-full h-full bg-[#B9E3A8] rounded-full opacity-60" />
+          <div className="absolute left-[-60%] top-[40%] w-[1000px] h-[1000px]">
+            <div className="w-full h-full bg-[#B9E3A8] rounded-full opacity-50" />
           </div>
 
           {/* Floating money/card graphics */}
@@ -97,15 +97,17 @@ export default function LoginPage() {
         </div>
 
         {/* Logo */}
-        <div className="absolute top-4 left-18 z-20 pl-6 pr-6 ">
-          <Image
-            src="/images/logowhite.png"
-            alt="BNG Logo"
-            width={280}
-            height={160}
-            className="object-contain"
-            priority
-          />
+        <div className="absolute top-4 left-18 z-20 translate-x-4">
+        <div className="group flex h-[200px] w-[200px] items-center justify-center rounded-full bg-white/10 backdrop-blur-md transition-all duration-500 hover:bg-white/20 hover:shadow-[0_0_40px_rgba(244,196,48,0.4)]">
+        <Image
+        src="/images/logowhite.png"
+        alt="BNG Logo"
+        width={300}
+        height={200}
+        className="object-contain scale-125 transition-transform duration-500 group-hover:scale-140"
+        priority
+        />
+        </div>
         </div>
 
         <div className="relative z-10 flex items-end justify-start w-full h-full pb-0">
@@ -125,7 +127,7 @@ export default function LoginPage() {
       {/* Right side - Login Form */}
       <div className="w-full lg:w-1/2 flex items-center justify-center p-8 relative overflow-hidden">
         <div className="absolute -bottom-20 -right-20 w-40 h-40">
-          <div className="w-full h-full bg-[#B9E3A8] rounded-full opacity-30" />
+          <div className="w-full h-full bg-[#B9E3A8] rounded-full opacity-20" />
         </div>
 
         <div className="w-full max-w-md space-y-6 relative z-10">
