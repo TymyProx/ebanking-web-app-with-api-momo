@@ -97,12 +97,12 @@ export default function LoginPage() {
         </div>
 
         {/* Logo */}
-        <div className="absolute bg-white top-8 left-28 z-20 pl-6 pr-6">
+        <div className="absolute top-4 left-18 z-20 pl-6 pr-6 ">
           <Image
-            src="/images/logo-bng.png"
+            src="/images/logowhite.png"
             alt="BNG Logo"
-            width={160}
-            height={30}
+            width={280}
+            height={160}
             className="object-contain"
             priority
           />
