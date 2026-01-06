@@ -87,7 +87,7 @@ export default function LoginPage() {
           </div>
 
           {/* Floating money/card graphics */}
-          <div className="absolute top-[20%] right-[20%]">
+          <div className="absolute top-[25%] right-[25%]">
             <img
               src="/images/billet.png"
               alt="billet"
@@ -115,8 +115,8 @@ export default function LoginPage() {
             <Image
               src="/images/image.png"
               alt="Welcome"
-              width={400}
-              height={500}
+              width={300}
+              height={400}
               className="object-contain object-bottom drop-shadow-2xl"
               priority
             />
