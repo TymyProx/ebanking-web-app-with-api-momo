@@ -140,9 +140,7 @@ function VerifyEmailContent() {
         <div className="w-full max-w-md space-y-6 relative z-10">
           {/* Mobile Logo */}
           <div className="lg:hidden flex justify-center mb-8">
-            <div className="bg-white px-6 py-3 rounded shadow-lg">
-              <Image src="/images/logo-bng.png" alt="BNG Logo" width={140} height={45} className="object-contain" />
-            </div>
+            <Image src="/images/logowhite.png" alt="BNG Logo" width={180} height={60} className="object-contain" />
           </div>
 
           {/* Status Content */}

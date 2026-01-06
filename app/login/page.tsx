@@ -69,12 +69,15 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex" style={{
-      backgroundImage: "url('/images/background.png')",
-      backgroundSize: "cover",
-      backgroundPosition: "center",
-      backgroundRepeat: "no-repeat"
-    }}>
+    <div
+      className="min-h-screen flex"
+      style={{
+        backgroundImage: "url('/images/background.png')",
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        backgroundRepeat: "no-repeat",
+      }}
+    >
       {/* Left side - Hero Image with Green Background */}
       <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden">
         <div className="absolute inset-0">
@@ -98,16 +101,16 @@ export default function LoginPage() {
 
         {/* Logo */}
         <div className="absolute top-4 left-18 z-20 translate-x-4">
-        <div className="group flex h-[200px] w-[200px] items-center justify-center rounded-full bg-white/10 backdrop-blur-md transition-all duration-500 hover:bg-white/20 hover:shadow-[0_0_40px_rgba(244,196,48,0.4)]">
-        <Image
-        src="/images/logowhite.png"
-        alt="BNG Logo"
-        width={300}
-        height={200}
-        className="object-contain scale-125 transition-transform duration-500 group-hover:scale-140"
-        priority
-        />
-        </div>
+          <div className="group flex h-[200px] w-[200px] items-center justify-center rounded-full bg-white/10 backdrop-blur-md transition-all duration-500 hover:bg-white/20 hover:shadow-[0_0_40px_rgba(244,196,48,0.4)]">
+            <Image
+              src="/images/logowhite.png"
+              alt="BNG Logo"
+              width={300}
+              height={200}
+              className="object-contain scale-125 transition-transform duration-500 group-hover:scale-140"
+              priority
+            />
+          </div>
         </div>
 
         <div className="relative z-10 flex items-end justify-start w-full h-full pb-0">
@@ -133,9 +136,7 @@ export default function LoginPage() {
         <div className="w-full max-w-md space-y-6 relative z-10">
           {/* Mobile Logo */}
           <div className="lg:hidden flex justify-center mb-8">
-            <div className="bg-white px-6 py-3 rounded shadow-lg">
-              <Image src="/images/logo-bng.png" alt="BNG Logo" width={140} height={45} className="object-contain" />
-            </div>
+            <Image src="/images/logowhite.png" alt="BNG Logo" width={180} height={60} className="object-contain" />
           </div>
 
           {/* Connectez-vous Title */}
