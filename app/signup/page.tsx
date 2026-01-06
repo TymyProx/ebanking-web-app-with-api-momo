@@ -90,15 +90,16 @@ export default function SignupPage() {
         {/* Left side - Hero Image with Green Background */}
         <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden">
           <div className="absolute inset-0">
-            <div className="absolute -top-24 -left-40 w-64 h-64">
+            <div className="absolute -top-24 -left-40 w-72 h-72">
               <div className="w-full h-full bg-[#B9E3A8] rounded-full opacity-40" />
             </div>
 
-            <div className="absolute left-[-60%] top-[35%] w-[1000px] h-[1000px]">
-              <div className="w-full h-full bg-[#B9E3A8] rounded-full opacity-60" />
+            <div className="absolute left-[-60%] top-[40%] w-[1000px] h-[1000px]">
+              <div className="w-full h-full bg-[#B9E3A8] rounded-full opacity-50" />
             </div>
 
-            <div className="absolute top-[20%] right-[20%]">
+            {/* Floating money/card graphics */}
+            <div className="absolute top-[25%] right-[25%]">
               <img
                 src="/images/billet.png"
                 alt="billet"
@@ -107,15 +108,18 @@ export default function SignupPage() {
             </div>
           </div>
 
-          <div className="absolute bg-white top-8 left-28 z-20 pl-6 pr-6">
-            <Image
-              src="/images/logo-bng.png"
-              alt="BNG Logo"
-              width={160}
-              height={30}
-              className="object-contain"
-              priority
-            />
+          {/* Logo */}
+          <div className="absolute top-4 left-18 z-20 translate-x-4">
+            <div className="group flex h-[200px] w-[200px] items-center justify-center rounded-full bg-white/10 backdrop-blur-md transition-all duration-500 hover:bg-white/20 hover:shadow-[0_0_40px_rgba(244,196,48,0.4)]">
+              <Image
+                src="/images/logowhite.png"
+                alt="BNG Logo"
+                width={300}
+                height={200}
+                className="object-contain scale-125 transition-transform duration-500 group-hover:scale-140"
+                priority
+              />
+            </div>
           </div>
 
           <div className="relative z-10 flex items-end justify-start w-full h-full pb-0">
@@ -123,8 +127,8 @@ export default function SignupPage() {
               <Image
                 src="/images/image.png"
                 alt="Welcome"
-                width={400}
-                height={500}
+                width={300}
+                height={400}
                 className="object-contain object-bottom drop-shadow-2xl"
                 priority
               />
@@ -135,7 +139,7 @@ export default function SignupPage() {
         {/* Right side - Success Message */}
         <div className="w-full lg:w-1/2 flex items-center justify-center p-8 relative overflow-hidden">
           <div className="absolute -bottom-20 -right-20 w-40 h-40">
-            <div className="w-full h-full bg-[#B9E3A8] rounded-full opacity-30" />
+            <div className="w-full h-full bg-[#B9E3A8] rounded-full opacity-20" />
           </div>
 
           <div className="w-full max-w-md space-y-8 relative z-10">
@@ -195,15 +199,16 @@ export default function SignupPage() {
         {/* Left side - Hero Image with Green Background */}
         <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden">
           <div className="absolute inset-0">
-            <div className="absolute -top-24 -left-40 w-64 h-64">
+            <div className="absolute -top-24 -left-40 w-72 h-72">
               <div className="w-full h-full bg-[#B9E3A8] rounded-full opacity-40" />
             </div>
 
-            <div className="absolute left-[-60%] top-[35%] w-[1000px] h-[1000px]">
-              <div className="w-full h-full bg-[#B9E3A8] rounded-full opacity-60" />
+            <div className="absolute left-[-60%] top-[40%] w-[1000px] h-[1000px]">
+              <div className="w-full h-full bg-[#B9E3A8] rounded-full opacity-50" />
             </div>
 
-            <div className="absolute top-[20%] right-[20%]">
+            {/* Floating money/card graphics */}
+            <div className="absolute top-[25%] right-[25%]">
               <img
                 src="/images/billet.png"
                 alt="billet"
@@ -212,15 +217,18 @@ export default function SignupPage() {
             </div>
           </div>
 
-          <div className="absolute bg-white top-8 left-28 z-20 pl-6 pr-6">
-            <Image
-              src="/images/logo-bng.png"
-              alt="BNG Logo"
-              width={160}
-              height={30}
-              className="object-contain"
-              priority
-            />
+          {/* Logo */}
+          <div className="absolute top-4 left-18 z-20 translate-x-4">
+            <div className="group flex h-[200px] w-[200px] items-center justify-center rounded-full bg-white/10 backdrop-blur-md transition-all duration-500 hover:bg-white/20 hover:shadow-[0_0_40px_rgba(244,196,48,0.4)]">
+              <Image
+                src="/images/logowhite.png"
+                alt="BNG Logo"
+                width={300}
+                height={200}
+                className="object-contain scale-125 transition-transform duration-500 group-hover:scale-140"
+                priority
+              />
+            </div>
           </div>
 
           <div className="relative z-10 flex items-end justify-start w-full h-full pb-0">
@@ -228,8 +236,8 @@ export default function SignupPage() {
               <Image
                 src="/images/image.png"
                 alt="Welcome"
-                width={400}
-                height={500}
+                width={300}
+                height={400}
                 className="object-contain object-bottom drop-shadow-2xl"
                 priority
               />
@@ -240,7 +248,7 @@ export default function SignupPage() {
         {/* Right side - Client Type Selection */}
         <div className="w-full lg:w-1/2 flex items-center justify-center p-8 relative overflow-hidden">
           <div className="absolute -bottom-20 -right-20 w-40 h-40">
-            <div className="w-full h-full bg-[#B9E3A8] rounded-full opacity-30" />
+            <div className="w-full h-full bg-[#B9E3A8] rounded-full opacity-20" />
           </div>
 
           <div className="w-full max-w-md space-y-8 relative z-10">
@@ -334,15 +342,16 @@ export default function SignupPage() {
         {/* Left side - Hero Image with Green Background */}
         <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden">
           <div className="absolute inset-0">
-            <div className="absolute -top-24 -left-40 w-64 h-64">
+            <div className="absolute -top-24 -left-40 w-72 h-72">
               <div className="w-full h-full bg-[#B9E3A8] rounded-full opacity-40" />
             </div>
 
-            <div className="absolute left-[-60%] top-[35%] w-[1000px] h-[1000px]">
-              <div className="w-full h-full bg-[#B9E3A8] rounded-full opacity-60" />
+            <div className="absolute left-[-60%] top-[40%] w-[1000px] h-[1000px]">
+              <div className="w-full h-full bg-[#B9E3A8] rounded-full opacity-50" />
             </div>
 
-            <div className="absolute top-[20%] right-[20%]">
+            {/* Floating money/card graphics */}
+            <div className="absolute top-[25%] right-[25%]">
               <img
                 src="/images/billet.png"
                 alt="billet"
@@ -351,15 +360,18 @@ export default function SignupPage() {
             </div>
           </div>
 
-          <div className="absolute bg-white top-8 left-28 z-20 pl-6 pr-6">
-            <Image
-              src="/images/logo-bng.png"
-              alt="BNG Logo"
-              width={160}
-              height={30}
-              className="object-contain"
-              priority
-            />
+          {/* Logo */}
+          <div className="absolute top-4 left-18 z-20 translate-x-4">
+            <div className="group flex h-[200px] w-[200px] items-center justify-center rounded-full bg-white/10 backdrop-blur-md transition-all duration-500 hover:bg-white/20 hover:shadow-[0_0_40px_rgba(244,196,48,0.4)]">
+              <Image
+                src="/images/logowhite.png"
+                alt="BNG Logo"
+                width={300}
+                height={200}
+                className="object-contain scale-125 transition-transform duration-500 group-hover:scale-140"
+                priority
+              />
+            </div>
           </div>
 
           <div className="relative z-10 flex items-end justify-start w-full h-full pb-0">
@@ -367,8 +379,8 @@ export default function SignupPage() {
               <Image
                 src="/images/image.png"
                 alt="Welcome"
-                width={400}
-                height={500}
+                width={300}
+                height={400}
                 className="object-contain object-bottom drop-shadow-2xl"
                 priority
               />
@@ -379,7 +391,7 @@ export default function SignupPage() {
         {/* Right side - Existing Client Form */}
         <div className="w-full lg:w-1/2 flex items-center justify-center p-8 relative overflow-hidden">
           <div className="absolute -bottom-20 -right-20 w-40 h-40">
-            <div className="w-full h-full bg-[#B9E3A8] rounded-full opacity-30" />
+            <div className="w-full h-full bg-[#B9E3A8] rounded-full opacity-20" />
           </div>
 
           <div className="w-full max-w-md space-y-8 relative z-10">
@@ -480,15 +492,16 @@ export default function SignupPage() {
       {/* Left side - Hero Image with Green Background */}
       <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden">
         <div className="absolute inset-0">
-          <div className="absolute -top-24 -left-40 w-64 h-64">
+          <div className="absolute -top-24 -left-40 w-72 h-72">
             <div className="w-full h-full bg-[#B9E3A8] rounded-full opacity-40" />
           </div>
 
-          <div className="absolute left-[-60%] top-[35%] w-[1000px] h-[1000px]">
-            <div className="w-full h-full bg-[#B9E3A8] rounded-full opacity-60" />
+          <div className="absolute left-[-60%] top-[40%] w-[1000px] h-[1000px]">
+            <div className="w-full h-full bg-[#B9E3A8] rounded-full opacity-50" />
           </div>
 
-          <div className="absolute top-[20%] right-[20%]">
+          {/* Floating money/card graphics */}
+          <div className="absolute top-[25%] right-[25%]">
             <img
               src="/images/billet.png"
               alt="billet"
@@ -497,15 +510,18 @@ export default function SignupPage() {
           </div>
         </div>
 
-        <div className="absolute bg-white top-8 left-28 z-20 pl-6 pr-6">
-          <Image
-            src="/images/logo-bng.png"
-            alt="BNG Logo"
-            width={160}
-            height={30}
-            className="object-contain"
-            priority
-          />
+        {/* Logo */}
+        <div className="absolute top-4 left-18 z-20 translate-x-4">
+          <div className="group flex h-[200px] w-[200px] items-center justify-center rounded-full bg-white/10 backdrop-blur-md transition-all duration-500 hover:bg-white/20 hover:shadow-[0_0_40px_rgba(244,196,48,0.4)]">
+            <Image
+              src="/images/logowhite.png"
+              alt="BNG Logo"
+              width={300}
+              height={200}
+              className="object-contain scale-125 transition-transform duration-500 group-hover:scale-140"
+              priority
+            />
+          </div>
         </div>
 
         <div className="relative z-10 flex items-end justify-start w-full h-full pb-0">
@@ -513,8 +529,8 @@ export default function SignupPage() {
             <Image
               src="/images/image.png"
               alt="Welcome"
-              width={400}
-              height={500}
+              width={300}
+              height={400}
               className="object-contain object-bottom drop-shadow-2xl"
               priority
             />
@@ -525,7 +541,7 @@ export default function SignupPage() {
       {/* Right side - New Client Signup Form */}
       <div className="w-full lg:w-1/2 flex items-center justify-center p-8 relative overflow-hidden">
         <div className="absolute -bottom-20 -right-20 w-40 h-40">
-          <div className="w-full h-full bg-[#B9E3A8] rounded-full opacity-30" />
+          <div className="w-full h-full bg-[#B9E3A8] rounded-full opacity-20" />
         </div>
 
         <div className="w-full max-w-md space-y-8 relative z-10">

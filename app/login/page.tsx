@@ -82,7 +82,7 @@ export default function LoginPage() {
             <div className="w-full h-full bg-[#B9E3A8] rounded-full opacity-40" />
           </div>
 
-          <div className="absolute left-[-50%] top-[50%] w-[800px] h-[800px]">
+          <div className="absolute left-[-60%] top-[40%] w-[1000px] h-[1000px]">
             <div className="w-full h-full bg-[#B9E3A8] rounded-full opacity-50" />
           </div>
 
