@@ -942,8 +942,6 @@ export default function ServiceRequestsPage() {
                   <SelectContent>
                     <SelectItem value="Chéquier standard (barré)">Chéquier standard (barré)</SelectItem>
                     <SelectItem value="Chéquier standard (non barré)">Chéquier standard (non barré)</SelectItem>
-                    <SelectItem value="Chèque certifié">Chèque certifié (chèque standard certifié)</SelectItem>
-                    <SelectItem value="Chèque de banque">Chèque de banque (format spécial)</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
