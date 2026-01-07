@@ -26,6 +26,8 @@ import {
   Loader2,
   PlusCircle,
   FileCheck,
+  BookOpen,
+  DollarSign,
 } from "lucide-react"
 import Image from "next/image"
 import { cn } from "@/lib/utils"
@@ -149,8 +151,19 @@ const navigationData = {
   services: [
     {
       title: "E-Services",
-      url: "/services/requests",
       icon: FileText,
+      items: [
+        {
+          title: "Demande de chéquier",
+          url: "/services/checkbook",
+          icon: BookOpen,
+        },
+        {
+          title: "Demande de crédit",
+          url: "/services/credit",
+          icon: DollarSign,
+        },
+      ],
     },
   ],
   support: [
@@ -520,7 +533,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>): 
                 <SidebarMenu className="space-y-1">
                   {navigationData.services.map((item) => (
                     <SidebarMenuItem key={item.title}>
-                      {item.url ? (
+                      {"items" in item ? (
+                        <MenuItemWithSubmenu item={item} />
+                      ) : "url" in item ? (
                         <SidebarMenuButton
                           asChild
                           isActive={pathname === item.url}
