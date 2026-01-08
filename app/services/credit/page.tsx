@@ -1,6 +1,7 @@
 "use client"
 
 import type React from "react"
+
 import { useEffect, useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -10,7 +11,8 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
-import { CreditCard, Clock, CheckCircle, AlertCircle, Send, Search, Loader2 } from "lucide-react"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { CreditCard, Clock, CheckCircle, AlertCircle, Send, Search } from "lucide-react"
 import { submitCreditRequest, getCreditRequest, getDemandeCreditById } from "../requests/actions"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { getAccounts } from "../../accounts/actions"
@@ -34,43 +36,25 @@ export default function CreditRequestPage() {
   const [accounts, setAccounts] = useState<any[]>([])
   const [isLoadingAccounts, setIsLoadingAccounts] = useState(true)
 
-  const loadCreditRequests = async () => {
-    setIsLoadingCreditRequests(true)
-    try {
-      const result = await getCreditRequest()
-      if (result && "rows" in result && result.rows && Array.isArray(result.rows)) {
-        const transformedRequests = result.rows.map((item: any, index: number) => ({
-          id: item.id || `CRD${String(index + 1).padStart(3, "0")}`,
-          type: "credit",
-          typeName: "Demande de crédit",
-          status: item.status || "En attente",
-          submittedAt: item.createdAt ? item.createdAt.split("T")[0] : new Date().toISOString().split("T")[0],
-          expectedResponse: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
-          account: item.numcompte || item.accountNumber || "Compte non spécifié",
-          reference: item.referenceDemande || "Référence non disponible",
-          details: {
-            applicantName: item.applicantName || "",
-            creditAmount: item.creditAmount || "",
-            durationMonths: item.durationMonths || "",
-            purpose: item.purpose || "",
-          },
-        }))
-        setCreditRequests(transformedRequests)
-      } else {
-        setCreditRequests([])
-      }
-    } catch (error) {
-      console.error("Erreur lors du chargement des demandes:", error)
-      setCreditRequests([])
-    } finally {
-      setIsLoadingCreditRequests(false)
+  useEffect(() => {
+    loadAccounts()
+    loadCreditRequests()
+  }, [])
+
+  useEffect(() => {
+    if (creditSubmitState?.success || creditSubmitState?.error) {
+      const timer = setTimeout(() => {
+        setCreditSubmitState(null)
+      }, 4000)
+      return () => clearTimeout(timer)
     }
-  }
+  }, [creditSubmitState])
 
   const loadAccounts = async () => {
     try {
       setIsLoadingAccounts(true)
       const result = await getAccounts()
+
       if (Array.isArray(result) && result.length > 0) {
         const adaptedAccounts = result.map((apiAccount: any) => ({
           id: apiAccount.id || apiAccount.accountId,
@@ -98,6 +82,77 @@ export default function CreditRequestPage() {
       setAccounts([])
     } finally {
       setIsLoadingAccounts(false)
+    }
+  }
+
+  const loadCreditRequests = async () => {
+    setIsLoadingCreditRequests(true)
+    try {
+      const result = await getCreditRequest()
+      const creditData = (result as any)?.rows || []
+
+      const creditRequests = creditData.map((item: any, index: number) => ({
+        id: item.id || `CRD${String(index + 1).padStart(3, "0")}`,
+        type: "credit",
+        typeName: "Demande de crédit",
+        status: item.status || "En attente",
+        submittedAt: item.createdAt ? item.createdAt.split("T")[0] : new Date().toISOString().split("T")[0],
+        expectedResponse: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+        account: item.numcompte || item.accountNumber || "Compte non spécifié",
+        reference: item.referenceDemande || "Référence non disponible",
+        details: {
+          applicantName: item.applicantName || "",
+          creditAmount: item.creditAmount || "",
+          durationMonths: item.durationMonths || "",
+          purpose: item.purpose || "",
+        },
+      }))
+
+      creditRequests.sort((a, b) => {
+        const dateA = new Date(a.submittedAt).getTime()
+        const dateB = new Date(b.submittedAt).getTime()
+        return dateB - dateA
+      })
+
+      setCreditRequests(creditRequests)
+    } catch (error) {
+      console.error("Erreur lors du chargement des demandes de crédit:", error)
+      setCreditRequests([])
+    } finally {
+      setIsLoadingCreditRequests(false)
+    }
+  }
+
+  const handleSubmitCredit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setIsCreditSubmitting(true)
+
+    try {
+      const result = await submitCreditRequest({
+        applicant_name: formData.applicant_name || "",
+        loan_amount: formData.loan_amount || "",
+        loan_duration: formData.loan_duration || "",
+        loan_purpose: formData.loan_purpose || "",
+        numcompte: selectedAccount,
+        typedemande: formData.typedemande || "",
+        accountNumber: selectedAccount,
+      })
+
+      setCreditSubmitState({
+        success: true,
+        referenceDemande: result.referenceDemande,
+      })
+
+      setFormData({})
+      setSelectedAccount("")
+      loadCreditRequests()
+    } catch (error: any) {
+      setCreditSubmitState({
+        success: false,
+        error: error.message || "Erreur lors de la soumission",
+      })
+    } finally {
+      setIsCreditSubmitting(false)
     }
   }
 
@@ -136,48 +191,12 @@ export default function CreditRequestPage() {
     setSelectedRequestDetails(null)
   }
 
-  const handleCreditSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    setIsCreditSubmitting(true)
-    setCreditSubmitState(null)
-
-    const formDataObj = new FormData(e.currentTarget)
-
-    try {
-      const result = await submitCreditRequest(null, formDataObj)
-
-      if (result?.success) {
-        setCreditSubmitState({
-          success: true,
-          reference: result.reference,
-          referenceDemande: result.referenceDemande,
-        })
-        e.currentTarget.reset()
-        setSelectedAccount("")
-        setFormData({})
-        loadCreditRequests()
-      } else {
-        setCreditSubmitState({
-          success: false,
-          error: result?.error || "Une erreur s'est produite lors de la soumission",
-        })
-      }
-    } catch (error) {
-      setCreditSubmitState({
-        success: false,
-        error: "Erreur lors de l'envoi de la demande",
-      })
-    } finally {
-      setIsCreditSubmitting(false)
-    }
-  }
-
   const formatRequestDetails = (details: any) => {
     if (!details) return []
 
     return [
       { label: "Référence", value: details.referenceDemande || "Non attribuée" },
-      { label: "Numéro de compte", value: details.numcompte || "Non spécifié" },
+      { label: "Numéro de compte", value: details.numcompte || details.numcompteId || "Non spécifié" },
       { label: "Intitulé du compte", value: details.intitulecompte || "Non spécifié" },
       { label: "Nom du demandeur", value: details.applicant_name || details.applicantName || "Non spécifié" },
       { label: "Type de crédit", value: details.credit_type || details.typedemande || "Non spécifié" },
@@ -197,20 +216,6 @@ export default function CreditRequestPage() {
     ]
   }
 
-  useEffect(() => {
-    loadAccounts()
-    loadCreditRequests()
-  }, [])
-
-  useEffect(() => {
-    if (creditSubmitState?.success || creditSubmitState?.error) {
-      const timer = setTimeout(() => {
-        setCreditSubmitState(null)
-      }, 4000)
-      return () => clearTimeout(timer)
-    }
-  }, [creditSubmitState])
-
   const filteredRequests = creditRequests.filter((request) => {
     const matchesSearch =
       request.typeName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -219,256 +224,268 @@ export default function CreditRequestPage() {
     return matchesSearch
   })
 
-  const getStatusBadgeVariant = (status: string) => {
-    switch (status) {
-      case "Approuvée":
-        return "default"
-      case "En cours":
-        return "secondary"
-      case "En attente":
-        return "outline"
-      default:
-        return "outline"
+  const getStatusBadge = (status: string) => {
+    const statusConfig: Record<string, { variant: "default" | "secondary" | "destructive" | "outline"; icon: any }> = {
+      "En attente": { variant: "outline", icon: Clock },
+      "En cours": { variant: "default", icon: Clock },
+      Approuvé: { variant: "secondary", icon: CheckCircle },
+      Rejeté: { variant: "destructive", icon: AlertCircle },
     }
+
+    const config = statusConfig[status] || { variant: "outline" as const, icon: Clock }
+    const Icon = config.icon
+
+    return (
+      <Badge variant={config.variant} className="flex items-center gap-1.5 font-medium">
+        <Icon className="w-3.5 h-3.5" />
+        {status}
+      </Badge>
+    )
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      <div className="flex items-center gap-3 mb-6">
-        <div className="p-3 bg-purple-100 rounded-lg">
-          <CreditCard className="w-6 h-6 text-purple-600" />
-        </div>
-        <div>
-          <h1 className="text-3xl font-bold">Demande de Crédit</h1>
-          <p className="text-muted-foreground">Demande de crédit (personnel, immobilier, etc.)</p>
-        </div>
+    <div className="container mx-auto py-6 space-y-6">
+      <div>
+        <h1 className="text-3xl font-bold text-gray-900">Demande de crédit</h1>
+        <p className="text-gray-600 mt-2">Effectuez une demande de crédit personnel, immobilier ou autre</p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Formulaire de demande */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Send className="w-5 h-5" />
-              Nouvelle Demande
-            </CardTitle>
-            <CardDescription>Remplissez le formulaire pour soumettre une demande de crédit</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {creditSubmitState?.success && (
-              <Alert className="mb-4 bg-green-50 border-green-200">
-                <CheckCircle className="h-4 w-4 text-green-600" />
-                <AlertDescription className="text-green-800">
-                  Demande soumise avec succès ! Référence : <strong>{creditSubmitState.referenceDemande}</strong>
-                </AlertDescription>
-              </Alert>
-            )}
+      <Tabs defaultValue="form" className="space-y-6">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="form" className="flex items-center gap-2">
+            <CreditCard className="w-4 h-4" />
+            Nouvelle demande
+          </TabsTrigger>
+          <TabsTrigger value="list" className="flex items-center gap-2">
+            <Clock className="w-4 h-4" />
+            Mes demandes
+          </TabsTrigger>
+        </TabsList>
 
-            {creditSubmitState?.error && (
-              <Alert variant="destructive" className="mb-4">
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>{creditSubmitState.error}</AlertDescription>
-              </Alert>
-            )}
+        <TabsContent value="form">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <CreditCard className="w-5 h-5" />
+                Formulaire de demande de crédit
+              </CardTitle>
+              <CardDescription>
+                Remplissez les informations ci-dessous pour effectuer une demande de crédit
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {creditSubmitState?.success && (
+                <Alert className="mb-6 border-green-200 bg-green-50">
+                  <CheckCircle className="h-4 w-4 text-green-600" />
+                  <AlertDescription className="text-green-800">
+                    Votre demande de crédit a été soumise avec succès !<br />
+                    Référence: <span className="font-semibold">{creditSubmitState.referenceDemande}</span>
+                  </AlertDescription>
+                </Alert>
+              )}
 
-            <form onSubmit={handleCreditSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="account">Compte *</Label>
-                {isLoadingAccounts ? (
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    Chargement des comptes...
-                  </div>
-                ) : accounts.length > 0 ? (
-                  <Select name="numcompte" value={selectedAccount} onValueChange={setSelectedAccount} required>
+              {creditSubmitState?.error && (
+                <Alert className="mb-6 border-red-200 bg-red-50">
+                  <AlertCircle className="h-4 w-4 text-red-600" />
+                  <AlertDescription className="text-red-800">{creditSubmitState.error}</AlertDescription>
+                </Alert>
+              )}
+
+              <form onSubmit={handleSubmitCredit} className="space-y-6">
+                <div className="space-y-2">
+                  <Label htmlFor="account">Compte</Label>
+                  <Select value={selectedAccount} onValueChange={setSelectedAccount} required>
                     <SelectTrigger>
                       <SelectValue placeholder="Sélectionnez un compte" />
                     </SelectTrigger>
                     <SelectContent>
-                      {accounts.map((account) => (
-                        <SelectItem key={account.id} value={account.number}>
-                          {account.name} - {account.number}
+                      {isLoadingAccounts ? (
+                        <SelectItem value="loading" disabled>
+                          Chargement...
                         </SelectItem>
-                      ))}
+                      ) : accounts.length === 0 ? (
+                        <SelectItem value="no-accounts" disabled>
+                          Aucun compte disponible
+                        </SelectItem>
+                      ) : (
+                        accounts.map((account) => (
+                          <SelectItem key={account.id} value={account.number}>
+                            {account.name} - {account.number}
+                          </SelectItem>
+                        ))
+                      )}
                     </SelectContent>
                   </Select>
-                ) : (
-                  <Alert>
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertDescription>
-                      Aucun compte courant actif disponible. Veuillez contacter votre agence.
-                    </AlertDescription>
-                  </Alert>
-                )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="applicant_name">Nom du demandeur</Label>
+                  <Input
+                    id="applicant_name"
+                    value={formData.applicant_name || ""}
+                    onChange={(e) => setFormData({ ...formData, applicant_name: e.target.value })}
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="typedemande">Type de crédit</Label>
+                  <Select
+                    value={formData.typedemande || ""}
+                    onValueChange={(value) => setFormData({ ...formData, typedemande: value })}
+                    required
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Sélectionnez le type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Personnel">Crédit personnel</SelectItem>
+                      <SelectItem value="Immobilier">Crédit immobilier</SelectItem>
+                      <SelectItem value="Automobile">Crédit automobile</SelectItem>
+                      <SelectItem value="Consommation">Crédit à la consommation</SelectItem>
+                      <SelectItem value="Professionnel">Crédit professionnel</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="loan_amount">Montant demandé (GNF)</Label>
+                    <Input
+                      id="loan_amount"
+                      type="number"
+                      min="0"
+                      value={formData.loan_amount || ""}
+                      onChange={(e) => setFormData({ ...formData, loan_amount: e.target.value })}
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="loan_duration">Durée (en mois)</Label>
+                    <Input
+                      id="loan_duration"
+                      type="number"
+                      min="1"
+                      value={formData.loan_duration || ""}
+                      onChange={(e) => setFormData({ ...formData, loan_duration: e.target.value })}
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="loan_purpose">Objet du crédit</Label>
+                  <Textarea
+                    id="loan_purpose"
+                    placeholder="Décrivez l'utilisation prévue du crédit..."
+                    value={formData.loan_purpose || ""}
+                    onChange={(e) => setFormData({ ...formData, loan_purpose: e.target.value })}
+                    rows={4}
+                    required
+                  />
+                </div>
+
+                <Button type="submit" className="w-full" disabled={isCreditSubmitting}>
+                  {isCreditSubmitting ? (
+                    <>
+                      <Clock className="mr-2 h-4 w-4 animate-spin" />
+                      Soumission en cours...
+                    </>
+                  ) : (
+                    <>
+                      <Send className="mr-2 h-4 w-4" />
+                      Soumettre la demande
+                    </>
+                  )}
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="list">
+          <Card>
+            <CardHeader>
+              <CardTitle>Mes demandes de crédit</CardTitle>
+              <CardDescription>Consultez l'état de vos demandes de crédit</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="mb-4">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                  <Input
+                    placeholder="Rechercher par référence, compte..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="applicantName">Nom du demandeur *</Label>
-                <Input id="applicantName" name="applicantName" type="text" placeholder="Nom complet" required />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="creditType">Type de crédit *</Label>
-                <Select name="typedemande" required>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Sélectionnez le type de crédit" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Personnel">Crédit Personnel</SelectItem>
-                    <SelectItem value="Immobilier">Crédit Immobilier</SelectItem>
-                    <SelectItem value="Auto">Crédit Auto</SelectItem>
-                    <SelectItem value="Consommation">Crédit à la Consommation</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="creditAmount">Montant demandé (GNF) *</Label>
-                <Input
-                  id="creditAmount"
-                  name="creditAmount"
-                  type="number"
-                  min="1"
-                  placeholder="Ex: 50000000"
-                  required
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="durationMonths">Durée (mois) *</Label>
-                <Input id="durationMonths" name="durationMonths" type="number" min="1" placeholder="Ex: 24" required />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="purpose">Objet du crédit *</Label>
-                <Textarea
-                  id="purpose"
-                  name="purpose"
-                  placeholder="Décrivez l'objet de votre demande de crédit..."
-                  rows={3}
-                  required
-                />
-              </div>
-
-              <Button type="submit" className="w-full" disabled={isCreditSubmitting || accounts.length === 0}>
-                {isCreditSubmitting ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Envoi en cours...
-                  </>
-                ) : (
-                  <>
-                    <Send className="mr-2 h-4 w-4" />
-                    Soumettre la demande
-                  </>
-                )}
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
-
-        {/* Liste des demandes */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Clock className="w-5 h-5" />
-              Mes Demandes de Crédit
-            </CardTitle>
-            <CardDescription>Historique de vos demandes de crédit</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="mb-4">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-                <Input
-                  type="text"
-                  placeholder="Rechercher par référence, compte..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-            </div>
-
-            {isLoadingCreditRequests ? (
-              <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-                <Loader2 className="w-8 h-8 animate-spin mb-2" />
-                <p>Chargement des demandes...</p>
-              </div>
-            ) : filteredRequests.length === 0 ? (
-              <div className="text-center py-12 text-muted-foreground">
-                <CreditCard className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                <p>Aucune demande de crédit trouvée</p>
-              </div>
-            ) : (
-              <div className="space-y-3 max-h-[600px] overflow-y-auto">
-                {filteredRequests.map((request) => (
-                  <Card key={request.id} className="hover:shadow-md transition-shadow">
-                    <CardContent className="p-4">
-                      <div className="flex items-start justify-between mb-2">
-                        <div className="flex items-start gap-3 flex-1">
-                          <div className="p-2 bg-purple-50 rounded-lg">
-                            <CreditCard className="w-4 h-4 text-purple-600" />
+              {isLoadingCreditRequests ? (
+                <div className="text-center py-8">
+                  <Clock className="w-8 h-8 animate-spin mx-auto text-gray-400" />
+                  <p className="text-gray-600 mt-2">Chargement...</p>
+                </div>
+              ) : filteredRequests.length === 0 ? (
+                <div className="text-center py-8">
+                  <CreditCard className="w-12 h-12 mx-auto text-gray-300" />
+                  <p className="text-gray-600 mt-2">Aucune demande de crédit trouvée</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {filteredRequests.map((request) => (
+                    <Card key={request.id} className="hover:shadow-md transition-shadow">
+                      <CardContent className="p-4">
+                        <div className="flex items-start justify-between">
+                          <div className="space-y-2 flex-1">
+                            <div className="flex items-center gap-2">
+                              <CreditCard className="w-4 h-4 text-purple-600" />
+                              <span className="font-semibold text-gray-900">{request.reference}</span>
+                            </div>
+                            <div className="text-sm text-gray-600 space-y-1">
+                              <p>Compte: {request.account}</p>
+                              <p>Date de soumission: {new Date(request.submittedAt).toLocaleDateString("fr-FR")}</p>
+                            </div>
                           </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="font-semibold text-sm truncate">{request.typeName}</p>
-                            <p className="text-xs text-muted-foreground truncate">Compte: {request.account}</p>
+                          <div className="flex flex-col items-end gap-2">
+                            {getStatusBadge(request.status)}
+                            <Button variant="outline" size="sm" onClick={() => handleViewDetails(request)}>
+                              Détails
+                            </Button>
                           </div>
                         </div>
-                        <Badge variant={getStatusBadgeVariant(request.status)} className="text-xs whitespace-nowrap">
-                          {request.status}
-                        </Badge>
-                      </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
 
-                      <div className="space-y-1 text-xs text-muted-foreground mb-3">
-                        <p>
-                          Référence: <span className="font-medium text-foreground">{request.reference}</span>
-                        </p>
-                        <p>
-                          Soumis le: <span className="font-medium text-foreground">{request.submittedAt}</span>
-                        </p>
-                      </div>
-
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="w-full bg-transparent"
-                        onClick={() => handleViewDetails(request)}
-                      >
-                        Voir les détails
-                      </Button>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Modal de détails */}
-      <Dialog open={isDetailsModalOpen} onOpenChange={closeDetailsModal}>
+      <Dialog open={isDetailsModalOpen} onOpenChange={setIsDetailsModalOpen}>
         <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Détails de la demande</DialogTitle>
           </DialogHeader>
-
           {isLoadingDetails ? (
-            <div className="flex flex-col items-center justify-center py-12">
-              <Loader2 className="w-8 h-8 animate-spin mb-2" />
-              <p className="text-sm text-muted-foreground">Chargement des détails...</p>
+            <div className="flex items-center justify-center py-8">
+              <Clock className="w-8 h-8 animate-spin text-gray-400" />
+            </div>
+          ) : selectedRequestDetails ? (
+            <div className="space-y-4">
+              {formatRequestDetails(selectedRequestDetails).map((field, index) => (
+                <div key={index} className="grid grid-cols-2 gap-2 py-2 border-b">
+                  <span className="font-medium text-gray-700">{field.label}</span>
+                  <span className="text-gray-900">{field.value}</span>
+                </div>
+              ))}
             </div>
           ) : (
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                {formatRequestDetails(selectedRequestDetails).map((field, index) => (
-                  <div key={index} className="space-y-1">
-                    <Label className="text-xs text-muted-foreground">{field.label}</Label>
-                    <p className="text-sm font-medium">{field.value}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
+            <p className="text-center text-gray-600 py-4">Aucun détail disponible</p>
           )}
         </DialogContent>
       </Dialog>
