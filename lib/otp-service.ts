@@ -1,24 +1,8 @@
 import axios from "axios"
-import { config } from "./config"
+import { getApiBaseUrl, TENANT_ID } from "./api-url"
 
-// Ensure no trailing slash and include /api once
-const normalizeBase = (url: string) => url.replace(/\/api\/?$/, "").replace(/\/$/, "")
-
-const tenantId = config.TENANT_ID
 const isBrowser = typeof window !== "undefined"
-const DEFAULT_API_BASE_URL = "https://35.184.98.9:4000"
-const resolvedApiBase = (() => {
-  const cleaned = normalizeBase(config.API_BASE_URL || "")
-  if (!cleaned) {
-    return DEFAULT_API_BASE_URL
-  }
-  const lower = cleaned.toLowerCase()
-  if (lower.startsWith("http://localhost:3000") || lower.startsWith("http://127.0.0.1:3000")) {
-    return DEFAULT_API_BASE_URL
-  }
-  return cleaned
-})()
-const API_BASE_URL = `${resolvedApiBase}/api/tenant/${tenantId}/otp`
+const API_BASE_URL = `${getApiBaseUrl()}/tenant/${TENANT_ID}/otp`
 
 // Configuration de l'instance axios pour l'OTP
 const otpAxios = axios.create({

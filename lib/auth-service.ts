@@ -1,12 +1,8 @@
 import axios from "axios"
 import Cookies from "js-cookie"
-import { config } from "./config"
+import { getApiBaseUrl } from "./api-url"
 
-// Ensure no trailing slash and include /api once
-const normalizeBase = (url: string) =>
-  url.replace(/\/api\/?$/, '').replace(/\/$/, '');
-
-const API_BASE_URL = `${normalizeBase(config.API_BASE_URL)}/api`;
+const API_BASE_URL = getApiBaseUrl();
 
 if (!API_BASE_URL) {
   throw new Error("API_BASE_URL environment variable is required")

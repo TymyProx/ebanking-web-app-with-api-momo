@@ -6,10 +6,9 @@ import { getCookieConfig } from "@/lib/cookie-config"
 import { config } from "@/lib/config"
 import { Resend } from "resend"
 import { VerificationEmail } from "@/emails/verification-email"
+import { getApiBaseUrl, TENANT_ID } from "@/lib/api-url"
 
-const normalize = (u?: string) => (u ? u.replace(/\/$/, "") : "")
-const API_BASE_URL = `${normalize(config.API_BASE_URL)}/api`
-const TENANT_ID = config.TENANT_ID
+const API_BASE_URL = getApiBaseUrl()
 const APP_URL = config.EBANKING_URL || "http://localhost:3000"
 
 interface SignupData {

@@ -18,9 +18,9 @@ interface SendRibEmailPayload {
   attachment: SendRibEmailAttachment
 }
 
-const normalize = (u?: string) => (u ? u.replace(/\/$/, "") : "")
-const API_BASE_URL = `${normalize(config.API_BASE_URL)}/api`
-const TENANT_ID = config.TENANT_ID
+import { getApiBaseUrl, TENANT_ID } from "@/lib/api-url"
+
+const API_BASE_URL = getApiBaseUrl()
 
 /**
  * Récupère le profil utilisateur complet

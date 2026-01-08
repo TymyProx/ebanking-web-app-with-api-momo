@@ -141,3 +141,4 @@ Le backend doit supporter:
 1. Les clients non vérifiés ont `status: 0` (Restreint)
 2. Le `userid` est mis à jour uniquement après vérification
 3. Les erreurs de création de client sont loggées mais n'empêchent pas l'envoi de l'email
+

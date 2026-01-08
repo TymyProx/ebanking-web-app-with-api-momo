@@ -17,9 +17,8 @@ async function getCurrentUser() {
 
     if (!token) return null
 
-    const { config } = await import("@/lib/config")
-    const normalize = (u?: string) => (u ? u.replace(/\/$/, "") : "")
-    const API_BASE_URL = `${normalize(config.API_BASE_URL)}/api`
+    const { getApiBaseUrl } = await import("@/lib/api-url")
+    const API_BASE_URL = getApiBaseUrl()
 
     const response = await fetch(`${API_BASE_URL}/auth/me`, {
       method: "GET",

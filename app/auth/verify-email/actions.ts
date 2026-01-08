@@ -2,11 +2,9 @@
 
 import { cookies } from "next/headers"
 import { setSecureCookie } from "@/lib/cookie-config"
-import { config } from "@/lib/config"
+import { getApiBaseUrl, TENANT_ID } from "@/lib/api-url"
 
-const normalize = (u?: string) => (u ? u.replace(/\/$/, "") : "")
-const API_BASE_URL = `${normalize(config.API_BASE_URL)}/api`
-const TENANT_ID = String(config.TENANT_ID)
+const API_BASE_URL = getApiBaseUrl()
 
 // Endpoints (adaptables)
 const TENANT_USERS_ENDPOINT = `${API_BASE_URL}/tenant/${TENANT_ID}/tenantUsers`
