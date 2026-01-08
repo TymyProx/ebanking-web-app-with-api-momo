@@ -27,7 +27,6 @@ import {
   PlusCircle,
   FileCheck,
   BookOpen,
-  DollarSign,
 } from "lucide-react"
 import Image from "next/image"
 import { cn } from "@/lib/utils"
@@ -161,7 +160,7 @@ const navigationData = {
         {
           title: "Demande de crédit",
           url: "/services/credit",
-          icon: DollarSign,
+          icon: CreditCard,
         },
       ],
     },
@@ -533,22 +532,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>): 
                 <SidebarMenu className="space-y-1">
                   {navigationData.services.map((item) => (
                     <SidebarMenuItem key={item.title}>
-                      {"items" in item ? (
-                        <MenuItemWithSubmenu item={item} />
-                      ) : "url" in item ? (
-                        <SidebarMenuButton
-                          asChild
-                          isActive={pathname === item.url}
-                          className="h-11 rounded-xl text-white hover:bg-white/20 data-[active=true]:bg-white/30 data-[active=true]:text-white data-[active=true]:shadow-lg data-[active=true]:border-l-4 data-[active=true]:border-[#f4c430] transition-all duration-200"
-                        >
-                          <Link href={item.url} className="flex items-center gap-3">
-                            <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-white/10 group-data-[active=true]:bg-white/20">
-                              <item.icon className={ICON_WHITE_MD} />
-                            </div>
-                            <span className="font-semibold text-white">{item.title}</span>
-                          </Link>
-                        </SidebarMenuButton>
-                      ) : null}
+                      <MenuItemWithSubmenu item={item} />
                     </SidebarMenuItem>
                   ))}
                 </SidebarMenu>
