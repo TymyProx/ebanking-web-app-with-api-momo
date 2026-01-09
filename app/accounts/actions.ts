@@ -2,11 +2,9 @@
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0"
 import { cookies } from "next/headers"
 import { revalidatePath } from "next/cache"
-import { config } from "@/lib/config"
+import { getApiBaseUrl, TENANT_ID } from "@/lib/api-url"
 
-const normalize = (u?: string) => (u ? u.replace(/\/$/, "") : "")
-const API_BASE_URL = `${normalize(config.API_BASE_URL)}/api`
-const TENANT_ID = config.TENANT_ID
+const API_BASE_URL = getApiBaseUrl()
 
 export interface Account {
   id: string
@@ -133,9 +131,12 @@ export async function getAccounts(): Promise<Account[]> {
               tenantId: TENANT_ID,
             },
           ]
+        } else {
+          // Log error for debugging but return empty array instead of throwing
+          console.error("Error fetching accounts:", errorText)
+          throw new Error("Erreur de communication avec l'API")
         }
 
-        throw new Error("Erreur de communication avec l'API")
       }
     }
 

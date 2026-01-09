@@ -75,7 +75,7 @@ export default function CardsPage() {
   const [total, setTotal] = useState<number>(0)
   const [loading, setIsLoading] = useState<boolean>(true) // Set initial loading to true
   const [error, setError] = useState<string | null>(null)
-  const [statusFilter, setStatusFilter] = useState<string>("ACTIF")
+  const [statusFilter, setStatusFilter] = useState<string>("all")
   const [currentCardIndex, setCurrentCardIndex] = useState<number>(0)
   const [isFading, setIsFading] = useState<boolean>(false) // Added fade transition state
 
@@ -202,7 +202,9 @@ export default function CardsPage() {
       setSubmitSuccess("Demande de carte créée avec succès !")
       setNewCardData({ typCard: "", selectedAccount: "" })
       setShowNewCardForm(false)
-      await fetchAllCards() // Corrected variable name
+      
+      // Refresh the cards list
+      await handleRefresh()
     } catch (e: any) {
       setSubmitError(e?.message ?? "Erreur lors de la création de la demande")
     } finally {
@@ -221,7 +223,7 @@ export default function CardsPage() {
           description: result.message,
         })
         // Refresh the cards list
-        await fetchAllCards() // Corrected variable name
+        await handleRefresh()
       } else {
         toast.toast({
           title: "Erreur",
@@ -361,6 +363,8 @@ export default function CardsPage() {
     switch (status.toUpperCase()) {
       case "ACTIF":
         return <Badge className="bg-green-100 text-green-800">Actif</Badge>
+      case "EN_ATTENTE":
+        return <Badge className="bg-yellow-100 text-yellow-800">En attente</Badge>
       case "BLOCKED":
       case "BLOQUE":
         return <Badge className="bg-red-100 text-red-800">Bloqué</Badge>
@@ -484,7 +488,9 @@ export default function CardsPage() {
                 <SelectValue placeholder="Filtrer par statut" />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="all">Toutes</SelectItem>
                 <SelectItem value="ACTIF">Actif</SelectItem>
+                <SelectItem value="EN_ATTENTE">En attente</SelectItem>
                 <SelectItem value="BLOCKED">Bloqué</SelectItem>
                 <SelectItem value="EXPIRED">Expiré</SelectItem>
               </SelectContent>

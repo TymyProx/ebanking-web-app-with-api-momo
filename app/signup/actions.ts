@@ -6,10 +6,9 @@ import { getCookieConfig } from "@/lib/cookie-config"
 import { config } from "@/lib/config"
 import { Resend } from "resend"
 import { VerificationEmail } from "@/emails/verification-email"
+import { getApiBaseUrl, TENANT_ID } from "@/lib/api-url"
 
-const normalize = (u?: string) => (u ? u.replace(/\/$/, "") : "")
-const API_BASE_URL = `${normalize(config.API_BASE_URL)}/api`
-const TENANT_ID = config.TENANT_ID
+const API_BASE_URL = getApiBaseUrl()
 const APP_URL = config.EBANKING_URL || "http://localhost:3000"
 
 interface SignupData {
@@ -74,12 +73,12 @@ export async function initiateSignup(data: InitialSignupData) {
       return { success: false, message: "Adresse requise" }
     }
 
-    // Generate a unique client code
-    const codeClient = `CLI-${Date.now()}-${Math.random().toString(36).substring(2, 9).toUpperCase()}`
-
     // Generate verification token
     const verificationToken = randomBytes(32).toString("hex")
 
+    // ============================================================
+    // SAVE DATA IN COOKIE FOR LATER (Backend will create client)
+    // ============================================================
     const cookieStore = await cookies()
     const cookieConfig = getCookieConfig()
     cookieStore.set(
@@ -89,9 +88,8 @@ export async function initiateSignup(data: InitialSignupData) {
         email: data.email,
         phone: data.phone,
         address: data.address,
-        codeClient: codeClient,
         verificationToken: verificationToken,
-        clientType: "new", // Explicitly mark as new client
+        clientType: "new",
       }),
       {
         ...cookieConfig,
@@ -99,7 +97,10 @@ export async function initiateSignup(data: InitialSignupData) {
       },
     )
 
-    console.log("[v0] Sending verification email via Resend (server action)...")
+    // ============================================================
+    // SEND VERIFICATION EMAIL
+    // ============================================================
+    console.log("[v0] Sending verification email via Resend...")
 
     const resend = new Resend(process.env.RESEND_API_KEY)
     const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || "no-reply@bngebanking.com"
@@ -109,6 +110,7 @@ export async function initiateSignup(data: InitialSignupData) {
 
     const { data: resendData, error: resendError } = await resend.emails.send({
       from: FROM_EMAIL,
+      
       to: data.email,
       subject: "Vérifiez votre adresse email - BNG E-Banking",
       react: VerificationEmail({
@@ -122,8 +124,6 @@ export async function initiateSignup(data: InitialSignupData) {
       throw new Error(resendError.message || "Erreur lors de l'envoi de l'email de vérification")
     }
     console.log("[v0] Email sent successfully:", resendData)
-
-    console.log("[v0] Verification email sent successfully via Resend")
 
     return {
       success: true,
@@ -244,9 +244,6 @@ export async function signupUser(data: SignupData) {
 }
 
 export async function initiateExistingClientSignup(data: { clientCode: string }) {
-  const tempUserId: string | null = null
-  const tempToken: string | null = null
-
   try {
     console.log("[v0] Starting existing client signup process...")
     console.log("[v0] Client code (numClient):", data.clientCode)
@@ -275,28 +272,22 @@ export async function initiateExistingClientSignup(data: { clientCode: string })
       body: JSON.stringify(loginPayload),
     })
 
-    console.log("[v0] Support account login response status:", loginResponse.status)
-
     if (!loginResponse.ok) {
       const errorText = await loginResponse.text()
       console.error("[v0] Failed to login with support account:", errorText)
-      throw new Error("Erreur lors de l'authentification du compte support")
+      throw new Error("Erreur lors de l'authentification du système")
     }
 
     const loginResponseText = await loginResponse.text()
     const supportToken = loginResponseText.startsWith("eyJ") ? loginResponseText : JSON.parse(loginResponseText).token
 
     if (!supportToken) {
-      throw new Error("Aucun token reçu du compte support")
+      throw new Error("Token système non reçu")
     }
+    
+    console.log("[v0] Step 2: Searching for client in BdClientBng...")
 
-    console.log("[v0] Support account token obtained successfully")
-
-    console.log("[v0] Step 2: Searching for client in BdClientBng table using numClient...")
-
-    const searchUrl = `${API_BASE_URL}/tenant/${TENANT_ID}/bd-client-bng?filter=numClient||$eq||${encodeURIComponent(data.clientCode)}`
-    console.log("[v0] Fetching from URL:", searchUrl)
-    console.log("[v0] Searching for exact numClient:", data.clientCode)
+    const searchUrl = `${API_BASE_URL}/tenant/${TENANT_ID}/bd-client-bng?numClient=${encodeURIComponent(data.clientCode)}`
 
     const bdClientResponse = await fetch(searchUrl, {
       method: "GET",
@@ -306,24 +297,17 @@ export async function initiateExistingClientSignup(data: { clientCode: string })
       },
     })
 
-    console.log("[v0] BdClientBng search response status:", bdClientResponse.status)
-
     if (!bdClientResponse.ok) {
-      const errorText = await bdClientResponse.text()
-      console.error("[v0] BdClientBng fetch failed:", errorText)
-
       if (bdClientResponse.status === 404) {
         return {
           success: false,
           message: "Racine du compte invalide. Veuillez vérifier votre racine et réessayer.",
         }
       }
-
       throw new Error("Erreur lors de la recherche du client dans la base BNG")
     }
 
     const bdClientResponseData = await bdClientResponse.json()
-    console.log("[v0] BdClientBng response received:", JSON.stringify(bdClientResponseData, null, 2))
 
     let bdClientData
     let clientArray: any[] = []
@@ -334,45 +318,20 @@ export async function initiateExistingClientSignup(data: { clientCode: string })
       clientArray = bdClientResponseData.data
     } else if (bdClientResponseData.rows && Array.isArray(bdClientResponseData.rows)) {
       clientArray = bdClientResponseData.rows
-    } else if (bdClientResponseData.value && Array.isArray(bdClientResponseData.value)) {
-      clientArray = bdClientResponseData.value
     } else {
       bdClientData = bdClientResponseData
     }
 
-    console.log("[v0] Total clients retrieved:", clientArray.length)
-
-    // Find the client with exact numClient match (with type conversion and trimming)
+    // Find the client with exact numClient match
     if (clientArray.length > 0) {
-      const searchCode = String(data.clientCode).trim()
-      console.log("[v0] Searching for client with numClient:", searchCode)
-      
-      // Log all available numClient values for debugging
-      console.log("[v0] Available numClient values:", clientArray.map(c => String(c.numClient || "").trim()))
-      
-      bdClientData = clientArray.find((client) => {
-        const clientNumClient = String(client.numClient || "").trim()
-        const match = clientNumClient === searchCode
-        if (match) {
-          console.log("[v0] ✅ EXACT MATCH FOUND:", clientNumClient)
-        }
-        return match
-      })
+      bdClientData = clientArray.find((client) => client.numClient === data.clientCode)
 
       if (!bdClientData) {
-        console.error("[v0] ❌ No client found with exact numClient match:", searchCode)
-        console.error("[v0] Available clients:", clientArray.map(c => ({
-          numClient: c.numClient,
-          email: c.email,
-          nomComplet: c.nomComplet || c.fullName
-        })))
         return {
           success: false,
           message: "Racine du compte invalide. Veuillez vérifier votre racine et réessayer.",
         }
       }
-      
-      console.log("[v0] ✅ Client found with numClient:", bdClientData.numClient)
     }
 
     if (!bdClientData) {
@@ -381,8 +340,6 @@ export async function initiateExistingClientSignup(data: { clientCode: string })
         message: "Racine du compte invalide. Veuillez vérifier votre racine et réessayer.",
       }
     }
-
-    console.log("[v0] BdClientBng data extracted:", JSON.stringify(bdClientData, null, 2))
 
     const clientEmail = bdClientData.email
     const clientFullName = bdClientData.nomComplet || bdClientData.fullName || bdClientData.name || ""
@@ -393,59 +350,12 @@ export async function initiateExistingClientSignup(data: { clientCode: string })
       throw new Error("Email du client non trouvé dans la base BNG")
     }
 
-    console.log("[v0] Client found in BdClientBng:")
-    console.log("[v0] - Email:", clientEmail)
-    console.log("[v0] - Full name:", clientFullName)
-    console.log("[v0] - Phone:", clientPhone)
-    console.log("[v0] - NumClient:", numClient)
+    console.log("[v0] Client found in BdClientBng:", clientFullName, clientEmail)
 
-    console.log("[v0] Step 2.5: Checking if client already exists with codeClient:", numClient)
-
-    const existingClientUrl = `${API_BASE_URL}/tenant/${TENANT_ID}/client?filter=codeClient||$eq||${encodeURIComponent(numClient)}`
-    console.log("[v0] Checking existing client URL:", existingClientUrl)
-
-    const existingClientResponse = await fetch(existingClientUrl, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${supportToken}`,
-      },
-    })
-
-    if (existingClientResponse.ok) {
-      const existingClientData = await existingClientResponse.json()
-      console.log("[v0] Existing client check response:", JSON.stringify(existingClientData, null, 2))
-
-      let existingClients: any[] = []
-      if (Array.isArray(existingClientData)) {
-        existingClients = existingClientData
-      } else if (existingClientData.data && Array.isArray(existingClientData.data)) {
-        existingClients = existingClientData.data
-      } else if (existingClientData.rows && Array.isArray(existingClientData.rows)) {
-        existingClients = existingClientData.rows
-      } else if (existingClientData.value && Array.isArray(existingClientData.value)) {
-        existingClients = existingClientData.value
-      }
-
-      console.log("[v0] Found existing clients count:", existingClients.length)
-      console.log(
-        "[v0] Exact match found:",
-        existingClients.find((client) => client.codeClient === numClient) ? "YES" : "NO",
-      )
-
-      if (existingClients.find((client) => client.codeClient === numClient)) {
-        console.log("[v0] Client with this codeClient already exists:", numClient)
-        return {
-          success: false,
-          message: "Ce compte est déjà inscrit. Veuillez vous connecter avec vos identifiants.",
-        }
-      }
-    }
-
-    console.log("[v0] Step 2.6: Checking if email already exists:", clientEmail)
+    // Check if email already has an account
+    console.log("[v0] Step 3: Checking if email already exists...")
 
     const existingUsersUrl = `${API_BASE_URL}/tenant/${TENANT_ID}/users?filter=email||$eq||${encodeURIComponent(clientEmail)}`
-    console.log("[v0] Checking existing users URL:", existingUsersUrl)
 
     const existingUsersResponse = await fetch(existingUsersUrl, {
       method: "GET",
@@ -457,7 +367,6 @@ export async function initiateExistingClientSignup(data: { clientCode: string })
 
     if (existingUsersResponse.ok) {
       const existingUsersData = await existingUsersResponse.json()
-      console.log("[v0] Existing users check response:", JSON.stringify(existingUsersData, null, 2))
 
       let existingUsers: any[] = []
       if (Array.isArray(existingUsersData)) {
@@ -466,8 +375,6 @@ export async function initiateExistingClientSignup(data: { clientCode: string })
         existingUsers = existingUsersData.data
       } else if (existingUsersData.rows && Array.isArray(existingUsersData.rows)) {
         existingUsers = existingUsersData.rows
-      } else if (existingUsersData.value && Array.isArray(existingUsersData.value)) {
-        existingUsers = existingUsersData.value
       }
 
       if (existingUsers.length > 0) {
@@ -481,6 +388,9 @@ export async function initiateExistingClientSignup(data: { clientCode: string })
 
     const verificationToken = randomBytes(32).toString("hex")
 
+    // ============================================================
+    // SAVE DATA IN COOKIE (Backend will create client later)
+    // ============================================================
     const cookieStore = await cookies()
     const cookieConfig = getCookieConfig()
     cookieStore.set(
@@ -489,11 +399,10 @@ export async function initiateExistingClientSignup(data: { clientCode: string })
         email: clientEmail,
         fullName: clientFullName,
         phone: clientPhone,
-        address: "", // Not available in BdClientBng
-        clientCode: data.clientCode,
+        address: bdClientData.adresse || bdClientData.address || "",
         numClient: numClient,
         verificationToken: verificationToken,
-        clientType: "existing", // Explicitly mark as existing client
+        clientType: "existing",
       }),
       {
         ...cookieConfig,
@@ -501,7 +410,10 @@ export async function initiateExistingClientSignup(data: { clientCode: string })
       },
     )
 
-    console.log("[v0] Sending verification email via Resend...")
+    // ============================================================
+    // SEND VERIFICATION EMAIL
+    // ============================================================
+    console.log("[v0] Step 4: Sending verification email...")
 
     const resend = new Resend(process.env.RESEND_API_KEY)
     const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || "no-reply@bngebanking.com"

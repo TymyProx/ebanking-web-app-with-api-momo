@@ -2,10 +2,9 @@
 
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0"
 import { cookies } from "next/headers"
-import { config } from "@/lib/config"
+import { getApiBaseUrl } from "@/lib/api-url"
 
-const normalize = (u?: string) => (u ? u.replace(/\/$/, "") : "")
-const API_BASE_URL = `${normalize(config.API_BASE_URL)}/api`
+const API_BASE_URL = getApiBaseUrl()
 
 export interface UserProfile {
   id: string

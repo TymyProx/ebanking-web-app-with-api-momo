@@ -1,12 +1,10 @@
 "use server"
 
 import { cookies } from "next/headers"
-import { config } from "@/lib/config"
 import { decryptDataServer } from "@/lib/server-encryption"
+import { getApiBaseUrl, TENANT_ID } from "@/lib/api-url"
 
-const normalize = (u?: string) => (u ? u.replace(/\/$/, "") : "")
-const BASE_URL = `${normalize(config.API_BASE_URL)}/api`
-const TENANT_ID = config.TENANT_ID
+const BASE_URL = getApiBaseUrl()
 
 export type Card = {
   id: string

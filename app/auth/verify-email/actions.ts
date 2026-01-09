@@ -2,11 +2,9 @@
 
 import { cookies } from "next/headers"
 import { setSecureCookie } from "@/lib/cookie-config"
-import { config } from "@/lib/config"
+import { getApiBaseUrl, TENANT_ID } from "@/lib/api-url"
 
-const normalize = (u?: string) => (u ? u.replace(/\/$/, "") : "")
-const API_BASE_URL = `${normalize(config.API_BASE_URL)}/api`
-const TENANT_ID = String(config.TENANT_ID)
+const API_BASE_URL = getApiBaseUrl()
 
 // Endpoints (adaptables)
 const TENANT_USERS_ENDPOINT = `${API_BASE_URL}/tenant/${TENANT_ID}/tenantUsers`
@@ -157,38 +155,14 @@ export async function completeSignup(token: string, password: string) {
     // ============================================================
     const supportToken = await getSupportToken()
 
-    // USER duplicate (email)
-    const users = await getAll(TENANT_USERS_ENDPOINT, supportToken)
-    const emailLower = String(pending.email).trim().toLowerCase()
-    if (users.some((u: any) => String(u.email || "").toLowerCase() === emailLower)) {
-      throw new Error("Ce compte existe déjà. Veuillez vous connecter.")
-    }
-
-    // CLIENTS existing state (on ne crée jamais 2 fois)
-    const clients = await getAll(CLIENT_ENDPOINT, supportToken)
-
-    // existing: codeClient = numClient (BdClientBng)
-    // new: codeClient = pending.codeClient
+    // Determine codeClient for compte fetching (existing clients only)
     const codeClient =
       clientType === "existing"
         ? String(pending.numClient || "").trim()
-        : String(pending.codeClient || "").trim()
+        : ""
 
-    if (clientType === "existing") {
-      if (!codeClient || codeClient.startsWith("CLI-")) {
-        throw new Error("Code client BNG invalide (numClient attendu depuis BdClientBng).")
-      }
-      // ⚠️ si déjà existant, on ne postera pas client plus tard
-      // mais on ne bloque pas le process (car user n'existe pas encore)
-      // => on garde l’info pour skip
-    } else {
-      // new: doublons stricts
-      if (codeClient && clients.some((c: any) => String(c.codeClient || "").trim() === codeClient)) {
-        throw new Error("Client déjà existant (codeClient)")
-      }
-      if (clients.some((c: any) => String(c.email || "").trim().toLowerCase() === emailLower)) {
-        throw new Error("Client déjà existant (email)")
-      }
+    if (clientType === "existing" && (!codeClient || codeClient.startsWith("CLI-"))) {
+      throw new Error("Code client BNG invalide (numClient attendu depuis BdClientBng).")
     }
 
     // comptes duplicates (existing only)
@@ -226,11 +200,21 @@ export async function completeSignup(token: string, password: string) {
     // POST FLOW (aucun doublon user ; new client validé ; comptes validés)
     // ============================================================
 
-    // SIGN-UP
+    // SIGN-UP with extra client data
     const signupRes = await fetch(`${API_BASE_URL}/auth/sign-up`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email: pending.email, password, tenantId: TENANT_ID }),
+      body: JSON.stringify({ 
+        email: pending.email, 
+        password, 
+        tenantId: TENANT_ID,
+        // Extra client data
+        fullName: pending.fullName,
+        phone: pending.phone,
+        address: pending.address,
+        clientType: clientType,
+        numClient: clientType === "existing" ? codeClient : undefined,
+      }),
     })
 
     if (!signupRes.ok) {
@@ -258,78 +242,11 @@ export async function completeSignup(token: string, password: string) {
     if (!userId) throw new Error("userId introuvable")
 
     // ============================================================
-    // ✅ CLIENT: créer UNE SEULE FOIS pour existing
-    //    et payload doit venir de BdClientBng
+    // ✅ CLIENT: Already created by backend during signup
     // ============================================================
-    if (clientType === "existing") {
-      // 1) Re-check post-signup si client existe déjà (codeClient) => si oui, on ne post pas
-      const clientsAfter = await getAll(CLIENT_ENDPOINT, supportToken)
-      const existingClient = clientsAfter.find((c: any) => String(c.codeClient || "").trim() === codeClient)
-
-      if (!existingClient) {
-        // 2) Récupérer BdClientBng (source de vérité)
-        const bd = await fetchBdClientBngByNumClient(supportToken, codeClient)
-        if (!bd) throw new Error("BdClientBng introuvable pour ce numClient (impossible de créer le client).")
-
-        // 3) Construire payload *depuis BdClientBng* (et non pending)
-        const clientBody = {
-          data: {
-            nomComplet: String(bd.nomComplet || bd.fullName || pending.fullName || pending.email),
-            email: String(bd.email || pending.email),
-            telephone: String(bd.telephone || bd.phone || pending.phone || ""),
-            adresse: String(bd.adresse || bd.address || pending.address || ""),
-            codeClient: codeClient,      // ✅ numClient BdClientBng
-            userid: String(userId),      // ✅ lien au user créé
-            clientType: "existing",
-            verificationToken: token,
-          },
-        }
-
-        const clientRes = await fetch(CLIENT_ENDPOINT, {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${authToken}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(clientBody),
-        })
-
-        if (!clientRes.ok) {
-          const t = await clientRes.text().catch(() => "")
-          throw new Error(`Erreur création client (existing): ${t}`)
-        }
-      } else {
-        // client existe déjà => on ne crée pas
-        // optionnel: tu peux PATCH ici pour lier userid si ton API le supporte
-        // mais tu n'as pas demandé, donc on skip.
-      }
-    } else {
-      // NEW: créer client depuis pending (comme avant)
-      const clientRes = await fetch(CLIENT_ENDPOINT, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${authToken}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          data: {
-            nomComplet: pending.fullName || pending.email,
-            email: pending.email,
-            telephone: pending.phone || "",
-            adresse: pending.address || "",
-            codeClient: String(pending.codeClient || "").trim(),
-            userid: String(userId),
-            clientType: "new",
-            verificationToken: token,
-          },
-        }),
-      })
-
-      if (!clientRes.ok) {
-        const t = await clientRes.text().catch(() => "")
-        throw new Error(`Erreur création client (new): ${t}`)
-      }
-    }
+    console.log("[completeSignup] Client automatically created by backend during signup")
+    // The AuthService.signup method in the backend already creates the client
+    // We don't need to create it manually here anymore
 
     // ============================================================
     // COMPTES (existing)

@@ -36,13 +36,13 @@
     --chart-4: 0 84% 60%;
     --chart-5: 217 91% 60%;
     --radius: 1rem;
-    --sidebar-background: 210 40% 98%;
-    --sidebar-foreground: 220 13% 23%;
+    --sidebar-background: 142 39% 32%;
+    --sidebar-foreground: 0 0% 100%;
     --sidebar-primary: 0 0% 100%;
-    --sidebar-primary-foreground: 220 13% 23%;
-    --sidebar-accent: 237 49% 64%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 0 0% 100%;
     --sidebar-accent-foreground: 0 0% 100%;
-    --sidebar-border: 220 13% 91%;
+    --sidebar-border: 0 0% 100%;
     --sidebar-ring: 188 78% 41%;
   }
   .dark {
@@ -241,5 +241,84 @@
 
   .animate-slide-in-right {
     animation: slide-in-right 0.5s ease-out;
+  }
+}
+
+/* Modern Banking Sidebar Styles with Green Background */
+@layer components {
+  /* Sidebar Menu Button Enhanced */
+  [data-sidebar="menu-button"] {
+    @apply relative overflow-hidden;
+  }
+  
+  [data-sidebar="menu-button"]:not([data-active="true"]):hover {
+    @apply bg-white/20 text-white;
+  }
+  
+  [data-sidebar="menu-button"][data-active="true"] {
+    @apply bg-white/30 text-white font-semibold shadow-lg;
+    position: relative;
+    border-left: 4px solid #f4c430;
+  }
+  
+  [data-sidebar="menu-button"][data-active="true"] svg {
+    @apply drop-shadow-sm;
+  }
+  
+  /* Sidebar Sub Button Enhanced */
+  [data-sidebar="menu-sub-button"]:not([data-active="true"]):hover {
+    @apply bg-white/15 text-white font-medium;
+  }
+  
+  [data-sidebar="menu-sub-button"][data-active="true"] {
+    @apply bg-white/25 text-white font-semibold border-l-2 border-[#f4c430];
+  }
+  
+  /* Badge Styles */
+  [data-sidebar="menu-button"] .badge-new {
+    @apply bg-gradient-to-r from-[#f4c430] to-[#e0b020] text-gray-900 font-bold text-[10px] px-2 py-0.5 rounded-full shadow-sm;
+  }
+  
+  [data-sidebar="menu-button"] .badge-notification {
+    @apply bg-red-500 text-white font-bold text-[10px] px-1.5 py-0.5 rounded-full shadow-sm animate-pulse;
+  }
+  
+  /* Smooth transitions */
+  [data-sidebar="menu-button"],
+  [data-sidebar="menu-sub-button"] {
+    @apply transition-all duration-200 ease-in-out;
+  }
+  
+  /* Icon animations */
+  [data-sidebar="menu-button"]:hover svg {
+    @apply scale-110 transition-transform duration-200;
+  }
+  
+  /* Sidebar rail indicator */
+  [data-sidebar="rail"] {
+    @apply bg-gradient-to-b from-white/10 to-transparent;
+  }
+  
+  /* Sidebar content scrollbar */
+  [data-sidebar="content"] {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+  }
+  
+  [data-sidebar="content"]::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  [data-sidebar="content"]::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  [data-sidebar="content"]::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 3px;
+  }
+  
+  [data-sidebar="content"]::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.5);
   }
 }

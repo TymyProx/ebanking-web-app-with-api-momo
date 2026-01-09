@@ -930,6 +930,7 @@ export default function ServiceRequestsPage() {
               </div>
 
               <div className="space-y-2">
+                {/* ... existing code ... */}
                 <Label htmlFor="typeCheque">Type de chèque *</Label>
                 <Select
                   value={formData.typeCheque || ""}
@@ -939,10 +940,8 @@ export default function ServiceRequestsPage() {
                     <SelectValue placeholder="Choisir le type de chèque" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Standard barré">Standard barré</SelectItem>
-                    <SelectItem value="Standard non barré">Standard non barré</SelectItem>
-                    <SelectItem value="Certifié barré">Certifié barré</SelectItem>
-                    <SelectItem value="Certifié non barré">Certifié non barré</SelectItem>
+                    <SelectItem value="Chéquier standard (barré)">Chéquier standard (barré)</SelectItem>
+                    <SelectItem value="Chéquier standard (non barré)">Chéquier standard (non barré)</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

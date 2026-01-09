@@ -8,9 +8,9 @@ import { config } from "@/lib/config"
 import { getAccounts as fetchAccounts } from "../../accounts/actions"
 import { getBeneficiaries as fetchBeneficiaries } from "../beneficiaries/actions"
 
-const normalize = (u?: string) => (u ? u.replace(/\/$/, "") : "")
-const API_BASE_URL = `${normalize(config.API_BASE_URL)}/api`
-const TENANT_ID = config.TENANT_ID
+import { getApiBaseUrl, TENANT_ID } from "@/lib/api-url"
+
+const API_BASE_URL = getApiBaseUrl()
 
 interface CurrentUserInfo {
   id: string | null

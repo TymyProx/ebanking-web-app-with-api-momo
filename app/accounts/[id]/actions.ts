@@ -15,8 +15,8 @@ export async function getAccountDetails(accountId: string): Promise<Account | nu
     }
 
     // Get user info to retrieve tenantId
-    const normalize = (u?: string) => (u ? u.replace(/\/$/, "") : "")
-    const API_BASE_URL = `${normalize(config.API_BASE_URL)}/api`
+    const { getApiBaseUrl } = await import("@/lib/api-url")
+    const API_BASE_URL = getApiBaseUrl()
     const userResponse = await fetch(`${API_BASE_URL}/auth/me`, {
       headers: {
         Authorization: `Bearer ${token}`,

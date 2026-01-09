@@ -9,9 +9,9 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { CheckCircle, XCircle, Loader2, Mail, Eye, EyeOff, AlertCircle } from "lucide-react"
+import { CheckCircle, XCircle, Loader2, Mail, Eye, EyeOff } from "lucide-react"
 import { completeSignup } from "./actions"
-import { validatePassword, getPasswordRequirements } from "@/lib/password-validation"
+import { validatePassword } from "@/lib/password-validation"
 
 function VerifyEmailContent() {
   const [status, setStatus] = useState<"pending" | "setting-password" | "creating" | "success" | "error">("pending")
@@ -73,31 +73,74 @@ function VerifyEmailContent() {
   }
 
   return (
-    <div className="min-h-screen flex bg-gray-100">
-      {/* Left side - Hero Image */}
-      <div className="hidden lg:flex lg:w-1/2 relative">
-        <div className="relative w-full h-full p-8">
-          <div className="relative w-full h-full overflow-hidden rounded-2xl shadow-lg border backdrop-blur-sm">
-            <Image src="/images/welcom.png" alt="Welcome" fill className="object-cover rounded-2xl" priority />
-            <div className="absolute top-12 left-6 z-10">
-              <Image
-                src="/images/logo-bng.png"
-                alt="BNG Logo"
-                width={150}
-                height={50}
-                className="object-contain drop-shadow-md"
-              />
-            </div>
+    <div
+      className="min-h-screen flex"
+      style={{
+        backgroundImage: "url('/images/background.png')",
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        backgroundRepeat: "no-repeat",
+      }}
+    >
+      {/* Left side - Hero Image with Green Background */}
+      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden">
+        <div className="absolute inset-0">
+          <div className="absolute -top-24 -left-40 w-72 h-72">
+            <div className="w-full h-full bg-[#B9E3A8] rounded-full opacity-40" />
+          </div>
+
+          <div className="absolute left-[-60%] top-[40%] w-[1000px] h-[1000px]">
+            <div className="w-full h-full bg-[#B9E3A8] rounded-full opacity-50" />
+          </div>
+
+          {/* Floating money/card graphics */}
+          <div className="absolute top-[25%] right-[25%]">
+            <img
+              src="/images/billet.png"
+              alt="billet"
+              className="w-[320px] h-auto object-contain rotate-12 drop-shadow-lg"
+            />
+          </div>
+        </div>
+
+        {/* Logo */}
+        <div className="absolute top-4 left-18 z-20 translate-x-4">
+          <div className="group flex h-[200px] w-[200px] items-center justify-center rounded-full bg-white/10 backdrop-blur-md transition-all duration-500 hover:bg-white/20 hover:shadow-[0_0_40px_rgba(244,196,48,0.4)]">
+            <Image
+              src="/images/logowhite.png"
+              alt="BNG Logo"
+              width={300}
+              height={200}
+              className="object-contain scale-125 transition-transform duration-500 group-hover:scale-140"
+              priority
+            />
+          </div>
+        </div>
+
+        <div className="relative z-10 flex items-end justify-start w-full h-full pb-0">
+          <div className="relative flex justify-start items-end max-w-[420px] w-full">
+            <Image
+              src="/images/image.png"
+              alt="Welcome"
+              width={300}
+              height={400}
+              className="object-contain object-bottom drop-shadow-2xl"
+              priority
+            />
           </div>
         </div>
       </div>
 
       {/* Right side - Verification Form */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-8">
-        <div className="w-full max-w-md space-y-8">
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-8 relative overflow-hidden">
+        <div className="absolute -bottom-20 -right-20 w-40 h-40">
+          <div className="w-full h-full bg-[#B9E3A8] rounded-full opacity-20" />
+        </div>
+
+        <div className="w-full max-w-md space-y-6 relative z-10">
           {/* Mobile Logo */}
           <div className="lg:hidden flex justify-center mb-8">
-            <Image src="/images/logo-bng.png" alt="BNG Logo" width={150} height={50} className="object-contain" />
+            <Image src="/images/logowhite.png" alt="BNG Logo" width={180} height={60} className="object-contain" />
           </div>
 
           {/* Status Content */}
@@ -105,14 +148,16 @@ function VerifyEmailContent() {
             {status === "pending" && (
               <>
                 <div className="flex justify-center">
-                  <Mail className="h-16 w-16 text-[hsl(123,38%,57%)]" />
+                  <div className="mx-auto w-20 h-20 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center">
+                    <Mail className="w-10 h-10 text-white" />
+                  </div>
                 </div>
-                <div className="text-center space-y-2">
-                  <h1 className="text-3xl font-bold text-[hsl(220,13%,13%)]">Vérifiez votre email</h1>
-                  <p className="text-[hsl(220,13%,46%)]">
-                    Un email de vérification a été envoyé à <strong>{email}</strong>
+                <div className="text-center space-y-4">
+                  <h1 className="text-3xl font-bold text-white">Vérifiez votre email</h1>
+                  <p className="text-lg text-white/90">
+                    Un email de vérification a été envoyé à <strong className="text-white">{email}</strong>
                   </p>
-                  <p className="text-sm text-[hsl(220,13%,46%)]">
+                  <p className="text-sm text-white/80">
                     Veuillez cliquer sur le lien dans l'email pour continuer votre inscription.
                   </p>
                 </div>
@@ -122,40 +167,20 @@ function VerifyEmailContent() {
             {status === "setting-password" && (
               <>
                 <div className="space-y-2">
-                  <h1 className="text-3xl font-bold text-[hsl(45,93%,47%)]">
-                    Nous-y sommes presque ! Définissez votre mot de passe
-                  </h1>
-                  <p className="text-[hsl(220,13%,46%)]">Créez un mot de passe sécurisé pour votre compte</p>
+                  <h1 className="text-3xl font-bold text-white text-center mb-8">Définissez votre mot de passe</h1>
+                  <p className="text-white/90 text-center">Créez un mot de passe sécurisé pour votre compte</p>
                 </div>
 
                 <form onSubmit={handlePasswordSubmit} className="space-y-5">
                   {error && (
-                    <div className="p-3 rounded-lg bg-red-50 border border-red-200">
-                      <p className="text-sm text-red-600">{error}</p>
+                    <div className="p-3 rounded-lg bg-red-500/90 border border-red-600">
+                      <p className="text-sm text-white">{error}</p>
                     </div>
                   )}
 
-                  {/* Password Requirements Info Box */}
-                  {/* <div className="p-3 rounded-lg bg-blue-50 border border-blue-200">
-                    <div className="flex items-start space-x-2">
-                      <AlertCircle className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
-                      <div className="space-y-1">
-                        <p className="text-sm font-medium text-blue-900">Le mot de passe doit contenir :</p>
-                        <ul className="text-xs text-blue-700 space-y-0.5">
-                          {getPasswordRequirements().map((req, index) => (
-                            <li key={index} className="flex items-center space-x-1">
-                              <span>•</span>
-                              <span>{req}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    </div>
-                  </div> */}
-
                   {/* Password Field */}
                   <div className="space-y-2">
-                    <Label htmlFor="password" className="text-sm font-medium text-[hsl(220,13%,13%)]">
+                    <Label htmlFor="password" className="text-sm font-medium text-white uppercase tracking-wide">
                       Mot de passe
                     </Label>
                     <div className="relative">
@@ -164,7 +189,7 @@ function VerifyEmailContent() {
                         name="password"
                         type={showPassword ? "text" : "password"}
                         placeholder="Créer un mot de passe"
-                        className="h-12 pr-10 bg-white border-gray-300 focus:border-[hsl(123,38%,57%)] focus:ring-[hsl(123,38%,57%)]"
+                        className="h-11 bg-[#6dd47e]/30 border border-[#6dd47e]/50 text-white pr-10 placeholder:text-white/60 focus:bg-[#6dd47e]/40 focus:border-[#6dd47e] focus:ring-0 backdrop-blur-sm"
                         required
                         minLength={8}
                         value={password}
@@ -173,14 +198,14 @@ function VerifyEmailContent() {
                       <button
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-white/70 hover:text-white"
                       >
                         {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                       </button>
                     </div>
                     {/* Real-time Password Validation Errors */}
                     {password && passwordErrors.length > 0 && (
-                      <div className="text-xs text-red-600 space-y-0.5 mt-1">
+                      <div className="text-xs text-red-300 space-y-0.5 mt-1">
                         {passwordErrors.map((err, index) => (
                           <p key={index}>• {err}</p>
                         ))}
@@ -190,7 +215,7 @@ function VerifyEmailContent() {
 
                   {/* Confirm Password Field */}
                   <div className="space-y-2">
-                    <Label htmlFor="confirmPassword" className="text-sm font-medium text-[hsl(220,13%,13%)]">
+                    <Label htmlFor="confirmPassword" className="text-sm font-medium text-white uppercase tracking-wide">
                       Confirmer le mot de passe
                     </Label>
                     <div className="relative">
@@ -199,7 +224,7 @@ function VerifyEmailContent() {
                         name="confirmPassword"
                         type={showConfirmPassword ? "text" : "password"}
                         placeholder="Confirmer votre mot de passe"
-                        className="h-12 pr-10 bg-white border-gray-300 focus:border-[hsl(123,38%,57%)] focus:ring-[hsl(123,38%,57%)]"
+                        className="h-11 bg-[#6dd47e]/30 border border-[#6dd47e]/50 text-white pr-10 placeholder:text-white/60 focus:bg-[#6dd47e]/40 focus:border-[#6dd47e] focus:ring-0 backdrop-blur-sm"
                         required
                         minLength={8}
                         value={confirmPassword}
@@ -208,7 +233,7 @@ function VerifyEmailContent() {
                       <button
                         type="button"
                         onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-white/70 hover:text-white"
                       >
                         {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                       </button>
@@ -218,7 +243,7 @@ function VerifyEmailContent() {
                   {/* Submit Button */}
                   <Button
                     type="submit"
-                    className="w-full h-12 bg-gradient-to-r from-[hsl(45,93%,47%)] to-[hsl(123,38%,57%)] hover:opacity-90 text-white font-semibold text-base shadow-lg"
+                    className="w-full h-12 bg-[#f4c430] hover:bg-[#e0b020] text-gray-900 font-bold text-base shadow-lg uppercase tracking-wide"
                   >
                     Créer mon compte
                   </Button>
@@ -229,13 +254,11 @@ function VerifyEmailContent() {
             {status === "creating" && (
               <>
                 <div className="flex justify-center">
-                  <Loader2 className="h-16 w-16 text-[hsl(123,38%,57%)] animate-spin" />
+                  <Loader2 className="h-16 w-16 text-white animate-spin" />
                 </div>
                 <div className="space-y-2 text-center">
-                  <h1 className="text-3xl font-bold text-[hsl(220,13%,13%)]">Création de votre compte...</h1>
-                  <p className="text-[hsl(220,13%,46%)]">
-                    Veuillez patienter pendant que nous finalisons votre inscription.
-                  </p>
+                  <h1 className="text-3xl font-bold text-white">Création de votre compte...</h1>
+                  <p className="text-white/90">Veuillez patienter pendant que nous finalisons votre inscription.</p>
                 </div>
               </>
             )}
@@ -243,17 +266,19 @@ function VerifyEmailContent() {
             {status === "success" && (
               <>
                 <div className="flex justify-center">
-                  <CheckCircle className="h-16 w-16 text-green-500" />
+                  <div className="mx-auto w-20 h-20 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center">
+                    <CheckCircle className="w-10 h-10 text-white" />
+                  </div>
                 </div>
                 <div className="space-y-4 text-center">
-                  <h1 className="text-3xl font-bold text-[hsl(220,13%,13%)]">Compte créé avec succès !</h1>
-                  <p className="text-[hsl(220,13%,46%)]">{message}</p>
+                  <h1 className="text-3xl font-bold text-white">Compte créé avec succès !</h1>
+                  <p className="text-white/90">{message}</p>
                   <div className="pt-4">
-                    <p className="text-sm text-[hsl(220,13%,46%)] mb-3">
+                    <p className="text-sm text-white/80 mb-3">
                       Vous pouvez maintenant vous connecter avec vos identifiants
                     </p>
                     <Link href="/login">
-                      <Button className="w-full h-12 bg-gradient-to-r from-[hsl(45,93%,47%)] to-[hsl(123,38%,57%)] hover:opacity-90 text-white font-semibold text-base shadow-lg">
+                      <Button className="w-full h-12 bg-[#f4c430] hover:bg-[#e0b020] text-gray-900 font-bold text-base shadow-lg uppercase tracking-wide">
                         Se connecter
                       </Button>
                     </Link>
@@ -265,14 +290,16 @@ function VerifyEmailContent() {
             {status === "error" && (
               <>
                 <div className="flex justify-center">
-                  <XCircle className="h-16 w-16 text-red-500" />
+                  <div className="mx-auto w-20 h-20 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center">
+                    <XCircle className="w-10 h-10 text-red-400" />
+                  </div>
                 </div>
                 <div className="space-y-4 text-center">
-                  <h1 className="text-3xl font-bold text-[hsl(220,13%,13%)]">Erreur</h1>
-                  <p className="text-[hsl(220,13%,46%)]">{message}</p>
+                  <h1 className="text-3xl font-bold text-white">Erreur</h1>
+                  <p className="text-white/90">{message}</p>
                   <Button
                     onClick={() => router.push("/signup")}
-                    className="w-full h-12 bg-gradient-to-r from-[hsl(45,93%,47%)] to-[hsl(123,38%,57%)] hover:opacity-90 text-white font-semibold"
+                    className="w-full h-12 bg-[#f4c430] hover:bg-[#e0b020] text-gray-900 font-bold text-base shadow-lg uppercase tracking-wide"
                   >
                     Retour à l'inscription
                   </Button>
@@ -283,7 +310,7 @@ function VerifyEmailContent() {
 
           {/* Footer */}
           <div className="pt-8 text-center">
-            <p className="text-sm font-semibold text-[hsl(220,13%,46%)]">BNG BANK INTERNATIONAL 2025 ©</p>
+            <p className="text-sm font-semibold text-white/80">BNG BANK INTERNATIONAL 2025 ©</p>
           </div>
         </div>
       </div>

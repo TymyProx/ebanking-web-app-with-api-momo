@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Eye, EyeOff, User } from "lucide-react"
+import { Eye, EyeOff } from "lucide-react"
 import AuthService from "@/lib/auth-service"
 import { config } from "@/lib/config"
 import { storeAuthToken } from "./actions"
@@ -69,144 +69,202 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex bg-gray-100">
-      {/* Left side - Hero Image */}
-      <div className="hidden lg:flex lg:w-1/2 relative">
-        <div className="relative w-full h-full p-8">
-          <div className="relative w-full h-full overflow-hidden rounded-2xl shadow-lg border backdrop-blur-sm">
-            <Image src="/images/welcom.png" alt="Welcome" fill className="object-cover rounded-2xl" priority />
-            <div className="absolute top-12 left-6 z-10">
-              <Image
-                src="/images/logo-bng.png"
-                alt="BNG Logo"
-                width={150}
-                height={50}
-                className="object-contain drop-shadow-md"
-              />
-            </div>
+    <div
+      className="min-h-screen flex"
+      style={{
+        backgroundImage: "url('/images/background.png')",
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        backgroundRepeat: "no-repeat",
+      }}
+    >
+      {/* Left side - Hero Image with Green Background */}
+      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden">
+        <div className="absolute inset-0">
+          <div className="absolute -top-24 -left-40 w-72 h-72">
+            <div className="w-full h-full bg-[#B9E3A8] rounded-full opacity-40" />
+          </div>
+
+          <div className="absolute left-[-60%] top-[40%] w-[1000px] h-[1000px]">
+            <div className="w-full h-full bg-[#B9E3A8] rounded-full opacity-50" />
+          </div>
+
+          {/* Floating money/card graphics */}
+          <div className="absolute top-[25%] right-[25%]">
+            <img
+              src="/images/billet.png"
+              alt="billet"
+              className="w-[320px] h-auto object-contain rotate-12 drop-shadow-lg"
+            />
+          </div>
+        </div>
+
+        {/* Logo */}
+        <div className="absolute top-4 left-18 z-20 translate-x-4">
+          <div className="group flex h-[200px] w-[200px] items-center justify-center rounded-full bg-white/10 backdrop-blur-md transition-all duration-500 hover:bg-white/20 hover:shadow-[0_0_40px_rgba(244,196,48,0.4)]">
+            <Image
+              src="/images/logowhite.png"
+              alt="BNG Logo"
+              width={300}
+              height={200}
+              className="object-contain scale-125 transition-transform duration-500 group-hover:scale-140"
+              priority
+            />
+          </div>
+        </div>
+
+        <div className="relative z-10 flex items-end justify-start w-full h-full pb-0">
+          <div className="relative flex justify-start items-end max-w-[420px] w-full">
+            <Image
+              src="/images/image.png"
+              alt="Welcome"
+              width={300}
+              height={400}
+              className="object-contain object-bottom drop-shadow-2xl"
+              priority
+            />
           </div>
         </div>
       </div>
 
       {/* Right side - Login Form */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-8">
-        <div className="w-full max-w-md space-y-8">
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-8 relative overflow-hidden">
+        <div className="absolute -bottom-20 -right-20 w-40 h-40">
+          <div className="w-full h-full bg-[#B9E3A8] rounded-full opacity-20" />
+        </div>
+
+        <div className="w-full max-w-md space-y-6 relative z-10">
           {/* Mobile Logo */}
           <div className="lg:hidden flex justify-center mb-8">
-            <Image src="/images/logo-bng.png" alt="BNG Logo" width={150} height={50} className="object-contain" />
+            <Image src="/images/logowhite.png" alt="BNG Logo" width={180} height={60} className="object-contain" />
           </div>
 
-          {/* Welcome Text */}
-          <div className="space-y-2">
-            <h1 className="text-5xl font-bold text-[hsl(45,93%,47%)]">Bienvenue</h1>
-            <p className="text-3xl font-semibold text-primary">
-              sur <span className="font-bold">MyBNG Bank</span>
-            </p>
+          {/* Connectez-vous Title */}
+          <div>
+            <h1 className="text-3xl font-bold text-white text-center mb-8">Connectez-vous</h1>
           </div>
 
           {/* Login Form */}
-          <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-[hsl(220,13%,13%)]">Se connecter</h2>
-
-            <form onSubmit={handleSubmit} className="space-y-5">
-              {error && (
-                <div className="p-3 rounded-lg bg-red-50 border border-red-200">
-                  <p className="text-sm text-red-600">{error}</p>
-                </div>
-              )}
-
-              {/* Username/Email Field */}
-              <div className="space-y-2">
-                <Label htmlFor="email" className="text-sm font-medium text-[hsl(220,13%,13%)]">
-                  Email
-                </Label>
-                <div className="relative">
-                  <Input
-                    id="email"
-                    name="email"
-                    type="email"
-                    placeholder="Email"
-                    className="h-12 pr-10 bg-white border-gray-300 focus:border-[hsl(123,38%,57%)] focus:ring-[hsl(123,38%,57%)]"
-                    required
-                    disabled={isLoading}
-                  />
-                  <User className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-                </div>
+          <form onSubmit={handleSubmit} className="space-y-5">
+            {error && (
+              <div className="p-3 rounded-lg bg-red-500/90 border border-red-600">
+                <p className="text-sm text-white">{error}</p>
               </div>
+            )}
 
-              {/* Password Field */}
-              <div className="space-y-2">
-                <Label htmlFor="password" className="text-sm font-medium text-[hsl(220,13%,13%)]">
-                  Mot de passe
-                </Label>
-                <div className="relative">
-                  <Input
-                    id="password"
-                    name="password"
-                    type={showPassword ? "text" : "password"}
-                    placeholder="Mot de passe"
-                    className="h-12 pr-10 bg-white border-gray-300 focus:border-[hsl(123,38%,57%)] focus:ring-[hsl(123,38%,57%)]"
-                    required
-                    disabled={isLoading}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                    disabled={isLoading}
-                  >
-                    {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                  </button>
-                </div>
-              </div>
-
-              {/* Remember Me & Forgot Password */}
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="remember"
-                    checked={rememberMe}
-                    onCheckedChange={(checked) => setRememberMe(checked as boolean)}
-                    disabled={isLoading}
-                    className="border-gray-300"
-                  />
-                  <Label htmlFor="remember" className="text-sm text-[hsl(220,13%,13%)] cursor-pointer font-normal">
-                    Se souvenir de moi
-                  </Label>
-                </div>
-                <Button
-                  type="button"
-                  variant="link"
-                  className="px-0 text-sm text-[hsl(220,13%,13%)] hover:text-[hsl(123,38%,57%)] underline font-normal h-auto"
-                >
-                  Mot de passe oublié ?
-                </Button>
-              </div>
-
-              {/* Submit Button */}
-              <Button
-                type="submit"
-                className="w-full h-12 bg-primary hover:opacity-90 text-white font-semibold text-base shadow-lg"
+            {/* Email Field */}
+            <div className="space-y-2">
+              <Label htmlFor="email" className="text-sm font-medium text-white uppercase tracking-wide">
+                E-mail
+              </Label>
+              <Input
+                id="email"
+                name="email"
+                type="email"
+                placeholder=""
+                className="h-11 bg-[#6dd47e]/30 border border-[#6dd47e]/50 text-white placeholder:text-white/60 focus:bg-[#6dd47e]/40 focus:border-[#6dd47e] focus:ring-0 backdrop-blur-sm"
+                required
                 disabled={isLoading}
-              >
-                {isLoading ? (
-                  <div className="flex items-center space-x-2">
-                    <div className="animate-spin rounded-full h-5 w-5 border-2 border-white/30 border-t-white"></div>
-                    <span>Connexion...</span>
-                  </div>
-                ) : (
-                  "Se connecter"
-                )}
-              </Button>
-            </form>
-          </div>
+              />
+            </div>
 
-          {/* Footer */}
-          <div className="pt-8 text-center">
-            <p className="text-sm font-semibold text-[hsl(220,13%,46%)]">BNG BANK INTERNATIONAL 2025 ©</p>
-          </div>
+            {/* Password Field */}
+            <div className="space-y-2">
+              <Label htmlFor="password" className="text-sm font-medium text-white uppercase tracking-wide">
+                Mot de passe
+              </Label>
+              <div className="relative">
+                <Input
+                  id="password"
+                  name="password"
+                  type={showPassword ? "text" : "password"}
+                  placeholder=""
+                  className="h-11 bg-[#6dd47e]/30 border border-[#6dd47e]/50 text-white pr-10 placeholder:text-white/60 focus:bg-[#6dd47e]/40 focus:border-[#6dd47e] focus:ring-0 backdrop-blur-sm"
+                  required
+                  disabled={isLoading}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-white/70 hover:text-white"
+                  disabled={isLoading}
+                >
+                  {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                </button>
+              </div>
+            </div>
+
+            {/* Remember Me */}
+            <div className="flex items-center space-x-2 pt-1">
+              <Checkbox
+                id="remember"
+                checked={rememberMe}
+                onCheckedChange={(checked) => setRememberMe(checked as boolean)}
+                disabled={isLoading}
+                className="border-white bg-white/20 data-[state=checked]:bg-white data-[state=checked]:text-green-700"
+              />
+              <Label htmlFor="remember" className="text-sm text-white cursor-pointer font-normal">
+                Se rappeler de moi
+              </Label>
+            </div>
+
+            {/* Submit Button */}
+            <Button
+              type="submit"
+              className="w-full h-12 bg-[#f4c430] hover:bg-[#e0b020] text-gray-900 font-bold text-base shadow-lg uppercase tracking-wide"
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <div className="flex items-center space-x-2">
+                  <div className="animate-spin rounded-full h-5 w-5 border-2 border-gray-900/30 border-t-gray-900"></div>
+                  <span>Connexion...</span>
+                </div>
+              ) : (
+                "Connexion"
+              )}
+            </Button>
+
+            {/* Forgot Password Link */}
+            <div className="text-center pt-2">
+              <Button
+                type="button"
+                variant="link"
+                className="text-sm text-white hover:text-white/80 underline font-normal uppercase tracking-wide h-auto p-0"
+              >
+                Mot de passe oublié?
+              </Button>
+            </div>
+          </form>
         </div>
       </div>
+
+      <style jsx global>{`
+        @keyframes float {
+          0%,
+          100% {
+            transform: translateY(0px) rotate(12deg);
+          }
+          50% {
+            transform: translateY(-20px) rotate(12deg);
+          }
+        }
+        @keyframes float-delayed {
+          0%,
+          100% {
+            transform: translateY(0px) rotate(-6deg);
+          }
+          50% {
+            transform: translateY(-15px) rotate(-6deg);
+          }
+        }
+        .animate-float {
+          animation: float 3s ease-in-out infinite;
+        }
+        .animate-float-delayed {
+          animation: float-delayed 3.5s ease-in-out infinite;
+          animation-delay: 1s;
+        }
+      `}</style>
     </div>
   )
 }
