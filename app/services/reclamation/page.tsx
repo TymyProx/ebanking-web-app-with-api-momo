@@ -66,7 +66,9 @@ const complainTypes = {
 
 export default function ReclamationPage() {
   const [activeTab, setActiveTab] = useState("form")
-  const [formData, setFormData] = useState<Record<string, any>>({})
+  const [formData, setFormData] = useState<Record<string, any>>({
+    complainDate: new Date().toISOString().split("T")[0],
+  })
   const [selectedType, setSelectedType] = useState<string>("")
   const [availableObjects, setAvailableObjects] = useState<string[]>([])
   const [submitState, setSubmitState] = useState<{
