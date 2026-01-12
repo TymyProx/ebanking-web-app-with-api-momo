@@ -17,7 +17,14 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { createReclamation, getReclamations, getReclamationById } from "./actions"
 
 const complainTypes = {
-  Compte: [],
+  Compte: [
+    "Erreur de solde ou d'écritures",
+    "Frais bancaires non justifiés",
+    "Prélèvement non autorisé",
+    "Clôture de compte non demandée",
+    "Problème d'accès au compte",
+    "Blocage de compte injustifié",
+  ],
   Carte: [
     "Carte non reçue",
     "Carte bloquée ou avalée",
