@@ -12,4 +12,3 @@ export function getApiBaseUrl(): string {
 }
 
 export const TENANT_ID = config.TENANT_ID
-

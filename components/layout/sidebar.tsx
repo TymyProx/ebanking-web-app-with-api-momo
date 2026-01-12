@@ -162,6 +162,11 @@ const navigationData = {
           url: "/services/credit",
           icon: CreditCard,
         },
+        {
+          title: "Réclamations",
+          url: "/services/reclamation",
+          icon: AlertCircle,
+        },
       ],
     },
   ],

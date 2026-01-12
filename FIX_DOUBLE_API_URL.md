@@ -4,15 +4,15 @@
 
 L'application générait des URLs incorrectes avec un **double `/api/api/`**:
 
-```
+\`\`\`
 ❌ Cannot GET /api/api/tenant/aa1287f6-06af-45b7-a905-8c57363565c2/compte
-```
+\`\`\`
 
 Au lieu de:
 
-```
+\`\`\`
 ✅ Cannot GET /api/tenant/aa1287f6-06af-45b7-a905-8c57363565c2/compte
-```
+\`\`\`
 
 ---
 
@@ -22,9 +22,9 @@ Au lieu de:
 
 **Fichier**: `/lib/config.ts`
 
-```typescript
+\`\`\`typescript
 API_BASE_URL: "https://35.184.98.9:4000"  // Peut ou pas avoir /api à la fin
-```
+\`\`\`
 
 **Problème**: La variable `NEXT_PUBLIC_API_URL` peut être configurée:
 - Avec `/api`: `https://35.184.98.9:4000/api`
@@ -34,10 +34,10 @@ API_BASE_URL: "https://35.184.98.9:4000"  // Peut ou pas avoir /api à la fin
 
 Dans **tous** les fichiers `actions.ts`:
 
-```typescript
+\`\`\`typescript
 const normalize = (u?: string) => (u ? u.replace(/\/$/, "") : "")
 const API_BASE_URL = `${normalize(config.API_BASE_URL)}/api`  // ❌ Ajoute toujours /api
-```
+\`\`\`
 
 ### Résultat
 
@@ -53,7 +53,7 @@ Si `config.API_BASE_URL` = `https://35.184.98.9:4000/api`:
 
 **Nouveau fichier**: `/lib/api-url.ts`
 
-```typescript
+\`\`\`typescript
 import { config } from "@/lib/config"
 
 /**
@@ -68,11 +68,11 @@ export function getApiBaseUrl(): string {
 }
 
 export const TENANT_ID = config.TENANT_ID
-```
+\`\`\`
 
 ### 2. Logique de Normalisation
 
-```typescript
+\`\`\`typescript
 // Étape 1: Enlever / à la fin
 normalize("https://35.184.98.9:4000/api/") 
   → "https://35.184.98.9:4000/api"
@@ -84,7 +84,7 @@ normalize("https://35.184.98.9:4000/api/")
 // Étape 3: Ajouter /api une seule fois
 `${...}/api` 
   → "https://35.184.98.9:4000/api" ✅
-```
+\`\`\`
 
 ---
 
@@ -98,21 +98,21 @@ Tous les fichiers ont été corrigés avec succès ! Voir `/DOUBLE_API_FIX_COMPL
 
 Remplacer dans **chaque fichier**:
 
-```typescript
+\`\`\`typescript
 // ❌ ANCIEN CODE
 const normalize = (u?: string) => (u ? u.replace(/\/$/, "") : "")
 const API_BASE_URL = `${normalize(config.API_BASE_URL)}/api`
 const TENANT_ID = config.TENANT_ID
-```
+\`\`\`
 
 Par:
 
-```typescript
+\`\`\`typescript
 // ✅ NOUVEAU CODE
 import { getApiBaseUrl, TENANT_ID } from "@/lib/api-url"
 
 const API_BASE_URL = getApiBaseUrl()
-```
+\`\`\`
 
 ### Liste des Fichiers
 
@@ -142,25 +142,25 @@ const API_BASE_URL = getApiBaseUrl()
 
 ### Avant Fix ❌
 
-```bash
+\`\`\`bash
 # Requête envoyée
 GET /api/api/tenant/aa1287f6-06af-45b7-a905-8c57363565c2/compte
 
 # Résultat
 ❌ Cannot GET /api/api/tenant/...
 ❌ Error: Erreur de communication avec l'API
-```
+\`\`\`
 
 ### Après Fix ✅
 
-```bash
+\`\`\`bash
 # Requête envoyée
 GET /api/tenant/aa1287f6-06af-45b7-a905-8c57363565c2/compte
 
 # Résultat
 ✅ 200 OK (si backend est accessible)
 ✅ Données des comptes retournées
-```
+\`\`\`
 
 ---
 
@@ -190,7 +190,7 @@ GET /api/tenant/aa1287f6-06af-45b7-a905-8c57363565c2/compte
 
 Pour mettre à jour tous les fichiers rapidement:
 
-```bash
+\`\`\`bash
 # 1. Créer le fichier utilitaire (déjà fait)
 # /lib/api-url.ts
 
@@ -203,7 +203,7 @@ grep -r "config.API_BASE_URL\)/api" app/
 # - Supprimer: const normalize = ...
 # - Supprimer: const API_BASE_URL = `${normalize...
 # - Supprimer: const TENANT_ID = config.TENANT_ID
-```
+\`\`\`
 
 ---
 
@@ -213,13 +213,13 @@ Pour éviter toute confusion future, assurez-vous que la variable d'environnemen
 
 ### .env ou .env.local
 
-```bash
+\`\`\`bash
 # ✅ RECOMMANDÉ (sans /api)
 NEXT_PUBLIC_API_URL=https://35.184.98.9:4000
 
 # ❌ ÉVITER (avec /api)
 # NEXT_PUBLIC_API_URL=https://35.184.98.9:4000/api
-```
+\`\`\`
 
 Avec cette configuration, `getApiBaseUrl()` ajoutera `/api` automatiquement et correctement.
 
@@ -253,4 +253,3 @@ Une fois tous les fichiers mis à jour:
 ✅ **Cohérent** - Même approche dans toute l'application
 
 **L'erreur "Cannot GET /api/api/..." sera résolue! 🚀**
-

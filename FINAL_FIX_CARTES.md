@@ -10,35 +10,35 @@
 
 Après avoir corrigé les 17 fichiers initiaux, une erreur est apparue dans les logs:
 
-```
+\`\`\`
 [v0] Error fetching user info: Error: Failed to fetch user info
     at getCurrentUserInfo (app/cartes/actions.ts:55:12)
 ⨯ Error: Unable to get user information
     at getCurrentUserInfo (app/cartes/actions.ts:62:10)
 POST /cartes/demande 500 in 267ms
-```
+\`\`\`
 
 ### Cause
 
 Le fichier `/app/cartes/actions.ts` n'était pas dans la recherche initiale car il utilisait `BASE_URL` au lieu de `API_BASE_URL`, mais avait **le même bug**:
 
-```typescript
+\`\`\`typescript
 // ❌ AVANT
 const normalize = (u?: string) => (u ? u.replace(/\/$/, "") : "")
 const BASE_URL = `${normalize(config.API_BASE_URL)}/api`
 const TENANT_ID = config.TENANT_ID
-```
+\`\`\`
 
 ---
 
 ## ✅ Correction Appliquée
 
-```typescript
+\`\`\`typescript
 // ✅ APRÈS
 import { getApiBaseUrl, TENANT_ID } from "@/lib/api-url"
 
 const BASE_URL = getApiBaseUrl()
-```
+\`\`\`
 
 ### Changements
 
@@ -90,20 +90,20 @@ const BASE_URL = getApiBaseUrl()
 
 ### Recherche Exhaustive
 
-```bash
+\`\`\`bash
 # Recherche de tous les patterns possibles
 grep -r "normalize.*config.API_BASE_URL.*/api" app/
 # Résultat: Aucun fichier trouvé ✅
-```
+\`\`\`
 
 **Verdict**: ✅ Plus aucun fichier avec le pattern du double `/api/api/`
 
 ### Linter
 
-```bash
+\`\`\`bash
 # Vérification du fichier cartes
 ✅ /app/cartes/actions.ts - 0 erreurs
-```
+\`\`\`
 
 ---
 
@@ -135,12 +135,12 @@ grep -r "normalize.*config.API_BASE_URL.*/api" app/
 
 Pour détecter **tous** les fichiers avec ce problème:
 
-```bash
+\`\`\`bash
 # Recherche plus large
 grep -r "normalize.*config\.API_BASE_URL" .
 grep -r "}/api\`" .
 grep -r "import.*config.*from.*@/lib/config" . | grep -v "api-url"
-```
+\`\`\`
 
 ---
 
@@ -162,13 +162,13 @@ grep -r "import.*config.*from.*@/lib/config" . | grep -v "api-url"
 
 Pour tester:
 
-```bash
+\`\`\`bash
 cd /Users/gib/Projects/Proxylab/ebanking-web-app-with-api-momo
 
 # Nettoyer et redémarrer
 rm -rf .next
 npm run dev
-```
+\`\`\`
 
 Tester la fonctionnalité cartes:
 1. ✅ Se connecter
@@ -189,4 +189,3 @@ Tester la fonctionnalité cartes:
 **Date de résolution finale**: 8 Janvier 2026  
 **Nombre total de fichiers corrigés**: **19**  
 **Status**: ✅ **100% COMPLET - PRODUCTION READY**
-

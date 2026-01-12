@@ -12,19 +12,19 @@ Le problème du double `/api/api/` dans toutes les URLs de l'E-Banking Portal a 
 
 ### Problème Initial ❌
 
-```
+\`\`\`
 https://35.184.98.9:4000/api/api/tenant/aa1287f6-06af-45b7-a905-8c57363565c2/compte
                          ^^^^^^^^ Double /api/
-```
+\`\`\`
 
 **Résultat**: Toutes les requêtes API retournaient des erreurs 404.
 
 ### Solution Appliquée ✅
 
-```
+\`\`\`
 https://35.184.98.9:4000/api/tenant/aa1287f6-06af-45b7-a905-8c57363565c2/compte
                          ^^^^ Un seul /api/ maintenant
-```
+\`\`\`
 
 ---
 
@@ -34,7 +34,7 @@ https://35.184.98.9:4000/api/tenant/aa1287f6-06af-45b7-a905-8c57363565c2/compte
 
 ✅ **`/lib/api-url.ts`** (NOUVEAU)
 
-```typescript
+\`\`\`typescript
 import { config } from "@/lib/config"
 
 /**
@@ -49,7 +49,7 @@ export function getApiBaseUrl(): string {
 }
 
 export const TENANT_ID = config.TENANT_ID
-```
+\`\`\`
 
 **Logique**:
 1. Normalise l'URL (enlève `/` final)
@@ -62,23 +62,23 @@ export const TENANT_ID = config.TENANT_ID
 
 Chaque fichier a été modifié de:
 
-```typescript
+\`\`\`typescript
 // ❌ AVANT
 import { config } from "@/lib/config"
 
 const normalize = (u?: string) => (u ? u.replace(/\/$/, "") : "")
 const API_BASE_URL = `${normalize(config.API_BASE_URL)}/api`
 const TENANT_ID = config.TENANT_ID
-```
+\`\`\`
 
 À:
 
-```typescript
+\`\`\`typescript
 // ✅ APRÈS
 import { getApiBaseUrl, TENANT_ID } from "@/lib/api-url"
 
 const API_BASE_URL = getApiBaseUrl()
-```
+\`\`\`
 
 ---
 
@@ -113,7 +113,7 @@ const API_BASE_URL = getApiBaseUrl()
 
 ### Vérification Linter ✅
 
-```bash
+\`\`\`bash
 # Aucune erreur de linter détectée
 ✅ /app/accounts/new/actions.ts
 ✅ /app/signup/actions.ts
@@ -132,7 +132,7 @@ const API_BASE_URL = getApiBaseUrl()
 ✅ /app/api/accounts/check-existing/route.ts
 ✅ /app/api/client-info/check/route.ts
 ✅ /lib/api-url.ts
-```
+\`\`\`
 
 **Résultat**: **0 erreurs** 🎉
 
@@ -164,7 +164,7 @@ const API_BASE_URL = getApiBaseUrl()
 
 ### Exemple de Requêtes Corrigées
 
-```bash
+\`\`\`bash
 # Authentification
 ✅ POST https://35.184.98.9:4000/api/auth/sign-in
 
@@ -182,7 +182,7 @@ const API_BASE_URL = getApiBaseUrl()
 
 # Créer un e-payment
 ✅ POST https://35.184.98.9:4000/api/tenant/aa1287f6-06af-45b7-a905-8c57363565c2/epayments
-```
+\`\`\`
 
 **Toutes les URLs sont maintenant correctes !** ✅
 
@@ -193,20 +193,20 @@ const API_BASE_URL = getApiBaseUrl()
 ### Étapes pour Tester en Local
 
 1. **Arrêter le serveur de développement**
-```bash
+\`\`\`bash
 # Ctrl+C dans le terminal où Next.js tourne
-```
+\`\`\`
 
 2. **Nettoyer le cache Next.js**
-```bash
+\`\`\`bash
 cd /Users/gib/Projects/Proxylab/ebanking-web-app-with-api-momo
 rm -rf .next
-```
+\`\`\`
 
 3. **Redémarrer le serveur**
-```bash
+\`\`\`bash
 npm run dev
-```
+\`\`\`
 
 4. **Tester l'application**
    - ✅ Ouvrir http://localhost:3000
@@ -218,16 +218,16 @@ npm run dev
 ### Vérification des Logs
 
 Avant (avec le bug):
-```
+\`\`\`
 Error fetching accounts: Cannot GET /api/api/tenant/.../compte
 ❌ 404 Not Found
-```
+\`\`\`
 
 Après (corrigé):
-```
+\`\`\`
 ✅ GET /api/tenant/.../compte 200 OK
 ✅ Accounts fetched successfully
-```
+\`\`\`
 
 ---
 
@@ -315,4 +315,3 @@ Pour toute question sur cette correction:
 - Voir `/API_HARMONY_ANALYSIS.md` pour le contexte global
 
 **Problème résolu avec succès ! 🚀**
-
