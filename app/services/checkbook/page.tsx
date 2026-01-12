@@ -124,7 +124,7 @@ export default function CheckbookRequestPage() {
           talonCheque: item.talonCheque,
         },
       }))
-
+      
       checkbookRequests.sort((a, b) => {
         const dateA = new Date(a.submittedAt).getTime()
         const dateB = new Date(b.submittedAt).getTime()
