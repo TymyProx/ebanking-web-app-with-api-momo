@@ -15,6 +15,7 @@ interface FundsProvisionData {
   numCni: string
   agence: string
   statut: string
+  clientId: string
 }
 
 interface FundsProvision {
@@ -73,6 +74,19 @@ export async function submitFundsProvisionRequest(data: {
       throw new Error("Token d'authentification introuvable.")
     }
 
+    const userResponse = await fetch(`${API_BASE_URL}/auth/me`, {
+      headers: {
+        Authorization: `Bearer ${cookieToken}`,
+      },
+    })
+
+    if (!userResponse.ok) {
+      throw new Error("Impossible de récupérer les informations utilisateur")
+    }
+
+    const userData = await userResponse.json()
+    const clientId = userData.id
+
     const reference = await generateFundsProvisionReference()
 
     const fundsProvisionData: FundsProvisionData = {
@@ -83,6 +97,7 @@ export async function submitFundsProvisionRequest(data: {
       numCni: data.numCni,
       agence: data.agence,
       statut: "EN_ATTENTE",
+      clientId: clientId,
     }
 
     const response = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/mise-dpstion-fonds`, {
