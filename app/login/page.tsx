@@ -90,11 +90,11 @@ export default function LoginPage() {
           </div>
 
           {/* Floating money/card graphics */}
-          <div className="absolute top-[25%] right-[25%]">
+          <div className="absolute top-[15%] right-[35%]">
             <img
-              src="/images/billet.png"
+              src="/images/billet2.png"
               alt="billet"
-              className="w-[320px] h-auto object-contain rotate-12 drop-shadow-lg"
+              className="w-[200px] h-auto object-contain rotate-12 drop-shadow-lg"
             />
           </div>
         </div>
