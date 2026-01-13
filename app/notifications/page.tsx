@@ -225,10 +225,11 @@ export default function NotificationsPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="mt-6 space-y-6" lang="fr">
+      {/* En-tête */}
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div className="space-y-2">
-          <h1 className="text-3xl font-heading font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+          <h1 className="text-3xl font-bold text-primary">
             Notifications
           </h1>
           <p className="text-sm text-muted-foreground">Gérez vos notifications de débit et crédit automatiques</p>
