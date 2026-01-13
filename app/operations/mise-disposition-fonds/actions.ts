@@ -149,8 +149,6 @@ export async function getFundsProvisionById(id: string): Promise<any> {
       throw new Error("Token introuvable.")
     }
 
-    console.log("[v0] Fetching funds provision details for ID:", id)
-
     const response = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/mise-dpstion-fonds/${id}`, {
       method: "GET",
       headers: {
@@ -160,17 +158,12 @@ export async function getFundsProvisionById(id: string): Promise<any> {
       cache: "no-store",
     })
 
-    console.log("[v0] Response status:", response.status)
-
     if (!response.ok) {
       const errorData = await response.json()
-      console.log("[v0] Error response:", errorData)
       throw new Error(errorData.message || "Erreur lors de la récupération des détails")
     }
 
     const result = await response.json()
-    console.log("[v0] Funds provision details result:", result)
-
     return result
   } catch (error: any) {
     console.error("Error fetching funds provision details:", error)

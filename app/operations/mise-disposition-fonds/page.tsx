@@ -85,32 +85,33 @@ export default function FundsProvisionPage() {
   const loadRequests = async () => {
     setIsLoadingRequests(true)
     try {
-      console.log("[v0] Loading funds provision requests...")
       const result = await getFundsProvisionRequests()
-      console.log("[v0] Get requests result:", result)
 
-      const requestsData = result?.data?.rows || []
-      console.log("[v0] Requests data:", requestsData)
+      if (result?.data?.rows && Array.isArray(result.data.rows)) {
+        const requestsData = result.data.rows
 
-      const formattedRequests = requestsData.map((item: any) => ({
-        id: item.id,
-        reference: item.reference || "Référence non disponible",
-        compteAdebiter: item.compteAdebiter || "Compte non spécifié",
-        montant: item.montant || 0,
-        fullNameBenef: item.fullNameBenef || "Non spécifié",
-        numCni: item.numCni || "Non spécifié",
-        agence: item.agence || "Non spécifié",
-        statut: item.statut || "EN_ATTENTE",
-        createdAt: item.createdAt?.split("T")[0] || new Date().toISOString().split("T")[0],
-      }))
+        const formattedRequests = requestsData.map((item: any) => ({
+          id: item.id,
+          reference: item.reference || "Référence non disponible",
+          compteAdebiter: item.compteAdebiter || "Compte non spécifié",
+          montant: item.montant || 0,
+          fullNameBenef: item.fullNameBenef || "Non spécifié",
+          numCni: item.numCni || "Non spécifié",
+          agence: item.agence || "Non spécifié",
+          statut: item.statut || "EN_ATTENTE",
+          createdAt: item.createdAt || new Date().toISOString(),
+        }))
 
-      formattedRequests.sort((a: any, b: any) => {
-        const dateA = new Date(a.createdAt).getTime()
-        const dateB = new Date(b.createdAt).getTime()
-        return dateB - dateA
-      })
+        formattedRequests.sort((a: any, b: any) => {
+          const dateA = new Date(a.createdAt).getTime()
+          const dateB = new Date(b.createdAt).getTime()
+          return dateB - dateA
+        })
 
-      setRequests(formattedRequests)
+        setRequests(formattedRequests)
+      } else {
+        setRequests([])
+      }
     } catch (error) {
       console.error("Erreur lors du chargement des demandes:", error)
       setRequests([])
@@ -156,10 +157,7 @@ export default function FundsProvisionPage() {
     setIsDetailsModalOpen(true)
 
     try {
-      console.log("[v0] Loading details for request:", request.id)
       const details = await getFundsProvisionById(request.id)
-      console.log("[v0] Details result:", details)
-
       setSelectedRequestDetails(details?.data || details)
     } catch (error) {
       console.error("Erreur lors du chargement des détails:", error)
