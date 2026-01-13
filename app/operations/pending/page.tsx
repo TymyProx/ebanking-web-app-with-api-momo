@@ -199,10 +199,11 @@ export default function PendingOperationsPage() {
   const statusCounts = getStatusCounts()
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Opérations en attente</h1>
+   <div className="mt-6 space-y-6" lang="fr">
+      {/* En-tête */}
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div className="space-y-2">
+          <h1 className="text-3xl font-bold text-primary">Opérations en attente</h1>
           <p className="text-gray-600">Suivi de vos transactions en cours de traitement</p>
         </div>
         <div className="flex items-center space-x-2">

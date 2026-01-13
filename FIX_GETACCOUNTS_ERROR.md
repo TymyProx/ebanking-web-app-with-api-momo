@@ -4,10 +4,10 @@
 
 L'application web e-banking affichait constamment cette erreur dans les logs:
 
-```
+\`\`\`
 Error in getAccounts: Error: Erreur de communication avec l'API
     at getAccounts (app/accounts/actions.ts:138:14)
-```
+\`\`\`
 
 Cette erreur se produisait **même quand les données étaient correctement retournées**.
 
@@ -22,7 +22,7 @@ Cette erreur se produisait **même quand les données étaient correctement reto
 
 ### Code Problématique
 
-```javascript
+\`\`\`javascript
 if (errorText.includes("only public URLs are supported") || 
     errorText.includes("only https is supported")) {
   return [
@@ -31,7 +31,7 @@ if (errorText.includes("only public URLs are supported") ||
 }
 
 throw new Error("Erreur de communication avec l'API")  // ❌ TOUJOURS EXÉCUTÉ!
-```
+\`\`\`
 
 ### Problème
 
@@ -48,7 +48,7 @@ Le problème est que dans certains cas (par exemple, erreur 404 de `/auth/me`), 
 
 ### Code Corrigé
 
-```javascript
+\`\`\`javascript
 if (errorText.includes("only public URLs are supported") || 
     errorText.includes("only https is supported")) {
   return [
@@ -59,7 +59,7 @@ if (errorText.includes("only public URLs are supported") ||
   console.error("Error fetching accounts:", errorText)
   throw new Error("Erreur de communication avec l'API")
 }
-```
+\`\`\`
 
 ### Changement
 
@@ -74,7 +74,7 @@ Le `throw` est maintenant dans un bloc `else`, ce qui signifie:
 
 ### Avant Fix ❌
 
-```
+\`\`\`
 1. Appel API échoue (response.ok = false)
    ↓
 2. Vérifier contentType
@@ -87,11 +87,11 @@ Le `throw` est maintenant dans un bloc `else`, ce qui signifie:
    ↓
 6. ❌ TOUJOURS lance "Erreur de communication avec l'API"
    (même si on vient de return!)
-```
+\`\`\`
 
 ### Après Fix ✅
 
-```
+\`\`\`
 1. Appel API échoue (response.ok = false)
    ↓
 2. Vérifier contentType
@@ -103,7 +103,7 @@ Le `throw` est maintenant dans un bloc `else`, ce qui signifie:
 5. Si contient "only public URLs" → Return mockData ✅
    ↓
 6. SINON (else) → Lance "Erreur de communication avec l'API" ✅
-```
+\`\`\`
 
 ---
 
@@ -111,7 +111,7 @@ Le `throw` est maintenant dans un bloc `else`, ce qui signifie:
 
 ### Scénario 1: Erreur HTTPS
 
-```javascript
+\`\`\`javascript
 // Erreur contient "only public URLs are supported"
 Response: HTTP Error avec texte "only public URLs are supported"
 
@@ -119,11 +119,11 @@ Résultat:
 - ✅ Return données mockées
 - ✅ Pas d'exception lancée
 - ✅ Application continue de fonctionner
-```
+\`\`\`
 
 ### Scénario 2: Autre Erreur
 
-```javascript
+\`\`\`javascript
 // Erreur NE contient PAS "only public URLs"
 Response: HTTP 404 avec texte "Not Found"
 
@@ -131,7 +131,7 @@ Résultat:
 - ✅ Log l'erreur dans la console
 - ✅ Lance exception "Erreur de communication avec l'API"
 - ✅ Comportement intentionnel pour signaler une vraie erreur
-```
+\`\`\`
 
 ---
 
@@ -157,20 +157,20 @@ Résultat:
 
 Les logs montrent aussi:
 
-```
+\`\`\`
 [v0] Failed to fetch user: 404
 [v0] API response not ok: 404
-```
+\`\`\`
 
 Cela indique que l'endpoint `/auth/me` retourne 404. Cependant, ce n'est **pas fatal** car:
 
 1. Le code dans `user/actions.ts` gère déjà le cas d'erreur:
-   ```javascript
+   \`\`\`javascript
    if (!response.ok) {
      console.log("[v0] API response not ok:", response.status)
      return null  // ✅ Return null au lieu de crash
    }
-   ```
+   \`\`\`
 
 2. L'application continue de fonctionner avec `currentUserId = null`
 
@@ -179,23 +179,23 @@ Cela indique que l'endpoint `/auth/me` retourne 404. Cependant, ce n'est **pas f
 Pour résoudre le 404 de `/auth/me`:
 
 1. **Vérifier le token**
-   ```javascript
+   \`\`\`javascript
    // Dans browser console ou logs
    console.log("Token:", document.cookie)
-   ```
+   \`\`\`
 
 2. **Vérifier l'URL de l'API**
-   ```javascript
+   \`\`\`javascript
    // Dans lib/config.ts
    console.log("API_BASE_URL:", config.API_BASE_URL)
-   ```
+   \`\`\`
 
 3. **Vérifier que l'endpoint existe**
-   ```bash
+   \`\`\`bash
    # Test direct
    curl -H "Authorization: Bearer YOUR_TOKEN" \
         https://your-api.com/api/auth/me
-   ```
+   \`\`\`
 
 4. **Vérifier les logs backend**
    - L'endpoint `/auth/me` existe-t-il?
@@ -228,4 +228,3 @@ Pour résoudre le 404 de `/auth/me`:
 ## 🎉 Résultat
 
 L'erreur "Error in getAccounts: Error: Erreur de communication avec l'API" a été corrigée. L'application gère maintenant correctement les erreurs et ne lance d'exception que lorsque c'est vraiment nécessaire! ✅
-

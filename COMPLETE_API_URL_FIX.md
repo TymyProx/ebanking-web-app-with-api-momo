@@ -11,16 +11,16 @@
 Le problème du double `/api/api/` dans **TOUTES** les URLs de l'E-Banking Portal a été **complètement résolu**.
 
 ### Problème ❌
-```
+\`\`\`
 https://35.184.98.9:4000/api/api/tenant/.../compte
                          ^^^^^^^^ Double /api/
-```
+\`\`\`
 
 ### Solution ✅
-```
+\`\`\`
 https://35.184.98.9:4000/api/tenant/.../compte
                          ^^^^ Un seul /api/
-```
+\`\`\`
 
 ---
 
@@ -58,27 +58,27 @@ https://35.184.98.9:4000/api/tenant/.../compte
 ## 🔧 Changement Appliqué
 
 ### Avant ❌
-```typescript
+\`\`\`typescript
 import { config } from "@/lib/config"
 
 const normalize = (u?: string) => (u ? u.replace(/\/$/, "") : "")
 const API_BASE_URL = `${normalize(config.API_BASE_URL)}/api`
 const TENANT_ID = config.TENANT_ID
-```
+\`\`\`
 
 ### Après ✅
-```typescript
+\`\`\`typescript
 import { getApiBaseUrl, TENANT_ID } from "@/lib/api-url"
 
 const API_BASE_URL = getApiBaseUrl()
-```
+\`\`\`
 
 ---
 
 ## 🧪 Validation
 
 ### Recherche Exhaustive
-```bash
+\`\`\`bash
 # Recherche de tous les patterns
 grep -ri "normalize.*config.API_BASE_URL" .
 grep -ri "config.API_BASE_URL.*/api" .
@@ -88,12 +88,12 @@ grep -ri "config.API_BASE_URL.*/api" .
 ✅ FIX_DOUBLE_API_URL.md
 ✅ DOUBLE_API_FIX_COMPLETE.md
 ✅ lib/api-url.ts (le fichier utilitaire lui-même)
-```
+\`\`\`
 
 ### Linter
-```bash
+\`\`\`bash
 ✅ Tous les fichiers: 0 erreurs
-```
+\`\`\`
 
 ---
 
@@ -126,10 +126,10 @@ Recherche initiale avec pattern: `API_BASE_URL = \`${normalize(config.API_BASE_U
 
 ### Batch 2 - Fichier Cartes (1 fichier)
 Découvert via erreur en logs:
-```
+\`\`\`
 [v0] Error fetching user info: Error: Failed to fetch user info
     at getCurrentUserInfo (app/cartes/actions.ts:55:12)
-```
+\`\`\`
 Pattern différent: `BASE_URL` au lieu de `API_BASE_URL`
 
 ### Batch 3 - Fichiers Services (2 fichiers)
@@ -168,7 +168,7 @@ Recherche élargie avec pattern: `normalize.*config.API_BASE_URL`
 
 ### Étapes pour Tester
 
-```bash
+\`\`\`bash
 cd /Users/gib/Projects/Proxylab/ebanking-web-app-with-api-momo
 
 # 1. Nettoyer le cache Next.js
@@ -176,7 +176,7 @@ rm -rf .next
 
 # 2. Redémarrer le serveur
 npm run dev
-```
+\`\`\`
 
 ### Checklist de Test
 
@@ -240,7 +240,7 @@ npm run dev
 
 **Fichier**: `/lib/api-url.ts`
 
-```typescript
+\`\`\`typescript
 import { config } from "@/lib/config"
 
 /**
@@ -255,7 +255,7 @@ export function getApiBaseUrl(): string {
 }
 
 export const TENANT_ID = config.TENANT_ID
-```
+\`\`\`
 
 **Logique**:
 1. Normalise l'URL (enlève `/` final)
@@ -328,4 +328,3 @@ Pour toute question:
 - Analyse globale: `/API_HARMONY_ANALYSIS.md`
 
 **Problème résolu avec succès ! 🎉**
-
