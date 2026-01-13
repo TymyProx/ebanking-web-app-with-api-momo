@@ -144,11 +144,13 @@ export async function getFundsProvisionRequests(): Promise<GetFundsProvisionsRes
     })
 
     if (!response.ok) {
+      console.log("[v0] Response not OK, status:", response.status)
       const errorData = await response.json()
       throw new Error(errorData.message || "Erreur lors de la récupération des demandes")
     }
 
     const result = await response.json()
+    console.log("[v0] API Response in action:", result)
     return result
   } catch (error: any) {
     console.error("Error fetching funds provision requests:", error)

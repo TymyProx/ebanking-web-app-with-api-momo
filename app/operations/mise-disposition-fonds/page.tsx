@@ -86,9 +86,13 @@ export default function FundsProvisionPage() {
     setIsLoadingRequests(true)
     try {
       const result = await getFundsProvisionRequests()
+      console.log("[v0] Full API response:", result)
+      console.log("[v0] result.data:", result?.data)
+      console.log("[v0] result.data.rows:", result?.data?.rows)
 
       if (result?.data?.rows && Array.isArray(result.data.rows)) {
         const requestsData = result.data.rows
+        console.log("[v0] Requests data found:", requestsData)
 
         const formattedRequests = requestsData.map((item: any) => ({
           id: item.id,
