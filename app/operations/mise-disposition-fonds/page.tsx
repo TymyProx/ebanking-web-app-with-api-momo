@@ -407,24 +407,24 @@ export default function FundsProvisionPage() {
                   <p className="text-gray-600 mt-2">Aucune demande de mise à disposition trouvée</p>
                 </div>
               ) : (
-                <div className="space-y-4">
+                <div className="space-y-3">
                   {filteredRequests.map((request) => (
                     <Card key={request.id} className="hover:shadow-md transition-shadow">
                       <CardContent className="p-3">
-                        <div className="flex items-start justify-between">
-                          <div className="space-y-1.5 flex-1">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="space-y-1 flex-1">
                             <div className="flex items-center gap-2">
                               <HandCoins className="w-4 h-4 text-blue-600" />
-                              <span className="font-semibold text-gray-900 text-sm">{request.reference}</span>
+                              <span className="font-semibold text-gray-900">{request.reference}</span>
                             </div>
-                            <div className="text-xs text-gray-600 space-y-0.5">
+                            <div className="text-sm text-gray-600 space-y-0.5">
                               <p>Bénéficiaire: {request.fullNameBenef}</p>
-                              <p>Montant: {Number(request.montant).toLocaleString("fr-FR")} GNF</p>
-                              <p>Agence: {request.agence}</p>
-                              <p>Date: {new Date(request.createdAt).toLocaleDateString("fr-FR")}</p>
+                              <p className="font-medium text-gray-900">
+                                {Number(request.montant).toLocaleString("fr-FR")} GNF
+                              </p>
                             </div>
                           </div>
-                          <div className="flex flex-col items-end gap-1.5">
+                          <div className="flex flex-col items-end gap-2">
                             {getStatusBadge(request.statut)}
                             <Button variant="outline" size="sm" onClick={() => handleViewDetails(request)}>
                               Détails
