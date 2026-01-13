@@ -141,13 +141,15 @@ export async function getFundsProvisionRequests(): Promise<GetFundsProvisionsRes
   }
 }
 
-export async function getFundsProvisionById(id: string): Promise<FundsProvision | null> {
+export async function getFundsProvisionById(id: string): Promise<any> {
   try {
     const cookieToken = (await cookies()).get("token")?.value
 
     if (!cookieToken) {
       throw new Error("Token introuvable.")
     }
+
+    console.log("[v0] Fetching funds provision details for ID:", id)
 
     const response = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/mise-dpstion-fonds/${id}`, {
       method: "GET",
@@ -158,13 +160,18 @@ export async function getFundsProvisionById(id: string): Promise<FundsProvision 
       cache: "no-store",
     })
 
+    console.log("[v0] Response status:", response.status)
+
     if (!response.ok) {
       const errorData = await response.json()
+      console.log("[v0] Error response:", errorData)
       throw new Error(errorData.message || "Erreur lors de la récupération des détails")
     }
 
     const result = await response.json()
-    return result.data
+    console.log("[v0] Funds provision details result:", result)
+
+    return result
   } catch (error: any) {
     console.error("Error fetching funds provision details:", error)
     return null

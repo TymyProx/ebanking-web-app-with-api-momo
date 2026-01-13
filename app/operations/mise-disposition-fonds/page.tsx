@@ -85,8 +85,12 @@ export default function FundsProvisionPage() {
   const loadRequests = async () => {
     setIsLoadingRequests(true)
     try {
+      console.log("[v0] Loading funds provision requests...")
       const result = await getFundsProvisionRequests()
+      console.log("[v0] Get requests result:", result)
+
       const requestsData = result?.data?.rows || []
+      console.log("[v0] Requests data:", requestsData)
 
       const formattedRequests = requestsData.map((item: any) => ({
         id: item.id,
@@ -152,8 +156,11 @@ export default function FundsProvisionPage() {
     setIsDetailsModalOpen(true)
 
     try {
+      console.log("[v0] Loading details for request:", request.id)
       const details = await getFundsProvisionById(request.id)
-      setSelectedRequestDetails(details.data)
+      console.log("[v0] Details result:", details)
+
+      setSelectedRequestDetails(details?.data || details)
     } catch (error) {
       console.error("Erreur lors du chargement des détails:", error)
       setSelectedRequestDetails(request)
