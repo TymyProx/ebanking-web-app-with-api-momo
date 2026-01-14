@@ -8,15 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
-import { 
-  Eye, 
-  EyeOff, 
-  Shield, 
-  HelpCircle, 
-  UserPlus, 
-  Lock, 
-  Smartphone
-} from "lucide-react"
+import { Eye, EyeOff, Shield, HelpCircle, UserPlus, Lock, Smartphone } from "lucide-react"
 import AuthService from "@/lib/auth-service"
 import { config } from "@/lib/config"
 import { storeAuthToken } from "./actions"
@@ -40,8 +32,7 @@ const welcomeMessages = [
   },
   {
     title: "Services bancaires disponibles 24/7",
-    description:
-      "Accédez à tous vos services bancaires à toute heure, tous les jours de l'année, sans interruption.",
+    description: "Accédez à tous vos services bancaires à toute heure, tous les jours de l'année, sans interruption.",
   },
 ]
 
@@ -110,15 +101,14 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen relative overflow-hidden">
-
+    <div className="h-screen relative overflow-hidden">
       {/* Logo Only */}
-      <div className="absolute top-10 left-[-30px] z-50">
+      <div className="absolute top-4 left-[-30px] z-50">
         <Image
           src="/images/logowhite.png"
           alt="BNG Logo"
-          width={260}
-          height={80}
+          width={240}
+          height={70}
           className="object-contain drop-shadow-lg"
           priority
         />
@@ -129,30 +119,30 @@ export default function LoginPage() {
         <div className="absolute inset-0 bg-gradient-to-br from-[#2d6e3e] via-[#36803e] to-[#2d6e3e]">
           {/* Animated gradient overlay */}
           <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent animate-shimmer"></div>
-          
+
           {/* Decorative pattern overlay */}
           <div className="absolute inset-0 opacity-5">
-            <div className="absolute inset-0" style={{
-              backgroundImage: 'url("data:image/svg+xml,%3Csvg width=\'60\' height=\'60\' viewBox=\'0 0 60 60\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'none\' fill-rule=\'evenodd\'%3E%3Cg fill=\'%23ffffff\' fill-opacity=\'0.4\'%3E%3Cpath d=\'M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z\'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")'
-            }}></div>
+            <div
+              className="absolute inset-0"
+              style={{
+                backgroundImage:
+                  "url(\"data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fillRule='evenodd'%3E%3Cg fill='%23ffffff' fillOpacity='0.4'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E\")",
+              }}
+            ></div>
           </div>
-          
+
           {/* Banking illustration */}
           <div className="absolute bottom-0 left-1/2 -translate-x-1/2 opacity-30">
-            <Image
-              src="/images/image.png"
-              alt="Banking"
-              width={500}
-              height={350}
-              className="object-contain"
-            />
+            <Image src="/images/image.png" alt="Banking" width={500} height={350} className="object-contain" />
           </div>
 
           {/* Hero Text - Positioned on the Top Left */}
           <div className="absolute top-1/2 -translate-y-1/2 left-6 max-w-2xl">
-            <div className="text-left text-white space-y-4 transition-all duration-700 ease-in-out">
-              <div className="flex items-center justify-start space-x-2 mb-3">
-                <span className="text-xs md:text-sm font-semibold text-[#f4c430] uppercase tracking-wider">Digital Banking</span>
+            <div className="text-left text-white space-y-3 transition-all duration-700 ease-in-out">
+              <div className="flex items-center justify-start space-x-2 mb-2">
+                <span className="text-xs md:text-sm font-semibold text-[#f4c430] uppercase tracking-wider">
+                  Digital Banking
+                </span>
               </div>
               <h1 className="text-2xl md:text-4xl lg:text-5xl font-bold animate-fadeIn drop-shadow-2xl leading-tight">
                 {welcomeMessages[currentMessageIndex].title}
@@ -166,24 +156,24 @@ export default function LoginPage() {
       </div>
 
       {/* Main Content - Overlay with transparency */}
-      <main className="w-full px-6 pt-20 pb-6 relative z-10 min-h-screen flex flex-col justify-between">
+      <main className="w-full px-6 pt-16 pb-4 relative z-10 h-screen flex flex-col justify-between">
         {/* Login Form - Top Right */}
         <div className="w-full max-w-full">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 lg:gap-6">
             <div className="md:col-start-3">
               <div className="relative group">
                 <div className="absolute inset-0 bg-gradient-to-br from-[#2d6e3e]/30 via-[#f4c430]/20 to-[#2d6e3e]/30 rounded-2xl blur-2xl opacity-40 group-hover:opacity-60 transition-opacity"></div>
-                <div className="bg-white/40 backdrop-blur-2xl rounded-2xl shadow-2xl p-8 border border-white/20">
+                <div className="bg-white/40 backdrop-blur-2xl rounded-2xl shadow-2xl p-6 border border-white/20">
                   {/* Decorative corner */}
                   <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-white/15 to-transparent rounded-bl-full"></div>
-                  
-                  <div className="text-center mb-6 relative z-10">
+
+                  <div className="text-center mb-4 relative z-10">
                     <h2 className="text-2xl font-bold text-white mb-1 drop-shadow-2xl">Connexion</h2>
                   </div>
 
                   {/* Login Form */}
-                  <form onSubmit={handleSubmit} className="space-y-5">
-                    <div className="space-y-4">
+                  <form onSubmit={handleSubmit} className="space-y-4">
+                    <div className="space-y-3">
                       {error && (
                         <div className="p-2.5 rounded-lg bg-[#2d6e3e]/70 border-0 shadow-md">
                           <p className="text-xs text-white text-center font-semibold drop-shadow-md">{error}</p>
@@ -192,7 +182,10 @@ export default function LoginPage() {
 
                       {/* Email/User ID Field */}
                       <div className="space-y-1.5">
-                        <Label htmlFor="email" className="text-xs font-semibold text-white/90 flex items-center space-x-1 drop-shadow-lg">
+                        <Label
+                          htmlFor="email"
+                          className="text-xs font-semibold text-white/90 flex items-center space-x-1 drop-shadow-lg"
+                        >
                           <span>Identifiant / E-mail</span>
                           <span className="text-red-300 drop-shadow-md">*</span>
                         </Label>
@@ -212,7 +205,10 @@ export default function LoginPage() {
 
                       {/* Password Field */}
                       <div className="space-y-1.5">
-                        <Label htmlFor="password" className="text-xs font-semibold text-white/90 flex items-center space-x-1 drop-shadow-lg">
+                        <Label
+                          htmlFor="password"
+                          className="text-xs font-semibold text-white/90 flex items-center space-x-1 drop-shadow-lg"
+                        >
                           <span>Mot de passe</span>
                           <span className="text-red-300 drop-shadow-md">*</span>
                         </Label>
@@ -248,7 +244,10 @@ export default function LoginPage() {
                             disabled={isLoading}
                             className="border-0 bg-[#2d6e3e]/60 data-[state=checked]:bg-white data-[state=checked]:border-0 data-[state=checked]:text-[#2d6e3e] rounded w-4 h-4 shadow-md"
                           />
-                          <Label htmlFor="remember" className="text-xs text-white/90 cursor-pointer font-medium group-hover:text-white transition-colors drop-shadow-md">
+                          <Label
+                            htmlFor="remember"
+                            className="text-xs text-white/90 cursor-pointer font-medium group-hover:text-white transition-colors drop-shadow-md"
+                          >
                             Se rappeler de moi
                           </Label>
                         </div>
@@ -276,7 +275,7 @@ export default function LoginPage() {
                     </div>
 
                     {/* Forgot Password & Register Links */}
-                    <div className="space-y-2.5 pt-3 border-t-0">
+                    <div className="space-y-2 pt-2 border-t-0">
                       <Button
                         type="button"
                         variant="link"
@@ -287,12 +286,14 @@ export default function LoginPage() {
                           <span>Mot de passe oublié?</span>
                         </span>
                       </Button>
-                      <div className="relative py-2">
+                      <div className="relative py-1.5">
                         <div className="absolute inset-0 flex items-center">
                           <div className="w-full border-t border-white/20"></div>
                         </div>
                         <div className="relative flex justify-center text-xs">
-                          <span className="bg-white/10 backdrop-blur-sm px-3 py-0.5 text-white/80 font-medium rounded-full">ou</span>
+                          <span className="bg-white/10 backdrop-blur-sm px-3 py-0.5 text-white/80 font-medium rounded-full">
+                            ou
+                          </span>
                         </div>
                       </div>
                       <Button
@@ -307,7 +308,6 @@ export default function LoginPage() {
                         </div>
                       </Button>
                     </div>
-
                   </form>
                 </div>
               </div>
@@ -317,148 +317,76 @@ export default function LoginPage() {
 
         {/* Information Cards - Full Width at Bottom */}
         <div className="w-full max-w-full mt-auto">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 lg:gap-6">
             {/* New User */}
-              <div className="group relative">
-                <div className="absolute inset-0 bg-gradient-to-br from-[#2d6e3e]/10 to-transparent rounded-xl blur-lg opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                <div className="relative bg-white/75 backdrop-blur-xl rounded-xl shadow-lg p-5 hover:shadow-xl hover:-translate-y-1 hover:bg-white/85 transition-all duration-300 border border-white/40 overflow-hidden">
-                  {/* Decorative element */}
-                  <div className="absolute top-0 right-0 w-16 h-16 bg-gradient-to-br from-[#2d6e3e]/10 to-transparent rounded-bl-full"></div>
-                  
-                  <div className="flex items-center space-x-3 relative z-10">
-                    <div className="relative flex-shrink-0">
-                      <div className="p-3 bg-gradient-to-br from-[#2d6e3e]/10 to-[#2d6e3e]/5 rounded-xl">
-                        <UserPlus className="h-5 w-5 text-[#2d6e3e]" />
-                      </div>
+            <div className="group relative">
+              <div className="absolute inset-0 bg-gradient-to-br from-[#2d6e3e]/10 to-transparent rounded-xl blur-lg opacity-0 group-hover:opacity-100 transition-opacity"></div>
+              <div className="relative bg-white/75 backdrop-blur-xl rounded-xl shadow-lg p-4 hover:shadow-xl hover:-translate-y-1 hover:bg-white/85 transition-all duration-300 border border-white/40 overflow-hidden">
+                {/* Decorative element */}
+                <div className="absolute top-0 right-0 w-16 h-16 bg-gradient-to-br from-[#2d6e3e]/10 to-transparent rounded-bl-full"></div>
+
+                <div className="flex items-center space-x-3 relative z-10">
+                  <div className="relative flex-shrink-0">
+                    <div className="p-2.5 bg-gradient-to-br from-[#2d6e3e]/10 to-[#2d6e3e]/5 rounded-xl">
+                      <UserPlus className="h-5 w-5 text-[#2d6e3e]" />
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-bold text-gray-900 text-sm drop-shadow-sm">Nouvel utilisateur?</h3>
-                      <p className="text-xs text-gray-700 font-medium mt-1 drop-shadow-sm">Créez votre compte rapidement</p>
-                    </div>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-bold text-gray-900 text-sm drop-shadow-sm">Nouvel utilisateur?</h3>
+                    <p className="text-xs text-gray-700 font-medium mt-0.5 drop-shadow-sm">
+                      Créez votre compte rapidement
+                    </p>
                   </div>
                 </div>
               </div>
+            </div>
 
-              {/* Mobile Banking */}
-              <div className="group relative">
-                <div className="absolute inset-0 bg-gradient-to-br from-[#f4c430]/10 to-transparent rounded-xl blur-lg opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                <div className="relative bg-white/75 backdrop-blur-xl rounded-xl shadow-lg p-5 hover:shadow-xl hover:-translate-y-1 hover:bg-white/85 transition-all duration-300 border border-white/40 overflow-hidden">
-                  {/* Decorative element */}
-                  <div className="absolute top-0 right-0 w-16 h-16 bg-gradient-to-br from-[#f4c430]/10 to-transparent rounded-bl-full"></div>
-                  
-                  <div className="flex items-center space-x-3 relative z-10">
-                    <div className="relative flex-shrink-0">
-                      <div className="p-3 bg-gradient-to-br from-[#f4c430]/10 to-[#f4c430]/5 rounded-xl">
-                        <Smartphone className="h-5 w-5 text-[#f4c430]" />
-                      </div>
+            {/* Mobile Banking */}
+            <div className="group relative">
+              <div className="absolute inset-0 bg-gradient-to-br from-[#f4c430]/10 to-transparent rounded-xl blur-lg opacity-0 group-hover:opacity-100 transition-opacity"></div>
+              <div className="relative bg-white/75 backdrop-blur-xl rounded-xl shadow-lg p-4 hover:shadow-xl hover:-translate-y-1 hover:bg-white/85 transition-all duration-300 border border-white/40 overflow-hidden">
+                {/* Decorative element */}
+                <div className="absolute top-0 right-0 w-16 h-16 bg-gradient-to-br from-[#f4c430]/10 to-transparent rounded-bl-full"></div>
+
+                <div className="flex items-center space-x-3 relative z-10">
+                  <div className="relative flex-shrink-0">
+                    <div className="p-2.5 bg-gradient-to-br from-[#f4c430]/10 to-[#f4c430]/5 rounded-xl">
+                      <Smartphone className="h-5 w-5 text-[#f4c430]" />
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-bold text-gray-900 text-sm drop-shadow-sm">Application Mobile</h3>
-                      <p className="text-xs text-gray-700 font-medium mt-1 drop-shadow-sm">Banking en mobilité 24/7</p>
-                    </div>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-bold text-gray-900 text-sm drop-shadow-sm">Application Mobile</h3>
+                    <p className="text-xs text-gray-700 font-medium mt-0.5 drop-shadow-sm">Banking en mobilité 24/7</p>
                   </div>
                 </div>
               </div>
+            </div>
 
-              {/* Support */}
-              <div className="group relative">
-                <div className="absolute inset-0 bg-gradient-to-br from-[#2d6e3e]/10 to-transparent rounded-xl blur-lg opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                <div className="relative bg-white/75 backdrop-blur-xl rounded-xl shadow-lg p-5 hover:shadow-xl hover:-translate-y-1 hover:bg-white/85 transition-all duration-300 border border-white/40 overflow-hidden">
-                  {/* Decorative element */}
-                  <div className="absolute top-0 right-0 w-16 h-16 bg-gradient-to-br from-[#2d6e3e]/10 to-transparent rounded-bl-full"></div>
-                  
-                  <div className="flex items-center space-x-3 relative z-10">
-                    <div className="relative flex-shrink-0">
-                      <div className="p-3 bg-gradient-to-br from-[#2d6e3e]/10 to-[#2d6e3e]/5 rounded-xl">
-                        <HelpCircle className="h-5 w-5 text-[#2d6e3e]" />
-                      </div>
+            {/* Support */}
+            <div className="group relative">
+              <div className="absolute inset-0 bg-gradient-to-br from-[#2d6e3e]/10 to-transparent rounded-xl blur-lg opacity-0 group-hover:opacity-100 transition-opacity"></div>
+              <div className="relative bg-white/75 backdrop-blur-xl rounded-xl shadow-lg p-4 hover:shadow-xl hover:-translate-y-1 hover:bg-white/85 transition-all duration-300 border border-white/40 overflow-hidden">
+                {/* Decorative element */}
+                <div className="absolute top-0 right-0 w-16 h-16 bg-gradient-to-br from-[#2d6e3e]/10 to-transparent rounded-bl-full"></div>
+
+                <div className="flex items-center space-x-3 relative z-10">
+                  <div className="relative flex-shrink-0">
+                    <div className="p-2.5 bg-gradient-to-br from-[#2d6e3e]/10 to-[#2d6e3e]/5 rounded-xl">
+                      <HelpCircle className="h-5 w-5 text-[#2d6e3e]" />
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-bold text-gray-900 text-sm drop-shadow-sm">Support Client</h3>
-                      <p className="text-xs text-gray-700 font-medium mt-1 drop-shadow-sm">Assistance disponible 24/7</p>
-                    </div>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-bold text-gray-900 text-sm drop-shadow-sm">Support Client</h3>
+                    <p className="text-xs text-gray-700 font-medium mt-0.5 drop-shadow-sm">
+                      Assistance disponible 24/7
+                    </p>
                   </div>
                 </div>
               </div>
             </div>
           </div>
-        </main>
-
-      <style jsx global>{`
-        @keyframes fadeIn {
-          from {
-            opacity: 0;
-            transform: translateY(10px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-        .animate-fadeIn {
-          animation: fadeIn 0.7s ease-in-out;
-        }
-        
-        @keyframes shimmer {
-          0% {
-            transform: translateX(-100%);
-          }
-          100% {
-            transform: translateX(100%);
-          }
-        }
-        .animate-shimmer {
-          animation: shimmer 3s infinite;
-        }
-        
-        @keyframes float {
-          0%, 100% {
-            transform: translateY(0px);
-          }
-          50% {
-            transform: translateY(-10px);
-          }
-        }
-        .animate-float {
-          animation: float 3s ease-in-out infinite;
-        }
-        
-        @keyframes pulse-glow {
-          0%, 100% {
-            opacity: 0.3;
-            transform: scale(1);
-          }
-          50% {
-            opacity: 0.6;
-            transform: scale(1.05);
-          }
-        }
-        .animate-pulse {
-          animation: pulse-glow 2s ease-in-out infinite;
-        }
-        
-        /* Custom scrollbar */
-        ::-webkit-scrollbar {
-          width: 10px;
-        }
-        ::-webkit-scrollbar-track {
-          background: linear-gradient(to bottom, #f1f1f1, #e5e5e5);
-          border-radius: 10px;
-        }
-        ::-webkit-scrollbar-thumb {
-          background: linear-gradient(to bottom, #2d6e3e, #36803e);
-          border-radius: 10px;
-          border: 2px solid #f1f1f1;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-          background: linear-gradient(to bottom, #36803e, #2d6e3e);
-        }
-        
-        /* Smooth transitions */
-        * {
-          scroll-behavior: smooth;
-        }
-      `}</style>
+        </div>
+      </main>
     </div>
   )
 }
