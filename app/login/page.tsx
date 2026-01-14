@@ -2,24 +2,65 @@
 
 import type React from "react"
 import Image from "next/image"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Eye, EyeOff } from "lucide-react"
+import { 
+  Eye, 
+  EyeOff, 
+  Shield, 
+  HelpCircle, 
+  UserPlus, 
+  Lock, 
+  Smartphone
+} from "lucide-react"
 import AuthService from "@/lib/auth-service"
 import { config } from "@/lib/config"
 import { storeAuthToken } from "./actions"
 import { getAccounts } from "@/app/accounts/actions"
+
+const welcomeMessages = [
+  {
+    title: "Bienvenue sur votre plateforme bancaire",
+    description:
+      "Avec une protection de niveau bancaire, nous facilitons les opérations bancaires par Internet de manière sécurisée.",
+  },
+  {
+    title: "Gérez vos comptes en toute simplicité",
+    description:
+      "Consultez vos soldes, effectuez des virements et payez vos factures en quelques clics depuis n'importe où.",
+  },
+  {
+    title: "Une sécurité maximale pour vos transactions",
+    description:
+      "Cryptage 256-bit, authentification à deux facteurs et surveillance continue pour protéger votre argent.",
+  },
+  {
+    title: "Services bancaires disponibles 24/7",
+    description:
+      "Accédez à tous vos services bancaires à toute heure, tous les jours de l'année, sans interruption.",
+  },
+]
 
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
   const [showPassword, setShowPassword] = useState(false)
   const [rememberMe, setRememberMe] = useState(false)
+  const [currentMessageIndex, setCurrentMessageIndex] = useState(0)
   const router = useRouter()
+
+  // Carrousel automatique pour les messages de bienvenue
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentMessageIndex((prev) => (prev + 1) % welcomeMessages.length)
+    }, 5000) // Change toutes les 5 secondes
+
+    return () => clearInterval(interval)
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -69,200 +110,353 @@ export default function LoginPage() {
   }
 
   return (
-    <div
-      className="min-h-screen flex"
-      style={{
-        backgroundImage: "url('/images/background.png')",
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-        backgroundRepeat: "no-repeat",
-      }}
-    >
-      {/* Left side - Hero Image with Green Background */}
-      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden">
-        <div className="absolute inset-0">
-          <div className="absolute -top-24 -left-40 w-72 h-72">
-            <div className="w-full h-full bg-[#B9E3A8] rounded-full opacity-40" />
-          </div>
+    <div className="min-h-screen relative overflow-hidden">
 
-          <div className="absolute left-[-60%] top-[40%] w-[1000px] h-[1000px]">
-            <div className="w-full h-full bg-[#B9E3A8] rounded-full opacity-50" />
-          </div>
+      {/* Logo Only */}
+      <div className="absolute top-10 left-[-30px] z-50">
+        <Image
+          src="/images/logowhite.png"
+          alt="BNG Logo"
+          width={260}
+          height={80}
+          className="object-contain drop-shadow-lg"
+          priority
+        />
+      </div>
 
-          {/* Floating money/card graphics */}
-          <div className="absolute top-[15%] right-[35%]">
-            <img
-              src="/images/billet2.png"
-              alt="billet"
-              className="w-[200px] h-auto object-contain rotate-12 drop-shadow-lg"
-            />
+      {/* Full Screen Background Hero */}
+      <div className="fixed inset-0 z-0">
+        <div className="absolute inset-0 bg-gradient-to-br from-[#2d6e3e] via-[#36803e] to-[#2d6e3e]">
+          {/* Animated gradient overlay */}
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent animate-shimmer"></div>
+          
+          {/* Decorative pattern overlay */}
+          <div className="absolute inset-0 opacity-5">
+            <div className="absolute inset-0" style={{
+              backgroundImage: 'url("data:image/svg+xml,%3Csvg width=\'60\' height=\'60\' viewBox=\'0 0 60 60\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'none\' fill-rule=\'evenodd\'%3E%3Cg fill=\'%23ffffff\' fill-opacity=\'0.4\'%3E%3Cpath d=\'M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z\'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")'
+            }}></div>
           </div>
-        </div>
-
-        {/* Logo */}
-        <div className="absolute top-4 left-18 z-20 translate-x-4">
-          <div className="group flex h-[200px] w-[200px] items-center justify-center rounded-full bg-white/10 backdrop-blur-md transition-all duration-500 hover:bg-white/20 hover:shadow-[0_0_40px_rgba(244,196,48,0.4)]">
-            <Image
-              src="/images/logowhite.png"
-              alt="BNG Logo"
-              width={300}
-              height={200}
-              className="object-contain scale-125 transition-transform duration-500 group-hover:scale-140"
-              priority
-            />
-          </div>
-        </div>
-
-        <div className="relative z-10 flex items-end justify-start w-full h-full pb-0">
-          <div className="relative flex justify-start items-end max-w-[420px] w-full">
+          
+          {/* Banking illustration */}
+          <div className="absolute bottom-0 left-1/2 -translate-x-1/2 opacity-30">
             <Image
               src="/images/image.png"
-              alt="Welcome"
-              width={300}
-              height={400}
-              className="object-contain object-bottom drop-shadow-2xl"
-              priority
+              alt="Banking"
+              width={500}
+              height={350}
+              className="object-contain"
             />
           </div>
+
+          {/* Hero Text - Positioned on the Top Left */}
+          <div className="absolute top-1/2 -translate-y-1/2 left-6 max-w-2xl">
+            <div className="text-left text-white space-y-4 transition-all duration-700 ease-in-out">
+              <div className="flex items-center justify-start space-x-2 mb-3">
+                <span className="text-xs md:text-sm font-semibold text-[#f4c430] uppercase tracking-wider">Digital Banking</span>
+              </div>
+              <h1 className="text-2xl md:text-4xl lg:text-5xl font-bold animate-fadeIn drop-shadow-2xl leading-tight">
+                {welcomeMessages[currentMessageIndex].title}
+              </h1>
+              <p className="text-base md:text-lg lg:text-xl text-white/90 animate-fadeIn drop-shadow-lg leading-relaxed">
+                {welcomeMessages[currentMessageIndex].description}
+              </p>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Right side - Login Form */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-8 relative overflow-hidden">
-        <div className="absolute -bottom-20 -right-20 w-40 h-40">
-          <div className="w-full h-full bg-[#B9E3A8] rounded-full opacity-20" />
-        </div>
+      {/* Main Content - Overlay with transparency */}
+      <main className="w-full px-6 pt-20 pb-6 relative z-10 min-h-screen flex flex-col justify-between">
+        {/* Login Form - Top Right */}
+        <div className="w-full max-w-full">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
+            <div className="md:col-start-3">
+              <div className="relative group">
+                <div className="absolute inset-0 bg-gradient-to-br from-[#2d6e3e]/30 via-[#f4c430]/20 to-[#2d6e3e]/30 rounded-2xl blur-2xl opacity-40 group-hover:opacity-60 transition-opacity"></div>
+                <div className="bg-white/40 backdrop-blur-2xl rounded-2xl shadow-2xl p-8 border border-white/20">
+                  {/* Decorative corner */}
+                  <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-white/15 to-transparent rounded-bl-full"></div>
+                  
+                  <div className="text-center mb-6 relative z-10">
+                    <h2 className="text-2xl font-bold text-white mb-1 drop-shadow-2xl">Connexion</h2>
+                  </div>
 
-        <div className="w-full max-w-md space-y-6 relative z-10">
-          {/* Mobile Logo */}
-          <div className="lg:hidden flex justify-center mb-8">
-            <Image src="/images/logowhite.png" alt="BNG Logo" width={180} height={60} className="object-contain" />
-          </div>
+                  {/* Login Form */}
+                  <form onSubmit={handleSubmit} className="space-y-5">
+                    <div className="space-y-4">
+                      {error && (
+                        <div className="p-2.5 rounded-lg bg-[#2d6e3e]/70 border-0 shadow-md">
+                          <p className="text-xs text-white text-center font-semibold drop-shadow-md">{error}</p>
+                        </div>
+                      )}
 
-          {/* Connectez-vous Title */}
-          <div>
-            <h1 className="text-3xl font-bold text-white text-center mb-8">Connectez-vous</h1>
-          </div>
+                      {/* Email/User ID Field */}
+                      <div className="space-y-1.5">
+                        <Label htmlFor="email" className="text-xs font-semibold text-white/90 flex items-center space-x-1 drop-shadow-lg">
+                          <span>Identifiant / E-mail</span>
+                          <span className="text-red-300 drop-shadow-md">*</span>
+                        </Label>
+                        <div className="relative group">
+                          <Input
+                            id="email"
+                            name="email"
+                            type="email"
+                            placeholder="exemple@email.com"
+                            className="h-11 bg-[#2d6e3e]/60 border-0 text-white text-sm placeholder:text-white/60 focus:bg-[#2d6e3e]/70 focus:ring-0 rounded-lg transition-all group-hover:bg-[#2d6e3e]/65 shadow-md"
+                            required
+                            disabled={isLoading}
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-r from-white/5 to-transparent rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
+                        </div>
+                      </div>
 
-          {/* Login Form */}
-          <form onSubmit={handleSubmit} className="space-y-5">
-            {error && (
-              <div className="p-3 rounded-lg bg-red-500/90 border border-red-600">
-                <p className="text-sm text-white">{error}</p>
-              </div>
-            )}
+                      {/* Password Field */}
+                      <div className="space-y-1.5">
+                        <Label htmlFor="password" className="text-xs font-semibold text-white/90 flex items-center space-x-1 drop-shadow-lg">
+                          <span>Mot de passe</span>
+                          <span className="text-red-300 drop-shadow-md">*</span>
+                        </Label>
+                        <div className="relative group">
+                          <Input
+                            id="password"
+                            name="password"
+                            type={showPassword ? "text" : "password"}
+                            placeholder="••••••••"
+                            className="h-11 bg-[#2d6e3e]/60 border-0 text-white text-sm pr-11 placeholder:text-white/60 focus:bg-[#2d6e3e]/70 focus:ring-0 rounded-lg transition-all group-hover:bg-[#2d6e3e]/65 shadow-md"
+                            required
+                            disabled={isLoading}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowPassword(!showPassword)}
+                            className="absolute right-2 top-1/2 transform -translate-y-1/2 text-white/70 hover:text-white p-1.5 rounded-lg hover:bg-white/10 transition-colors"
+                            disabled={isLoading}
+                          >
+                            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                          </button>
+                          <div className="absolute inset-0 bg-gradient-to-r from-white/5 to-transparent rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
+                        </div>
+                      </div>
 
-            {/* Email Field */}
-            <div className="space-y-2">
-              <Label htmlFor="email" className="text-sm font-medium text-white uppercase tracking-wide">
-                E-mail
-              </Label>
-              <Input
-                id="email"
-                name="email"
-                type="email"
-                placeholder=""
-                className="h-11 bg-[#6dd47e]/30 border border-[#6dd47e]/50 text-white placeholder:text-white/60 focus:bg-[#6dd47e]/40 focus:border-[#6dd47e] focus:ring-0 backdrop-blur-sm"
-                required
-                disabled={isLoading}
-              />
-            </div>
+                      {/* Remember Me */}
+                      <div className="flex items-center justify-between pt-1">
+                        <div className="flex items-center space-x-2 group">
+                          <Checkbox
+                            id="remember"
+                            checked={rememberMe}
+                            onCheckedChange={(checked) => setRememberMe(checked as boolean)}
+                            disabled={isLoading}
+                            className="border-0 bg-[#2d6e3e]/60 data-[state=checked]:bg-white data-[state=checked]:border-0 data-[state=checked]:text-[#2d6e3e] rounded w-4 h-4 shadow-md"
+                          />
+                          <Label htmlFor="remember" className="text-xs text-white/90 cursor-pointer font-medium group-hover:text-white transition-colors drop-shadow-md">
+                            Se rappeler de moi
+                          </Label>
+                        </div>
+                      </div>
 
-            {/* Password Field */}
-            <div className="space-y-2">
-              <Label htmlFor="password" className="text-sm font-medium text-white uppercase tracking-wide">
-                Mot de passe
-              </Label>
-              <div className="relative">
-                <Input
-                  id="password"
-                  name="password"
-                  type={showPassword ? "text" : "password"}
-                  placeholder=""
-                  className="h-11 bg-[#6dd47e]/30 border border-[#6dd47e]/50 text-white pr-10 placeholder:text-white/60 focus:bg-[#6dd47e]/40 focus:border-[#6dd47e] focus:ring-0 backdrop-blur-sm"
-                  required
-                  disabled={isLoading}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-white/70 hover:text-white"
-                  disabled={isLoading}
-                >
-                  {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                </button>
-              </div>
-            </div>
+                      {/* Submit Button */}
+                      <Button
+                        type="submit"
+                        className="relative w-full h-11 bg-gradient-to-r from-[#f4c430] via-[#f8d060] to-[#f4c430] hover:from-[#e0b020] hover:via-[#f4c430] hover:to-[#e0b020] text-gray-900 font-semibold text-sm shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden group rounded-lg"
+                        disabled={isLoading}
+                      >
+                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-1000"></div>
+                        {isLoading ? (
+                          <div className="flex items-center space-x-2 relative z-10">
+                            <div className="animate-spin rounded-full h-4 w-4 border-2 border-gray-900/30 border-t-gray-900"></div>
+                            <span className="text-sm">Connexion en cours...</span>
+                          </div>
+                        ) : (
+                          <div className="flex items-center justify-center space-x-2 relative z-10">
+                            <Lock className="h-4 w-4" />
+                            <span className="text-sm">Se connecter</span>
+                          </div>
+                        )}
+                      </Button>
+                    </div>
 
-            {/* Remember Me */}
-            <div className="flex items-center space-x-2 pt-1">
-              <Checkbox
-                id="remember"
-                checked={rememberMe}
-                onCheckedChange={(checked) => setRememberMe(checked as boolean)}
-                disabled={isLoading}
-                className="border-white bg-white/20 data-[state=checked]:bg-white data-[state=checked]:text-green-700"
-              />
-              <Label htmlFor="remember" className="text-sm text-white cursor-pointer font-normal">
-                Se rappeler de moi
-              </Label>
-            </div>
+                    {/* Forgot Password & Register Links */}
+                    <div className="space-y-2.5 pt-3 border-t-0">
+                      <Button
+                        type="button"
+                        variant="link"
+                        className="w-full text-xs text-white/90 hover:text-white font-medium h-auto py-2 bg-[#2d6e3e]/50 hover:bg-[#2d6e3e]/60 rounded-lg transition-all"
+                      >
+                        <span className="flex items-center justify-center space-x-1.5 drop-shadow-lg">
+                          <Shield className="h-3.5 w-3.5" />
+                          <span>Mot de passe oublié?</span>
+                        </span>
+                      </Button>
+                      <div className="relative py-2">
+                        <div className="absolute inset-0 flex items-center">
+                          <div className="w-full border-t border-white/20"></div>
+                        </div>
+                        <div className="relative flex justify-center text-xs">
+                          <span className="bg-white/10 backdrop-blur-sm px-3 py-0.5 text-white/80 font-medium rounded-full">ou</span>
+                        </div>
+                      </div>
+                      <Button
+                        type="button"
+                        className="relative w-full h-11 bg-gradient-to-r from-[#f4c430] via-[#f8d060] to-[#f4c430] hover:from-[#e0b020] hover:via-[#f4c430] hover:to-[#e0b020] text-gray-900 font-semibold text-sm shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden group rounded-lg"
+                        onClick={() => router.push("/signup")}
+                      >
+                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-1000"></div>
+                        <div className="flex items-center justify-center space-x-2 relative z-10">
+                          <UserPlus className="h-4 w-4" />
+                          <span className="text-sm">Créer un nouveau compte</span>
+                        </div>
+                      </Button>
+                    </div>
 
-            {/* Submit Button */}
-            <Button
-              type="submit"
-              className="w-full h-12 bg-[#f4c430] hover:bg-[#e0b020] text-gray-900 font-bold text-base shadow-lg uppercase tracking-wide"
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                <div className="flex items-center space-x-2">
-                  <div className="animate-spin rounded-full h-5 w-5 border-2 border-gray-900/30 border-t-gray-900"></div>
-                  <span>Connexion...</span>
+                  </form>
                 </div>
-              ) : (
-                "Connexion"
-              )}
-            </Button>
-
-            {/* Forgot Password Link */}
-            <div className="text-center pt-2">
-              <Button
-                type="button"
-                variant="link"
-                className="text-sm text-white hover:text-white/80 underline font-normal uppercase tracking-wide h-auto p-0"
-              >
-                Mot de passe oublié?
-              </Button>
+              </div>
             </div>
-          </form>
+          </div>
         </div>
-      </div>
+
+        {/* Information Cards - Full Width at Bottom */}
+        <div className="w-full max-w-full mt-auto">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
+            {/* New User */}
+              <div className="group relative">
+                <div className="absolute inset-0 bg-gradient-to-br from-[#2d6e3e]/10 to-transparent rounded-xl blur-lg opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                <div className="relative bg-white/75 backdrop-blur-xl rounded-xl shadow-lg p-5 hover:shadow-xl hover:-translate-y-1 hover:bg-white/85 transition-all duration-300 border border-white/40 overflow-hidden">
+                  {/* Decorative element */}
+                  <div className="absolute top-0 right-0 w-16 h-16 bg-gradient-to-br from-[#2d6e3e]/10 to-transparent rounded-bl-full"></div>
+                  
+                  <div className="flex items-center space-x-3 relative z-10">
+                    <div className="relative flex-shrink-0">
+                      <div className="p-3 bg-gradient-to-br from-[#2d6e3e]/10 to-[#2d6e3e]/5 rounded-xl">
+                        <UserPlus className="h-5 w-5 text-[#2d6e3e]" />
+                      </div>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-bold text-gray-900 text-sm drop-shadow-sm">Nouvel utilisateur?</h3>
+                      <p className="text-xs text-gray-700 font-medium mt-1 drop-shadow-sm">Créez votre compte rapidement</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Mobile Banking */}
+              <div className="group relative">
+                <div className="absolute inset-0 bg-gradient-to-br from-[#f4c430]/10 to-transparent rounded-xl blur-lg opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                <div className="relative bg-white/75 backdrop-blur-xl rounded-xl shadow-lg p-5 hover:shadow-xl hover:-translate-y-1 hover:bg-white/85 transition-all duration-300 border border-white/40 overflow-hidden">
+                  {/* Decorative element */}
+                  <div className="absolute top-0 right-0 w-16 h-16 bg-gradient-to-br from-[#f4c430]/10 to-transparent rounded-bl-full"></div>
+                  
+                  <div className="flex items-center space-x-3 relative z-10">
+                    <div className="relative flex-shrink-0">
+                      <div className="p-3 bg-gradient-to-br from-[#f4c430]/10 to-[#f4c430]/5 rounded-xl">
+                        <Smartphone className="h-5 w-5 text-[#f4c430]" />
+                      </div>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-bold text-gray-900 text-sm drop-shadow-sm">Application Mobile</h3>
+                      <p className="text-xs text-gray-700 font-medium mt-1 drop-shadow-sm">Banking en mobilité 24/7</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Support */}
+              <div className="group relative">
+                <div className="absolute inset-0 bg-gradient-to-br from-[#2d6e3e]/10 to-transparent rounded-xl blur-lg opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                <div className="relative bg-white/75 backdrop-blur-xl rounded-xl shadow-lg p-5 hover:shadow-xl hover:-translate-y-1 hover:bg-white/85 transition-all duration-300 border border-white/40 overflow-hidden">
+                  {/* Decorative element */}
+                  <div className="absolute top-0 right-0 w-16 h-16 bg-gradient-to-br from-[#2d6e3e]/10 to-transparent rounded-bl-full"></div>
+                  
+                  <div className="flex items-center space-x-3 relative z-10">
+                    <div className="relative flex-shrink-0">
+                      <div className="p-3 bg-gradient-to-br from-[#2d6e3e]/10 to-[#2d6e3e]/5 rounded-xl">
+                        <HelpCircle className="h-5 w-5 text-[#2d6e3e]" />
+                      </div>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-bold text-gray-900 text-sm drop-shadow-sm">Support Client</h3>
+                      <p className="text-xs text-gray-700 font-medium mt-1 drop-shadow-sm">Assistance disponible 24/7</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </main>
 
       <style jsx global>{`
-        @keyframes float {
-          0%,
-          100% {
-            transform: translateY(0px) rotate(12deg);
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+            transform: translateY(10px);
           }
-          50% {
-            transform: translateY(-20px) rotate(12deg);
+          to {
+            opacity: 1;
+            transform: translateY(0);
           }
         }
-        @keyframes float-delayed {
-          0%,
+        .animate-fadeIn {
+          animation: fadeIn 0.7s ease-in-out;
+        }
+        
+        @keyframes shimmer {
+          0% {
+            transform: translateX(-100%);
+          }
           100% {
-            transform: translateY(0px) rotate(-6deg);
+            transform: translateX(100%);
+          }
+        }
+        .animate-shimmer {
+          animation: shimmer 3s infinite;
+        }
+        
+        @keyframes float {
+          0%, 100% {
+            transform: translateY(0px);
           }
           50% {
-            transform: translateY(-15px) rotate(-6deg);
+            transform: translateY(-10px);
           }
         }
         .animate-float {
           animation: float 3s ease-in-out infinite;
         }
-        .animate-float-delayed {
-          animation: float-delayed 3.5s ease-in-out infinite;
-          animation-delay: 1s;
+        
+        @keyframes pulse-glow {
+          0%, 100% {
+            opacity: 0.3;
+            transform: scale(1);
+          }
+          50% {
+            opacity: 0.6;
+            transform: scale(1.05);
+          }
+        }
+        .animate-pulse {
+          animation: pulse-glow 2s ease-in-out infinite;
+        }
+        
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+          width: 10px;
+        }
+        ::-webkit-scrollbar-track {
+          background: linear-gradient(to bottom, #f1f1f1, #e5e5e5);
+          border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb {
+          background: linear-gradient(to bottom, #2d6e3e, #36803e);
+          border-radius: 10px;
+          border: 2px solid #f1f1f1;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+          background: linear-gradient(to bottom, #36803e, #2d6e3e);
+        }
+        
+        /* Smooth transitions */
+        * {
+          scroll-behavior: smooth;
         }
       `}</style>
     </div>

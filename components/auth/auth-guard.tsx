@@ -19,7 +19,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
 
   useEffect(() => {
     const checkAuth = async () => {
-      const publicPaths = ["/", "/auth/accept-invite"]
+      const publicPaths = ["/", "/login", "/signup", "/auth/accept-invite", "/auth/verify-email"]
       const isPublicPage = publicPaths.some((path) => pathname.startsWith(path))
 
       if (isPublicPage) {
