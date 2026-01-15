@@ -485,17 +485,19 @@ export default function SignupPage() {
                 {/* Decorative element */}
                 <div className="absolute top-0 right-0 w-16 h-16 bg-gradient-to-br from-[#2d6e3e]/10 to-transparent rounded-bl-full"></div>
                 
-                <div className="flex items-center space-x-3 relative z-10">
-                  <div className="relative flex-shrink-0">
-                    <div className="p-3 bg-gradient-to-br from-[#2d6e3e]/10 to-[#2d6e3e]/5 rounded-xl">
-                      <UserPlus className="h-5 w-5 text-[#2d6e3e]" />
-                    </div>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-bold text-gray-900 text-sm drop-shadow-sm">Inscription rapide</h3>
-                    <p className="text-xs text-gray-700 font-medium mt-1 drop-shadow-sm">Créez votre compte en 5 minutes</p>
+              <div className="flex items-center space-x-3 relative z-10">
+                <div className="relative flex-shrink-0">
+                  <div className="p-2 sm:p-2.5 bg-gradient-to-br from-[#2d6e3e]/10 to-[#2d6e3e]/5 rounded-xl">
+                  <MapPin className="h-4 sm:h-5 w-4 sm:w-5 text-[#2d6e3e]" />
                   </div>
                 </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-bold text-gray-900 text-xs sm:text-sm drop-shadow-sm">Nous Trouver</h3>
+                  <p className="text-xs text-gray-700 font-medium mt-0.5 drop-shadow-sm">
+                  Notre équipe est à votre disposition
+                  </p>
+                </div>
+              </div>
               </div>
             </div>
 

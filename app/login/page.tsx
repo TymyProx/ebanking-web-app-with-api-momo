@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Eye, EyeOff, Shield, HelpCircle, UserPlus, Lock, Smartphone } from "lucide-react"
+import { Eye, EyeOff, Shield, HelpCircle, UserPlus, Lock, Smartphone,MapPin } from "lucide-react"
 import AuthService from "@/lib/auth-service"
 import { config } from "@/lib/config"
 import { storeAuthToken } from "./actions"
@@ -107,9 +107,9 @@ export default function LoginPage() {
         <Image
           src="/images/logowhite.png"
           alt="BNG Logo"
-          width={180}
-          height={52}
-          className="object-contain drop-shadow-lg sm:w-[240px] sm:h-[70px]"
+           width={260}
+          height={80}
+          className="object-contain drop-shadow-lg"
           priority
         />
       </div>
@@ -271,7 +271,6 @@ export default function LoginPage() {
                         className="w-full text-xs text-white/90 hover:text-white font-medium h-auto py-2 bg-[#2d6e3e]/50 hover:bg-[#2d6e3e]/60 rounded-lg transition-all"
                       >
                         <span className="flex items-center justify-center space-x-1.5 drop-shadow-lg">
-                          <Shield className="h-3.5 w-3.5" />
                           <span>Mot de passe oublié?</span>
                         </span>
                       </Button>
@@ -317,13 +316,13 @@ export default function LoginPage() {
                 <div className="flex items-center space-x-3 relative z-10">
                   <div className="relative flex-shrink-0">
                     <div className="p-2 sm:p-2.5 bg-gradient-to-br from-[#2d6e3e]/10 to-[#2d6e3e]/5 rounded-xl">
-                      <UserPlus className="h-4 sm:h-5 w-4 sm:w-5 text-[#2d6e3e]" />
+                      <MapPin className="h-4 sm:h-5 w-4 sm:w-5 text-[#2d6e3e]" />
                     </div>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-bold text-gray-900 text-xs sm:text-sm drop-shadow-sm">Nouvel utilisateur?</h3>
+                    <h3 className="font-bold text-gray-900 text-xs sm:text-sm drop-shadow-sm">Nous Trouver</h3>
                     <p className="text-xs text-gray-700 font-medium mt-0.5 drop-shadow-sm">
-                      Créez votre compte rapidement
+                     Notre équipe est à votre disposition
                     </p>
                   </div>
                 </div>
