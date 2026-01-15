@@ -1,11 +1,10 @@
 "use server"
-
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0"
-import { cookies } from "next/headers"
 
-const normalize = (u?: string) => (u ? u.replace(/\/$/, "") : "")
-const API_BASE_URL = `${normalize(process.env.NEXT_PUBLIC_API_URL || "https://35.184.98.9:4000")}/api`
-const TENANT_ID = process.env.NEXT_PUBLIC_TENANT_ID || "aa1287f6-06af-45b7-a905-8c57363565c2"
+import { cookies } from "next/headers"
+import { getApiBaseUrl, TENANT_ID } from "@/lib/api-url"
+
+const API_BASE_URL = getApiBaseUrl()
 
 interface ReclamationData {
   claimId: string
