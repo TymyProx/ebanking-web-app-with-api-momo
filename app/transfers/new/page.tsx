@@ -362,7 +362,9 @@ export default function NewTransferPage() {
   useEffect(() => {
     if (transferValidationError && transferSubmitted) {
       // Scroll vers le message
-      validationErrorMessageRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })
+      setTimeout(() => {
+        validationErrorMessageRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })
+      }, 100)
 
       const timer = setTimeout(() => {
         setTransferValidationError("")
@@ -376,7 +378,9 @@ export default function NewTransferPage() {
     if (transferState?.success) {
       setShowSuccessMessage(true)
       // Scroll vers le message
-      successMessageRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })
+      setTimeout(() => {
+        successMessageRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })
+      }, 100)
 
       const timer = setTimeout(() => {
         setShowSuccessMessage(false)
@@ -389,7 +393,9 @@ export default function NewTransferPage() {
     if (transferState?.error) {
       setShowErrorMessage(true)
       // Scroll vers le message
-      errorMessageRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })
+      setTimeout(() => {
+        errorMessageRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })
+      }, 100)
 
       const timer = setTimeout(() => {
         setShowErrorMessage(false)
