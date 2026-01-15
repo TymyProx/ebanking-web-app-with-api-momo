@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState, useTransition, useEffect } from "react"
+import { useState, useTransition, useEffect, useRef } from "react"
 import { addBeneficiary } from "../beneficiaries/actions"
 import { executeTransfer } from "./actions" // Import de l'action executeTransfer
 import { getAccounts } from "../../accounts/actions"
@@ -100,6 +100,15 @@ export default function NewTransferPage() {
   const [showOtpModal, setShowOtpModal] = useState(false)
   const [otpReferenceId, setOtpReferenceId] = useState<string | null>(null)
   const [pendingTransferData, setPendingTransferData] = useState<FormData | null>(null)
+
+  // Refs pour le scroll automatique vers les messages
+  const successMessageRef = useRef<HTMLDivElement>(null)
+  const errorMessageRef = useRef<HTMLDivElement>(null)
+  const validationErrorMessageRef = useRef<HTMLDivElement>(null)
+
+  // États pour contrôler l'affichage des messages
+  const [showSuccessMessage, setShowSuccessMessage] = useState(false)
+  const [showErrorMessage, setShowErrorMessage] = useState(false)
 
   // Fonctions utilitaires
   const toText = (val: any): string => (typeof val === "string" ? val : val ? JSON.stringify(val) : "")
@@ -352,6 +361,9 @@ export default function NewTransferPage() {
 
   useEffect(() => {
     if (transferValidationError && transferSubmitted) {
+      // Scroll vers le message
+      validationErrorMessageRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })
+
       const timer = setTimeout(() => {
         setTransferValidationError("")
         setTransferSubmitted(false)
@@ -362,8 +374,12 @@ export default function NewTransferPage() {
 
   useEffect(() => {
     if (transferState?.success) {
+      setShowSuccessMessage(true)
+      // Scroll vers le message
+      successMessageRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })
+
       const timer = setTimeout(() => {
-        // Les messages de succès se réinitialiseront naturellement lors des prochaines interactions
+        setShowSuccessMessage(false)
       }, 8000)
       return () => clearTimeout(timer)
     }
@@ -371,8 +387,12 @@ export default function NewTransferPage() {
 
   useEffect(() => {
     if (transferState?.error) {
+      setShowErrorMessage(true)
+      // Scroll vers le message
+      errorMessageRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })
+
       const timer = setTimeout(() => {
-        // Les messages d'erreur se réinitialiseront naturellement lors des prochaines interactions
+        setShowErrorMessage(false)
       }, 8000)
       return () => clearTimeout(timer)
     }
@@ -429,14 +449,14 @@ export default function NewTransferPage() {
       </div>
 
       {transferValidationError && transferSubmitted && !isDialogOpen && (
-        <Alert variant="destructive" className="border-l-4 border-destructive">
+        <Alert ref={validationErrorMessageRef} variant="destructive" className="border-l-4 border-destructive">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>{transferValidationError}</AlertDescription>
         </Alert>
       )}
 
-      {transferState?.success && !isDialogOpen && (
-        <Alert className="border-l-4 border-green-500 bg-green-50/50 dark:bg-green-950/20">
+      {transferState?.success && !isDialogOpen && showSuccessMessage && (
+        <Alert ref={successMessageRef} className="border-l-4 border-green-500 bg-green-50/50 dark:bg-green-950/20">
           <Check className="h-4 w-4 text-green-600" />
           <AlertDescription className="text-green-800 dark:text-green-400">
             {toText(transferState.message) || "Virement effectué avec succès !"}
@@ -444,8 +464,8 @@ export default function NewTransferPage() {
         </Alert>
       )}
 
-      {transferState?.error && !isDialogOpen && (
-        <Alert variant="destructive" className="border-l-4 border-destructive">
+      {transferState?.error && !isDialogOpen && showErrorMessage && (
+        <Alert ref={errorMessageRef} variant="destructive" className="border-l-4 border-destructive">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>{toText(transferState.error)}</AlertDescription>
         </Alert>
