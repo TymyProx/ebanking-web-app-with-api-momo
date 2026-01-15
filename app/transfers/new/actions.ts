@@ -845,7 +845,7 @@ export async function executeTransfer(prevState: any, formData: FormData) {
       console.log("[v0] Epayment created successfully")
     }
 
-    let successMessage = `✅ Virement de ${new Intl.NumberFormat("fr-FR").format(transferAmount)} GNF effectué avec succès.`
+    let successMessage = `Virement de ${new Intl.NumberFormat("fr-FR").format(transferAmount)} GNF effectué avec succès.`
 
     if (validatedData.transferType === "account-to-account") {
       successMessage += " Comptes débité et crédité automatiquement."
