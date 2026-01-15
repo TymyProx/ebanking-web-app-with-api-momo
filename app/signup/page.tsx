@@ -161,7 +161,7 @@ export default function SignupPage() {
           <div className="absolute top-1/2 -translate-y-1/2 left-6 max-w-2xl">
             <div className="text-left text-white space-y-4 transition-all duration-700 ease-in-out">
               <div className="flex items-center justify-start space-x-2 mb-3">
-                <span className="text-xs md:text-sm font-semibold text-[#f4c430] uppercase tracking-wider">Digital Banking</span>
+                <span className="text-xs md:text-sm font-semibold text-[#f4c430] uppercase tracking-wider">Astra e-Banking</span>
               </div>
               <h1 className="text-2xl md:text-4xl lg:text-5xl font-bold animate-fadeIn drop-shadow-2xl leading-tight">
                 {signupMessages[currentMessageIndex].title}

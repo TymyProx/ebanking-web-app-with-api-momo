@@ -130,7 +130,7 @@ export default function LoginPage() {
             <div className="text-left text-white space-y-2 sm:space-y-3 transition-all duration-700 ease-in-out">
               <div className="flex items-center justify-start space-x-2 mb-1 sm:mb-2">
                 <span className="text-xs sm:text-sm font-semibold text-[#f4c430] uppercase tracking-wider">
-                  Digital Banking
+                  Astra e-Banking
                 </span>
               </div>
               <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-bold animate-fadeIn drop-shadow-2xl leading-tight">
