@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Eye, EyeOff, Shield, HelpCircle, UserPlus, Lock, Smartphone,MapPin } from "lucide-react"
+import { Eye, EyeOff, HelpCircle, UserPlus, Lock, Smartphone, MapPin } from "lucide-react"
 import AuthService from "@/lib/auth-service"
 import { config } from "@/lib/config"
 import { storeAuthToken } from "./actions"
@@ -102,14 +102,13 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen lg:h-screen relative overflow-x-hidden overflow-y-auto lg:overflow-hidden">
-      {/* Logo Only */}
-      <div className="absolute top-2 sm:top-4 left-2 sm:left-[-30px] z-50">
+      <div className="absolute top-4 sm:top-4 left-4 sm:left-6 lg:left-[-30px] z-50">
         <Image
           src="/images/logowhite.png"
           alt="BNG Logo"
-           width={260}
-          height={80}
-          className="object-contain drop-shadow-lg"
+          width={200}
+          height={60}
+          className="object-contain drop-shadow-lg w-40 sm:w-48 lg:w-[260px]"
           priority
         />
       </div>
@@ -125,15 +124,14 @@ export default function LoginPage() {
             <Image src="/images/image.png" alt="Banking" width={500} height={350} className="object-contain" />
           </div>
 
-          {/* Hero Text - Positioned on the Top Left */}
-          <div className="absolute top-24 sm:top-32 lg:top-1/2 lg:-translate-y-1/2 left-4 sm:left-6 right-4 lg:right-auto lg:max-w-2xl">
-            <div className="text-left text-white space-y-2 sm:space-y-3 transition-all duration-700 ease-in-out">
-              <div className="flex items-center justify-start space-x-2 mb-1 sm:mb-2">
-                <span className="text-xs sm:text-sm font-semibold text-[#f4c430] uppercase tracking-wider">
+          <div className="absolute top-28 sm:top-32 lg:top-1/2 lg:-translate-y-1/2 left-4 sm:left-6 right-4 lg:right-auto lg:max-w-2xl px-2 sm:px-0">
+            <div className="text-left text-white space-y-3 sm:space-y-4 transition-all duration-700 ease-in-out">
+              <div className="flex items-center justify-start space-x-2 mb-2 sm:mb-3">
+                <span className="text-xs sm:text-sm font-semibold text-[#f4c430] uppercase tracking-wider px-3 py-1 bg-white/10 backdrop-blur-sm rounded-full">
                   Astra e-Banking
                 </span>
               </div>
-              <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-bold animate-fadeIn drop-shadow-2xl leading-tight">
+              <h1 className="text-lg sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-bold animate-fadeIn drop-shadow-2xl leading-tight">
                 {welcomeMessages[currentMessageIndex].title}
               </h1>
               <p className="text-sm sm:text-base md:text-lg lg:text-xl text-white/90 animate-fadeIn drop-shadow-lg leading-relaxed">
@@ -144,8 +142,7 @@ export default function LoginPage() {
         </div>
       </div>
 
-      {/* Main Content - Overlay with transparency */}
-      <main className="w-full px-4 sm:px-6 pt-56 sm:pt-64 md:pt-72 lg:pt-16 pb-4 relative z-10 min-h-screen lg:h-screen flex flex-col justify-between">
+      <main className="w-full px-4 sm:px-6 pt-64 sm:pt-72 md:pt-80 lg:pt-16 pb-4 relative z-10 min-h-screen lg:h-screen flex flex-col justify-between">
         {/* Login Form - Top Right */}
         <div className="w-full max-w-full mb-6 lg:mb-0">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
@@ -322,7 +319,7 @@ export default function LoginPage() {
                   <div className="flex-1 min-w-0">
                     <h3 className="font-bold text-gray-900 text-xs sm:text-sm drop-shadow-sm">Nous Trouver</h3>
                     <p className="text-xs text-gray-700 font-medium mt-0.5 drop-shadow-sm">
-                     Notre équipe est à votre disposition
+                      Notre équipe est à votre disposition
                     </p>
                   </div>
                 </div>
