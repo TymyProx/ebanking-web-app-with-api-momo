@@ -232,7 +232,8 @@ export default function NewTransferPage() {
   }
 
   // Fonction appelée après validation OTP
-  const handleOtpVerified = () => {
+  const handleOtpVerified = (payload?: any) => {
+    console.log("[v0] OTP vérifié avec succès, payload:", payload)
     if (pendingTransferData) {
       startTransition(() => {
         transferAction(pendingTransferData)
@@ -240,6 +241,7 @@ export default function NewTransferPage() {
       // Réinitialiser les données en attente
       setPendingTransferData(null)
       setOtpReferenceId(null)
+      setShowOtpModal(false)
     }
   }
 
@@ -903,15 +905,20 @@ export default function NewTransferPage() {
 
       {showOtpModal && otpReferenceId && (
         <OtpModal
-          isOpen={showOtpModal}
-          onClose={() => {
-            setShowOtpModal(false)
-            setOtpReferenceId(null)
-            setPendingTransferData(null)
+          open={showOtpModal}
+          onOpenChange={(open) => {
+            if (!open) {
+              setShowOtpModal(false)
+              setOtpReferenceId(null)
+              setPendingTransferData(null)
+            }
           }}
           onVerified={handleOtpVerified}
+          purpose="transfer"
           referenceId={otpReferenceId}
-          operationType="transfer"
+          title="Vérification du virement"
+          description="Veuillez entrer le code de vérification pour confirmer ce virement"
+          deliveryMethod="EMAIL"
         />
       )}
     </div>
