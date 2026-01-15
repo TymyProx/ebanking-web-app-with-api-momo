@@ -3,7 +3,6 @@ process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0"
 import { z } from "zod"
 import { cookies } from "next/headers"
 import { revalidatePath } from "next/cache"
-import { encryptAesGcmNode, stringifyEncrypted } from "./secure"
 import { config } from "@/lib/config"
 import { getAccounts as fetchAccounts } from "../../accounts/actions"
 import { getBeneficiaries as fetchBeneficiaries } from "../beneficiaries/actions"
@@ -758,49 +757,9 @@ export async function executeTransfer(prevState: any, formData: FormData) {
     }
 
     const transactionUrl = `${API_BASE_URL}/tenant/${TENANT_ID}/epayments`
-    const secureMode = (process.env.NEXT_PUBLIC_PORTAL_SECURE_MODE || "false").toLowerCase() === "true"
-    const keyB64 = process.env.NEXT_PUBLIC_PORTAL_KEY_B64 || ""
-    const keyId = process.env.NEXT_PUBLIC_PORTAL_KEY_ID || "k1-mobile-v1"
-
-    let bodyToSend: any = apiData
-    if (secureMode && keyB64) {
-      try {
-        const enc = (val: any) => ({ ...encryptAesGcmNode(val, keyB64), key_id: keyId })
-        const d = apiData.data
-        bodyToSend = {
-          data: {
-            affiliateid: d.affiliateid,
-            stepflow: d.stepflow,
-            montantOperation_json: enc(d.montantOperation),
-            requestID: d.requestID,
-            ribClient_json: enc(d.ribClient),
-            dateOrdre: d.dateOrdre,
-            nomClient_json: enc(d.nomClient),
-            status: d.status,
-            referenceOperation: d.referenceOperation,
-            dateReception: d.dateReception,
-            dateExecution: d.dateExecution,
-            dateNotification: d.dateNotification,
-            referencePaiement: d.referencePaiement,
-            nomBeneficiaire_json: enc(d.nomBeneficiaire),
-            ribBeneficiaire_json: enc(d.ribBeneficiaire),
-            commentnotes_json: enc(d.commentnotes),
-            productCode: d.productCode,
-            description_json: enc(d.description),
-            clientId: d.clientId,
-            key_id: keyId,
-          },
-        }
-      } catch (e) {
-        console.error("[v0] Secure mode encryption failed, falling back to plaintext payload:", (e as Error).message)
-        bodyToSend = apiData
-      }
-    }
-    // For non-secure mode or fallback, strip montantOperation entirely
-    if (!secureMode) {
-      bodyToSend = { data: { ...apiData.data } }
-      delete bodyToSend.data.montantOperation
-    }
+    
+    // Envoyer les données directement sans cryptage
+    const bodyToSend: any = apiData
 
     if ((process.env.NEXT_PUBLIC_LOG_LEVEL || "error").toLowerCase() === "debug") {
       console.log("[v0] ===== EPAYMENT CREATION DEBUG =====")
