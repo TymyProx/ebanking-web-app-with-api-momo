@@ -436,8 +436,11 @@ export default function NewTransferPage() {
   // Gestionnaire de changement du montant avec validation en temps réel
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value
-    setAmount(value)
-    validateAmount(value)
+    // Ne permet que les chiffres, le point décimal et un seul point
+    if (value === "" || /^\d*\.?\d*$/.test(value)) {
+      setAmount(value)
+      validateAmount(value)
+    }
   }
 
   // Révalider le montant lorsque le compte change
