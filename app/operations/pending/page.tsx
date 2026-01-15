@@ -366,11 +366,6 @@ export default function PendingOperationsPage() {
 
                     {/* Actions */}
                     <div className="flex items-center justify-end space-x-2 mt-2">
-                      <Button variant="outline" size="sm">
-                        <Eye className="h-3 w-3 mr-1" />
-                        Détails
-                      </Button>
-
                       {operation.canRetry && operation.status === "failed" && (
                         <Button
                           variant="outline"

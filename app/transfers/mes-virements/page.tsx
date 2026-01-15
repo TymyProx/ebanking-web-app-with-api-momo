@@ -174,7 +174,7 @@ export default function MesVirementsPage() {
                   return (
                     <div
                       key={item.txnId || index}
-                      onClick={() => handleTransactionClick(item)}
+                      onDoubleClick={() => handleTransactionClick(item)}
                       className="flex items-center justify-between p-4 bg-gradient-to-r from-muted/50 to-muted/30 rounded-xl border border-border/50 hover:shadow-md transition-all duration-200 hover:scale-[1.01] cursor-pointer"
                     >
                       <div className="flex items-center space-x-4 flex-1">

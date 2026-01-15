@@ -409,9 +409,13 @@ export default function FundsProvisionPage() {
               ) : (
                 <div className="space-y-3">
                   {filteredRequests.map((request) => (
-                    <Card key={request.id} className="hover:shadow-md transition-shadow">
+                    <Card 
+                      key={request.id} 
+                      className="hover:shadow-md transition-shadow cursor-pointer"
+                      onDoubleClick={() => handleViewDetails(request)}
+                    >
                       <CardContent className="p-3">
-                        <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-center justify-between gap-3">
                           <div className="space-y-1 flex-1">
                             <div className="flex items-center gap-2">
                               <HandCoins className="w-4 h-4 text-blue-600" />
@@ -424,11 +428,8 @@ export default function FundsProvisionPage() {
                               </p>
                             </div>
                           </div>
-                          <div className="flex flex-col items-end gap-2">
+                          <div>
                             {getStatusBadge(request.statut)}
-                            <Button variant="outline" size="sm" onClick={() => handleViewDetails(request)}>
-                              Détails
-                            </Button>
                           </div>
                         </div>
                       </CardContent>

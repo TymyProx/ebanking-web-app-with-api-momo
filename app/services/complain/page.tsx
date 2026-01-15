@@ -468,7 +468,8 @@ export default function ComplainPage() {
                   {filteredComplains.map((complain) => (
                     <div
                       key={complain.id}
-                      className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors"
+                      className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
+                      onDoubleClick={() => handleViewDetails(complain)}
                     >
                       <div className="flex items-center space-x-4 flex-1">
                         <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center">
@@ -491,12 +492,6 @@ export default function ComplainPage() {
                           <p>Soumise le</p>
                           <p className="font-medium">{new Date(complain.submittedAt).toLocaleDateString("fr-FR")}</p>
                         </div>
-                      </div>
-
-                      <div className="flex items-center space-x-2">
-                        <Button variant="ghost" size="sm" onClick={() => handleViewDetails(complain)}>
-                          <Eye className="w-4 h-4" />
-                        </Button>
                       </div>
                     </div>
                   ))}

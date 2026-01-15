@@ -436,9 +436,13 @@ export default function CreditRequestPage() {
               ) : (
                 <div className="space-y-4">
                   {filteredRequests.map((request) => (
-                    <Card key={request.id} className="hover:shadow-md transition-shadow">
+                    <Card
+                      key={request.id}
+                      className="hover:shadow-md transition-shadow cursor-pointer"
+                      onDoubleClick={() => handleViewDetails(request)}
+                    >
                       <CardContent className="p-4">
-                        <div className="flex items-start justify-between">
+                        <div className="flex items-center justify-between">
                           <div className="space-y-2 flex-1">
                             <div className="flex items-center gap-2">
                               <CreditCard className="w-4 h-4 text-purple-600" />
@@ -449,11 +453,8 @@ export default function CreditRequestPage() {
                               <p>Date de soumission: {new Date(request.submittedAt).toLocaleDateString("fr-FR")}</p>
                             </div>
                           </div>
-                          <div className="flex flex-col items-end gap-2">
+                          <div>
                             {getStatusBadge(request.status)}
-                            <Button variant="outline" size="sm" onClick={() => handleViewDetails(request)}>
-                              Détails
-                            </Button>
                           </div>
                         </div>
                       </CardContent>
