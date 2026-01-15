@@ -111,6 +111,7 @@ const toWorkflowStatus = (value: any): WorkflowStatus => {
 export default function BeneficiariesPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [filterType, setFilterType] = useState("all")
+  const [activeFilter, setActiveFilter] = useState<"all" | "favorites" | "BNG-BNG" | "BNG-CONFRERE" | "BNG-INTERNATIONAL">("all")
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [editingBeneficiary, setEditingBeneficiary] = useState<Beneficiary | null>(null)
@@ -349,20 +350,25 @@ export default function BeneficiariesPage() {
     const isSuspended = beneficiary.status === 1 || beneficiary.workflowStatus === WORKFLOW_STATUS.SUSPENDED
     const isPending = PENDING_WORKFLOW_STATUSES.includes(beneficiary.workflowStatus)
 
-    let matchesFilter = false
-    if (filterType === "all") {
-      matchesFilter = !isSuspended
-    } else if (filterType === "inactive") {
-      matchesFilter = isSuspended
-    } else if (filterType === "favorites") {
-      matchesFilter = beneficiary.favorite && isAvailable
-    } else if (filterType === "pending") {
-      matchesFilter = isPending
+    // Filtre par onglet actif
+    let matchesActiveFilter = false
+    if (activeFilter === "all") {
+      matchesActiveFilter = !isSuspended
+    } else if (activeFilter === "favorites") {
+      matchesActiveFilter = beneficiary.favorite && isAvailable
     } else {
-      matchesFilter = beneficiary.type === filterType && isAvailable
+      matchesActiveFilter = beneficiary.type === activeFilter && !isSuspended
     }
 
-    return matchesSearch && matchesFilter
+    // Filtre secondaire (dropdown)
+    let matchesSecondaryFilter = true
+    if (filterType === "inactive") {
+      matchesSecondaryFilter = isSuspended
+    } else if (filterType === "pending") {
+      matchesSecondaryFilter = isPending
+    }
+
+    return matchesSearch && matchesActiveFilter && matchesSecondaryFilter
   })
 
   const validateAccountNumber = (value: string) => {
@@ -1026,83 +1032,161 @@ export default function BeneficiariesPage() {
             </div>
             <Select value={filterType} onValueChange={setFilterType}>
               <SelectTrigger className="w-full sm:w-48">
-                <SelectValue placeholder="Filtrer par type" />
+                <SelectValue placeholder="Statut" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Tous les bénéficiaires</SelectItem>
-                <SelectItem value="BNG-CONFRERE">Confrère(Guinée)</SelectItem>
-                <SelectItem value="inactive">Désactivé</SelectItem>
-                <SelectItem value="favorites">Favoris</SelectItem>
-                <SelectItem value="BNG-BNG">Interne</SelectItem>
-                <SelectItem value="BNG-INTERNATIONAL">International</SelectItem>
+                <SelectItem value="all">Tous statuts</SelectItem>
+                <SelectItem value="inactive">Inactifs</SelectItem>
+                <SelectItem value="pending">En attente</SelectItem>
               </SelectContent>
             </Select>
           </div>
         </CardContent>
       </Card>
 
+      {/* Onglets de catégories */}
       <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center">
-              <Users className="h-6 w-6 text-blue-600" />
-              <div className="ml-3">
-                <p className="text-xs font-medium text-gray-600">Total</p>
-                <p className="text-xl font-bold">{beneficiaries.length}</p>
+        {/* Tous les bénéficiaires */}
+        <button
+          onClick={() => setActiveFilter("all")}
+          className={`relative group p-4 rounded-xl border-2 transition-all duration-300 text-left ${
+            activeFilter === "all"
+              ? "border-primary bg-primary/5 shadow-lg shadow-primary/20"
+              : "border-border bg-card hover:border-primary/50 hover:shadow-md"
+          }`}
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-gradient-to-br from-primary/10 to-primary/5">
+                <Users className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-foreground">Tous</h3>
+                <p className="text-xl font-bold text-primary">{beneficiaries.filter(b => b.status !== 1 && b.workflowStatus !== WORKFLOW_STATUS.SUSPENDED).length}</p>
               </div>
             </div>
-          </CardContent>
-        </Card>
+            {activeFilter === "all" && (
+              <div className="h-2 w-2 rounded-full bg-primary animate-pulse"></div>
+            )}
+          </div>
+          {activeFilter === "all" && (
+            <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-primary/0 via-primary to-primary/0 rounded-b-xl"></div>
+          )}
+        </button>
 
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center">
-              <Star className="h-6 w-6 text-yellow-600" />
-              <div className="ml-3">
-                <p className="text-xs font-medium text-gray-600">Favoris</p>
-                <p className="text-xl font-bold">{beneficiaries.filter((b) => b.favorite).length}</p>
+        {/* Favoris */}
+        <button
+          onClick={() => setActiveFilter("favorites")}
+          className={`relative group p-4 rounded-xl border-2 transition-all duration-300 text-left ${
+            activeFilter === "favorites"
+              ? "border-yellow-500 bg-yellow-50/50 dark:bg-yellow-950/20 shadow-lg shadow-yellow-500/20"
+              : "border-border bg-card hover:border-yellow-500/50 hover:shadow-md"
+          }`}
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-gradient-to-br from-yellow-500/10 to-yellow-500/5">
+                <Star className="h-5 w-5 text-yellow-600" />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-foreground">Favoris</h3>
+                <p className="text-xl font-bold text-yellow-600">{beneficiaries.filter((b) => b.favorite).length}</p>
               </div>
             </div>
-          </CardContent>
-        </Card>
+            {activeFilter === "favorites" && (
+              <div className="h-2 w-2 rounded-full bg-yellow-500 animate-pulse"></div>
+            )}
+          </div>
+          {activeFilter === "favorites" && (
+            <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-yellow-500/0 via-yellow-500 to-yellow-500/0 rounded-b-xl"></div>
+          )}
+        </button>
 
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center">
-              <Building className="h-6 w-6 text-green-600" />
-              <div className="ml-3">
-                <p className="text-xs font-medium text-gray-600">BNG</p>
-                <p className="text-xl font-bold">{beneficiaries.filter((b) => b.type === "BNG-BNG").length}</p>
+        {/* BNG Interne */}
+        <button
+          onClick={() => setActiveFilter("BNG-BNG")}
+          className={`relative group p-4 rounded-xl border-2 transition-all duration-300 text-left ${
+            activeFilter === "BNG-BNG"
+              ? "border-blue-500 bg-blue-50/50 dark:bg-blue-950/20 shadow-lg shadow-blue-500/20"
+              : "border-border bg-card hover:border-blue-500/50 hover:shadow-md"
+          }`}
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-gradient-to-br from-blue-500/10 to-blue-500/5">
+                <Building className="h-5 w-5 text-blue-600" />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-foreground">BNG</h3>
+                <p className="text-xl font-bold text-blue-600">{beneficiaries.filter((b) => b.type === "BNG-BNG").length}</p>
               </div>
             </div>
-          </CardContent>
-        </Card>
+            {activeFilter === "BNG-BNG" && (
+              <div className="h-2 w-2 rounded-full bg-blue-500 animate-pulse"></div>
+            )}
+          </div>
+          {activeFilter === "BNG-BNG" && (
+            <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500/0 via-blue-500 to-blue-500/0 rounded-b-xl"></div>
+          )}
+        </button>
 
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center">
-              <User className="h-6 w-6 text-green-600" />
-              <div className="ml-3">
-                <p className="text-xs font-medium text-gray-600">Confrères</p>
-                <p className="text-xl font-bold">{beneficiaries.filter((b) => b.type === "BNG-CONFRERE").length}</p>
+        {/* Confrères */}
+        <button
+          onClick={() => setActiveFilter("BNG-CONFRERE")}
+          className={`relative group p-4 rounded-xl border-2 transition-all duration-300 text-left ${
+            activeFilter === "BNG-CONFRERE"
+              ? "border-green-500 bg-green-50/50 dark:bg-green-950/20 shadow-lg shadow-green-500/20"
+              : "border-border bg-card hover:border-green-500/50 hover:shadow-md"
+          }`}
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-gradient-to-br from-green-500/10 to-green-500/5">
+                <User className="h-5 w-5 text-green-600" />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-foreground">Confrères</h3>
+                <p className="text-xl font-bold text-green-600">{beneficiaries.filter((b) => b.type === "BNG-CONFRERE").length}</p>
               </div>
             </div>
-          </CardContent>
-        </Card>
+            {activeFilter === "BNG-CONFRERE" && (
+              <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse"></div>
+            )}
+          </div>
+          {activeFilter === "BNG-CONFRERE" && (
+            <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-green-500/0 via-green-500 to-green-500/0 rounded-b-xl"></div>
+          )}
+        </button>
 
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center">
-              <Globe className="h-6 w-6 text-purple-600" />
-              <div className="ml-3">
-                <p className="text-xs font-medium text-gray-600">International</p>
-                <p className="text-xl font-bold">
+        {/* International */}
+        <button
+          onClick={() => setActiveFilter("BNG-INTERNATIONAL")}
+          className={`relative group p-4 rounded-xl border-2 transition-all duration-300 text-left ${
+            activeFilter === "BNG-INTERNATIONAL"
+              ? "border-purple-500 bg-purple-50/50 dark:bg-purple-950/20 shadow-lg shadow-purple-500/20"
+              : "border-border bg-card hover:border-purple-500/50 hover:shadow-md"
+          }`}
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-gradient-to-br from-purple-500/10 to-purple-500/5">
+                <Globe className="h-5 w-5 text-purple-600" />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-foreground">International</h3>
+                <p className="text-xl font-bold text-purple-600">
                   {beneficiaries.filter((b) => b.type === "BNG-INTERNATIONAL").length}
                 </p>
               </div>
             </div>
-          </CardContent>
-        </Card>
+            {activeFilter === "BNG-INTERNATIONAL" && (
+              <div className="h-2 w-2 rounded-full bg-purple-500 animate-pulse"></div>
+            )}
+          </div>
+          {activeFilter === "BNG-INTERNATIONAL" && (
+            <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-purple-500/0 via-purple-500 to-purple-500/0 rounded-b-xl"></div>
+          )}
+        </button>
       </div>
 
       <Card>
