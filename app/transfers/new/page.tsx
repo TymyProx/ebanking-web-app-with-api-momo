@@ -728,7 +728,7 @@ export default function NewTransferPage() {
                   placeholder="0"
                   min="1"
                   required
-                  className={`h-12 text-lg border-2 transition-colors ${
+                  className={`h-12 text-lg border-2 transition-colors [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none ${
                     amountError
                       ? "border-destructive focus:border-destructive"
                       : "hover:border-primary/50 focus:border-primary"
