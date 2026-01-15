@@ -1,91 +1,130 @@
 "use server"
-process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
-// Simulation des opérations en attente
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0"
+import { cookies } from "next/headers"
+import { getApiBaseUrl, TENANT_ID } from "@/lib/api-url"
+
+const API_BASE_URL = getApiBaseUrl()
+
+// Récupérer les opérations en attente depuis l'API epayments
 export async function getPendingOperations() {
   try {
-    // Simulation d'un délai de récupération
-    await new Promise((resolve) => setTimeout(resolve, 800))
+    const cookieStore = await cookies()
+    const usertoken = cookieStore.get("token")?.value
 
-    // Simulation d'une erreur de connexion (1% de chance)
-    if (Math.random() < 0.01) {
-      throw new Error("Erreur de connexion au système de gestion des opérations")
+    if (!usertoken) {
+      return {
+        success: false,
+        error: "Non authentifié",
+        timestamp: new Date().toISOString(),
+      }
     }
 
-    // Données simulées des opérations en attente
-    const operations = [
-      {
-        id: "OP001",
-        type: "transfer",
-        description: "Virement vers compte épargne",
-        amount: 500000,
-        currency: "GNF",
-        recipient: "Mamadou Diallo",
-        status: "processing",
-        createdAt: "2024-01-13T09:15:00Z",
-        estimatedCompletion: "2024-01-13T16:00:00Z",
-        canCancel: false,
-        canRetry: false,
-      },
-      {
-        id: "OP002",
-        type: "payment",
-        description: "Paiement facture EDG",
-        amount: 150,
-        currency: "USD",
-        recipient: "Électricité de Guinée",
-        status: "failed",
-        createdAt: "2024-01-12T14:30:00Z",
-        failureReason: "Solde insuffisant sur le compte USD",
-        canCancel: false,
-        canRetry: true,
-      },
-      {
-        id: "OP003",
-        type: "withdrawal",
-        description: "Retrait DAB - Montant important",
-        amount: 1000000,
-        currency: "GNF",
-        status: "approval_required",
-        createdAt: "2024-01-13T11:45:00Z",
-        estimatedCompletion: "2024-01-14T10:00:00Z",
-        canCancel: true,
-        canRetry: false,
-      },
-      {
-        id: "OP004",
-        type: "deposit",
-        description: "Dépôt de chèque",
-        amount: 750000,
-        currency: "GNF",
-        recipient: "Banque Nationale de Guinée",
-        status: "pending",
-        createdAt: "2024-01-13T08:20:00Z",
-        estimatedCompletion: "2024-01-15T12:00:00Z",
-        canCancel: true,
-        canRetry: false,
-      },
-      {
-        id: "OP005",
-        type: "transfer",
-        description: "Virement international",
-        amount: 200,
-        currency: "EUR",
-        recipient: "Marie Dubois - France",
-        status: "pending",
-        createdAt: "2024-01-12T16:10:00Z",
-        estimatedCompletion: "2024-01-16T10:00:00Z",
-        canCancel: true,
-        canRetry: false,
-      },
-    ]
+    // Récupérer l'ID de l'utilisateur connecté
+    let currentUserId: string | null = null
+    try {
+      const me = await fetch(`${API_BASE_URL}/auth/me`, {
+        method: "GET",
+        headers: { Authorization: `Bearer ${usertoken}`, "Content-Type": "application/json" },
+      })
+      if (me.ok) {
+        const userData = await me.json()
+        currentUserId = userData.id || null
+      }
+    } catch (error) {
+      console.error("Erreur lors de la récupération de l'utilisateur:", error)
+    }
 
-    // Log d'audit
-    //console.log(`[AUDIT] Consultation opérations en attente - Client: USER123 à ${new Date().toISOString()}`)
+    if (!currentUserId) {
+      return {
+        success: false,
+        error: "Impossible de récupérer les informations utilisateur",
+        timestamp: new Date().toISOString(),
+      }
+    }
+
+    // Récupérer les epayments avec tri et limite
+    const res = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/epayments?orderBy=createdAt_DESC&limit=100`, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${usertoken}`, Accept: "application/json" },
+    })
+
+    const contentType = res.headers.get("content-type") || ""
+    const bodyText = await res.text()
+    
+    if (!res.ok) {
+      throw new Error("Erreur lors de la récupération des opérations")
+    }
+
+    const parsed = contentType.includes("application/json") && bodyText ? JSON.parse(bodyText) : { rows: [] }
+    let rows: any[] = parsed.rows || []
+
+    // Filtrer par utilisateur
+    rows = rows.filter((r: any) => r.clientId === currentUserId || r.createdById === currentUserId)
+
+    // Filtrer par statut en attente
+    const pendingStatuses = ["PENDING", "PROCESSING", "APPROVAL_REQUIRED", "FAILED"]
+    const filteredOperations = rows
+      .filter((payment: any) => {
+        const status = (payment.status || "").toUpperCase()
+        return pendingStatuses.includes(status)
+      })
+      .map((payment: any) => {
+        const status = (payment.status || "").toUpperCase()
+        
+        // Mapper le statut de l'API vers le format attendu
+        let mappedStatus: "pending" | "processing" | "failed" | "approval_required" = "pending"
+        if (status === "PROCESSING" || status === "IN_PROGRESS") {
+          mappedStatus = "processing"
+        } else if (status === "FAILED" || status === "REJECTED") {
+          mappedStatus = "failed"
+        } else if (status === "APPROVAL_REQUIRED" || status === "AWAITING_APPROVAL") {
+          mappedStatus = "approval_required"
+        }
+
+        // Déterminer le type d'opération
+        let operationType: "transfer" | "payment" | "deposit" | "withdrawal" = "transfer"
+        const description = String(payment.description || payment.commentnotes || "").toLowerCase()
+        if (description.includes("paiement") || description.includes("payment")) {
+          operationType = "payment"
+        } else if (description.includes("dépôt") || description.includes("deposit")) {
+          operationType = "deposit"
+        } else if (description.includes("retrait") || description.includes("withdrawal")) {
+          operationType = "withdrawal"
+        }
+
+        // Fonction helper pour extraire du texte depuis un objet potentiellement chiffré
+        const extractText = (value: any): string => {
+          if (!value) return ""
+          if (typeof value === "string") return value
+          if (typeof value === "object" && (value.ct || value.iv)) {
+            // Objet chiffré - retourner un placeholder
+            return "[Chiffré]"
+          }
+          return String(value)
+        }
+
+        return {
+          id: payment.id || payment.referenceOperation || "",
+          type: operationType,
+          description: extractText(payment.description) || extractText(payment.commentnotes) || "Virement",
+          amount: Number(payment.montantOperation || 0),
+          currency: "GNF",
+          recipient: extractText(payment.nomBeneficiaire) || "",
+          status: mappedStatus,
+          createdAt: payment.dateOrdre || payment.createdAt || new Date().toISOString(),
+          estimatedCompletion: payment.dateExecution || undefined,
+          failureReason: mappedStatus === "failed" ? "Opération échouée" : undefined,
+          canCancel: mappedStatus === "pending" || mappedStatus === "approval_required",
+          canRetry: mappedStatus === "failed",
+        }
+      })
+
+    console.log("[PENDING OPS] Opérations filtrées:", filteredOperations.length)
 
     return {
       success: true,
       message: "Opérations récupérées avec succès",
-      data: operations,
+      data: filteredOperations,
       timestamp: new Date().toISOString(),
     }
   } catch (error) {
@@ -102,16 +141,34 @@ export async function getPendingOperations() {
 // Annuler une opération
 export async function cancelOperation(operationId: string) {
   try {
-    // Simulation d'un délai de traitement
-    await new Promise((resolve) => setTimeout(resolve, 1000))
+    const cookieStore = await cookies()
+    const usertoken = cookieStore.get("token")?.value
 
-    // Simulation d'une erreur (2% de chance)
-    if (Math.random() < 0.02) {
-      throw new Error("Impossible d'annuler l'opération")
+    if (!usertoken) {
+      return {
+        success: false,
+        error: "Non authentifié",
+        timestamp: new Date().toISOString(),
+      }
     }
 
-    // Log d'audit
-    //console.log(`[AUDIT] Annulation opération ${operationId} - Client: USER123 à ${new Date().toISOString()}`)
+    // Mise à jour du statut de l'opération
+    const response = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/epayments/${operationId}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${usertoken}`,
+      },
+      body: JSON.stringify({
+        status: "CANCELLED",
+      }),
+    })
+
+    if (!response.ok) {
+      throw new Error("Erreur lors de l'annulation")
+    }
+
+    console.log(`[AUDIT] Annulation opération ${operationId} à ${new Date().toISOString()}`)
 
     return {
       success: true,
@@ -132,16 +189,34 @@ export async function cancelOperation(operationId: string) {
 // Relancer une opération échouée
 export async function retryOperation(operationId: string) {
   try {
-    // Simulation d'un délai de traitement
-    await new Promise((resolve) => setTimeout(resolve, 1200))
+    const cookieStore = await cookies()
+    const usertoken = cookieStore.get("token")?.value
 
-    // Simulation d'une erreur (3% de chance)
-    if (Math.random() < 0.03) {
-      throw new Error("Impossible de relancer l'opération")
+    if (!usertoken) {
+      return {
+        success: false,
+        error: "Non authentifié",
+        timestamp: new Date().toISOString(),
+      }
     }
 
-    // Log d'audit
-    //console.log(`[AUDIT] Relance opération ${operationId} - Client: USER123 à ${new Date().toISOString()}`)
+    // Mise à jour du statut de l'opération pour la relancer
+    const response = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/epayments/${operationId}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${usertoken}`,
+      },
+      body: JSON.stringify({
+        status: "PENDING",
+      }),
+    })
+
+    if (!response.ok) {
+      throw new Error("Erreur lors de la relance")
+    }
+
+    console.log(`[AUDIT] Relance opération ${operationId} à ${new Date().toISOString()}`)
 
     return {
       success: true,
@@ -162,39 +237,76 @@ export async function retryOperation(operationId: string) {
 // Obtenir les détails d'une opération
 export async function getOperationDetails(operationId: string) {
   try {
-    // Simulation d'un délai de récupération
-    await new Promise((resolve) => setTimeout(resolve, 500))
+    const cookieStore = await cookies()
+    const usertoken = cookieStore.get("token")?.value
 
-    // Simulation des détails d'une opération
+    if (!usertoken) {
+      return {
+        success: false,
+        error: "Non authentifié",
+        timestamp: new Date().toISOString(),
+      }
+    }
+
+    // Récupérer les détails de l'opération
+    const response = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/epayments/${operationId}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${usertoken}`,
+      },
+    })
+
+    if (!response.ok) {
+      throw new Error("Erreur lors de la récupération des détails")
+    }
+
+    const payment = await response.json()
+    const status = (payment.status || "").toUpperCase()
+    
+    let mappedStatus: "pending" | "processing" | "failed" | "approval_required" = "pending"
+    if (status === "PROCESSING" || status === "IN_PROGRESS") {
+      mappedStatus = "processing"
+    } else if (status === "FAILED" || status === "REJECTED") {
+      mappedStatus = "failed"
+    } else if (status === "APPROVAL_REQUIRED" || status === "AWAITING_APPROVAL") {
+      mappedStatus = "approval_required"
+    }
+
+    // Fonction helper pour extraire du texte depuis un objet potentiellement chiffré
+    const extractText = (value: any): string => {
+      if (!value) return ""
+      if (typeof value === "string") return value
+      if (typeof value === "object" && (value.ct || value.iv)) {
+        // Objet chiffré - retourner un placeholder
+        return "[Chiffré]"
+      }
+      return String(value)
+    }
+
     const operationDetails = {
-      id: operationId,
-      type: "transfer",
-      description: "Virement vers compte épargne",
-      amount: 500000,
+      id: payment.id || payment.referenceOperation || operationId,
+      type: "transfer" as const,
+      description: extractText(payment.description) || extractText(payment.commentnotes) || "Virement",
+      amount: Number(payment.montantOperation || 0),
       currency: "GNF",
-      recipient: "Mamadou Diallo",
-      recipientAccount: "0002-345678-90",
-      status: "processing",
-      createdAt: "2024-01-13T09:15:00Z",
-      estimatedCompletion: "2024-01-13T16:00:00Z",
+      recipient: extractText(payment.nomBeneficiaire) || "",
+      recipientAccount: extractText(payment.ribBeneficiaire) || "",
+      status: mappedStatus,
+      createdAt: payment.dateOrdre || payment.createdAt || new Date().toISOString(),
+      estimatedCompletion: payment.dateExecution || undefined,
       steps: [
         {
           step: "Validation initiale",
           status: "completed",
-          timestamp: "2024-01-13T09:15:30Z",
+          timestamp: payment.dateOrdre || new Date().toISOString(),
           description: "Vérification des informations de base",
         },
         {
-          step: "Vérification des fonds",
-          status: "completed",
-          timestamp: "2024-01-13T09:16:00Z",
-          description: "Confirmation de la disponibilité des fonds",
-        },
-        {
           step: "Traitement bancaire",
-          status: "in_progress",
-          timestamp: "2024-01-13T09:16:30Z",
-          description: "Traitement par le système bancaire central",
+          status: mappedStatus === "processing" ? "in_progress" : mappedStatus === "failed" ? "failed" : "pending",
+          timestamp: payment.dateReception || undefined,
+          description: "Traitement par le système bancaire",
         },
         {
           step: "Finalisation",
@@ -202,8 +314,8 @@ export async function getOperationDetails(operationId: string) {
           description: "Confirmation finale et notification",
         },
       ],
-      canCancel: false,
-      canRetry: false,
+      canCancel: mappedStatus === "pending" || mappedStatus === "approval_required",
+      canRetry: mappedStatus === "failed",
     }
 
     return {

@@ -7,6 +7,12 @@ import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Skeleton } from "@/components/ui/skeleton"
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import {
   Clock,
   AlertCircle,
   CheckCircle,
@@ -22,7 +28,7 @@ import {
   RotateCcw,
   X,
 } from "lucide-react"
-import { getPendingOperations, cancelOperation, retryOperation } from "./actions"
+import { getPendingOperations, cancelOperation, retryOperation, getOperationDetails } from "./actions"
 
 interface PendingOperation {
   id: string
@@ -45,6 +51,9 @@ export default function PendingOperationsPage() {
   const [isPending, startTransition] = useTransition()
   const [actionState, setActionState] = useState<any>(null)
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date())
+  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false)
+  const [selectedOperation, setSelectedOperation] = useState<any>(null)
+  const [isLoadingDetails, setIsLoadingDetails] = useState(false)
 
   // Charger les opérations au montage du composant
   useEffect(() => {
@@ -117,6 +126,26 @@ export default function PendingOperationsPage() {
         setActionState({ success: false, error: "Erreur lors de la relance" })
       }
     })
+  }
+
+  const handleViewDetails = async (operation: PendingOperation) => {
+    setIsDetailsModalOpen(true)
+    setIsLoadingDetails(true)
+    setSelectedOperation(null)
+
+    try {
+      const result = await getOperationDetails(operation.id)
+      if (result.success) {
+        setSelectedOperation(result.data)
+      } else {
+        setActionState({ success: false, error: result.error })
+      }
+    } catch (error) {
+      console.error("Erreur lors de la récupération des détails:", error)
+      setActionState({ success: false, error: "Erreur lors de la récupération des détails" })
+    } finally {
+      setIsLoadingDetails(false)
+    }
   }
 
   const formatAmount = (amount: number, currency: string) => {
@@ -301,7 +330,7 @@ export default function PendingOperationsPage() {
         <div className="space-y-4">
           {[1, 2, 3, 4, 5].map((i) => (
             <Card key={i}>
-              <CardContent className="p-6">
+              <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-4">
                     <Skeleton className="h-10 w-10 rounded-full" />
@@ -330,8 +359,12 @@ export default function PendingOperationsPage() {
       ) : (
         <div className="space-y-4">
           {operations.map((operation) => (
-            <Card key={operation.id} className="hover:shadow-md transition-shadow">
-              <CardContent className="p-6">
+            <Card
+              key={operation.id}
+              className="hover:shadow-md transition-shadow cursor-pointer"
+              onDoubleClick={() => handleViewDetails(operation)}
+            >
+              <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-4">
                     <div className="flex-shrink-0">{getOperationIcon(operation.type)}</div>
@@ -363,35 +396,6 @@ export default function PendingOperationsPage() {
                         Finalisation estimée: {new Date(operation.estimatedCompletion).toLocaleDateString("fr-FR")}
                       </p>
                     )}
-
-                    {/* Actions */}
-                    <div className="flex items-center justify-end space-x-2 mt-2">
-                      {operation.canRetry && operation.status === "failed" && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleRetryOperation(operation.id)}
-                          disabled={isPending}
-                        >
-                          <RotateCcw className="h-3 w-3 mr-1" />
-                          Relancer
-                        </Button>
-                      )}
-
-                      {operation.canCancel &&
-                        (operation.status === "pending" || operation.status === "approval_required") && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleCancelOperation(operation.id)}
-                            disabled={isPending}
-                            className="text-red-600 hover:text-red-700"
-                          >
-                            <X className="h-3 w-3 mr-1" />
-                            Annuler
-                          </Button>
-                        )}
-                    </div>
                   </div>
                 </div>
               </CardContent>
@@ -419,6 +423,145 @@ export default function PendingOperationsPage() {
           </CardContent>
         </Card>
       )}
+
+      {/* Modal des détails */}
+      <Dialog open={isDetailsModalOpen} onOpenChange={setIsDetailsModalOpen}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Clock className="w-5 h-5" />
+              Détails de l'opération
+            </DialogTitle>
+          </DialogHeader>
+          {isLoadingDetails ? (
+            <div className="flex items-center justify-center py-8">
+              <Clock className="w-8 h-8 animate-spin text-gray-400" />
+            </div>
+          ) : selectedOperation ? (
+            <div className="space-y-6">
+              {/* Informations principales */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm text-gray-600">Référence</p>
+                  <p className="font-semibold">{selectedOperation.id}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">Type</p>
+                  <p className="font-semibold">{getOperationTypeLabel(selectedOperation.type)}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">Montant</p>
+                  <p className="font-semibold text-lg">
+                    {formatAmount(selectedOperation.amount, selectedOperation.currency)} {selectedOperation.currency}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">Statut</p>
+                  {getStatusBadge(selectedOperation.status)}
+                </div>
+                {selectedOperation.recipient && (
+                  <div>
+                    <p className="text-sm text-gray-600">Bénéficiaire</p>
+                    <p className="font-semibold">{selectedOperation.recipient}</p>
+                  </div>
+                )}
+                {selectedOperation.recipientAccount && (
+                  <div>
+                    <p className="text-sm text-gray-600">Compte bénéficiaire</p>
+                    <p className="font-semibold font-mono text-sm">{selectedOperation.recipientAccount}</p>
+                  </div>
+                )}
+                <div>
+                  <p className="text-sm text-gray-600">Date de création</p>
+                  <p className="font-semibold">{new Date(selectedOperation.createdAt).toLocaleString("fr-FR")}</p>
+                </div>
+                {selectedOperation.estimatedCompletion && (
+                  <div>
+                    <p className="text-sm text-gray-600">Finalisation estimée</p>
+                    <p className="font-semibold">
+                      {new Date(selectedOperation.estimatedCompletion).toLocaleString("fr-FR")}
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* Description */}
+              <div>
+                <p className="text-sm text-gray-600 mb-1">Description</p>
+                <p className="text-gray-900">{selectedOperation.description}</p>
+              </div>
+
+              {/* Étapes de traitement */}
+              {selectedOperation.steps && selectedOperation.steps.length > 0 && (
+                <div>
+                  <p className="text-sm font-semibold text-gray-900 mb-3">Suivi du traitement</p>
+                  <div className="space-y-3">
+                    {selectedOperation.steps.map((step: any, index: number) => (
+                      <div key={index} className="flex items-start gap-3">
+                        <div className="flex-shrink-0 mt-1">
+                          {step.status === "completed" ? (
+                            <CheckCircle className="w-5 h-5 text-green-600" />
+                          ) : step.status === "in_progress" ? (
+                            <Clock className="w-5 h-5 text-blue-600 animate-spin" />
+                          ) : step.status === "failed" ? (
+                            <XCircle className="w-5 h-5 text-red-600" />
+                          ) : (
+                            <Clock className="w-5 h-5 text-gray-400" />
+                          )}
+                        </div>
+                        <div className="flex-1">
+                          <p className="font-medium text-sm">{step.step}</p>
+                          <p className="text-xs text-gray-600">{step.description}</p>
+                          {step.timestamp && (
+                            <p className="text-xs text-gray-500 mt-1">
+                              {new Date(step.timestamp).toLocaleString("fr-FR")}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Actions */}
+              <div className="flex justify-end gap-2 pt-4 border-t">
+                {selectedOperation.canRetry && selectedOperation.status === "failed" && (
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      handleRetryOperation(selectedOperation.id)
+                      setIsDetailsModalOpen(false)
+                    }}
+                  >
+                    <RotateCcw className="h-4 w-4 mr-2" />
+                    Relancer
+                  </Button>
+                )}
+                {selectedOperation.canCancel &&
+                  (selectedOperation.status === "pending" || selectedOperation.status === "approval_required") && (
+                    <Button
+                      variant="outline"
+                      className="text-red-600 hover:text-red-700"
+                      onClick={() => {
+                        handleCancelOperation(selectedOperation.id)
+                        setIsDetailsModalOpen(false)
+                      }}
+                    >
+                      <X className="h-4 w-4 mr-2" />
+                      Annuler l'opération
+                    </Button>
+                  )}
+                <Button variant="outline" onClick={() => setIsDetailsModalOpen(false)}>
+                  Fermer
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="text-center py-8 text-gray-500">Aucun détail disponible</div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
