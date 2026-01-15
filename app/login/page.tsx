@@ -102,7 +102,7 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen lg:h-screen relative overflow-x-hidden overflow-y-auto lg:overflow-hidden">
-      <div className="absolute top-4 sm:top-4 left-4 sm:left-6 lg:left-[-30px] z-50">
+      <div className="absolute top-4 sm:top-4 left-1/2 -translate-x-1/2 lg:left-[-30px] lg:translate-x-0 z-50">
         <Image
           src="/images/logowhite.png"
           alt="BNG Logo"
