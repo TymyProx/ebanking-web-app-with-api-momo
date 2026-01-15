@@ -125,7 +125,7 @@ export default function SignupPage() {
 
           {/* Banking illustration */}
           <div className="hidden lg:block absolute bottom-0 left-1/2 -translate-x-1/2 opacity-30">
-            <Image src="/images/image.png" alt="Banking" width={500} height={350} className="object-contain" />
+            <Image src="/images/image2.png" alt="Banking" width={550} height={400} className="object-contain" />
           </div>
 
           {/* Hero Text - Positioned on the Top Left */}

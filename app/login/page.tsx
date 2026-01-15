@@ -121,7 +121,7 @@ export default function LoginPage() {
 
           {/* Banking illustration */}
           <div className="hidden lg:block absolute bottom-0 left-1/2 -translate-x-1/2 opacity-30">
-            <Image src="/images/image.png" alt="Banking" width={500} height={350} className="object-contain" />
+            <Image src="/images/image2.png" alt="Banking" width={550} height={400} className="object-contain" />
           </div>
 
           <div className="absolute top-28 sm:top-32 lg:top-1/2 lg:-translate-y-1/2 left-4 sm:left-6 right-4 lg:right-auto lg:max-w-2xl px-2 sm:px-0">
