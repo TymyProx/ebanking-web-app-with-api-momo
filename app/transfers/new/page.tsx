@@ -722,13 +722,13 @@ export default function NewTransferPage() {
                 </Label>
                 <Input
                   id="amount"
-                  type="number"
+                  type="text"
+                  inputMode="decimal"
                   value={amount}
                   onChange={handleAmountChange}
                   placeholder="0"
-                  min="1"
                   required
-                  className={`h-12 text-lg border-2 transition-colors [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none ${
+                  className={`h-12 text-lg border-2 transition-colors ${
                     amountError
                       ? "border-destructive focus:border-destructive"
                       : "hover:border-primary/50 focus:border-primary"
@@ -742,7 +742,7 @@ export default function NewTransferPage() {
                 )}
                 {selectedAccountData && !amountError && (
                   <div className="p-3 rounded-lg bg-muted/50 border">
-                    <p className="text-sm">
+                    <p className="text-sm text-muted-foreground">
                       Solde disponible:{" "}
                       <span className="font-semibold text-primary">
                         {formatCurrency(selectedAccountData.balance, selectedAccountData.currency)}
