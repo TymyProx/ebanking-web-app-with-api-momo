@@ -2,10 +2,10 @@
 
 import type React from "react"
 import { useState, useTransition, useEffect, useRef } from "react"
-import { addBeneficiary } from "../beneficiaries/actions"
+import { addBeneficiaryAndActivate } from "../beneficiaries/actions"
 import { executeTransfer } from "./actions"
 import { getAccounts } from "../../accounts/actions"
-import { getBeneficiaries } from "../beneficiaries/actions"
+import { getBeneficiaries, getBanks } from "../beneficiaries/actions"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -14,10 +14,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { ArrowRight, Plus, User, Check, AlertCircle, Wallet } from "lucide-react"
 import { useActionState } from "react"
-import Link from "next/link"
 import { OtpModal } from "@/components/otp-modal"
+import { toast } from "@/hooks/use-toast"
 
 // Types
 interface Beneficiary {
@@ -36,22 +37,17 @@ interface Account {
   number: string
   balance: number
   currency: string
-  status?: string // Added status field to Account interface
+  status?: string
+}
+
+interface Bank {
+  id: string
+  bankName: string
+  swiftCode: string
+  codeBank: string
 }
 
 type TransferType = "account-to-account" | "account-to-beneficiary"
-
-const banks = {
-  "BNG-BNG": ["Banque Nationale de Guinée"],
-  "BNG-CONFRERE": [
-    "United Bank for Africa (UBA)",
-    "Ecobank Guinée",
-    "Société Générale Guinée",
-    "BICIGUI",
-    "Banque Islamique de Guinée",
-  ],
-  International: ["BNP Paribas", "Société Générale", "Crédit Agricole", "HSBC", "Standard Chartered"],
-}
 
 const countries = [
   "France",
@@ -84,11 +80,24 @@ export default function NewTransferPage() {
   const [transferValidationError, setTransferValidationError] = useState<string>("")
   const [transferSubmitted, setTransferSubmitted] = useState(false)
 
-  // États pour le formulaire de bénéficiaire
-  const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [isAddBeneficiaryDialogOpen, setIsAddBeneficiaryDialogOpen] = useState(false)
   const [isPending, startTransition] = useTransition()
   const [transferState, transferAction, isTransferPending] = useActionState(executeTransfer, null)
-  const [addBeneficiaryState, addBeneficiaryAction, isAddBeneficiaryPending] = useActionState(addBeneficiary, null)
+  const [addBeneficiaryState, addBeneficiaryAction, isAddBeneficiaryPending] = useActionState(
+    addBeneficiaryAndActivate,
+    null,
+  )
+
+  const [selectedType, setSelectedType] = useState("")
+  const [selectedBank, setSelectedBank] = useState("")
+  const [banks, setBanks] = useState<Bank[]>([])
+  const [selectedBankCode, setSelectedBankCode] = useState("")
+  const [selectedSwiftCode, setSelectedSwiftCode] = useState("")
+  const [loadingBanks, setLoadingBanks] = useState(false)
+  const [accountNumberError, setAccountNumberError] = useState<string | null>(null)
+  const [ribError, setRibError] = useState<string | null>(null)
+  const [addFormSuccess, setAddFormSuccess] = useState(false)
+  const beneficiaryFormRef = useRef<HTMLFormElement>(null)
 
   const [beneficiaryMessage, setBeneficiaryMessage] = useState<{ type: "success" | "error"; text: string } | null>(null)
 
@@ -133,6 +142,192 @@ export default function NewTransferPage() {
     }
   }
 
+  const loadBanks = async () => {
+    try {
+      setLoadingBanks(true)
+      const banksData = await getBanks()
+      setBanks(banksData)
+    } catch (error) {
+      console.error("Erreur lors du chargement des banques:", error)
+      setBanks([])
+    } finally {
+      setLoadingBanks(false)
+    }
+  }
+
+  const validateAccountNumber = (value: string) => {
+    const digitsOnly = value.replace(/\D/g, "")
+
+    if (digitsOnly.length === 0) {
+      setAccountNumberError(null)
+      return
+    }
+
+    if (digitsOnly.length !== 10) {
+      setAccountNumberError("Le numéro de compte doit contenir exactement 10 chiffres")
+      return false
+    }
+
+    if (value !== digitsOnly) {
+      setAccountNumberError("Le numéro de compte ne doit contenir que des chiffres")
+      return false
+    }
+
+    setAccountNumberError(null)
+    return true
+  }
+
+  const sanitizeRibPart = (value: string) => value.replace(/\s+/g, "").toUpperCase()
+
+  const replaceLettersWithDigits = (value: string) =>
+    value
+      .split("")
+      .map((char) => {
+        if (/[0-9]/.test(char)) {
+          return char
+        }
+        const code = char.charCodeAt(0) - 55
+        return code >= 10 && code <= 35 ? String(code) : ""
+      })
+      .join("")
+
+  const mod97 = (numeric: string) => {
+    let remainder = 0
+    for (let i = 0; i < numeric.length; i += 1) {
+      const digit = numeric.charCodeAt(i) - 48
+      if (digit < 0 || digit > 9) {
+        return -1
+      }
+      remainder = (remainder * 10 + digit) % 97
+    }
+    return remainder
+  }
+
+  const computeRibKey = (bankCode: string, agencyCode: string, accountNumber: string) => {
+    const numeric = `${replaceLettersWithDigits(bankCode)}${replaceLettersWithDigits(agencyCode)}${replaceLettersWithDigits(accountNumber)}`
+    const remainder = mod97(numeric)
+    if (remainder < 0) {
+      return ""
+    }
+    const key = 97 - remainder
+    return key.toString().padStart(2, "0")
+  }
+
+  const validateRibLocally = (bankCode: string, agencyCode: string, accountNumber: string, ribKey: string) => {
+    const sanitizedBank = sanitizeRibPart(bankCode)
+    const sanitizedAgency = sanitizeRibPart(agencyCode)
+    const sanitizedAccount = sanitizeRibPart(accountNumber)
+    const sanitizedKey = sanitizeRibPart(ribKey)
+
+    if (!sanitizedBank || !sanitizedAgency || !sanitizedAccount || !sanitizedKey) {
+      return { valid: false, error: "Tous les champs RIB sont requis" }
+    }
+
+    if (!/^[0-9]{2}$/.test(sanitizedKey)) {
+      return { valid: false, error: "La clé RIB doit contenir 2 chiffres" }
+    }
+
+    const expectedKey = computeRibKey(sanitizedBank, sanitizedAgency, sanitizedAccount)
+    if (!expectedKey) {
+      return { valid: false, error: "Impossible de calculer la clé RIB" }
+    }
+
+    if (expectedKey !== sanitizedKey) {
+      return { valid: false, error: "Clé RIB invalide" }
+    }
+
+    return { valid: true, error: null }
+  }
+
+  const handleBankSelection = (bankName: string) => {
+    setSelectedBank(bankName)
+    const selectedBankData = banks.find((bank) => bank.bankName === bankName)
+    if (selectedBankData) {
+      setSelectedBankCode(selectedBankData.codeBank || "")
+      setSelectedSwiftCode(selectedBankData.swiftCode || "")
+    } else {
+      setSelectedBankCode("")
+      setSelectedSwiftCode("")
+    }
+  }
+
+  const resetBeneficiaryForm = () => {
+    setSelectedType("")
+    setSelectedBank("")
+    setSelectedBankCode("")
+    setSelectedSwiftCode("")
+    setAccountNumberError(null)
+    setRibError(null)
+    setAddFormSuccess(false)
+    if (beneficiaryFormRef.current) {
+      beneficiaryFormRef.current.reset()
+    }
+  }
+
+  const handleRibFieldChange = () => {
+    setRibError(null)
+  }
+
+  const handleAddBeneficiary = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    const formData = new FormData(e.currentTarget)
+
+    if (selectedType !== "BNG-INTERNATIONAL") {
+      const accountNumber = formData.get("account") as string
+      if (!validateAccountNumber(accountNumber)) {
+        return
+      }
+
+      if (selectedType === "BNG-BNG" || selectedType === "BNG-CONFRERE") {
+        const agencyCode = (formData.get("codeAgence") as string) || ""
+        const cleRib = (formData.get("cleRib") as string) || ""
+        const bankCodeForRib =
+          selectedType === "BNG-BNG"
+            ? selectedBankCode || "022"
+            : selectedBankCode || (formData.get("bank") as string) || ""
+
+        const ribValidation = validateRibLocally(bankCodeForRib, agencyCode, accountNumber, cleRib)
+        if (!ribValidation.valid) {
+          setRibError(ribValidation.error)
+          toast({
+            title: "RIB invalide",
+            description: ribValidation.error,
+            variant: "destructive",
+          })
+          return
+        }
+        setRibError(null)
+      }
+    }
+
+    formData.set("type", selectedType)
+
+    if (selectedType === "BNG-BNG") {
+      const internalBankCode = selectedBankCode || "022"
+      formData.set("bank", "GNXXX")
+      formData.set("bankname", "Banque Nationale de Guinée")
+      formData.set("bankCode", internalBankCode)
+      formData.set("codeBanque", internalBankCode)
+    } else if (selectedType === "BNG-CONFRERE") {
+      formData.set("bank", selectedBankCode)
+      formData.set("bankname", selectedBank)
+      if (selectedBankCode) {
+        formData.set("bankCode", selectedBankCode)
+        formData.set("codeBanque", selectedBankCode)
+      }
+    } else {
+      const bankValue = selectedBank
+      formData.set("bank", bankValue)
+      if (bankValue) {
+        formData.set("bankname", bankValue)
+      }
+    }
+
+    startTransition(() => {
+      addBeneficiaryAction(formData)
+    })
+  }
+
   const handleTransferTypeChange = (type: TransferType) => {
     setTransferType(type)
     setSelectedBeneficiary("")
@@ -149,13 +344,6 @@ export default function NewTransferPage() {
     }
   }
 
-  const handleAddBeneficiary = (formData: FormData) => {
-    startTransition(() => {
-      addBeneficiaryAction(formData)
-    })
-  }
-
-  // Gestionnaires d'événements pour le virement
   const handleTransferSubmit = (e: React.FormEvent) => {
     e.preventDefault()
 
@@ -242,15 +430,6 @@ export default function NewTransferPage() {
       setPendingTransferData(null)
       setOtpReferenceId(null)
       setShowOtpModal(false)
-    }
-  }
-
-  const handleDialogClose = (open: boolean) => {
-    setIsDialogOpen(open)
-    if (!open) {
-      setTransferValidationError("")
-      setTransferSubmitted(false)
-      setBeneficiaryMessage(null)
     }
   }
 
@@ -349,17 +528,45 @@ export default function NewTransferPage() {
   }, [])
 
   useEffect(() => {
-    if (addBeneficiaryState?.success) {
-      setBeneficiaryMessage({
-        type: "success",
-        text: "Bénéficiaire enregistré. Il sera disponible après vérification et validation.",
-      })
-      // Recharger la liste des bénéficiaires
-      loadBeneficiaries()
-    } else if (addBeneficiaryState?.error) {
-      setBeneficiaryMessage({ type: "error", text: addBeneficiaryState.error })
+    if (selectedType === "BNG-CONFRERE") {
+      loadBanks()
     }
-  }, [addBeneficiaryState])
+  }, [selectedType])
+
+  useEffect(() => {
+    if (selectedType === "BNG-BNG") {
+      setSelectedBank("Banque Nationale de Guinée")
+      setSelectedBankCode("022")
+      setSelectedSwiftCode("")
+    } else if (selectedType === "BNG-CONFRERE") {
+      setSelectedBank("")
+      setSelectedBankCode("")
+      setSelectedSwiftCode("")
+    } else if (selectedType !== "") {
+      setSelectedBank("")
+      setSelectedBankCode("")
+      setSelectedSwiftCode("")
+    }
+    if (selectedType === "BNG-INTERNATIONAL") {
+      setRibError(null)
+    }
+  }, [selectedType])
+
+  useEffect(() => {
+    if (addBeneficiaryState?.success) {
+      setAddFormSuccess(true)
+      resetBeneficiaryForm()
+      loadBeneficiaries()
+      toast({
+        title: "Succès",
+        description: "Bénéficiaire ajouté avec succès!",
+      })
+      setTimeout(() => {
+        setAddFormSuccess(false)
+        setIsAddBeneficiaryDialogOpen(false)
+      }, 2000)
+    }
+  }, [addBeneficiaryState?.success])
 
   useEffect(() => {
     if (transferValidationError && transferSubmitted) {
@@ -459,14 +666,14 @@ export default function NewTransferPage() {
         <p className="text-muted-foreground">Transférez des fonds vers un bénéficiaire ou entre vos comptes</p>
       </div>
 
-      {transferValidationError && transferSubmitted && !isDialogOpen && (
+      {transferValidationError && transferSubmitted && (
         <Alert ref={validationErrorMessageRef} variant="destructive" className="border-l-4">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>{transferValidationError}</AlertDescription>
         </Alert>
       )}
 
-      {transferState?.success && !isDialogOpen && showSuccessMessage && (
+      {transferState?.success && showSuccessMessage && (
         <Alert ref={successMessageRef} className="border-l-4 border-primary bg-primary/5">
           <Check className="h-4 w-4 text-primary" />
           <AlertDescription className="text-primary font-medium">
@@ -475,7 +682,7 @@ export default function NewTransferPage() {
         </Alert>
       )}
 
-      {transferState?.error && !isDialogOpen && showErrorMessage && (
+      {transferState?.error && showErrorMessage && (
         <Alert ref={errorMessageRef} variant="destructive" className="border-l-4">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>{toText(transferState.error)}</AlertDescription>
@@ -646,12 +853,19 @@ export default function NewTransferPage() {
                     </div>
                     Bénéficiaire
                   </div>
-                  <Link href="/transfers/beneficiaries">
-                    <Button type="button" variant="outline" size="sm" className="gap-2 bg-transparent">
-                      <Plus className="h-4 w-4" />
-                      Nouveau
-                    </Button>
-                  </Link>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="gap-2 bg-transparent"
+                    onClick={() => {
+                      resetBeneficiaryForm()
+                      setIsAddBeneficiaryDialogOpen(true)
+                    }}
+                  >
+                    <Plus className="h-4 w-4" />
+                    Nouveau
+                  </Button>
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -902,6 +1116,196 @@ export default function NewTransferPage() {
           </Card>
         </div>
       </form>
+
+      <Dialog open={isAddBeneficiaryDialogOpen} onOpenChange={setIsAddBeneficiaryDialogOpen}>
+        <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Ajouter un bénéficiaire</DialogTitle>
+          </DialogHeader>
+
+          <form ref={beneficiaryFormRef} onSubmit={handleAddBeneficiary} className="space-y-4">
+            {addFormSuccess && (
+              <Alert variant="default" className="border-primary/20 bg-primary/5">
+                <Check className="h-4 w-4 text-primary" />
+                <AlertDescription className="text-primary">Bénéficiaire ajouté avec succès!</AlertDescription>
+              </Alert>
+            )}
+
+            {addBeneficiaryState?.error && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{addBeneficiaryState.error}</AlertDescription>
+              </Alert>
+            )}
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="name">Nom complet *</Label>
+                <Input id="name" name="name" placeholder="Nom et prénom du bénéficiaire" required />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="type">Type de bénéficiaire *</Label>
+                <Select value={selectedType} onValueChange={setSelectedType} required>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Sélectionnez le type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="BNG-BNG">Interne</SelectItem>
+                    <SelectItem value="BNG-CONFRERE">Confrère(Guinée)</SelectItem>
+                    <SelectItem value="BNG-INTERNATIONAL">International</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {selectedType !== "" && (
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="bank">Banque *</Label>
+                  {selectedType === "BNG-BNG" ? (
+                    <Input
+                      id="bank"
+                      name="bankname"
+                      value="Banque Nationale de Guinée"
+                      readOnly
+                      className="bg-muted/50"
+                    />
+                  ) : selectedType === "BNG-CONFRERE" ? (
+                    <Select name="bankname" value={selectedBank} onValueChange={handleBankSelection} required>
+                      <SelectTrigger>
+                        <SelectValue placeholder={loadingBanks ? "Chargement..." : "Sélectionnez une banque"} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {banks.map((bank) => (
+                          <SelectItem key={bank.id} value={bank.bankName}>
+                            {bank.bankName}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  ) : selectedType === "BNG-INTERNATIONAL" ? (
+                    <Input
+                      id="bank"
+                      name="bank"
+                      value={selectedBank || ""}
+                      onChange={(e) => setSelectedBank(e.target.value)}
+                      placeholder="Saisissez le nom de la banque"
+                      required
+                    />
+                  ) : null}
+                </div>
+
+                {(selectedType === "BNG-CONFRERE" || selectedType === "BNG-BNG") && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="codeBanque">Code Banque *</Label>
+                      <Input
+                        id="codeBanque"
+                        name="codeBanque"
+                        value={selectedBankCode || ""}
+                        placeholder="Code banque"
+                        disabled
+                        className="bg-muted/50"
+                        required
+                      />
+                    </div>
+
+                    {selectedType === "BNG-CONFRERE" && (
+                      <div className="space-y-2">
+                        <Label htmlFor="swiftCode">Code SWIFT</Label>
+                        <Input
+                          id="swiftCode"
+                          name="swiftCode"
+                          value={selectedSwiftCode || ""}
+                          placeholder="Code SWIFT"
+                          disabled
+                          className="bg-muted/50"
+                        />
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {selectedType !== "BNG-INTERNATIONAL" && selectedType !== "" && (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="codeAgence">Code agence *</Label>
+                  <Input
+                    id="codeAgence"
+                    name="codeAgence"
+                    placeholder="Ex: 0001"
+                    onChange={handleRibFieldChange}
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="account">Numéro de compte *</Label>
+                  <Input
+                    id="account"
+                    name="account"
+                    onChange={(e) => {
+                      validateAccountNumber(e.target.value)
+                      handleRibFieldChange()
+                    }}
+                    placeholder="1234567890"
+                    maxLength={10}
+                    pattern="[0-9]{10}"
+                    required
+                  />
+                  {accountNumberError && <p className="text-sm text-destructive">{accountNumberError}</p>}
+                  <p className="text-sm text-muted-foreground">10 chiffres uniquement</p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="cleRib">Clé RIB *</Label>
+                  <Input
+                    id="cleRib"
+                    name="cleRib"
+                    placeholder="Ex: 89"
+                    maxLength={2}
+                    onChange={handleRibFieldChange}
+                    required
+                  />
+                  {ribError && selectedType !== "BNG-INTERNATIONAL" && (
+                    <p className="text-sm text-destructive">{ribError}</p>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {selectedType === "BNG-INTERNATIONAL" && (
+              <div className="space-y-2">
+                <Label htmlFor="account">IBAN *</Label>
+                <Input id="account" name="account" placeholder="FR76 1234 5678 9012 3456 78" required />
+              </div>
+            )}
+
+            <div className="flex justify-end space-x-2 pt-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsAddBeneficiaryDialogOpen(false)}
+                disabled={isAddBeneficiaryPending}
+              >
+                Annuler
+              </Button>
+              <Button
+                type="submit"
+                disabled={
+                  isAddBeneficiaryPending ||
+                  ((accountNumberError !== null || ribError !== null) && selectedType !== "BNG-INTERNATIONAL")
+                }
+              >
+                {isAddBeneficiaryPending ? "Traitement..." : "Ajouter"}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
 
       {showOtpModal && otpReferenceId && (
         <OtpModal
