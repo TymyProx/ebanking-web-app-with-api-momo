@@ -1037,7 +1037,6 @@ export default function BeneficiariesPage() {
               <SelectContent>
                 <SelectItem value="all">Tous statuts</SelectItem>
                 <SelectItem value="inactive">Inactifs</SelectItem>
-                <SelectItem value="pending">En attente</SelectItem>
               </SelectContent>
             </Select>
           </div>
