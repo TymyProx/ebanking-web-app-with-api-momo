@@ -163,7 +163,8 @@ export default function AcceptInvitePage() {
 
   return (
     <div className="min-h-screen lg:h-screen relative overflow-x-hidden overflow-y-auto lg:overflow-hidden">
-      <div className="absolute top-4 sm:top-4 left-1/2 -translate-x-1/2 lg:left-[-30px] lg:translate-x-0 z-50">
+      {/* Logo aligné avec le texte de bienvenue */}
+      <div className="absolute top-4 sm:top-4 lg:top-8 left-1/2 -translate-x-1/2 lg:left-4 lg:translate-x-0 z-50">
         <Image
           src="/images/logowhite.png"
           alt="BNG Logo"
@@ -203,25 +204,25 @@ export default function AcceptInvitePage() {
         </div>
       </div>
 
-      <main className="w-full px-4 sm:px-6 pt-64 sm:pt-72 md:pt-80 lg:pt-16 pb-4 relative z-10 min-h-screen lg:h-screen flex flex-col justify-between">
+      <main className="w-full px-4 sm:px-6 pt-64 sm:pt-72 md:pt-80 lg:pt-16 pb-2 relative z-10 min-h-screen lg:h-screen flex flex-col justify-between">
         {/* Activation Form - Top Right */}
-        <div className="w-full max-w-full mb-6 lg:mb-0">
+        <div className="w-full max-w-full mb-0">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
             <div className="lg:col-start-3">
               <div className="relative group">
                 <div className="absolute inset-0 bg-gradient-to-br from-[#2d6e3e]/30 via-[#f4c430]/20 to-[#2d6e3e]/30 rounded-2xl blur-2xl opacity-40 group-hover:opacity-60 transition-opacity"></div>
-                <div className="bg-white/40 backdrop-blur-2xl rounded-2xl shadow-2xl p-8 border border-white/20">
+                <div className="bg-white/40 backdrop-blur-2xl rounded-2xl shadow-2xl p-4 sm:p-5 border border-white/20">
                   {/* Decorative corner */}
-                  <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-white/15 to-transparent rounded-bl-full"></div>
+                  <div className="absolute top-0 right-0 w-20 sm:w-24 h-20 sm:h-24 bg-gradient-to-br from-white/15 to-transparent rounded-bl-full"></div>
                   
-                  <div className="text-center mb-6 relative z-10">
-                    <h2 className="text-2xl font-bold text-[#f4c430] mb-1 drop-shadow-2xl">Activation</h2>
-                    <p className="text-sm text-white/90 drop-shadow-md">Finalisez votre inscription</p>
+                  <div className="text-center mb-3 sm:mb-4 relative z-10">
+                    <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-[#f4c430] mb-1 drop-shadow-2xl">Activation</h2>
+                    <p className="text-xs sm:text-sm text-white/90 drop-shadow-md">Finalisez votre inscription</p>
                   </div>
 
                   {/* Activation Form */}
-                  <form onSubmit={handleSubmit} className="space-y-5">
-                    <div className="space-y-4">
+                  <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
+                    <div className="space-y-2 sm:space-y-3">
                       {error && (
                         <div className="p-2.5 rounded-lg bg-[#2d6e3e]/70 border-0 shadow-md">
                           <p className="text-xs text-white text-center font-semibold drop-shadow-md">{error}</p>
@@ -229,7 +230,7 @@ export default function AcceptInvitePage() {
                       )}
 
                       {/* Email Field */}
-                      <div className="space-y-1.5">
+                      <div className="space-y-1">
                         <Label htmlFor="email" className="text-xs font-semibold text-white/90 flex items-center space-x-1 drop-shadow-lg">
                           <span>Email</span>
                           <span className="text-red-300 drop-shadow-md">*</span>
@@ -240,7 +241,7 @@ export default function AcceptInvitePage() {
                             type="email"
                             value={formData.email}
                             readOnly
-                            className="h-11 bg-[#2d6e3e]/60 border-0 text-white text-sm placeholder:text-white/60 focus:bg-[#2d6e3e]/70 focus:ring-0 rounded-lg transition-all group-hover:bg-[#2d6e3e]/65 shadow-md"
+                            className="h-9 sm:h-10 bg-[#2d6e3e]/60 border-0 text-white text-sm placeholder:text-white/60 focus:bg-[#2d6e3e]/70 focus:ring-0 rounded-lg transition-all group-hover:bg-[#2d6e3e]/65 shadow-md"
                             required
                             disabled={isLoading || !!invitedEmail}
                           />
@@ -249,7 +250,7 @@ export default function AcceptInvitePage() {
                       </div>
 
                       {/* First Name Field */}
-                      <div className="space-y-1.5">
+                      <div className="space-y-1">
                         <Label htmlFor="firstName" className="text-xs font-semibold text-white/90 flex items-center space-x-1 drop-shadow-lg">
                           <span>Prénom</span>
                           <span className="text-red-300 drop-shadow-md">*</span>
@@ -260,7 +261,7 @@ export default function AcceptInvitePage() {
                             type="text"
                             value={formData.firstName}
                             onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-                            className="h-11 bg-[#2d6e3e]/60 border-0 text-white text-sm placeholder:text-white/60 focus:bg-[#2d6e3e]/70 focus:ring-0 rounded-lg transition-all group-hover:bg-[#2d6e3e]/65 shadow-md"
+                            className="h-9 sm:h-10 bg-[#2d6e3e]/60 border-0 text-white text-sm placeholder:text-white/60 focus:bg-[#2d6e3e]/70 focus:ring-0 rounded-lg transition-all group-hover:bg-[#2d6e3e]/65 shadow-md"
                             required
                             disabled={isLoading}
                           />
@@ -269,7 +270,7 @@ export default function AcceptInvitePage() {
                       </div>
 
                       {/* Last Name Field */}
-                      <div className="space-y-1.5">
+                      <div className="space-y-1">
                         <Label htmlFor="lastName" className="text-xs font-semibold text-white/90 flex items-center space-x-1 drop-shadow-lg">
                           <span>Nom</span>
                           <span className="text-red-300 drop-shadow-md">*</span>
@@ -280,7 +281,7 @@ export default function AcceptInvitePage() {
                             type="text"
                             value={formData.lastName}
                             onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
-                            className="h-11 bg-[#2d6e3e]/60 border-0 text-white text-sm placeholder:text-white/60 focus:bg-[#2d6e3e]/70 focus:ring-0 rounded-lg transition-all group-hover:bg-[#2d6e3e]/65 shadow-md"
+                            className="h-9 sm:h-10 bg-[#2d6e3e]/60 border-0 text-white text-sm placeholder:text-white/60 focus:bg-[#2d6e3e]/70 focus:ring-0 rounded-lg transition-all group-hover:bg-[#2d6e3e]/65 shadow-md"
                             required
                             disabled={isLoading}
                           />
@@ -289,7 +290,7 @@ export default function AcceptInvitePage() {
                       </div>
 
                       {/* Password Field */}
-                      <div className="space-y-1.5">
+                      <div className="space-y-1">
                         <Label htmlFor="password" className="text-xs font-semibold text-white/90 flex items-center space-x-1 drop-shadow-lg">
                           <span>Mot de passe</span>
                           <span className="text-red-300 drop-shadow-md">*</span>
@@ -301,7 +302,7 @@ export default function AcceptInvitePage() {
                             value={formData.password}
                             onChange={(e) => handlePasswordChange(e.target.value)}
                             placeholder="••••••••"
-                            className="h-11 bg-[#2d6e3e]/60 border-0 text-white text-sm pr-11 placeholder:text-white/60 focus:bg-[#2d6e3e]/70 focus:ring-0 rounded-lg transition-all group-hover:bg-[#2d6e3e]/65 shadow-md"
+                            className="h-9 sm:h-10 bg-[#2d6e3e]/60 border-0 text-white text-sm pr-11 placeholder:text-white/60 focus:bg-[#2d6e3e]/70 focus:ring-0 rounded-lg transition-all group-hover:bg-[#2d6e3e]/65 shadow-md"
                             required
                             disabled={isLoading}
                           />
@@ -324,7 +325,7 @@ export default function AcceptInvitePage() {
                       </div>
 
                       {/* Confirm Password Field */}
-                      <div className="space-y-1.5">
+                      <div className="space-y-1">
                         <Label htmlFor="confirmPassword" className="text-xs font-semibold text-white/90 flex items-center space-x-1 drop-shadow-lg">
                           <span>Confirmer le mot de passe</span>
                           <span className="text-red-300 drop-shadow-md">*</span>
@@ -336,7 +337,7 @@ export default function AcceptInvitePage() {
                             value={formData.confirmPassword}
                             onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
                             placeholder="••••••••"
-                            className="h-11 bg-[#2d6e3e]/60 border-0 text-white text-sm pr-11 placeholder:text-white/60 focus:bg-[#2d6e3e]/70 focus:ring-0 rounded-lg transition-all group-hover:bg-[#2d6e3e]/65 shadow-md"
+                            className="h-9 sm:h-10 bg-[#2d6e3e]/60 border-0 text-white text-sm pr-11 placeholder:text-white/60 focus:bg-[#2d6e3e]/70 focus:ring-0 rounded-lg transition-all group-hover:bg-[#2d6e3e]/65 shadow-md"
                             required
                             disabled={isLoading}
                           />
@@ -354,7 +355,7 @@ export default function AcceptInvitePage() {
                       {/* Submit Button */}
                       <Button
                         type="submit"
-                        className="relative w-full h-11 bg-gradient-to-r from-[#f4c430] via-[#f8d060] to-[#f4c430] hover:from-[#e0b020] hover:via-[#f4c430] hover:to-[#e0b020] text-gray-900 font-semibold text-sm shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden group rounded-lg"
+                        className="relative w-full h-9 sm:h-10 bg-gradient-to-r from-[#f4c430] via-[#f8d060] to-[#f4c430] hover:from-[#e0b020] hover:via-[#f4c430] hover:to-[#e0b020] text-gray-900 font-semibold text-xs sm:text-sm shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden group rounded-lg"
                         disabled={isLoading}
                       >
                         <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-1000"></div>
@@ -376,7 +377,7 @@ export default function AcceptInvitePage() {
         </div>
 
         {/* Information Cards - Full Width at Bottom */}
-        <div className="w-full max-w-full mt-auto">
+        <div className="w-full max-w-full -mt-2 sm:-mt-3 mb-4 sm:mb-5 md:mb-6">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 lg:gap-6">
               {/* New User */}
               <div className="group relative">

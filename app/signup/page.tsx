@@ -105,14 +105,14 @@ export default function SignupPage() {
 
   return (
     <div className="min-h-screen lg:h-screen relative overflow-x-hidden overflow-y-auto lg:overflow-hidden">
-      {/* Logo Only */}
-      <div className="absolute top-2 sm:top-4 left-2 sm:left-[-30px] z-50">
+      {/* Logo aligné avec le texte de bienvenue */}
+      <div className="absolute top-4 sm:top-4 lg:top-8 left-1/2 -translate-x-1/2 lg:left-4 lg:translate-x-0 z-50">
         <Image
           src="/images/logowhite.png"
           alt="BNG Logo"
-          width={260}
-          height={80}
-          className="object-contain drop-shadow-lg"
+          width={200}
+          height={60}
+          className="object-contain drop-shadow-lg w-40 sm:w-48 lg:w-[260px]"
           priority
         />
       </div>
@@ -129,7 +129,7 @@ export default function SignupPage() {
           </div>
 
           {/* Hero Text - Positioned on the Top Left */}
-          <div className="absolute top-24 sm:top-32 lg:top-1/2 lg:-translate-y-1/2 left-4 sm:left-6 right-4 lg:right-auto lg:max-w-2xl">
+          <div className="absolute top-28 sm:top-32 lg:top-1/2 lg:-translate-y-1/2 left-4 sm:left-6 right-4 lg:right-auto lg:max-w-2xl px-2 sm:px-0">
             <div className="text-left text-white space-y-2 sm:space-y-3 transition-all duration-700 ease-in-out">
               <div className="flex items-center justify-start space-x-2 mb-1 sm:mb-2">
                 <span className="text-xs sm:text-sm font-semibold text-[#f4c430] uppercase tracking-wider">
@@ -148,25 +148,25 @@ export default function SignupPage() {
       </div>
 
       {/* Main Content - Overlay with transparency */}
-      <main className="w-full px-4 sm:px-6 pt-56 sm:pt-64 md:pt-72 lg:pt-16 pb-4 relative z-10 min-h-screen lg:h-screen flex flex-col justify-between">
+      <main className="w-full px-4 sm:px-6 pt-64 sm:pt-72 md:pt-80 lg:pt-16 pb-2 relative z-10 min-h-screen lg:h-screen flex flex-col justify-between">
         {/* Signup Form - Top Right */}
-        <div className="w-full max-w-full mb-6 lg:mb-0">
+        <div className="w-full max-w-full mb-0">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
             <div className="lg:col-start-3">
               <div className="relative group">
                 <div className="absolute inset-0 bg-gradient-to-br from-[#2d6e3e]/30 via-[#f4c430]/20 to-[#2d6e3e]/30 rounded-2xl blur-2xl opacity-40 group-hover:opacity-60 transition-opacity"></div>
-                <div className="bg-white/40 backdrop-blur-2xl rounded-2xl shadow-2xl p-5 sm:p-6 border border-white/20">
+                <div className="bg-white/40 backdrop-blur-2xl rounded-2xl shadow-2xl p-4 sm:p-5 border border-white/20">
                   {/* Decorative corner */}
                   <div className="absolute top-0 right-0 w-20 sm:w-24 h-20 sm:h-24 bg-gradient-to-br from-white/15 to-transparent rounded-bl-full"></div>
 
                   {!clientType && (
                     <>
-                      <div className="text-center mb-3 sm:mb-4 relative z-10">
-                        <h2 className="text-xl sm:text-2xl font-bold text-white mb-1 drop-shadow-2xl">Inscription</h2>
+                      <div className="text-center mb-2 sm:mb-3 relative z-10">
+                        <h2 className="text-lg sm:text-xl font-bold text-white mb-1 drop-shadow-2xl">Inscription</h2>
                       </div>
 
                       {/* Client Type Selection */}
-                      <div className="space-y-3 sm:space-y-4">
+                      <div className="space-y-2 sm:space-y-3">
                         <button
                           onClick={() => setClientType("new")}
                           className="w-full p-4 sm:p-5 bg-[#2d6e3e]/60 backdrop-blur-md rounded-xl hover:bg-[#2d6e3e]/70 transition-all text-left group border border-white/30 shadow-lg"
@@ -222,15 +222,15 @@ export default function SignupPage() {
                         <span>Retour</span>
                       </button>
 
-                      <div className="text-center mb-3 sm:mb-4 relative z-10">
-                        <h2 className="text-xl sm:text-2xl font-bold text-white mb-1 drop-shadow-2xl">
+                      <div className="text-center mb-2 sm:mb-3 relative z-10">
+                        <h2 className="text-lg sm:text-xl font-bold text-white mb-1 drop-shadow-2xl">
                           Nouveau compte
                         </h2>
                       </div>
 
                       {/* New Client Form */}
-                      <form onSubmit={handleNewClientSubmit} className="space-y-3 sm:space-y-4">
-                        <div className="space-y-2.5 sm:space-y-3">
+                      <form onSubmit={handleNewClientSubmit} className="space-y-2 sm:space-y-3">
+                        <div className="space-y-2 sm:space-y-2.5">
                           {error && (
                             <div className="p-2.5 rounded-lg bg-[#2d6e3e]/70 border-0 shadow-md">
                               <p className="text-xs text-white text-center font-semibold drop-shadow-md">{error}</p>
@@ -238,7 +238,7 @@ export default function SignupPage() {
                           )}
 
                           {/* Full Name Field */}
-                          <div className="space-y-1.5">
+                          <div className="space-y-1">
                             <Label
                               htmlFor="fullName"
                               className="text-xs font-semibold text-white/90 flex items-center space-x-1 drop-shadow-lg"
@@ -252,7 +252,7 @@ export default function SignupPage() {
                                 name="fullName"
                                 type="text"
                                 placeholder="Votre nom complet"
-                                className="h-10 sm:h-11 bg-[#2d6e3e]/60 border-0 text-white text-sm placeholder:text-white/60 focus:bg-[#2d6e3e]/70 focus:ring-0 rounded-lg transition-all group-hover:bg-[#2d6e3e]/65 shadow-md"
+                                className="h-9 sm:h-10 bg-[#2d6e3e]/60 border-0 text-white text-sm placeholder:text-white/60 focus:bg-[#2d6e3e]/70 focus:ring-0 rounded-lg transition-all group-hover:bg-[#2d6e3e]/65 shadow-md"
                                 required
                                 disabled={isLoading}
                               />
@@ -261,7 +261,7 @@ export default function SignupPage() {
                           </div>
 
                           {/* Email Field */}
-                          <div className="space-y-1.5">
+                          <div className="space-y-1">
                             <Label
                               htmlFor="email"
                               className="text-xs font-semibold text-white/90 flex items-center space-x-1 drop-shadow-lg"
@@ -275,7 +275,7 @@ export default function SignupPage() {
                                 name="email"
                                 type="email"
                                 placeholder="votre.email@exemple.com"
-                                className="h-10 sm:h-11 bg-[#2d6e3e]/60 border-0 text-white text-sm placeholder:text-white/60 focus:bg-[#2d6e3e]/70 focus:ring-0 rounded-lg transition-all group-hover:bg-[#2d6e3e]/65 shadow-md"
+                                className="h-9 sm:h-10 bg-[#2d6e3e]/60 border-0 text-white text-sm placeholder:text-white/60 focus:bg-[#2d6e3e]/70 focus:ring-0 rounded-lg transition-all group-hover:bg-[#2d6e3e]/65 shadow-md"
                                 required
                                 disabled={isLoading}
                               />
@@ -284,7 +284,7 @@ export default function SignupPage() {
                           </div>
 
                           {/* Phone Field */}
-                          <div className="space-y-1.5">
+                          <div className="space-y-1">
                             <Label
                               htmlFor="phone"
                               className="text-xs font-semibold text-white/90 flex items-center space-x-1 drop-shadow-lg"
@@ -298,7 +298,7 @@ export default function SignupPage() {
                                 name="phone"
                                 type="tel"
                                 placeholder="+225 XX XX XX XX XX"
-                                className="h-10 sm:h-11 bg-[#2d6e3e]/60 border-0 text-white text-sm placeholder:text-white/60 focus:bg-[#2d6e3e]/70 focus:ring-0 rounded-lg transition-all group-hover:bg-[#2d6e3e]/65 shadow-md"
+                                className="h-9 sm:h-10 bg-[#2d6e3e]/60 border-0 text-white text-sm placeholder:text-white/60 focus:bg-[#2d6e3e]/70 focus:ring-0 rounded-lg transition-all group-hover:bg-[#2d6e3e]/65 shadow-md"
                                 required
                                 disabled={isLoading}
                               />
@@ -307,7 +307,7 @@ export default function SignupPage() {
                           </div>
 
                           {/* Address Field */}
-                          <div className="space-y-1.5">
+                          <div className="space-y-1">
                             <Label
                               htmlFor="address"
                               className="text-xs font-semibold text-white/90 flex items-center space-x-1 drop-shadow-lg"
@@ -321,7 +321,7 @@ export default function SignupPage() {
                                 name="address"
                                 type="text"
                                 placeholder="Votre adresse complète"
-                                className="h-10 sm:h-11 bg-[#2d6e3e]/60 border-0 text-white text-sm placeholder:text-white/60 focus:bg-[#2d6e3e]/70 focus:ring-0 rounded-lg transition-all group-hover:bg-[#2d6e3e]/65 shadow-md"
+                                className="h-9 sm:h-10 bg-[#2d6e3e]/60 border-0 text-white text-sm placeholder:text-white/60 focus:bg-[#2d6e3e]/70 focus:ring-0 rounded-lg transition-all group-hover:bg-[#2d6e3e]/65 shadow-md"
                                 required
                                 disabled={isLoading}
                               />
@@ -332,7 +332,7 @@ export default function SignupPage() {
                           {/* Submit Button */}
                           <Button
                             type="submit"
-                            className="relative w-full h-10 sm:h-11 bg-gradient-to-r from-[#f4c430] via-[#f8d060] to-[#f4c430] hover:from-[#e0b020] hover:via-[#f4c430] hover:to-[#e0b020] text-gray-900 font-semibold text-sm shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden group rounded-lg"
+                            className="relative w-full h-9 sm:h-10 bg-gradient-to-r from-[#f4c430] via-[#f8d060] to-[#f4c430] hover:from-[#e0b020] hover:via-[#f4c430] hover:to-[#e0b020] text-gray-900 font-semibold text-xs sm:text-sm shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden group rounded-lg"
                             disabled={isLoading}
                           >
                             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-1000"></div>
@@ -363,22 +363,22 @@ export default function SignupPage() {
                         <span>Retour</span>
                       </button>
 
-                      <div className="text-center mb-3 sm:mb-4 relative z-10">
-                        <h2 className="text-xl sm:text-2xl font-bold text-white mb-1 drop-shadow-2xl">
+                      <div className="text-center mb-2 sm:mb-3 relative z-10">
+                        <h2 className="text-lg sm:text-xl font-bold text-white mb-1 drop-shadow-2xl">
                           Client existant
                         </h2>
                       </div>
 
                       {/* Existing Client Form */}
-                      <form onSubmit={handleExistingClientSubmit} className="space-y-3 sm:space-y-4">
-                        <div className="space-y-2.5 sm:space-y-3">
+                      <form onSubmit={handleExistingClientSubmit} className="space-y-2 sm:space-y-3">
+                        <div className="space-y-2 sm:space-y-2.5">
                           {error && (
                             <div className="p-2.5 rounded-lg bg-[#2d6e3e]/70 border-0 shadow-md">
                               <p className="text-xs text-white text-center font-semibold drop-shadow-md">{error}</p>
                             </div>
                           )}
 
-                          <div className="space-y-1.5">
+                          <div className="space-y-1">
                             <Label
                               htmlFor="clientCode"
                               className="text-xs font-semibold text-white/90 flex items-center space-x-1 drop-shadow-lg"
@@ -395,7 +395,7 @@ export default function SignupPage() {
                                 pattern="[0-9]{6}"
                                 maxLength={6}
                                 placeholder="Votre racine du compte"
-                                className="h-10 sm:h-11 bg-[#2d6e3e]/60 border-0 text-white text-sm placeholder:text-white/60 focus:bg-[#2d6e3e]/70 focus:ring-0 rounded-lg transition-all group-hover:bg-[#2d6e3e]/65 shadow-md"
+                                className="h-9 sm:h-10 bg-[#2d6e3e]/60 border-0 text-white text-sm placeholder:text-white/60 focus:bg-[#2d6e3e]/70 focus:ring-0 rounded-lg transition-all group-hover:bg-[#2d6e3e]/65 shadow-md"
                                 required
                                 disabled={isLoading}
                                 onInput={(e) => {
@@ -410,7 +410,7 @@ export default function SignupPage() {
 
                           <Button
                             type="submit"
-                            className="relative w-full h-10 sm:h-11 bg-gradient-to-r from-[#f4c430] via-[#f8d060] to-[#f4c430] hover:from-[#e0b020] hover:via-[#f4c430] hover:to-[#e0b020] text-gray-900 font-semibold text-sm shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden group rounded-lg"
+                            className="relative w-full h-9 sm:h-10 bg-gradient-to-r from-[#f4c430] via-[#f8d060] to-[#f4c430] hover:from-[#e0b020] hover:via-[#f4c430] hover:to-[#e0b020] text-gray-900 font-semibold text-xs sm:text-sm shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden group rounded-lg"
                             disabled={isLoading}
                           >
                             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-1000"></div>
@@ -466,7 +466,7 @@ export default function SignupPage() {
         </div>
 
         {/* Information Cards - Full Width at Bottom */}
-        <div className="w-full max-w-full mt-auto">
+        <div className="w-full max-w-full -mt-2 sm:-mt-3 mb-4 sm:mb-5 md:mb-6">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 lg:gap-6">
             {/* New User */}
             <div className="group relative">
