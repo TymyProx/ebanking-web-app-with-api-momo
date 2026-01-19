@@ -350,29 +350,29 @@ export default function BeneficiariesPage() {
     const isSuspended = beneficiary.status === 1 || beneficiary.workflowStatus === WORKFLOW_STATUS.SUSPENDED
     const isPending = PENDING_WORKFLOW_STATUSES.includes(beneficiary.workflowStatus)
 
-    // Filtre secondaire (dropdown) - traité en premier pour gérer le cas "inactive"
-    if (filterType === "inactive") {
-      // Afficher uniquement les bénéficiaires avec status = 1 (inactifs)
-      return matchesSearch && beneficiary.status === 1
-    }
-    
-    // Filtre par onglet actif
-    let matchesActiveFilter = false
+    // Filtre par onglet actif (type de bénéficiaire)
+    let matchesTypeFilter = false
     if (activeFilter === "all") {
-      matchesActiveFilter = !isSuspended
+      matchesTypeFilter = true
     } else if (activeFilter === "favorites") {
-      matchesActiveFilter = beneficiary.favorite && isAvailable
+      matchesTypeFilter = beneficiary.favorite === true
     } else {
-      matchesActiveFilter = beneficiary.type === activeFilter && !isSuspended
+      matchesTypeFilter = beneficiary.type === activeFilter
     }
 
-    // Filtre secondaire (dropdown) - pour les autres cas
+    // Filtre secondaire (dropdown)
     let matchesSecondaryFilter = true
-    if (filterType === "pending") {
+    if (filterType === "inactive") {
+      // Afficher uniquement les bénéficiaires avec status = 1 (inactifs) du type sélectionné
+      matchesSecondaryFilter = beneficiary.status === 1
+    } else if (filterType === "pending") {
       matchesSecondaryFilter = isPending
+    } else {
+      // Par défaut (all), exclure les suspendus
+      matchesSecondaryFilter = !isSuspended
     }
 
-    return matchesSearch && matchesActiveFilter && matchesSecondaryFilter
+    return matchesSearch && matchesTypeFilter && matchesSecondaryFilter
   })
 
   const validateAccountNumber = (value: string) => {
