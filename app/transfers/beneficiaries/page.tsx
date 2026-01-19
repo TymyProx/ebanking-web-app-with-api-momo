@@ -350,6 +350,12 @@ export default function BeneficiariesPage() {
     const isSuspended = beneficiary.status === 1 || beneficiary.workflowStatus === WORKFLOW_STATUS.SUSPENDED
     const isPending = PENDING_WORKFLOW_STATUSES.includes(beneficiary.workflowStatus)
 
+    // Filtre secondaire (dropdown) - traité en premier pour gérer le cas "inactive"
+    if (filterType === "inactive") {
+      // Afficher uniquement les bénéficiaires avec status = 1 (inactifs)
+      return matchesSearch && beneficiary.status === 1
+    }
+    
     // Filtre par onglet actif
     let matchesActiveFilter = false
     if (activeFilter === "all") {
@@ -360,11 +366,9 @@ export default function BeneficiariesPage() {
       matchesActiveFilter = beneficiary.type === activeFilter && !isSuspended
     }
 
-    // Filtre secondaire (dropdown)
+    // Filtre secondaire (dropdown) - pour les autres cas
     let matchesSecondaryFilter = true
-    if (filterType === "inactive") {
-      matchesSecondaryFilter = isSuspended
-    } else if (filterType === "pending") {
+    if (filterType === "pending") {
       matchesSecondaryFilter = isPending
     }
 
