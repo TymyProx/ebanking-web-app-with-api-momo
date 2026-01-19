@@ -811,11 +811,11 @@ export default function BeneficiariesPage() {
   }
 
   return (
-    <div className="mt-2 sm:mt-4 md:mt-6 space-y-4 sm:space-y-6">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
-        <div className="space-y-1 sm:space-y-2">
-          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-primary">Gestion des bénéficiaires</h1>
-          <p className="text-xs sm:text-sm text-muted-foreground">Gérez vos destinataires de virements</p>
+    <div className="mt-6 space-y-6">
+      <div className="flex items-center justify-between">
+        <div className="space-y-2">
+          <h1 className="text-3xl font-bold text-primary">Gestion des bénéficiaires</h1>
+          <p className="text-sm text-muted-foreground">Gérez vos destinataires de virements</p>
         </div>
 
         <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
@@ -1069,19 +1069,19 @@ export default function BeneficiariesPage() {
       )}
 
       <Card>
-        <CardContent className="pt-4 sm:pt-6">
-          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+        <CardContent className="pt-6">
+          <div className="flex flex-col sm:flex-row gap-4">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
               <Input
                 placeholder="Rechercher un bénéficiaire..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 h-9 sm:h-10"
+                className="pl-10"
               />
             </div>
             <Select value={filterType} onValueChange={setFilterType}>
-              <SelectTrigger className="w-full sm:w-48 h-9 sm:h-10">
+              <SelectTrigger className="w-full sm:w-48">
                 <SelectValue placeholder="Statut" />
               </SelectTrigger>
               <SelectContent>
@@ -1094,24 +1094,24 @@ export default function BeneficiariesPage() {
       </Card>
 
       {/* Onglets de catégories */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 sm:gap-3 md:gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
         {/* Tous les bénéficiaires */}
         <button
           onClick={() => setActiveFilter("all")}
-          className={`relative group p-3 sm:p-4 rounded-xl border-2 transition-all duration-300 text-left ${
+          className={`relative group p-4 rounded-xl border-2 transition-all duration-300 text-left ${
             activeFilter === "all"
               ? "border-primary bg-primary/5 shadow-lg shadow-primary/20"
               : "border-border bg-card hover:border-primary/50 hover:shadow-md"
           }`}
         >
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 sm:gap-3">
-              <div className="p-1.5 sm:p-2 rounded-lg bg-gradient-to-br from-primary/10 to-primary/5">
-                <Users className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-gradient-to-br from-primary/10 to-primary/5">
+                <Users className="h-5 w-5 text-primary" />
               </div>
               <div>
-                <h3 className="text-xs sm:text-sm font-bold text-foreground">Tous</h3>
-                <p className="text-lg sm:text-xl font-bold text-primary">
+                <h3 className="text-sm font-bold text-foreground">Tous</h3>
+                <p className="text-xl font-bold text-primary">
                   {getFilteredBeneficiariesForCount(beneficiaries, "all", filterType).length}
                 </p>
               </div>
@@ -1128,20 +1128,20 @@ export default function BeneficiariesPage() {
         {/* Favoris */}
         <button
           onClick={() => setActiveFilter("favorites")}
-          className={`relative group p-3 sm:p-4 rounded-xl border-2 transition-all duration-300 text-left ${
+          className={`relative group p-4 rounded-xl border-2 transition-all duration-300 text-left ${
             activeFilter === "favorites"
               ? "border-yellow-500 bg-yellow-50/50 dark:bg-yellow-950/20 shadow-lg shadow-yellow-500/20"
               : "border-border bg-card hover:border-yellow-500/50 hover:shadow-md"
           }`}
         >
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 sm:gap-3">
-              <div className="p-1.5 sm:p-2 rounded-lg bg-gradient-to-br from-yellow-500/10 to-yellow-500/5">
-                <Star className="h-4 w-4 sm:h-5 sm:w-5 text-yellow-600" />
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-gradient-to-br from-yellow-500/10 to-yellow-500/5">
+                <Star className="h-5 w-5 text-yellow-600" />
               </div>
               <div>
-                <h3 className="text-xs sm:text-sm font-bold text-foreground">Favoris</h3>
-                <p className="text-lg sm:text-xl font-bold text-yellow-600">
+                <h3 className="text-sm font-bold text-foreground">Favoris</h3>
+                <p className="text-xl font-bold text-yellow-600">
                   {getFilteredBeneficiariesForCount(beneficiaries, "favorites", filterType).length}
                 </p>
               </div>
@@ -1158,20 +1158,20 @@ export default function BeneficiariesPage() {
         {/* BNG Interne */}
         <button
           onClick={() => setActiveFilter("BNG-BNG")}
-          className={`relative group p-3 sm:p-4 rounded-xl border-2 transition-all duration-300 text-left ${
+          className={`relative group p-4 rounded-xl border-2 transition-all duration-300 text-left ${
             activeFilter === "BNG-BNG"
               ? "border-blue-500 bg-blue-50/50 dark:bg-blue-950/20 shadow-lg shadow-blue-500/20"
               : "border-border bg-card hover:border-blue-500/50 hover:shadow-md"
           }`}
         >
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 sm:gap-3">
-              <div className="p-1.5 sm:p-2 rounded-lg bg-gradient-to-br from-blue-500/10 to-blue-500/5">
-                <Building className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600" />
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-gradient-to-br from-blue-500/10 to-blue-500/5">
+                <Building className="h-5 w-5 text-blue-600" />
               </div>
               <div>
-                <h3 className="text-xs sm:text-sm font-bold text-foreground">BNG</h3>
-                <p className="text-lg sm:text-xl font-bold text-blue-600">
+                <h3 className="text-sm font-bold text-foreground">BNG</h3>
+                <p className="text-xl font-bold text-blue-600">
                   {getFilteredBeneficiariesForCount(beneficiaries, "BNG-BNG", filterType).length}
                 </p>
               </div>
@@ -1188,20 +1188,20 @@ export default function BeneficiariesPage() {
         {/* Confrères */}
         <button
           onClick={() => setActiveFilter("BNG-CONFRERE")}
-          className={`relative group p-3 sm:p-4 rounded-xl border-2 transition-all duration-300 text-left ${
+          className={`relative group p-4 rounded-xl border-2 transition-all duration-300 text-left ${
             activeFilter === "BNG-CONFRERE"
               ? "border-green-500 bg-green-50/50 dark:bg-green-950/20 shadow-lg shadow-green-500/20"
               : "border-border bg-card hover:border-green-500/50 hover:shadow-md"
           }`}
         >
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 sm:gap-3">
-              <div className="p-1.5 sm:p-2 rounded-lg bg-gradient-to-br from-green-500/10 to-green-500/5">
-                <User className="h-4 w-4 sm:h-5 sm:w-5 text-green-600" />
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-gradient-to-br from-green-500/10 to-green-500/5">
+                <User className="h-5 w-5 text-green-600" />
               </div>
               <div>
-                <h3 className="text-xs sm:text-sm font-bold text-foreground">Confrères</h3>
-                <p className="text-lg sm:text-xl font-bold text-green-600">
+                <h3 className="text-sm font-bold text-foreground">Confrères</h3>
+                <p className="text-xl font-bold text-green-600">
                   {getFilteredBeneficiariesForCount(beneficiaries, "BNG-CONFRERE", filterType).length}
                 </p>
               </div>
@@ -1218,20 +1218,20 @@ export default function BeneficiariesPage() {
         {/* International */}
         <button
           onClick={() => setActiveFilter("BNG-INTERNATIONAL")}
-          className={`relative group p-3 sm:p-4 rounded-xl border-2 transition-all duration-300 text-left ${
+          className={`relative group p-4 rounded-xl border-2 transition-all duration-300 text-left ${
             activeFilter === "BNG-INTERNATIONAL"
               ? "border-purple-500 bg-purple-50/50 dark:bg-purple-950/20 shadow-lg shadow-purple-500/20"
               : "border-border bg-card hover:border-purple-500/50 hover:shadow-md"
           }`}
         >
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 sm:gap-3">
-              <div className="p-1.5 sm:p-2 rounded-lg bg-gradient-to-br from-purple-500/10 to-purple-500/5">
-                <Globe className="h-4 w-4 sm:h-5 sm:w-5 text-purple-600" />
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-gradient-to-br from-purple-500/10 to-purple-500/5">
+                <Globe className="h-5 w-5 text-purple-600" />
               </div>
               <div>
-                <h3 className="text-xs sm:text-sm font-bold text-foreground">International</h3>
-                <p className="text-lg sm:text-xl font-bold text-purple-600">
+                <h3 className="text-sm font-bold text-foreground">International</h3>
+                <p className="text-xl font-bold text-purple-600">
                   {getFilteredBeneficiariesForCount(beneficiaries, "BNG-INTERNATIONAL", filterType).length}
                 </p>
               </div>
@@ -1272,24 +1272,24 @@ export default function BeneficiariesPage() {
                   key={beneficiary.id}
                   // ✅ NEW: Ajout du onClick sur la carte pour ouvrir la modale
                   onClick={() => openDetailsDialog(beneficiary)}
-                  className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 sm:p-4 border rounded-lg hover:bg-gray-50 transition-colors cursor-pointer gap-3 sm:gap-4"
+                  className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
                 >
-                  <div className="flex items-start sm:items-center space-x-3 sm:space-x-4 flex-1 min-w-0">
-                    <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gray-100 rounded-full flex items-center justify-center flex-shrink-0">
+                  <div className="flex items-center space-x-4">
+                    <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center">
                       {getTypeIcon(beneficiary.type)}
                     </div>
 
-                    <div className="flex-1 min-w-0">
-                      <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mb-1 sm:mb-0">
-                        <h3 className="font-semibold text-sm sm:text-base text-gray-900 truncate">{beneficiary.name}</h3>
-                        {beneficiary.favorite && <Star className="w-3 h-3 sm:w-4 sm:h-4 text-yellow-500 fill-current flex-shrink-0" />}
+                    <div className="flex-1">
+                      <div className="flex items-center space-x-2">
+                        <h3 className="font-semibold text-gray-900">{beneficiary.name}</h3>
+                        {beneficiary.favorite && <Star className="w-4 h-4 text-yellow-500 fill-current" />}
                         {getTypeBadge(beneficiary.type)}
                         {getstatutBadge(beneficiary.status)}
                       </div>
 
-                      <div className="text-xs sm:text-sm text-gray-600 space-y-0.5 sm:space-y-1">
-                        <p className="font-mono truncate">{beneficiary.account}</p>
-                        <p className="font-medium truncate">{beneficiary.bank}</p>
+                      <div className="text-sm text-gray-600 space-y-1">
+                        <p className="font-mono">{beneficiary.account}</p>
+                        <p className="font-medium">{beneficiary.bank}</p>
                         {beneficiary.workflowStatus !== WORKFLOW_STATUS.AVAILABLE && (
                           <p className="text-xs text-amber-700 bg-amber-50 px-2 py-1 rounded inline-block">
                             ⏳ En attente de validation manuelle
@@ -1298,82 +1298,80 @@ export default function BeneficiariesPage() {
                         {beneficiary.country && <p className="text-xs text-gray-500">{beneficiary.country}</p>}
                       </div>
                     </div>
-                  </div>
 
-                  <div className="flex items-center justify-between sm:justify-end w-full sm:w-auto gap-2 sm:gap-4">
-                    <div className="text-left sm:text-right text-xs sm:text-sm text-gray-500 hidden sm:block">
+                    <div className="text-right text-sm text-gray-500">
                       <p>Dernier virement</p>
                       <p className="font-medium">{beneficiary.lastUsed}</p>
                       <p className="text-xs">Ajouté le {beneficiary.addedDate}</p>
                     </div>
+                  </div>
 
-                    <div className="flex items-center space-x-1 sm:space-x-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        // ✅ NEW: Empêche l'ouverture de la modale de détails lors du clic sur l'icône favori
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          toggleFavorite(beneficiary.id)
-                        }}
-                      >
-                        {beneficiary.favorite ? (
-                          <Star className="w-4 h-4 text-yellow-500 fill-current" />
-                        ) : (
-                          <StarOff className="w-4 h-4 text-gray-400" />
-                        )}
-                      </Button>
+                  <div className="flex items-center space-x-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      // ✅ NEW: Empêche l'ouverture de la modale de détails lors du clic sur l'icône favori
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        toggleFavorite(beneficiary.id)
+                      }}
+                    >
+                      {beneficiary.favorite ? (
+                        <Star className="w-4 h-4 text-yellow-500 fill-current" />
+                      ) : (
+                        <StarOff className="w-4 h-4 text-gray-400" />
+                      )}
+                    </Button>
 
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            // ✅ NEW: Empêche l'ouverture de la modale de détails lors du clic sur le menu
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <MoreVertical className="w-4 h-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          {beneficiary.status === 0 ? (
-                            <>
-                              <DropdownMenuItem
-                                disabled={beneficiary.workflowStatus !== WORKFLOW_STATUS.AVAILABLE}
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  if (beneficiary.workflowStatus === WORKFLOW_STATUS.AVAILABLE) {
-                                    window.location.href = "/transfers/new"
-                                  }
-                                }}
-                              >
-                                <Users className="w-4 h-4 mr-2" />
-                                {beneficiary.workflowStatus === WORKFLOW_STATUS.AVAILABLE
-                                  ? "Faire un virement"
-                                  : "⏳ En attente de validation"}
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                className="text-orange-600"
-                                onClick={(e) => handleDeactivateBeneficiary(beneficiary.id, e)}
-                                disabled={isDeactivatePending}
-                              >
-                                <UserX className="w-4 h-4 mr-2" />
-                                Désactiver
-                              </DropdownMenuItem>
-                            </>
-                          ) : (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          // ✅ NEW: Empêche l'ouverture de la modale de détails lors du clic sur le menu
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <MoreVertical className="w-4 h-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        {beneficiary.status === 0 ? (
+                          <>
                             <DropdownMenuItem
-                              className="text-green-600"
-                              onClick={(e) => handleReactivateBeneficiary(beneficiary.id, e)}
-                              disabled={isReactivatePending}
+                              disabled={beneficiary.workflowStatus !== WORKFLOW_STATUS.AVAILABLE}
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                if (beneficiary.workflowStatus === WORKFLOW_STATUS.AVAILABLE) {
+                                  window.location.href = "/transfers/new"
+                                }
+                              }}
                             >
-                              <CheckCircle className="w-4 h-4 mr-2" />
-                              Réactiver
+                              <Users className="w-4 h-4 mr-2" />
+                              {beneficiary.workflowStatus === WORKFLOW_STATUS.AVAILABLE
+                                ? "Faire un virement"
+                                : "⏳ En attente de validation"}
                             </DropdownMenuItem>
-                          )}
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
+                            <DropdownMenuItem
+                              className="text-orange-600"
+                              onClick={(e) => handleDeactivateBeneficiary(beneficiary.id, e)}
+                              disabled={isDeactivatePending}
+                            >
+                              <UserX className="w-4 h-4 mr-2" />
+                              Désactiver
+                            </DropdownMenuItem>
+                          </>
+                        ) : (
+                          <DropdownMenuItem
+                            className="text-green-600"
+                            onClick={(e) => handleReactivateBeneficiary(beneficiary.id, e)}
+                            disabled={isReactivatePending}
+                          >
+                            <CheckCircle className="w-4 h-4 mr-2" />
+                            Réactiver
+                          </DropdownMenuItem>
+                        )}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
                 </div>
               ))}
