@@ -102,7 +102,8 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen lg:h-screen relative overflow-x-hidden overflow-y-auto lg:overflow-hidden">
-      <div className="absolute top-4 sm:top-4 left-1/2 -translate-x-1/2 lg:left-[-30px] lg:translate-x-0 z-50">
+      {/* Logo aligné avec le texte de bienvenue */}
+      <div className="absolute top-4 sm:top-4 lg:top-8 left-1/2 -translate-x-1/2 lg:left-4 lg:translate-x-0 z-50">
         <Image
           src="/images/logowhite.png"
           alt="BNG Logo"
@@ -144,7 +145,7 @@ export default function LoginPage() {
 
       <main className="w-full px-4 sm:px-6 pt-64 sm:pt-72 md:pt-80 lg:pt-16 pb-4 relative z-10 min-h-screen lg:h-screen flex flex-col justify-between">
         {/* Login Form - Top Right */}
-        <div className="w-full max-w-full mb-6 lg:mb-0">
+        <div className="w-full max-w-full mb-4 sm:mb-5 md:mb-6 lg:mb-8">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
             <div className="lg:col-start-3">
               <div className="relative group">
@@ -300,9 +301,9 @@ export default function LoginPage() {
           </div>
         </div>
 
-        {/* Information Cards - Full Width at Bottom */}
-        <div className="w-full max-w-full mt-auto">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 lg:gap-6">
+         {/* Information Cards - Full Width at Bottom */}
+         <div className="w-full max-w-full mt-4 sm:mt-5 md:mt-6 lg:mt-8 mb-6 sm:mb-8 md:mb-10 lg:mb-12">
+           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 lg:gap-6">
             {/* New User */}
             <div className="group relative">
               <div className="absolute inset-0 bg-gradient-to-br from-[#2d6e3e]/10 to-transparent rounded-xl blur-lg opacity-0 group-hover:opacity-100 transition-opacity"></div>
