@@ -362,6 +362,10 @@ export default function BeneficiariesPage() {
 
     // Filtre secondaire (dropdown)
     let matchesSecondaryFilter = true
+     if (filterType === "active") {
+      // Afficher uniquement les bénéficiaires avec status = 1 (inactifs) du type sélectionné
+      matchesSecondaryFilter = beneficiary.status === 0
+    }
     if (filterType === "inactive") {
       // Afficher uniquement les bénéficiaires avec status = 1 (inactifs) du type sélectionné
       matchesSecondaryFilter = beneficiary.status === 1
@@ -1039,7 +1043,7 @@ export default function BeneficiariesPage() {
                 <SelectValue placeholder="Statut" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Tous statuts</SelectItem>
+                <SelectItem value="active">Actifs</SelectItem>
                 <SelectItem value="inactive">Inactifs</SelectItem>
               </SelectContent>
             </Select>
