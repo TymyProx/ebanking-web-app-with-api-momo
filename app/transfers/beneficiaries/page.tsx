@@ -1085,7 +1085,6 @@ export default function BeneficiariesPage() {
                 <SelectValue placeholder="Statut" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Tous</SelectItem>
                 <SelectItem value="active">Actifs</SelectItem>
                 <SelectItem value="inactive">Inactifs</SelectItem>
               </SelectContent>
