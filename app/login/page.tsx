@@ -143,9 +143,9 @@ export default function LoginPage() {
         </div>
       </div>
 
-      <main className="w-full px-4 sm:px-6 pt-64 sm:pt-72 md:pt-80 lg:pt-16 pb-4 relative z-10 min-h-screen lg:h-screen flex flex-col justify-between">
+      <main className="w-full px-4 sm:px-6 pt-64 sm:pt-72 md:pt-80 lg:pt-16 pb-2 relative z-10 min-h-screen lg:h-screen flex flex-col justify-between">
         {/* Login Form - Top Right */}
-        <div className="w-full max-w-full mb-4 sm:mb-5 md:mb-6 lg:mb-8">
+        <div className="w-full max-w-full mb-2 sm:mb-3">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
             <div className="lg:col-start-3">
               <div className="relative group">
@@ -302,7 +302,7 @@ export default function LoginPage() {
         </div>
 
          {/* Information Cards - Full Width at Bottom */}
-         <div className="w-full max-w-full mt-4 sm:mt-5 md:mt-6 lg:mt-8 mb-6 sm:mb-8 md:mb-10 lg:mb-12">
+         <div className="w-full max-w-full mt-2 sm:mt-3 mb-4 sm:mb-5 md:mb-6">
            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 lg:gap-6">
             {/* New User */}
             <div className="group relative">
