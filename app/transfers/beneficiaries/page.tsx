@@ -110,7 +110,7 @@ const toWorkflowStatus = (value: any): WorkflowStatus => {
 
 export default function BeneficiariesPage() {
   const [searchTerm, setSearchTerm] = useState("")
-  const [filterType, setFilterType] = useState("all")
+  const [filterType, setFilterType] = useState("")
   const [activeFilter, setActiveFilter] = useState<"all" | "favorites" | "BNG-BNG" | "BNG-CONFRERE" | "BNG-INTERNATIONAL">("all")
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
@@ -338,6 +338,46 @@ export default function BeneficiariesPage() {
     return bankNames[bankCode] || bankCode
   }
 
+  // Helper function to filter beneficiaries based on type and status filters (without search)
+  const getFilteredBeneficiariesForCount = (
+    beneficiariesList: Beneficiary[],
+    typeFilter: typeof activeFilter,
+    statusFilter: string,
+  ) => {
+    return beneficiariesList.filter((beneficiary) => {
+      const isSuspended = beneficiary.status === 1 || beneficiary.workflowStatus === WORKFLOW_STATUS.SUSPENDED
+      const isPending = PENDING_WORKFLOW_STATUSES.includes(beneficiary.workflowStatus)
+
+      // Filtre par onglet actif (type de bénéficiaire)
+      let matchesTypeFilter = false
+      if (typeFilter === "all") {
+        matchesTypeFilter = true
+      } else if (typeFilter === "favorites") {
+        matchesTypeFilter = beneficiary.favorite === true
+      } else {
+        matchesTypeFilter = beneficiary.type === typeFilter
+      }
+
+      // Filtre secondaire (dropdown)
+      let matchesSecondaryFilter = true
+      if (statusFilter === "active") {
+        matchesSecondaryFilter = beneficiary.status === 0
+      } else if (statusFilter === "inactive") {
+        matchesSecondaryFilter = beneficiary.status === 1
+      } else if (statusFilter === "pending") {
+        matchesSecondaryFilter = isPending
+      } else if (statusFilter === "all" || statusFilter === "") {
+        // Par défaut (all ou vide), exclure les suspendus
+        matchesSecondaryFilter = !isSuspended
+      } else {
+        // Par défaut, exclure les suspendus
+        matchesSecondaryFilter = !isSuspended
+      }
+
+      return matchesTypeFilter && matchesSecondaryFilter
+    })
+  }
+
   const filteredBeneficiaries = beneficiaries.filter((beneficiary) => {
     const safe = (v: any) => (typeof v === "string" ? v : v ? JSON.stringify(v) : "")
     const searchLc = searchTerm.toLowerCase()
@@ -362,17 +402,19 @@ export default function BeneficiariesPage() {
 
     // Filtre secondaire (dropdown)
     let matchesSecondaryFilter = true
-     if (filterType === "active") {
-      // Afficher uniquement les bénéficiaires avec status = 1 (inactifs) du type sélectionné
+    if (filterType === "active") {
+      // Afficher uniquement les bénéficiaires avec status = 0 (actifs) du type sélectionné
       matchesSecondaryFilter = beneficiary.status === 0
-    }
-    if (filterType === "inactive") {
+    } else if (filterType === "inactive") {
       // Afficher uniquement les bénéficiaires avec status = 1 (inactifs) du type sélectionné
       matchesSecondaryFilter = beneficiary.status === 1
     } else if (filterType === "pending") {
       matchesSecondaryFilter = isPending
+    } else if (filterType === "all" || filterType === "") {
+      // Par défaut (all ou vide), exclure les suspendus
+      matchesSecondaryFilter = !isSuspended
     } else {
-      // Par défaut (all), exclure les suspendus
+      // Par défaut, exclure les suspendus
       matchesSecondaryFilter = !isSuspended
     }
 
@@ -1043,6 +1085,7 @@ export default function BeneficiariesPage() {
                 <SelectValue placeholder="Statut" />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="all">Tous</SelectItem>
                 <SelectItem value="active">Actifs</SelectItem>
                 <SelectItem value="inactive">Inactifs</SelectItem>
               </SelectContent>
@@ -1069,7 +1112,9 @@ export default function BeneficiariesPage() {
               </div>
               <div>
                 <h3 className="text-sm font-bold text-foreground">Tous</h3>
-                <p className="text-xl font-bold text-primary">{beneficiaries.filter(b => b.status !== 1 && b.workflowStatus !== WORKFLOW_STATUS.SUSPENDED).length}</p>
+                <p className="text-xl font-bold text-primary">
+                  {getFilteredBeneficiariesForCount(beneficiaries, "all", filterType).length}
+                </p>
               </div>
             </div>
             {activeFilter === "all" && (
@@ -1097,7 +1142,9 @@ export default function BeneficiariesPage() {
               </div>
               <div>
                 <h3 className="text-sm font-bold text-foreground">Favoris</h3>
-                <p className="text-xl font-bold text-yellow-600">{beneficiaries.filter((b) => b.favorite).length}</p>
+                <p className="text-xl font-bold text-yellow-600">
+                  {getFilteredBeneficiariesForCount(beneficiaries, "favorites", filterType).length}
+                </p>
               </div>
             </div>
             {activeFilter === "favorites" && (
@@ -1125,7 +1172,9 @@ export default function BeneficiariesPage() {
               </div>
               <div>
                 <h3 className="text-sm font-bold text-foreground">BNG</h3>
-                <p className="text-xl font-bold text-blue-600">{beneficiaries.filter((b) => b.type === "BNG-BNG").length}</p>
+                <p className="text-xl font-bold text-blue-600">
+                  {getFilteredBeneficiariesForCount(beneficiaries, "BNG-BNG", filterType).length}
+                </p>
               </div>
             </div>
             {activeFilter === "BNG-BNG" && (
@@ -1153,7 +1202,9 @@ export default function BeneficiariesPage() {
               </div>
               <div>
                 <h3 className="text-sm font-bold text-foreground">Confrères</h3>
-                <p className="text-xl font-bold text-green-600">{beneficiaries.filter((b) => b.type === "BNG-CONFRERE").length}</p>
+                <p className="text-xl font-bold text-green-600">
+                  {getFilteredBeneficiariesForCount(beneficiaries, "BNG-CONFRERE", filterType).length}
+                </p>
               </div>
             </div>
             {activeFilter === "BNG-CONFRERE" && (
@@ -1182,7 +1233,7 @@ export default function BeneficiariesPage() {
               <div>
                 <h3 className="text-sm font-bold text-foreground">International</h3>
                 <p className="text-xl font-bold text-purple-600">
-                  {beneficiaries.filter((b) => b.type === "BNG-INTERNATIONAL").length}
+                  {getFilteredBeneficiariesForCount(beneficiaries, "BNG-INTERNATIONAL", filterType).length}
                 </p>
               </div>
             </div>
