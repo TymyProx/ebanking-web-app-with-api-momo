@@ -320,12 +320,12 @@ export default function BalancesPage() {
   }
 
   return (
-    <div className="mt-4 space-y-3">
-      <div className="space-y-2">
-        <h1 className="text-3xl font-bold text-primary">Mes Soldes</h1>
-        <p className="text-sm text-muted-foreground">Gérez tous vos comptes en un seul endroit</p>
+    <div className="mt-2 sm:mt-4 space-y-3 sm:space-y-4">
+      <div className="space-y-1 sm:space-y-2">
+        <h1 className="text-2xl sm:text-3xl font-bold text-primary">Mes Soldes</h1>
+        <p className="text-xs sm:text-sm text-muted-foreground">Gérez tous vos comptes en un seul endroit</p>
       </div>
-      <div className="flex items-center justify-end gap-3">
+      <div className="flex items-center justify-end gap-2 sm:gap-3">
         {/* <Dialog open={isNewAccountDialogOpen} onOpenChange={setIsNewAccountDialogOpen}>
           <DialogTrigger asChild>
             <Button>
@@ -450,7 +450,7 @@ export default function BalancesPage() {
           disabled={isPending}
           variant="outline"
           size="icon"
-          className="bg-white/80 backdrop-blur-sm"
+          className="bg-white/80 backdrop-blur-sm h-9 w-9 sm:h-10 sm:w-10"
         >
           <RefreshCw className={`h-4 w-4 ${isPending ? "animate-spin" : ""}`} />
         </Button>
@@ -458,7 +458,7 @@ export default function BalancesPage() {
           variant="outline"
           size="icon"
           onClick={() => setShowBalance(!showBalance)}
-          className="bg-white/80 backdrop-blur-sm"
+          className="bg-white/80 backdrop-blur-sm h-9 w-9 sm:h-10 sm:w-10"
         >
           {showBalance ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
         </Button>
@@ -515,7 +515,7 @@ export default function BalancesPage() {
           </Card>
         </div>
       ) : (
-        <div className="w-full px-2">
+        <div className="w-full px-1 sm:px-2">
           <Carousel
             setApi={setApi}
             className="w-full"
@@ -526,9 +526,9 @@ export default function BalancesPage() {
               dragFree: false,
             }}
           >
-            <CarouselContent className="w-full">
+            <CarouselContent className="w-full -ml-1 sm:-ml-2">
               {(filteredAccounts || []).map((account) => (
-                <CarouselItem key={account.id} className="pl-2 basis-full">
+                <CarouselItem key={account.id} className="pl-1 sm:pl-2 basis-full">
                   <Link href={`/accounts/${account.id}`} className="block">
                     <Card className="group relative overflow-hidden border-2 hover:border-primary/50 transition-all duration-300 hover:shadow-2xl hover:-translate-y-1 bg-gradient-to-br from-white to-gray-50/50">
                       <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-secondary/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />

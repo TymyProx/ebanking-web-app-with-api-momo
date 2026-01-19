@@ -142,14 +142,14 @@ export default function LoginPage() {
         </div>
       </div>
 
-      <main className="w-full px-4 sm:px-6 pt-64 sm:pt-72 md:pt-80 lg:pt-16 pb-4 relative z-10 min-h-screen lg:h-screen flex flex-col justify-between">
+      <main className="w-full px-3 sm:px-4 md:px-6 pt-48 sm:pt-64 md:pt-72 lg:pt-16 pb-4 relative z-10 min-h-screen lg:h-screen flex flex-col justify-between">
         {/* Login Form - Top Right */}
-        <div className="w-full max-w-full mb-6 lg:mb-0">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
-            <div className="lg:col-start-3">
+        <div className="w-full max-w-full mb-4 sm:mb-6 lg:mb-0">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6 max-w-7xl mx-auto">
+            <div className="lg:col-start-3 w-full max-w-md mx-auto lg:max-w-none lg:mx-0">
               <div className="relative group">
                 <div className="absolute inset-0 bg-gradient-to-br from-[#2d6e3e]/30 via-[#f4c430]/20 to-[#2d6e3e]/30 rounded-2xl blur-2xl opacity-40 group-hover:opacity-60 transition-opacity"></div>
-                <div className="bg-white/40 backdrop-blur-2xl rounded-2xl shadow-2xl p-5 sm:p-6 border border-white/20">
+                <div className="bg-white/40 backdrop-blur-2xl rounded-2xl shadow-2xl p-4 sm:p-5 md:p-6 border border-white/20">
                   {/* Decorative corner */}
                   <div className="absolute top-0 right-0 w-20 sm:w-24 h-20 sm:h-24 bg-gradient-to-br from-white/15 to-transparent rounded-bl-full"></div>
 
@@ -301,8 +301,8 @@ export default function LoginPage() {
         </div>
 
         {/* Information Cards - Full Width at Bottom */}
-        <div className="w-full max-w-full mt-auto">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 lg:gap-6">
+        <div className="w-full max-w-full mt-4 sm:mt-auto">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-6 max-w-7xl mx-auto">
             {/* New User */}
             <div className="group relative">
               <div className="absolute inset-0 bg-gradient-to-br from-[#2d6e3e]/10 to-transparent rounded-xl blur-lg opacity-0 group-hover:opacity-100 transition-opacity"></div>
