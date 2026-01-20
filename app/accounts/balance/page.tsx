@@ -530,93 +530,71 @@ export default function BalancesPage() {
               {(filteredAccounts || []).map((account) => (
                 <CarouselItem key={account.id} className="pl-2 basis-full">
                   <Link href={`/accounts/${account.id}`} className="block">
-                    <Card className="group relative overflow-hidden border-0 shadow-lg hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 bg-gradient-to-br from-white via-white to-gray-50/80 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800/80">
-                      {/* Animated gradient overlay */}
-                      <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-secondary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                      
-                      {/* Decorative elements */}
-                      <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-primary/10 to-secondary/10 rounded-full blur-3xl opacity-0 group-hover:opacity-50 transition-opacity duration-500 -translate-y-1/2 translate-x-1/2" />
-                      <div className="absolute bottom-0 left-0 w-48 h-48 bg-gradient-to-tr from-secondary/10 to-primary/10 rounded-full blur-2xl opacity-0 group-hover:opacity-30 transition-opacity duration-500 translate-y-1/2 -translate-x-1/2" />
+                    <Card className="group relative overflow-hidden border-2 hover:border-primary/50 transition-all duration-300 hover:shadow-2xl hover:-translate-y-1 bg-gradient-to-br from-white to-gray-50/50">
+                      <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-secondary/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
-                      <CardHeader className="relative flex flex-row items-center justify-between space-y-0 pb-4 pt-6 px-6">
-                        <div className="flex items-center space-x-4">
-                          <div className="relative">
-                            <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-secondary/20 rounded-2xl blur-md opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                            <div className="relative p-3 rounded-2xl bg-gradient-to-br from-primary/10 via-primary/5 to-secondary/10 group-hover:from-primary/20 group-hover:via-primary/10 group-hover:to-secondary/20 transition-all duration-300 shadow-sm group-hover:shadow-md">
-                              {getAccountIcon(account.type)}
-                            </div>
+                      <CardHeader className="relative flex flex-row items-center justify-between space-y-0 pb-2">
+                        <div className="flex items-center space-x-3">
+                          <div className="p-2 rounded-xl bg-gradient-to-br from-primary/10 to-secondary/10 group-hover:from-primary/20 group-hover:to-secondary/20 transition-colors">
+                            {getAccountIcon(account.type)}
                           </div>
-                          <div>
-                            <CardTitle className="text-base font-bold text-foreground group-hover:text-primary transition-colors duration-300">
-                              {account.name}
-                            </CardTitle>
-                            <p className="text-xs text-muted-foreground mt-0.5 font-mono">{account.number}</p>
-                          </div>
+                          <CardTitle className="text-sm font-semibold">{account.name}</CardTitle>
                         </div>
                         <Badge
                           variant={account.status === "Actif" ? "default" : "secondary"}
-                          className={`shadow-sm ${
-                            account.status === "Actif"
-                              ? "bg-gradient-to-r from-green-500 to-emerald-600 text-white border-0 hover:from-green-600 hover:to-emerald-700"
-                              : "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300"
-                          }`}
+                          className={
+                            account.status === "Actif" ? "bg-gradient-to-r from-primary to-secondary text-white" : ""
+                          }
                         >
                           {account.status}
                         </Badge>
                       </CardHeader>
 
-                      <CardContent className="relative space-y-6 px-6 pb-6">
-                        {/* Main balance display */}
-                        <div className="space-y-4">
-                          <div className="space-y-1">
-                            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                              Solde disponible
-                            </p>
-                            <div className="flex items-baseline gap-2">
-                              <span className="text-4xl font-bold bg-gradient-to-r from-foreground via-foreground to-foreground/80 bg-clip-text text-transparent group-hover:from-primary group-hover:via-primary group-hover:to-secondary transition-all duration-500">
-                                {showBalance
-                                  ? formatAmount(account.availableBalance, account.currency)
-                                  : "••••••••"}
-                              </span>
-                              {showBalance && (
-                                <span className="text-lg font-semibold text-muted-foreground">
-                                  {account.currency}
-                                </span>
-                              )}
-                            </div>
+                      <CardContent className="relative space-y-4">
+                        <div className="space-y-2">
+                          <div className="text-xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">
+                            Solde disponible :{" "}
+                            {showBalance
+                              ? `${formatAmount(account.availableBalance, account.currency)} ${account.currency}`
+                              : "••••••••"}
                           </div>
-
-                          <div className="pt-3 border-t border-border/50">
-                            <div className="flex items-center justify-between">
-                              <p className="text-xs text-muted-foreground">Solde comptable</p>
-                              <p className="text-sm font-semibold text-muted-foreground">
-                                {showBalance
-                                  ? `${formatAmount(account.balance, account.currency)} ${account.currency}`
-                                  : "••••••••"}
-                              </p>
-                            </div>
-                          </div>
+                          <p className="text-sm text-muted-foreground">
+                            Solde comptable :{" "}
+                            {showBalance
+                              ? `${formatAmount(account.balance, account.currency)} ${account.currency}`
+                              : "••••••••"}
+                          </p>
+                          <p className="text-xl text-muted-foreground font-mono font-semibold">{account.number}</p>
                         </div>
 
-                        {/* Bottom info grid */}
-                        <div className="grid grid-cols-3 gap-4 pt-4 border-t border-border/50">
+                        {/* <div className="flex items-center justify-between pt-3 border-t border-border/50">
+                          <div className="flex items-center space-x-1">
+                            {getTrendIcon(account.trend, account.trendPercentage)}
+                            <span className={`text-xs font-medium ${getTrendColor(account.trend)}`}>
+                              {account.trendPercentage !== 0 && (
+                                <>
+                                  {account.trend === "up" ? "+" : account.trend === "down" ? "-" : ""}
+                                  {account.trendPercentage}% ce mois
+                                </>
+                              )}
+                              {account.trendPercentage === 0 && "Stable"}
+                            </span>
+                          </div>
+                         
+                        </div> */}
+
+                        <div className="grid grid-cols-3 gap-3 text-xs pt-2">
                           <div className="space-y-1">
-                            <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
-                              Type
-                            </p>
-                            <div className="text-sm font-semibold text-foreground">{account.type}</div>
+                            <span className="text-muted-foreground">Type</span>
+                            <div className="font-medium">{account.type}</div>
                           </div>
                           <div className="space-y-1">
-                            <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
-                              Dernière MAJ
-                            </p>
-                            <div className="text-sm font-semibold text-foreground">{account.lastUpdate}</div>
+                            <span className="text-muted-foreground">Dernière MAJ</span>
+                            <div className="font-medium">{account.lastUpdate}</div>
                           </div>
-                          <div className="flex items-end justify-end">
-                            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-r from-primary/10 to-secondary/10 group-hover:from-primary/20 group-hover:to-secondary/20 text-primary group-hover:text-secondary transition-all duration-300 cursor-pointer">
-                              <span className="text-xs font-semibold">Détails</span>
-                              <ArrowUpRight className="h-3.5 w-3.5 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform duration-300" />
-                            </div>
+                          <div className="ml-auto pr-1 flex items-center text-xs font-medium text-primary group-hover:text-secondary transition-colors">
+                            Détails
+                            <ArrowUpRight className="h-3 w-3 ml-1 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
                           </div>
                         </div>
                       </CardContent>
