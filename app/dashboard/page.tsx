@@ -56,23 +56,29 @@ async function RecentTransactions() {
   }
 
   const formatTransaction = (transaction: any, accounts: any[]) => {
-    const amount = Number.parseFloat(transaction.montantOperation)
-    const isCredit = amount >= 0
+    const baseAmount = Number.parseFloat(transaction.montantOperation || "0")
+    const txnType = (transaction.txnType || "").toUpperCase()
+    const isDebit = txnType === "DEBIT"
+    const isCredit = txnType === "CREDIT"
+    // Montant avec signe : négatif pour DEBIT, positif pour CREDIT
+    const signedAmount = isDebit ? -Math.abs(baseAmount) : Math.abs(baseAmount)
 
     const account = accounts.find((acc) => acc.id === transaction.accountId || acc.accountId === transaction.accountId)
     const currency = account?.currency || "GNF"
 
     return {
-      type: isCredit ? "Virement reçu" : "Virement émis",
+      type: isDebit ? "Virement émis" : "Virement reçu",
       from: transaction.description || "Transaction",
-      amount: `${isCredit ? "+" : ""}${formatAmount(amount, currency)} ${currency}`,
-      rawAmount: amount,
-      date: new Date(transaction.valueDate).toLocaleDateString("fr-FR", {
+      amount: `${formatAmount(signedAmount, currency)} ${currency}`,
+      rawAmount: signedAmount,
+      date: new Date(transaction.valueDate || transaction.createdAt || new Date()).toLocaleDateString("fr-FR", {
         day: "numeric",
         month: "short",
         year: "numeric",
       }),
       status: transaction.status || "Exécuté",
+      isDebit: isDebit,
+      isCredit: isCredit,
     }
   }
 
@@ -106,13 +112,13 @@ async function RecentTransactions() {
                     {/* Reduced icon container size */}
                     <div
                       className={`w-9 h-9 rounded-full flex items-center justify-center ${
-                        formattedTransaction.rawAmount < 0
+                        formattedTransaction.isDebit
                           ? "bg-red-500/20 text-red-600"
                           : "bg-green-500/20 text-green-600"
                       }`}
                     >
                       {/* Reduced icon size */}
-                      {formattedTransaction.rawAmount < 0 ? (
+                      {formattedTransaction.isDebit ? (
                         <ArrowUpRight className="w-4 h-4" />
                       ) : (
                         <ArrowDownRight className="w-4 h-4" />
@@ -128,7 +134,7 @@ async function RecentTransactions() {
                     {/* Reduced amount and date text size */}
                     <p
                       className={`font-semibold text-xs ${
-                        formattedTransaction.rawAmount < 0 ? "text-red-600" : "text-green-600"
+                        formattedTransaction.isDebit ? "text-red-600" : "text-green-600"
                       }`}
                     >
                       {formattedTransaction.amount}
