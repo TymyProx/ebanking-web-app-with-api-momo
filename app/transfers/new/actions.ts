@@ -565,8 +565,8 @@ export async function executeTransfer(prevState: any, formData: FormData) {
         }
       }
 
-      ribClient = `${sourceAccountData.codeBanque || ""}${sourceAccountData.codeAgence || ""}${sourceAccountData.accountNumber || ""}${sourceAccountData.cleRib || ""}`
-      console.log("[v0] Source account RIB constructed:", ribClient)
+      ribClient = sourceAccountData.accountNumber || ""
+      console.log("[v0] Source account number:", ribClient)
     } catch (error) {
       console.error("[v0] Error fetching source account details:", error)
       return {

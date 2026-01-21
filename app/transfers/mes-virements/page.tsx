@@ -81,13 +81,14 @@ export default function MesVirementsPage() {
   const filteredTransactions = useMemo(() => {
     return transactions.filter((txn) => {
       const amount = Math.abs(Number.parseFloat(txn.montantOperation || "0"))
-      const isNegative = Number.parseFloat(txn.montantOperation || "0") < 0
+      const txnType = (txn.txnType || "").toUpperCase()
+      const isDebit = txnType === "DEBIT"
       const when = new Date(txn.valueDate || txn.createdAt || new Date())
       const status = (txn.status || "COMPLETED").toLowerCase()
 
       // Filtre par onglet (type de virement)
-      if (activeTab === "emis" && !isNegative) return false
-      if (activeTab === "recu" && isNegative) return false
+      if (activeTab === "emis" && !isDebit) return false
+      if (activeTab === "recu" && isDebit) return false
 
       // Filtre par date
       if (filters.dateFrom) {
@@ -118,8 +119,8 @@ export default function MesVirementsPage() {
   // Statistiques par type
   const stats = useMemo(() => {
     const tous = transactions.length
-    const emis = transactions.filter(t => Number.parseFloat(t.montantOperation || "0") < 0)
-    const recu = transactions.filter(t => Number.parseFloat(t.montantOperation || "0") >= 0)
+    const emis = transactions.filter(t => (t.txnType || "").toUpperCase() === "DEBIT")
+    const recu = transactions.filter(t => (t.txnType || "").toUpperCase() === "CREDIT")
     
     const totalEmis = emis.reduce((sum, t) => sum + Math.abs(Number.parseFloat(t.montantOperation || "0")), 0)
     const totalRecu = recu.reduce((sum, t) => sum + Math.abs(Number.parseFloat(t.montantOperation || "0")), 0)
@@ -169,23 +170,27 @@ export default function MesVirementsPage() {
   }
 
   const formatTransaction = (txn: any, accounts: any[]) => {
-    const amount = Number.parseFloat(txn.montantOperation || "0")
-    const isNegative = amount < 0
+    const baseAmount = Number.parseFloat(txn.montantOperation || "0")
+    const txnType = (txn.txnType || "").toUpperCase()
+    const isDebit = txnType === "DEBIT"
+    const isCredit = txnType === "CREDIT"
+    // Montant avec signe : négatif pour DEBIT, positif pour CREDIT
+    const signedAmount = isDebit ? -Math.abs(baseAmount) : Math.abs(baseAmount)
     const account = accounts.find((acc) => acc.accountNumber === txn.numCompte || acc.accountId === txn.accountId)
     const currency = account?.currency || "GNF"
     const when = txn.valueDate || txn.createdAt || new Date().toISOString()
     return {
-      type: isNegative ? "Virement émis" : "Virement reçu",
+      type: isDebit ? "Virement émis" : "Virement reçu",
       from: txn.description || txn.referenceOperation || "Transaction",
-      amount: `${formatAmount(amount, currency)} ${currency}`,
+      amount: `${formatAmount(signedAmount, currency)} ${currency}`,
       date: new Date(when).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" }),
       time: new Date(when).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }),
       status: txn.status || "COMPLETED",
-      isCredit: !isNegative,
+      isCredit: isCredit,
       currency,
-      rawAmount: amount,
+      rawAmount: signedAmount,
       account,
-      isNegative,
+      isNegative: isDebit,
     }
   }
 
