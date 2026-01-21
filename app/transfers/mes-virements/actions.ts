@@ -130,19 +130,54 @@ export async function getUserTransactions(): Promise<{ success: boolean; data: T
     console.log("[v0] Total transactions récupérées:", allTransactions.length)
 
     // 4. Filtrer les transactions par comptes de l'utilisateur
-    let userTransactions = allTransactions
+    let userTransactions: Transaction[] = []
 
-    // Filtrer par clientId si disponible
-    // if (currentUserId) {
-    //   userTransactions = userTransactions.filter((txn: any) => txn.clientId === currentUserId)
-    // }
-
-    // Filtrer également par numéro de compte si disponible
     if (userAccountNumbers.length > 0) {
-      userTransactions = userTransactions.filter((txn: any) => {
+      // Transactions où le compte de l'utilisateur est le compte source (numCompte/accountId)
+      const directTransactions = allTransactions.filter((txn: any) => {
         const txnAccountNumber = txn.numCompte || txn.accountNumber || txn.accountId
         return userAccountNumbers.includes(txnAccountNumber)
       })
+
+      // Transactions où le compte de l'utilisateur est le compte crédité (creditAccount)
+      const creditTransactions = allTransactions
+        .filter((txn: any) => {
+          const creditAccount = txn.creditAccount
+          return creditAccount && userAccountNumbers.includes(creditAccount)
+        })
+        .map((txn: any) => {
+          // Créer une copie de la transaction avec txnType = "CREDIT" et numCompte = creditAccount
+          return {
+            ...txn,
+            txnType: "CREDIT" as const,
+            numCompte: txn.creditAccount,
+            accountId: txn.creditAccount,
+            // Conserver l'ID original pour éviter les doublons si la transaction existe déjà
+            originalTxnId: txn.txnId,
+          }
+        })
+
+      // Combiner les deux listes et supprimer les doublons
+      const allUserTransactions = [...directTransactions, ...creditTransactions]
+      
+      // Supprimer les doublons basés sur txnId (si une transaction est à la fois directe et créditée)
+      const uniqueTransactions = new Map<string, Transaction>()
+      allUserTransactions.forEach((txn: any) => {
+        const key = txn.txnId || txn.id || `${txn.numCompte}_${txn.valueDate}_${txn.montantOperation}`
+        if (!uniqueTransactions.has(key)) {
+          uniqueTransactions.set(key, txn)
+        } else {
+          // Si la transaction existe déjà, prioriser celle avec txnType = "CREDIT" si applicable
+          const existing = uniqueTransactions.get(key)!
+          if (txn.txnType === "CREDIT" && existing.txnType !== "CREDIT") {
+            uniqueTransactions.set(key, txn)
+          }
+        }
+      })
+
+      userTransactions = Array.from(uniqueTransactions.values())
+    } else {
+      userTransactions = allTransactions
     }
 
     console.log("[v0] Transactions filtrées pour l'utilisateur:", userTransactions.length)

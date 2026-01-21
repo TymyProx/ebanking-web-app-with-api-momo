@@ -176,7 +176,14 @@ export default function MesVirementsPage() {
     const isCredit = txnType === "CREDIT"
     // Montant avec signe : négatif pour DEBIT, positif pour CREDIT
     const signedAmount = isDebit ? -Math.abs(baseAmount) : Math.abs(baseAmount)
-    const account = accounts.find((acc) => acc.accountNumber === txn.numCompte || acc.accountId === txn.accountId)
+    const account = accounts.find(
+      (acc) =>
+        acc.accountNumber === txn.numCompte ||
+        acc.accountId === txn.accountId ||
+        acc.accountNumber === txn.accountId ||
+        acc.id === txn.accountId ||
+        acc.numCompte === txn.numCompte
+    )
     const currency = account?.currency || "GNF"
     const when = txn.valueDate || txn.createdAt || new Date().toISOString()
     return {

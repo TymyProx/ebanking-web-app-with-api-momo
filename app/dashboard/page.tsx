@@ -63,7 +63,14 @@ async function RecentTransactions() {
     // Montant avec signe : négatif pour DEBIT, positif pour CREDIT
     const signedAmount = isDebit ? -Math.abs(baseAmount) : Math.abs(baseAmount)
 
-    const account = accounts.find((acc) => acc.id === transaction.accountId || acc.accountId === transaction.accountId)
+    const account = accounts.find(
+      (acc) =>
+        acc.id === transaction.accountId ||
+        acc.accountId === transaction.accountId ||
+        acc.accountNumber === transaction.numCompte ||
+        acc.accountNumber === transaction.accountId ||
+        acc.numCompte === transaction.numCompte
+    )
     const currency = account?.currency || "GNF"
 
     return {
