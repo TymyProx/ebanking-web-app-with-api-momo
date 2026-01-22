@@ -22,6 +22,7 @@ import { useRouter } from "next/navigation"
 import { getAccounts } from "@/app/accounts/actions"
 import { createCardRequest } from "@/app/cartes/actions"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { isAccountActive } from "@/lib/status-utils"
 
 interface Account {
   id: string
@@ -60,8 +61,9 @@ export default function DemandeCartePage() {
       try {
         setLoadingAccounts(true)
         const accountsData = await getAccounts()
+        // Filtrer uniquement les comptes actifs en utilisant la fonction normalisée
         const activeAccounts = accountsData
-          .filter((acc: any) => acc.status === "ACTIF")
+          .filter((acc: any) => isAccountActive(acc.status))
           .map((acc: any) => ({
             id: acc.id || acc.accountId,
             name: acc.accountName || acc.name || `Compte ${acc.accountNumber}`,

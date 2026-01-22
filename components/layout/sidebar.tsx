@@ -64,6 +64,7 @@ import { LogoutButton } from "@/components/auth/logout-button"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { getAccounts } from "@/app/accounts/actions"
+import { isAccountActive } from "@/lib/status-utils"
 
 const navigationData = {
   main: [
@@ -262,7 +263,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>): 
       try {
         setIsCheckingAccounts(true)
         const accounts = await getAccounts()
-        const hasActive = accounts.some((account) => account.status === "ACTIF")
+        // Utiliser la fonction normalisée pour vérifier les comptes actifs
+        const hasActive = accounts.some((account) => isAccountActive(account.status))
         setHasActiveAccount(hasActive)
       } catch (error) {
         console.error("Error checking accounts:", error)

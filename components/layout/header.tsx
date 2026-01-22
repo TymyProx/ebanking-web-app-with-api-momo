@@ -20,6 +20,7 @@ import { usePathname } from "next/navigation"
 import { useState, useEffect } from "react"
 import { getAccounts } from "@/app/accounts/actions"
 import { getCurrentUser } from "@/app/user/actions"
+import { isAccountActive } from "@/lib/status-utils"
 
 export function Header() {
   const pathname = usePathname()
@@ -43,7 +44,8 @@ export function Header() {
     const checkActiveAccounts = async () => {
       try {
         const accounts = await getAccounts()
-        const activeAccounts = accounts.filter((account) => account.status?.toUpperCase() === "ACTIF")
+        // Utiliser la fonction normalisée pour vérifier les comptes actifs
+        const activeAccounts = accounts.filter((account) => isAccountActive(account.status))
         setHasActiveAccount(activeAccounts.length > 0)
       } catch (error) {
         console.error("Error checking active accounts:", error)

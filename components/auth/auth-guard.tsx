@@ -6,6 +6,7 @@ import { useEffect, useState } from "react"
 import { useRouter, usePathname } from "next/navigation"
 import AuthService from "@/lib/auth-service"
 import { getAccounts } from "@/app/accounts/actions"
+import { isAccountActive } from "@/lib/status-utils"
 
 interface AuthGuardProps {
   children: React.ReactNode
@@ -26,7 +27,8 @@ export function AuthGuard({ children }: AuthGuardProps) {
         if (AuthService.isAuthenticated() && pathname === "/") {
           try {
             const accounts = await getAccounts()
-            const hasActiveAccount = accounts.some((account) => account.status === "ACTIF")
+            // Utiliser la fonction normalisée pour vérifier les comptes actifs
+            const hasActiveAccount = accounts.some((account) => isAccountActive(account.status))
 
             if (hasActiveAccount) {
               router.push("/dashboard")

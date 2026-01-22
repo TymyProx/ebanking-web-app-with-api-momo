@@ -49,6 +49,7 @@ import { fetchAllCards, createCardRequest, type Card as CardType, type NewCardRe
 import { getAccounts } from "../accounts/actions"
 import { Badge } from "@/components/ui/badge"
 import { Label } from "@/components/ui/label"
+import { isAccountActive } from "@/lib/status-utils"
 import cn from "classnames"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 
@@ -300,8 +301,8 @@ export default function CardsPage() {
       },
     ]
 
-    // Filter card types based on account type and status
-    if (account.status !== "ACTIF") {
+    // Filter card types based on account type and status (using normalized function)
+    if (!isAccountActive(account.status)) {
       return [] // No cards for inactive accounts
     }
 
@@ -927,7 +928,7 @@ export default function CardsPage() {
                           </SelectItem>
                         ) : accounts.length > 0 ? (
                           accounts
-                            .filter((account) => account.status === "ACTIF") // Only active accounts
+                            .filter((account) => isAccountActive(account.status)) // Only active accounts
                             .map((account) => (
                               <SelectItem key={account.id} value={account.id}>
                                 <div className="flex flex-col">
