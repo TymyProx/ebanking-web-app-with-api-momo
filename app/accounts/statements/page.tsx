@@ -28,6 +28,7 @@ import { generateStatement, sendStatementByEmail, getTransactionsByNumCompte } f
 import { useActionState } from "react"
 import { getAccounts, getAccountById } from "../actions"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { normalizeAccountStatus } from "@/lib/status-utils"
 import jsPDF from "jspdf"
 import * as XLSX from "xlsx" // Added import for Excel generation
 
@@ -119,9 +120,11 @@ export default function StatementsPage() {
             branch: acc.branch,
           }))
 
-          const activeAccounts = adaptedAccounts.filter(
-            (account) => account.status === "Actif" || account.status === "ACTIF",
-          )
+          // Filtrer uniquement les comptes actifs en utilisant la normalisation
+          const activeAccounts = adaptedAccounts.filter((account) => {
+            const normalizedStatus = normalizeAccountStatus(account.status)
+            return normalizedStatus === "Actif"
+          })
           setAccounts(activeAccounts)
         }
       } catch (error) {
