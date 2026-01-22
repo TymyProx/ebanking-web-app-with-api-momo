@@ -24,6 +24,7 @@ import {
 import { useActionState } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { getAccounts } from "../../accounts/actions"
+import { isAccountActive } from "@/lib/status-utils"
 
 const serviceTypes = [
   {
@@ -453,10 +454,10 @@ export default function ServiceRequestsPage() {
           type: apiAccount.accountType || apiAccount.type,
         }))
 
-        // Filtrer pour ne garder que les comptes courants actifs
+        // Filtrer pour ne garder que les comptes courants actifs (avec fonction normalisée)
         const currentAccounts = adaptedAccounts.filter(
           (account: any) =>
-            (account.status === "ACTIF" || account.status === "Actif") &&
+            isAccountActive(account.status) &&
             (account.type === "Courant" || account.type === "Courant") &&
             account.number &&
             String(account.number).trim() !== "",

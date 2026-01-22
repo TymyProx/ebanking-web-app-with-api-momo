@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { Carousel, CarouselContent, CarouselItem } from "@/components/ui/carousel"
 import { Wallet, PiggyBank, DollarSign, Eye } from "lucide-react"
 import type { CarouselApi } from "@/components/ui/carousel"
+import { isAccountActive } from "@/lib/status-utils"
 
 interface Account {
   id: string
@@ -28,7 +29,8 @@ export function AccountsCarousel({ accounts }: AccountsCarouselProps) {
   const [current, setCurrent] = useState(0)
   const [count, setCount] = useState(0)
 
-  const activeAccounts = accounts.filter((account) => account.status === "ACTIF")
+  // Filtrer uniquement les comptes actifs avec la fonction normalisée
+  const activeAccounts = accounts.filter((account) => isAccountActive(account.status))
 
   useEffect(() => {
     if (!api) {
