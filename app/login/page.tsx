@@ -176,17 +176,16 @@ export default function LoginPage() {
                           <span>Identifiant / E-mail</span>
                           <span className="text-red-300 drop-shadow-md">*</span>
                         </Label>
-                        <div className="relative group">
+                        <div className="relative">
                           <Input
                             id="email"
                             name="email"
                             type="email"
                             placeholder="exemple@email.com"
-                            className="h-9 sm:h-10 bg-[#2d6e3e]/60 border-0 text-white text-sm placeholder:text-white/60 focus:bg-[#2d6e3e]/70 focus:ring-0 rounded-lg transition-all group-hover:bg-[#2d6e3e]/65 shadow-md"
+                            className="h-9 sm:h-10 bg-[#2d6e3e]/60 border-0 text-white text-sm placeholder:text-white/60 focus:bg-[#2d6e3e]/60 focus:ring-0 rounded-lg transition-all hover:bg-[#2d6e3e]/60 shadow-md"
                             required
                             disabled={isLoading}
                           />
-                          <div className="absolute inset-0 bg-gradient-to-r from-white/5 to-transparent rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
                         </div>
                       </div>
 
@@ -199,13 +198,13 @@ export default function LoginPage() {
                           <span>Mot de passe</span>
                           <span className="text-red-300 drop-shadow-md">*</span>
                         </Label>
-                        <div className="relative group">
+                        <div className="relative">
                           <Input
                             id="password"
                             name="password"
                             type={showPassword ? "text" : "password"}
                             placeholder="••••••••"
-                            className="h-9 sm:h-10 bg-[#2d6e3e]/60 border-0 text-white text-sm pr-11 placeholder:text-white/60 focus:bg-[#2d6e3e]/70 focus:ring-0 rounded-lg transition-all group-hover:bg-[#2d6e3e]/65 shadow-md"
+                            className="h-9 sm:h-10 bg-[#2d6e3e]/60 border-0 text-white text-sm pr-11 placeholder:text-white/60 focus:bg-[#2d6e3e]/60 focus:ring-0 rounded-lg transition-all hover:bg-[#2d6e3e]/60 shadow-md"
                             required
                             disabled={isLoading}
                           />
@@ -217,7 +216,6 @@ export default function LoginPage() {
                           >
                             {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                           </button>
-                          <div className="absolute inset-0 bg-gradient-to-r from-white/5 to-transparent rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
                         </div>
                       </div>
 
@@ -259,22 +257,22 @@ export default function LoginPage() {
                           </div>
                         )}
                       </Button>
-                    </div>
 
-                    {/* Forgot Password & Register Links */}
-                    <div className="space-y-1.5 pt-1 border-t-0">
+                      {/* Forgot Password - Centered between buttons */}
                       <Button
                         type="button"
                         variant="link"
-                        className="w-full text-xs text-white/90 hover:text-white font-medium h-auto py-1.5 bg-[#2d6e3e]/50 hover:bg-[#2d6e3e]/60 rounded-lg transition-all mb-5"
+                        className="w-full text-xs text-white/90 hover:text-white font-medium h-auto py-1.5 bg-transparent hover:bg-transparent transition-all my-2.5"
                       >
                         <span className="flex items-center justify-center space-x-1.5 drop-shadow-lg">
                           <span>Mot de passe oublié?</span>
                         </span>
                       </Button>
+
+                      {/* Register Button */}
                       <Button
                         type="button"
-                        className="relative w-full h-10 sm:h-11 bg-gradient-to-r from-[#f4c430] via-[#f8d060] to-[#f4c430] hover:from-[#e0b020] hover:via-[#f4c430] hover:to-[#e0b020] text-gray-900 font-semibold text-sm shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden group rounded-lg mt-10"
+                        className="relative w-full h-10 sm:h-11 bg-gradient-to-r from-[#f4c430] via-[#f8d060] to-[#f4c430] hover:from-[#e0b020] hover:via-[#f4c430] hover:to-[#e0b020] text-gray-900 font-semibold text-sm shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden group rounded-lg"
                         onClick={() => router.push("/signup")}
                       >
                         <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-1000"></div>
