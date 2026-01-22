@@ -164,13 +164,13 @@ export default function AcceptInvitePage() {
   return (
     <div className="min-h-screen lg:h-screen relative overflow-x-hidden overflow-y-auto lg:overflow-hidden">
       {/* Logo aligné avec le texte de bienvenue */}
-      <div className="absolute top-4 sm:top-4 lg:top-8 left-1/2 -translate-x-1/2 lg:left-4 lg:translate-x-0 z-50">
+      <div className="absolute top-4 sm:top-4 lg:top-2 left-1/2 -translate-x-1/2 lg:left-2 lg:translate-x-0 z-50">
         <Image
           src="/images/logowhite.png"
           alt="BNG Logo"
-          width={200}
-          height={60}
-          className="object-contain drop-shadow-lg w-40 sm:w-48 lg:w-[260px]"
+          width={160}
+          height={48}
+          className="object-contain drop-shadow-lg w-32 sm:w-36 lg:w-[200px]"
           priority
         />
       </div>
