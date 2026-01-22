@@ -25,6 +25,7 @@ import {
 import { createAccount, getAccounts } from "../actions"
 import { Carousel, CarouselContent, CarouselItem, type CarouselApi } from "@/components/ui/carousel"
 import { cn } from "@/lib/utils"
+import { normalizeAccountStatus } from "@/lib/status-utils"
 
 interface Account {
   id: string
@@ -66,21 +67,10 @@ export default function BalancesPage() {
       return accountsList
     }
     return accountsList.filter((account) => {
-      // Normalize status values for comparison
-      const accountStatus = account.status?.toUpperCase()
-      if (status === "ACTIF") {
-        return accountStatus === "ACTIF" || accountStatus === "ACTIF"
-      }
-      if (status === "BLOCKED") {
-        return accountStatus === "BLOCKED" || accountStatus === "BLOQUÉ"
-      }
-      if (status === "CLOSED") {
-        return accountStatus === "CLOSED" || accountStatus === "FERMÉ"
-      }
-      if (status === "PENDING") {
-        return accountStatus === "PENDING" || accountStatus === "EN ATTENTE"
-      }
-      return accountStatus === status
+      // Utiliser la fonction de normalisation pour comparer les statuts
+      const normalizedAccountStatus = normalizeAccountStatus(account.status)
+      const normalizedFilterStatus = normalizeAccountStatus(status)
+      return normalizedAccountStatus === normalizedFilterStatus
     })
   }
 

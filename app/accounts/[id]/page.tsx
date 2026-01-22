@@ -30,6 +30,7 @@ import { getAccounts } from "../actions"
 import { toggleAccountStatus, getAccountDetails } from "./actions"
 import { getUserTransactions } from "@/app/transfers/mes-virements/actions"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { getAccountStatusBadge } from "@/lib/status-utils"
 import React from "react"
 
 interface Account {
@@ -438,17 +439,9 @@ export default function AccountDetailsPage({ params }: AccountDetailPageProps) {
     }
   }
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "Actif":
-        return <Badge className="bg-green-100 text-green-800 hover:bg-green-100">Actif</Badge>
-      case "Bloqué":
-        return <Badge variant="destructive">Bloqué</Badge>
-      case "Fermé":
-        return <Badge variant="secondary">Fermé</Badge>
-      default:
-        return <Badge variant="outline">{status}</Badge>
-    }
+  const getStatusBadge = (status: string | number) => {
+    const statusInfo = getAccountStatusBadge(status)
+    return <Badge className={statusInfo.className} variant={statusInfo.variant}>{statusInfo.label}</Badge>
   }
 
   return (
