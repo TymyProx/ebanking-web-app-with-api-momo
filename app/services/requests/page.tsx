@@ -1630,7 +1630,7 @@ export default function ServiceRequestsPage() {
                     <div
                       key={request.id}
                       className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
-                      onClick={() => handleViewDetails(request)}
+                      onDoubleClick={() => handleViewDetails(request)}
                     >
                       <div className="flex items-center space-x-4">
                         <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center">

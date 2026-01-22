@@ -2,10 +2,10 @@
 
 import type React from "react"
 import { useState, useTransition, useEffect, useRef } from "react"
-import { addBeneficiary } from "../beneficiaries/actions"
-import { executeTransfer } from "./actions" // Import de l'action executeTransfer
+import { addBeneficiaryAndActivate } from "../beneficiaries/actions"
+import { executeTransfer } from "./actions"
 import { getAccounts } from "../../accounts/actions"
-import { getBeneficiaries } from "../beneficiaries/actions"
+import { getBeneficiaries, getBanks } from "../beneficiaries/actions"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -14,10 +14,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { ArrowRight, Plus, User, Building, Check, AlertCircle } from "lucide-react"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { ArrowRight, Plus, User, Check, AlertCircle, Wallet } from "lucide-react"
 import { useActionState } from "react"
-import Link from "next/link"
 import { OtpModal } from "@/components/otp-modal"
+import { toast } from "@/hooks/use-toast"
 
 // Types
 interface Beneficiary {
@@ -36,22 +37,17 @@ interface Account {
   number: string
   balance: number
   currency: string
-  status?: string // Added status field to Account interface
+  status?: string
+}
+
+interface Bank {
+  id: string
+  bankName: string
+  swiftCode: string
+  codeBank: string
 }
 
 type TransferType = "account-to-account" | "account-to-beneficiary"
-
-const banks = {
-  "BNG-BNG": ["Banque Nationale de Guinée"],
-  "BNG-CONFRERE": [
-    "United Bank for Africa (UBA)",
-    "Ecobank Guinée",
-    "Société Générale Guinée",
-    "BICIGUI",
-    "Banque Islamique de Guinée",
-  ],
-  International: ["BNP Paribas", "Société Générale", "Crédit Agricole", "HSBC", "Standard Chartered"],
-}
 
 const countries = [
   "France",
@@ -84,11 +80,24 @@ export default function NewTransferPage() {
   const [transferValidationError, setTransferValidationError] = useState<string>("")
   const [transferSubmitted, setTransferSubmitted] = useState(false)
 
-  // États pour le formulaire de bénéficiaire
-  const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [isAddBeneficiaryDialogOpen, setIsAddBeneficiaryDialogOpen] = useState(false)
   const [isPending, startTransition] = useTransition()
   const [transferState, transferAction, isTransferPending] = useActionState(executeTransfer, null)
-  const [addBeneficiaryState, addBeneficiaryAction, isAddBeneficiaryPending] = useActionState(addBeneficiary, null)
+  const [addBeneficiaryState, addBeneficiaryAction, isAddBeneficiaryPending] = useActionState(
+    addBeneficiaryAndActivate,
+    null,
+  )
+
+  const [selectedType, setSelectedType] = useState("")
+  const [selectedBank, setSelectedBank] = useState("")
+  const [banks, setBanks] = useState<Bank[]>([])
+  const [selectedBankCode, setSelectedBankCode] = useState("")
+  const [selectedSwiftCode, setSelectedSwiftCode] = useState("")
+  const [loadingBanks, setLoadingBanks] = useState(false)
+  const [accountNumberError, setAccountNumberError] = useState<string | null>(null)
+  const [ribError, setRibError] = useState<string | null>(null)
+  const [addFormSuccess, setAddFormSuccess] = useState(false)
+  const beneficiaryFormRef = useRef<HTMLFormElement>(null)
 
   const [beneficiaryMessage, setBeneficiaryMessage] = useState<{ type: "success" | "error"; text: string } | null>(null)
 
@@ -133,6 +142,192 @@ export default function NewTransferPage() {
     }
   }
 
+  const loadBanks = async () => {
+    try {
+      setLoadingBanks(true)
+      const banksData = await getBanks()
+      setBanks(banksData)
+    } catch (error) {
+      console.error("Erreur lors du chargement des banques:", error)
+      setBanks([])
+    } finally {
+      setLoadingBanks(false)
+    }
+  }
+
+  const validateAccountNumber = (value: string) => {
+    const digitsOnly = value.replace(/\D/g, "")
+
+    if (digitsOnly.length === 0) {
+      setAccountNumberError(null)
+      return
+    }
+
+    if (digitsOnly.length !== 10) {
+      setAccountNumberError("Le numéro de compte doit contenir exactement 10 chiffres")
+      return false
+    }
+
+    if (value !== digitsOnly) {
+      setAccountNumberError("Le numéro de compte ne doit contenir que des chiffres")
+      return false
+    }
+
+    setAccountNumberError(null)
+    return true
+  }
+
+  const sanitizeRibPart = (value: string) => value.replace(/\s+/g, "").toUpperCase()
+
+  const replaceLettersWithDigits = (value: string) =>
+    value
+      .split("")
+      .map((char) => {
+        if (/[0-9]/.test(char)) {
+          return char
+        }
+        const code = char.charCodeAt(0) - 55
+        return code >= 10 && code <= 35 ? String(code) : ""
+      })
+      .join("")
+
+  const mod97 = (numeric: string) => {
+    let remainder = 0
+    for (let i = 0; i < numeric.length; i += 1) {
+      const digit = numeric.charCodeAt(i) - 48
+      if (digit < 0 || digit > 9) {
+        return -1
+      }
+      remainder = (remainder * 10 + digit) % 97
+    }
+    return remainder
+  }
+
+  const computeRibKey = (bankCode: string, agencyCode: string, accountNumber: string) => {
+    const numeric = `${replaceLettersWithDigits(bankCode)}${replaceLettersWithDigits(agencyCode)}${replaceLettersWithDigits(accountNumber)}`
+    const remainder = mod97(numeric)
+    if (remainder < 0) {
+      return ""
+    }
+    const key = 97 - remainder
+    return key.toString().padStart(2, "0")
+  }
+
+  const validateRibLocally = (bankCode: string, agencyCode: string, accountNumber: string, ribKey: string) => {
+    const sanitizedBank = sanitizeRibPart(bankCode)
+    const sanitizedAgency = sanitizeRibPart(agencyCode)
+    const sanitizedAccount = sanitizeRibPart(accountNumber)
+    const sanitizedKey = sanitizeRibPart(ribKey)
+
+    if (!sanitizedBank || !sanitizedAgency || !sanitizedAccount || !sanitizedKey) {
+      return { valid: false, error: "Tous les champs RIB sont requis" }
+    }
+
+    if (!/^[0-9]{2}$/.test(sanitizedKey)) {
+      return { valid: false, error: "La clé RIB doit contenir 2 chiffres" }
+    }
+
+    const expectedKey = computeRibKey(sanitizedBank, sanitizedAgency, sanitizedAccount)
+    if (!expectedKey) {
+      return { valid: false, error: "Impossible de calculer la clé RIB" }
+    }
+
+    if (expectedKey !== sanitizedKey) {
+      return { valid: false, error: "Clé RIB invalide" }
+    }
+
+    return { valid: true, error: null }
+  }
+
+  const handleBankSelection = (bankName: string) => {
+    setSelectedBank(bankName)
+    const selectedBankData = banks.find((bank) => bank.bankName === bankName)
+    if (selectedBankData) {
+      setSelectedBankCode(selectedBankData.codeBank || "")
+      setSelectedSwiftCode(selectedBankData.swiftCode || "")
+    } else {
+      setSelectedBankCode("")
+      setSelectedSwiftCode("")
+    }
+  }
+
+  const resetBeneficiaryForm = () => {
+    setSelectedType("")
+    setSelectedBank("")
+    setSelectedBankCode("")
+    setSelectedSwiftCode("")
+    setAccountNumberError(null)
+    setRibError(null)
+    setAddFormSuccess(false)
+    if (beneficiaryFormRef.current) {
+      beneficiaryFormRef.current.reset()
+    }
+  }
+
+  const handleRibFieldChange = () => {
+    setRibError(null)
+  }
+
+  const handleAddBeneficiary = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    const formData = new FormData(e.currentTarget)
+
+    if (selectedType !== "BNG-INTERNATIONAL") {
+      const accountNumber = formData.get("account") as string
+      if (!validateAccountNumber(accountNumber)) {
+        return
+      }
+
+      if (selectedType === "BNG-BNG" || selectedType === "BNG-CONFRERE") {
+        const agencyCode = (formData.get("codeAgence") as string) || ""
+        const cleRib = (formData.get("cleRib") as string) || ""
+        const bankCodeForRib =
+          selectedType === "BNG-BNG"
+            ? selectedBankCode || "022"
+            : selectedBankCode || (formData.get("bank") as string) || ""
+
+        const ribValidation = validateRibLocally(bankCodeForRib, agencyCode, accountNumber, cleRib)
+        if (!ribValidation.valid) {
+          setRibError(ribValidation.error)
+          toast({
+            title: "RIB invalide",
+            description: ribValidation.error,
+            variant: "destructive",
+          })
+          return
+        }
+        setRibError(null)
+      }
+    }
+
+    formData.set("type", selectedType)
+
+    if (selectedType === "BNG-BNG") {
+      const internalBankCode = selectedBankCode || "022"
+      formData.set("bank", "GNXXX")
+      formData.set("bankname", "Banque Nationale de Guinée")
+      formData.set("bankCode", internalBankCode)
+      formData.set("codeBanque", internalBankCode)
+    } else if (selectedType === "BNG-CONFRERE") {
+      formData.set("bank", selectedBankCode)
+      formData.set("bankname", selectedBank)
+      if (selectedBankCode) {
+        formData.set("bankCode", selectedBankCode)
+        formData.set("codeBanque", selectedBankCode)
+      }
+    } else {
+      const bankValue = selectedBank
+      formData.set("bank", bankValue)
+      if (bankValue) {
+        formData.set("bankname", bankValue)
+      }
+    }
+
+    startTransition(() => {
+      addBeneficiaryAction(formData)
+    })
+  }
+
   const handleTransferTypeChange = (type: TransferType) => {
     setTransferType(type)
     setSelectedBeneficiary("")
@@ -149,13 +344,6 @@ export default function NewTransferPage() {
     }
   }
 
-  const handleAddBeneficiary = (formData: FormData) => {
-    startTransition(() => {
-      addBeneficiaryAction(formData)
-    })
-  }
-
-  // Gestionnaires d'événements pour le virement
   const handleTransferSubmit = (e: React.FormEvent) => {
     e.preventDefault()
 
@@ -232,7 +420,8 @@ export default function NewTransferPage() {
   }
 
   // Fonction appelée après validation OTP
-  const handleOtpVerified = () => {
+  const handleOtpVerified = (payload?: any) => {
+    console.log("[v0] OTP vérifié avec succès, payload:", payload)
     if (pendingTransferData) {
       startTransition(() => {
         transferAction(pendingTransferData)
@@ -240,15 +429,7 @@ export default function NewTransferPage() {
       // Réinitialiser les données en attente
       setPendingTransferData(null)
       setOtpReferenceId(null)
-    }
-  }
-
-  const handleDialogClose = (open: boolean) => {
-    setIsDialogOpen(open)
-    if (!open) {
-      setTransferValidationError("")
-      setTransferSubmitted(false)
-      setBeneficiaryMessage(null)
+      setShowOtpModal(false)
     }
   }
 
@@ -347,22 +528,52 @@ export default function NewTransferPage() {
   }, [])
 
   useEffect(() => {
-    if (addBeneficiaryState?.success) {
-      setBeneficiaryMessage({
-        type: "success",
-        text: "Bénéficiaire enregistré. Il sera disponible après vérification et validation.",
-      })
-      // Recharger la liste des bénéficiaires
-      loadBeneficiaries()
-    } else if (addBeneficiaryState?.error) {
-      setBeneficiaryMessage({ type: "error", text: addBeneficiaryState.error })
+    if (selectedType === "BNG-CONFRERE") {
+      loadBanks()
     }
-  }, [addBeneficiaryState])
+  }, [selectedType])
+
+  useEffect(() => {
+    if (selectedType === "BNG-BNG") {
+      setSelectedBank("Banque Nationale de Guinée")
+      setSelectedBankCode("022")
+      setSelectedSwiftCode("")
+    } else if (selectedType === "BNG-CONFRERE") {
+      setSelectedBank("")
+      setSelectedBankCode("")
+      setSelectedSwiftCode("")
+    } else if (selectedType !== "") {
+      setSelectedBank("")
+      setSelectedBankCode("")
+      setSelectedSwiftCode("")
+    }
+    if (selectedType === "BNG-INTERNATIONAL") {
+      setRibError(null)
+    }
+  }, [selectedType])
+
+  useEffect(() => {
+    if (addBeneficiaryState?.success) {
+      setAddFormSuccess(true)
+      resetBeneficiaryForm()
+      loadBeneficiaries()
+      toast({
+        title: "Succès",
+        description: "Bénéficiaire ajouté avec succès!",
+      })
+      setTimeout(() => {
+        setAddFormSuccess(false)
+        setIsAddBeneficiaryDialogOpen(false)
+      }, 2000)
+    }
+  }, [addBeneficiaryState?.success])
 
   useEffect(() => {
     if (transferValidationError && transferSubmitted) {
       // Scroll vers le message
-      validationErrorMessageRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })
+      setTimeout(() => {
+        validationErrorMessageRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })
+      }, 100)
 
       const timer = setTimeout(() => {
         setTransferValidationError("")
@@ -376,7 +587,9 @@ export default function NewTransferPage() {
     if (transferState?.success) {
       setShowSuccessMessage(true)
       // Scroll vers le message
-      successMessageRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })
+      setTimeout(() => {
+        successMessageRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })
+      }, 100)
 
       const timer = setTimeout(() => {
         setShowSuccessMessage(false)
@@ -389,7 +602,9 @@ export default function NewTransferPage() {
     if (transferState?.error) {
       setShowErrorMessage(true)
       // Scroll vers le message
-      errorMessageRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })
+      setTimeout(() => {
+        errorMessageRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })
+      }, 100)
 
       const timer = setTimeout(() => {
         setShowErrorMessage(false)
@@ -430,8 +645,11 @@ export default function NewTransferPage() {
   // Gestionnaire de changement du montant avec validation en temps réel
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value
-    setAmount(value)
-    validateAmount(value)
+    // Ne permet que les chiffres, le point décimal et un seul point
+    if (value === "" || /^\d*\.?\d*$/.test(value)) {
+      setAmount(value)
+      validateAmount(value)
+    }
   }
 
   // Révalider le montant lorsque le compte change
@@ -445,103 +663,93 @@ export default function NewTransferPage() {
     <div className="mt-6 space-y-6">
       <div className="space-y-2">
         <h1 className="text-3xl font-bold text-primary">Effectuer un virement</h1>
-        <p className="text-sm text-muted-foreground">Effectuer un virement vers un bénéficiaire ou un autre compte</p>
+        <p className="text-muted-foreground">Transférez des fonds vers un bénéficiaire ou entre vos comptes</p>
       </div>
 
-      {transferValidationError && transferSubmitted && !isDialogOpen && (
-        <Alert ref={validationErrorMessageRef} variant="destructive" className="border-l-4 border-destructive">
+      {transferValidationError && transferSubmitted && (
+        <Alert ref={validationErrorMessageRef} variant="destructive" className="border-l-4">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>{transferValidationError}</AlertDescription>
         </Alert>
       )}
 
-      {transferState?.success && !isDialogOpen && showSuccessMessage && (
-        <Alert ref={successMessageRef} className="border-l-4 border-green-500 bg-green-50/50 dark:bg-green-950/20">
-          <Check className="h-4 w-4 text-green-600" />
-          <AlertDescription className="text-green-800 dark:text-green-400">
+      {transferState?.success && showSuccessMessage && (
+        <Alert ref={successMessageRef} className="border-l-4 border-primary bg-primary/5">
+          <Check className="h-4 w-4 text-primary" />
+          <AlertDescription className="text-primary font-medium">
             {toText(transferState.message) || "Virement effectué avec succès !"}
           </AlertDescription>
         </Alert>
       )}
 
-      {transferState?.error && !isDialogOpen && showErrorMessage && (
-        <Alert ref={errorMessageRef} variant="destructive" className="border-l-4 border-destructive">
+      {transferState?.error && showErrorMessage && (
+        <Alert ref={errorMessageRef} variant="destructive" className="border-l-4">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>{toText(transferState.error)}</AlertDescription>
         </Alert>
       )}
 
       <form onSubmit={handleTransferSubmit} className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Formulaire principal */}
         <div className="lg:col-span-2 space-y-6">
-          <Card className="border-2 hover:border-primary/50 transition-all duration-300 bg-gradient-to-br from-background via-background to-primary/5">
-            <CardHeader className="space-y-1">
-              <CardTitle className="flex items-center space-x-3 text-xl">
+          {/* Type de virement */}
+          <Card className="border-2 hover:border-primary/50 transition-colors">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-lg">
                 <div className="p-2 rounded-lg bg-primary/10">
                   <ArrowRight className="h-5 w-5 text-primary" />
                 </div>
-                <span>Type de virement</span>
+                Type de virement
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-3">
-                <Label htmlFor="transferType" className="text-base font-semibold">
-                  Sélectionner le type de virement *
-                </Label>
-                <Select value={transferType} onValueChange={handleTransferTypeChange}>
-                  <SelectTrigger className="h-auto py-3 border-2 hover:border-primary/50 focus:border-primary transition-all duration-200 bg-gradient-to-r from-background to-muted/20">
-                    <SelectValue placeholder="Choisir le type de virement" />
-                  </SelectTrigger>
-                  <SelectContent className="border-2">
-                    <SelectItem value="account-to-beneficiary" className="py-4 cursor-pointer hover:bg-primary/5">
-                      <div className="flex items-start space-x-3">
-                        <div className="p-2 rounded-md bg-blue-100 dark:bg-blue-950">
-                          <User className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                        </div>
-                        <div className="flex flex-col">
-                          <span className="font-semibold text-base">Compte vers bénéficiaire</span>
-                          <span className="text-sm text-muted-foreground">
-                            Virement vers un bénéficiaire enregistré
-                          </span>
-                        </div>
+            <CardContent>
+              <Select value={transferType} onValueChange={handleTransferTypeChange}>
+                <SelectTrigger className="h-12 border-2 hover:border-primary/50 focus:border-primary transition-colors">
+                  <SelectValue placeholder="Choisir le type de virement" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="account-to-beneficiary" className="py-3 cursor-pointer">
+                    <div className="flex items-center gap-3">
+                      <User className="h-4 w-4 text-primary" />
+                      <div>
+                        <div className="font-medium">Vers un bénéficiaire</div>
+                        <div className="text-sm text-muted-foreground">Virement vers un bénéficiaire enregistré</div>
                       </div>
-                    </SelectItem>
-                    <SelectItem value="account-to-account" className="py-4 cursor-pointer hover:bg-primary/5">
-                      <div className="flex items-start space-x-3">
-                        <div className="p-2 rounded-md bg-green-100 dark:bg-green-950">
-                          <ArrowRight className="h-4 w-4 text-green-600 dark:text-green-400" />
-                        </div>
-                        <div className="flex flex-col">
-                          <span className="font-semibold text-base">Compte à compte</span>
-                          <span className="text-sm text-muted-foreground">Virement entre vos comptes</span>
-                        </div>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="account-to-account" className="py-3 cursor-pointer">
+                    <div className="flex items-center gap-3">
+                      <Wallet className="h-4 w-4 text-primary" />
+                      <div>
+                        <div className="font-medium">Entre mes comptes</div>
+                        <div className="text-sm text-muted-foreground">Virement entre vos comptes</div>
                       </div>
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+                    </div>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
             </CardContent>
           </Card>
 
-          <Card className="border-2 hover:border-primary/50 transition-all duration-300 bg-gradient-to-br from-background via-background to-blue-500/5">
-            <CardHeader className="space-y-1">
-              <CardTitle className="flex items-center space-x-3 text-xl">
-                <div className="p-2 rounded-lg bg-blue-100 dark:bg-blue-950">
-                  <User className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+          {/* Compte débiteur */}
+          <Card className="border-2 hover:border-primary/50 transition-colors">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <div className="p-2 rounded-lg bg-primary/10">
+                  <Wallet className="h-5 w-5 text-primary" />
                 </div>
-                <span>Compte débiteur</span>
+                Compte débiteur
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent>
               <div className="space-y-3">
-                <Label htmlFor="account" className="text-base font-semibold">
+                <Label htmlFor="account" className="font-medium">
                   Sélectionner le compte à débiter *
                 </Label>
                 <Select value={selectedAccount} onValueChange={handleDebitAccountChange}>
-                  <SelectTrigger className="h-auto py-3 border-2 hover:border-blue-500/50 focus:border-blue-500 transition-all duration-200 bg-gradient-to-r from-background to-blue-500/10">
+                  <SelectTrigger className="h-12 border-2 hover:border-primary/50 focus:border-primary transition-colors">
                     <SelectValue placeholder={isLoadingAccounts ? "Chargement..." : "Choisir un compte"} />
                   </SelectTrigger>
-                  <SelectContent className="border-2">
+                  <SelectContent>
                     {isLoadingAccounts ? (
                       <SelectItem value="loading" disabled>
                         Chargement des comptes...
@@ -552,17 +760,13 @@ export default function NewTransferPage() {
                       </SelectItem>
                     ) : (
                       accounts.map((account) => (
-                        <SelectItem
-                          key={account.id}
-                          value={account.id}
-                          className="py-4 cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-950/20"
-                        >
-                          <div className="flex items-center justify-between w-full">
-                            <div className="flex flex-col">
-                              <span className="font-semibold text-base">{account.name}</span>
-                              <span className="text-sm text-muted-foreground">{account.number}</span>
+                        <SelectItem key={account.id} value={account.id} className="py-3 cursor-pointer">
+                          <div className="flex items-center justify-between w-full gap-4">
+                            <div>
+                              <div className="font-medium">{account.name}</div>
+                              <div className="text-sm text-muted-foreground">{account.number}</div>
                             </div>
-                            <span className="font-bold text-blue-600 dark:text-blue-400 ml-4">
+                            <span className="font-semibold text-primary">
                               {formatCurrency(account.balance, account.currency)}
                             </span>
                           </div>
@@ -575,27 +779,27 @@ export default function NewTransferPage() {
             </CardContent>
           </Card>
 
+          {/* Compte créditeur ou Bénéficiaire */}
           {transferType === "account-to-account" ? (
-            /* Modernized credit account card */
-            <Card className="border-2 hover:border-primary/50 transition-all duration-300 bg-gradient-to-br from-background via-background to-green-500/5">
-              <CardHeader className="space-y-1">
-                <CardTitle className="flex items-center space-x-3 text-xl">
-                  <div className="p-2 rounded-lg bg-green-100 dark:bg-green-950">
-                    <Building className="h-5 w-5 text-green-600 dark:text-green-400" />
+            <Card className="border-2 hover:border-primary/50 transition-colors">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <div className="p-2 rounded-lg bg-accent/20">
+                    <Wallet className="h-5 w-5 text-accent-foreground" />
                   </div>
-                  <span>Compte créditeur</span>
+                  Compte créditeur
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent>
                 <div className="space-y-3">
-                  <Label htmlFor="creditAccount" className="text-base font-semibold">
+                  <Label htmlFor="creditAccount" className="font-medium">
                     Sélectionner le compte à créditer *
                   </Label>
                   <Select value={selectedCreditAccount} onValueChange={setSelectedCreditAccount}>
-                    <SelectTrigger className="h-auto py-3 border-2 hover:border-green-500/50 focus:border-green-500 transition-all duration-200 bg-gradient-to-r from-background to-green-500/10">
+                    <SelectTrigger className="h-12 border-2 hover:border-primary/50 focus:border-primary transition-colors">
                       <SelectValue placeholder={isLoadingAccounts ? "Chargement..." : "Choisir un compte"} />
                     </SelectTrigger>
-                    <SelectContent className="border-2">
+                    <SelectContent>
                       {isLoadingAccounts ? (
                         <SelectItem value="loading" disabled>
                           Chargement des comptes...
@@ -614,17 +818,13 @@ export default function NewTransferPage() {
                             )
                           })
                           .map((account) => (
-                            <SelectItem
-                              key={account.id}
-                              value={account.id}
-                              className="py-4 cursor-pointer hover:bg-green-50 dark:hover:bg-green-950/20"
-                            >
-                              <div className="flex items-center justify-between w-full">
-                                <div className="flex flex-col">
-                                  <span className="font-semibold text-base">{account.name}</span>
-                                  <span className="text-sm text-muted-foreground">{account.number}</span>
+                            <SelectItem key={account.id} value={account.id} className="py-3 cursor-pointer">
+                              <div className="flex items-center justify-between w-full gap-4">
+                                <div>
+                                  <div className="font-medium">{account.name}</div>
+                                  <div className="text-sm text-muted-foreground">{account.number}</div>
                                 </div>
-                                <span className="font-bold text-green-600 dark:text-green-400 ml-4">
+                                <span className="font-semibold text-primary">
                                   {formatCurrency(account.balance, account.currency)}
                                 </span>
                               </div>
@@ -634,9 +834,9 @@ export default function NewTransferPage() {
                     </SelectContent>
                   </Select>
                   {selectedAccountData && transferType === "account-to-account" && (
-                    <div className="p-3 rounded-lg bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800">
-                      <p className="text-sm text-blue-700 dark:text-blue-300 font-medium">
-                        💡 Seuls les comptes en {selectedAccountData.currency} sont disponibles pour ce virement
+                    <div className="p-3 rounded-lg bg-muted/50 border">
+                      <p className="text-sm text-muted-foreground">
+                        Seuls les comptes en {selectedAccountData.currency} sont disponibles
                       </p>
                     </div>
                   )}
@@ -644,39 +844,57 @@ export default function NewTransferPage() {
               </CardContent>
             </Card>
           ) : (
-            /* Modernized beneficiary card */
-            <Card className="border-2 hover:border-primary/50 transition-all duration-300 bg-gradient-to-br from-background via-background to-purple-500/5">
-              <CardHeader className="space-y-1">
+            <Card className="border-2 hover:border-primary/50 transition-colors">
+              <CardHeader>
                 <CardTitle className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3 text-xl">
-                    <div className="p-2 rounded-lg bg-purple-100 dark:bg-purple-950">
-                      <Building className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+                  <div className="flex items-center gap-2 text-lg">
+                    <div className="p-2 rounded-lg bg-accent/20">
+                      <User className="h-4 w-4 text-accent-foreground" />
                     </div>
-                    <span>Bénéficiaire</span>
+                    Bénéficiaire
                   </div>
-                  <Link href="/transfers/beneficiaries">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      className="flex items-center space-x-2 border-2 hover:border-primary hover:bg-primary/5 transition-all duration-200 bg-transparent"
-                    >
-                      <Plus className="h-4 w-4" />
-                      <span>Nouveau</span>
-                    </Button>
-                  </Link>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="gap-2 bg-transparent"
+                    onClick={() => {
+                      resetBeneficiaryForm()
+                      setIsAddBeneficiaryDialogOpen(true)
+                    }}
+                  >
+                    <Plus className="h-4 w-4" />
+                    Nouveau
+                  </Button>
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent>
                 <div className="space-y-3">
-                  <Label htmlFor="beneficiary" className="text-base font-semibold">
+                  <Label htmlFor="beneficiary" className="font-medium">
                     Sélectionner le bénéficiaire *
                   </Label>
                   <Select value={selectedBeneficiary} onValueChange={setSelectedBeneficiary}>
-                    <SelectTrigger className="h-auto py-3 border-2 hover:border-purple-500/50 focus:border-purple-500 transition-all duration-200 bg-gradient-to-r from-background to-purple-500/10">
-                      <SelectValue placeholder={isLoadingBeneficiaries ? "Chargement..." : "Choisir un bénéficiaire"} />
+                    <SelectTrigger className="min-h-12 h-auto py-2 border-2 hover:border-primary/50 focus:border-primary transition-colors">
+                      <SelectValue placeholder={isLoadingBeneficiaries ? "Chargement..." : "Choisir un bénéficiaire"}>
+                        {selectedBeneficiary && beneficiaries.find((b) => b.id === selectedBeneficiary) && (
+                          <div className="flex items-start gap-3 py-1">
+                            <User className="h-4 w-4 text-primary mt-1 flex-shrink-0" />
+                            <div className="flex-1 min-w-0 text-left">
+                              <div className="font-medium truncate">
+                                {beneficiaries.find((b) => b.id === selectedBeneficiary)?.name}
+                              </div>
+                              <div className="text-sm text-muted-foreground truncate">
+                                {beneficiaries.find((b) => b.id === selectedBeneficiary)?.account}
+                              </div>
+                              <div className="text-xs text-muted-foreground">
+                                {beneficiaries.find((b) => b.id === selectedBeneficiary)?.bank}
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </SelectValue>
                     </SelectTrigger>
-                    <SelectContent className="border-2">
+                    <SelectContent>
                       {isLoadingBeneficiaries ? (
                         <SelectItem value="loading" disabled>
                           Chargement des bénéficiaires...
@@ -687,19 +905,13 @@ export default function NewTransferPage() {
                         </SelectItem>
                       ) : (
                         beneficiaries.map((beneficiary) => (
-                          <SelectItem
-                            key={beneficiary.id}
-                            value={beneficiary.id}
-                            className="py-4 cursor-pointer hover:bg-purple-50 dark:hover:bg-purple-950/20"
-                          >
-                            <div className="flex items-start space-x-3">
-                              <div className="p-2 rounded-md bg-purple-100 dark:bg-purple-950">
-                                <User className="h-4 w-4 text-purple-600 dark:text-purple-400" />
-                              </div>
-                              <div className="flex flex-col">
-                                <span className="font-semibold text-base">{beneficiary.name}</span>
-                                <span className="text-sm text-muted-foreground">{beneficiary.account}</span>
-                                <span className="text-sm text-muted-foreground">{beneficiary.bank}</span>
+                          <SelectItem key={beneficiary.id} value={beneficiary.id} className="py-3 cursor-pointer">
+                            <div className="flex items-start gap-3">
+                              <User className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
+                              <div className="min-w-0 flex-1">
+                                <div className="font-medium">{beneficiary.name}</div>
+                                <div className="text-sm text-muted-foreground break-all">{beneficiary.account}</div>
+                                <div className="text-xs text-muted-foreground">{beneficiary.bank}</div>
                               </div>
                             </div>
                           </SelectItem>
@@ -712,32 +924,33 @@ export default function NewTransferPage() {
             </Card>
           )}
 
-          <Card className="border-2 hover:border-primary/50 transition-all duration-300 bg-gradient-to-br from-background via-background to-orange-500/5">
-            <CardHeader className="space-y-1">
-              <CardTitle className="flex items-center space-x-3 text-xl">
-                <div className="p-2 rounded-lg bg-orange-100 dark:bg-orange-950">
-                  <ArrowRight className="h-5 w-5 text-orange-600 dark:text-orange-400" />
+          {/* Détails du virement */}
+          <Card className="border-2 hover:border-primary/50 transition-colors">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <div className="p-2 rounded-lg bg-secondary/20">
+                  <ArrowRight className="h-5 w-5 text-secondary-foreground" />
                 </div>
-                <span>Détails du virement</span>
+                Détails du virement
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-5">
-              <div className="space-y-3">
-                <Label htmlFor="amount" className="text-base font-semibold">
+              <div className="space-y-2">
+                <Label htmlFor="amount" className="font-medium">
                   Montant *
                 </Label>
                 <Input
                   id="amount"
-                  type="number"
+                  type="text"
+                  inputMode="decimal"
                   value={amount}
                   onChange={handleAmountChange}
                   placeholder="0"
-                  min="1"
                   required
-                  className={`h-12 text-lg border-2 transition-all duration-200 ${
+                  className={`h-12 text-lg border-2 transition-colors ${
                     amountError
-                      ? "border-destructive focus:border-destructive hover:border-destructive"
-                      : "hover:border-orange-500/50 focus:border-orange-500"
+                      ? "border-destructive focus:border-destructive"
+                      : "hover:border-primary/50 focus:border-primary"
                   }`}
                 />
                 {amountError && (
@@ -746,11 +959,11 @@ export default function NewTransferPage() {
                     <AlertDescription className="text-sm">{amountError}</AlertDescription>
                   </Alert>
                 )}
-                {selectedAccountData && (
+                {selectedAccountData && !amountError && (
                   <div className="p-3 rounded-lg bg-muted/50 border">
-                    <p className="text-sm font-medium">
-                      💰 Solde disponible:{" "}
-                      <span className="text-primary">
+                    <p className="text-sm text-muted-foreground">
+                      Solde disponible:{" "}
+                      <span className="font-semibold text-primary">
                         {formatCurrency(selectedAccountData.balance, selectedAccountData.currency)}
                       </span>
                     </p>
@@ -758,8 +971,8 @@ export default function NewTransferPage() {
                 )}
               </div>
 
-              <div className="space-y-3">
-                <Label htmlFor="motif" className="text-base font-semibold">
+              <div className="space-y-2">
+                <Label htmlFor="motif" className="font-medium">
                   Motif du virement *
                 </Label>
                 <Textarea
@@ -769,12 +982,12 @@ export default function NewTransferPage() {
                   placeholder="Indiquez le motif du virement..."
                   rows={3}
                   required
-                  className="border-2 hover:border-orange-500/50 focus:border-orange-500 transition-all duration-200 resize-none"
+                  className="border-2 hover:border-primary/50 focus:border-primary transition-colors resize-none"
                 />
               </div>
 
-              <div className="space-y-3">
-                <Label htmlFor="transferDate" className="text-base font-semibold">
+              <div className="space-y-2">
+                <Label htmlFor="transferDate" className="font-medium">
                   Date d'exécution *
                 </Label>
                 <Input
@@ -784,7 +997,7 @@ export default function NewTransferPage() {
                   onChange={(e) => setTransferDate(e.target.value)}
                   min={new Date().toISOString().split("T")[0]}
                   required
-                  className="h-12 border-2 hover:border-orange-500/50 focus:border-orange-500 transition-all duration-200"
+                  className="h-12 border-2 hover:border-primary/50 focus:border-primary transition-colors"
                 />
               </div>
             </CardContent>
@@ -801,36 +1014,36 @@ export default function NewTransferPage() {
                 !motif ||
                 !isAmountValid
               }
-              className="h-12 px-8 text-base font-semibold bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+              className="h-12 px-8 font-semibold bg-primary hover:bg-primary/90 transition-all shadow-lg hover:shadow-xl disabled:opacity-50"
             >
               <ArrowRight className="h-5 w-5 mr-2" />
-              <span>{isTransferPending ? "Traitement en cours..." : "Effectuer le virement"}</span>
+              {isTransferPending ? "Traitement en cours..." : "Effectuer le virement"}
             </Button>
           </div>
         </div>
 
         <div className="space-y-6">
-          <Card className="sticky top-6 border-2 bg-gradient-to-br from-background via-background to-primary/10 shadow-lg">
-            <CardHeader className="space-y-1 border-b bg-gradient-to-r from-primary/5 to-primary/10">
-              <CardTitle className="text-xl">📋 Résumé du virement</CardTitle>
+          <Card className="sticky top-6 border-2 shadow-lg">
+            <CardHeader className="border-b bg-muted/30">
+              <CardTitle className="text-lg">Résumé du virement</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4 pt-6">
               <div>
-                <h4 className="font-semibold text-sm text-muted-foreground mb-2">Type de virement</h4>
-                <div className="p-3 bg-gradient-to-r from-muted/50 to-muted/30 rounded-lg border">
-                  <p className="font-semibold">
-                    {transferType === "account-to-beneficiary" ? "Compte vers bénéficiaire" : "Compte à compte"}
+                <h4 className="text-sm font-medium text-muted-foreground mb-2">Type de virement</h4>
+                <div className="p-3 bg-muted/50 rounded-lg border">
+                  <p className="font-medium">
+                    {transferType === "account-to-beneficiary" ? "Vers un bénéficiaire" : "Entre mes comptes"}
                   </p>
                 </div>
               </div>
 
               {selectedAccountData && (
                 <div>
-                  <h4 className="font-semibold text-sm text-muted-foreground mb-2">Compte à débiter</h4>
-                  <div className="p-3 bg-gradient-to-r from-blue-50 to-blue-100/50 dark:from-blue-950/30 dark:to-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-                    <p className="font-semibold">{selectedAccountData.name}</p>
+                  <h4 className="text-sm font-medium text-muted-foreground mb-2">Compte à débiter</h4>
+                  <div className="p-3 bg-primary/5 rounded-lg border border-primary/20">
+                    <p className="font-medium">{selectedAccountData.name}</p>
                     <p className="text-sm text-muted-foreground">{selectedAccountData.number}</p>
-                    <p className="text-sm font-medium text-blue-600 dark:text-blue-400 mt-1">
+                    <p className="text-sm font-semibold text-primary mt-1">
                       {formatCurrency(selectedAccountData.balance, selectedAccountData.currency)}
                     </p>
                   </div>
@@ -839,12 +1052,12 @@ export default function NewTransferPage() {
 
               {transferType === "account-to-beneficiary" && selectedBeneficiaryData && (
                 <div>
-                  <h4 className="font-semibold text-sm text-muted-foreground mb-2">Bénéficiaire</h4>
-                  <div className="p-3 bg-gradient-to-r from-purple-50 to-purple-100/50 dark:from-purple-950/30 dark:to-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-800">
-                    <p className="font-semibold">{selectedBeneficiaryData.name}</p>
+                  <h4 className="text-sm font-medium text-muted-foreground mb-2">Bénéficiaire</h4>
+                  <div className="p-3 bg-accent/10 rounded-lg border border-accent/20">
+                    <p className="font-medium">{selectedBeneficiaryData.name}</p>
                     <p className="text-sm text-muted-foreground">{selectedBeneficiaryData.account}</p>
                     <p className="text-sm text-muted-foreground">{selectedBeneficiaryData.bank}</p>
-                    <Badge variant="outline" className="mt-2 border-purple-300 dark:border-purple-700">
+                    <Badge variant="outline" className="mt-2">
                       {selectedBeneficiaryData.type}
                     </Badge>
                   </div>
@@ -853,11 +1066,11 @@ export default function NewTransferPage() {
 
               {transferType === "account-to-account" && selectedCreditAccountData && (
                 <div>
-                  <h4 className="font-semibold text-sm text-muted-foreground mb-2">Compte à créditer</h4>
-                  <div className="p-3 bg-gradient-to-r from-green-50 to-green-100/50 dark:from-green-950/30 dark:to-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
-                    <p className="font-semibold">{selectedCreditAccountData.name}</p>
+                  <h4 className="text-sm font-medium text-muted-foreground mb-2">Compte à créditer</h4>
+                  <div className="p-3 bg-accent/10 rounded-lg border border-accent/20">
+                    <p className="font-medium">{selectedCreditAccountData.name}</p>
                     <p className="text-sm text-muted-foreground">{selectedCreditAccountData.number}</p>
-                    <p className="text-sm font-medium text-green-600 dark:text-green-400 mt-1">
+                    <p className="text-sm font-semibold text-primary mt-1">
                       {formatCurrency(selectedCreditAccountData.balance, selectedCreditAccountData.currency)}
                     </p>
                   </div>
@@ -866,9 +1079,9 @@ export default function NewTransferPage() {
 
               {amount && (
                 <div>
-                  <h4 className="font-semibold text-sm text-muted-foreground mb-2">Montant</h4>
-                  <div className="p-4 bg-gradient-to-r from-primary/10 to-primary/5 rounded-lg border-2 border-primary/20">
-                    <p className="text-2xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+                  <h4 className="text-sm font-medium text-muted-foreground mb-2">Montant</h4>
+                  <div className="p-4 bg-secondary/10 rounded-lg border-2 border-secondary/30">
+                    <p className="text-2xl font-bold text-primary">
                       {formatCurrency(Number.parseFloat(amount), selectedAccountData?.currency || "GNF")}
                     </p>
                   </div>
@@ -877,7 +1090,7 @@ export default function NewTransferPage() {
 
               {motif && (
                 <div>
-                  <h4 className="font-semibold text-sm text-muted-foreground mb-2">Motif</h4>
+                  <h4 className="text-sm font-medium text-muted-foreground mb-2">Motif</h4>
                   <div className="p-3 bg-muted/50 rounded-lg border">
                     <p className="text-sm">{motif}</p>
                   </div>
@@ -886,7 +1099,7 @@ export default function NewTransferPage() {
 
               {transferDate && (
                 <div>
-                  <h4 className="font-semibold text-sm text-muted-foreground mb-2">Date d'exécution</h4>
+                  <h4 className="text-sm font-medium text-muted-foreground mb-2">Date d'exécution</h4>
                   <div className="p-3 bg-muted/50 rounded-lg border">
                     <p className="text-sm font-medium">
                       {new Date(transferDate).toLocaleDateString("fr-FR", {
@@ -904,18 +1117,214 @@ export default function NewTransferPage() {
         </div>
       </form>
 
-      {/* Modal OTP */}
-      <OtpModal
-        open={showOtpModal}
-        onOpenChange={setShowOtpModal}
-        onVerified={handleOtpVerified}
-        purpose="TRANSFER"
-        referenceId={otpReferenceId || undefined}
-        title="Confirmer le virement"
-        description={`Entrez le code OTP pour confirmer le virement de ${amount ? formatCurrency(Number.parseFloat(amount), selectedAccountData?.currency || "GNF") : "0 GNF"}`}
-        deliveryMethod="EMAIL"
-        autoGenerate={true}
-      />
+      <Dialog open={isAddBeneficiaryDialogOpen} onOpenChange={setIsAddBeneficiaryDialogOpen}>
+        <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Ajouter un bénéficiaire</DialogTitle>
+          </DialogHeader>
+
+          <form ref={beneficiaryFormRef} onSubmit={handleAddBeneficiary} className="space-y-4">
+            {addFormSuccess && (
+              <Alert variant="default" className="border-primary/20 bg-primary/5">
+                <Check className="h-4 w-4 text-primary" />
+                <AlertDescription className="text-primary">Bénéficiaire ajouté avec succès!</AlertDescription>
+              </Alert>
+            )}
+
+            {addBeneficiaryState?.error && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{addBeneficiaryState.error}</AlertDescription>
+              </Alert>
+            )}
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="name">Nom complet *</Label>
+                <Input id="name" name="name" placeholder="Nom et prénom du bénéficiaire" required />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="type">Type de bénéficiaire *</Label>
+                <Select value={selectedType} onValueChange={setSelectedType} required>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Sélectionnez le type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="BNG-BNG">Interne</SelectItem>
+                    <SelectItem value="BNG-CONFRERE">Confrère(Guinée)</SelectItem>
+                    <SelectItem value="BNG-INTERNATIONAL">International</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {selectedType !== "" && (
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="bank">Banque *</Label>
+                  {selectedType === "BNG-BNG" ? (
+                    <Input
+                      id="bank"
+                      name="bankname"
+                      value="Banque Nationale de Guinée"
+                      readOnly
+                      className="bg-muted/50"
+                    />
+                  ) : selectedType === "BNG-CONFRERE" ? (
+                    <Select name="bankname" value={selectedBank} onValueChange={handleBankSelection} required>
+                      <SelectTrigger>
+                        <SelectValue placeholder={loadingBanks ? "Chargement..." : "Sélectionnez une banque"} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {banks.map((bank) => (
+                          <SelectItem key={bank.id} value={bank.bankName}>
+                            {bank.bankName}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  ) : selectedType === "BNG-INTERNATIONAL" ? (
+                    <Input
+                      id="bank"
+                      name="bank"
+                      value={selectedBank || ""}
+                      onChange={(e) => setSelectedBank(e.target.value)}
+                      placeholder="Saisissez le nom de la banque"
+                      required
+                    />
+                  ) : null}
+                </div>
+
+                {(selectedType === "BNG-CONFRERE" || selectedType === "BNG-BNG") && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="codeBanque">Code Banque *</Label>
+                      <Input
+                        id="codeBanque"
+                        name="codeBanque"
+                        value={selectedBankCode || ""}
+                        placeholder="Code banque"
+                        disabled
+                        className="bg-muted/50"
+                        required
+                      />
+                    </div>
+
+                    {selectedType === "BNG-CONFRERE" && (
+                      <div className="space-y-2">
+                        <Label htmlFor="swiftCode">Code SWIFT</Label>
+                        <Input
+                          id="swiftCode"
+                          name="swiftCode"
+                          value={selectedSwiftCode || ""}
+                          placeholder="Code SWIFT"
+                          disabled
+                          className="bg-muted/50"
+                        />
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {selectedType !== "BNG-INTERNATIONAL" && selectedType !== "" && (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="codeAgence">Code agence *</Label>
+                  <Input
+                    id="codeAgence"
+                    name="codeAgence"
+                    placeholder="Ex: 0001"
+                    onChange={handleRibFieldChange}
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="account">Numéro de compte *</Label>
+                  <Input
+                    id="account"
+                    name="account"
+                    onChange={(e) => {
+                      validateAccountNumber(e.target.value)
+                      handleRibFieldChange()
+                    }}
+                    placeholder="1234567890"
+                    maxLength={10}
+                    pattern="[0-9]{10}"
+                    required
+                  />
+                  {accountNumberError && <p className="text-sm text-destructive">{accountNumberError}</p>}
+                  <p className="text-sm text-muted-foreground">10 chiffres uniquement</p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="cleRib">Clé RIB *</Label>
+                  <Input
+                    id="cleRib"
+                    name="cleRib"
+                    placeholder="Ex: 89"
+                    maxLength={2}
+                    onChange={handleRibFieldChange}
+                    required
+                  />
+                  {ribError && selectedType !== "BNG-INTERNATIONAL" && (
+                    <p className="text-sm text-destructive">{ribError}</p>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {selectedType === "BNG-INTERNATIONAL" && (
+              <div className="space-y-2">
+                <Label htmlFor="account">IBAN *</Label>
+                <Input id="account" name="account" placeholder="FR76 1234 5678 9012 3456 78" required />
+              </div>
+            )}
+
+            <div className="flex justify-end space-x-2 pt-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsAddBeneficiaryDialogOpen(false)}
+                disabled={isAddBeneficiaryPending}
+              >
+                Annuler
+              </Button>
+              <Button
+                type="submit"
+                disabled={
+                  isAddBeneficiaryPending ||
+                  ((accountNumberError !== null || ribError !== null) && selectedType !== "BNG-INTERNATIONAL")
+                }
+              >
+                {isAddBeneficiaryPending ? "Traitement..." : "Ajouter"}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {showOtpModal && otpReferenceId && (
+        <OtpModal
+          open={showOtpModal}
+          onOpenChange={(open) => {
+            if (!open) {
+              setShowOtpModal(false)
+              setOtpReferenceId(null)
+              setPendingTransferData(null)
+            }
+          }}
+          onVerified={handleOtpVerified}
+          purpose="transfer"
+          referenceId={otpReferenceId}
+          title="Vérification du virement"
+          description="Veuillez entrer le code de vérification pour confirmer ce virement"
+          deliveryMethod="EMAIL"
+        />
+      )}
     </div>
   )
 }

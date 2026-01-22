@@ -132,6 +132,11 @@ const navigationData = {
       ],
     },
     {
+      title: "Opérations en attente",
+      url: "/operations/pending",
+      icon: Clock,
+    },
+    {
       title: "Gestion des cartes",
       icon: CreditCard,
       items: [
@@ -210,11 +215,6 @@ const navigationData = {
       url: "/notifications",
       icon: Bell,
       badge: "3",
-    },
-    {
-      title: "Opérations en attente",
-      url: "/operations/pending",
-      icon: Clock,
     },
   ],
 }
