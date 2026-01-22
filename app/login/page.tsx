@@ -13,6 +13,7 @@ import AuthService from "@/lib/auth-service"
 import { config } from "@/lib/config"
 import { storeAuthToken } from "./actions"
 import { getAccounts } from "@/app/accounts/actions"
+import { isAccountActive } from "@/lib/status-utils"
 
 const welcomeMessages = [
   {
@@ -81,9 +82,8 @@ export default function LoginPage() {
 
         console.log("[v0] Fetched accounts:", accounts)
 
-        const hasActiveAccounts = accounts.some(
-          (acc) => acc.status?.toUpperCase() === "ACTIF" || acc.status?.toUpperCase() === "ACTIVE",
-        )
+        // Utiliser la fonction normalisée pour vérifier les comptes actifs
+        const hasActiveAccounts = accounts.some((acc) => isAccountActive(acc.status))
 
         console.log("[v0] Has active accounts:", hasActiveAccounts)
 

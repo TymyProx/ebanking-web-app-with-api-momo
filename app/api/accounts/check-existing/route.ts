@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { cookies } from "next/headers"
 import { getApiBaseUrl, TENANT_ID } from "@/lib/api-url"
+import { isAccountActive } from "@/lib/status-utils"
 
 const API_BASE_URL = getApiBaseUrl()
 
@@ -56,11 +57,11 @@ export async function GET() {
       accounts = accountsData
     }
 
-    // Filter by current user and active status
+    // Filter by current user and active status (using normalized function)
     const userActiveAccounts = accounts.filter(
       (account: any) => 
         account.clientId === currentUserId && 
-        (account.status === "ACTIF" || account.status === "ACTIVE")
+        isAccountActive(account.status)
     )
 
     return NextResponse.json({ 
