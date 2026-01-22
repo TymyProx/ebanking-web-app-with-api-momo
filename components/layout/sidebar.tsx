@@ -397,7 +397,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>): 
             </div>
           ) : (
             <div className="flex min-h-[80px] w-full items-center justify-center py-2">
-              <div className="h-[160px] w-[360px] flex-shrink-0 rounded-lg px-4 py-3">
+              <div className="h-[120px] w-[260px] flex-shrink-0 rounded-lg px-4 py-3">
                 <Image
                   src="/images/logowhite.png"
                   alt="BNG Logo"
