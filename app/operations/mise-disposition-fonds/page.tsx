@@ -34,6 +34,7 @@ export default function FundsProvisionPage() {
   const [isLoadingDetails, setIsLoadingDetails] = useState(false)
   const [accounts, setAccounts] = useState<any[]>([])
   const [isLoadingAccounts, setIsLoadingAccounts] = useState(true)
+  const [balanceError, setBalanceError] = useState<string>("")
 
   useEffect(() => {
     loadAccounts()
@@ -127,6 +128,20 @@ export default function FundsProvisionPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    // Vérifier le solde avant de soumettre
+    if (selectedAccount && formData.montant) {
+      const account = accounts.find((acc) => acc.number === selectedAccount)
+      const montantNum = Number.parseFloat(formData.montant)
+      if (account && montantNum > account.balance) {
+        setSubmitState({
+          success: false,
+          error: `Le montant saisi dépasse le solde disponible (${account.balance.toLocaleString("fr-FR")} ${account.currency || "GNF"})`,
+        })
+        return
+      }
+    }
+    
     setIsSubmitting(true)
 
     try {
@@ -141,11 +156,12 @@ export default function FundsProvisionPage() {
 
       setSubmitState({
         success: true,
-        reference: result.data?.reference || "Demande enregistrée",
+        reference: result.withdrawalCode || result.data?.reference || result.reference || "Demande enregistrée",
       })
 
       setFormData({})
       setSelectedAccount("")
+      setBalanceError("")
       loadRequests()
     } catch (error: any) {
       setSubmitState({
@@ -265,7 +281,9 @@ export default function FundsProvisionPage() {
                   <CheckCircle className="h-4 w-4 text-green-600" />
                   <AlertDescription className="text-green-800">
                     Votre demande a été soumise avec succès !<br />
-                    Référence: <span className="font-semibold">{submitState.reference}</span>
+                    <strong>Code de retrait:</strong> <span className="font-semibold text-lg">{submitState.reference}</span><br />
+                    <span className="text-sm mt-2 block">Un email avec le récapitulatif PDF a été envoyé à votre adresse email.</span>
+                    <span className="text-sm block">Le bénéficiaire doit se présenter à l'agence avec ce code de retrait et sa CNI.</span>
                   </AlertDescription>
                 </Alert>
               )}
@@ -280,7 +298,24 @@ export default function FundsProvisionPage() {
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="space-y-2">
                   <Label htmlFor="account">Compte à débiter</Label>
-                  <Select value={selectedAccount} onValueChange={setSelectedAccount} required>
+                  <Select 
+                    value={selectedAccount} 
+                    onValueChange={(value) => {
+                      setSelectedAccount(value)
+                      // Réinitialiser l'erreur de solde et vérifier à nouveau si un montant est saisi
+                      setBalanceError("")
+                      if (formData.montant) {
+                        const account = accounts.find((acc) => acc.number === value)
+                        const montantNum = Number.parseFloat(formData.montant)
+                        if (account && montantNum > account.balance) {
+                          setBalanceError(
+                            `Le montant saisi (${montantNum.toLocaleString("fr-FR")} ${account.currency || "GNF"}) dépasse le solde disponible (${account.balance.toLocaleString("fr-FR")} ${account.currency || "GNF"})`
+                          )
+                        }
+                      }
+                    }} 
+                    required
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="Sélectionnez un compte" />
                     </SelectTrigger>
@@ -311,10 +346,47 @@ export default function FundsProvisionPage() {
                     type="number"
                     min="1"
                     value={formData.montant || ""}
-                    onChange={(e) => setFormData({ ...formData, montant: e.target.value })}
+                    onChange={(e) => {
+                      const montant = e.target.value
+                      setFormData({ ...formData, montant })
+                      
+                      // Vérifier le solde si un compte est sélectionné
+                      if (selectedAccount && montant) {
+                        const account = accounts.find((acc) => acc.number === selectedAccount)
+                        const montantNum = Number.parseFloat(montant)
+                        if (account && montantNum > account.balance) {
+                          setBalanceError(
+                            `Le montant saisi (${montantNum.toLocaleString("fr-FR")} ${account.currency || "GNF"}) dépasse le solde disponible (${account.balance.toLocaleString("fr-FR")} ${account.currency || "GNF"})`
+                          )
+                        } else {
+                          setBalanceError("")
+                        }
+                      } else {
+                        setBalanceError("")
+                      }
+                    }}
                     placeholder="Montant à mettre à disposition"
                     required
                   />
+                  {balanceError && (
+                    <p className="text-sm text-red-600 mt-1">{balanceError}</p>
+                  )}
+                  {selectedAccount && formData.montant && !balanceError && (
+                    (() => {
+                      const account = accounts.find((acc) => acc.number === selectedAccount)
+                      if (account) {
+                        const montantNum = Number.parseFloat(formData.montant)
+                        const soldeRestant = account.balance - montantNum
+                        return (
+                          <p className="text-sm text-gray-600 mt-1">
+                            Solde disponible: {account.balance.toLocaleString("fr-FR")} {account.currency || "GNF"} | 
+                            Solde après opération: {soldeRestant.toLocaleString("fr-FR")} {account.currency || "GNF"}
+                          </p>
+                        )
+                      }
+                      return null
+                    })()
+                  )}
                 </div>
 
                 <div className="space-y-2">
