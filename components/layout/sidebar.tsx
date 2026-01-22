@@ -399,8 +399,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>): 
                 <Image
                   src="/images/logowhite.png"
                   alt="BNG Logo"
-                  width={340}
-                  height={160}
+                  width={240}
+                  height={60}
                   className="h-full w-full object-contain"
                   priority
                 />
