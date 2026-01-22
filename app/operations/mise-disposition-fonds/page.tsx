@@ -15,6 +15,7 @@ import { HandCoins, Clock, CheckCircle, AlertCircle, Send, Search } from "lucide
 import { submitFundsProvisionRequest, getFundsProvisionRequests, getFundsProvisionById } from "./actions"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { getAccounts } from "../../accounts/actions"
+import { isAccountActive } from "@/lib/status-utils"
 
 export default function FundsProvisionPage() {
   const [selectedAccount, setSelectedAccount] = useState<string>("")
@@ -64,9 +65,10 @@ export default function FundsProvisionPage() {
           type: apiAccount.accountType || apiAccount.type,
         }))
 
+        // Filtrer uniquement les comptes actifs (avec fonction normalisée)
         const currentAccounts = adaptedAccounts.filter(
           (account: any) =>
-            (account.status === "ACTIF" || account.status === "Actif") &&
+            isAccountActive(account.status) &&
             account.number &&
             String(account.number).trim() !== "",
         )

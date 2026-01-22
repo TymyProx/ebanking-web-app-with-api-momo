@@ -16,6 +16,7 @@ import { CreditCard, Clock, CheckCircle, AlertCircle, Send, Search } from "lucid
 import { submitCreditRequest, getCreditRequest, getDemandeCreditById } from "../requests/actions"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { getAccounts } from "../../accounts/actions"
+import { isAccountActive } from "@/lib/status-utils"
 
 export default function CreditRequestPage() {
   const [selectedAccount, setSelectedAccount] = useState<string>("")
@@ -66,9 +67,10 @@ export default function CreditRequestPage() {
           type: apiAccount.accountType || apiAccount.type,
         }))
 
+        // Filtrer uniquement les comptes courants actifs (avec fonction normalisée)
         const currentAccounts = adaptedAccounts.filter(
           (account: any) =>
-            (account.status === "ACTIF" || account.status === "Actif") &&
+            isAccountActive(account.status) &&
             (account.type === "Courant" || account.type === "Courant") &&
             account.number &&
             String(account.number).trim() !== "",

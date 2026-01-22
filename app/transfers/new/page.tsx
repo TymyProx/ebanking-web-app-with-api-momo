@@ -19,6 +19,7 @@ import { ArrowRight, Plus, User, Check, AlertCircle, Wallet } from "lucide-react
 import { useActionState } from "react"
 import { OtpModal } from "@/components/otp-modal"
 import { toast } from "@/hooks/use-toast"
+import { isAccountActive } from "@/lib/status-utils"
 
 // Types
 interface Beneficiary {
@@ -464,9 +465,10 @@ export default function NewTransferPage() {
           currency: apiAccount.currency || "GNF",
           status: apiAccount.status,
         }))
+        // Filtrer uniquement les comptes actifs avec la fonction normalisée
         const activeAccounts = adaptedAccounts.filter(
           (account: Account) =>
-            (account.status === "ACTIF" || account.status === "Actif") &&
+            isAccountActive(account.status) &&
             account.number &&
             String(account.number).trim() !== "",
         )
