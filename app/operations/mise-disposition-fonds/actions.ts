@@ -26,6 +26,7 @@ interface FundsProvision {
   numCni: string
   agence: string
   statut: string
+  clientId?: string
   createdAt: string
   updatedAt: string
   deletedAt?: string
@@ -408,7 +409,28 @@ export async function getFundsProvisionRequests(): Promise<GetFundsProvisionsRes
       return { success: false, data: { rows: [], count: 0 } }
     }
 
-    const response = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/mise-dpstion-fonds`, {
+    // Récupérer les informations de l'utilisateur connecté pour obtenir le clientId
+    const userResponse = await fetch(`${API_BASE_URL}/auth/me`, {
+      headers: {
+        Authorization: `Bearer ${cookieToken}`,
+      },
+    })
+
+    if (!userResponse.ok) {
+      console.error("[MDF] Impossible de récupérer les informations utilisateur")
+      return { success: false, data: { rows: [], count: 0 } }
+    }
+
+    const userData = await userResponse.json()
+    const clientId = userData.id
+
+    if (!clientId) {
+      console.error("[MDF] clientId introuvable dans les données utilisateur")
+      return { success: false, data: { rows: [], count: 0 } }
+    }
+
+    // Récupérer toutes les demandes avec filtre clientId dans l'URL
+    const response = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/mise-dpstion-fonds?filter[clientId]=${clientId}`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -419,11 +441,49 @@ export async function getFundsProvisionRequests(): Promise<GetFundsProvisionsRes
 
     if (!response.ok) {
       console.log("[v0] Response not OK, status:", response.status)
-      const errorData = await response.json()
-      throw new Error(errorData.message || "Erreur lors de la récupération des demandes")
+      
+      // Si le filtre dans l'URL ne fonctionne pas, récupérer toutes les demandes et filtrer côté client
+      const fallbackResponse = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/mise-dpstion-fonds`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${cookieToken}`,
+        },
+        cache: "no-store",
+      })
+
+      if (!fallbackResponse.ok) {
+        const errorData = await fallbackResponse.json()
+        throw new Error(errorData.message || "Erreur lors de la récupération des demandes")
+      }
+
+      const fallbackResult = await fallbackResponse.json()
+      
+      // Filtrer les résultats par clientId côté client
+      if (fallbackResult?.rows && Array.isArray(fallbackResult.rows)) {
+        const filteredRows = fallbackResult.rows.filter((item: any) => item.clientId === clientId)
+        return {
+          ...fallbackResult,
+          rows: filteredRows,
+          count: filteredRows.length,
+        }
+      }
+
+      return { success: false, data: { rows: [], count: 0 } }
     }
 
     const result = await response.json()
+    
+    // Double vérification : filtrer aussi côté client au cas où le backend ne filtre pas correctement
+    if (result?.rows && Array.isArray(result.rows)) {
+      const filteredRows = result.rows.filter((item: any) => item.clientId === clientId)
+      return {
+        ...result,
+        rows: filteredRows,
+        count: filteredRows.length,
+      }
+    }
+
     console.log("[v0] API Response in action:", result)
     return result
   } catch (error: any) {
