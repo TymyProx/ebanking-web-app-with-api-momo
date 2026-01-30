@@ -14,7 +14,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
+import { Checkbox } from "@/components/ui/checkbox"
 import { ArrowRight, Plus, User, Check, AlertCircle, Wallet } from "lucide-react"
 import { useActionState } from "react"
 import { OtpModal } from "@/components/otp-modal"
@@ -30,6 +31,7 @@ interface Beneficiary {
   type: "BNG-BNG" | "BNG-CONFRERE" | "International"
   workflowStatus?: string
   status?: number
+  clerib?: string
 }
 
 interface Account {
@@ -48,7 +50,7 @@ interface Bank {
   codeBank: string
 }
 
-type TransferType = "account-to-account" | "account-to-beneficiary"
+type TransferType = "account-to-account" | "account-to-beneficiary" | "account-to-occasional-beneficiary"
 
 const countries = [
   "France",
@@ -70,6 +72,17 @@ export default function NewTransferPage() {
   const [selectedAccount, setSelectedAccount] = useState<string>("")
   const [selectedBeneficiary, setSelectedBeneficiary] = useState<string>("")
   const [selectedCreditAccount, setSelectedCreditAccount] = useState<string>("")
+  const [occasionalBeneficiary, setOccasionalBeneficiary] = useState<{
+    name: string
+    account: string
+    bank: string
+    type?: string
+    codeAgence?: string
+    cleRib?: string
+    codeBanque?: string
+    id?: string
+  } | null>(null)
+  const [isEditingOccasionalBeneficiary, setIsEditingOccasionalBeneficiary] = useState(false)
   const [amount, setAmount] = useState<string>("")
   const [motif, setMotif] = useState<string>("")
   const [transferDate, setTransferDate] = useState<string>(new Date().toISOString().split("T")[0])
@@ -110,6 +123,10 @@ export default function NewTransferPage() {
   const [showOtpModal, setShowOtpModal] = useState(false)
   const [otpReferenceId, setOtpReferenceId] = useState<string | null>(null)
   const [pendingTransferData, setPendingTransferData] = useState<FormData | null>(null)
+  
+  // États pour la modale de confirmation
+  const [showConfirmationModal, setShowConfirmationModal] = useState(false)
+  const [isTransferConfirmed, setIsTransferConfirmed] = useState(false)
 
   // Refs pour le scroll automatique vers les messages
   const successMessageRef = useRef<HTMLDivElement>(null)
@@ -324,6 +341,36 @@ export default function NewTransferPage() {
       }
     }
 
+    // Si c'est un bénéficiaire ponctuel, stocker les infos localement sans enregistrer en BD
+    if (transferType === "account-to-occasional-beneficiary") {
+      const name = formData.get("name") as string
+      const account = formData.get("account") as string
+      const bankname = formData.get("bankname") as string || formData.get("bank") as string || ""
+      const codeAgence = formData.get("codeAgence") as string || ""
+      const cleRib = formData.get("cleRib") as string || ""
+      const codeBanque = formData.get("codeBanque") as string || ""
+
+      setOccasionalBeneficiary({
+        name: name || "",
+        account: account || "",
+        bank: bankname || "",
+        type: selectedType,
+        codeAgence: codeAgence || "",
+        cleRib: cleRib || "",
+        codeBanque: codeBanque || "",
+      })
+
+      resetBeneficiaryForm()
+      setIsAddBeneficiaryDialogOpen(false)
+      setIsEditingOccasionalBeneficiary(false)
+      toast({
+        title: "Succès",
+        description: "Informations du bénéficiaire ponctuel enregistrées!",
+      })
+      return
+    }
+
+    // Pour les bénéficiaires normaux, enregistrer en BD
     startTransition(() => {
       addBeneficiaryAction(formData)
     })
@@ -333,6 +380,7 @@ export default function NewTransferPage() {
     setTransferType(type)
     setSelectedBeneficiary("")
     setSelectedCreditAccount("")
+    setOccasionalBeneficiary(null)
     setTransferValidationError("")
     setTransferSubmitted(false)
   }
@@ -345,7 +393,7 @@ export default function NewTransferPage() {
     }
   }
 
-  const handleTransferSubmit = (e: React.FormEvent) => {
+  const handleTransferSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
     setTransferSubmitted(true)
@@ -353,21 +401,31 @@ export default function NewTransferPage() {
 
     if (!selectedAccount) {
       setTransferValidationError("Veuillez sélectionner un compte débiteur")
+      setTransferSubmitted(false)
       return
     }
 
     if (transferType === "account-to-beneficiary") {
       if (!selectedBeneficiary) {
         setTransferValidationError("Veuillez sélectionner un bénéficiaire")
+        setTransferSubmitted(false)
+        return
+      }
+    } else if (transferType === "account-to-occasional-beneficiary") {
+      if (!occasionalBeneficiary) {
+        setTransferValidationError("Veuillez saisir les informations du bénéficiaire ponctuel")
+        setTransferSubmitted(false)
         return
       }
     } else {
       if (!selectedCreditAccount) {
         setTransferValidationError("Veuillez sélectionner un compte créditeur")
+        setTransferSubmitted(false)
         return
       }
       if (selectedAccount === selectedCreditAccount) {
         setTransferValidationError("Le compte débiteur et créditeur ne peuvent pas être identiques")
+        setTransferSubmitted(false)
         return
       }
       const debitAccount = accounts.find((acc) => acc.id === selectedAccount)
@@ -376,12 +434,14 @@ export default function NewTransferPage() {
         setTransferValidationError(
           "Les virements compte à compte ne peuvent être effectués qu'entre des comptes de même devise",
         )
+        setTransferSubmitted(false)
         return
       }
     }
 
     if (!amount || Number.parseFloat(amount) <= 0) {
       setTransferValidationError("Veuillez saisir un montant valide")
+      setTransferSubmitted(false)
       return
     }
 
@@ -390,12 +450,61 @@ export default function NewTransferPage() {
       setTransferValidationError(
         `Le montant saisi (${formatCurrency(Number.parseFloat(amount), debitAccount.currency)}) dépasse le solde disponible (${formatCurrency(debitAccount.balance, debitAccount.currency)})`,
       )
+      setTransferSubmitted(false)
       return
     }
 
     if (!motif.trim()) {
       setTransferValidationError("Veuillez saisir le motif du virement")
+      setTransferSubmitted(false)
       return
+    }
+
+    // Si c'est un bénéficiaire ponctuel, enregistrer d'abord en BD avec statut 100
+    if (transferType === "account-to-occasional-beneficiary" && occasionalBeneficiary && !occasionalBeneficiary.id) {
+      // Créer un FormData pour enregistrer le bénéficiaire ponctuel
+      const beneficiaryFormData = new FormData()
+      beneficiaryFormData.append("name", occasionalBeneficiary.name)
+      beneficiaryFormData.append("account", occasionalBeneficiary.account)
+      beneficiaryFormData.append("type", occasionalBeneficiary.type || "")
+      beneficiaryFormData.append("bankname", occasionalBeneficiary.bank)
+      // S'assurer que le statut est bien "100" comme string
+      beneficiaryFormData.append("status", "100")
+      
+      if (occasionalBeneficiary.codeAgence) {
+        beneficiaryFormData.append("codeAgence", occasionalBeneficiary.codeAgence)
+      }
+      if (occasionalBeneficiary.cleRib) {
+        beneficiaryFormData.append("cleRib", occasionalBeneficiary.cleRib)
+      }
+      if (occasionalBeneficiary.codeBanque) {
+        beneficiaryFormData.append("codeBanque", occasionalBeneficiary.codeBanque)
+        beneficiaryFormData.append("bankCode", occasionalBeneficiary.codeBanque)
+      }
+
+      // Vérifier que le statut est bien dans le FormData
+      console.log("[handleTransferSubmit] Status in FormData:", beneficiaryFormData.get("status"))
+
+      // Enregistrer le bénéficiaire ponctuel en BD
+      try {
+        const result = await addBeneficiaryAndActivate(null, beneficiaryFormData)
+        if (!result.success) {
+          setTransferValidationError(result.error || "Erreur lors de l'enregistrement du bénéficiaire ponctuel")
+          setTransferSubmitted(false)
+          return
+        }
+        // Générer un ID temporaire pour le bénéficiaire ponctuel
+        const generatedId = `BEN_${Date.now()}`
+        setOccasionalBeneficiary({
+          ...occasionalBeneficiary,
+          id: generatedId,
+        })
+      } catch (error) {
+        console.error("[handleTransferSubmit] Erreur lors de l'enregistrement:", error)
+        setTransferValidationError("Erreur lors de l'enregistrement du bénéficiaire ponctuel")
+        setTransferSubmitted(false)
+        return
+      }
     }
 
     const formData = new FormData()
@@ -404,6 +513,15 @@ export default function NewTransferPage() {
 
     if (transferType === "account-to-beneficiary") {
       formData.append("beneficiaryId", selectedBeneficiary)
+    } else if (transferType === "account-to-occasional-beneficiary") {
+      // Pour le bénéficiaire ponctuel, on passe l'ID du bénéficiaire créé
+      if (occasionalBeneficiary?.id) {
+        formData.append("beneficiaryId", occasionalBeneficiary.id)
+      } else {
+        setTransferValidationError("Erreur: bénéficiaire ponctuel non enregistré")
+        setTransferSubmitted(false)
+        return
+      }
     } else {
       formData.append("targetAccount", selectedCreditAccount)
     }
@@ -412,11 +530,24 @@ export default function NewTransferPage() {
     formData.append("purpose", motif)
     formData.append("transferDate", transferDate)
 
-    // Au lieu d'exécuter directement le virement, on ouvre le modal OTP
+    // Stocker les données du virement pour la modale de confirmation
+    setPendingTransferData(formData)
+    setIsTransferConfirmed(false)
+    setShowConfirmationModal(true)
+  }
+
+  // Fonction pour déclencher l'OTP après confirmation
+  const handleConfirmAndProceed = () => {
+    if (!isTransferConfirmed || !pendingTransferData) {
+      return
+    }
+
+    // Fermer la modale de confirmation
+    setShowConfirmationModal(false)
+    
     // Générer un référence unique pour ce virement
     const referenceId = `TRANSFER-${Date.now()}-${selectedAccount.substring(0, 8)}`
     setOtpReferenceId(referenceId)
-    setPendingTransferData(formData)
     setShowOtpModal(true)
   }
 
@@ -500,6 +631,7 @@ export default function NewTransferPage() {
           type: apiBeneficiary.type,
           workflowStatus: apiBeneficiary.workflowStatus,
           status: apiBeneficiary.status,
+          clerib: apiBeneficiary.clerib || "",
         }))
 
         const activeBeneficiaries = adaptedBeneficiaries.filter((beneficiary: any) => {
@@ -555,10 +687,10 @@ export default function NewTransferPage() {
   }, [selectedType])
 
   useEffect(() => {
-    if (addBeneficiaryState?.success) {
+    if (addBeneficiaryState?.success && transferType !== "account-to-occasional-beneficiary") {
       setAddFormSuccess(true)
-      resetBeneficiaryForm()
       loadBeneficiaries()
+      resetBeneficiaryForm()
       toast({
         title: "Succès",
         description: "Bénéficiaire ajouté avec succès!",
@@ -568,7 +700,27 @@ export default function NewTransferPage() {
         setIsAddBeneficiaryDialogOpen(false)
       }, 2000)
     }
-  }, [addBeneficiaryState?.success])
+  }, [addBeneficiaryState?.success, transferType])
+
+  // Pré-remplir le formulaire quand on ouvre en mode édition
+  useEffect(() => {
+    if (isAddBeneficiaryDialogOpen && isEditingOccasionalBeneficiary && occasionalBeneficiary) {
+      // Les valeurs par défaut sont déjà définies dans les Input avec defaultValue
+      // On doit juste s'assurer que les états sont synchronisés
+      if (occasionalBeneficiary.type) {
+        setSelectedType(occasionalBeneficiary.type)
+      }
+      if (occasionalBeneficiary.bank) {
+        setSelectedBank(occasionalBeneficiary.bank)
+      }
+      if (occasionalBeneficiary.codeBanque) {
+        setSelectedBankCode(occasionalBeneficiary.codeBanque)
+      }
+    } else if (isAddBeneficiaryDialogOpen && !isEditingOccasionalBeneficiary && transferType === "account-to-occasional-beneficiary") {
+      // Réinitialiser le formulaire si on ouvre pour une nouvelle saisie
+      resetBeneficiaryForm()
+    }
+  }, [isAddBeneficiaryDialogOpen, isEditingOccasionalBeneficiary, occasionalBeneficiary, transferType])
 
   useEffect(() => {
     if (transferValidationError && transferSubmitted) {
@@ -662,7 +814,7 @@ export default function NewTransferPage() {
   }, [selectedAccount])
 
   return (
-    <div className="mt-6 space-y-6">
+    <div className="mt-6 space-y-6 relative">
       <div className="space-y-2">
         <h1 className="text-3xl font-bold text-primary">Effectuer un virement</h1>
         <p className="text-muted-foreground">Transférez des fonds vers un bénéficiaire ou entre vos comptes</p>
@@ -691,8 +843,8 @@ export default function NewTransferPage() {
         </Alert>
       )}
 
-      <form onSubmit={handleTransferSubmit} className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 space-y-6">
+      <form onSubmit={handleTransferSubmit} className="grid grid-cols-1 lg:grid-cols-7 gap-6 relative">
+        <div className="lg:col-span-4 space-y-6 lg:max-w-3xl lg:w-full">
           {/* Type de virement */}
           <Card className="border-2 hover:border-primary/50 transition-colors">
             <CardHeader>
@@ -715,6 +867,15 @@ export default function NewTransferPage() {
                       <div>
                         <div className="font-medium">Vers un bénéficiaire</div>
                         <div className="text-sm text-muted-foreground">Virement vers un bénéficiaire enregistré</div>
+                      </div>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="account-to-occasional-beneficiary" className="py-3 cursor-pointer">
+                    <div className="flex items-center gap-3">
+                      <User className="h-4 w-4 text-primary" />
+                      <div>
+                        <div className="font-medium">Vers un bénéficiaire ponctuel</div>
+                        <div className="text-sm text-muted-foreground">Virement vers un bénéficiaire ponctuel</div>
                       </div>
                     </div>
                   </SelectItem>
@@ -840,6 +1001,71 @@ export default function NewTransferPage() {
                       <p className="text-sm text-muted-foreground">
                         Seuls les comptes en {selectedAccountData.currency} sont disponibles
                       </p>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          ) : transferType === "account-to-occasional-beneficiary" ? (
+            <Card className="border-2 hover:border-primary/50 transition-colors">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <div className="p-2 rounded-lg bg-accent/20">
+                    <User className="h-4 w-4 text-accent-foreground" />
+                  </div>
+                  Bénéficiaire ponctuel
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {occasionalBeneficiary ? (
+                    <div className="p-4 rounded-lg border-2 border-primary/20 bg-primary/5">
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <Label className="font-medium text-sm">Informations du bénéficiaire</Label>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              if (occasionalBeneficiary) {
+                                // Pré-remplir le formulaire avec les infos existantes
+                                setSelectedType(occasionalBeneficiary.type || "")
+                                setSelectedBank(occasionalBeneficiary.bank || "")
+                                if (occasionalBeneficiary.codeBanque) {
+                                  setSelectedBankCode(occasionalBeneficiary.codeBanque)
+                                }
+                                setIsEditingOccasionalBeneficiary(true)
+                                setIsAddBeneficiaryDialogOpen(true)
+                              }
+                            }}
+                            className="h-7 text-xs"
+                          >
+                            Modifier
+                          </Button>
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-sm font-medium">{occasionalBeneficiary.name}</p>
+                          <p className="text-xs text-muted-foreground">Compte: {occasionalBeneficiary.account}</p>
+                          <p className="text-xs text-muted-foreground">Banque: {occasionalBeneficiary.bank}</p>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      <Label className="font-medium">Saisir les informations du bénéficiaire *</Label>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="w-full h-12 border-2 hover:border-primary/50 focus:border-primary transition-colors"
+                        onClick={() => {
+                          resetBeneficiaryForm()
+                          setIsAddBeneficiaryDialogOpen(true)
+                        }}
+                      >
+                        <Plus className="h-4 w-4 mr-2" />
+                        Saisie infos bénéficiaire
+                      </Button>
                     </div>
                   )}
                 </div>
@@ -1011,41 +1237,58 @@ export default function NewTransferPage() {
               disabled={
                 isTransferPending ||
                 !selectedAccount ||
-                (transferType === "account-to-beneficiary" ? !selectedBeneficiary : !selectedCreditAccount) ||
+                (transferType === "account-to-beneficiary"
+                  ? !selectedBeneficiary
+                  : transferType === "account-to-occasional-beneficiary"
+                    ? !occasionalBeneficiary
+                    : !selectedCreditAccount) ||
                 !amount ||
                 !motif ||
                 !isAmountValid
               }
               className="h-12 px-8 font-semibold bg-primary hover:bg-primary/90 transition-all shadow-lg hover:shadow-xl disabled:opacity-50"
             >
-              <ArrowRight className="h-5 w-5 mr-2" />
-              {isTransferPending ? "Traitement en cours..." : "Effectuer le virement"}
+              <Check className="h-5 w-5 mr-2" />
+              {isTransferPending ? "Traitement en cours..." : "Confirmer virement"}
             </Button>
           </div>
         </div>
 
-        <div className="space-y-6">
-          <Card className="sticky top-6 border-2 shadow-lg">
-            <CardHeader className="border-b bg-muted/30">
-              <CardTitle className="text-lg">Résumé du virement</CardTitle>
+        <div 
+          className="lg:fixed lg:w-[380px] lg:z-[5] lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto"
+          style={{
+            position: 'fixed',
+            top: '6rem',
+            right: '1.5rem',
+            willChange: 'transform',
+            transform: 'translateZ(0)'
+          }}
+        >
+          <Card className="border-2 shadow-lg">
+            <CardHeader className="border-b bg-muted/30 pb-1">
+              <CardTitle className="text-base">Résumé du virement</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4 pt-6">
+            <CardContent className="space-y-2 pt-3">
               <div>
-                <h4 className="text-sm font-medium text-muted-foreground mb-2">Type de virement</h4>
-                <div className="p-3 bg-muted/50 rounded-lg border">
-                  <p className="font-medium">
-                    {transferType === "account-to-beneficiary" ? "Vers un bénéficiaire" : "Entre mes comptes"}
+                <h4 className="text-xs font-medium text-muted-foreground mb-1">Type de virement</h4>
+                <div className="p-2 bg-muted/50 rounded-lg border">
+                  <p className="text-sm font-medium">
+                    {transferType === "account-to-beneficiary"
+                      ? "Vers un bénéficiaire"
+                      : transferType === "account-to-occasional-beneficiary"
+                        ? "Vers un bénéficiaire ponctuel"
+                        : "Entre mes comptes"}
                   </p>
                 </div>
               </div>
 
               {selectedAccountData && (
                 <div>
-                  <h4 className="text-sm font-medium text-muted-foreground mb-2">Compte à débiter</h4>
-                  <div className="p-3 bg-primary/5 rounded-lg border border-primary/20">
-                    <p className="font-medium">{selectedAccountData.name}</p>
-                    <p className="text-sm text-muted-foreground">{selectedAccountData.number}</p>
-                    <p className="text-sm font-semibold text-primary mt-1">
+                  <h4 className="text-xs font-medium text-muted-foreground mb-1">Compte à débiter</h4>
+                  <div className="p-2 bg-primary/5 rounded-lg border border-primary/20">
+                    <p className="text-sm font-medium">{selectedAccountData.name}</p>
+                    <p className="text-xs text-muted-foreground">{selectedAccountData.number}</p>
+                    <p className="text-xs font-semibold text-primary mt-0.5">
                       {formatCurrency(selectedAccountData.balance, selectedAccountData.currency)}
                     </p>
                   </div>
@@ -1054,25 +1297,39 @@ export default function NewTransferPage() {
 
               {transferType === "account-to-beneficiary" && selectedBeneficiaryData && (
                 <div>
-                  <h4 className="text-sm font-medium text-muted-foreground mb-2">Bénéficiaire</h4>
-                  <div className="p-3 bg-accent/10 rounded-lg border border-accent/20">
-                    <p className="font-medium">{selectedBeneficiaryData.name}</p>
-                    <p className="text-sm text-muted-foreground">{selectedBeneficiaryData.account}</p>
-                    <p className="text-sm text-muted-foreground">{selectedBeneficiaryData.bank}</p>
-                    <Badge variant="outline" className="mt-2">
-                      {selectedBeneficiaryData.type}
-                    </Badge>
+                  <h4 className="text-xs font-medium text-muted-foreground mb-1">Bénéficiaire</h4>
+                  <div className="p-2 bg-accent/10 rounded-lg border border-accent/20">
+                    <p className="text-sm font-medium">{selectedBeneficiaryData.name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {selectedBeneficiaryData.account}
+                      {(selectedBeneficiaryData as any).clerib ? (selectedBeneficiaryData as any).clerib : ""}
+                    </p>
+                    <p className="text-xs text-muted-foreground">{selectedBeneficiaryData.bank}</p>
+                  </div>
+                </div>
+              )}
+
+              {transferType === "account-to-occasional-beneficiary" && occasionalBeneficiary && (
+                <div>
+                  <h4 className="text-xs font-medium text-muted-foreground mb-1">Bénéficiaire ponctuel</h4>
+                  <div className="p-2 bg-accent/10 rounded-lg border border-accent/20">
+                    <p className="text-sm font-medium">{occasionalBeneficiary.name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {occasionalBeneficiary.account}
+                      {occasionalBeneficiary.cleRib ? occasionalBeneficiary.cleRib : ""}
+                    </p>
+                    <p className="text-xs text-muted-foreground">{occasionalBeneficiary.bank}</p>
                   </div>
                 </div>
               )}
 
               {transferType === "account-to-account" && selectedCreditAccountData && (
                 <div>
-                  <h4 className="text-sm font-medium text-muted-foreground mb-2">Compte à créditer</h4>
-                  <div className="p-3 bg-accent/10 rounded-lg border border-accent/20">
-                    <p className="font-medium">{selectedCreditAccountData.name}</p>
-                    <p className="text-sm text-muted-foreground">{selectedCreditAccountData.number}</p>
-                    <p className="text-sm font-semibold text-primary mt-1">
+                  <h4 className="text-xs font-medium text-muted-foreground mb-1">Compte à créditer</h4>
+                  <div className="p-2 bg-accent/10 rounded-lg border border-accent/20">
+                    <p className="text-sm font-medium">{selectedCreditAccountData.name}</p>
+                    <p className="text-xs text-muted-foreground">{selectedCreditAccountData.number}</p>
+                    <p className="text-xs font-semibold text-primary mt-0.5">
                       {formatCurrency(selectedCreditAccountData.balance, selectedCreditAccountData.currency)}
                     </p>
                   </div>
@@ -1081,9 +1338,9 @@ export default function NewTransferPage() {
 
               {amount && (
                 <div>
-                  <h4 className="text-sm font-medium text-muted-foreground mb-2">Montant</h4>
-                  <div className="p-4 bg-secondary/10 rounded-lg border-2 border-secondary/30">
-                    <p className="text-2xl font-bold text-primary">
+                  <h4 className="text-xs font-medium text-muted-foreground mb-1">Montant</h4>
+                  <div className="p-2 bg-secondary/10 rounded-lg border-2 border-secondary/30">
+                    <p className="text-lg font-bold text-primary">
                       {formatCurrency(Number.parseFloat(amount), selectedAccountData?.currency || "GNF")}
                     </p>
                   </div>
@@ -1092,18 +1349,18 @@ export default function NewTransferPage() {
 
               {motif && (
                 <div>
-                  <h4 className="text-sm font-medium text-muted-foreground mb-2">Motif</h4>
-                  <div className="p-3 bg-muted/50 rounded-lg border">
-                    <p className="text-sm">{motif}</p>
+                  <h4 className="text-xs font-medium text-muted-foreground mb-1">Motif</h4>
+                  <div className="p-2 bg-muted/50 rounded-lg border">
+                    <p className="text-xs">{motif}</p>
                   </div>
                 </div>
               )}
 
               {transferDate && (
                 <div>
-                  <h4 className="text-sm font-medium text-muted-foreground mb-2">Date d'exécution</h4>
-                  <div className="p-3 bg-muted/50 rounded-lg border">
-                    <p className="text-sm font-medium">
+                  <h4 className="text-xs font-medium text-muted-foreground mb-1">Date d'exécution</h4>
+                  <div className="p-2 bg-muted/50 rounded-lg border">
+                    <p className="text-xs font-medium">
                       {new Date(transferDate).toLocaleDateString("fr-FR", {
                         weekday: "long",
                         year: "numeric",
@@ -1143,7 +1400,13 @@ export default function NewTransferPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="name">Nom complet *</Label>
-                <Input id="name" name="name" placeholder="Nom et prénom du bénéficiaire" required />
+                <Input 
+                  id="name" 
+                  name="name" 
+                  placeholder="Nom et prénom du bénéficiaire" 
+                  defaultValue={isEditingOccasionalBeneficiary && occasionalBeneficiary ? occasionalBeneficiary.name : ""}
+                  required 
+                />
               </div>
 
               <div className="space-y-2">
@@ -1239,6 +1502,7 @@ export default function NewTransferPage() {
                     id="codeAgence"
                     name="codeAgence"
                     placeholder="Ex: 0001"
+                    defaultValue={isEditingOccasionalBeneficiary && occasionalBeneficiary ? occasionalBeneficiary.codeAgence : ""}
                     onChange={handleRibFieldChange}
                     required
                   />
@@ -1254,6 +1518,7 @@ export default function NewTransferPage() {
                       handleRibFieldChange()
                     }}
                     placeholder="1234567890"
+                    defaultValue={isEditingOccasionalBeneficiary && occasionalBeneficiary ? occasionalBeneficiary.account : ""}
                     maxLength={10}
                     pattern="[0-9]{10}"
                     required
@@ -1269,6 +1534,7 @@ export default function NewTransferPage() {
                     name="cleRib"
                     placeholder="Ex: 89"
                     maxLength={2}
+                    defaultValue={isEditingOccasionalBeneficiary && occasionalBeneficiary ? occasionalBeneficiary.cleRib : ""}
                     onChange={handleRibFieldChange}
                     required
                   />
@@ -1306,6 +1572,166 @@ export default function NewTransferPage() {
               </Button>
             </div>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modale de confirmation */}
+      <Dialog open={showConfirmationModal} onOpenChange={setShowConfirmationModal}>
+        <DialogContent className="sm:max-w-[750px] max-h-[95vh] overflow-hidden flex flex-col p-0">
+          <DialogHeader className="px-6 pt-6 pb-3 border-b">
+            <DialogTitle className="text-lg">Confirmation du virement</DialogTitle>
+          </DialogHeader>
+          
+          <div className="flex-1 overflow-y-auto px-6 py-4">
+            <div className="text-xs text-muted-foreground mb-3">
+              Veuillez vérifier les informations ci-dessous avant de procéder au virement.
+            </div>
+
+            {/* Résumé du virement - Disposition en grille compacte */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <h4 className="text-xs font-medium text-muted-foreground">Type de virement</h4>
+                <div className="p-2 bg-muted/50 rounded border text-sm">
+                  {transferType === "account-to-beneficiary"
+                    ? "Vers un bénéficiaire"
+                    : transferType === "account-to-occasional-beneficiary"
+                      ? "Vers un bénéficiaire ponctuel"
+                      : "Entre mes comptes"}
+                </div>
+              </div>
+
+              {amount && (
+                <div className="space-y-2">
+                  <h4 className="text-xs font-medium text-muted-foreground">Montant</h4>
+                  <div className="p-2 bg-secondary/10 rounded border-2 border-secondary/30">
+                    <p className="text-base font-bold text-primary">
+                      {formatCurrency(Number.parseFloat(amount), selectedAccountData?.currency || "GNF")}
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
+              {selectedAccountData && (
+                <div className="space-y-2">
+                  <h4 className="text-xs font-medium text-muted-foreground">Compte à débiter</h4>
+                  <div className="p-2 bg-primary/5 rounded border border-primary/20">
+                    <p className="text-sm font-medium">{selectedAccountData.name}</p>
+                    <p className="text-xs text-muted-foreground">{selectedAccountData.number}</p>
+                    <p className="text-xs font-semibold text-primary">
+                      {formatCurrency(selectedAccountData.balance, selectedAccountData.currency)}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {transferType === "account-to-beneficiary" && selectedBeneficiaryData && (
+                <div className="space-y-2">
+                  <h4 className="text-xs font-medium text-muted-foreground">Bénéficiaire</h4>
+                  <div className="p-2 bg-accent/10 rounded border border-accent/20">
+                    <p className="text-sm font-medium">{selectedBeneficiaryData.name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {selectedBeneficiaryData.account}
+                      {(selectedBeneficiaryData as any).clerib ? (selectedBeneficiaryData as any).clerib : ""}
+                    </p>
+                    <p className="text-xs text-muted-foreground">{selectedBeneficiaryData.bank}</p>
+                  </div>
+                </div>
+              )}
+
+              {transferType === "account-to-occasional-beneficiary" && occasionalBeneficiary && (
+                <div className="space-y-2">
+                  <h4 className="text-xs font-medium text-muted-foreground">Bénéficiaire ponctuel</h4>
+                  <div className="p-2 bg-accent/10 rounded border border-accent/20">
+                    <p className="text-sm font-medium">{occasionalBeneficiary.name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {occasionalBeneficiary.account}
+                      {occasionalBeneficiary.cleRib ? occasionalBeneficiary.cleRib : ""}
+                    </p>
+                    <p className="text-xs text-muted-foreground">{occasionalBeneficiary.bank}</p>
+                  </div>
+                </div>
+              )}
+
+              {transferType === "account-to-account" && selectedCreditAccountData && (
+                <div className="space-y-2">
+                  <h4 className="text-xs font-medium text-muted-foreground">Compte à créditer</h4>
+                  <div className="p-2 bg-accent/10 rounded border border-accent/20">
+                    <p className="text-sm font-medium">{selectedCreditAccountData.name}</p>
+                    <p className="text-xs text-muted-foreground">{selectedCreditAccountData.number}</p>
+                    <p className="text-xs font-semibold text-primary">
+                      {formatCurrency(selectedCreditAccountData.balance, selectedCreditAccountData.currency)}
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
+              {motif && (
+                <div className="space-y-2">
+                  <h4 className="text-xs font-medium text-muted-foreground">Motif</h4>
+                  <div className="p-2 bg-muted/50 rounded border">
+                    <p className="text-xs line-clamp-2">{motif}</p>
+                  </div>
+                </div>
+              )}
+
+              {transferDate && (
+                <div className="space-y-2">
+                  <h4 className="text-xs font-medium text-muted-foreground">Date d'exécution</h4>
+                  <div className="p-2 bg-muted/50 rounded border">
+                    <p className="text-xs font-medium">
+                      {new Date(transferDate).toLocaleDateString("fr-FR", {
+                        weekday: "short",
+                        year: "numeric",
+                        month: "short",
+                        day: "numeric",
+                      })}
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Checkbox de confirmation */}
+            <div className="flex items-start space-x-2 mt-4 pt-3 border-t">
+              <Checkbox
+                id="confirm-transfer"
+                checked={isTransferConfirmed}
+                onCheckedChange={(checked) => setIsTransferConfirmed(checked === true)}
+                className="mt-0.5"
+              />
+              <Label
+                htmlFor="confirm-transfer"
+                className="text-xs font-normal leading-tight peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+              >
+                J'ai lu et confirme les informations du transfert
+              </Label>
+            </div>
+          </div>
+
+          <DialogFooter className="px-6 py-4 border-t bg-muted/30 flex-row gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowConfirmationModal(false)
+                setIsTransferConfirmed(false)
+              }}
+              className="flex-1 sm:flex-initial"
+            >
+              Annuler
+            </Button>
+            <Button
+              onClick={handleConfirmAndProceed}
+              disabled={!isTransferConfirmed}
+              className="flex-1 sm:flex-initial h-10 px-6 font-semibold bg-primary hover:bg-primary/90 transition-all disabled:opacity-50"
+            >
+              <ArrowRight className="h-4 w-4 mr-2" />
+              Effectuer virement
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 

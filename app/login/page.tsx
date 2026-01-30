@@ -8,12 +8,13 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Eye, EyeOff, HelpCircle, UserPlus, Lock, Smartphone, MapPin } from "lucide-react"
+import { Eye, EyeOff, HelpCircle, UserPlus, Lock, Smartphone, MapPin, CreditCard, Mail, ArrowLeft } from "lucide-react"
 import AuthService from "@/lib/auth-service"
 import { config } from "@/lib/config"
 import { storeAuthToken } from "./actions"
 import { getAccounts } from "@/app/accounts/actions"
 import { isAccountActive } from "@/lib/status-utils"
+import { initiateSignup, initiateExistingClientSignup } from "@/app/signup/actions"
 
 const welcomeMessages = [
   {
@@ -43,6 +44,9 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [rememberMe, setRememberMe] = useState(false)
   const [currentMessageIndex, setCurrentMessageIndex] = useState(0)
+  const [formType, setFormType] = useState<"login" | "signup" | "newClient">("login")
+  const [verificationSent, setVerificationSent] = useState(false)
+  const [maskedEmail, setMaskedEmail] = useState("")
   const router = useRouter()
 
   // Carrousel automatique pour les messages de bienvenue
@@ -95,6 +99,61 @@ export default function LoginPage() {
       }
     } catch (err: any) {
       setError(err.message)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleNewClientSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setIsLoading(true)
+    setError("")
+
+    try {
+      const formData = new FormData(e.target as HTMLFormElement)
+      const fullName = formData.get("fullName") as string
+      const email = formData.get("email") as string
+      const phone = formData.get("phone") as string
+      const address = formData.get("address") as string
+
+      const result = await initiateSignup({
+        fullName,
+        email,
+        phone,
+        address,
+      })
+
+      if (result.success) {
+        router.push(`/auth/verify-email?email=${encodeURIComponent(email)}`)
+      } else {
+        setError(result.message)
+      }
+    } catch (err: any) {
+      setError(err.message || "Une erreur est survenue lors de l'inscription")
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleExistingClientSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setIsLoading(true)
+    setError("")
+
+    try {
+      const formData = new FormData(e.target as HTMLFormElement)
+      const clientCode = formData.get("clientCode") as string
+
+      const result = await initiateExistingClientSignup({ clientCode })
+
+      if (result.success && result.maskedEmail) {
+        setVerificationSent(true)
+        setMaskedEmail(result.maskedEmail)
+      } else {
+        setError(result.message)
+      }
+    } catch (err: any) {
+      setError(err.message || "Une erreur est survenue")
     } finally {
       setIsLoading(false)
     }
@@ -154,12 +213,14 @@ export default function LoginPage() {
                   {/* Decorative corner */}
                   <div className="absolute top-0 right-0 w-20 sm:w-24 h-20 sm:h-24 bg-gradient-to-br from-white/15 to-transparent rounded-bl-full"></div>
 
-                  <div className="text-center mb-2 sm:mb-3 relative z-10">
-                    <h2 className="text-lg sm:text-xl font-bold text-white mb-1 drop-shadow-2xl">Connexion</h2>
-                  </div>
+                  {formType === "login" && (
+                    <>
+                      <div className="text-center mb-2 sm:mb-3 relative z-10">
+                        <h2 className="text-lg sm:text-xl font-bold text-white mb-1 drop-shadow-2xl">Connexion</h2>
+                      </div>
 
-                  {/* Login Form */}
-                  <form onSubmit={handleSubmit} className="space-y-2 sm:space-y-3">
+                      {/* Login Form */}
+                      <form onSubmit={handleSubmit} className="space-y-2 sm:space-y-3">
                     <div className="space-y-2 sm:space-y-2.5">
                       {error && (
                         <div className="p-2.5 rounded-lg bg-[#2d6e3e]/70 border-0 shadow-md">
@@ -269,20 +330,302 @@ export default function LoginPage() {
                         </span>
                       </Button>
 
-                      {/* Register Button */}
+                      {/* S'inscrire Button */}
                       <Button
                         type="button"
                         className="relative w-full h-10 sm:h-11 bg-gradient-to-r from-[#f4c430] via-[#f8d060] to-[#f4c430] hover:from-[#e0b020] hover:via-[#f4c430] hover:to-[#e0b020] text-gray-900 font-semibold text-sm shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden group rounded-lg"
-                        onClick={() => router.push("/signup")}
+                        onClick={() => setFormType("signup")}
+                      >
+                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-1000"></div>
+                        <div className="flex items-center justify-center space-x-2 relative z-10">
+                          <CreditCard className="h-4 w-4" />
+                          <span className="text-sm">S'inscrire</span>
+                        </div>
+                      </Button>
+
+                      {/* Devenir client Button */}
+                      <Button
+                        type="button"
+                        className="relative w-full h-10 sm:h-11 bg-gradient-to-r from-[#2d6e3e] via-[#36803e] to-[#2d6e3e] hover:from-[#1f5a2e] hover:via-[#2d6e3e] hover:to-[#1f5a2e] text-white font-semibold text-sm shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden group rounded-lg"
+                        onClick={() => setFormType("newClient")}
                       >
                         <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-1000"></div>
                         <div className="flex items-center justify-center space-x-2 relative z-10">
                           <UserPlus className="h-4 w-4" />
-                          <span className="text-sm">Créer un nouveau compte</span>
+                          <span className="text-sm">Devenir client</span>
                         </div>
                       </Button>
                     </div>
                   </form>
+                    </>
+                  )}
+
+                  {formType === "signup" && !verificationSent && (
+                    <>
+                      <button
+                        onClick={() => {
+                          setFormType("login")
+                          setError("")
+                          setVerificationSent(false)
+                        }}
+                        className="text-xs text-white/90 hover:text-white flex items-center space-x-1 font-medium mb-3 sm:mb-4"
+                      >
+                        <ArrowLeft className="h-3 w-3" />
+                        <span>Retour</span>
+                      </button>
+
+                      <div className="text-center mb-2 sm:mb-3 relative z-10">
+                        <h2 className="text-lg sm:text-xl font-bold text-white mb-1 drop-shadow-2xl">
+                          S'inscrire
+                        </h2>
+                      </div>
+
+                      {/* Existing Client Form - Racine du compte */}
+                      <form onSubmit={handleExistingClientSubmit} className="space-y-2 sm:space-y-3">
+                        <div className="space-y-2 sm:space-y-2.5">
+                          {error && (
+                            <div className="p-2.5 rounded-lg bg-[#2d6e3e]/70 border-0 shadow-md">
+                              <p className="text-xs text-white text-center font-semibold drop-shadow-md">{error}</p>
+                            </div>
+                          )}
+
+                          <div className="space-y-1">
+                            <Label
+                              htmlFor="clientCode"
+                              className="text-xs font-semibold text-white/90 flex items-center space-x-1 drop-shadow-lg"
+                            >
+                              <span>Racine du compte</span>
+                              <span className="text-red-300 drop-shadow-md">*</span>
+                            </Label>
+                            <div className="relative group">
+                              <Input
+                                id="clientCode"
+                                name="clientCode"
+                                type="text"
+                                inputMode="numeric"
+                                pattern="[0-9]{6}"
+                                maxLength={6}
+                                placeholder="Votre racine du compte"
+                                className="h-9 sm:h-10 bg-[#2d6e3e]/60 border-0 text-white text-sm placeholder:text-white/60 focus:bg-[#2d6e3e]/70 focus:ring-0 rounded-lg transition-all group-hover:bg-[#2d6e3e]/65 shadow-md"
+                                required
+                                disabled={isLoading}
+                                onInput={(e) => {
+                                  const target = e.target as HTMLInputElement
+                                  target.value = target.value.replace(/[^0-9]/g, "")
+                                }}
+                              />
+                              <div className="absolute inset-0 bg-gradient-to-r from-white/5 to-transparent rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
+                            </div>
+                            <p className="text-xs text-white/70">Trouvez votre racine sur vos documents bancaires</p>
+                          </div>
+
+                          <Button
+                            type="submit"
+                            className="relative w-full h-9 sm:h-10 bg-gradient-to-r from-[#f4c430] via-[#f8d060] to-[#f4c430] hover:from-[#e0b020] hover:via-[#f4c430] hover:to-[#e0b020] text-gray-900 font-semibold text-xs sm:text-sm shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden group rounded-lg"
+                            disabled={isLoading}
+                          >
+                            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-1000"></div>
+                            {isLoading ? (
+                              <div className="flex items-center space-x-2 relative z-10">
+                                <div className="animate-spin rounded-full h-4 w-4 border-2 border-gray-900/30 border-t-gray-900"></div>
+                                <span className="text-sm">Vérification...</span>
+                              </div>
+                            ) : (
+                              <div className="flex items-center justify-center space-x-2 relative z-10">
+                                <CreditCard className="h-4 w-4" />
+                                <span className="text-sm">Continuer</span>
+                              </div>
+                            )}
+                          </Button>
+                        </div>
+                      </form>
+                    </>
+                  )}
+
+                  {formType === "newClient" && !verificationSent && (
+                    <>
+                      <button
+                        onClick={() => {
+                          setFormType("login")
+                          setError("")
+                          setVerificationSent(false)
+                        }}
+                        className="text-xs text-white/90 hover:text-white flex items-center space-x-1 font-medium mb-3 sm:mb-4"
+                      >
+                        <ArrowLeft className="h-3 w-3" />
+                        <span>Retour</span>
+                      </button>
+
+                      <div className="text-center mb-2 sm:mb-3 relative z-10">
+                        <h2 className="text-lg sm:text-xl font-bold text-white mb-1 drop-shadow-2xl">
+                          Devenir client
+                        </h2>
+                      </div>
+
+                      {/* New Client Form */}
+                      <form onSubmit={handleNewClientSubmit} className="space-y-2 sm:space-y-3">
+                        <div className="space-y-2 sm:space-y-2.5">
+                          {error && (
+                            <div className="p-2.5 rounded-lg bg-[#2d6e3e]/70 border-0 shadow-md">
+                              <p className="text-xs text-white text-center font-semibold drop-shadow-md">{error}</p>
+                            </div>
+                          )}
+
+                          {/* Full Name Field */}
+                          <div className="space-y-1">
+                            <Label
+                              htmlFor="fullName"
+                              className="text-xs font-semibold text-white/90 flex items-center space-x-1 drop-shadow-lg"
+                            >
+                              <span>Nom complet</span>
+                              <span className="text-red-300 drop-shadow-md">*</span>
+                            </Label>
+                            <div className="relative group">
+                              <Input
+                                id="fullName"
+                                name="fullName"
+                                type="text"
+                                placeholder="Votre nom complet"
+                                className="h-9 sm:h-10 bg-[#2d6e3e]/60 border-0 text-white text-sm placeholder:text-white/60 focus:bg-[#2d6e3e]/70 focus:ring-0 rounded-lg transition-all group-hover:bg-[#2d6e3e]/65 shadow-md"
+                                required
+                                disabled={isLoading}
+                              />
+                              <div className="absolute inset-0 bg-gradient-to-r from-white/5 to-transparent rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
+                            </div>
+                          </div>
+
+                          {/* Email Field */}
+                          <div className="space-y-1">
+                            <Label
+                              htmlFor="email"
+                              className="text-xs font-semibold text-white/90 flex items-center space-x-1 drop-shadow-lg"
+                            >
+                              <span>Email</span>
+                              <span className="text-red-300 drop-shadow-md">*</span>
+                            </Label>
+                            <div className="relative group">
+                              <Input
+                                id="email"
+                                name="email"
+                                type="email"
+                                placeholder="votre.email@exemple.com"
+                                className="h-9 sm:h-10 bg-[#2d6e3e]/60 border-0 text-white text-sm placeholder:text-white/60 focus:bg-[#2d6e3e]/70 focus:ring-0 rounded-lg transition-all group-hover:bg-[#2d6e3e]/65 shadow-md"
+                                required
+                                disabled={isLoading}
+                              />
+                              <div className="absolute inset-0 bg-gradient-to-r from-white/5 to-transparent rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
+                            </div>
+                          </div>
+
+                          {/* Phone Field */}
+                          <div className="space-y-1">
+                            <Label
+                              htmlFor="phone"
+                              className="text-xs font-semibold text-white/90 flex items-center space-x-1 drop-shadow-lg"
+                            >
+                              <span>Téléphone</span>
+                              <span className="text-red-300 drop-shadow-md">*</span>
+                            </Label>
+                            <div className="relative group">
+                              <Input
+                                id="phone"
+                                name="phone"
+                                type="tel"
+                                inputMode="numeric"
+                                maxLength={9}
+                                placeholder="012345678"
+                                className="h-9 sm:h-10 bg-[#2d6e3e]/60 border-0 text-white text-sm placeholder:text-white/60 focus:bg-[#2d6e3e]/70 focus:ring-0 rounded-lg transition-all group-hover:bg-[#2d6e3e]/65 shadow-md"
+                                required
+                                disabled={isLoading}
+                                onInput={(e) => {
+                                  const target = e.target as HTMLInputElement
+                                  target.value = target.value.replace(/[^0-9]/g, "").slice(0, 9)
+                                }}
+                              />
+                              <div className="absolute inset-0 bg-gradient-to-r from-white/5 to-transparent rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
+                            </div>
+                          </div>
+
+                          {/* Address Field */}
+                          <div className="space-y-1">
+                            <Label
+                              htmlFor="address"
+                              className="text-xs font-semibold text-white/90 flex items-center space-x-1 drop-shadow-lg"
+                            >
+                              <span>Adresse</span>
+                              <span className="text-red-300 drop-shadow-md">*</span>
+                            </Label>
+                            <div className="relative group">
+                              <Input
+                                id="address"
+                                name="address"
+                                type="text"
+                                placeholder="Votre adresse complète"
+                                className="h-9 sm:h-10 bg-[#2d6e3e]/60 border-0 text-white text-sm placeholder:text-white/60 focus:bg-[#2d6e3e]/70 focus:ring-0 rounded-lg transition-all group-hover:bg-[#2d6e3e]/65 shadow-md"
+                                required
+                                disabled={isLoading}
+                              />
+                              <div className="absolute inset-0 bg-gradient-to-r from-white/5 to-transparent rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
+                            </div>
+                          </div>
+
+                          {/* Submit Button */}
+                          <Button
+                            type="submit"
+                            className="relative w-full h-9 sm:h-10 bg-gradient-to-r from-[#f4c430] via-[#f8d060] to-[#f4c430] hover:from-[#e0b020] hover:via-[#f4c430] hover:to-[#e0b020] text-gray-900 font-semibold text-xs sm:text-sm shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden group rounded-lg"
+                            disabled={isLoading}
+                          >
+                            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-1000"></div>
+                            {isLoading ? (
+                              <div className="flex items-center space-x-2 relative z-10">
+                                <div className="animate-spin rounded-full h-4 w-4 border-2 border-gray-900/30 border-t-gray-900"></div>
+                                <span className="text-sm">Inscription...</span>
+                              </div>
+                            ) : (
+                              <div className="flex items-center justify-center space-x-2 relative z-10">
+                                <UserPlus className="h-4 w-4" />
+                                <span className="text-sm">S'inscrire</span>
+                              </div>
+                            )}
+                          </Button>
+                        </div>
+                      </form>
+                    </>
+                  )}
+
+                  {verificationSent && maskedEmail && (
+                    <>
+                      <div className="text-center space-y-3 sm:space-y-6">
+                        <div className="mx-auto w-12 sm:w-16 h-12 sm:h-16 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center">
+                          <Mail className="w-6 sm:w-8 h-6 sm:h-8 text-[#f4c430]" />
+                        </div>
+
+                        <div className="space-y-2 sm:space-y-3">
+                          <h2 className="text-xl sm:text-2xl font-bold text-white drop-shadow-2xl">Email envoyé !</h2>
+                          <p className="text-sm sm:text-base text-white/90 drop-shadow-lg">
+                            Un email de vérification a été envoyé à{" "}
+                            <span className="font-semibold text-white">{maskedEmail}</span>
+                          </p>
+                          <p className="text-xs text-white/80 drop-shadow-md">
+                            Cliquez sur le lien dans l'email pour définir votre mot de passe et activer votre compte.
+                          </p>
+                        </div>
+
+                        <Button
+                          onClick={() => {
+                            router.push("/login")
+                            setFormType("login")
+                            setVerificationSent(false)
+                            setMaskedEmail("")
+                          }}
+                          className="relative w-full h-10 sm:h-11 bg-gradient-to-r from-[#f4c430] via-[#f8d060] to-[#f4c430] hover:from-[#e0b020] hover:via-[#f4c430] hover:to-[#e0b020] text-gray-900 font-semibold text-sm shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden group rounded-lg"
+                        >
+                          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-1000"></div>
+                          <span className="relative z-10 text-sm">Retour à la connexion</span>
+                        </Button>
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
             </div>

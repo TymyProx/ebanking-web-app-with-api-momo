@@ -116,31 +116,31 @@ const generatePDF = async (account: Account) => {
     doc.addImage(logoDataUrl, "PNG", 15, yPos, 35, 12)
   }
 
-  yPos += 25
+  yPos += 30
 
   doc.setTextColor(...blackText)
   doc.setFontSize(14)
   doc.setFont("helvetica", "bold")
   doc.text("BANQUE NATIONALE DE GUINÉE", 15, yPos)
 
-  yPos += 5
+  yPos += 8
   doc.setFontSize(8)
   doc.setFont("helvetica", "normal")
   doc.text("6ème Avenue Boulevard DIALLO Telly BP: 1781 Conakry", 15, yPos)
 
-  yPos += 12
+  yPos += 15
 
   doc.setFontSize(9)
   doc.setFont("helvetica", "bold")
   doc.text("DEPARTEMENT DES OPERATIONS", 15, yPos)
 
-  yPos += 12
+  yPos += 15
 
   doc.setFontSize(10)
   doc.setFont("helvetica", "bold")
   doc.text("RELEVE DE COORDONNEES BANCAIRES", 15, yPos)
 
-  yPos += 8
+  yPos += 12
 
   doc.setFontSize(8)
   doc.setFont("helvetica", "normal")
@@ -152,16 +152,16 @@ const generatePDF = async (account: Account) => {
 
   descriptionLines.forEach((line) => {
     doc.text(line, 15, yPos)
-    yPos += 4
+    yPos += 6
   })
 
-  yPos += 3
+  yPos += 8
 
   doc.setFontSize(9)
   doc.setFont("helvetica", "bold")
   doc.text(`CLIENT: ${account.accountHolder.toUpperCase()}`, 15, yPos)
 
-  yPos += 10
+  yPos += 15
 
   // ──────────────────────────────────────────────
   // TABLEAU 1 : RIB / IBAN
@@ -171,7 +171,7 @@ const generatePDF = async (account: Account) => {
   doc.setFont("helvetica", "bold")
   doc.text(account.name, 15, yPos)
 
-  yPos += 6
+  yPos += 10
 
   const tableStartX = 15
   const tableTotalWidth = 185 // même largeur que les tableaux USD/EURO
@@ -258,126 +258,7 @@ const generatePDF = async (account: Account) => {
   // séparation uniquement entre libellé et valeur
   doc.line(headerStartX, ibanY, headerStartX, ibanY + rowHeight)
 
-  yPos = ibanY + rowHeight + 10
-
-  // ──────────────────────────────────────────────
-  // TABLEAU 2 : NOTRE CORRESPONDANT USD (inchangé)
-  // ──────────────────────────────────────────────
-
-  doc.setFontSize(9)
-  doc.setFont("helvetica", "bold")
-  doc.text("Notre Correspondant USD :", 15, yPos)
-
-  yPos += 6
-
-  const table2StartX = 15
-  const table2Col1 = 50
-  const table2Col2 = 30
-  const table2Col3 = 25
-  const table2Col4 = 50
-  const table2Col5 = 30
-  const table2RowHeight = 15
-
-  doc.setFontSize(8)
-  doc.setFont("helvetica", "bold")
-
-  doc.rect(table2StartX, yPos, table2Col1 + table2Col2 + table2Col3 + table2Col4 + table2Col5, rowHeight)
-  doc.text("Banque Correspondante", table2StartX + 2, yPos + 5)
-  doc.text("SWIFT", table2StartX + table2Col1 + 2, yPos + 4)
-  doc.text("Code", table2StartX + table2Col1 + table2Col2 + 2, yPos + 7)
-  doc.text("Notre", table2StartX + table2Col1 + table2Col2 + table2Col3 + 2, yPos + 4)
-  doc.text("Compte USD", table2StartX + table2Col1 + table2Col2 + table2Col3 + 2, yPos + 7)
-  doc.text("Banque Intermédiaire", table2StartX + table2Col1 + table2Col2 + table2Col3 + 2, yPos + 5)
-  doc.text("SWIFT", table2StartX + table2Col1 + table2Col2 + table2Col3 + table2Col4 + 2, yPos + 4)
-  doc.text("CODE", table2StartX + table2Col1 + table2Col2 + table2Col3 + table2Col4 + 2, yPos + 7)
-
-  doc.line(table2StartX + table2Col1, yPos, table2StartX + table2Col1, yPos + rowHeight + table2RowHeight)
-  doc.line(
-    table2StartX + table2Col1 + table2Col2,
-    yPos,
-    table2StartX + table2Col1 + table2Col2,
-    yPos + rowHeight + table2RowHeight,
-  )
-  doc.line(
-    table2StartX + table2Col1 + table2Col2 + table2Col3,
-    yPos,
-    table2StartX + table2Col1 + table2Col2 + table2Col3,
-    yPos + rowHeight + table2RowHeight,
-  )
-  doc.line(
-    table2StartX + table2Col1 + table2Col2 + table2Col3 + table2Col4,
-    yPos,
-    table2StartX + table2Col1 + table2Col2 + table2Col3 + table2Col4,
-    yPos + rowHeight + table2RowHeight,
-  )
-
-  yPos += rowHeight
-
-  doc.rect(table2StartX, yPos, table2Col1 + table2Col2 + table2Col3 + table2Col4 + table2Col5, table2RowHeight)
-  doc.setFont("helvetica", "normal")
-  doc.setFontSize(7)
-  doc.text("BRITISH ARAB COMMERCIAL BANK", table2StartX + 2, yPos + 7)
-  doc.text("BACMGB2L", table2StartX + table2Col1 + 2, yPos + 7)
-  doc.text("0100975", table2StartX + table2Col1 + table2Col2 + 2, yPos + 7)
-  doc.text("BANCO POPULAR DI SANDRO", table2StartX + table2Col1 + table2Col2 + table2Col3 + 2, yPos + 7)
-
-  const swiftLines = ["POGRITZ2/VD", "JP MORGAN-", "CHASE NEW YORK-", "CHASUS33", "POGRITZ3"]
-  let swiftY = yPos + 3
-  swiftLines.forEach((line) => {
-    doc.text(line, table2StartX + table2Col1 + table2Col2 + table2Col3 + table2Col4 + 2, swiftY)
-    swiftY += 2.5
-  })
-
-  yPos += table2RowHeight + 10
-
-  // ──────────────────────────────────────────────
-  // TABLEAU 3 : NOTRE CORRESPONDANT EURO (inchangé)
-  // ──────────────────────────────────────────────
-
-  doc.setFontSize(9)
-  doc.setFont("helvetica", "bold")
-  doc.text("Notre Correspondant EURO :", 15, yPos)
-
-  yPos += 6
-
-  doc.setFontSize(8)
-  doc.setFont("helvetica", "bold")
-
-  doc.rect(table2StartX, yPos, table2Col1 + table2Col2 + table2Col3 + table2Col4 + table2Col5, rowHeight)
-  doc.text("Banque Correspondante", table2StartX + 2, yPos + 5)
-  doc.text("SWIFT", table2StartX + table2Col1 + 2, yPos + 4)
-  doc.text("Code", table2StartX + table2Col1 + table2Col2 + 2, yPos + 7)
-  doc.text("Notre", table2StartX + table2Col1 + table2Col2 + table2Col3 + 2, yPos + 4)
-  doc.text("Compte Euro", table2StartX + table2Col1 + table2Col2 + table2Col3 + 2, yPos + 7)
-  doc.text("Banque Intermédiaire", table2StartX + table2Col1 + table2Col2 + table2Col3 + 2, yPos + 5)
-  doc.text("SWIFT", table2StartX + table2Col1 + table2Col2 + table2Col3 + table2Col4 + 2, yPos + 4)
-  doc.text("CODE", table2StartX + table2Col1 + table2Col2 + table2Col3 + table2Col4 + 2, yPos + 7)
-
-  doc.line(table2StartX + table2Col1, yPos, table2StartX + table2Col1, yPos + rowHeight * 2)
-  doc.line(table2StartX + table2Col1 + table2Col2, yPos, table2StartX + table2Col1 + table2Col2, yPos + rowHeight * 2)
-  doc.line(
-    table2StartX + table2Col1 + table2Col2 + table2Col3,
-    yPos,
-    table2StartX + table2Col1 + table2Col2 + table2Col3,
-    yPos + rowHeight * 2,
-  )
-  doc.line(
-    table2StartX + table2Col1 + table2Col2 + table2Col3 + table2Col4,
-    yPos,
-    table2StartX + table2Col1 + table2Col2 + table2Col3 + table2Col4,
-    yPos + rowHeight * 2,
-  )
-
-  yPos += rowHeight
-
-  doc.rect(table2StartX, yPos, table2Col1 + table2Col2 + table2Col3 + table2Col4 + table2Col5, rowHeight)
-  doc.setFont("helvetica", "normal")
-  doc.setFontSize(7)
-  doc.text("BRITISH ARAB COMMERCIAL BANK", table2StartX + 2, yPos + 5)
-  doc.text("BACMGB2L", table2StartX + table2Col1 + 2, yPos + 5)
-  doc.text("0100974", table2StartX + table2Col1 + table2Col2 + 2, yPos + 5)
-  doc.text("BANCO POPULAR DI SANDRO", table2StartX + table2Col1 + table2Col2 + table2Col3 + 2, yPos + 5)
-  doc.text("POGRITZ2", table2StartX + table2Col1 + table2Col2 + table2Col3 + table2Col4 + 2, yPos + 5)
+  yPos = ibanY + rowHeight + 20
 
   // ──────────────────────────────────────────────
   // PIED DE PAGE
@@ -389,7 +270,7 @@ const generatePDF = async (account: Account) => {
   doc.setLineWidth(0.3)
   doc.line(15, yPos, pageWidth - 15, yPos)
 
-  yPos += 5
+  yPos += 8
 
   doc.setTextColor(...grayText)
   doc.setFontSize(7)
@@ -404,7 +285,7 @@ const generatePDF = async (account: Account) => {
 
   footerLines.forEach((line) => {
     doc.text(line, 15, yPos)
-    yPos += 3
+    yPos += 5
   })
 
   const fileName = `RIB_${account.number.replace(/-/g, "_")}_${new Date().toISOString().split("T")[0]}.pdf`

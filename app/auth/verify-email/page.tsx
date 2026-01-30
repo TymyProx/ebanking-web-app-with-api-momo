@@ -166,7 +166,7 @@ function VerifyEmailContent() {
                           Un email de vérification a été envoyé à{" "}
                           <span className="font-semibold text-white">{email}</span>
                         </p>
-                        <p className="text-xs sm:text-sm text-white/80 px-4 drop-shadow-sm">
+                        <p className="text-xs sm:text-sm font-bold text-white px-4 drop-shadow-lg">
                           Veuillez cliquer sur le lien dans l'email pour continuer votre inscription.
                         </p>
                       </div>
@@ -176,8 +176,7 @@ function VerifyEmailContent() {
                   {status === "setting-password" && (
                     <>
                       <div className="text-center mb-3 sm:mb-4 relative z-10">
-                        <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-[#f4c430] mb-1 drop-shadow-2xl">Définissez votre mot de passe</h2>
-                        <p className="text-xs sm:text-sm text-white/90 drop-shadow-md">Créez un mot de passe sécurisé</p>
+                        <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-white mb-1 drop-shadow-2xl">Créez un mot de passe</h2>
                       </div>
 
                       <form onSubmit={handlePasswordSubmit} className="space-y-3 sm:space-y-4">

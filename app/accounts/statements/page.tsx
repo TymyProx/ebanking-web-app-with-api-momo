@@ -23,6 +23,9 @@ import {
   DollarSign,
   FileText,
   FileSpreadsheet,
+  Filter,
+  Search,
+  X,
 } from "lucide-react"
 import { generateStatement, sendStatementByEmail, getTransactionsByNumCompte } from "./actions"
 import { useActionState } from "react"
@@ -31,6 +34,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { normalizeAccountStatus } from "@/lib/status-utils"
 import jsPDF from "jspdf"
 import * as XLSX from "xlsx" // Added import for Excel generation
+import ExcelJS from "exceljs" // For better Excel formatting and images
 
 interface Account {
   id: string
@@ -98,6 +102,13 @@ export default function StatementsPage() {
   const [isPending, startTransition] = useTransition()
   const [hasSearched, setHasSearched] = useState(false) // Track if user has initiated a search
   const [hasGeneratedStatement, setHasGeneratedStatement] = useState(false)
+  
+  // États pour les filtres de transactions
+  const [allTransactions, setAllTransactions] = useState<any[]>([]) // Toutes les transactions (non filtrées)
+  const [filterType, setFilterType] = useState<"all" | "debit" | "credit">("all")
+  const [amount, setAmount] = useState<string>("")
+  const [filterDate, setFilterDate] = useState<string>("")
+  const [searchText, setSearchText] = useState<string>("")
 
   useEffect(() => {
     const loadAccounts = async () => {
@@ -246,6 +257,7 @@ export default function StatementsPage() {
         })
         // </CHANGE>
 
+        setAllTransactions(cleanedTransactions)
         setFilteredTransactions(cleanedTransactions)
         setTransactionCount(cleanedTransactions.length)
         setShowDownloadLink(true)
@@ -371,6 +383,69 @@ export default function StatementsPage() {
   // --- UPDATE END ---
 
   const isFormValid = selectedAccount && startDate && endDate && new Date(startDate) <= new Date(endDate)
+
+  // Appliquer les filtres quand ils changent
+  useEffect(() => {
+    if (allTransactions.length === 0) {
+      return
+    }
+
+    let filtered = [...allTransactions]
+
+    // Filtre par type (débit/crédit)
+    if (filterType === "debit") {
+      filtered = filtered.filter((txn) => Number.parseFloat(String(txn.montantOperation ?? 0)) < 0)
+    } else if (filterType === "credit") {
+      filtered = filtered.filter((txn) => Number.parseFloat(String(txn.montantOperation ?? 0)) >= 0)
+    }
+
+    // Filtre par montant
+    if (amount) {
+      const amountValue = Number.parseFloat(amount)
+      if (!Number.isNaN(amountValue)) {
+        filtered = filtered.filter((txn) => {
+          const txnAmount = Math.abs(Number.parseFloat(String(txn.montantOperation ?? 0)))
+          return txnAmount >= amountValue
+        })
+      }
+    }
+
+    // Filtre par date
+    if (filterDate) {
+      const filterDateObj = new Date(filterDate)
+      filtered = filtered.filter((txn) => {
+        if (!txn.valueDate) return false
+        const txnDate = new Date(txn.valueDate)
+        return (
+          txnDate.getFullYear() === filterDateObj.getFullYear() &&
+          txnDate.getMonth() === filterDateObj.getMonth() &&
+          txnDate.getDate() === filterDateObj.getDate()
+        )
+      })
+    }
+
+    // Filtre par recherche texte (description ou référence)
+    if (searchText.trim()) {
+      const searchLower = searchText.toLowerCase().trim()
+      filtered = filtered.filter(
+        (txn) =>
+          (txn.description || "").toLowerCase().includes(searchLower) ||
+          (txn.referenceOperation || "").toLowerCase().includes(searchLower),
+      )
+    }
+
+    setFilteredTransactions(filtered)
+    setTransactionCount(filtered.length)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filterType, amount, filterDate, searchText, allTransactions])
+
+  // Réinitialiser les filtres
+  const resetFilters = () => {
+    setFilterType("all")
+    setAmount("")
+    setFilterDate("")
+    setSearchText("")
+  }
 
   // Trouver le compte pré-sélectionné pour afficher un message
   const preSelectedAccount = preSelectedAccountId ? accounts.find((acc) => acc.id === preSelectedAccountId) : null
@@ -715,16 +790,138 @@ export default function StatementsPage() {
           </TabsContent>
         </Tabs>
 
-        {showDownloadLink && filteredTransactions.length > 0 && (
-          <Card className="mt-4">
-            <CardHeader>
-              <CardTitle className="flex items-center text-base">
-                <CreditCard className="w-4 h-4 mr-2" />
-                Aperçu des transactions ({filteredTransactions.length})
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Table>
+        {showDownloadLink && allTransactions.length > 0 && (
+          <>
+            {/* Section de filtres */}
+            <Card className="mt-4">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center justify-between text-base">
+                  <div className="flex items-center gap-2">
+                    <Filter className="w-4 h-4" />
+                    Filtres de transactions
+                  </div>
+                  {(filterType !== "all" || amount || filterDate || searchText) && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={resetFilters}
+                      className="h-8 text-xs"
+                    >
+                      <X className="w-3 h-3 mr-1" />
+                      Réinitialiser
+                    </Button>
+                  )}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {/* Recherche texte */}
+                  <div className="space-y-2">
+                    <Label htmlFor="searchText" className="text-sm">
+                      Recherche
+                    </Label>
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="searchText"
+                        type="text"
+                        placeholder="Description ou référence..."
+                        value={searchText}
+                        onChange={(e) => setSearchText(e.target.value)}
+                        className="pl-9 h-9"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Type de transaction */}
+                  <div className="space-y-2">
+                    <Label htmlFor="filterType" className="text-sm">
+                      Type de transaction
+                    </Label>
+                    <Select value={filterType} onValueChange={(value: "all" | "debit" | "credit") => setFilterType(value)}>
+                      <SelectTrigger className="h-9">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Toutes</SelectItem>
+                        <SelectItem value="credit">Crédits uniquement</SelectItem>
+                        <SelectItem value="debit">Débits uniquement</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Montant */}
+                  <div className="space-y-2">
+                    <Label htmlFor="amount" className="text-sm">
+                      Montant (minimum)
+                    </Label>
+                    <Input
+                      id="amount"
+                      type="text"
+                      placeholder="0"
+                      value={amount}
+                      onChange={(e) => {
+                        const value = e.target.value
+                        // Ne permet que les chiffres
+                        if (value === "" || /^\d+$/.test(value)) {
+                          setAmount(value)
+                        }
+                      }}
+                      className="h-9"
+                      inputMode="numeric"
+                    />
+                  </div>
+
+                  {/* Date */}
+                  <div className="space-y-2">
+                    <Label htmlFor="filterDate" className="text-sm">
+                      Date
+                    </Label>
+                    <Input
+                      id="filterDate"
+                      type="date"
+                      value={filterDate}
+                      onChange={(e) => setFilterDate(e.target.value)}
+                      className="h-9"
+                    />
+                  </div>
+                </div>
+
+                {/* Indicateur de résultats filtrés */}
+                {(filterType !== "all" || amount || filterDate || searchText) && (
+                  <div className="pt-2 border-t">
+                    <p className="text-sm text-muted-foreground">
+                      {filteredTransactions.length} transaction{filteredTransactions.length > 1 ? "s" : ""} trouvée{filteredTransactions.length > 1 ? "s" : ""} sur {allTransactions.length}
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Tableau des transactions */}
+            <Card className="mt-4">
+              <CardHeader>
+                <CardTitle className="flex items-center text-base">
+                  <CreditCard className="w-4 h-4 mr-2" />
+                  Aperçu des transactions ({filteredTransactions.length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {filteredTransactions.length === 0 ? (
+                  <div className="text-center py-8">
+                    <AlertCircle className="w-12 h-12 mx-auto text-muted-foreground mb-2" />
+                    <p className="text-muted-foreground">Aucune transaction ne correspond aux filtres sélectionnés</p>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={resetFilters}
+                      className="mt-4"
+                    >
+                      Réinitialiser les filtres
+                    </Button>
+                  </div>
+                ) : (
+                  <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Date</TableHead>
@@ -752,8 +949,10 @@ export default function StatementsPage() {
                   ))}
                 </TableBody>
               </Table>
-            </CardContent>
-          </Card>
+                )}
+              </CardContent>
+            </Card>
+          </>
         )}
       </div>
     </div>
@@ -1935,122 +2134,329 @@ export default function StatementsPage() {
 
 
 
-  async function generateExcelStatement(
-    transactions: any[],
-    account: Account,
-    startDate: string,
-    endDate: string,
-    openingBalance: number,
-    closingBalance: number, // This parameter is now derived from the last transaction balance
-  ) {
-    try {
-      // Calculate totals
-      let totalDebit = 0
-      let totalCredit = 0
-      let currentBalance = Number.parseFloat(String(openingBalance)) || 0
+async function generateExcelStatement(
+  transactions: any[],
+  account: Account,
+  startDate: string,
+  endDate: string,
+  openingBalance: number,
+  closingBalance: number,
+) {
+  try {
+    // Calculate totals
+    let totalDebit = 0
+    let totalCredit = 0
+    let currentBalance = Number.parseFloat(String(openingBalance)) || 0
 
-      transactions.forEach((txn) => {
-        const amount = Number.parseFloat(String(txn?.montantOperation ?? 0))
-        if (amount < 0) {
-          totalDebit += Math.abs(amount)
-        } else {
-          totalCredit += amount
+    transactions.forEach((txn) => {
+      const amount = Number.parseFloat(String(txn?.montantOperation ?? 0))
+      if (amount < 0) totalDebit += Math.abs(amount)
+      else totalCredit += amount
+    })
+
+    const workbook = new ExcelJS.Workbook()
+    const worksheet = workbook.addWorksheet("Relevé de compte")
+
+    // ✅ Rendu clean (comme screenshot)
+    worksheet.views = [{ showGridLines: false }]
+
+    // Set column widths
+    worksheet.columns = [
+      { width: 15 }, // A
+      { width: 40 }, // B
+      { width: 25 }, // C
+      { width: 15 }, // D
+      { width: 18 }, // E
+      { width: 18 }, // F
+      { width: 18 }, // G
+    ]
+
+    // ✅ Merge safe (anti "already merged")
+    const isMergedCell = (cell: any) => Boolean(cell?.isMerged || cell?.master || cell?._mergeCount)
+
+    const mergeRowAtoG = (rowNumber: number) => {
+      const aCell: any = worksheet.getCell(rowNumber, 1)
+      if (isMergedCell(aCell)) return
+      worksheet.mergeCells(rowNumber, 1, rowNumber, 7)
+      aCell.alignment = { vertical: "middle" }
+    }
+
+    const greenBottomLine = (rowNumber: number) => {
+      const row = worksheet.getRow(rowNumber)
+      for (let c = 1; c <= 7; c++) {
+        const cell = row.getCell(c)
+        cell.border = {
+          ...(cell.border || {}),
+          bottom: { style: "medium", color: { argb: "FF2E7D32" } },
+        }
+      }
+    }
+
+    // Helper to put light borders in a range
+    const lightBorder = (rowNumber: number, colFrom: number, colTo: number) => {
+      const row = worksheet.getRow(rowNumber)
+      for (let c = colFrom; c <= colTo; c++) {
+        row.getCell(c).border = {
+          top: { style: "thin", color: { argb: "FFE5E7EB" } },
+          left: { style: "thin", color: { argb: "FFE5E7EB" } },
+          bottom: { style: "thin", color: { argb: "FFE5E7EB" } },
+          right: { style: "thin", color: { argb: "FFE5E7EB" } },
+        }
+      }
+    }
+
+    let currentRow = 1
+
+    // Header spacing
+    currentRow += 2
+
+    // Title
+    mergeRowAtoG(currentRow)
+    const titleRow = worksheet.getRow(currentRow)
+    titleRow.getCell(1).value = "RELEVÉ DE COMPTE"
+    titleRow.getCell(1).font = { bold: true, size: 16 }
+    titleRow.getCell(1).alignment = { horizontal: "left", vertical: "middle" }
+    titleRow.height = 28
+    currentRow++
+
+    // Empty row
+    mergeRowAtoG(currentRow)
+    worksheet.getRow(currentRow).height = 12
+    currentRow++
+
+    // Period
+    mergeRowAtoG(currentRow)
+    const periodRow = worksheet.getRow(currentRow)
+    periodRow.getCell(1).value = `${new Date(startDate).toLocaleDateString("fr-FR")} - ${new Date(endDate).toLocaleDateString("fr-FR")}`
+    periodRow.getCell(1).alignment = { horizontal: "left", vertical: "middle" }
+    periodRow.height = 18
+    currentRow++
+
+    // Empty rows
+    mergeRowAtoG(currentRow)
+    worksheet.getRow(currentRow).height = 12
+    currentRow++
+
+    mergeRowAtoG(currentRow)
+    worksheet.getRow(currentRow).height = 12
+    currentRow++
+
+    // Green line under header block
+    greenBottomLine(currentRow - 1)
+
+    // Summary start
+    const summaryStartRow = currentRow
+
+    // ✅ Merge everything in header area (safe)
+    for (let r = 1; r < summaryStartRow; r++) mergeRowAtoG(r)
+
+    // ---------------------------------------------------------
+    // ✅ LEFT: Summary (A/B)
+    // ---------------------------------------------------------
+    const summaryRows: Array<[string, string]> = [
+      ["Devise", account.currency || ""],
+      ["Solde d'ouverture", `${formatAmount(openingBalance)} ${account.currency || ""}`],
+      ["Solde de clôture", `${formatAmount(closingBalance)} ${account.currency || ""}`],
+      ["Total débit", `${formatAmount(totalDebit)} ${account.currency || ""}`],
+      ["Total crédit", `${formatAmount(totalCredit)} ${account.currency || ""}`],
+    ]
+
+    summaryRows.forEach(([label, value]) => {
+      const row = worksheet.getRow(currentRow)
+      row.height = 18
+
+      row.getCell(1).value = label
+      row.getCell(2).value = value
+
+      row.getCell(1).font = { size: 11 }
+      row.getCell(2).font = { size: 11, bold: true }
+
+      row.getCell(1).alignment = { horizontal: "left", vertical: "middle" }
+      row.getCell(2).alignment = { horizontal: "right", vertical: "middle" }
+
+      lightBorder(currentRow, 1, 2)
+
+      currentRow++
+    })
+
+    // ---------------------------------------------------------
+    // ✅ RIGHT: Bank + Account info
+    //    Tu veux "tout décaler vers la droite" => on commence en colonne D
+    //    et on merge D..G (au lieu de C..G)
+    // ---------------------------------------------------------
+    const bankStartRow = summaryStartRow
+
+    const bankInfoRows = [
+      { text: "BANQUE NATIONALE DE GUINÉE", bold: true },
+      { text: "6ème Avenue Boulevard DIALLO Télly BP: 1781 Conakry", bold: false },
+      { text: "", bold: false },
+      { text: account.designation || account.name || "Compte", bold: false },
+      { text: account.number || "", bold: false },
+    ]
+
+    bankInfoRows.forEach((item, idx) => {
+      const r = bankStartRow + idx
+      const row = worksheet.getRow(r)
+      row.height = 18
+
+      // ✅ Décalé à droite: D
+      row.getCell(4).value = String(item.text || "")
+      row.getCell(4).font = item.bold ? { bold: true, size: 11 } : { size: 11 }
+      row.getCell(4).alignment = { horizontal: "left", vertical: "middle" }
+
+      // Merge D..G
+      worksheet.mergeCells(r, 4, r, 7)
+
+      // (optionnel) petite ligne light pour la zone info
+      // lightBorder(r, 4, 7)
+    })
+
+    // move cursor below both blocks
+    currentRow = summaryStartRow + Math.max(summaryRows.length, bankInfoRows.length)
+    currentRow += 2
+
+    // ---------------------------------------------------------
+    // TRANSACTIONS title
+    // ---------------------------------------------------------
+    const txTitleRow = worksheet.getRow(currentRow)
+    txTitleRow.getCell(1).value = `TRANSACTIONS (${transactions.length})`
+    txTitleRow.getCell(1).font = { bold: true, size: 12 }
+    txTitleRow.getCell(1).alignment = { horizontal: "left", vertical: "middle" }
+    worksheet.mergeCells(currentRow, 1, currentRow, 7)
+    txTitleRow.height = 20
+    currentRow++
+
+    // Empty row
+    currentRow++
+
+    // Headers
+    const headerRow = worksheet.getRow(currentRow)
+    const headers = ["Date Valeur", "Description", "Référence", "Date Opération", "Débit", "Crédit", "Solde"]
+
+    headers.forEach((header, index) => {
+      const cell = headerRow.getCell(index + 1)
+      cell.value = header
+      cell.font = { bold: true }
+      cell.alignment = { horizontal: "center", vertical: "middle" }
+      cell.fill = {
+        type: "pattern",
+        pattern: "solid",
+        fgColor: { argb: "FFE8F5E8" },
+      }
+      cell.border = {
+        top: { style: "thin" },
+        left: { style: "thin" },
+        bottom: { style: "thin" },
+        right: { style: "thin" },
+      }
+    })
+    headerRow.height = 22
+    currentRow++
+
+    // Reset balance
+    currentBalance = Number.parseFloat(String(openingBalance)) || 0
+
+    // Rows
+    transactions.forEach((txn) => {
+      const amount = Number.parseFloat(String(txn?.montantOperation ?? 0))
+      const debit = amount < 0 ? formatAmount(Math.round(Math.abs(amount))) : ""
+      const credit = amount >= 0 ? formatAmount(Math.round(amount)) : ""
+
+      currentBalance += amount
+      const solde = formatAmount(Math.round(currentBalance))
+
+      const row = worksheet.getRow(currentRow)
+      row.height = 18
+
+      const values = [
+        txn?.valueDate ? new Date(txn.valueDate).toLocaleDateString("fr-FR") : "",
+        txn?.description || "",
+        txn?.referenceOperation || "",
+        txn?.dateEcriture ? new Date(txn.dateEcriture).toLocaleDateString("fr-FR") : "",
+        debit,
+        credit,
+        solde,
+      ]
+
+      values.forEach((value, index) => {
+        const cell = row.getCell(index + 1)
+        cell.value = String(value ?? "")
+        cell.alignment = { horizontal: index >= 4 ? "right" : "left", vertical: "middle" }
+        cell.border = {
+          top: { style: "thin" },
+          left: { style: "thin" },
+          bottom: { style: "thin" },
+          right: { style: "thin" },
         }
       })
 
-      // Create Excel workbook
-      const workbook = XLSX.utils.book_new()
+      currentRow++
+    })
 
-      // Header information
-      const headerData = [
-        ["RELEVÉ DE COMPTE"],
-        [],
-        ["Numéro de compte", account.number],
-        ["Intitulé", account.name],
-        ["Type", account.type],
-        ["Devise", account.currency],
-        ["Solde d'ouverture", `${formatAmount(openingBalance)} ${account.currency}`],
-        ["Solde de clôture", `${formatAmount(closingBalance)} ${account.currency}`], // Use the closing balance passed to the function
-        ["Total débit", `${formatAmount(totalDebit)} ${account.currency}`],
-        ["Total crédit", `${formatAmount(totalCredit)} ${account.currency}`],
-        [
-          "Période",
-          `${new Date(startDate).toLocaleDateString("fr-FR")} - ${new Date(endDate).toLocaleDateString("fr-FR")}`,
-        ],
-        [],
-        [],
-      ]
+    // Footer
+    currentRow += 2
+    const footerRows = [
+      "Banque Nationale de Guinée SA - Agrément par décision N° 06/019/93/CAB/PE 06/06/1993",
+      "Capital : 60.000.000.000 GNF",
+      "Boulevard Tidiani Kaba - Quartier Boulbinet/Almamya, Kaloum, Conakry, Guinée",
+      "Tél: +224 - 622 454 049 - B.P 1781 - mail: contact@bng.gn",
+    ]
 
-      // Transaction headers
-      const transactionHeaders = [
-        "Date Valeur",
-        "Description",
-        "Référence",
-        "Date Opération",
-        "Débit",
-        "Crédit",
-        "Solde", // Added Solde column
-      ]
+    footerRows.forEach((text) => {
+      const row = worksheet.getRow(currentRow)
+      row.getCell(1).value = String(text || "")
+      row.getCell(1).font = { size: 9, color: { argb: "FF64748B" } }
+      row.getCell(1).alignment = { horizontal: "left", vertical: "middle" }
+      worksheet.mergeCells(currentRow, 1, currentRow, 7)
+      row.height = 14
+      currentRow++
+    })
 
-      // Reset balance for calculation
-      currentBalance = Number.parseFloat(String(openingBalance)) || 0
+    // ---------------------------------------------------------
+    // ✅ LOGO: décale vers la gauche pour ne pas déborder colonne G
+    // - A=0 ... G=6
+    // - En baissant "col", tu le pousses vers la gauche
+    // ---------------------------------------------------------
+    try {
+      const logoResponse = await fetch("/images/logo-bng.png")
+      if (logoResponse.ok) {
+        const logoBuffer = await logoResponse.arrayBuffer()
+        const logoId = workbook.addImage({ buffer: logoBuffer, extension: "png" })
 
-      // Transaction rows
-      const transactionRows = transactions.map((txn) => {
-        const amount = Number.parseFloat(String(txn?.montantOperation ?? 0))
-        const debit = amount < 0 ? formatAmount(Math.round(Math.abs(amount))) : ""
-        const credit = amount >= 0 ? formatAmount(Math.round(amount)) : ""
-
-        // --- UPDATE START ---
-        currentBalance += amount
-        const solde = formatAmount(Math.round(currentBalance))
-        // --- UPDATE END ---
-
-        return [
-          txn?.valueDate ? new Date(txn.valueDate).toLocaleDateString("fr-FR") : "",
-          txn?.description || "",
-          txn?.referenceOperation || "",
-          txn?.dateEcriture ? new Date(txn.dateEcriture).toLocaleDateString("fr-FR") : "",
-          debit,
-          credit,
-          solde, // Add Solde value
-        ]
-      })
-
-      // Combine all data
-      const worksheetData = [...headerData, transactionHeaders, ...transactionRows]
-
-      // Create worksheet
-      const worksheet = XLSX.utils.aoa_to_sheet(worksheetData)
-
-      // Set column widths
-      // --- UPDATE START ---
-      worksheet["!cols"] = [
-        { wch: 15 }, // Date Valeur
-        { wch: 40 }, // Description
-        { wch: 25 }, // Référence (increased from 20 to match PDF)
-        { wch: 15 }, // Date Opération
-        { wch: 15 }, // Débit
-        { wch: 15 }, // Crédit
-        { wch: 15 }, // Solde
-      ]
-      // </CHANGE>
-      // --- UPDATE END ---
-
-      // Add worksheet to workbook
-      XLSX.utils.book_append_sheet(workbook, worksheet, "Relevé de compte")
-
-      // Generate file name
-      const fileName = `Releve_Compte_${account.number.replace(/-/g, "_")}_${new Date().toISOString().split("T")[0]}.xlsx`
-
-      // Download file
-      XLSX.writeFile(workbook, fileName)
-      console.log("[v0] Excel généré et téléchargé:", fileName)
+        worksheet.addImage(logoId, {
+          tl: { col: 5.55, row: 1.85 }, // ✅ plus à gauche qu'avant
+          ext: { width: 175, height: 58 },
+        })
+      }
     } catch (error) {
-      console.error("[v0] Erreur génération Excel:", error)
-      alert("❌ Erreur lors de la génération du relevé Excel")
+      console.warn("[v0] Logo BNG non trouvé, génération sans logo", error)
     }
+
+    // File name
+    const safeAccount = (account.number || "COMPTE").replace(/-/g, "_")
+    const fileName = `Releve_Compte_${safeAccount}_${new Date().toISOString().split("T")[0]}.xlsx`
+
+    // Download
+    const buffer = await workbook.xlsx.writeBuffer()
+    const blob = new Blob([buffer], {
+      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    })
+
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement("a")
+    a.href = url
+    a.download = fileName
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+
+    console.log("[v0] Excel généré et téléchargé:", fileName)
+  } catch (error) {
+    console.error("[v0] Erreur génération Excel:", error)
+    alert("❌ Erreur lors de la génération du relevé Excel")
   }
+}
 
   function generateAndDownloadExcelWithTransactions(account: Account, transactions: any[]) {
     try {

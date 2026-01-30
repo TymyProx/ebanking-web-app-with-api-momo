@@ -292,13 +292,37 @@ export async function addBeneficiaryAndActivate(
       cleRib,
     })
 
+    // Récupérer le statut depuis le FormData (100 pour bénéficiaire ponctuel, 0 par défaut)
+    const statusStr = getStr("status")
+    let beneficiaryStatus = 0
+    if (statusStr) {
+      const parsedStatus = Number.parseInt(statusStr, 10)
+      if (!Number.isNaN(parsedStatus)) {
+        beneficiaryStatus = parsedStatus
+      }
+    }
+    const isOccasionalBeneficiary = beneficiaryStatus === 100
+
+    console.log("[addBeneficiaryAndActivate] Status from FormData:", {
+      statusStr,
+      beneficiaryStatus,
+      isOccasionalBeneficiary,
+      type: typeof beneficiaryStatus,
+    })
+
     const base = {
       beneficiaryId: `BEN_${Date.now()}`,
       clientId: clientId,
-      status: 0, // Active
+      status: beneficiaryStatus, // 100 pour bénéficiaire ponctuel, 0 pour normal - DOIT être un nombre
       workflowStatus: WORKFLOW_STATUS.AVAILABLE, // ✅ Directly available
       typeBeneficiary: type,
       favoris: false,
+    }
+
+    // S'assurer que le statut est bien un nombre dans l'objet base
+    if (typeof base.status !== "number") {
+      console.error("[addBeneficiaryAndActivate] ERREUR: Le statut n'est pas un nombre!", base.status)
+      base.status = Number.parseInt(String(base.status), 10) || 0
     }
 
     let apiData: any
@@ -337,8 +361,23 @@ export async function addBeneficiaryAndActivate(
 
     const payloadToSend = apiData.data ?? apiData
 
+    // Vérifier que le statut est bien dans le payload
+    console.log("[addBeneficiaryAndActivate] Status check:", {
+      statusInBase: base.status,
+      statusInPayload: payloadToSend.status,
+      beneficiaryStatus,
+      statusStr,
+      isOccasionalBeneficiary,
+    })
+
+    // S'assurer que le statut est bien 100 dans le payload final si c'est un bénéficiaire ponctuel
+    if (isOccasionalBeneficiary && payloadToSend.status !== 100) {
+      console.warn("[addBeneficiaryAndActivate] ATTENTION: Le statut devrait être 100 mais est:", payloadToSend.status)
+      payloadToSend.status = 100
+    }
+
     console.log("[addBeneficiaryAndActivate] API payload (secureMode:", secureMode, ")", apiData)
-    console.log("[addBeneficiaryAndActivate] Payload sent to API", payloadToSend)
+    console.log("[addBeneficiaryAndActivate] Payload sent to API (final status:", payloadToSend.status, ")", payloadToSend)
 
     const cookieToken = (await cookies()).get("token")?.value
     const usertoken = cookieToken

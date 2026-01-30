@@ -12,8 +12,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { Search, Settings, User } from "lucide-react"
+import { TooltipProvider } from "@/components/ui/tooltip"
+import { User } from "lucide-react"
 import { LogoutButton } from "@/components/auth/logout-button"
 import { NotificationDropdown } from "@/components/notifications/notification-dropdown"
 import { usePathname } from "next/navigation"
@@ -21,6 +21,7 @@ import { useState, useEffect } from "react"
 import { getAccounts } from "@/app/accounts/actions"
 import { getCurrentUser } from "@/app/user/actions"
 import { isAccountActive } from "@/lib/status-utils"
+import Link from "next/link"
 
 export function Header() {
   const pathname = usePathname()
@@ -90,18 +91,6 @@ export function Header() {
         )}
 
         <div className="ml-auto flex items-center gap-2">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-8 w-8">
-                <Search className="h-4 w-4" />
-                <span className="sr-only">Rechercher</span>
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Rechercher</p>
-            </TooltipContent>
-          </Tooltip>
-
           <NotificationDropdown />
 
           <DropdownMenu>
@@ -121,13 +110,11 @@ export function Header() {
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>
-                <User className="mr-2 h-4 w-4" />
-                <span>Profil</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <Settings className="mr-2 h-4 w-4" />
-                <span>Paramètres</span>
+              <DropdownMenuItem asChild>
+                <Link href="/profile" className="flex items-center">
+                  <User className="mr-2 h-4 w-4" />
+                  <span>Profil</span>
+                </Link>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem asChild>

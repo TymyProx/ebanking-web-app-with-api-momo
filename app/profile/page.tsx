@@ -2,14 +2,11 @@
 
 import { useState, useTransition, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Badge } from "@/components/ui/badge"
-import { Separator } from "@/components/ui/separator"
-import { User, MapPin, Shield, CheckCircle, AlertCircle } from "lucide-react"
+import { User, MapPin, CheckCircle, AlertCircle } from "lucide-react"
 import { getUserProfileData } from "./actions"
 import { AuthService, type User as AuthUser } from "@/lib/auth-service"
 
@@ -147,9 +144,7 @@ export default function ProfilePage() {
         </Alert>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Main Content */}
-        <div className="lg:col-span-2 space-y-6">
+      <div className="space-y-6">
           {/* Informations Personnelles */}
           <Card>
             <CardHeader>
@@ -244,80 +239,6 @@ export default function ProfilePage() {
               </div>
             </CardContent>
           </Card>
-        </div>
-
-        {/* Sidebar */}
-        <div className="space-y-6">
-          {/* Statut du compte */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Shield className="w-5 h-5" />
-                Statut du compte
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="text-sm">Compte vérifié</span>
-                <Badge
-                  variant="default"
-                  className={`${currentUser?.emailVerified ? "bg-green-100 text-green-800" : "bg-yellow-100 text-yellow-800"}`}
-                >
-                  <CheckCircle className="w-3 h-3 mr-1" />
-                  {currentUser?.emailVerified ? "Vérifié" : "En attente"}
-                </Badge>
-              </div>
-
-              <Separator />
-
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span>ID Utilisateur</span>
-                  <span className="font-mono">{currentUser?.id?.slice(0, 8) || "N/A"}</span>
-                </div>
-                {formData.codeClient && (
-                  <div className="flex justify-between">
-                    <span>Code Client</span>
-                    <span className="font-mono">{formData.codeClient}</span>
-                  </div>
-                )}
-                {formData.clientType && (
-                  <div className="flex justify-between">
-                    <span>Type de Client</span>
-                    <Badge variant="outline" className="capitalize">
-                      {formData.clientType === "existing" ? "Existant" : "Nouveau"}
-                    </Badge>
-                  </div>
-                )}
-                <div className="flex justify-between">
-                  <span>Email</span>
-                  <span>{currentUser?.email || "N/A"}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Tenant actif</span>
-                  <span>{currentUser?.tenants?.[0]?.tenant?.name || "N/A"}</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Actions rapides */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Actions rapides</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <Button variant="outline" size="sm" className="w-full justify-start bg-transparent">
-                <Shield className="w-4 h-4 mr-2" />
-                Sécurité du compte
-              </Button>
-              <Button variant="outline" size="sm" className="w-full justify-start bg-transparent">
-                <User className="w-4 h-4 mr-2" />
-                Préférences
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
       </div>
     </div>
   )

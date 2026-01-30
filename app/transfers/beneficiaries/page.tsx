@@ -167,40 +167,46 @@ export default function BeneficiariesPage() {
     try {
       const apiBeneficiaries = await getBeneficiaries()
 
-      const transformedBeneficiaries: Beneficiary[] = apiBeneficiaries.map((apiB: any) => {
-        // Data is already decrypted server-side
-        const name = apiB.name ?? ""
-        const accountNumber = apiB.accountNumber ?? ""
-        const bankNamePlain = apiB.bankName ?? ""
-        const bankResolved = bankNamePlain || getBankNameFromCode(apiB.bankCode)
-        const codagence = apiB.codagence ?? ""
-        const clerib = apiB.clerib ?? ""
-        const workflowStatus = toWorkflowStatus(apiB.workflowStatus)
-        let workflowMetadata = apiB.workflowMetadata || null
-        if (workflowMetadata && typeof workflowMetadata === "string") {
-          try {
-            workflowMetadata = JSON.parse(workflowMetadata)
-          } catch {
-            workflowMetadata = null
+      const transformedBeneficiaries: Beneficiary[] = apiBeneficiaries
+        .map((apiB: any) => {
+          // Data is already decrypted server-side
+          const name = apiB.name ?? ""
+          const accountNumber = apiB.accountNumber ?? ""
+          const bankNamePlain = apiB.bankName ?? ""
+          const bankResolved = bankNamePlain || getBankNameFromCode(apiB.bankCode)
+          const codagence = apiB.codagence ?? ""
+          const clerib = apiB.clerib ?? ""
+          const workflowStatus = toWorkflowStatus(apiB.workflowStatus)
+          let workflowMetadata = apiB.workflowMetadata || null
+          if (workflowMetadata && typeof workflowMetadata === "string") {
+            try {
+              workflowMetadata = JSON.parse(workflowMetadata)
+            } catch {
+              workflowMetadata = null
+            }
           }
-        }
 
-        return {
-          id: apiB.id,
-          name,
-          account: accountNumber,
-          bank: bankResolved,
-          type: apiB.typeBeneficiary,
-          favorite: Boolean(apiB.favoris),
-          lastUsed: "Jamais", // This might need to be fetched or calculated differently if available
-          addedDate: apiB.createdAt ? new Date(apiB.createdAt).toLocaleDateString("fr-FR") : "",
-          status: apiB.status,
-          codagence,
-          clerib,
-          workflowStatus,
-          workflowMetadata,
-        } as Beneficiary
-      })
+          return {
+            id: apiB.id,
+            name,
+            account: accountNumber,
+            bank: bankResolved,
+            type: apiB.typeBeneficiary,
+            favorite: Boolean(apiB.favoris),
+            lastUsed: "Jamais", // This might need to be fetched or calculated differently if available
+            addedDate: apiB.createdAt ? new Date(apiB.createdAt).toLocaleDateString("fr-FR") : "",
+            status: apiB.status,
+            codagence,
+            clerib,
+            workflowStatus,
+            workflowMetadata,
+          } as Beneficiary
+        })
+        .filter((beneficiary) => {
+          // Exclure les bénéficiaires avec le statut 100 (bénéficiaires ponctuels)
+          const statusValue = Number(beneficiary.status)
+          return statusValue !== 100
+        })
       setBeneficiaries(transformedBeneficiaries)
     } catch (error) {
       console.error("Erreur lors du chargement des bénéficiaires:", error)
@@ -345,6 +351,12 @@ export default function BeneficiariesPage() {
     statusFilter: string,
   ) => {
     return beneficiariesList.filter((beneficiary) => {
+      // Exclure les bénéficiaires avec le statut 100 (bénéficiaires ponctuels)
+      const statusValue = Number(beneficiary.status)
+      if (statusValue === 100) {
+        return false
+      }
+
       const isSuspended = beneficiary.status === 1 || beneficiary.workflowStatus === WORKFLOW_STATUS.SUSPENDED
       const isPending = PENDING_WORKFLOW_STATUSES.includes(beneficiary.workflowStatus)
 
@@ -379,6 +391,12 @@ export default function BeneficiariesPage() {
   }
 
   const filteredBeneficiaries = beneficiaries.filter((beneficiary) => {
+    // Exclure les bénéficiaires avec le statut 100 (bénéficiaires ponctuels)
+    const statusValue = Number(beneficiary.status)
+    if (statusValue === 100) {
+      return false
+    }
+
     const safe = (v: any) => (typeof v === "string" ? v : v ? JSON.stringify(v) : "")
     const searchLc = searchTerm.toLowerCase()
     const nameLc = safe(beneficiary.name).toLowerCase()
@@ -1086,7 +1104,7 @@ export default function BeneficiariesPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="active">Actifs</SelectItem>
-                <SelectItem value="inactive">Inactifs</SelectItem>
+                <SelectItem value="inactive">Désactivés</SelectItem>
               </SelectContent>
             </Select>
           </div>
