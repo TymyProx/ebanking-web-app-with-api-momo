@@ -198,18 +198,14 @@ export async function createAccount(prevState: any, formData: FormData) {
 
     const accountType = (formData.get("accountType") as string) || "CURRENT"
     const accountData: any = {
-      accountId: formData.get("accountId") as string,
-      accountNumber: formData.get("accountNumber") as string,
+      // Le backend générera automatiquement accountId, accountNumber, codeBanque, codeAgence, cleRib
       accountName: formData.get("accountName") as string,
       currency: formData.get("currency") as string,
       bookBalance: (formData.get("bookBalance") as string) || "0",
       availableBalance: (formData.get("availableBalance") as string) || "0",
       status: "EN ATTENTE",
       type: accountType,
-      codeAgence: "N/A",
       clientId: clientId,
-      codeBanque: "N/A",
-      cleRib: "N/A",
     }
 
     if (accountType === "MINEUR") {
