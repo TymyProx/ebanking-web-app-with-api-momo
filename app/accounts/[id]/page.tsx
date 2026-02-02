@@ -184,15 +184,35 @@ export default function AccountDetailsPage({ params }: AccountDetailPageProps) {
         const transactionsData = await getUserTransactions()
 
         if (transactionsData.success && transactionsData.data && Array.isArray(transactionsData.data)) {
-          // Transactions où le compte est le compte source (numCompte/accountId)
-          const directTransactions = transactionsData.data
+          // ✅ Filter and classify transactions using reliable account-based logic
+          const allRelevantTransactions = transactionsData.data
             .filter((txn: any) => {
-              const txnAccountNumber = txn.numCompte || txn.accountNumber || txn.accountId
-              return txnAccountNumber === accountNumber
+              const txnDebitAccount = txn.numCompte || txn.accountNumber || txn.accountId
+              const txnCreditAccount = txn.creditAccount
+              // Include transaction if this account is either the debit or credit account
+              return txnDebitAccount === accountNumber || txnCreditAccount === accountNumber
             })
             .map((txn: any) => {
               const amount = Number.parseFloat(txn.montantOperation || txn.amount || "0")
-              const isCredit = txn.txnType === "CREDIT"
+              
+              // ✅ Reliable classification based on account relationship
+              const txnDebitAccount = txn.numCompte
+              const txnCreditAccount = txn.creditAccount
+              
+              let isCredit = false
+              let isDebit = false
+              
+              if (txnCreditAccount === accountNumber) {
+                // This account is receiving money → CREDIT
+                isCredit = true
+              } else if (txnDebitAccount === accountNumber) {
+                // This account is sending money → DEBIT
+                isDebit = true
+              } else {
+                // Fallback to txnType
+                isCredit = txn.txnType === "CREDIT"
+                isDebit = !isCredit
+              }
 
               return {
                 id: txn.txnId || txn.id || txn.transactionId,
@@ -203,57 +223,16 @@ export default function AccountDetailsPage({ params }: AccountDetailPageProps) {
                 currency: txn.codeDevise || "GNF",
                 date: txn.valueDate || txn.date || txn.createdAt || new Date().toISOString(),
                 status: txn.status || "Exécuté",
-                counterparty: txn.creditAccount || txn.beneficiaryId || txn.beneficiary || "Système",
+                counterparty: isCredit 
+                  ? (txn.numCompte || txn.accountNumber || "Système")
+                  : (txn.creditAccount || txn.beneficiaryId || "Système"),
                 reference: txn.txnId || txn.referenceOperation || txn.reference || "REF-" + Date.now(),
                 balanceAfter: 0,
               } as Transaction
             })
 
-          // Transactions où le compte est le compte crédité (creditAccount)
-          const creditTransactions = transactionsData.data
-            .filter((txn: any) => {
-              const creditAccount = txn.creditAccount
-              return creditAccount && creditAccount === accountNumber
-            })
-            .map((txn: any) => {
-              const amount = Number.parseFloat(txn.montantOperation || txn.amount || "0")
-              // Ces transactions sont toujours des crédits pour ce compte
-              const isCredit = true
-
-              return {
-                id: `${txn.txnId || txn.id || txn.transactionId}_credit`,
-                accountId: accountId,
-                type: "Virement reçu",
-                description: txn.description || txn.referenceOperation || "Transaction",
-                amount: Math.abs(amount), // Toujours positif car c'est un crédit
-                currency: txn.codeDevise || "GNF",
-                date: txn.valueDate || txn.date || txn.createdAt || new Date().toISOString(),
-                status: txn.status || "Exécuté",
-                counterparty: txn.numCompte || txn.accountNumber || txn.accountId || "Système",
-                reference: txn.txnId || txn.referenceOperation || txn.reference || "REF-" + Date.now(),
-                balanceAfter: 0,
-              } as Transaction
-            })
-
-          // Combiner les deux listes et supprimer les doublons
-          const allAccountTransactions = [...directTransactions, ...creditTransactions]
-          
-          // Supprimer les doublons basés sur l'ID original (si une transaction est à la fois directe et créditée)
-          const uniqueTransactions = new Map<string, Transaction>()
-          allAccountTransactions.forEach((txn) => {
-            const originalId = txn.id.replace("_credit", "")
-            if (!uniqueTransactions.has(originalId)) {
-              uniqueTransactions.set(originalId, txn)
-            } else {
-              // Si la transaction existe déjà, prioriser celle avec type = "Virement reçu" (crédit)
-              const existing = uniqueTransactions.get(originalId)!
-              if (txn.type === "Virement reçu" && existing.type !== "Virement reçu") {
-                uniqueTransactions.set(originalId, txn)
-              }
-            }
-          })
-
-          const accountTransactions = Array.from(uniqueTransactions.values())
+          // Sort transactions by date (most recent first)
+          const accountTransactions = allRelevantTransactions
             .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
 
           setTransactions(accountTransactions)

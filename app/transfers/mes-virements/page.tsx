@@ -171,11 +171,8 @@ export default function MesVirementsPage() {
 
   const formatTransaction = (txn: any, accounts: any[]) => {
     const baseAmount = Number.parseFloat(txn.montantOperation || "0")
-    const txnType = (txn.txnType || "").toUpperCase()
-    const isDebit = txnType === "DEBIT"
-    const isCredit = txnType === "CREDIT"
-    // Montant avec signe : négatif pour DEBIT, positif pour CREDIT
-    const signedAmount = isDebit ? -Math.abs(baseAmount) : Math.abs(baseAmount)
+    
+    // Find the account this transaction belongs to
     const account = accounts.find(
       (acc) =>
         acc.accountNumber === txn.numCompte ||
@@ -185,6 +182,33 @@ export default function MesVirementsPage() {
         acc.numCompte === txn.numCompte
     )
     const currency = account?.currency || "GNF"
+    
+    // ✅ Use reliable classification based on account relationships
+    const accountNumber = account?.accountNumber || account?.numCompte
+    const isCreditAccount = accountNumber && txn.creditAccount === accountNumber
+    const isDebitAccount = accountNumber && txn.numCompte === accountNumber
+    
+    let isDebit = false
+    let isCredit = false
+    
+    if (isCreditAccount) {
+      // Account is receiving money → CREDIT
+      isCredit = true
+      isDebit = false
+    } else if (isDebitAccount) {
+      // Account is sending money → DEBIT
+      isDebit = true
+      isCredit = false
+    } else {
+      // Fallback to txnType field
+      const txnType = (txn.txnType || "").toUpperCase()
+      isDebit = txnType === "DEBIT"
+      isCredit = txnType === "CREDIT"
+    }
+    
+    // Montant avec signe : négatif pour DEBIT, positif pour CREDIT
+    const signedAmount = isDebit ? -Math.abs(baseAmount) : Math.abs(baseAmount)
+    
     const when = txn.valueDate || txn.createdAt || new Date().toISOString()
     return {
       type: isDebit ? "Virement émis" : "Virement reçu",
