@@ -575,18 +575,19 @@ export async function executeTransfer(prevState: any, formData: FormData) {
       }
     }
 
-    const debitResult = await debitAccountBalance(validatedData.sourceAccount, transferAmount, {
-      token: usertoken,
-      currentUser,
-      allowedAccountIds,
-    })
+    // Retiré : modification du solde disponible lors du virement
+    // const debitResult = await debitAccountBalance(validatedData.sourceAccount, transferAmount, {
+    //   token: usertoken,
+    //   currentUser,
+    //   allowedAccountIds,
+    // })
 
-    if (!debitResult.success) {
-      return {
-        success: false,
-        error: debitResult.error || "Impossible de débiter le compte source",
-      }
-    }
+    // if (!debitResult.success) {
+    //   return {
+    //     success: false,
+    //     error: debitResult.error || "Impossible de débiter le compte source",
+    //   }
+    // }
 
     const timestamp = Date.now().toString()
     const random = Math.floor(Math.random() * 1000000)
@@ -621,11 +622,7 @@ export async function executeTransfer(prevState: any, formData: FormData) {
 
           if (!targetAccountResponse.ok) {
             console.error("[v0] Failed to fetch target account details:", targetAccountResponse.status)
-            await debitAccountBalance(validatedData.sourceAccount, -transferAmount, {
-              token: usertoken,
-              currentUser,
-              allowedAccountIds,
-            })
+            // Retiré : restauration du solde
             return {
               success: false,
               error: "Impossible de récupérer le compte destinataire",
@@ -640,11 +637,7 @@ export async function executeTransfer(prevState: any, formData: FormData) {
             console.warn(
               `[v0] Target account ownership mismatch: compte ${validatedData.targetAccount} -> ${targetOwnerId}, utilisateur ${currentUser.id}`,
             )
-            await debitAccountBalance(validatedData.sourceAccount, -transferAmount, {
-              token: usertoken,
-              currentUser,
-              allowedAccountIds,
-            })
+            // Retiré : restauration du solde
             return {
               success: false,
               error: "Compte destinataire non autorisé",
@@ -656,37 +649,34 @@ export async function executeTransfer(prevState: any, formData: FormData) {
           console.log("[v0] Target account details retrieved:", { nomBeneficiaire, ribBeneficiaire })
         } catch (error) {
           console.error("[v0] Error fetching target account details:", error)
-          await debitAccountBalance(validatedData.sourceAccount, -transferAmount, {
-            token: usertoken,
-            currentUser,
-            allowedAccountIds,
-          })
+          // Retiré : restauration du solde
           return {
             success: false,
             error: "Erreur lors de la récupération du compte destinataire",
           }
         }
 
-        const creditResult = await creditAccountBalance(validatedData.targetAccount, transferAmount, {
-          token: usertoken,
-          currentUser,
-          allowedAccountIds,
-        })
+        // Retiré : crédit du solde disponible
+        // const creditResult = await creditAccountBalance(validatedData.targetAccount, transferAmount, {
+        //   token: usertoken,
+        //   currentUser,
+        //   allowedAccountIds,
+        // })
 
-        if (!creditResult.success) {
-          console.log("[v0] Erreur lors du crédit, restauration du solde source")
-          await debitAccountBalance(validatedData.sourceAccount, -transferAmount, {
-            token: usertoken,
-            currentUser,
-            allowedAccountIds,
-          })
-          return {
-            success: false,
-            error: creditResult.error || "Impossible de créditer le compte destinataire",
-          }
-        }
+        // if (!creditResult.success) {
+        //   console.log("[v0] Erreur lors du crédit, restauration du solde source")
+        //   await debitAccountBalance(validatedData.sourceAccount, -transferAmount, {
+        //     token: usertoken,
+        //     currentUser,
+        //     allowedAccountIds,
+        //   })
+        //   return {
+        //     success: false,
+        //     error: creditResult.error || "Impossible de créditer le compte destinataire",
+        //   }
+        // }
 
-        console.log(`[v0] Compte destinataire crédité avec succès - Nouveau solde: ${creditResult.newBalance}`)
+        // console.log(`[v0] Compte destinataire crédité avec succès - Nouveau solde: ${creditResult.newBalance}`)
       }
     } else if (validatedData.beneficiaryId) {
       console.log(`[v0] Récupération des informations du bénéficiaire: ${validatedData.beneficiaryId}`)
@@ -697,12 +687,8 @@ export async function executeTransfer(prevState: any, formData: FormData) {
       })
 
       if (!beneficiary) {
-        console.log("[v0] Bénéficiaire non trouvé, restauration du solde source")
-        await debitAccountBalance(validatedData.sourceAccount, -transferAmount, {
-          token: usertoken,
-          currentUser,
-          allowedAccountIds,
-        })
+        console.log("[v0] Bénéficiaire non trouvé")
+        // Retiré : restauration du solde
         return {
           success: false,
           error: "Bénéficiaire non trouvé",
@@ -801,7 +787,7 @@ export async function executeTransfer(prevState: any, formData: FormData) {
 
     if (!response.ok) {
       if ((process.env.NEXT_PUBLIC_LOG_LEVEL || "error").toLowerCase() === "debug") {
-        console.log("[v0] Erreur API, restauration du solde disponible")
+        console.log("[v0] Erreur API")
       }
 
       const responseText = await response.text()
@@ -809,19 +795,7 @@ export async function executeTransfer(prevState: any, formData: FormData) {
         console.log("[v0] Error response body:", responseText)
       }
 
-      await debitAccountBalance(validatedData.sourceAccount, -transferAmount, {
-        token: usertoken,
-        currentUser,
-        allowedAccountIds,
-      })
-
-      if (validatedData.transferType === "account-to-account" && validatedData.targetAccount) {
-        await debitAccountBalance(validatedData.targetAccount, transferAmount, {
-          token: usertoken,
-          currentUser,
-          allowedAccountIds,
-        })
-      }
+      // Retiré : restauration du solde disponible
 
       let errorMessage = `❌ Erreur API: ${response.status} ${response.statusText}`
 
@@ -855,7 +829,7 @@ export async function executeTransfer(prevState: any, formData: FormData) {
 
     if ((process.env.NEXT_PUBLIC_LOG_LEVEL || "error").toLowerCase() === "debug") {
       console.log(
-        `[AUDIT] Virement exécuté - RequestID: ${requestID}, Type: ${validatedData.transferType}, Nouveau solde disponible: ${debitResult.newBalance} à ${new Date().toISOString()}`,
+        `[AUDIT] Virement exécuté - RequestID: ${requestID}, Type: ${validatedData.transferType} à ${new Date().toISOString()}`,
       )
     }
 
@@ -869,10 +843,7 @@ export async function executeTransfer(prevState: any, formData: FormData) {
       amount: transferAmount,
       executedAt: new Date().toISOString(),
       apiResponse: result,
-      balanceInfo: {
-        previousBalance: debitResult.previousBalance,
-        newBalance: debitResult.newBalance,
-      },
+      // Retiré : informations de solde
     }
   } catch (error) {
     console.error("Erreur lors de l'exécution du virement:", error)

@@ -82,7 +82,8 @@ export default function NewTransferPage() {
     codeBanque?: string
     id?: string
   } | null>(null)
-  const [isEditingOccasionalBeneficiary, setIsEditingOccasionalBeneficiary] = useState(false)
+  const [occasionalBeneficiaryName, setOccasionalBeneficiaryName] = useState<string>("")
+  const [occasionalBeneficiaryAccount, setOccasionalBeneficiaryAccount] = useState<string>("")
   const [amount, setAmount] = useState<string>("")
   const [motif, setMotif] = useState<string>("")
   const [transferDate, setTransferDate] = useState<string>(new Date().toISOString().split("T")[0])
@@ -341,34 +342,8 @@ export default function NewTransferPage() {
       }
     }
 
-    // Si c'est un bénéficiaire ponctuel, stocker les infos localement sans enregistrer en BD
-    if (transferType === "account-to-occasional-beneficiary") {
-      const name = formData.get("name") as string
-      const account = formData.get("account") as string
-      const bankname = formData.get("bankname") as string || formData.get("bank") as string || ""
-      const codeAgence = formData.get("codeAgence") as string || ""
-      const cleRib = formData.get("cleRib") as string || ""
-      const codeBanque = formData.get("codeBanque") as string || ""
-
-      setOccasionalBeneficiary({
-        name: name || "",
-        account: account || "",
-        bank: bankname || "",
-        type: selectedType,
-        codeAgence: codeAgence || "",
-        cleRib: cleRib || "",
-        codeBanque: codeBanque || "",
-      })
-
-      resetBeneficiaryForm()
-      setIsAddBeneficiaryDialogOpen(false)
-      setIsEditingOccasionalBeneficiary(false)
-      toast({
-        title: "Succès",
-        description: "Informations du bénéficiaire ponctuel enregistrées!",
-      })
-      return
-    }
+    // Cette partie n'est plus utilisée pour les bénéficiaires ponctuels
+    // Les bénéficiaires ponctuels sont maintenant saisis directement dans la card
 
     // Pour les bénéficiaires normaux, enregistrer en BD
     startTransition(() => {
@@ -381,6 +356,8 @@ export default function NewTransferPage() {
     setSelectedBeneficiary("")
     setSelectedCreditAccount("")
     setOccasionalBeneficiary(null)
+    setOccasionalBeneficiaryName("")
+    setOccasionalBeneficiaryAccount("")
     setTransferValidationError("")
     setTransferSubmitted(false)
   }
@@ -412,8 +389,8 @@ export default function NewTransferPage() {
         return
       }
     } else if (transferType === "account-to-occasional-beneficiary") {
-      if (!occasionalBeneficiary) {
-        setTransferValidationError("Veuillez saisir les informations du bénéficiaire ponctuel")
+      if (!occasionalBeneficiaryName.trim() || !occasionalBeneficiaryAccount.trim()) {
+        setTransferValidationError("Veuillez saisir le nom et le numéro de compte du bénéficiaire ponctuel")
         setTransferSubmitted(false)
         return
       }
@@ -461,26 +438,17 @@ export default function NewTransferPage() {
     }
 
     // Si c'est un bénéficiaire ponctuel, enregistrer d'abord en BD avec statut 100
-    if (transferType === "account-to-occasional-beneficiary" && occasionalBeneficiary && !occasionalBeneficiary.id) {
+    if (transferType === "account-to-occasional-beneficiary" && occasionalBeneficiaryName && occasionalBeneficiaryAccount) {
       // Créer un FormData pour enregistrer le bénéficiaire ponctuel
       const beneficiaryFormData = new FormData()
-      beneficiaryFormData.append("name", occasionalBeneficiary.name)
-      beneficiaryFormData.append("account", occasionalBeneficiary.account)
-      beneficiaryFormData.append("type", occasionalBeneficiary.type || "")
-      beneficiaryFormData.append("bankname", occasionalBeneficiary.bank)
+      beneficiaryFormData.append("name", occasionalBeneficiaryName.trim())
+      beneficiaryFormData.append("account", occasionalBeneficiaryAccount.trim())
+      beneficiaryFormData.append("type", "BNG-BNG") // Type par défaut pour bénéficiaire ponctuel
+      beneficiaryFormData.append("bankname", "Banque Nationale de Guinée")
       // S'assurer que le statut est bien "100" comme string
       beneficiaryFormData.append("status", "100")
-      
-      if (occasionalBeneficiary.codeAgence) {
-        beneficiaryFormData.append("codeAgence", occasionalBeneficiary.codeAgence)
-      }
-      if (occasionalBeneficiary.cleRib) {
-        beneficiaryFormData.append("cleRib", occasionalBeneficiary.cleRib)
-      }
-      if (occasionalBeneficiary.codeBanque) {
-        beneficiaryFormData.append("codeBanque", occasionalBeneficiary.codeBanque)
-        beneficiaryFormData.append("bankCode", occasionalBeneficiary.codeBanque)
-      }
+      beneficiaryFormData.append("bankCode", "022")
+      beneficiaryFormData.append("codeBanque", "022")
 
       // Vérifier que le statut est bien dans le FormData
       console.log("[handleTransferSubmit] Status in FormData:", beneficiaryFormData.get("status"))
@@ -493,10 +461,13 @@ export default function NewTransferPage() {
           setTransferSubmitted(false)
           return
         }
-        // Générer un ID temporaire pour le bénéficiaire ponctuel
+        // Créer l'objet bénéficiaire ponctuel avec l'ID généré
         const generatedId = `BEN_${Date.now()}`
         setOccasionalBeneficiary({
-          ...occasionalBeneficiary,
+          name: occasionalBeneficiaryName.trim(),
+          account: occasionalBeneficiaryAccount.trim(),
+          bank: "Banque Nationale de Guinée",
+          type: "BNG-BNG",
           id: generatedId,
         })
       } catch (error) {
@@ -518,9 +489,9 @@ export default function NewTransferPage() {
       if (occasionalBeneficiary?.id) {
         formData.append("beneficiaryId", occasionalBeneficiary.id)
       } else {
-        setTransferValidationError("Erreur: bénéficiaire ponctuel non enregistré")
-        setTransferSubmitted(false)
-        return
+        // Si l'enregistrement a échoué, utiliser les données directes
+        formData.append("occasionalBeneficiaryName", occasionalBeneficiaryName.trim())
+        formData.append("occasionalBeneficiaryAccount", occasionalBeneficiaryAccount.trim())
       }
     } else {
       formData.append("targetAccount", selectedCreditAccount)
@@ -575,6 +546,9 @@ export default function NewTransferPage() {
       setSelectedAccount("")
       setSelectedBeneficiary("")
       setSelectedCreditAccount("")
+      setOccasionalBeneficiaryName("")
+      setOccasionalBeneficiaryAccount("")
+      setOccasionalBeneficiary(null)
       setAmount("")
       setMotif("")
       setTransferDate(new Date().toISOString().split("T")[0])
@@ -702,25 +676,6 @@ export default function NewTransferPage() {
     }
   }, [addBeneficiaryState?.success, transferType])
 
-  // Pré-remplir le formulaire quand on ouvre en mode édition
-  useEffect(() => {
-    if (isAddBeneficiaryDialogOpen && isEditingOccasionalBeneficiary && occasionalBeneficiary) {
-      // Les valeurs par défaut sont déjà définies dans les Input avec defaultValue
-      // On doit juste s'assurer que les états sont synchronisés
-      if (occasionalBeneficiary.type) {
-        setSelectedType(occasionalBeneficiary.type)
-      }
-      if (occasionalBeneficiary.bank) {
-        setSelectedBank(occasionalBeneficiary.bank)
-      }
-      if (occasionalBeneficiary.codeBanque) {
-        setSelectedBankCode(occasionalBeneficiary.codeBanque)
-      }
-    } else if (isAddBeneficiaryDialogOpen && !isEditingOccasionalBeneficiary && transferType === "account-to-occasional-beneficiary") {
-      // Réinitialiser le formulaire si on ouvre pour une nouvelle saisie
-      resetBeneficiaryForm()
-    }
-  }, [isAddBeneficiaryDialogOpen, isEditingOccasionalBeneficiary, occasionalBeneficiary, transferType])
 
   useEffect(() => {
     if (transferValidationError && transferSubmitted) {
@@ -1017,57 +972,42 @@ export default function NewTransferPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-3">
-                  {occasionalBeneficiary ? (
-                    <div className="p-4 rounded-lg border-2 border-primary/20 bg-primary/5">
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <Label className="font-medium text-sm">Informations du bénéficiaire</Label>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              if (occasionalBeneficiary) {
-                                // Pré-remplir le formulaire avec les infos existantes
-                                setSelectedType(occasionalBeneficiary.type || "")
-                                setSelectedBank(occasionalBeneficiary.bank || "")
-                                if (occasionalBeneficiary.codeBanque) {
-                                  setSelectedBankCode(occasionalBeneficiary.codeBanque)
-                                }
-                                setIsEditingOccasionalBeneficiary(true)
-                                setIsAddBeneficiaryDialogOpen(true)
-                              }
-                            }}
-                            className="h-7 text-xs"
-                          >
-                            Modifier
-                          </Button>
-                        </div>
-                        <div className="space-y-1">
-                          <p className="text-sm font-medium">{occasionalBeneficiary.name}</p>
-                          <p className="text-xs text-muted-foreground">Compte: {occasionalBeneficiary.account}</p>
-                          <p className="text-xs text-muted-foreground">Banque: {occasionalBeneficiary.bank}</p>
-                        </div>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="space-y-3">
-                      <Label className="font-medium">Saisir les informations du bénéficiaire *</Label>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        className="w-full h-12 border-2 hover:border-primary/50 focus:border-primary transition-colors"
-                        onClick={() => {
-                          resetBeneficiaryForm()
-                          setIsAddBeneficiaryDialogOpen(true)
-                        }}
-                      >
-                        <Plus className="h-4 w-4 mr-2" />
-                        Saisie infos bénéficiaire
-                      </Button>
-                    </div>
-                  )}
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="occasionalBeneficiaryName" className="font-medium">
+                      Nom et prénoms du bénéficiaire *
+                    </Label>
+                    <Input
+                      id="occasionalBeneficiaryName"
+                      type="text"
+                      value={occasionalBeneficiaryName}
+                      onChange={(e) => setOccasionalBeneficiaryName(e.target.value)}
+                      placeholder="Saisissez le nom et prénoms du bénéficiaire"
+                      required
+                      className="h-12 border-2 hover:border-primary/50 focus:border-primary transition-colors"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="occasionalBeneficiaryAccount" className="font-medium">
+                      Numéro de compte *
+                    </Label>
+                    <Input
+                      id="occasionalBeneficiaryAccount"
+                      type="text"
+                      value={occasionalBeneficiaryAccount}
+                      onChange={(e) => {
+                        const value = e.target.value.replace(/\D/g, "")
+                        if (value.length <= 18) {
+                          setOccasionalBeneficiaryAccount(value)
+                        }
+                      }}
+                      placeholder="Saisissez le numéro de compte (18 chiffres)"
+                      maxLength={18}
+                      required
+                      className="h-12 border-2 hover:border-primary/50 focus:border-primary transition-colors"
+                    />
+                    <p className="text-sm text-muted-foreground">18 chiffres</p>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -1240,7 +1180,7 @@ export default function NewTransferPage() {
                 (transferType === "account-to-beneficiary"
                   ? !selectedBeneficiary
                   : transferType === "account-to-occasional-beneficiary"
-                    ? !occasionalBeneficiary
+                    ? !occasionalBeneficiaryName.trim() || !occasionalBeneficiaryAccount.trim()
                     : !selectedCreditAccount) ||
                 !amount ||
                 !motif ||
@@ -1309,16 +1249,14 @@ export default function NewTransferPage() {
                 </div>
               )}
 
-              {transferType === "account-to-occasional-beneficiary" && occasionalBeneficiary && (
+              {transferType === "account-to-occasional-beneficiary" && (occasionalBeneficiaryName || occasionalBeneficiaryAccount) && (
                 <div>
                   <h4 className="text-xs font-medium text-muted-foreground mb-1">Bénéficiaire ponctuel</h4>
                   <div className="p-2 bg-accent/10 rounded-lg border border-accent/20">
-                    <p className="text-sm font-medium">{occasionalBeneficiary.name}</p>
+                    <p className="text-sm font-medium">{occasionalBeneficiaryName || "Non renseigné"}</p>
                     <p className="text-xs text-muted-foreground">
-                      {occasionalBeneficiary.account}
-                      {occasionalBeneficiary.cleRib ? occasionalBeneficiary.cleRib : ""}
+                      {occasionalBeneficiaryAccount || "Non renseigné"}
                     </p>
-                    <p className="text-xs text-muted-foreground">{occasionalBeneficiary.bank}</p>
                   </div>
                 </div>
               )}
@@ -1376,7 +1314,11 @@ export default function NewTransferPage() {
         </div>
       </form>
 
-      <Dialog open={isAddBeneficiaryDialogOpen} onOpenChange={setIsAddBeneficiaryDialogOpen}>
+      <Dialog open={isAddBeneficiaryDialogOpen && transferType !== "account-to-occasional-beneficiary"} onOpenChange={(open) => {
+        if (transferType !== "account-to-occasional-beneficiary") {
+          setIsAddBeneficiaryDialogOpen(open)
+        }
+      }}>
         <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Ajouter un bénéficiaire</DialogTitle>
@@ -1404,7 +1346,6 @@ export default function NewTransferPage() {
                   id="name" 
                   name="name" 
                   placeholder="Nom et prénom du bénéficiaire" 
-                  defaultValue={isEditingOccasionalBeneficiary && occasionalBeneficiary ? occasionalBeneficiary.name : ""}
                   required 
                 />
               </div>
@@ -1502,7 +1443,6 @@ export default function NewTransferPage() {
                     id="codeAgence"
                     name="codeAgence"
                     placeholder="Ex: 0001"
-                    defaultValue={isEditingOccasionalBeneficiary && occasionalBeneficiary ? occasionalBeneficiary.codeAgence : ""}
                     onChange={handleRibFieldChange}
                     required
                   />
@@ -1518,7 +1458,6 @@ export default function NewTransferPage() {
                       handleRibFieldChange()
                     }}
                     placeholder="1234567890"
-                    defaultValue={isEditingOccasionalBeneficiary && occasionalBeneficiary ? occasionalBeneficiary.account : ""}
                     maxLength={10}
                     pattern="[0-9]{10}"
                     required
@@ -1534,7 +1473,6 @@ export default function NewTransferPage() {
                     name="cleRib"
                     placeholder="Ex: 89"
                     maxLength={2}
-                    defaultValue={isEditingOccasionalBeneficiary && occasionalBeneficiary ? occasionalBeneficiary.cleRib : ""}
                     onChange={handleRibFieldChange}
                     required
                   />
@@ -1640,16 +1578,14 @@ export default function NewTransferPage() {
                 </div>
               )}
 
-              {transferType === "account-to-occasional-beneficiary" && occasionalBeneficiary && (
+              {transferType === "account-to-occasional-beneficiary" && (occasionalBeneficiaryName || occasionalBeneficiaryAccount) && (
                 <div className="space-y-2">
                   <h4 className="text-xs font-medium text-muted-foreground">Bénéficiaire ponctuel</h4>
                   <div className="p-2 bg-accent/10 rounded border border-accent/20">
-                    <p className="text-sm font-medium">{occasionalBeneficiary.name}</p>
+                    <p className="text-sm font-medium">{occasionalBeneficiaryName || "Non renseigné"}</p>
                     <p className="text-xs text-muted-foreground">
-                      {occasionalBeneficiary.account}
-                      {occasionalBeneficiary.cleRib ? occasionalBeneficiary.cleRib : ""}
+                      {occasionalBeneficiaryAccount || "Non renseigné"}
                     </p>
-                    <p className="text-xs text-muted-foreground">{occasionalBeneficiary.bank}</p>
                   </div>
                 </div>
               )}

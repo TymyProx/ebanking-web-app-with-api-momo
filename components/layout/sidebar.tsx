@@ -97,11 +97,11 @@ const navigationData = {
           url: "/accounts/statements",
           icon: FileText,
         },
-        {
-          title: "Ouverture compte",
-          url: "/accounts/new",
-          icon: PlusCircle,
-        },
+        // {
+        //   title: "Ouverture compte",
+        //   url: "/accounts/new",
+        //   icon: PlusCircle,
+        // },
         {
           title: "Relevé de coordonnées bancaires",
           url: "/accounts/rib",
@@ -137,27 +137,27 @@ const navigationData = {
       url: "/operations/pending",
       icon: Clock,
     },
-    {
-      title: "Gestion des cartes",
-      icon: CreditCard,
-      items: [
-        {
-          title: "Mes cartes",
-          url: "/cartes",
-          icon: CreditCard,
-        },
-        {
-          title: "Demande de carte",
-          url: "/cartes/demande",
-          icon: FileCheck,
-        },
-      ],
-    },
-    {
-      title: "Mise à disposition des fonds",
-      url: "/operations/mise-disposition-fonds",
-      icon: HandCoins,
-    },
+    // {
+    //   title: "Gestion des cartes",
+    //   icon: CreditCard,
+    //   items: [
+    //     {
+    //       title: "Mes cartes",
+    //       url: "/cartes",
+    //       icon: CreditCard,
+    //     },
+    //     {
+    //       title: "Demande de carte",
+    //       url: "/cartes/demande",
+    //       icon: FileCheck,
+    //     },
+    //   ],
+    // },
+    // {
+    //   title: "Mise à disposition des fonds",
+    //   url: "/operations/mise-disposition-fonds",
+    //   icon: HandCoins,
+    // },
   ],
   services: [
     {
