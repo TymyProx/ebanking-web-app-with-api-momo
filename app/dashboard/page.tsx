@@ -57,12 +57,8 @@ async function RecentTransactions() {
 
   const formatTransaction = (transaction: any, accounts: any[]) => {
     const baseAmount = Number.parseFloat(transaction.montantOperation || "0")
-    const txnType = (transaction.txnType || "").toUpperCase()
-    const isDebit = txnType === "DEBIT"
-    const isCredit = txnType === "CREDIT"
-    // Montant avec signe : négatif pour DEBIT, positif pour CREDIT
-    const signedAmount = isDebit ? -Math.abs(baseAmount) : Math.abs(baseAmount)
-
+    
+    // Find the account this transaction belongs to
     const account = accounts.find(
       (acc) =>
         acc.id === transaction.accountId ||
@@ -72,6 +68,33 @@ async function RecentTransactions() {
         acc.numCompte === transaction.numCompte
     )
     const currency = account?.currency || "GNF"
+    
+    // ✅ Use reliable classification based on account relationships
+    // Check if this account is the credit account (receiving money)
+    const accountNumber = account?.accountNumber || account?.numCompte
+    const isCreditAccount = accountNumber && transaction.creditAccount === accountNumber
+    const isDebitAccount = accountNumber && transaction.numCompte === accountNumber
+    
+    let isDebit = false
+    let isCredit = false
+    
+    if (isCreditAccount) {
+      // Account is receiving money → CREDIT
+      isCredit = true
+      isDebit = false
+    } else if (isDebitAccount) {
+      // Account is sending money → DEBIT
+      isDebit = true
+      isCredit = false
+    } else {
+      // Fallback to txnType field
+      const txnType = (transaction.txnType || "").toUpperCase()
+      isDebit = txnType === "DEBIT"
+      isCredit = txnType === "CREDIT"
+    }
+    
+    // Montant avec signe : négatif pour DEBIT, positif pour CREDIT
+    const signedAmount = isDebit ? -Math.abs(baseAmount) : Math.abs(baseAmount)
 
     return {
       type: isDebit ? "Virement émis" : "Virement reçu",
