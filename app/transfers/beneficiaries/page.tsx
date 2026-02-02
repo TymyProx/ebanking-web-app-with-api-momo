@@ -169,39 +169,39 @@ export default function BeneficiariesPage() {
 
       const transformedBeneficiaries: Beneficiary[] = apiBeneficiaries
         .map((apiB: any) => {
-          // Data is already decrypted server-side
-          const name = apiB.name ?? ""
-          const accountNumber = apiB.accountNumber ?? ""
-          const bankNamePlain = apiB.bankName ?? ""
-          const bankResolved = bankNamePlain || getBankNameFromCode(apiB.bankCode)
-          const codagence = apiB.codagence ?? ""
-          const clerib = apiB.clerib ?? ""
-          const workflowStatus = toWorkflowStatus(apiB.workflowStatus)
-          let workflowMetadata = apiB.workflowMetadata || null
-          if (workflowMetadata && typeof workflowMetadata === "string") {
-            try {
-              workflowMetadata = JSON.parse(workflowMetadata)
-            } catch {
-              workflowMetadata = null
-            }
+        // Data is already decrypted server-side
+        const name = apiB.name ?? ""
+        const accountNumber = apiB.accountNumber ?? ""
+        const bankNamePlain = apiB.bankName ?? ""
+        const bankResolved = bankNamePlain || getBankNameFromCode(apiB.bankCode)
+        const codagence = apiB.codagence ?? ""
+        const clerib = apiB.clerib ?? ""
+        const workflowStatus = toWorkflowStatus(apiB.workflowStatus)
+        let workflowMetadata = apiB.workflowMetadata || null
+        if (workflowMetadata && typeof workflowMetadata === "string") {
+          try {
+            workflowMetadata = JSON.parse(workflowMetadata)
+          } catch {
+            workflowMetadata = null
           }
+        }
 
-          return {
-            id: apiB.id,
-            name,
-            account: accountNumber,
-            bank: bankResolved,
-            type: apiB.typeBeneficiary,
-            favorite: Boolean(apiB.favoris),
-            lastUsed: "Jamais", // This might need to be fetched or calculated differently if available
-            addedDate: apiB.createdAt ? new Date(apiB.createdAt).toLocaleDateString("fr-FR") : "",
-            status: apiB.status,
-            codagence,
-            clerib,
-            workflowStatus,
-            workflowMetadata,
-          } as Beneficiary
-        })
+        return {
+          id: apiB.id,
+          name,
+          account: accountNumber,
+          bank: bankResolved,
+          type: apiB.typeBeneficiary,
+          favorite: Boolean(apiB.favoris),
+          lastUsed: "Jamais", // This might need to be fetched or calculated differently if available
+          addedDate: apiB.createdAt ? new Date(apiB.createdAt).toLocaleDateString("fr-FR") : "",
+          status: apiB.status,
+          codagence,
+          clerib,
+          workflowStatus,
+          workflowMetadata,
+        } as Beneficiary
+      })
         .filter((beneficiary) => {
           // Exclure les bénéficiaires avec le statut 100 (bénéficiaires ponctuels)
           const statusValue = Number(beneficiary.status)

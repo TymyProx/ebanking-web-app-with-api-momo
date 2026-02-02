@@ -1,12 +1,21 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback } from "react"
 import Link from "next/link"
 import { Card, CardContent, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { Wallet, PiggyBank, DollarSign, Eye, EyeOff } from "lucide-react"
 import { isAccountActive } from "@/lib/status-utils"
+// Utiliser les variables d'environnement directement côté client
+const getApiBaseUrl = (): string => {
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "https://35.184.98.9:4000"
+  const normalize = (u?: string) => (u ? u.replace(/\/$/, "") : "")
+  const cleanBaseUrl = normalize(apiUrl).replace(/\/api$/, "")
+  return `${cleanBaseUrl}/api`
+}
+
+const TENANT_ID = process.env.NEXT_PUBLIC_TENANT_ID || "aa1287f6-06af-45b7-a905-8c57363565c2"
 
 interface Account {
   id: string
@@ -20,13 +29,118 @@ interface Account {
 }
 
 interface AccountsCarouselProps {
-  accounts: Account[]
+  accounts?: Account[] // Optionnel maintenant car on charge côté client
 }
 
-export function AccountsCarousel({ accounts }: AccountsCarouselProps) {
+export function AccountsCarousel({ accounts: initialAccounts = [] }: AccountsCarouselProps) {
   const [current, setCurrent] = useState(0)
   const [showBalances, setShowBalances] = useState(false)
   const [isFading, setIsFading] = useState(false)
+  const [accounts, setAccounts] = useState<Account[]>(initialAccounts)
+  const [isLoading, setIsLoading] = useState(false)
+
+  // Fonction pour charger les comptes depuis l'API
+  const fetchAccounts = useCallback(async () => {
+    try {
+      setIsLoading(true)
+      const token = document.cookie
+        .split("; ")
+        .find((row) => row.startsWith("token="))
+        ?.split("=")[1]
+
+      if (!token) {
+        setAccounts([])
+        return
+      }
+
+      const API_BASE_URL = getApiBaseUrl()
+
+      // Récupérer l'ID de l'utilisateur
+      let currentUserId: string | null = null
+      try {
+        const userResponse = await fetch(`${API_BASE_URL}/auth/me`, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        })
+
+        if (userResponse.ok) {
+          const userData = await userResponse.json()
+          currentUserId = userData.id
+        }
+      } catch (error) {
+        console.error("Error fetching user ID:", error)
+      }
+
+      // Récupérer les comptes
+      const response = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/compte`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        cache: "no-store",
+      })
+
+      if (!response.ok) {
+        console.error("Error fetching accounts:", response.status)
+        return
+      }
+
+      const responseData = await response.json()
+
+      let fetchedAccounts: Account[] = []
+
+      if (responseData.rows && Array.isArray(responseData.rows)) {
+        fetchedAccounts = responseData.rows
+      } else if (responseData.data) {
+        if (Array.isArray(responseData.data)) {
+          fetchedAccounts = responseData.data
+        } else if (typeof responseData.data === "object") {
+          fetchedAccounts = [responseData.data]
+        }
+      } else if (Array.isArray(responseData)) {
+        fetchedAccounts = responseData
+      }
+
+      // Filtrer par clientId si disponible
+      if (currentUserId) {
+        fetchedAccounts = fetchedAccounts.filter((account: any) => account.clientId === currentUserId)
+      }
+
+      // Adapter les données au format attendu
+      const adaptedAccounts: Account[] = fetchedAccounts.map((account: any) => ({
+        id: account.id || account.accountId,
+        accountName: account.accountName || account.name || `Compte ${account.accountNumber || ""}`,
+        accountNumber: account.accountNumber || account.number || "",
+        type: account.type || "",
+        currency: account.currency || "GNF",
+        availableBalance: account.availableBalance || 0,
+        bookBalance: account.bookBalance || 0,
+        status: account.status || "",
+      }))
+
+      setAccounts(adaptedAccounts)
+    } catch (error) {
+      console.error("Error fetching accounts:", error)
+    } finally {
+      setIsLoading(false)
+    }
+  }, [])
+
+  // Charger les comptes au montage et toutes les 30 secondes
+  useEffect(() => {
+    fetchAccounts()
+
+    // Rafraîchir automatiquement toutes les 30 secondes
+    const interval = setInterval(() => {
+      fetchAccounts()
+    }, 30000) // 30 secondes
+
+    return () => clearInterval(interval)
+  }, [fetchAccounts])
 
   // Filtrer uniquement les comptes actifs avec la fonction normalisée
   const activeAccounts = accounts.filter((account) => isAccountActive(account.status))
@@ -86,6 +200,16 @@ export function AccountsCarousel({ accounts }: AccountsCarouselProps) {
 
   const getAccountTrend = () => {
     return "+2.5%" // Placeholder - could be calculated from transaction history
+  }
+
+  if (isLoading && activeAccounts.length === 0) {
+    return (
+      <Card className="border-0 shadow-none bg-transparent">
+        <CardContent className="p-0">
+          <div className="h-48 bg-gradient-to-br from-muted to-muted/50 rounded-xl animate-pulse" />
+        </CardContent>
+      </Card>
+    )
   }
 
   if (activeAccounts.length === 0) {

@@ -23,9 +23,9 @@ import {
   CheckCircle,
 } from "lucide-react"
 import { createAccount, getAccounts } from "../actions"
-import { Carousel, CarouselContent, CarouselItem, type CarouselApi } from "@/components/ui/carousel"
-import { cn } from "@/lib/utils"
 import { normalizeAccountStatus } from "@/lib/status-utils"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { isAccountActive } from "@/lib/status-utils"
 
 interface Account {
   id: string
@@ -58,9 +58,8 @@ export default function BalancesPage() {
   const [isCreatingAccount, setIsCreatingAccount] = useState(false)
   const [createAccountState, setCreateAccountState] = useState<any>(null)
 
-  const [api, setApi] = useState<CarouselApi>()
   const [current, setCurrent] = useState(0)
-  const [count, setCount] = useState(0)
+  const [isFading, setIsFading] = useState(false)
 
   const filterAccountsByStatus = (accountsList: Account[], status: string) => {
     if (status === "ALL") {
@@ -144,30 +143,24 @@ export default function BalancesPage() {
     }
   }, [refreshState?.success])
 
-  useEffect(() => {
-    if (!api) {
-      return
-    }
-
-    setCount(api.scrollSnapList().length)
-    setCurrent(api.selectedScrollSnap())
-
-    api.on("select", () => {
-      setCurrent(api.selectedScrollSnap())
-    })
-  }, [api])
+  // Filtrer uniquement les comptes actifs
+  const activeFilteredAccounts = filteredAccounts.filter((account) => isAccountActive(account.status))
+  const count = activeFilteredAccounts.length
 
   useEffect(() => {
-    if (!api || !filteredAccounts || filteredAccounts.length <= 1) {
-      return
-    }
+    if (count <= 1) return
 
-    const autoScroll = setInterval(() => {
-      api.scrollNext()
-    }, 5000) // Défilement automatique toutes les 5 secondes
+    // Auto-play: change slide every 5 seconds with fade effect
+    const autoplay = setInterval(() => {
+      setIsFading(true)
+      setTimeout(() => {
+        setCurrent((prev) => (prev + 1) % count)
+        setIsFading(false)
+      }, 300) // Half of transition duration
+    }, 5000)
 
-    return () => clearInterval(autoScroll)
-  }, [api, filteredAccounts])
+    return () => clearInterval(autoplay)
+  }, [count])
 
   const handleRefresh = () => {
     startTransition(async () => {
@@ -260,14 +253,27 @@ export default function BalancesPage() {
 
   const getAccountIcon = (type: string) => {
     switch (type) {
+      case "CURRENT":
       case "Courant":
-        return <Wallet className="h-5 w-5 text-blue-600" />
+        return <Wallet className="h-5 w-5 text-primary" />
+      case "SAVINGS":
       case "Épargne":
-        return <PiggyBank className="h-5 w-5 text-green-600" />
+        return <PiggyBank className="h-5 w-5 text-secondary" />
       case "Devise":
-        return <DollarSign className="h-5 w-5 text-purple-600" />
+        return <DollarSign className="h-5 w-5 text-accent" />
       default:
         return <Eye className="h-5 w-5 text-muted-foreground" />
+    }
+  }
+
+  const getAccountTypeDisplay = (type: string) => {
+    switch (type) {
+      case "CURRENT":
+        return "Courant"
+      case "SAVINGS":
+        return "Épargne"
+      default:
+        return type
     }
   }
 
@@ -504,140 +510,144 @@ export default function BalancesPage() {
             </CardContent>
           </Card>
         </div>
-      ) : (
-        <div className="w-full px-2">
-          <Carousel
-            setApi={setApi}
-            className="w-full"
-            opts={{
-              align: "center",
-              loop: true,
-              skipSnaps: false,
-              dragFree: false,
-            }}
-          >
-            <CarouselContent className="w-full">
-              {(filteredAccounts || []).map((account) => (
-                <CarouselItem key={account.id} className="pl-2 basis-full">
-                  <Link href={`/accounts/${account.id}`} className="block">
-                    <Card className="group relative overflow-hidden border-2 hover:border-primary/50 transition-all duration-300 hover:shadow-2xl hover:-translate-y-1 bg-gradient-to-br from-white to-gray-50/50">
-                      <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-secondary/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+      ) : activeFilteredAccounts.length > 0 ? (
+        <div className="w-full">
+          <Card className="border-0 shadow-none bg-transparent">
+            <CardContent className="p-0">
+              <div className="relative w-full">
+                {activeFilteredAccounts[current] && (
+                  <Link href={`/accounts/${activeFilteredAccounts[current].id}`}>
+                    <Card
+                      className="card-hover border-0 shadow-md bg-gradient-to-br from-primary/10 via-background to-secondary/10 backdrop-blur-sm transition-opacity duration-500 ease-in-out"
+                      style={{ opacity: isFading ? 0 : 1 }}
+                    >
+                      <CardContent className="p-6">
+                        <div className="flex items-center justify-between gap-4">
+                          {/* Left section: Account info and type */}
+                          <div className="flex-1 space-y-3">
+                            <div className="flex items-center gap-2">
+                              <div className="p-3 rounded-lg bg-primary/10">
+                                {getAccountIcon(activeFilteredAccounts[current].type)}
+                              </div>
+                              <div>
+                                <CardTitle className="text-lg font-heading font-semibold mb-0.5">
+                                  {activeFilteredAccounts[current].name}
+                                </CardTitle>
+                                <Badge
+                                  variant="secondary"
+                                  className="bg-secondary/20 text-secondary-foreground border-secondary/30 text-xs"
+                                >
+                                  {getAccountTypeDisplay(activeFilteredAccounts[current].type)}
+                                </Badge>
+                              </div>
+                            </div>
 
-                      <CardHeader className="relative flex flex-row items-center justify-between space-y-0 pb-2">
-                        <div className="flex items-center space-x-3">
-                          <div className="p-2 rounded-xl bg-gradient-to-br from-primary/10 to-secondary/10 group-hover:from-primary/20 group-hover:to-secondary/20 transition-colors">
-                            {getAccountIcon(account.type)}
+                            <div>
+                              <p className="text-xs text-muted-foreground mb-1">Numéro de compte</p>
+                              <p className="text-sm font-mono font-semibold bg-muted/50 px-4 py-2 rounded-md inline-block">
+                                {activeFilteredAccounts[current].number}
+                              </p>
+                            </div>
                           </div>
-                          <CardTitle className="text-sm font-semibold">{account.name}</CardTitle>
-                        </div>
-                        <Badge
-                          variant={account.status === "Actif" ? "default" : "secondary"}
-                          className={
-                            account.status === "Actif" ? "bg-gradient-to-r from-primary to-secondary text-white" : ""
-                          }
-                        >
-                          {account.status}
-                        </Badge>
-                      </CardHeader>
 
-                      <CardContent className="relative space-y-4">
-                        <div className="space-y-2">
-                          <div className="text-xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">
-                            Solde disponible :{" "}
-                            {showBalance
-                              ? `${formatAmount(account.availableBalance, account.currency)} ${account.currency}`
-                              : "••••••••"}
-                          </div>
-                          <p className="text-sm text-muted-foreground">
-                            Solde comptable :{" "}
-                            {showBalance
-                              ? `${formatAmount(account.balance, account.currency)} ${account.currency}`
-                              : "••••••••"}
-                          </p>
-                          <p className="text-xl text-muted-foreground font-mono font-semibold">{account.number}</p>
-                        </div>
+                          {/* Right section: Balances */}
+                          <div className="flex-1 space-y-3 text-right">
+                            <div className="flex items-center justify-end gap-2 mb-2">
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <button
+                                      onClick={(e) => {
+                                        e.preventDefault()
+                                        e.stopPropagation()
+                                        setShowBalance(!showBalance)
+                                      }}
+                                      className="p-1.5 rounded-lg hover:bg-muted/50 transition-colors"
+                                      aria-label={showBalance ? "Masquer les soldes" : "Afficher les soldes"}
+                                    >
+                                      {showBalance ? (
+                                        <EyeOff className="h-4 w-4 text-muted-foreground" />
+                                      ) : (
+                                        <Eye className="h-4 w-4 text-muted-foreground" />
+                                      )}
+                                    </button>
+                                  </TooltipTrigger>
+                                  <TooltipContent side="left">
+                                    <p>{showBalance ? "Masquer le solde" : "Voir le solde"}</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            </div>
+                            <div>
+                              <p className="text-xs text-muted-foreground mb-1">Solde disponible</p>
+                              <div className="text-3xl font-heading font-bold text-foreground">
+                                {showBalance
+                                  ? formatAmount(
+                                      activeFilteredAccounts[current].availableBalance,
+                                      activeFilteredAccounts[current].currency,
+                                    )
+                                  : "••••••••"}
+                              </div>
+                              <div className="text-sm text-muted-foreground mt-1">
+                                {showBalance ? activeFilteredAccounts[current].currency : "•••"}
+                              </div>
+                            </div>
 
-                        {/* <div className="flex items-center justify-between pt-3 border-t border-border/50">
-                          <div className="flex items-center space-x-1">
-                            {getTrendIcon(account.trend, account.trendPercentage)}
-                            <span className={`text-xs font-medium ${getTrendColor(account.trend)}`}>
-                              {account.trendPercentage !== 0 && (
-                                <>
-                                  {account.trend === "up" ? "+" : account.trend === "down" ? "-" : ""}
-                                  {account.trendPercentage}% ce mois
-                                </>
-                              )}
-                              {account.trendPercentage === 0 && "Stable"}
-                            </span>
-                          </div>
-                         
-                        </div> */}
-
-                        <div className="grid grid-cols-3 gap-3 text-xs pt-2">
-                          <div className="space-y-1">
-                            <span className="text-muted-foreground">Type</span>
-                            <div className="font-medium">{account.type}</div>
-                          </div>
-                          <div className="space-y-1">
-                            <span className="text-muted-foreground">Dernière MAJ</span>
-                            <div className="font-medium">{account.lastUpdate}</div>
-                          </div>
-                          <div className="ml-auto pr-1 flex items-center text-xs font-medium text-primary group-hover:text-secondary transition-colors">
-                            Détails
-                            <ArrowUpRight className="h-3 w-3 ml-1 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+                            <div className="pt-2 border-t border-border/50">
+                              <p className="text-xs text-muted-foreground mb-1">Solde comptable</p>
+                              <div className="text-xl font-heading font-semibold text-muted-foreground">
+                                {showBalance
+                                  ? `${formatAmount(
+                                      activeFilteredAccounts[current].balance,
+                                      activeFilteredAccounts[current].currency,
+                                    )} ${activeFilteredAccounts[current].currency}`
+                                  : "••••••••"}
+                              </div>
+                            </div>
                           </div>
                         </div>
                       </CardContent>
                     </Card>
                   </Link>
-                </CarouselItem>
-              ))}
-            </CarouselContent>
-          </Carousel>
+                )}
+              </div>
 
-          {filteredAccounts && filteredAccounts.length > 1 && (
-            <div className="flex justify-center gap-2 mt-8">
-              {filteredAccounts.map((_, index) => (
-                <button
-                  key={index}
-                  type="button"
-                  className={cn(
-                    "h-3 rounded-full transition-all duration-300 cursor-pointer",
-                    "hover:scale-110 hover:opacity-100",
-                    index === current
-                      ? "w-10 bg-gradient-to-r from-primary to-secondary shadow-lg"
-                      : "w-3 bg-muted-foreground/30 hover:bg-muted-foreground/50",
-                  )}
-                  onClick={() => {
-                    api?.scrollTo(index)
-                  }}
-                  aria-label={`Aller au compte ${index + 1}`}
-                />
-              ))}
-            </div>
-          )}
+              {/* Dots indicator */}
+              {count > 1 && (
+                <div className="flex justify-center gap-2 mt-2">
+                  {Array.from({ length: count }).map((_, index) => (
+                    <button
+                      key={index}
+                      className={`h-2 rounded-full transition-all ${
+                        index === current ? "w-8 bg-primary" : "w-2 bg-muted-foreground/30"
+                      }`}
+                      onClick={() => {
+                        setIsFading(true)
+                        setTimeout(() => {
+                          setCurrent(index)
+                          setIsFading(false)
+                        }, 300)
+                      }}
+                      aria-label={`Aller au compte ${index + 1}`}
+                    />
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
-      )}
-
-      {isLoaded && (filteredAccounts?.length === 0 || !filteredAccounts) && (
+      ) : (
         <Card className="border-2 border-dashed border-border/50">
           <CardContent className="flex flex-col items-center justify-center py-16">
-            <div className="p-4 rounded-full bg-gradient-to-br from-primary/10 to-secondary/10 mb-4">
-              <Wallet className="h-12 w-12 text-primary" />
+            <div className="p-4 rounded-full bg-muted/50 mb-4">
+              <Wallet className="h-8 w-8 text-muted-foreground" />
             </div>
-            <h3 className="text-lg font-semibold text-foreground mb-2">
-              {statusFilter === "ALL"
-                ? "Aucun compte trouvé"
-                : `Aucun compte ${getStatusDisplayText(statusFilter).toLowerCase()}`}
-            </h3>
-            <p className="text-muted-foreground text-center max-w-sm">
-              {statusFilter === "ALL"
-                ? "Commencez par créer votre premier compte bancaire"
-                : `Aucun compte avec le statut "${getStatusDisplayText(statusFilter).toLowerCase()}"`}
-            </p>
+            <h3 className="text-lg font-heading font-semibold mb-2">Aucun compte</h3>
+            <p className="text-muted-foreground text-center">Aucun compte n'est disponible pour le moment.</p>
           </CardContent>
         </Card>
       )}
+
     </div>
   )
 }

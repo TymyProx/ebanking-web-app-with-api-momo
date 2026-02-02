@@ -807,7 +807,7 @@ export default function NewTransferPage() {
                 <div className="p-2 rounded-lg bg-primary/10">
                   <ArrowRight className="h-5 w-5 text-primary" />
                 </div>
-                Type de virement
+                Virement vers ...
               </CardTitle>
             </CardHeader>
             <CardContent>

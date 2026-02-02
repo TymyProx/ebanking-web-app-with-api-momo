@@ -899,14 +899,14 @@ export default function StatementsPage() {
             </Card>
 
             {/* Tableau des transactions */}
-            <Card className="mt-4">
-              <CardHeader>
-                <CardTitle className="flex items-center text-base">
-                  <CreditCard className="w-4 h-4 mr-2" />
-                  Aperçu des transactions ({filteredTransactions.length})
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
+          <Card className="mt-4">
+            <CardHeader>
+              <CardTitle className="flex items-center text-base">
+                <CreditCard className="w-4 h-4 mr-2" />
+                Aperçu des transactions ({filteredTransactions.length})
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
                 {filteredTransactions.length === 0 ? (
                   <div className="text-center py-8">
                     <AlertCircle className="w-12 h-12 mx-auto text-muted-foreground mb-2" />
@@ -921,7 +921,7 @@ export default function StatementsPage() {
                     </Button>
                   </div>
                 ) : (
-                  <Table>
+              <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Date</TableHead>
@@ -950,8 +950,8 @@ export default function StatementsPage() {
                 </TableBody>
               </Table>
                 )}
-              </CardContent>
-            </Card>
+            </CardContent>
+          </Card>
           </>
         )}
       </div>

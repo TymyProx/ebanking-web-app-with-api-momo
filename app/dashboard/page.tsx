@@ -165,9 +165,9 @@ async function RecentTransactions() {
   )
 }
 
-async function AccountsSection() {
-  const accounts = await getAccounts()
-  return <AccountsCarousel accounts={accounts} />
+function AccountsSection() {
+  // Le composant AccountsCarousel charge maintenant les comptes côté client
+  return <AccountsCarousel />
 }
 
 function TransactionsLoading() {
