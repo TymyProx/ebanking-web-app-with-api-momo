@@ -254,7 +254,29 @@ export async function completeSignup(token: string, password: string) {
     if (clientType === "existing") {
       for (const c of comptesBng) {
         const accountNumber = String(c.numCompte || "").trim()
-        if (!accountNumber) continue
+        
+        // Préparer les données du compte
+        const accountPayload: any = {
+          accountName: c.accountName || c.typeCompte || "Compte",
+          currency: c.devise || "GNF",
+          bookBalance: c.bookBalance || "0",
+          availableBalance: c.availableBalance || "0",
+          status: "ACTIF",
+          type: c.typeCompte || "CURRENT",
+          clientId: String(userId),
+          // Le backend calculera automatiquement codeBanque, codeAgence, cleRib
+          // si ces valeurs sont disponibles depuis le formulaire, on les envoie
+          ...(c.codeBanque && c.codeBanque !== "N/A" && { codeBanque: c.codeBanque }),
+          ...(c.codeAgence && c.codeAgence !== "N/A" && { codeAgence: c.codeAgence }),
+          ...(c.cleRib && c.cleRib !== "N/A" && { cleRib: c.cleRib }),
+        }
+        
+        // Si un numéro de compte existe, l'envoyer (client existant avec compte réel)
+        // Sinon, le backend générera un nouveau numéro de compte
+        if (accountNumber) {
+          accountPayload.accountNumber = accountNumber
+          accountPayload.accountId = accountNumber
+        }
 
         const res = await fetch(COMPTE_ENDPOINT, {
           method: "POST",
@@ -263,20 +285,7 @@ export async function completeSignup(token: string, password: string) {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            data: {
-              accountId: accountNumber,
-              accountNumber,
-              accountName: c.accountName || c.typeCompte || "Compte",
-              currency: c.devise || "GNF",
-              bookBalance: c.bookBalance || "0",
-              availableBalance: c.availableBalance || "0",
-              status: "ACTIF",
-              type: c.typeCompte || "CURRENT",
-              codeAgence: c.codeAgence || "001",
-              clientId: String(userId), // comme ton modèle actuel
-              codeBanque: c.codeBanque || "BNG",
-              cleRib: c.cleRib || "00",
-            },
+            data: accountPayload,
           }),
         })
 

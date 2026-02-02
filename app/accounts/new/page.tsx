@@ -839,9 +839,8 @@ export default function NewAccountPage() {
               </div>
             </div>
             <form onSubmit={handleSubmit}>
-              <input type="hidden" name="accountId" value={`ACC_${Date.now()}`} />
+              {/* Le backend générera automatiquement accountId et accountNumber */}
               <input type="hidden" name="customerId" value="CUSTOMER_ID_PLACEHOLDER" />
-              <input type="hidden" name="accountNumber" value={`000${Date.now().toString().slice(-7)}`} />
               <input type="hidden" name="accountName" value={formData.accountName || ""} />
               <input type="hidden" name="currency" value={formData.currency || selectedAccountType.currency} />
               <input type="hidden" name="bookBalance" value={formData.initialDeposit || "0"} />
