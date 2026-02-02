@@ -229,3 +229,4 @@ Pour résoudre le 404 de `/auth/me`:
 
 L'erreur "Error in getAccounts: Error: Erreur de communication avec l'API" a été corrigée. L'application gère maintenant correctement les erreurs et ne lance d'exception que lorsque c'est vraiment nécessaire! ✅
 
+
