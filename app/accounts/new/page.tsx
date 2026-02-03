@@ -70,6 +70,15 @@ const accountTypes = [
   },
 ]
 
+// Données des pays et villes
+const countriesAndCities: Record<string, string[]> = {
+  Guinée: ["Conakry", "Kankan", "Labé", "Nzérékoré", "Kindia", "Mamou", "Boké", "Faranah"],
+  France: ["Paris", "Lyon", "Marseille", "Toulouse", "Nice", "Nantes", "Strasbourg", "Montpellier"],
+  Sénégal: ["Dakar", "Thiès", "Kaolack", "Saint-Louis", "Ziguinchor", "Diourbel", "Louga"],
+  "Côte d'Ivoire": ["Abidjan", "Bouaké", "Daloa", "Yamoussoukro", "San-Pédro", "Korhogo"],
+  Mali: ["Bamako", "Sikasso", "Mopti", "Koutiala", "Kayes", "Ségou", "Gao"],
+}
+
 export default function NewAccountPage() {
   const [step, setStep] = useState(1)
   const [selectedType, setSelectedType] = useState("")
@@ -78,6 +87,8 @@ export default function NewAccountPage() {
   const [hasClientInfo, setHasClientInfo] = useState<boolean | null>(null)
   const [createState, createAction, isCreating] = useActionState(createAccount, null)
   const [success, setSuccess] = useState(false)
+  const [selectedCountry, setSelectedCountry] = useState<string>("")
+  const [availableCities, setAvailableCities] = useState<string[]>([])
   const router = useRouter()
 
   const selectedAccountType = accountTypes.find((type) => type.id === selectedType)
@@ -132,6 +143,26 @@ export default function NewAccountPage() {
   const handleInputChange = (field: string, value: any) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
   }
+
+  // Mettre à jour les villes disponibles quand le pays change
+  useEffect(() => {
+    if (selectedCountry) {
+      setAvailableCities(countriesAndCities[selectedCountry] || [])
+      // Réinitialiser la ville si le pays change
+      if (formData.country !== selectedCountry) {
+        handleInputChange("city", "")
+      }
+    } else {
+      setAvailableCities([])
+    }
+  }, [selectedCountry])
+
+  // Synchroniser selectedCountry avec formData.country
+  useEffect(() => {
+    if (formData.country) {
+      setSelectedCountry(formData.country)
+    }
+  }, [formData.country])
 
   const handleFileUpload = async (field: string, file: File) => {
     try {
@@ -524,25 +555,45 @@ export default function NewAccountPage() {
                       <Label htmlFor="country" className="text-sm">
                         Pays *
                       </Label>
-                      <Input
-                        id="country"
-                        placeholder="Ex: Guinée"
+                      <Select
                         value={formData.country || ""}
-                        onChange={(e) => handleInputChange("country", e.target.value)}
-                        className="border-2 focus:border-primary h-9 text-sm"
-                      />
+                        onValueChange={(value) => {
+                          setSelectedCountry(value)
+                          handleInputChange("country", value)
+                        }}
+                      >
+                        <SelectTrigger className="border-2 focus:border-primary h-9 text-sm">
+                          <SelectValue placeholder="Sélectionnez un pays" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {Object.keys(countriesAndCities).map((country) => (
+                            <SelectItem key={country} value={country}>
+                              {country}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
                     <div className="space-y-1">
                       <Label htmlFor="city" className="text-sm">
                         Ville *
                       </Label>
-                      <Input
-                        id="city"
-                        placeholder="Ex: Conakry"
+                      <Select
                         value={formData.city || ""}
-                        onChange={(e) => handleInputChange("city", e.target.value)}
-                        className="border-2 focus:border-primary h-9 text-sm"
-                      />
+                        onValueChange={(value) => handleInputChange("city", value)}
+                        disabled={!selectedCountry || availableCities.length === 0}
+                      >
+                        <SelectTrigger className="border-2 focus:border-primary h-9 text-sm">
+                          <SelectValue placeholder={selectedCountry ? "Sélectionnez une ville" : "Sélectionnez d'abord un pays"} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {availableCities.map((city) => (
+                            <SelectItem key={city} value={city}>
+                              {city}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
                     <div className="space-y-1">
                       <Label htmlFor="postalCode" className="text-sm">

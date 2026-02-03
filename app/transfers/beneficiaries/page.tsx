@@ -447,8 +447,8 @@ export default function BeneficiariesPage() {
       return
     }
 
-    if (digitsOnly.length !== 10) {
-      setAccountNumberError("Le numéro de compte doit contenir exactement 10 chiffres")
+    if (digitsOnly.length !== 11) {
+      setAccountNumberError("Le numéro de compte doit contenir exactement 11 chiffres")
       return false
     }
 
@@ -969,7 +969,8 @@ export default function BeneficiariesPage() {
                     <Input
                       id="codeAgence"
                       name="codeAgence"
-                      placeholder="Ex: 0001"
+                      placeholder="Ex: 00001"
+                      maxLength={5}
                       onChange={handleRibFieldChange}
                       required
                     />
@@ -984,13 +985,13 @@ export default function BeneficiariesPage() {
                         validateAccountNumber(e.target.value)
                         handleRibFieldChange()
                       }}
-                      placeholder="1234567890"
-                      maxLength={10}
-                      pattern="[0-9]{10}"
+                      placeholder="12345678901"
+                      maxLength={11}
+                      pattern="[0-9]{11}"
                       required
                     />
                     {accountNumberError && <p className="text-sm text-red-600">{accountNumberError}</p>}
-                    <p className="text-sm text-muted-foreground">10 chiffres uniquement</p>
+                    <p className="text-sm text-muted-foreground">11 chiffres uniquement</p>
                   </div>
 
                   <div className="space-y-2">
@@ -1662,7 +1663,8 @@ export default function BeneficiariesPage() {
                     id="edit-codeAgence"
                     name="codeAgence"
                     defaultValue={editingBeneficiary?.codagence || ""}
-                    placeholder="Ex: 0001"
+                    placeholder="Ex: 00001"
+                    maxLength={5}
                     onChange={handleRibFieldChange}
                     required
                   />
@@ -1678,9 +1680,9 @@ export default function BeneficiariesPage() {
                       validateAccountNumber(e.target.value)
                       handleRibFieldChange()
                     }}
-                    placeholder="1234567890"
-                    maxLength={10}
-                    pattern="[0-9]{10}"
+                    placeholder="12345678901"
+                    maxLength={11}
+                    pattern="[0-9]{11}"
                     required
                   />
                   {accountNumberError && <p className="text-sm text-red-600">{accountNumberError}</p>}

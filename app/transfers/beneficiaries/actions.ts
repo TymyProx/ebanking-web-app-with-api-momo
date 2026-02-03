@@ -268,10 +268,10 @@ export async function addBeneficiaryAndActivate(
 
     if (type !== "BNG-INTERNATIONAL") {
       const digitsOnly = account.replace(/\D/g, "")
-      if (digitsOnly.length !== 10 || account !== digitsOnly) {
+      if (digitsOnly.length !== 11 || account !== digitsOnly) {
         return {
           success: false,
-          error: "Le numéro de compte doit contenir exactement 10 chiffres sans caractères spéciaux",
+          error: "Le numéro de compte doit contenir exactement 11 chiffres sans caractères spéciaux",
         }
       }
     }
@@ -484,10 +484,10 @@ export async function addBeneficiary(prevState: ActionResult | null, formData: F
 
     if (type !== "BNG-INTERNATIONAL") {
       const digitsOnly = account.replace(/\D/g, "")
-      if (digitsOnly.length !== 10 || account !== digitsOnly) {
+      if (digitsOnly.length !== 11 || account !== digitsOnly) {
         return {
           success: false,
-          error: "Le numéro de compte doit contenir exactement 10 chiffres sans caractères spéciaux",
+          error: "Le numéro de compte doit contenir exactement 11 chiffres sans caractères spéciaux",
         }
       }
     }
@@ -612,10 +612,10 @@ export async function updateBeneficiary(prevState: ActionResult | null, formData
 
     if (type !== "BNG-INTERNATIONAL") {
       const digitsOnly = account.replace(/\D/g, "")
-      if (digitsOnly.length !== 10 || account !== digitsOnly) {
+      if (digitsOnly.length !== 11 || account !== digitsOnly) {
         return {
           success: false,
-          error: "Le numéro de compte doit contenir exactement 10 chiffres sans caractères spéciaux",
+          error: "Le numéro de compte doit contenir exactement 11 chiffres sans caractères spéciaux",
         }
       }
     }
