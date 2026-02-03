@@ -14,6 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Send, Eye, Plus, Search, FileText, MessageSquare, Upload } from "lucide-react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { createReclamation, getReclamations } from "./actions"
+import { getCurrentUser } from "@/app/user/actions"
 
 const complainTypes = {
   Compte: [],
@@ -67,7 +68,9 @@ const typesRequiringAttachments = ["Carte", "Virement"]
 
 export default function ComplainPage() {
   const [activeTab, setActiveTab] = useState("new")
-  const [formData, setFormData] = useState<Record<string, any>>({})
+  const [formData, setFormData] = useState<Record<string, any>>({
+    complainDate: new Date().toISOString().split("T")[0],
+  })
   const [selectedType, setSelectedType] = useState<string>("")
   const [availableObjects, setAvailableObjects] = useState<string[]>([])
   const [showAttachmentField, setShowAttachmentField] = useState(false)
@@ -94,6 +97,26 @@ export default function ComplainPage() {
     handleInputChange("complainType", type)
     handleInputChange("complainObject", "") // Réinitialiser l'objet
   }
+
+  // Charger les informations de l'utilisateur au montage du composant
+  useEffect(() => {
+    const loadUserInfo = async () => {
+      try {
+        const user = await getCurrentUser()
+        if (user) {
+          setFormData((prev) => ({
+            ...prev,
+            email: user.email || "",
+            phone: user.phoneNumber || user.phone || "",
+          }))
+        }
+      } catch (error) {
+        console.error("Erreur lors du chargement des informations utilisateur:", error)
+      }
+    }
+
+    loadUserInfo()
+  }, [])
 
   const handleInputChange = (field: string, value: any) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
@@ -135,8 +158,13 @@ export default function ComplainPage() {
 
       setSubmitState({ success: true, reference: result.reference })
 
-      // Réinitialiser le formulaire
-      setFormData({})
+      // Réinitialiser le formulaire en gardant les infos utilisateur et la date
+      const user = await getCurrentUser()
+      setFormData({
+        complainDate: new Date().toISOString().split("T")[0],
+        email: user?.email || "",
+        phone: user?.phoneNumber || user?.phone || "",
+      })
       setSelectedType("")
       setAvailableObjects([])
       setShowAttachmentField(false)
@@ -294,21 +322,14 @@ export default function ComplainPage() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {/* Date de la réclamation */}
-                  <div className="space-y-2">
-                    <Label htmlFor="complainDate">Date de la réclamation *</Label>
-                    <Input
-                      id="complainDate"
-                      type="date"
-                      value={formData.complainDate || ""}
-                      onChange={(e) => handleInputChange("complainDate", e.target.value)}
-                      max={new Date().toISOString().split("T")[0]}
-                      required
-                      className="w-full"
-                    />
-                  </div>
+                {/* Date cachée - automatiquement la date du jour */}
+                <input
+                  type="hidden"
+                  name="complainDate"
+                  value={formData.complainDate || ""}
+                />
 
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {/* Téléphone */}
                   <div className="space-y-2">
                     <Label htmlFor="phone">Téléphone *</Label>
@@ -319,6 +340,8 @@ export default function ComplainPage() {
                       onChange={(e) => handleInputChange("phone", e.target.value)}
                       placeholder="+224 6XX XXX XXX"
                       required
+                      readOnly={!!(formData.phone)}
+                      className={formData.phone ? "bg-gray-50 cursor-not-allowed" : ""}
                     />
                   </div>
 
@@ -332,6 +355,8 @@ export default function ComplainPage() {
                       onChange={(e) => handleInputChange("email", e.target.value)}
                       placeholder="votre@email.com"
                       required
+                      readOnly={!!(formData.email)}
+                      className={formData.email ? "bg-gray-50 cursor-not-allowed" : ""}
                     />
                   </div>
                 </div>
