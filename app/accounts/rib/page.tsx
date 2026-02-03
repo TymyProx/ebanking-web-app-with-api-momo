@@ -320,55 +320,97 @@ export default function RIBPage() {
         console.log("[RIB] Comptes récupérés:", accountsData)
 
         if (Array.isArray(accountsData)) {
-          const adaptedAccounts: Account[] = accountsData.map((acc: any) => ({
-            id: acc.id || acc.accountId,
-            name: acc.accountName || acc.name || `Compte ${acc.accountNumber}`,
-            number: acc.accountNumber,
-            balance: Number.parseFloat(acc.bookBalance || acc.balance || "0"),
-            currency: acc.currency || "GNF",
-            type: acc.type === "SAVINGS" ? ("Épargne" as const) : ("Courant" as const),
-            status: (acc.status === "ACTIF" ? "Actif" : acc.status) as "Actif" | "Bloqué" | "Fermé",
-            iban: `GN82${acc.codeBanque || "BNG"}${acc.codeAgence || "001"}${acc.accountNumber}`,
-            accountHolder: profile ? `${profile.firstName || ""} ${profile.lastName || ""}`.trim() : "TITULAIRE",
-            bankName: "Banque Nationale de Guinée",
-            bankCode: acc.codeBanque || "BNG",
-            branchCode: acc.codeAgence || "001",
-            branchName: "Agence Kaloum",
-            swiftCode: "BNGNGNCX",
-            ribKey: acc.ribKey || "12345",
-          }))
+          const adaptedAccounts: Account[] = accountsData.map((acc: any) => {
+            // Normaliser le statut
+            let status: "Actif" | "Bloqué" | "Fermé" = "Actif"
+            const rawStatus = (acc.status || "").toUpperCase()
+            if (rawStatus === "ACTIF" || rawStatus === "ACTIVE") {
+              status = "Actif"
+            } else if (rawStatus === "BLOQUÉ" || rawStatus === "BLOCKED" || rawStatus === "BLOQUE") {
+              status = "Bloqué"
+            } else if (rawStatus === "FERMÉ" || rawStatus === "CLOSED" || rawStatus === "FERME") {
+              status = "Fermé"
+            }
 
-          const activeAccounts = adaptedAccounts.filter(
-            (account: Account) => account.status === "Actif" && account.number && String(account.number).trim() !== "",
+            return {
+              id: acc.id || acc.accountId,
+              name: acc.accountName || acc.name || `Compte ${acc.accountNumber}`,
+              number: acc.accountNumber,
+              balance: Number.parseFloat(acc.bookBalance || acc.balance || "0"),
+              currency: acc.currency || "GNF",
+              type: acc.type === "SAVINGS" ? ("Épargne" as const) : ("Courant" as const),
+              status,
+              iban: `GN82${acc.codeBanque || "BNG"}${acc.codeAgence || "001"}${acc.accountNumber}`,
+              accountHolder: profile ? `${profile.firstName || ""} ${profile.lastName || ""}`.trim() : "TITULAIRE",
+              bankName: "Banque Nationale de Guinée",
+              bankCode: acc.codeBanque || "BNG",
+              branchCode: acc.codeAgence || "001",
+              branchName: "Agence Kaloum",
+              swiftCode: "BNGNGNCX",
+              ribKey: acc.ribKey || "12345",
+            }
+          })
+
+          // Filtrer seulement les comptes avec un numéro valide (gardez tous les statuts pour déboguer)
+          const validAccounts = adaptedAccounts.filter(
+            (account: Account) => account.number && String(account.number).trim() !== "",
           )
 
-          console.log("[RIB] Comptes actifs avec données complètes:", activeAccounts)
-          setAccounts(activeAccounts)
+          console.log("[RIB] Tous les comptes récupérés:", adaptedAccounts)
+          console.log("[RIB] Comptes avec numéro valide:", validAccounts)
+          
+          // Si aucun compte, utiliser le fallback
+          if (validAccounts.length === 0) {
+            console.log("[RIB] Aucun compte trouvé, utilisation du compte de test")
+            setAccounts([
+              {
+                id: "1",
+                name: "Compte Courant",
+                number: "0001-234567-89",
+                balance: 2400000,
+                currency: "GNF",
+                type: "Courant",
+                status: "Actif",
+                iban: "GN82BNG0010001234567",
+                accountHolder: profile
+                  ? `${profile.firstName || ""} ${profile.lastName || ""}`.trim()
+                  : "DIALLO Mamadou",
+                bankName: "Banque Nationale de Guinée",
+                bankCode: "BNG",
+                branchCode: "001",
+                branchName: "Agence Kaloum",
+                swiftCode: "BNGNGNCX",
+                ribKey: "12345",
+              },
+            ])
+          } else {
+            setAccounts(validAccounts)
+          }
         }
       } catch (error) {
-        console.error("Erreur lors du chargement des données:", error)
+        console.error("[RIB] Erreur lors du chargement des données:", error)
         // Fallback avec données de test si API indisponible
-        setAccounts([
-          {
-            id: "1",
-            name: "Compte Courant",
-            number: "0001-234567-89",
-            balance: 2400000,
-            currency: "GNF",
-            type: "Courant",
-            status: "Actif",
-            iban: "GN82BNG0010001234567",
-            accountHolder: userProfile
-              ? `${userProfile.firstName || ""} ${userProfile.lastName || ""}`.trim()
-              : "DIALLO Mamadou",
-            bankName: "Banque Nationale de Guinée",
-            bankCode: "BNG",
-            branchCode: "001",
-            branchName: "Agence Kaloum",
-            swiftCode: "BNGNGNCX",
-            ribKey: "12345",
-          },
-        ])
+        const fallbackAccount = {
+          id: "1",
+          name: "Compte Courant",
+          number: "0001234567890",
+          balance: 2400000,
+          currency: "GNF",
+          type: "Courant" as const,
+          status: "Actif" as const,
+          iban: "GN82BNG0010001234567890",
+          accountHolder: profile
+            ? `${profile.firstName || ""} ${profile.lastName || ""}`.trim()
+            : "DIALLO Mamadou",
+          bankName: "Banque Nationale de Guinée",
+          bankCode: "BNG",
+          branchCode: "001",
+          branchName: "Agence Kaloum",
+          swiftCode: "BNGNGNCX",
+          ribKey: "12345",
+        }
+        console.log("[RIB] Utilisation du compte de test:", fallbackAccount)
+        setAccounts([fallbackAccount])
       } finally {
         setIsLoadingAccounts(false)
       }
@@ -805,31 +847,26 @@ export default function RIBPage() {
           <CardContent className="space-y-6">
             <div className="space-y-4">
               <Label htmlFor="account-select">Choisir le compte pour le RIB</Label>
-              <Select value={selectedAccountId} onValueChange={setSelectedAccountId} disabled={isLoadingAccounts}>
-                <SelectTrigger id="account-select">
-                  <SelectValue
-                    placeholder={isLoadingAccounts ? "Chargement des comptes..." : "Sélectionner un compte"}
-                  />
-                </SelectTrigger>
-                <SelectContent>
-                  {accounts.map((account) => (
-                    <SelectItem key={account.id} value={account.id}>
-                      <div className="flex items-center justify-between w-full">
-                        <div className="flex items-center space-x-2">
-                          {getAccountIcon(account.type)}
-                          <div>
-                            <p className="font-medium">{account.name}</p>
-                            <p className="text-sm text-muted-muted-foreground">{account.number}</p>
-                          </div>
-                        </div>
-                        <p className="text-sm font-medium ml-4">
-                          {formatAmount(account.balance ?? 0, account.currency)} {account.currency}
-                        </p>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              {!isLoadingAccounts && accounts.length === 0 ? (
+                <div className="p-4 text-center text-sm text-muted-foreground bg-gray-50 rounded-lg border">
+                  Aucun compte disponible. Veuillez créer un compte pour obtenir un RIB.
+                </div>
+              ) : (
+                <Select value={selectedAccountId} onValueChange={setSelectedAccountId} disabled={isLoadingAccounts}>
+                  <SelectTrigger id="account-select" className="h-auto min-h-[50px]">
+                    <SelectValue
+                      placeholder={isLoadingAccounts ? "Chargement des comptes..." : "Sélectionner un compte"}
+                    />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {accounts.map((account) => (
+                      <SelectItem key={account.id} value={account.id}>
+                        {account.name} - {account.number} ({formatAmount(account.balance ?? 0, account.currency)} {account.currency})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
             </div>
 
             {selectedAccount && (

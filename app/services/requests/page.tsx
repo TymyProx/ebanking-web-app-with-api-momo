@@ -856,17 +856,7 @@ export default function ServiceRequestsPage() {
                     ) : (
                       accounts.map((account) => (
                         <SelectItem key={account.id} value={account.id}>
-                          <div className="flex flex-col">
-                            <span className="font-medium">{account.name}</span>
-                            <span className="text-sm text-gray-500">
-                              {account.number} •{" "}
-                              {new Intl.NumberFormat("fr-FR", {
-                                style: "currency",
-                                currency: account.currency === "GNF" ? "GNF" : account.currency,
-                                minimumFractionDigits: account.currency === "GNF" ? 0 : 2,
-                              }).format(account.balance)}
-                            </span>
-                          </div>
+                          {account.name} - {account.number} ({Math.trunc(account.balance ?? 0).toLocaleString()} {account.currency})
                         </SelectItem>
                       ))
                     )}
@@ -1037,17 +1027,7 @@ export default function ServiceRequestsPage() {
                     ) : (
                       accounts.map((account) => (
                         <SelectItem key={account.id} value={account.id}>
-                          <div className="flex flex-col">
-                            <span className="font-medium">{account.name}</span>
-                            <span className="text-sm text-gray-500">
-                              {account.number} •{" "}
-                              {new Intl.NumberFormat("fr-FR", {
-                                style: "currency",
-                                currency: account.currency === "GNF" ? "GNF" : account.currency,
-                                minimumFractionDigits: account.currency === "GNF" ? 0 : 2,
-                              }).format(account.balance)}
-                            </span>
-                          </div>
+                          {account.name} - {account.number} ({Math.trunc(account.balance ?? 0).toLocaleString()} {account.currency})
                         </SelectItem>
                       ))
                     )}

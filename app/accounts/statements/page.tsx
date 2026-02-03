@@ -193,22 +193,65 @@ export default function StatementsPage() {
 
         const allTransactions = result.data
 
-        const start = new Date(startDate)
-        const end = new Date(endDate)
+        // Créer les dates de début et fin en s'assurant d'inclure toute la journée
+        const start = new Date(startDate + "T00:00:00")
+        const end = new Date(endDate + "T23:59:59")
         const sixMonthsBeforeEnd = new Date(end)
         sixMonthsBeforeEnd.setMonth(sixMonthsBeforeEnd.getMonth() - 6)
 
         const exceedsSixMonths = start < sixMonthsBeforeEnd
         const effectiveStartDate = exceedsSixMonths ? sixMonthsBeforeEnd : start
 
+        console.log("[STATEMENTS] 🔍 Analyse des transactions...")
+        console.log("[STATEMENTS] Compte sélectionné:", selectedAccount.number)
+        console.log("[STATEMENTS] Total transactions du compte:", allTransactions.length)
+        console.log("[STATEMENTS] Période recherchée:", { 
+          startDate, 
+          endDate,
+          startDateParsed: start.toISOString(),
+          endDateParsed: end.toISOString()
+        })
+        
+        // Log des transactions avant filtrage
+        if (allTransactions.length > 0) {
+          console.log("[STATEMENTS] Exemple de transaction:", allTransactions[0])
+          allTransactions.forEach((txn: any, idx: number) => {
+            console.log(`[STATEMENTS] Transaction ${idx + 1}:`, {
+              date: txn.valueDate,
+              description: txn.description,
+              amount: txn.montantOperation
+            })
+          })
+        }
+
         const filteredTxns = allTransactions.filter((txn: any) => {
-          if (!txn.valueDate) return false
+          if (!txn.valueDate) {
+            console.log("[STATEMENTS] ⚠️ Transaction sans valueDate ignorée:", txn)
+            return false
+          }
           const txnDate = new Date(txn.valueDate)
-          return txnDate >= effectiveStartDate && txnDate <= end
+          const isInRange = txnDate >= effectiveStartDate && txnDate <= end
+          
+          if (!isInRange) {
+            console.log("[STATEMENTS] ❌ Transaction hors période:", {
+              txnDate: txnDate.toISOString(),
+              start: effectiveStartDate.toISOString(),
+              end: end.toISOString(),
+              description: txn.description
+            })
+          }
+          
+          return isInRange
         })
 
+        console.log("[STATEMENTS] Transactions dans la période:", filteredTxns.length)
+
         if (filteredTxns.length === 0) {
-          setErrorMessage("Aucune transaction trouvée pour cette période.")
+          if (allTransactions.length === 0) {
+            setErrorMessage(`Aucune transaction trouvée pour le compte ${selectedAccount.number}. Ce compte n'a pas encore d'historique de transactions.`)
+          } else {
+            setErrorMessage(`Aucune transaction trouvée pour la période du ${new Date(startDate).toLocaleDateString('fr-FR')} au ${new Date(endDate).toLocaleDateString('fr-FR')}. Ce compte a ${allTransactions.length} transaction(s) au total. Essayez d'élargir la période de recherche.`)
+          }
           setIsLoadingTransactions(false)
           return
         }
@@ -557,28 +600,8 @@ export default function StatementsPage() {
                       </SelectTrigger>
                       <SelectContent className="max-h-[400px]">
                         {accounts.map((account) => (
-                          <SelectItem key={account.id} value={account.id} className="h-auto py-2">
-                            <div className="flex items-center justify-between w-full gap-4">
-                              <div className="flex items-center gap-2 flex-1">
-                                {getAccountIcon(account.type)}
-                                <div className="text-left">
-                                  <div className="font-medium flex items-center gap-1.5 text-sm">
-                                    {account.name}
-                                    {preSelectedAccountId === account.id && (
-                                      <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700">
-                                        Suggéré
-                                      </Badge>
-                                    )}
-                                  </div>
-                                  <div className="text-xs text-muted-foreground font-mono">{account.number}</div>
-                                </div>
-                              </div>
-                              <div className="text-right ml-4">
-                                <div className="font-bold text-sm">
-                                  {formatAmount(account.balance, account.currency)} {account.currency}
-                                </div>
-                              </div>
-                            </div>
+                          <SelectItem key={account.id} value={account.id}>
+                            {account.name} - {account.number} ({formatAmount(account.balance, account.currency)} {account.currency})
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -631,6 +654,56 @@ export default function StatementsPage() {
                   </div>
                 </div>
 
+                {selectedAccount && !startDate && !endDate && (
+                  <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                    <p className="text-sm text-amber-800 mb-2 font-medium">
+                      💡 Suggestions de périodes courantes :
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          const today = new Date()
+                          const lastMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1)
+                          const lastMonthEnd = new Date(today.getFullYear(), today.getMonth(), 0)
+                          setStartDate(lastMonth.toISOString().split("T")[0])
+                          setEndDate(lastMonthEnd.toISOString().split("T")[0])
+                        }}
+                      >
+                        Mois dernier
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          const today = new Date()
+                          const threeMonthsAgo = new Date(today.getFullYear(), today.getMonth() - 3, 1)
+                          setStartDate(threeMonthsAgo.toISOString().split("T")[0])
+                          setEndDate(today.toISOString().split("T")[0])
+                        }}
+                      >
+                        3 derniers mois
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          const today = new Date()
+                          const sixMonthsAgo = new Date(today.getFullYear(), today.getMonth() - 6, 1)
+                          setStartDate(sixMonthsAgo.toISOString().split("T")[0])
+                          setEndDate(today.toISOString().split("T")[0])
+                        }}
+                      >
+                        6 derniers mois
+                      </Button>
+                    </div>
+                  </div>
+                )}
+                
                 {startDate && endDate && (
                   <div className="p-2 bg-blue-50 rounded-lg">
                     <p className="text-sm text-blue-800">

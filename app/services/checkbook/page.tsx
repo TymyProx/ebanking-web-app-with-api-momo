@@ -69,12 +69,28 @@ export default function CheckbookRequestPage() {
 
         // Filtrer uniquement les comptes courants actifs (avec fonction normalisée)
         const currentAccounts = adaptedAccounts.filter(
-          (account: any) =>
-            isAccountActive(account.status) &&
-            (account.type === "Courant" || account.type === "Courant") &&
-            account.number &&
-            String(account.number).trim() !== "",
+          (account: any) => {
+            const accountType = String(account.type || "").toUpperCase()
+            const isCurrent = accountType === "COURANT" || accountType === "CURRENT" || accountType.includes("CURRENT")
+            const hasValidNumber = account.number && String(account.number).trim() !== ""
+            
+            console.log("[CHECKBOOK] Compte analysé:", {
+              name: account.name,
+              type: account.type,
+              status: account.status,
+              isActive: isAccountActive(account.status),
+              isCurrent,
+              hasValidNumber,
+              willBeIncluded: isAccountActive(account.status) && isCurrent && hasValidNumber
+            })
+            
+            return isAccountActive(account.status) && isCurrent && hasValidNumber
+          }
         )
+        
+        console.log("[CHECKBOOK] Comptes filtrés pour chéquier:", currentAccounts.length)
+        console.log("[CHECKBOOK] Liste des comptes:", currentAccounts)
+        
         setAccounts(currentAccounts)
       } else {
         setAccounts([])
@@ -297,12 +313,23 @@ export default function CheckbookRequestPage() {
                 </Alert>
               )}
 
+              {!isLoadingAccounts && accounts.length === 0 && (
+                <Alert className="mb-6 border-amber-200 bg-amber-50">
+                  <AlertCircle className="h-4 w-4 text-amber-600" />
+                  <AlertDescription className="text-amber-800">
+                    <strong>Aucun compte courant actif trouvé.</strong>
+                    <br />
+                    Pour commander un chéquier, vous devez avoir un compte courant actif. Veuillez contacter votre agence ou ouvrir un compte courant.
+                  </AlertDescription>
+                </Alert>
+              )}
+
               <form onSubmit={handleSubmitCheckbook} className="space-y-6">
                 <div className="space-y-2">
                   <Label htmlFor="account">Compte</Label>
-                  <Select value={selectedAccount} onValueChange={setSelectedAccount} required>
+                  <Select value={selectedAccount} onValueChange={setSelectedAccount} required disabled={accounts.length === 0}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Sélectionnez un compte" />
+                      <SelectValue placeholder={isLoadingAccounts ? "Chargement..." : accounts.length === 0 ? "Aucun compte disponible" : "Sélectionnez un compte"} />
                     </SelectTrigger>
                     <SelectContent>
                       {isLoadingAccounts ? (
@@ -311,12 +338,12 @@ export default function CheckbookRequestPage() {
                         </SelectItem>
                       ) : accounts.length === 0 ? (
                         <SelectItem value="no-accounts" disabled>
-                          Aucun compte disponible
+                          Aucun compte courant actif disponible
                         </SelectItem>
                       ) : (
                         accounts.map((account) => (
                           <SelectItem key={account.id} value={account.number}>
-                            {account.name} - {account.number}
+                            {account.name} - {account.number} ({Math.trunc(account.balance ?? 0).toLocaleString()} {account.currency})
                           </SelectItem>
                         ))
                       )}

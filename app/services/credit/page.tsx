@@ -312,7 +312,7 @@ export default function CreditRequestPage() {
                       ) : (
                         accounts.map((account) => (
                           <SelectItem key={account.id} value={account.number}>
-                            {account.name} - {account.number}
+                            {account.name} - {account.number} ({Math.trunc(account.balance ?? 0).toLocaleString()} {account.currency})
                           </SelectItem>
                         ))
                       )}
