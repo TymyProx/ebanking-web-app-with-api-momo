@@ -16,6 +16,7 @@ import { submitFundsProvisionRequest, getFundsProvisionRequests, getFundsProvisi
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { getAccounts } from "../../accounts/actions"
 import { isAccountActive } from "@/lib/status-utils"
+import { handleNumericChange, toNumber } from "@/lib/numeric-input"
 
 export default function FundsProvisionPage() {
   const [selectedAccount, setSelectedAccount] = useState<string>("")
@@ -132,7 +133,7 @@ export default function FundsProvisionPage() {
     // Vérifier le solde avant de soumettre
     if (selectedAccount && formData.montant) {
       const account = accounts.find((acc) => acc.number === selectedAccount)
-      const montantNum = Number.parseFloat(formData.montant)
+      const montantNum = toNumber(formData.montant)
       if (account && montantNum > account.balance) {
         setSubmitState({
           success: false,
@@ -147,7 +148,7 @@ export default function FundsProvisionPage() {
     try {
       const result = await submitFundsProvisionRequest({
         compteAdebiter: selectedAccount,
-        montant: Number(formData.montant) || 0,
+        montant: toNumber(formData.montant) || 0,
         fullNameBenef: formData.fullNameBenef || "",
         numCni: formData.numCni || "",
         agence: formData.agence || "",
@@ -306,7 +307,7 @@ export default function FundsProvisionPage() {
                       setBalanceError("")
                       if (formData.montant) {
                         const account = accounts.find((acc) => acc.number === value)
-                        const montantNum = Number.parseFloat(formData.montant)
+                        const montantNum = toNumber(formData.montant)
                         if (account && montantNum > account.balance) {
                           setBalanceError(
                             `Le montant saisi (${montantNum.toLocaleString("fr-FR")} ${account.currency || "GNF"}) dépasse le solde disponible (${account.balance.toLocaleString("fr-FR")} ${account.currency || "GNF"})`
@@ -343,17 +344,17 @@ export default function FundsProvisionPage() {
                   <Label htmlFor="montant">Montant (GNF)</Label>
                   <Input
                     id="montant"
-                    type="number"
-                    min="1"
+                    type="text"
+                    inputMode="numeric"
                     value={formData.montant || ""}
                     onChange={(e) => {
-                      const montant = e.target.value
+                      const montant = handleNumericChange(e.target.value)
                       setFormData({ ...formData, montant })
                       
                       // Vérifier le solde si un compte est sélectionné
                       if (selectedAccount && montant) {
                         const account = accounts.find((acc) => acc.number === selectedAccount)
-                        const montantNum = Number.parseFloat(montant)
+                        const montantNum = toNumber(montant)
                         if (account && montantNum > account.balance) {
                           setBalanceError(
                             `Le montant saisi (${montantNum.toLocaleString("fr-FR")} ${account.currency || "GNF"}) dépasse le solde disponible (${account.balance.toLocaleString("fr-FR")} ${account.currency || "GNF"})`
@@ -375,7 +376,7 @@ export default function FundsProvisionPage() {
                     (() => {
                       const account = accounts.find((acc) => acc.number === selectedAccount)
                       if (account) {
-                        const montantNum = Number.parseFloat(formData.montant)
+                        const montantNum = toNumber(formData.montant)
                         const soldeRestant = account.balance - montantNum
                         return (
                           <p className="text-sm text-gray-600 mt-1">
@@ -404,8 +405,13 @@ export default function FundsProvisionPage() {
                   <Label htmlFor="numCni">Numéro CNI du bénéficiaire</Label>
                   <Input
                     id="numCni"
+                    type="text"
+                    inputMode="numeric"
                     value={formData.numCni || ""}
-                    onChange={(e) => setFormData({ ...formData, numCni: e.target.value })}
+                    onChange={(e) => {
+                      const cleaned = handleNumericChange(e.target.value)
+                      setFormData({ ...formData, numCni: cleaned })
+                    }}
                     placeholder="Numéro de carte nationale d'identité"
                     required
                   />

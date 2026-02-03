@@ -414,11 +414,13 @@ export default function NotificationsPage() {
                 <Label htmlFor="min-amount">Montant minimum pour déclencher une notification (GNF)</Label>
                 <Input
                   id="min-amount"
-                  type="number"
+                  type="text"
+                  inputMode="numeric"
                   value={settings.minAmount}
-                  onChange={(e) =>
-                    handleSettingsUpdate({ ...settings, minAmount: Number.parseInt(e.target.value) || 0 })
-                  }
+                  onChange={(e) => {
+                    const cleaned = e.target.value.replace(/\D/g, "")
+                    handleSettingsUpdate({ ...settings, minAmount: Number.parseInt(cleaned) || 0 })
+                  }}
                   className="mt-1"
                 />
                 <p className="text-xs text-gray-500 mt-1">

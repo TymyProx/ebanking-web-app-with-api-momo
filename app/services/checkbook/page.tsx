@@ -364,10 +364,13 @@ export default function CheckbookRequestPage() {
                     <Label htmlFor="nbrechequier">Nombre de chéquiers</Label>
                     <Input
                       id="nbrechequier"
-                      type="number"
-                      min="1"
+                      type="text"
+                      inputMode="numeric"
                       value={formData.nbrechequier || ""}
-                      onChange={(e) => setFormData({ ...formData, nbrechequier: e.target.value })}
+                      onChange={(e) => {
+                        const cleaned = e.target.value.replace(/\D/g, "")
+                        setFormData({ ...formData, nbrechequier: cleaned })
+                      }}
                       required
                     />
                   </div>

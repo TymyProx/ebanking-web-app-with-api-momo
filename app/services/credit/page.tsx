@@ -390,10 +390,13 @@ export default function CreditRequestPage() {
                     <Label htmlFor="loan_amount">Montant demandé (GNF)</Label>
                     <Input
                       id="loan_amount"
-                      type="number"
-                      min="0"
+                      type="text"
+                      inputMode="numeric"
                       value={formData.loan_amount || ""}
-                      onChange={(e) => setFormData({ ...formData, loan_amount: e.target.value })}
+                      onChange={(e) => {
+                        const cleaned = e.target.value.replace(/\D/g, "")
+                        setFormData({ ...formData, loan_amount: cleaned })
+                      }}
                       required
                     />
                   </div>
@@ -402,10 +405,13 @@ export default function CreditRequestPage() {
                     <Label htmlFor="loan_duration">Durée (en mois)</Label>
                     <Input
                       id="loan_duration"
-                      type="number"
-                      min="1"
+                      type="text"
+                      inputMode="numeric"
                       value={formData.loan_duration || ""}
-                      onChange={(e) => setFormData({ ...formData, loan_duration: e.target.value })}
+                      onChange={(e) => {
+                        const cleaned = e.target.value.replace(/\D/g, "")
+                        setFormData({ ...formData, loan_duration: cleaned })
+                      }}
                       required
                     />
                   </div>

@@ -891,9 +891,13 @@ export default function UnifiedPaymentPage() {
                     </Label>
                     <Input
                       id="amount"
-                      type="number"
+                      type="text"
+                      inputMode="numeric"
                       value={paymentData.amount}
-                      onChange={(e) => setPaymentData((prev) => ({ ...prev, amount: e.target.value }))}
+                      onChange={(e) => {
+                        const cleaned = e.target.value.replace(/\D/g, "")
+                        setPaymentData((prev) => ({ ...prev, amount: cleaned }))
+                      }}
                       placeholder="0"
                       className="text-right font-mono"
                       min={selectedProvider?.minAmount}

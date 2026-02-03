@@ -231,9 +231,13 @@ export default function FundsProvisionPage() {
                     <Label htmlFor="amount">Montant à transférer (GNF) *</Label>
                     <Input
                       id="amount"
-                      type="number"
+                      type="text"
+                      inputMode="numeric"
                       value={formData.amount || ""}
-                      onChange={(e) => handleInputChange("amount", Number.parseFloat(e.target.value) || 0)}
+                      onChange={(e) => {
+                        const cleaned = e.target.value.replace(/\D/g, "")
+                        handleInputChange("amount", Number.parseFloat(cleaned) || 0)
+                      }}
                       placeholder="0"
                       min="1"
                       required

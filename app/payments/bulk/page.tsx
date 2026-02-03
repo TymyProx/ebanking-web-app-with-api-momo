@@ -279,9 +279,13 @@ export default function BulkPaymentPage() {
                   <Label htmlFor="totalAmount">Montant total (GNF)</Label>
                   <Input
                     id="totalAmount"
-                    type="number"
+                    type="text"
+                    inputMode="numeric"
                     value={formData.totalAmount || ""}
-                    onChange={(e) => handleInputChange("totalAmount", Number.parseFloat(e.target.value) || 0)}
+                    onChange={(e) => {
+                      const cleaned = e.target.value.replace(/\D/g, "")
+                      handleInputChange("totalAmount", Number.parseFloat(cleaned) || 0)
+                    }}
                     placeholder="0"
                   />
                 </div>
@@ -289,9 +293,13 @@ export default function BulkPaymentPage() {
                   <Label htmlFor="beneficiaryCount">Nombre de bénéficiaires</Label>
                   <Input
                     id="beneficiaryCount"
-                    type="number"
+                    type="text"
+                    inputMode="numeric"
                     value={formData.beneficiaryCount || ""}
-                    onChange={(e) => handleInputChange("beneficiaryCount", Number.parseInt(e.target.value) || 0)}
+                    onChange={(e) => {
+                      const cleaned = e.target.value.replace(/\D/g, "")
+                      handleInputChange("beneficiaryCount", Number.parseInt(cleaned) || 0)
+                    }}
                     placeholder="0"
                   />
                 </div>

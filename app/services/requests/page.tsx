@@ -904,14 +904,14 @@ export default function ServiceRequestsPage() {
                 <Input
                   id="nbrechequier"
                   name="nbrechequier"
-                  type="number"
-                  min="1"
-                  max="2"
+                  type="text"
+                  inputMode="numeric"
                   value={formData.nbrechequier || ""}
                   onChange={(e) => {
-                    const value = Number.parseInt(e.target.value)
-                    if (value >= 1 && value <= 2) {
-                      handleInputChange("nbrechequier", value.toString())
+                    const cleaned = e.target.value.replace(/\D/g, "")
+                    const value = Number.parseInt(cleaned)
+                    if (cleaned === "" || (value >= 1 && value <= 2)) {
+                      handleInputChange("nbrechequier", cleaned)
                     }
                   }}
                   placeholder="Ex: 2"
@@ -1074,10 +1074,14 @@ export default function ServiceRequestsPage() {
                 <Label htmlFor="loan_amount">Montant du crédit (GNF) *</Label>
                 <Input
                   id="loan_amount"
-                  type="number"
+                  type="text"
+                  inputMode="numeric"
                   placeholder="Ex: 10000000"
                   value={formData.loan_amount || ""}
-                  onChange={(e) => handleInputChange("loan_amount", e.target.value)}
+                  onChange={(e) => {
+                    const cleaned = e.target.value.replace(/\D/g, "")
+                    handleInputChange("loan_amount", cleaned)
+                  }}
                   required
                 />
               </div>
@@ -1122,10 +1126,14 @@ export default function ServiceRequestsPage() {
                 <Label htmlFor="monthly_income">Revenus mensuels (GNF) *</Label>
                 <Input
                   id="monthly_income"
-                  type="number"
+                  type="text"
+                  inputMode="numeric"
                   placeholder="Ex: 2000000"
                   value={formData.monthly_income || ""}
-                  onChange={(e) => handleInputChange("monthly_income", e.target.value)}
+                  onChange={(e) => {
+                    const cleaned = e.target.value.replace(/\D/g, "")
+                    handleInputChange("monthly_income", cleaned)
+                  }}
                   required
                 />
               </div>
@@ -1167,9 +1175,14 @@ export default function ServiceRequestsPage() {
                   <Label htmlFor="contact_phone">Téléphone *</Label>
                   <Input
                     id="contact_phone"
-                    placeholder="+224 6XX XXX XXX"
+                    type="text"
+                    inputMode="tel"
+                    placeholder="622123456"
                     value={formData.contact_phone || ""}
-                    onChange={(e) => handleInputChange("contact_phone", e.target.value)}
+                    onChange={(e) => {
+                      const cleaned = e.target.value.replace(/\D/g, "")
+                      handleInputChange("contact_phone", cleaned)
+                    }}
                   />
                 </div>
                 <div>

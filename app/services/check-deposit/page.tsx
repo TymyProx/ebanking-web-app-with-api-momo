@@ -215,7 +215,18 @@ export default function CheckDepositPage() {
 
                   <div className="space-y-2">
                     <Label htmlFor="amount">Montant (GNF) *</Label>
-                    <Input id="amount" name="amount" type="number" placeholder="Ex: 500000" min="1" required />
+                    <Input 
+                      id="amount" 
+                      name="amount" 
+                      type="text" 
+                      inputMode="numeric"
+                      placeholder="Ex: 500000"
+                      onChange={(e) => {
+                        const cleaned = e.target.value.replace(/\D/g, "")
+                        e.target.value = cleaned
+                      }}
+                      required 
+                    />
                   </div>
                 </div>
 

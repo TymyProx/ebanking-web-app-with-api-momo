@@ -61,8 +61,8 @@ export async function getPendingOperations() {
     // Filtrer par utilisateur
     rows = rows.filter((r: any) => r.clientId === currentUserId || r.createdById === currentUserId)
 
-    // Filtrer par statut en attente
-    const pendingStatuses = ["PENDING", "PROCESSING", "APPROVAL_REQUIRED", "FAILED"]
+    // Filtrer par statut en attente (inclure aussi EN_ATTENTE pour les mises à disposition)
+    const pendingStatuses = ["PENDING", "PROCESSING", "APPROVAL_REQUIRED", "FAILED", "EN_ATTENTE", "EN_COURS"]
     const filteredOperations = rows
       .filter((payment: any) => {
         const status = (payment.status || "").toUpperCase()
@@ -73,18 +73,36 @@ export async function getPendingOperations() {
         
         // Mapper le statut de l'API vers le format attendu
         let mappedStatus: "pending" | "processing" | "failed" | "approval_required" = "pending"
-        if (status === "PROCESSING" || status === "IN_PROGRESS") {
+        if (status === "PROCESSING" || status === "IN_PROGRESS" || status === "EN_COURS") {
           mappedStatus = "processing"
-        } else if (status === "FAILED" || status === "REJECTED") {
+        } else if (status === "FAILED" || status === "REJECTED" || status === "REJETE") {
           mappedStatus = "failed"
         } else if (status === "APPROVAL_REQUIRED" || status === "AWAITING_APPROVAL") {
           mappedStatus = "approval_required"
+        } else if (status === "EN_ATTENTE" || status === "PENDING") {
+          mappedStatus = "pending"
         }
 
         // Déterminer le type d'opération
+        // Vérifier d'abord si c'est une mise à disposition des fonds
         let operationType: "transfer" | "payment" | "deposit" | "withdrawal" = "transfer"
         const description = String(payment.description || payment.commentnotes || "").toLowerCase()
-        if (description.includes("paiement") || description.includes("payment")) {
+        
+        // Identifier les mises à disposition des fonds
+        // Elles peuvent avoir des champs spécifiques comme fullNameBenef, numCni, agence, etc.
+        const hasFundsProvisionFields = 
+          payment.fullNameBenef || 
+          payment.numCni || 
+          payment.agence ||
+          payment.reference?.startsWith("RET-") ||
+          payment.reference?.startsWith("MDF-") ||
+          description.includes("mise à disposition") ||
+          description.includes("mise a disposition") ||
+          description.includes("disposition des fonds")
+        
+        if (hasFundsProvisionFields) {
+          operationType = "withdrawal" // Mise à disposition = retrait en agence
+        } else if (description.includes("paiement") || description.includes("payment")) {
           operationType = "payment"
         } else if (description.includes("dépôt") || description.includes("deposit")) {
           operationType = "deposit"
@@ -103,23 +121,39 @@ export async function getPendingOperations() {
           return String(value)
         }
 
+        // Construire la description pour les mises à disposition
+        let operationDescription = extractText(payment.description) || extractText(payment.commentnotes) || "Virement"
+        if (hasFundsProvisionFields) {
+          const benefName = extractText(payment.fullNameBenef || payment.nomBeneficiaire)
+          const agence = extractText(payment.agence)
+          operationDescription = `Mise à disposition des fonds${benefName ? ` - ${benefName}` : ""}${agence ? ` - Agence: ${agence}` : ""}`
+        }
+
         return {
           id: payment.id || payment.referenceOperation || "",
           type: operationType,
-          description: extractText(payment.description) || extractText(payment.commentnotes) || "Virement",
-          amount: Number(payment.montantOperation || 0),
+          description: operationDescription,
+          amount: Number(payment.montantOperation || payment.montant || 0),
           currency: "GNF",
-          recipient: extractText(payment.nomBeneficiaire) || "",
+          recipient: extractText(payment.fullNameBenef || payment.nomBeneficiaire) || "",
           status: mappedStatus,
           createdAt: payment.dateOrdre || payment.createdAt || new Date().toISOString(),
           estimatedCompletion: payment.dateExecution || undefined,
           failureReason: mappedStatus === "failed" ? "Opération échouée" : undefined,
-          canCancel: mappedStatus === "pending" || mappedStatus === "approval_required",
+          canCancel: (mappedStatus === "pending" || mappedStatus === "approval_required") && !hasFundsProvisionFields, // Les mises à disposition ne peuvent généralement pas être annulées
           canRetry: mappedStatus === "failed",
         }
       })
 
+    console.log("[PENDING OPS] Total epayments récupérés:", rows.length)
     console.log("[PENDING OPS] Opérations filtrées:", filteredOperations.length)
+    console.log("[PENDING OPS] Détail des opérations:", filteredOperations.map(op => ({
+      id: op.id,
+      type: op.type,
+      description: op.description,
+      status: op.status,
+      amount: op.amount
+    })))
 
     return {
       success: true,

@@ -347,11 +347,13 @@ export default function MesVirementsPage() {
                 </Label>
                 <Input
                   id="minAmount"
-                  type="number"
+                  type="text"
+                  inputMode="numeric"
                   placeholder="0"
                   value={filters.minAmount}
                   onChange={(e) => {
-                    setFilters({ ...filters, minAmount: e.target.value })
+                    const cleaned = e.target.value.replace(/\D/g, "")
+                    setFilters({ ...filters, minAmount: cleaned })
                     setCurrentPage(1)
                   }}
                   className="h-10"
@@ -364,11 +366,13 @@ export default function MesVirementsPage() {
                 </Label>
                 <Input
                   id="maxAmount"
-                  type="number"
+                  type="text"
+                  inputMode="numeric"
                   placeholder="0"
                   value={filters.maxAmount}
                   onChange={(e) => {
-                    setFilters({ ...filters, maxAmount: e.target.value })
+                    const cleaned = e.target.value.replace(/\D/g, "")
+                    setFilters({ ...filters, maxAmount: cleaned })
                     setCurrentPage(1)
                   }}
                   className="h-10"

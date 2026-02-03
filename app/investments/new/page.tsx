@@ -214,11 +214,13 @@ export default function NewInvestmentPage() {
                     <Label htmlFor="amount">Montant à investir (GNF)</Label>
                     <Input
                       id="amount"
-                      type="number"
-                      min="100000"
-                      step="1000"
+                      type="text"
+                      inputMode="numeric"
                       value={formData.amount}
-                      onChange={(e) => handleInputChange("amount", e.target.value)}
+                      onChange={(e) => {
+                        const cleaned = e.target.value.replace(/\D/g, "")
+                        handleInputChange("amount", cleaned)
+                      }}
                       placeholder="Montant minimum: 100,000 GNF"
                       required
                     />
@@ -249,11 +251,13 @@ export default function NewInvestmentPage() {
                     <Label htmlFor="customDuration">Durée personnalisée (en mois)</Label>
                     <Input
                       id="customDuration"
-                      type="number"
-                      min="1"
-                      max="120"
+                      type="text"
+                      inputMode="numeric"
                       value={customDuration}
-                      onChange={(e) => setCustomDuration(e.target.value)}
+                      onChange={(e) => {
+                        const cleaned = e.target.value.replace(/\D/g, "")
+                        setCustomDuration(cleaned)
+                      }}
                       placeholder="Nombre de mois (1-120)"
                       required
                     />

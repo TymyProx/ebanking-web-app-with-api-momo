@@ -382,9 +382,13 @@ export default function PersonalBudgetPage() {
                       <Input
                         id="monthlyIncome"
                         name="monthlyIncome"
-                        type="number"
-                        min="0"
+                        type="text"
+                        inputMode="numeric"
                         defaultValue="3000000"
+                        onChange={(e) => {
+                          const cleaned = e.target.value.replace(/\D/g, "")
+                          e.target.value = cleaned
+                        }}
                         required
                       />
                     </div>
@@ -393,9 +397,13 @@ export default function PersonalBudgetPage() {
                       <Input
                         id="monthlyBudget"
                         name="monthlyBudget"
-                        type="number"
-                        min="0"
+                        type="text"
+                        inputMode="numeric"
                         defaultValue="2400000"
+                        onChange={(e) => {
+                          const cleaned = e.target.value.replace(/\D/g, "")
+                          e.target.value = cleaned
+                        }}
                         required
                       />
                       <p className="text-xs text-gray-500 mt-1">Plafond à ne pas dépasser</p>
@@ -404,7 +412,18 @@ export default function PersonalBudgetPage() {
 
                   <div>
                     <Label htmlFor="savingsGoal">Objectif d'épargne mensuel (GNF)</Label>
-                    <Input id="savingsGoal" name="savingsGoal" type="number" min="0" defaultValue="600000" required />
+                    <Input 
+                      id="savingsGoal" 
+                      name="savingsGoal" 
+                      type="text" 
+                      inputMode="numeric"
+                      defaultValue="600000"
+                      onChange={(e) => {
+                        const cleaned = e.target.value.replace(/\D/g, "")
+                        e.target.value = cleaned
+                      }}
+                      required 
+                    />
                     <p className="text-xs text-gray-500 mt-1">Montant que vous souhaitez épargner chaque mois</p>
                   </div>
 
@@ -491,7 +510,17 @@ export default function PersonalBudgetPage() {
                   </div>
                   <div>
                     <Label htmlFor="amount">Montant de la dépense (GNF)</Label>
-                    <Input id="amount" name="amount" type="number" min="1" required />
+                    <Input 
+                      id="amount" 
+                      name="amount" 
+                      type="text" 
+                      inputMode="numeric"
+                      onChange={(e) => {
+                        const cleaned = e.target.value.replace(/\D/g, "")
+                        e.target.value = cleaned
+                      }}
+                      required 
+                    />
                   </div>
                 </div>
 

@@ -196,9 +196,13 @@ export default function NewComplaintPage() {
                         <Input
                           id="transactionAmount"
                           name="transactionAmount"
-                          type="number"
-                          min="1"
+                          type="text"
+                          inputMode="numeric"
                           placeholder="0"
+                          onChange={(e) => {
+                            const cleaned = e.target.value.replace(/\D/g, "")
+                            e.target.value = cleaned
+                          }}
                           className="mt-1"
                         />
                       </div>

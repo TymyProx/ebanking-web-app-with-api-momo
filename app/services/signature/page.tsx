@@ -311,10 +311,14 @@ export default function ElectronicSignaturePage() {
                         <Label htmlFor="amount">Montant (GNF) *</Label>
                         <Input
                           id="amount"
-                          type="number"
+                          type="text"
+                          inputMode="numeric"
                           placeholder="Ex: 1000000"
                           value={documentData.amount}
-                          onChange={(e) => setDocumentData({ ...documentData, amount: e.target.value })}
+                          onChange={(e) => {
+                            const cleaned = e.target.value.replace(/\D/g, "")
+                            setDocumentData({ ...documentData, amount: cleaned })
+                          }}
                         />
                       </div>
                     )}

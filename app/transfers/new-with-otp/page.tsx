@@ -194,10 +194,14 @@ export default function TransferWithOtpExample() {
               <Label htmlFor="amount">Montant (FCFA) *</Label>
               <Input
                 id="amount"
-                type="number"
+                type="text"
+                inputMode="numeric"
                 placeholder="Ex: 10000"
                 value={amount}
-                onChange={(e) => setAmount(e.target.value)}
+                onChange={(e) => {
+                  const cleaned = e.target.value.replace(/\D/g, "")
+                  setAmount(cleaned)
+                }}
                 required
                 min="1"
                 step="0.01"

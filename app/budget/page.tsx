@@ -310,9 +310,13 @@ export default function BudgetPage() {
                   <Input
                     id="monthlyIncome"
                     name="monthlyIncome"
-                    type="number"
-                    min="0"
+                    type="text"
+                    inputMode="numeric"
                     defaultValue={budgetData.monthlyIncome}
+                    onChange={(e) => {
+                      const cleaned = e.target.value.replace(/\D/g, "")
+                      e.target.value = cleaned
+                    }}
                     required
                   />
                 </div>
@@ -321,9 +325,13 @@ export default function BudgetPage() {
                   <Input
                     id="monthlyBudget"
                     name="monthlyBudget"
-                    type="number"
-                    min="0"
+                    type="text"
+                    inputMode="numeric"
                     defaultValue={budgetData.monthlyBudget}
+                    onChange={(e) => {
+                      const cleaned = e.target.value.replace(/\D/g, "")
+                      e.target.value = cleaned
+                    }}
                     required
                   />
                   <p className="text-xs text-gray-500 mt-1">Plafond à ne pas dépasser</p>
@@ -401,7 +409,17 @@ export default function BudgetPage() {
                   </div>
                   <div>
                     <Label htmlFor="amount">Montant (GNF)</Label>
-                    <Input id="amount" name="amount" type="number" min="1" required />
+                    <Input 
+                      id="amount" 
+                      name="amount" 
+                      type="text" 
+                      inputMode="numeric"
+                      onChange={(e) => {
+                        const cleaned = e.target.value.replace(/\D/g, "")
+                        e.target.value = cleaned
+                      }}
+                      required 
+                    />
                   </div>
                 </div>
 
