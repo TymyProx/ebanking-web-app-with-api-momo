@@ -15,6 +15,7 @@ import { AlertCircle, Clock, CheckCircle, Send, Search, MessageSquare } from "lu
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { createReclamation, getReclamations, getReclamationById } from "./actions"
+import { getCurrentUser } from "@/app/user/actions"
 
 const complainTypes = {
   Compte: [
@@ -93,6 +94,26 @@ export default function ReclamationPage() {
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false)
   const [selectedReclamationDetails, setSelectedReclamationDetails] = useState<any>(null)
   const [isLoadingDetails, setIsLoadingDetails] = useState(false)
+
+  // Charger les informations de l'utilisateur au montage du composant
+  useEffect(() => {
+    const loadUserInfo = async () => {
+      try {
+        const user = await getCurrentUser()
+        if (user) {
+          setFormData((prev) => ({
+            ...prev,
+            email: user.email || "",
+            phone: user.phoneNumber || user.phone || "",
+          }))
+        }
+      } catch (error) {
+        console.error("Erreur lors du chargement des informations utilisateur:", error)
+      }
+    }
+
+    loadUserInfo()
+  }, [])
 
   useEffect(() => {
     if (submitState?.success || submitState?.error) {
@@ -364,19 +385,14 @@ export default function ReclamationPage() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="complainDate">Date de la réclamation *</Label>
-                    <Input
-                      id="complainDate"
-                      type="date"
-                      value={formData.complainDate || ""}
-                      onChange={(e) => setFormData({ ...formData, complainDate: e.target.value })}
-                      max={new Date().toISOString().split("T")[0]}
-                      required
-                    />
-                  </div>
+                {/* Date cachée - automatiquement la date du jour */}
+                <input
+                  type="hidden"
+                  name="complainDate"
+                  value={formData.complainDate || ""}
+                />
 
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="phone">Téléphone *</Label>
                     <Input
@@ -386,6 +402,8 @@ export default function ReclamationPage() {
                       onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                       placeholder="+224 6XX XXX XXX"
                       required
+                      readOnly={!!(formData.phone)}
+                      className={formData.phone ? "bg-gray-50 cursor-not-allowed" : ""}
                     />
                   </div>
 
@@ -398,6 +416,8 @@ export default function ReclamationPage() {
                       onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                       placeholder="votre@email.com"
                       required
+                      readOnly={!!(formData.email)}
+                      className={formData.email ? "bg-gray-50 cursor-not-allowed" : ""}
                     />
                   </div>
                 </div>
