@@ -188,9 +188,12 @@ async function RecentTransactions() {
   )
 }
 
-function AccountsSection() {
+async function AccountsSection() {
+  // Charger les comptes côté serveur comme fallback
+  const accounts = await getAccounts()
   // Le composant AccountsCarousel charge maintenant les comptes côté client
-  return <AccountsCarousel />
+  // mais on passe les comptes initiaux en cas d'échec du chargement client
+  return <AccountsCarousel accounts={accounts} />
 }
 
 function TransactionsLoading() {

@@ -38,22 +38,41 @@ export function AccountsCarousel({ accounts: initialAccounts = [] }: AccountsCar
   const [isFading, setIsFading] = useState(false)
   const [accounts, setAccounts] = useState<Account[]>(initialAccounts)
   const [isLoading, setIsLoading] = useState(false)
+  const [hasTriedFetch, setHasTriedFetch] = useState(false)
 
   // Fonction pour charger les comptes depuis l'API
   const fetchAccounts = useCallback(async () => {
     try {
       setIsLoading(true)
-      const token = document.cookie
-        .split("; ")
-        .find((row) => row.startsWith("token="))
-        ?.split("=")[1]
+      setHasTriedFetch(true)
+      
+      // Récupérer le token depuis localStorage (priorité) ou cookies (fallback)
+      let token: string | null = null
+      if (typeof window !== "undefined") {
+        token = localStorage.getItem("token")
+        if (!token) {
+          // Fallback sur les cookies
+          token = document.cookie
+            .split("; ")
+            .find((row) => row.startsWith("token="))
+            ?.split("=")[1] || null
+        }
+      }
 
       if (!token) {
-        setAccounts([])
+        console.warn("[AccountsCarousel] Aucun token trouvé, utilisation des comptes initiaux")
+        // Garder les comptes initiaux si disponibles
+        if (initialAccounts.length > 0) {
+          console.log(`[AccountsCarousel] Utilisation de ${initialAccounts.length} comptes initiaux`)
+          setAccounts(initialAccounts)
+        } else {
+          setAccounts([])
+        }
         return
       }
 
       const API_BASE_URL = getApiBaseUrl()
+      console.log("[AccountsCarousel] Chargement des comptes depuis:", `${API_BASE_URL}/tenant/${TENANT_ID}/compte`)
 
       // Récupérer l'ID de l'utilisateur
       let currentUserId: string | null = null
@@ -69,9 +88,12 @@ export function AccountsCarousel({ accounts: initialAccounts = [] }: AccountsCar
         if (userResponse.ok) {
           const userData = await userResponse.json()
           currentUserId = userData.id
+          console.log("[AccountsCarousel] User ID récupéré:", currentUserId)
+        } else {
+          console.warn("[AccountsCarousel] Erreur lors de la récupération de l'utilisateur:", userResponse.status)
         }
       } catch (error) {
-        console.error("Error fetching user ID:", error)
+        console.error("[AccountsCarousel] Erreur lors de la récupération de l'utilisateur:", error)
       }
 
       // Récupérer les comptes
@@ -85,11 +107,23 @@ export function AccountsCarousel({ accounts: initialAccounts = [] }: AccountsCar
       })
 
       if (!response.ok) {
-        console.error("Error fetching accounts:", response.status)
+        const errorText = await response.text()
+        console.error("[AccountsCarousel] Erreur API:", {
+          status: response.status,
+          statusText: response.statusText,
+          body: errorText,
+        })
+        // En cas d'erreur, garder les comptes initiaux si disponibles
+        if (initialAccounts.length > 0) {
+          setAccounts(initialAccounts)
+        } else {
+          setAccounts([])
+        }
         return
       }
 
       const responseData = await response.json()
+      console.log("[AccountsCarousel] Données reçues:", responseData)
 
       let fetchedAccounts: Account[] = []
 
@@ -105,9 +139,13 @@ export function AccountsCarousel({ accounts: initialAccounts = [] }: AccountsCar
         fetchedAccounts = responseData
       }
 
+      console.log("[AccountsCarousel] Comptes bruts récupérés:", fetchedAccounts.length)
+
       // Filtrer par clientId si disponible
       if (currentUserId) {
+        const beforeFilter = fetchedAccounts.length
         fetchedAccounts = fetchedAccounts.filter((account: any) => account.clientId === currentUserId)
+        console.log(`[AccountsCarousel] Filtrage par clientId: ${beforeFilter} -> ${fetchedAccounts.length}`)
       }
 
       // Adapter les données au format attendu
@@ -122,13 +160,30 @@ export function AccountsCarousel({ accounts: initialAccounts = [] }: AccountsCar
         status: account.status || "",
       }))
 
-      setAccounts(adaptedAccounts)
+      console.log("[AccountsCarousel] Comptes adaptés:", adaptedAccounts.length)
+      
+      // Utiliser les comptes récupérés seulement s'il y en a, sinon garder les initiaux
+      if (adaptedAccounts.length > 0) {
+        setAccounts(adaptedAccounts)
+      } else if (initialAccounts.length > 0) {
+        console.log("[AccountsCarousel] Aucun compte récupéré, utilisation des comptes initiaux")
+        setAccounts(initialAccounts)
+      } else {
+        setAccounts([])
+      }
     } catch (error) {
-      console.error("Error fetching accounts:", error)
+      console.error("[AccountsCarousel] Erreur lors du chargement des comptes:", error)
+      // En cas d'erreur, garder les comptes initiaux si disponibles
+      if (initialAccounts.length > 0) {
+        console.log(`[AccountsCarousel] Erreur, utilisation de ${initialAccounts.length} comptes initiaux`)
+        setAccounts(initialAccounts)
+      } else {
+        setAccounts([])
+      }
     } finally {
       setIsLoading(false)
     }
-  }, [])
+  }, [initialAccounts])
 
   // Charger les comptes au montage et toutes les 30 secondes
   useEffect(() => {
@@ -143,8 +198,21 @@ export function AccountsCarousel({ accounts: initialAccounts = [] }: AccountsCar
   }, [fetchAccounts])
 
   // Filtrer uniquement les comptes actifs avec la fonction normalisée
-  const activeAccounts = accounts.filter((account) => isAccountActive(account.status))
+  const activeAccounts = accounts.filter((account) => {
+    const isActive = isAccountActive(account.status)
+    if (!isActive) {
+      console.log(`[AccountsCarousel] Compte filtré (non actif):`, {
+        id: account.id,
+        name: account.accountName,
+        status: account.status,
+        normalized: account.status,
+      })
+    }
+    return isActive
+  })
   const count = activeAccounts.length
+  
+  console.log(`[AccountsCarousel] Comptes actifs: ${count} sur ${accounts.length} total`)
 
   useEffect(() => {
     if (count <= 1) return
@@ -202,7 +270,7 @@ export function AccountsCarousel({ accounts: initialAccounts = [] }: AccountsCar
     return "+2.5%" // Placeholder - could be calculated from transaction history
   }
 
-  if (isLoading && activeAccounts.length === 0) {
+  if (isLoading && activeAccounts.length === 0 && accounts.length === 0) {
     return (
       <Card className="border-0 shadow-none bg-transparent">
         <CardContent className="p-0">
@@ -213,14 +281,23 @@ export function AccountsCarousel({ accounts: initialAccounts = [] }: AccountsCar
   }
 
   if (activeAccounts.length === 0) {
+    // Afficher un message plus informatif si on a des comptes mais qu'ils ne sont pas actifs
+    if (accounts.length > 0) {
+      console.warn(`[AccountsCarousel] ${accounts.length} comptes trouvés mais aucun n'est actif. Statuts:`, 
+        accounts.map(a => ({ name: a.accountName, status: a.status })))
+    }
     return (
       <Card className="border-dashed border-2 border-muted">
         <CardContent className="flex flex-col items-center justify-center py-16">
           <div className="p-4 rounded-full bg-muted/50 mb-4">
             <Wallet className="h-8 w-8 text-muted-foreground" />
           </div>
-          <h3 className="text-lg font-heading font-semibold mb-2">Aucun compte</h3>
-          <p className="text-muted-foreground text-center">Aucun compte n'est disponible pour le moment.</p>
+          <h3 className="text-lg font-heading font-semibold mb-2">Aucun compte disponible</h3>
+          <p className="text-muted-foreground text-center">
+            {accounts.length > 0 
+              ? `${accounts.length} compte(s) trouvé(s) mais aucun n'est actif.`
+              : "Aucun compte n'est disponible pour le moment."}
+          </p>
         </CardContent>
       </Card>
     )
