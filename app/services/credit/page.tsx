@@ -69,12 +69,36 @@ export default function CreditRequestPage() {
 
         // Filtrer uniquement les comptes courants actifs (avec fonction normalisée)
         const currentAccounts = adaptedAccounts.filter(
-          (account: any) =>
-            isAccountActive(account.status) &&
-            (account.type === "Courant" || account.type === "Courant") &&
-            account.number &&
-            String(account.number).trim() !== "",
+          (account: any) => {
+            const accountType = String(account.type || "").toUpperCase()
+            // Vérifier si c'est un compte courant (plusieurs formats possibles)
+            const isCurrent = 
+              accountType === "COURANT" || 
+              accountType === "CURRENT" || 
+              accountType === "COURANT_CHEQUE" ||
+              accountType === "COURANT CHEQUE" ||
+              accountType.includes("CURRENT") ||
+              accountType.includes("COURANT")
+            const hasValidNumber = account.number && String(account.number).trim() !== ""
+            
+            console.log("[CREDIT] Compte analysé:", {
+              name: account.name,
+              type: account.type,
+              typeUpper: accountType,
+              status: account.status,
+              isActive: isAccountActive(account.status),
+              isCurrent,
+              hasValidNumber,
+              willBeIncluded: isAccountActive(account.status) && isCurrent && hasValidNumber
+            })
+            
+            return isAccountActive(account.status) && isCurrent && hasValidNumber
+          }
         )
+        
+        console.log("[CREDIT] Comptes filtrés pour crédit:", currentAccounts.length)
+        console.log("[CREDIT] Liste des comptes:", currentAccounts)
+        
         setAccounts(currentAccounts)
       } else {
         setAccounts([])
@@ -293,12 +317,23 @@ export default function CreditRequestPage() {
                 </Alert>
               )}
 
+              {!isLoadingAccounts && accounts.length === 0 && (
+                <Alert className="mb-6 border-amber-200 bg-amber-50">
+                  <AlertCircle className="h-4 w-4 text-amber-600" />
+                  <AlertDescription className="text-amber-800">
+                    <strong>Aucun compte actif trouvé.</strong>
+                    <br />
+                    Pour demander un crédit, vous devez avoir un compte actif. Veuillez contacter votre agence ou ouvrir un compte.
+                  </AlertDescription>
+                </Alert>
+              )}
+
               <form onSubmit={handleSubmitCredit} className="space-y-6">
                 <div className="space-y-2">
                   <Label htmlFor="account">Compte</Label>
-                  <Select value={selectedAccount} onValueChange={setSelectedAccount} required>
+                  <Select value={selectedAccount} onValueChange={setSelectedAccount} required disabled={accounts.length === 0}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Sélectionnez un compte" />
+                      <SelectValue placeholder={isLoadingAccounts ? "Chargement..." : accounts.length === 0 ? "Aucun compte disponible" : "Sélectionnez un compte"} />
                     </SelectTrigger>
                     <SelectContent>
                       {isLoadingAccounts ? (
@@ -307,7 +342,7 @@ export default function CreditRequestPage() {
                         </SelectItem>
                       ) : accounts.length === 0 ? (
                         <SelectItem value="no-accounts" disabled>
-                          Aucun compte disponible
+                          Aucun compte actif disponible
                         </SelectItem>
                       ) : (
                         accounts.map((account) => (

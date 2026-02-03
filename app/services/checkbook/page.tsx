@@ -71,12 +71,20 @@ export default function CheckbookRequestPage() {
         const currentAccounts = adaptedAccounts.filter(
           (account: any) => {
             const accountType = String(account.type || "").toUpperCase()
-            const isCurrent = accountType === "COURANT" || accountType === "CURRENT" || accountType.includes("CURRENT")
+            // Vérifier si c'est un compte courant (plusieurs formats possibles)
+            const isCurrent = 
+              accountType === "COURANT" || 
+              accountType === "CURRENT" || 
+              accountType === "COURANT_CHEQUE" ||
+              accountType === "COURANT CHEQUE" ||
+              accountType.includes("CURRENT") ||
+              accountType.includes("COURANT")
             const hasValidNumber = account.number && String(account.number).trim() !== ""
             
             console.log("[CHECKBOOK] Compte analysé:", {
               name: account.name,
               type: account.type,
+              typeUpper: accountType,
               status: account.status,
               isActive: isAccountActive(account.status),
               isCurrent,
