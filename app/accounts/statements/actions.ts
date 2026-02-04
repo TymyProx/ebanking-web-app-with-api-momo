@@ -397,8 +397,8 @@ export async function getTransactionsByNumCompte(numCompte: string) {
   try {
     const url = `${API_BASE_URL}/tenant/${TENANT_ID}/transactions`
 
-    console.log("[v0] Fetching from:", url)
-    console.log("[v0] Looking for numCompte:", numCompte)
+    console.log("[STATEMENTS] Fetching from:", url)
+    console.log("[STATEMENTS] Looking for numCompte:", numCompte)
 
     const response = await fetch(url, {
       method: "GET",
@@ -410,7 +410,7 @@ export async function getTransactionsByNumCompte(numCompte: string) {
     })
 
     if (!response.ok) {
-      console.error("[v0] Erreur API:", response.status, response.statusText)
+      console.error("[STATEMENTS] Erreur API:", response.status, response.statusText)
       return { success: false, data: [], error: `Erreur API: ${response.status}` }
     }
 
@@ -428,14 +428,65 @@ export async function getTransactionsByNumCompte(numCompte: string) {
       allTransactions = Array.isArray(data.data) ? data.data : [data.data]
     }
 
-    console.log("[v0] Total transactions récupérées:", allTransactions.length)
+    console.log("[STATEMENTS] Total transactions récupérées:", allTransactions.length)
     if (allTransactions.length > 0) {
-      console.log("[v0] Exemple de transaction:", allTransactions[0])
+      console.log("[STATEMENTS] Exemple de transaction:", allTransactions[0])
     }
 
-    const filteredTransactions = allTransactions.filter((txn: any) => txn.numCompte === numCompte)
+    // 1. Transactions où le compte est le compte source (numCompte/accountId) - généralement DEBIT
+    const directTransactions = allTransactions.filter((txn: any) => {
+      const txnAccountNumber = txn.numCompte || txn.accountNumber || txn.accountId
+      return txnAccountNumber === numCompte
+    })
 
-    console.log("[v0] Transactions filtrées par numCompte", numCompte, ":", filteredTransactions.length)
+    console.log("[STATEMENTS] Transactions directes (DEBIT):", directTransactions.length)
+
+    // 2. Transactions où le compte est le compte crédité (creditAccount) - CREDIT
+    const creditTransactions = allTransactions
+      .filter((txn: any) => {
+        const creditAccount = txn.creditAccount
+        return creditAccount && creditAccount === numCompte
+      })
+      .map((txn: any) => {
+        // Créer une copie de la transaction avec txnType = "CREDIT" et numCompte = creditAccount
+        return {
+          ...txn,
+          txnType: "CREDIT" as const,
+          numCompte: txn.creditAccount,
+          accountId: txn.creditAccount,
+          // Conserver l'ID original pour éviter les doublons
+          originalTxnId: txn.txnId || txn.id,
+        }
+      })
+
+    console.log("[STATEMENTS] Transactions créditées (CREDIT):", creditTransactions.length)
+
+    // 3. Combiner les deux listes
+    const allUserTransactions = [...directTransactions, ...creditTransactions]
+
+    // 4. Supprimer les doublons basés sur txnId (si une transaction est à la fois directe et créditée)
+    const uniqueTransactions = new Map<string, any>()
+    allUserTransactions.forEach((txn: any) => {
+      const key = txn.txnId || txn.id || `${txn.numCompte}_${txn.valueDate}_${txn.montantOperation}`
+      if (!uniqueTransactions.has(key)) {
+        uniqueTransactions.set(key, txn)
+      } else {
+        // Si la transaction existe déjà, prioriser celle avec txnType = "CREDIT" si applicable
+        const existing = uniqueTransactions.get(key)!
+        if (txn.txnType === "CREDIT" && existing.txnType !== "CREDIT") {
+          uniqueTransactions.set(key, txn)
+        }
+      }
+    })
+
+    const filteredTransactions = Array.from(uniqueTransactions.values())
+
+    console.log("[STATEMENTS] Transactions filtrées pour le compte", numCompte, ":", filteredTransactions.length)
+    console.log("[STATEMENTS] Détail:", {
+      direct: directTransactions.length,
+      credit: creditTransactions.length,
+      total: filteredTransactions.length
+    })
 
     const sortedTransactions = filteredTransactions.sort((a: any, b: any) => {
       const dateA = new Date(a.valueDate || 0).getTime()
@@ -448,7 +499,7 @@ export async function getTransactionsByNumCompte(numCompte: string) {
       data: sortedTransactions,
     }
   } catch (error) {
-    console.error("[v0] Erreur lors de la récupération des transactions:", error)
+    console.error("[STATEMENTS] Erreur lors de la récupération des transactions:", error)
     return {
       success: false,
       data: [],

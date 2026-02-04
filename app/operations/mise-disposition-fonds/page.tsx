@@ -406,10 +406,10 @@ export default function FundsProvisionPage() {
                   <Input
                     id="numCni"
                     type="text"
-                    inputMode="numeric"
                     value={formData.numCni || ""}
                     onChange={(e) => {
-                      const cleaned = handleNumericChange(e.target.value)
+                      // Accepter uniquement les caractères alphanumériques sans espaces
+                      const cleaned = e.target.value.replace(/[^a-zA-Z0-9]/g, "")
                       setFormData({ ...formData, numCni: cleaned })
                     }}
                     placeholder="Numéro de carte nationale d'identité"

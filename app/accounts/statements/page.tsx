@@ -200,7 +200,8 @@ export default function StatementsPage() {
         sixMonthsBeforeEnd.setMonth(sixMonthsBeforeEnd.getMonth() - 6)
 
         const exceedsSixMonths = start < sixMonthsBeforeEnd
-        const effectiveStartDate = exceedsSixMonths ? sixMonthsBeforeEnd : start
+        // Utiliser toujours la date de début demandée, pas de limitation à 6 mois
+        const effectiveStartDate = start
 
         console.log("[STATEMENTS] 🔍 Analyse des transactions...")
         console.log("[STATEMENTS] Compte sélectionné:", selectedAccount.number)
@@ -219,7 +220,8 @@ export default function StatementsPage() {
             console.log(`[STATEMENTS] Transaction ${idx + 1}:`, {
               date: txn.valueDate,
               description: txn.description,
-              amount: txn.montantOperation
+              amount: txn.montantOperation,
+              txnType: txn.txnType
             })
           })
         }
@@ -281,16 +283,44 @@ export default function StatementsPage() {
         let calculatedBalance = openingBalance
 
         const cleanedTransactions = sortedTransactions.map((txn: any, index: number) => {
-          const amount = Number.parseFloat(String(txn?.montantOperation ?? 0))
+          let amount = Number.parseFloat(String(txn?.montantOperation ?? 0))
+          
+          // Détecter les mises à disposition des fonds
+          const description = String(txn.description || "").toLowerCase()
+          const isFundsProvision = 
+            description.includes("mise à disposition") ||
+            description.includes("mise a disposition") ||
+            description.includes("disposition des fonds") ||
+            txn.referenceOperation?.startsWith("RET-") ||
+            txn.referenceOperation?.startsWith("MDF-") ||
+            txn.fullNameBenef ||
+            txn.numCni ||
+            txn.agence
+          
+          // Pour les mises à disposition des fonds, forcer le type à DEBIT et le montant à négatif
+          let txnType = txn.txnType || ""
+          if (isFundsProvision) {
+            txnType = "DEBIT"
+            // Si le montant est positif, le rendre négatif pour un débit
+            if (amount > 0) {
+              amount = -amount
+            }
+          } else {
+            // Pour les autres transactions, déterminer le type basé sur le signe du montant si txnType n'est pas défini
+            if (!txnType) {
+              txnType = amount < 0 ? "DEBIT" : "CREDIT"
+            }
+          }
+          
           calculatedBalance += amount // Add transaction to get new balance
 
           const transactionData = {
             referenceOperation: txn.referenceOperation || "",
-            montantOperation: txn.montantOperation || 0,
+            montantOperation: amount, // Utiliser le montant corrigé
             description: txn.description || "",
             valueDate: txn.valueDate || "",
             dateEcriture: txn.dateEcriture || "",
-            txnType: txn.txnType || "",
+            txnType: txnType,
             balanceOuverture: index === 0 ? openingBalance : undefined,
             balanceFermeture: index === sortedTransactions.length - 1 ? calculatedBalance : undefined,
             currentTransactionBalance: calculatedBalance, // Balance after this transaction
@@ -437,9 +467,19 @@ export default function StatementsPage() {
 
     // Filtre par type (débit/crédit)
     if (filterType === "debit") {
-      filtered = filtered.filter((txn) => Number.parseFloat(String(txn.montantOperation ?? 0)) < 0)
+      filtered = filtered.filter((txn) => {
+        const amount = Number.parseFloat(String(txn.montantOperation ?? 0))
+        const txnType = String(txn.txnType || "").toUpperCase()
+        // Un débit est soit un montant négatif, soit un txnType DEBIT
+        return amount < 0 || txnType === "DEBIT"
+      })
     } else if (filterType === "credit") {
-      filtered = filtered.filter((txn) => Number.parseFloat(String(txn.montantOperation ?? 0)) >= 0)
+      filtered = filtered.filter((txn) => {
+        const amount = Number.parseFloat(String(txn.montantOperation ?? 0))
+        const txnType = String(txn.txnType || "").toUpperCase()
+        // Un crédit est soit un montant positif, soit un txnType CREDIT
+        return amount >= 0 && txnType !== "DEBIT"
+      })
     }
 
     // Filtre par montant
@@ -1004,22 +1044,34 @@ export default function StatementsPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredTransactions.map((txn, index) => (
-                    <TableRow key={index}>
-                      <TableCell className="font-mono text-sm">
-                        {txn.valueDate ? new Date(txn.valueDate).toLocaleDateString("fr-FR") : "N/A"}
-                      </TableCell>
-                      <TableCell className="font-mono text-sm">{txn.referenceOperation || "N/A"}</TableCell>
-                      <TableCell className="max-w-[300px] truncate">{txn.description || "N/A"}</TableCell>
-                      <TableCell
-                        className={`text-right font-semibold ${
-                          txn.montantOperation >= 0 ? "text-green-600" : "text-red-600"
-                        }`}
-                      >
-                        {formatAmount(txn.montantOperation)} GNF
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                  {filteredTransactions.map((txn, index) => {
+                    const txnType = String(txn.txnType || "").toUpperCase()
+                    const baseAmount = Number.parseFloat(String(txn.montantOperation || 0))
+                    
+                    // Déterminer si c'est un débit ou un crédit
+                    const isDebit = txnType === "DEBIT" || baseAmount < 0
+                    const isCredit = txnType === "CREDIT" || (baseAmount >= 0 && txnType !== "DEBIT")
+                    
+                    // Montant avec signe : négatif pour DEBIT, positif pour CREDIT (comme dans mes-virements)
+                    const signedAmount = isDebit ? -Math.abs(baseAmount) : Math.abs(baseAmount)
+                    
+                    return (
+                      <TableRow key={index}>
+                        <TableCell className="font-mono text-sm">
+                          {txn.valueDate ? new Date(txn.valueDate).toLocaleDateString("fr-FR") : "N/A"}
+                        </TableCell>
+                        <TableCell className="font-mono text-sm">{txn.referenceOperation || "N/A"}</TableCell>
+                        <TableCell className="max-w-[300px] truncate">{txn.description || "N/A"}</TableCell>
+                        <TableCell
+                          className={`text-right font-semibold ${
+                            isDebit ? "text-red-600" : isCredit ? "text-green-600" : "text-gray-600"
+                          }`}
+                        >
+                          {signedAmount >= 0 ? "+" : ""}{formatAmount(signedAmount)} GNF
+                        </TableCell>
+                      </TableRow>
+                    )
+                  })}
                 </TableBody>
               </Table>
                 )}
@@ -1156,8 +1208,12 @@ export default function StatementsPage() {
         let totalCredit = 0
         transactions.forEach((txn) => {
           const m = Number(txn?.montantOperation ?? 0)
-          if (m < 0) totalDebit += Math.abs(m)
-          else totalCredit += m
+          const txnType = String(txn?.txnType || "").toUpperCase()
+          if (txnType === "DEBIT") {
+            totalDebit += Math.abs(m)
+          } else {
+            totalCredit += Math.abs(m)
+          }
         })
         // mêmes champs
         const leftData = [
@@ -1358,10 +1414,13 @@ export default function StatementsPage() {
           const reference = safe(txn?.referenceOperation || "N/A").substring(0, 18)
           const dateOp = fmtDate(txn?.dateEcriture)
           const m = Number(txn?.montantOperation ?? 0)
+          const txnType = String(txn?.txnType || "").toUpperCase()
           const montant = money(Math.abs(m))
 
           // Add transaction amount to current balance
-          currentBalance += m
+          // Pour DEBIT, le montant est négatif, pour CREDIT il est positif
+          const amountToAdd = txnType === "DEBIT" ? -Math.abs(m) : Math.abs(m)
+          currentBalance += amountToAdd
           const soldeText = money(Math.trunc(currentBalance))
 
           doc.setTextColor(...blackText)
@@ -1370,10 +1429,14 @@ export default function StatementsPage() {
           doc.text(reference, tableX + col1 + col2 + col3 / 2, y + 6, { align: "center" })
           doc.text(dateOp, tableX + col1 + col2 + col3 + col4 / 2, y + 6, { align: "center" })
 
-          if (m < 0) {
+          if (txnType === "DEBIT") {
             doc.setTextColor(...blackText)
             doc.text(montant, tableX + col1 + col2 + col3 + col4 + col5 / 2, y + 6, { align: "center" })
+            // Colonne crédit vide
+            doc.text("", tableX + col1 + col2 + col3 + col4 + col5 + col6 / 2, y + 6, { align: "center" })
           } else {
+            // Colonne débit vide
+            doc.text("", tableX + col1 + col2 + col3 + col4 + col5 / 2, y + 6, { align: "center" })
             doc.setTextColor(...primaryGreen)
             doc.text(montant, tableX + col1 + col2 + col3 + col4 + col5 + col6 / 2, y + 6, { align: "center" })
             doc.setTextColor(...blackText)
@@ -2223,8 +2286,12 @@ async function generateExcelStatement(
 
     transactions.forEach((txn) => {
       const amount = Number.parseFloat(String(txn?.montantOperation ?? 0))
-      if (amount < 0) totalDebit += Math.abs(amount)
-      else totalCredit += amount
+      const txnType = String(txn?.txnType || "").toUpperCase()
+      if (txnType === "DEBIT") {
+        totalDebit += Math.abs(amount)
+      } else {
+        totalCredit += Math.abs(amount)
+      }
     })
 
     const workbook = new ExcelJS.Workbook()
@@ -2432,10 +2499,13 @@ async function generateExcelStatement(
     // Rows
     transactions.forEach((txn) => {
       const amount = Number.parseFloat(String(txn?.montantOperation ?? 0))
-      const debit = amount < 0 ? formatAmount(Math.round(Math.abs(amount))) : ""
-      const credit = amount >= 0 ? formatAmount(Math.round(amount)) : ""
+      const txnType = String(txn?.txnType || "").toUpperCase()
+      const debit = txnType === "DEBIT" ? formatAmount(Math.round(Math.abs(amount))) : ""
+      const credit = txnType !== "DEBIT" ? formatAmount(Math.round(Math.abs(amount))) : ""
 
-      currentBalance += amount
+      // Pour DEBIT, le montant est négatif, pour CREDIT il est positif
+      const amountToAdd = txnType === "DEBIT" ? -Math.abs(amount) : Math.abs(amount)
+      currentBalance += amountToAdd
       const solde = formatAmount(Math.round(currentBalance))
 
       const row = worksheet.getRow(currentRow)
