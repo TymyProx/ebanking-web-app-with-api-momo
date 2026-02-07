@@ -3,6 +3,9 @@ process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0"
 
 import { cookies } from "next/headers"
 import { getApiBaseUrl, TENANT_ID } from "@/lib/api-url"
+import { generateStandardizedPDF, formatAmount, type PDFContentOptions } from "@/lib/pdf-generator"
+import { readFile } from "fs/promises"
+import { join } from "path"
 
 const API_BASE_URL = getApiBaseUrl()
 
@@ -98,113 +101,106 @@ async function generateFundsProvisionPDF(data: {
   clientEmail?: string
 }): Promise<Uint8Array> {
   const { jsPDF } = await import("jspdf")
-  const doc = new jsPDF()
+  const CONTENT_LEFT = 15
   const pageWidth = 210
-  const pageHeight = 297
   
-  const blackText: [number, number, number] = [0, 0, 0]
-  const grayText: [number, number, number] = [100, 100, 100]
+  const blackText: [number, number, number] = [15, 23, 42]
+  const grayText: [number, number, number] = [100, 116, 139]
   const primaryGreen: [number, number, number] = [11, 132, 56]
   
-  let yPos = 15
+  const subtitle = `Date d'émission: ${new Date().toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })}`
   
-  // En-tête
-  doc.setFontSize(16)
-  doc.setFont("helvetica", "bold")
-  doc.setTextColor(...primaryGreen)
-  doc.text("BANQUE NATIONALE DE GUINÉE", pageWidth / 2, yPos, { align: "center" })
-  
-  yPos += 8
-  doc.setFontSize(10)
-  doc.setFont("helvetica", "normal")
-  doc.setTextColor(...grayText)
-  doc.text("6ème Avenue Boulevard DIALLO Telly BP: 1781 Conakry", pageWidth / 2, yPos, { align: "center" })
-  
-  yPos += 15
-  doc.setFontSize(14)
-  doc.setFont("helvetica", "bold")
-  doc.setTextColor(...blackText)
-  doc.text("MISE À DISPOSITION DES FONDS", pageWidth / 2, yPos, { align: "center" })
-  
-  yPos += 10
-  doc.setFontSize(9)
-  doc.setFont("helvetica", "normal")
-  doc.setTextColor(...grayText)
-  doc.text(`Date d'émission: ${new Date().toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })}`, pageWidth / 2, yPos, { align: "center" })
-  
-  yPos += 15
-  
-  // Informations de l'opération
-  doc.setFontSize(10)
-  doc.setFont("helvetica", "bold")
-  doc.setTextColor(...blackText)
-  doc.text("RÉSUMÉ DE L'OPÉRATION", 15, yPos)
-  
-  yPos += 8
-  
-  // Fonction pour formater le montant sans slash
-  const formatAmount = (amount: number) => {
-    return amount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ")
+  // Charger le logo depuis le système de fichiers pour les server actions
+  let logoDataUrl: string | undefined
+  try {
+    const logoPath = join(process.cwd(), "public", "images", "logo-bng.png")
+    const logoBuffer = await readFile(logoPath)
+    logoDataUrl = `data:image/png;base64,${logoBuffer.toString("base64")}`
+  } catch (error) {
+    console.warn("[MDF] Impossible de charger le logo BNG:", error)
   }
   
-  const infoItems = [
-    { label: "Code de retrait", value: data.withdrawalCode },
-    { label: "Compte à débiter", value: data.compteAdebiter },
-    { label: "Montant", value: `${formatAmount(data.montant)} GNF` },
-    { label: "Nom du bénéficiaire", value: data.fullNameBenef },
-    { label: "Numéro CNI", value: data.numCni },
-    { label: "Agence de retrait", value: data.agence },
-  ]
+  // Utiliser le service standardisé
+  const content: PDFContentOptions = {
+    title: "MISE À DISPOSITION DES FONDS",
+    subtitle,
+    drawContent: (doc, y) => {
+      let yPos = y
+      
+      // Informations de l'opération
+      doc.setFontSize(10)
+      doc.setFont("helvetica", "bold")
+      doc.setTextColor(...blackText)
+      doc.text("RÉSUMÉ DE L'OPÉRATION", CONTENT_LEFT, yPos)
+      
+      yPos += 8
+      
+      // Formater le montant sans slash, avec espaces comme séparateurs de milliers
+      // S'assurer que le montant est un nombre
+      const montantNum = typeof data.montant === "number" ? data.montant : Number(data.montant) || 0
+      // Formater avec des espaces comme séparateurs (pas de slash)
+      const formattedAmount = montantNum.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ")
+      
+      const infoItems = [
+        { label: "Code de retrait", value: data.withdrawalCode },
+        { label: "Compte à débiter", value: data.compteAdebiter },
+        { label: "Montant", value: `${formattedAmount} GNF` },
+        { label: "Nom du bénéficiaire", value: data.fullNameBenef },
+        { label: "Numéro CNI", value: data.numCni },
+        { label: "Agence de retrait", value: data.agence },
+      ]
+      
+      doc.setFontSize(9)
+      doc.setFont("helvetica", "normal")
+      infoItems.forEach((item) => {
+        doc.setTextColor(...grayText)
+        doc.text(`${item.label}:`, CONTENT_LEFT, yPos)
+        doc.setTextColor(...blackText)
+        doc.setFont("helvetica", "bold")
+        const valueX = 80
+        doc.text(item.value, valueX, yPos)
+        doc.setFont("helvetica", "normal")
+        yPos += 7
+      })
+      
+      yPos += 10
+      
+      // Instructions importantes
+      doc.setFontSize(10)
+      doc.setFont("helvetica", "bold")
+      doc.setTextColor(...primaryGreen)
+      doc.text("INSTRUCTIONS IMPORTANTES", CONTENT_LEFT, yPos)
+      
+      yPos += 8
+      doc.setFontSize(8)
+      doc.setFont("helvetica", "normal")
+      doc.setTextColor(...blackText)
+      
+      const instructions = [
+        `Le bénéficiaire doit se présenter à l'agence ${data.agence} avec:`,
+        "- Ce document (ou une copie)",
+        "- Une pièce d'identité valide (CNI)",
+        `- Le code de retrait: ${data.withdrawalCode}`,
+        "",
+        "Le bénéficiaire devra présenter sa CNI correspondant au numéro indiqué ci-dessus.",
+        "Le retrait doit être effectué dans un délai de 30 jours à compter de la date d'émission.",
+      ]
+      
+      instructions.forEach((instruction) => {
+        doc.text(instruction, CONTENT_LEFT, yPos)
+        yPos += 5
+      })
+      
+      return yPos + 10
+    },
+  }
   
-  doc.setFontSize(9)
-  doc.setFont("helvetica", "normal")
-  infoItems.forEach((item) => {
-    doc.setTextColor(...grayText)
-    doc.text(`${item.label}:`, 15, yPos)
-    doc.setTextColor(...blackText)
-    doc.setFont("helvetica", "bold")
-    const valueX = 80
-    doc.text(item.value, valueX, yPos)
-    doc.setFont("helvetica", "normal")
-    yPos += 7
+  const doc = await generateStandardizedPDF(content, {
+    title: "MISE À DISPOSITION DES FONDS",
+    subtitle,
+    includeLogo: true,
+    logoDataUrl: logoDataUrl,
   })
-  
-  yPos += 10
-  
-  // Instructions importantes
-  doc.setFontSize(10)
-  doc.setFont("helvetica", "bold")
-  doc.setTextColor(...primaryGreen)
-  doc.text("INSTRUCTIONS IMPORTANTES", 15, yPos)
-  
-  yPos += 8
-  doc.setFontSize(8)
-  doc.setFont("helvetica", "normal")
-  doc.setTextColor(...blackText)
-  
-  const instructions = [
-    `Le bénéficiaire doit se présenter à l'agence ${data.agence} avec:`,
-    "- Ce document (ou une copie)",
-    "- Une pièce d'identité valide (CNI)",
-    `- Le code de retrait: ${data.withdrawalCode}`,
-    "",
-    "Le bénéficiaire devra présenter sa CNI correspondant au numéro indiqué ci-dessus.",
-    "Le retrait doit être effectué dans un délai de 30 jours à compter de la date d'émission.",
-  ]
-  
-  instructions.forEach((instruction) => {
-    doc.text(instruction, 15, yPos)
-    yPos += 5
-  })
-  
-  // Pied de page
-  yPos = pageHeight - 20
-  doc.setFontSize(7)
-  doc.setTextColor(...grayText)
-  doc.text("Ce document est généré automatiquement et fait foi de la demande de mise à disposition des fonds.", pageWidth / 2, yPos, { align: "center" })
-  
-  yPos += 5
-  doc.text("Pour toute question, contactez le service client au +224 XXX XXX XXX", pageWidth / 2, yPos, { align: "center" })
   
   return doc.output("arraybuffer") as unknown as Uint8Array
 }

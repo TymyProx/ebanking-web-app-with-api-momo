@@ -319,16 +319,12 @@ export default function LoginPage() {
                         )}
                       </Button>
 
-                      {/* Forgot Password - Centered between buttons */}
-                      <Button
-                        type="button"
-                        variant="link"
-                        className="w-full text-xs text-white/90 hover:text-white font-medium h-auto py-1.5 bg-transparent hover:bg-transparent transition-all my-2.5"
-                      >
-                        <span className="flex items-center justify-center space-x-1.5 drop-shadow-lg">
-                          <span>Mot de passe oublié?</span>
-                        </span>
-                      </Button>
+                      {/* Séparateur */}
+                      <div className="relative my-3">
+                        <div className="absolute inset-0 flex items-center">
+                          <div className="w-full border-t border-white/30"></div>
+                        </div>
+                      </div>
 
                       {/* S'inscrire Button */}
                       <Button

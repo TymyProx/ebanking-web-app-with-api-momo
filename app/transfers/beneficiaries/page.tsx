@@ -447,8 +447,8 @@ export default function BeneficiariesPage() {
       return
     }
 
-    if (digitsOnly.length !== 11) {
-      setAccountNumberError("Le numéro de compte doit contenir exactement 11 chiffres")
+    if (digitsOnly.length !== 10) {
+      setAccountNumberError("Le numéro de compte doit contenir exactement 10 chiffres")
       return false
     }
 
@@ -614,9 +614,9 @@ export default function BeneficiariesPage() {
       }
     }
 
-    startTransition(() => {
-      addAndActivateAction(formData)
-    })
+    // Sauvegarder les données et ouvrir le modal OTP
+    setPendingBeneficiaryData(formData)
+    setShowOtpModal(true)
   }
 
   const handleEditBeneficiary = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -807,25 +807,22 @@ export default function BeneficiariesPage() {
     setIsDetailsDialogOpen(true)
   }
 
-  const handleOtpVerified = async (success: boolean, message?: string) => {
+  const handleOtpVerified = async (payload: { otpId?: string | null; referenceId?: string }) => {
+    if (!pendingBeneficiaryData) return
+
     setShowOtpModal(false)
-    if (success) {
-      toast({
-        title: "Succès",
-        description: "Le bénéficiaire a été ajouté et activé avec succès.",
-        variant: "success",
-      })
-      await loadBeneficiaries()
-      resetForm()
-      setPendingBeneficiaryData(null)
-      setOtpReferenceId(null)
-    } else {
-      toast({
-        title: "Erreur OTP",
-        description: message || "La validation OTP a échoué. Veuillez réessayer.",
-        variant: "destructive",
-      })
-    }
+    setOtpReferenceId(payload.referenceId || null)
+
+    // Soumettre le formulaire après vérification OTP
+    startTransition(() => {
+      addAndActivateAction(pendingBeneficiaryData)
+    })
+  }
+
+  const handleOtpCancel = () => {
+    setShowOtpModal(false)
+    setPendingBeneficiaryData(null)
+    setOtpReferenceId(null)
   }
 
   return (
@@ -937,6 +934,7 @@ export default function BeneficiariesPage() {
                             placeholder="Code banque"
                             disabled
                             className="bg-gray-50"
+                            maxLength={3}
                             required
                           />
                         ) : (
@@ -969,8 +967,8 @@ export default function BeneficiariesPage() {
                     <Input
                       id="codeAgence"
                       name="codeAgence"
-                      placeholder="Ex: 00001"
-                      maxLength={5}
+                      placeholder="Ex: 001"
+                      maxLength={3}
                       onChange={handleRibFieldChange}
                       required
                     />
@@ -985,13 +983,13 @@ export default function BeneficiariesPage() {
                         validateAccountNumber(e.target.value)
                         handleRibFieldChange()
                       }}
-                      placeholder="12345678901"
-                      maxLength={11}
-                      pattern="[0-9]{11}"
+                      placeholder="1234567890"
+                      maxLength={10}
+                      pattern="[0-9]{10}"
                       required
                     />
                     {accountNumberError && <p className="text-sm text-red-600">{accountNumberError}</p>}
-                    <p className="text-sm text-muted-foreground">11 chiffres uniquement</p>
+                    <p className="text-sm text-muted-foreground">10 chiffres uniquement</p>
                   </div>
 
                   <div className="space-y-2">
@@ -999,8 +997,8 @@ export default function BeneficiariesPage() {
                     <Input
                       id="cleRib"
                       name="cleRib"
-                      placeholder="Ex: 89"
-                      maxLength={2}
+                      placeholder="Ex: 089"
+                      maxLength={3}
                       onChange={handleRibFieldChange}
                       required
                     />
@@ -1630,6 +1628,7 @@ export default function BeneficiariesPage() {
                           placeholder="Code banque"
                           disabled
                           className="bg-gray-50"
+                          maxLength={3}
                           required
                         />
                       ) : (
@@ -1663,8 +1662,8 @@ export default function BeneficiariesPage() {
                     id="edit-codeAgence"
                     name="codeAgence"
                     defaultValue={editingBeneficiary?.codagence || ""}
-                    placeholder="Ex: 00001"
-                    maxLength={5}
+                    placeholder="Ex: 001"
+                    maxLength={3}
                     onChange={handleRibFieldChange}
                     required
                   />
@@ -1680,9 +1679,9 @@ export default function BeneficiariesPage() {
                       validateAccountNumber(e.target.value)
                       handleRibFieldChange()
                     }}
-                    placeholder="12345678901"
-                    maxLength={11}
-                    pattern="[0-9]{11}"
+                    placeholder="1234567890"
+                    maxLength={10}
+                    pattern="[0-9]{10}"
                     required
                   />
                   {accountNumberError && <p className="text-sm text-red-600">{accountNumberError}</p>}
@@ -1694,8 +1693,8 @@ export default function BeneficiariesPage() {
                     id="edit-cleRib"
                     name="cleRib"
                     defaultValue={editingBeneficiary?.clerib || ""}
-                    placeholder="Ex: 89"
-                    maxLength={2}
+                    placeholder="Ex: 089"
+                    maxLength={3}
                     onChange={handleRibFieldChange}
                     required
                   />
@@ -1749,6 +1748,7 @@ export default function BeneficiariesPage() {
         open={showOtpModal}
         onOpenChange={setShowOtpModal}
         onVerified={handleOtpVerified}
+        onCancel={handleOtpCancel}
         purpose="ADD_BENEFICIARY"
         referenceId={otpReferenceId || undefined}
         title="🔐 Confirmer l'ajout du bénéficiaire"

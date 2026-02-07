@@ -17,6 +17,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { getAccounts } from "../../accounts/actions"
 import { isAccountActive } from "@/lib/status-utils"
 import { handleNumericChange, toNumber } from "@/lib/numeric-input"
+import { OtpModal } from "@/components/otp-modal"
 
 export default function FundsProvisionPage() {
   const [selectedAccount, setSelectedAccount] = useState<string>("")
@@ -36,6 +37,10 @@ export default function FundsProvisionPage() {
   const [accounts, setAccounts] = useState<any[]>([])
   const [isLoadingAccounts, setIsLoadingAccounts] = useState(true)
   const [balanceError, setBalanceError] = useState<string>("")
+  
+  // États pour l'OTP
+  const [showOtpModal, setShowOtpModal] = useState(false)
+  const [pendingFormData, setPendingFormData] = useState<Record<string, any> | null>(null)
 
   useEffect(() => {
     loadAccounts()
@@ -143,16 +148,32 @@ export default function FundsProvisionPage() {
       }
     }
     
+    // Sauvegarder les données du formulaire et ouvrir le modal OTP
+    setPendingFormData({
+      compteAdebiter: selectedAccount,
+      montant: toNumber(formData.montant) || 0,
+      fullNameBenef: formData.fullNameBenef || "",
+      numCni: formData.numCni || "",
+      agence: formData.agence || "",
+      statut: "EN_ATTENTE",
+    })
+    setShowOtpModal(true)
+  }
+
+  const handleOtpVerified = async (payload: { otpId?: string | null; referenceId?: string }) => {
+    if (!pendingFormData) return
+
     setIsSubmitting(true)
+    setSubmitState(null)
+    setShowOtpModal(false)
 
     try {
       const result = await submitFundsProvisionRequest({
-        compteAdebiter: selectedAccount,
-        montant: toNumber(formData.montant) || 0,
-        fullNameBenef: formData.fullNameBenef || "",
-        numCni: formData.numCni || "",
-        agence: formData.agence || "",
-        statut: "EN_ATTENTE",
+        compteAdebiter: pendingFormData.compteAdebiter,
+        montant: pendingFormData.montant,
+        fullNameBenef: pendingFormData.fullNameBenef,
+        numCni: pendingFormData.numCni,
+        agence: pendingFormData.agence,
       })
 
       setSubmitState({
@@ -160,18 +181,28 @@ export default function FundsProvisionPage() {
         reference: result.withdrawalCode || result.data?.reference || result.reference || "Demande enregistrée",
       })
 
+      // Réinitialiser le formulaire
       setFormData({})
       setSelectedAccount("")
       setBalanceError("")
-      loadRequests()
+      setPendingFormData(null)
+
+      // Recharger la liste des demandes
+      await loadRequests()
     } catch (error: any) {
+      console.error("Erreur lors de la soumission:", error)
       setSubmitState({
         success: false,
-        error: error.message || "Erreur lors de la soumission",
+        error: error.message || "Une erreur est survenue lors de la soumission de la demande",
       })
     } finally {
       setIsSubmitting(false)
     }
+  }
+
+  const handleOtpCancel = () => {
+    setShowOtpModal(false)
+    setPendingFormData(null)
   }
 
   const handleViewDetails = async (request: any) => {
@@ -553,6 +584,19 @@ export default function FundsProvisionPage() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Modal OTP */}
+      <OtpModal
+        open={showOtpModal}
+        onOpenChange={setShowOtpModal}
+        onVerified={handleOtpVerified}
+        onCancel={handleOtpCancel}
+        purpose="mise_disposition_fonds"
+        title="Vérification OTP"
+        description="Veuillez entrer le code de vérification que nous vous avons envoyé pour confirmer votre demande de mise à disposition des fonds."
+        deliveryMethod="EMAIL"
+        autoGenerate={true}
+      />
     </div>
   )
 }

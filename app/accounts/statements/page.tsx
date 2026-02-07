@@ -33,6 +33,7 @@ import { getAccounts, getAccountById } from "../actions"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { normalizeAccountStatus } from "@/lib/status-utils"
 import jsPDF from "jspdf"
+import { generateStandardizedPDF, formatAmount, savePDF, type PDFContentOptions } from "@/lib/pdf-generator"
 import * as XLSX from "xlsx" // Added import for Excel generation
 import ExcelJS from "exceljs" // For better Excel formatting and images
 
@@ -1092,117 +1093,30 @@ export default function StatementsPage() {
     closingBalance: number,
   ) {
     try {
-      const doc = new jsPDF()
-      const pageWidth = 210
-      const pageHeight = 297
-      // =========================
-      // PALETTE (BNG)
-      // =========================
+      const pageWidth: number = 210
+      const contentLeft: number = 15
+      const contentRight: number = pageWidth - 15
+      const contentWidth: number = contentRight - contentLeft
+      
+      // Couleurs locales pour le contenu
       const blackText: [number, number, number] = [15, 23, 42]
       const grayText: [number, number, number] = [100, 116, 139]
       const lightGray: [number, number, number] = [248, 250, 252]
       const borderGray: [number, number, number] = [226, 232, 240]
       const white: [number, number, number] = [255, 255, 255]
-      // Vert BNG: #0B8338
       const primaryGreen: [number, number, number] = [11, 132, 56]
-      const primaryGreenDark: [number, number, number] = [8, 96, 41]
-      const greenTint: [number, number, number] = [236, 247, 238]
-      // Jaune (accent)
-      const brandYellowSoft: [number, number, number] = [244, 230, 120]
-      const brandYellowStrong: [number, number, number] = [255, 235, 0] // #FFEB00
-      const yellowTextDark: [number, number, number] = [120, 105, 30]
-      // Layout
-      const contentLeft = 15
-      const contentRight = pageWidth - 15
-      const contentWidth = contentRight - contentLeft
+      
       // Helpers
       const safe = (v: any) => (v === null || v === undefined ? "" : String(v))
       const fmtDate = (d: any) => (d ? new Date(d).toLocaleDateString("fr-FR") : "N/A")
-      const clamp1Line = (text: string, maxW: number) => {
-        const lines = doc.splitTextToSize(text, maxW)
-        return lines?.[0] ? String(lines[0]) : ""
-      }
       const money = (n: any) => formatAmount(Number(n ?? 0))
-      // =========================
-      // TEMPLATE #2 : "Clean Minimal + Ribbon"
-      // - Header blanc + ribbon vertical vert à gauche
-      // - Bloc top en 2 cartes alignées
-      // - Table transactions header blanc, ligne haute verte, badge jaune discret
-      // =========================
-      const drawPageChrome = (pageNum: number, totalPages: number) => {
-        // ribbon vertical à gauche
-        doc.setFillColor(...primaryGreen)
-        doc.rect(0, 0, 8, pageHeight, "F")
-        // micro accent jaune au top du ribbon
-        doc.setFillColor(...brandYellowSoft)
-        doc.rect(0, 0, 8, 10, "F")
-        // footer line
-        const footerY = pageHeight - 18
-        doc.setDrawColor(...borderGray)
-        doc.setLineWidth(0.4)
-        doc.line(contentLeft, footerY, contentRight, footerY)
-        // footer text
-        doc.setTextColor(...grayText)
-        doc.setFont("helvetica", "normal")
-        doc.setFontSize(7)
-        const footerLines = [
-          "Banque Nationale de Guinée SA - Agrément par décision N° 06/019/93/CAB/PE 06/06/1993",
-          "Capital : 60.000.000.000 GNF",
-          "Boulevard Tidiani Kaba - Quartier Boulbinet/Almamya, Kaloum, Conakry, Guinée",
-          "Tél: +224 - 622 454 049 - B.P 1781 - mail: contact@bng.gn",
-        ]
-        let y = footerY + 4
-        footerLines.forEach((line) => {
-          doc.text(line, contentLeft, y)
-          y += 3
-        })
-        // page number (vert)
-        doc.setTextColor(...primaryGreenDark)
-        doc.setFont("helvetica", "bold")
-        doc.text(`Page ${pageNum} / ${totalPages}`, contentRight, footerY + 4, { align: "right" })
-      }
-      const drawHeader = (hasLogo: boolean, img?: HTMLImageElement) => {
-        // bloc header blanc
-        doc.setFillColor(...white)
-        doc.rect(0, 0, pageWidth, 34, "F")
-        // titre
-        doc.setTextColor(...blackText)
-        doc.setFont("helvetica", "bold")
-        doc.setFontSize(16)
-        doc.text("RELEVÉ DE COMPTE", contentLeft, 18)
-        // période
-        doc.setTextColor(...grayText)
-        doc.setFont("helvetica", "normal")
-        doc.setFontSize(9)
-        doc.text(
-          `${new Date(startDate).toLocaleDateString("fr-FR")} - ${new Date(endDate).toLocaleDateString("fr-FR")}`,
-          contentLeft,
-          26,
-        )
-        // ligne verte minimaliste
-        doc.setDrawColor(...primaryGreen)
-        doc.setLineWidth(1.2)
-        doc.line(contentLeft, 31, contentRight, 31)
-        // logo à droite (optionnel)
-        if (hasLogo && img) {
-          doc.addImage(img, "PNG", contentRight - 32, 10, 30, 12)
+      
+      const drawTopCards = (doc: jsPDF, yStart: number) => {
+        // Helper pour limiter le texte à une ligne (défini ici où doc est disponible)
+        const clamp1Line = (text: string, maxW: number) => {
+          const lines = doc.splitTextToSize(text, maxW)
+          return lines?.[0] ? String(lines[0]) : ""
         }
-        // chip devise (jaune discret)
-        // const chipW = 34
-        // const chipH = 9
-        // const chipX = contentRight - chipW
-        // const chipY = 34
-        // doc.setFillColor(...brandYellowSoft)
-        // doc.setDrawColor(...borderGray)
-        // doc.setLineWidth(0.3)
-        // doc.roundedRect(chipX, chipY, chipW, chipH, 3.5, 3.5, "FD")
-        // doc.setTextColor(...yellowTextDark)
-        // doc.setFont("helvetica", "bold")
-        // doc.setFontSize(8.5)
-        // doc.text(safe(account.currency || "-"), chipX + chipW / 2, chipY + 6.2, { align: "center"
-        // })
-      }
-      const drawTopCards = (yStart: number) => {
         // Totaux
         let totalDebit = 0
         let totalCredit = 0
@@ -1226,24 +1140,18 @@ export default function StatementsPage() {
           { label: "Total débit", value: `${money(totalDebit)} ${safe(account.currency)}` },
           { label: "Total crédit", value: `${money(totalCredit)} ${safe(account.currency)}` },
         ]
-        const gap = 8
-        const cardH = 46
-        const cardW = (contentWidth - gap) / 2
-        const leftX = contentLeft
-        const rightX = contentLeft + cardW + gap
-        const y = yStart
+        const gap: number = 8
+        const cardH: number = 46
+        const cardW: number = (contentWidth - gap) / 2
+        const leftX: number = contentLeft
+        const rightX: number = contentLeft + cardW + gap
+        const y: number = yStart
         // Card 1 (Résumé)
         doc.setFillColor(...white)
         doc.setDrawColor(...borderGray)
         doc.setLineWidth(0.7)
-        doc.roundedRect(leftX, y, cardW, cardH, 5, 5, "FD")
-        // top stripe vert
-        // doc.setFillColor(...primaryGreen)
-        // doc.roundedRect(leftX, y, cardW, 10, 5, 5, "F")
-        // doc.setTextColor(255, 255, 255)
-        // doc.setFont("helvetica", "bold")
-        // doc.setFontSize(8.8)
-        // doc.text("RÉSUMÉ", leftX + 6, y + 7)
+        // Utiliser rect avec coins arrondis manuels ou roundedRect sans opération
+        doc.roundedRect(leftX, y, cardW, cardH, 5, 5)
         // grid text
         const innerX = leftX + 6
         let ty = y + 16
@@ -1262,14 +1170,8 @@ export default function StatementsPage() {
         doc.setFillColor(...white)
         doc.setDrawColor(...borderGray)
         doc.setLineWidth(0.7)
-        doc.roundedRect(rightX, y, cardW, cardH, 5, 5, "FD")
-        // badge jaune discret en haut à droite
-        // doc.setFillColor(...brandYellowSoft)
-        // doc.roundedRect(rightX + cardW - 26, y + 3, 22, 7, 3.5, 3.5, "F")
-        // doc.setTextColor(...yellowTextDark)
-        // doc.setFont("helvetica", "bold")
-        // doc.setFontSize(7.6)
-        // doc.text("BNG", rightX + cardW - 15, y + 8, { align: "center" })
+        // Utiliser rect avec coins arrondis manuels ou roundedRect sans opération
+        doc.roundedRect(rightX, y, cardW, cardH, 5, 5)
         doc.setTextColor(...blackText)
         doc.setFont("helvetica", "bold")
         doc.setFontSize(10)
@@ -1293,19 +1195,18 @@ export default function StatementsPage() {
         const label = safe(account.designation || account.name || "-")
         doc.text(doc.splitTextToSize(label, cardW - 12), rightX + 6, y + 32)
 
-      doc.setTextColor(...grayText)
-      doc.setFont("helvetica", "normal")
-      doc.setFontSize(9)
-      doc.text(
-      safe(account.number),
-      rightX + 6,
-      y + 38
-      )
-
+        doc.setTextColor(...grayText)
+        doc.setFont("helvetica", "normal")
+        doc.setFontSize(9)
+        doc.text(
+          safe(account.number),
+          rightX + 6,
+          y + 38
+        )
 
         return y + cardH + 14
       }
-      const drawTransactions = (yStart: number) => {
+      const drawTransactions = (doc: jsPDF, yStart: number) => {
         let y = yStart
         // titre
         doc.setTextColor(...blackText)
@@ -1318,13 +1219,13 @@ export default function StatementsPage() {
         doc.line(contentLeft, y + 2.5, contentLeft + 70, y + 2.5)
         y += 10
         const tableX = contentLeft
-        const col1 = 22 // Date Valeur (reduced from 25)
-        const col2 = 38 // Description (reduced from 45)
-        const col3 = 28 // Référence (reduced from 30)
-        const col4 = 22 // Date Op. (reduced from 25)
-        const col5 = 22 // Débit (reduced from 25)
-        const col6 = 22 // Crédit (reduced from 25)
-        const col7 = 33 // Solde (new column)
+        const col1 = 22 // Date Valeur
+        const col2 = 38 // Description
+        const col3 = 28 // Référence
+        const col4 = 22 // Date Op.
+        const col5 = 22 // Débit
+        const col6 = 22 // Crédit
+        const col7 = 33 // Solde
         const cols = [col1, col2, col3, col4, col5, col6, col7]
         const w = cols.reduce((a, b) => a + b, 0)
         const h = 9
@@ -1360,26 +1261,7 @@ export default function StatementsPage() {
         const ensurePage = () => {
           if (y > 260) {
             doc.addPage()
-            y = 24
-            // mini header page
-            doc.setTextColor(...blackText)
-            doc.setFont("helvetica", "bold")
-            doc.setFontSize(10)
-            doc.text("RELEVÉ DE COMPTE", contentLeft, 12)
-            doc.setTextColor(...grayText)
-            doc.setFont("helvetica", "normal")
-            doc.setFontSize(8)
-            doc.text(
-              `${new Date(startDate).toLocaleDateString("fr-FR")} - ${new Date(endDate).toLocaleDateString("fr-FR")}`,
-              contentRight,
-              12,
-              {
-                align: "right",
-              },
-            )
-            doc.setDrawColor(...primaryGreen)
-            doc.setLineWidth(1.0)
-            doc.line(contentLeft, 16, contentRight, 16)
+            y = 30 // Après le header compact
             headerRow()
             doc.setFont("helvetica", "normal")
             doc.setFontSize(8)
@@ -1447,33 +1329,35 @@ export default function StatementsPage() {
 
           y += h
         })
+        
+        return y
       }
-      const render = (hasLogo: boolean, img?: HTMLImageElement) => {
-        // page chrome footer later
-        drawHeader(hasLogo, img)
-        let y = 50
-        y = drawTopCards(y)
-        drawTransactions(y)
-        // footers with ribbon for each page
-        const pageCount = doc.internal.getNumberOfPages()
-        for (let i = 1; i <= pageCount; i++) {
-          doc.setPage(i)
-          drawPageChrome(i, pageCount)
-        }
-        const fileName = `Releve_Compte_${safe(account.number).replace(/-/g, "_")}_${
-          new Date().toISOString().split("T")[0]
-        }.pdf`
-        doc.save(fileName)
+      
+      // Utiliser le service standardisé
+      const subtitle = `${new Date(startDate).toLocaleDateString("fr-FR")} - ${new Date(endDate).toLocaleDateString("fr-FR")}`
+      
+      const content: PDFContentOptions = {
+        title: "RELEVÉ DE COMPTE",
+        subtitle,
+        drawContent: (doc, y) => {
+          y = drawTopCards(doc, y)
+          y = drawTransactions(doc, y)
+          return y
+        },
       }
-      // Logo load
-      const img = new Image()
-      img.src = "/images/logo-bng.png"
-      img.crossOrigin = "anonymous"
-      img.onload = () => render(true, img)
-      img.onerror = () => {
-        console.warn("[v0] Logo BNG non trouvé, génération sans logo")
-        render(false)
-      }
+      
+      const doc = await generateStandardizedPDF(content, {
+        title: "RELEVÉ DE COMPTE",
+        subtitle,
+        includeLogo: true,
+        logoPath: "/images/logo-bng.png",
+      })
+      
+      // Sauvegarder le PDF
+      const fileName = `Releve_Compte_${safe(account.number).replace(/-/g, "_")}_${
+        new Date().toISOString().split("T")[0]
+      }.pdf`
+      savePDF(doc, fileName)
     } catch (error) {
       console.error("[v0] Erreur génération PDF:", error)
       alert(" Erreur lors de la génération du PDF")
