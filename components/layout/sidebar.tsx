@@ -66,7 +66,62 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { getAccounts } from "@/app/accounts/actions"
 import { isAccountActive } from "@/lib/status-utils"
 
-const navigationData = {
+type MenuItem = {
+  title: string
+  url: string
+  icon: React.ComponentType<{ className?: string }>
+  description?: string
+  badge?: string
+}
+
+const navigationData: {
+  main: MenuItem[]
+  accounts: Array<{
+    title: string
+    icon: React.ComponentType<{ className?: string }>
+    items: Array<{
+      title: string
+      url: string
+      icon: React.ComponentType<{ className?: string }>
+      badge?: string
+    }>
+  }>
+  operations: Array<{
+    title: string
+    url?: string
+    icon: React.ComponentType<{ className?: string }>
+    items?: Array<{
+      title: string
+      url: string
+      icon: React.ComponentType<{ className?: string }>
+      badge?: string
+    }>
+    badge?: string
+  }>
+  services: Array<{
+    title: string
+    icon: React.ComponentType<{ className?: string }>
+    items: Array<{
+      title: string
+      url: string
+      icon: React.ComponentType<{ className?: string }>
+      badge?: string
+    }>
+  }>
+  support: Array<{
+    title: string
+    url?: string
+    icon: React.ComponentType<{ className?: string }>
+    items?: Array<{
+      title: string
+      url: string
+      icon: React.ComponentType<{ className?: string }>
+      badge?: string
+    }>
+    badge?: string
+  }>
+  other: MenuItem[]
+} = {
   main: [
     {
       title: "Dashboard",
@@ -74,13 +129,13 @@ const navigationData = {
       icon: Home,
       description: "Vue d'ensemble",
     },
-    {
-      title: "Fonctionnalités",
-      url: "/fonctionnalites",
-      icon: Sparkles,
-      badge: "Nouveau",
-      description: "Nouvelles options",
-    },
+    // {
+    //   title: "Fonctionnalités",
+    //   url: "/fonctionnalites",
+    //   icon: Sparkles,
+    //   badge: "Nouveau",
+    //   description: "Nouvelles options",
+    // },
   ],
   accounts: [
     {
@@ -531,7 +586,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>): 
                     <SidebarMenuItem key={item.title}>
                       {"items" in item ? (
                         <MenuItemWithSubmenu item={item} />
-                      ) : "url" in item ? (
+                      ) : item.url ? (
                         <SidebarMenuButton
                           asChild
                           isActive={pathname === item.url}
@@ -578,7 +633,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>): 
                     <SidebarMenuItem key={item.title}>
                       {"items" in item ? (
                         <MenuItemWithSubmenu item={item} />
-                      ) : "url" in item ? (
+                      ) : item.url ? (
                         <SidebarMenuButton
                           asChild
                           isActive={pathname === item.url}
