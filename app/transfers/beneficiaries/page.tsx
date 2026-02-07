@@ -507,6 +507,18 @@ export default function BeneficiariesPage() {
       return { valid: false, error: "Tous les champs RIB sont requis" }
     }
 
+    if (sanitizedBank.length !== 3) {
+      return { valid: false, error: "Le code banque doit contenir exactement 3 caractères" }
+    }
+
+    if (sanitizedAgency.length !== 3) {
+      return { valid: false, error: "Le code agence doit contenir exactement 3 caractères" }
+    }
+
+    if (sanitizedAccount.length !== 10) {
+      return { valid: false, error: "Le numéro de compte doit contenir exactement 10 chiffres" }
+    }
+
     if (!/^[0-9]{2}$/.test(sanitizedKey)) {
       return { valid: false, error: "La clé RIB doit contenir 2 chiffres" }
     }
@@ -938,7 +950,7 @@ export default function BeneficiariesPage() {
                             required
                           />
                         ) : (
-                          <Input id="codeBanque" name="codeBanque" placeholder="Ex: GNXXX" required />
+                          <Input id="codeBanque" name="codeBanque" placeholder="Ex: 022" maxLength={3} required />
                         )}
                       </div>
 
@@ -997,8 +1009,8 @@ export default function BeneficiariesPage() {
                     <Input
                       id="cleRib"
                       name="cleRib"
-                      placeholder="Ex: 089"
-                      maxLength={3}
+                      placeholder="Ex: 89"
+                      maxLength={2}
                       onChange={handleRibFieldChange}
                       required
                     />
@@ -1632,7 +1644,7 @@ export default function BeneficiariesPage() {
                           required
                         />
                       ) : (
-                        <Input id="edit-codeBanque" name="codeBanque" placeholder="Ex: GNXXX" required />
+                        <Input id="edit-codeBanque" name="codeBanque" placeholder="Ex: 022" maxLength={3} required />
                       )}
                     </div>
 
@@ -1693,8 +1705,8 @@ export default function BeneficiariesPage() {
                     id="edit-cleRib"
                     name="cleRib"
                     defaultValue={editingBeneficiary?.clerib || ""}
-                    placeholder="Ex: 089"
-                    maxLength={3}
+                    placeholder="Ex: 89"
+                    maxLength={2}
                     onChange={handleRibFieldChange}
                     required
                   />

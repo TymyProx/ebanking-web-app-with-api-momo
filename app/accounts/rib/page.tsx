@@ -191,14 +191,22 @@ const generatePDF = async (account: Account) => {
       doc.setFontSize(8)
       doc.text("RIB", tableStartX + 2, ribY + 5)
 
-      doc.text(account.bankCode || "GN004", headerStartX + 2, ribY + 5)
-      doc.text(account.branchCode || "001", colX1 + 2, ribY + 5)
+      // Formater les valeurs avec les bonnes longueurs
+      const bankCode = (account.bankCode || "022").padStart(3, "0").slice(0, 3)
+      const branchCode = (account.branchCode || "001").padStart(3, "0").slice(0, 3)
+      const accountNumberClean = account.number.replace(/-/g, "").replace(/\s/g, "")
+      // Le numéro de compte doit avoir 10 chiffres (sans la clé RIB)
+      const numeroCompte = accountNumberClean.length > 10 
+        ? accountNumberClean.slice(0, 10) 
+        : accountNumberClean.padStart(10, "0").slice(0, 10)
+      // La clé RIB est un champ séparé de 2 chiffres
+      const cleRib = account.ribKey 
+        ? String(account.ribKey).padStart(2, "0").slice(0, 2)
+        : (accountNumberClean.length > 10 ? accountNumberClean.slice(-2) : "00")
 
-      const accountNumberClean = account.number.replace(/-/g, "")
-      const cleRib = accountNumberClean.slice(-2)
-      const numeroCompteSansCle = accountNumberClean.slice(0, -2)
-
-      doc.text(numeroCompteSansCle, colX2 + 2, ribY + 5)
+      doc.text(bankCode, headerStartX + 2, ribY + 5)
+      doc.text(branchCode, colX1 + 2, ribY + 5)
+      doc.text(numeroCompte, colX2 + 2, ribY + 5)
       doc.text(cleRib, colX3 + 2, ribY + 5)
 
       // Traits verticaux RIB
@@ -290,8 +298,8 @@ export default function RIBPage() {
               iban: `GN82${acc.codeBanque || "BNG"}${acc.codeAgence || "001"}${acc.accountNumber}`,
               accountHolder: profile ? `${profile.firstName || ""} ${profile.lastName || ""}`.trim() : "TITULAIRE",
               bankName: "Banque Nationale de Guinée",
-              bankCode: acc.codeBanque || "BNG",
-              branchCode: acc.codeAgence || "001",
+              bankCode: (acc.codeBanque || "022").padStart(3, "0").slice(0, 3),
+              branchCode: (acc.codeAgence || "001").padStart(3, "0").slice(0, 3),
               branchName: "Agence Kaloum",
               swiftCode: "BNGNGNCX",
               ribKey: acc.ribKey || "12345",
@@ -323,8 +331,8 @@ export default function RIBPage() {
                   ? `${profile.firstName || ""} ${profile.lastName || ""}`.trim()
                   : "DIALLO Mamadou",
                 bankName: "Banque Nationale de Guinée",
-                bankCode: "BNG",
-                branchCode: "001",
+          bankCode: "022",
+          branchCode: "001",
                 branchName: "Agence Kaloum",
                 swiftCode: "BNGNGNCX",
                 ribKey: "12345",
@@ -346,11 +354,11 @@ export default function RIBPage() {
           type: "Courant" as const,
           status: "Actif" as const,
           iban: "GN82BNG0010001234567890",
-          accountHolder: profile
-            ? `${profile.firstName || ""} ${profile.lastName || ""}`.trim()
+          accountHolder: userProfile
+            ? `${userProfile.firstName || ""} ${userProfile.lastName || ""}`.trim()
             : "DIALLO Mamadou",
           bankName: "Banque Nationale de Guinée",
-          bankCode: "BNG",
+          bankCode: "022",
           branchCode: "001",
           branchName: "Agence Kaloum",
           swiftCode: "BNGNGNCX",
@@ -383,7 +391,17 @@ export default function RIBPage() {
 
   const copyRIBToClipboard = () => {
     if (!selectedAccount) return
-    const rib = `${selectedAccount.bankCode}${selectedAccount.branchCode}${selectedAccount.number}`
+    // Formater le RIB avec les bonnes longueurs : Code banque (3) + Code agence (3) + Numéro compte (10) + Clé RIB (2)
+    const bankCode = (selectedAccount.bankCode || "022").padStart(3, "0").slice(0, 3)
+    const branchCode = (selectedAccount.branchCode || "001").padStart(3, "0").slice(0, 3)
+    const accountNumberClean = selectedAccount.number.replace(/-/g, "").replace(/\s/g, "")
+    const numeroCompte = accountNumberClean.length > 10 
+      ? accountNumberClean.slice(0, 10) 
+      : accountNumberClean.padStart(10, "0").slice(0, 10)
+    const cleRib = selectedAccount.ribKey 
+      ? String(selectedAccount.ribKey).padStart(2, "0").slice(0, 2)
+      : (accountNumberClean.length > 10 ? accountNumberClean.slice(-2) : "00")
+    const rib = `${bankCode}${branchCode}${numeroCompte}${cleRib}`
     navigator.clipboard.writeText(rib)
     setCopiedRIB(true)
     setTimeout(() => setCopiedRIB(false), 2000)
@@ -563,8 +581,8 @@ export default function RIBPage() {
               <div class="section-title">Domiciliation</div>
               <div class="section-divider"></div>
               <div style="margin-top: 8px; font-size: 9px;">
-                <div>Code Banque: <strong>${selectedAccount.bankCode}</strong></div>
-                <div>Code Agence: <strong>${selectedAccount.branchCode}</strong></div>
+                <div>Code Banque: <strong>${(selectedAccount.bankCode || "022").padStart(3, "0").slice(0, 3)}</strong></div>
+                <div>Code Agence: <strong>${(selectedAccount.branchCode || "001").padStart(3, "0").slice(0, 3)}</strong></div>
                 <div>Agence: <strong>${selectedAccount.branchName}</strong></div>
                 <div>Banque Nationale de Guinée</div>
                 <div>CONAKRY - RÉPUBLIQUE DE GUINÉE</div>
@@ -582,7 +600,18 @@ export default function RIBPage() {
                   </div>
                   <div>
                     <div class="label">RIB (Relevé d'Identité Bancaire)</div>
-                    <div class="value" style="font-size: 10px;">${selectedAccount.bankCode}${selectedAccount.branchCode}${selectedAccount.number.replace(/-/g, "")}</div>
+                    <div class="value" style="font-size: 10px;">${(() => {
+                      const bankCode = (selectedAccount.bankCode || "022").padStart(3, "0").slice(0, 3)
+                      const branchCode = (selectedAccount.branchCode || "001").padStart(3, "0").slice(0, 3)
+                      const accountNumberClean = selectedAccount.number.replace(/-/g, "").replace(/\s/g, "")
+                      const numeroCompte = accountNumberClean.length > 10 
+                        ? accountNumberClean.slice(0, 10) 
+                        : accountNumberClean.padStart(10, "0").slice(0, 10)
+                      const cleRib = selectedAccount.ribKey 
+                        ? String(selectedAccount.ribKey).padStart(2, "0").slice(0, 2)
+                        : (accountNumberClean.length > 10 ? accountNumberClean.slice(-2) : "00")
+                      return `${bankCode}${branchCode}${numeroCompte}${cleRib}`
+                    })()}</div>
                   </div>
                 </div>
               </div>
@@ -652,8 +681,8 @@ export default function RIBPage() {
         
         Numéro de compte: ${selectedAccount.number}
         IBAN: ${selectedAccount.iban}
-        Code banque: ${selectedAccount.bankCode}
-        Code agence: ${selectedAccount.branchCode}
+        Code banque: ${(selectedAccount.bankCode || "022").padStart(3, "0").slice(0, 3)}
+        Code agence: ${(selectedAccount.branchCode || "001").padStart(3, "0").slice(0, 3)}
         Code SWIFT: ${selectedAccount.swiftCode}
         
         Agence: ${selectedAccount.branchName}
@@ -898,11 +927,11 @@ export default function RIBPage() {
                       </div>
                       <div>
                         <p className="text-xs text-gray-500 uppercase">Code banque</p>
-                        <p className="font-mono text-sm">{selectedAccount.bankCode}</p>
+                        <p className="font-mono text-sm">{(selectedAccount.bankCode || "022").padStart(3, "0").slice(0, 3)}</p>
                       </div>
                       <div>
                         <p className="text-xs text-gray-500 uppercase">Code agence</p>
-                        <p className="font-mono text-sm">{selectedAccount.branchCode}</p>
+                        <p className="font-mono text-sm">{(selectedAccount.branchCode || "001").padStart(3, "0").slice(0, 3)}</p>
                       </div>
                       <div>
                         <p className="text-xs text-gray-500 uppercase">RIB</p>

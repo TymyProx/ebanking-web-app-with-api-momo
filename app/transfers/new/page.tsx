@@ -182,8 +182,8 @@ export default function NewTransferPage() {
       return
     }
 
-    if (digitsOnly.length !== 11) {
-      setAccountNumberError("Le numéro de compte doit contenir exactement 11 chiffres")
+    if (digitsOnly.length !== 10) {
+      setAccountNumberError("Le numéro de compte doit contenir exactement 10 chiffres")
       return false
     }
 
@@ -240,6 +240,18 @@ export default function NewTransferPage() {
 
     if (!sanitizedBank || !sanitizedAgency || !sanitizedAccount || !sanitizedKey) {
       return { valid: false, error: "Tous les champs RIB sont requis" }
+    }
+
+    if (sanitizedBank.length !== 3) {
+      return { valid: false, error: "Le code banque doit contenir exactement 3 caractères" }
+    }
+
+    if (sanitizedAgency.length !== 3) {
+      return { valid: false, error: "Le code agence doit contenir exactement 3 caractères" }
+    }
+
+    if (sanitizedAccount.length !== 10) {
+      return { valid: false, error: "Le numéro de compte doit contenir exactement 10 chiffres" }
     }
 
     if (!/^[0-9]{2}$/.test(sanitizedKey)) {
@@ -1413,6 +1425,7 @@ export default function NewTransferPage() {
                         placeholder="Code banque"
                         disabled
                         className="bg-muted/50"
+                        maxLength={3}
                         required
                       />
                     </div>
@@ -1442,8 +1455,8 @@ export default function NewTransferPage() {
                   <Input
                     id="codeAgence"
                     name="codeAgence"
-                    placeholder="Ex: 00001"
-                    maxLength={5}
+                    placeholder="Ex: 001"
+                    maxLength={3}
                     onChange={handleRibFieldChange}
                     required
                   />
@@ -1458,13 +1471,13 @@ export default function NewTransferPage() {
                       validateAccountNumber(e.target.value)
                       handleRibFieldChange()
                     }}
-                    placeholder="12345678901"
-                    maxLength={11}
-                    pattern="[0-9]{11}"
+                    placeholder="1234567890"
+                    maxLength={10}
+                    pattern="[0-9]{10}"
                     required
                   />
                   {accountNumberError && <p className="text-sm text-destructive">{accountNumberError}</p>}
-                  <p className="text-sm text-muted-foreground">11 chiffres uniquement</p>
+                  <p className="text-sm text-muted-foreground">10 chiffres uniquement</p>
                 </div>
 
                 <div className="space-y-2">
