@@ -21,10 +21,10 @@ interface ComplaintState {
 
 // Validation functions
 function validateAccountNumber(accountNumber: string): boolean {
-  // Format IBAN Guinée : GN + 15 chiffres
-  const ibanPattern = /^GN\d{15}$/
-  // Format interne : 10-15 chiffres
-  const internalPattern = /^\d{10,15}$/
+  // Format IBAN Guinée : GN + 2 chiffres clé + 3 code banque + 3 code agence + 10 compte + 2 clé RIB = GN + 20 chiffres
+  const ibanPattern = /^GN\d{20}$/
+  // Format interne : 10 chiffres exactement
+  const internalPattern = /^\d{10}$/
 
   return ibanPattern.test(accountNumber) || internalPattern.test(accountNumber)
 }
