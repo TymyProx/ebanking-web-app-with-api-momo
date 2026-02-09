@@ -295,14 +295,25 @@ export default function RIBPage() {
               currency: acc.currency || "GNF",
               type: acc.type === "SAVINGS" ? ("Épargne" as const) : ("Courant" as const),
               status,
-              iban: `GN82${acc.codeBanque || "BNG"}${acc.codeAgence || "001"}${acc.accountNumber}`,
+              iban: (() => {
+                const bankCode = (acc.codeBanque || "022").padStart(3, "0").slice(0, 3)
+                const branchCode = (acc.codeAgence || "001").padStart(3, "0").slice(0, 3)
+                const accountNumberClean = (acc.accountNumber || "").replace(/-/g, "").replace(/\s/g, "")
+                const numeroCompte = accountNumberClean.length > 10 
+                  ? accountNumberClean.slice(0, 10) 
+                  : accountNumberClean.padStart(10, "0").slice(0, 10)
+                const cleRib = acc.cleRib 
+                  ? String(acc.cleRib).padStart(2, "0").slice(0, 2)
+                  : (accountNumberClean.length > 10 ? accountNumberClean.slice(-2) : "00")
+                return `GN82${bankCode}${branchCode}${numeroCompte}${cleRib}`
+              })(),
               accountHolder: profile ? `${profile.firstName || ""} ${profile.lastName || ""}`.trim() : "TITULAIRE",
               bankName: "Banque Nationale de Guinée",
               bankCode: (acc.codeBanque || "022").padStart(3, "0").slice(0, 3),
               branchCode: (acc.codeAgence || "001").padStart(3, "0").slice(0, 3),
               branchName: "Agence Kaloum",
               swiftCode: "BNGNGNCX",
-              ribKey: acc.ribKey || "12345",
+              ribKey: acc.cleRib || acc.ribKey || "00",
             }
           })
 
@@ -321,12 +332,19 @@ export default function RIBPage() {
               {
                 id: "1",
                 name: "Compte Courant",
-                number: "0001-234567-89",
+                number: "0001234567",
                 balance: 2400000,
                 currency: "GNF",
                 type: "Courant",
                 status: "Actif",
-                iban: "GN82BNG0010001234567",
+                iban: (() => {
+                  const bankCode = "022"
+                  const branchCode = "001"
+                  const accountNumberClean = "0001234567"
+                  const numeroCompte = accountNumberClean.padStart(10, "0").slice(0, 10)
+                  const cleRib = "00"
+                  return `GN82${bankCode}${branchCode}${numeroCompte}${cleRib}`
+                })(),
                 accountHolder: profile
                   ? `${profile.firstName || ""} ${profile.lastName || ""}`.trim()
                   : "DIALLO Mamadou",
@@ -335,7 +353,7 @@ export default function RIBPage() {
           branchCode: "001",
                 branchName: "Agence Kaloum",
                 swiftCode: "BNGNGNCX",
-                ribKey: "12345",
+                ribKey: "00",
               },
             ])
           } else {
@@ -348,12 +366,19 @@ export default function RIBPage() {
         const fallbackAccount = {
           id: "1",
           name: "Compte Courant",
-          number: "0001234567890",
+          number: "0001234567",
           balance: 2400000,
           currency: "GNF",
           type: "Courant" as const,
           status: "Actif" as const,
-          iban: "GN82BNG0010001234567890",
+          iban: (() => {
+            const bankCode = "022"
+            const branchCode = "001"
+            const accountNumberClean = "0001234567"
+            const numeroCompte = accountNumberClean.padStart(10, "0").slice(0, 10)
+            const cleRib = "00"
+            return `GN82${bankCode}${branchCode}${numeroCompte}${cleRib}`
+          })(),
           accountHolder: userProfile
             ? `${userProfile.firstName || ""} ${userProfile.lastName || ""}`.trim()
             : "DIALLO Mamadou",

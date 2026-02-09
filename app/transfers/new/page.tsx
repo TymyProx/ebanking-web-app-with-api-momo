@@ -1009,16 +1009,16 @@ export default function NewTransferPage() {
                       value={occasionalBeneficiaryAccount}
                       onChange={(e) => {
                         const value = e.target.value.replace(/\D/g, "")
-                        if (value.length <= 11) {
+                        if (value.length <= 18) {
                           setOccasionalBeneficiaryAccount(value)
                         }
                       }}
-                      placeholder="Saisissez le numéro de compte (11 chiffres)"
-                      maxLength={11}
+                      placeholder="Saisissez le numéro de compte (18 chiffres)"
+                      maxLength={18}
                       required
                       className="h-12 border-2 hover:border-primary/50 focus:border-primary transition-colors"
                     />
-                    <p className="text-sm text-muted-foreground">11 chiffres</p>
+                    <p className="text-sm text-muted-foreground">18 chiffres</p>
                   </div>
                 </div>
               </CardContent>

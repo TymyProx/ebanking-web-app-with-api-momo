@@ -268,10 +268,22 @@ export async function addBeneficiaryAndActivate(
 
     if (type !== "BNG-INTERNATIONAL") {
       const digitsOnly = account.replace(/\D/g, "")
-      if (digitsOnly.length !== 10 || account !== digitsOnly) {
+      // Récupérer le statut pour vérifier si c'est un bénéficiaire ponctuel
+      const statusStr = formData.get("status") as string | null
+      const beneficiaryStatus = statusStr ? Number.parseInt(statusStr, 10) : 0
+      const isOccasionalBeneficiary = beneficiaryStatus === 100
+      
+      // Pour les bénéficiaires ponctuels, le numéro de compte doit avoir 18 positions
+      // Pour les autres, 10 positions
+      const expectedLength = isOccasionalBeneficiary ? 18 : 10
+      const errorMessage = isOccasionalBeneficiary 
+        ? "Le numéro de compte doit contenir exactement 18 chiffres sans caractères spéciaux"
+        : "Le numéro de compte doit contenir exactement 10 chiffres sans caractères spéciaux"
+      
+      if (digitsOnly.length !== expectedLength || account !== digitsOnly) {
         return {
           success: false,
-          error: "Le numéro de compte doit contenir exactement 10 chiffres sans caractères spéciaux",
+          error: errorMessage,
         }
       }
     }
@@ -484,10 +496,22 @@ export async function addBeneficiary(prevState: ActionResult | null, formData: F
 
     if (type !== "BNG-INTERNATIONAL") {
       const digitsOnly = account.replace(/\D/g, "")
-      if (digitsOnly.length !== 10 || account !== digitsOnly) {
+      // Récupérer le statut pour vérifier si c'est un bénéficiaire ponctuel
+      const statusStr = formData.get("status") as string | null
+      const beneficiaryStatus = statusStr ? Number.parseInt(statusStr, 10) : 0
+      const isOccasionalBeneficiary = beneficiaryStatus === 100
+      
+      // Pour les bénéficiaires ponctuels, le numéro de compte doit avoir 18 positions
+      // Pour les autres, 10 positions
+      const expectedLength = isOccasionalBeneficiary ? 18 : 10
+      const errorMessage = isOccasionalBeneficiary 
+        ? "Le numéro de compte doit contenir exactement 18 chiffres sans caractères spéciaux"
+        : "Le numéro de compte doit contenir exactement 10 chiffres sans caractères spéciaux"
+      
+      if (digitsOnly.length !== expectedLength || account !== digitsOnly) {
         return {
           success: false,
-          error: "Le numéro de compte doit contenir exactement 10 chiffres sans caractères spéciaux",
+          error: errorMessage,
         }
       }
     }
@@ -612,10 +636,22 @@ export async function updateBeneficiary(prevState: ActionResult | null, formData
 
     if (type !== "BNG-INTERNATIONAL") {
       const digitsOnly = account.replace(/\D/g, "")
-      if (digitsOnly.length !== 10 || account !== digitsOnly) {
+      // Récupérer le statut pour vérifier si c'est un bénéficiaire ponctuel
+      const statusStr = formData.get("status") as string | null
+      const beneficiaryStatus = statusStr ? Number.parseInt(statusStr, 10) : 0
+      const isOccasionalBeneficiary = beneficiaryStatus === 100
+      
+      // Pour les bénéficiaires ponctuels, le numéro de compte doit avoir 18 positions
+      // Pour les autres, 10 positions
+      const expectedLength = isOccasionalBeneficiary ? 18 : 10
+      const errorMessage = isOccasionalBeneficiary 
+        ? "Le numéro de compte doit contenir exactement 18 chiffres sans caractères spéciaux"
+        : "Le numéro de compte doit contenir exactement 10 chiffres sans caractères spéciaux"
+      
+      if (digitsOnly.length !== expectedLength || account !== digitsOnly) {
         return {
           success: false,
-          error: "Le numéro de compte doit contenir exactement 10 chiffres sans caractères spéciaux",
+          error: errorMessage,
         }
       }
     }

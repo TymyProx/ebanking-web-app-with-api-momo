@@ -36,19 +36,39 @@ export function generateRibData(account: RibInfo, userProfile: UserProfile | nul
     : "Titulaire du compte"
 
   // Construire l'IBAN si non disponible
+  // Format IBAN: GN82 + Code banque (3) + Code agence (3) + Numéro compte (10) + Clé RIB (2)
   let iban = account.accountNumber || ""
   if (iban && !iban.startsWith("GN")) {
-    iban = `GN82${account.codeBanque || "BNG"}${account.codeAgence || "001"}${iban}`
+    const bankCode = (account.codeBanque || "022").padStart(3, "0").slice(0, 3)
+    const branchCode = (account.codeAgence || "001").padStart(3, "0").slice(0, 3)
+    const accountNumberClean = iban.replace(/-/g, "").replace(/\s/g, "")
+    const numeroCompte = accountNumberClean.length > 10 
+      ? accountNumberClean.slice(0, 10) 
+      : accountNumberClean.padStart(10, "0").slice(0, 10)
+    const cleRib = account.cleRib 
+      ? String(account.cleRib).padStart(2, "0").slice(0, 2)
+      : (accountNumberClean.length > 10 ? accountNumberClean.slice(-2) : "00")
+    iban = `GN82${bankCode}${branchCode}${numeroCompte}${cleRib}`
   }
 
-  const ribRaw = `${account.codeBanque || "BNG"}${account.codeAgence || "001"}${(account.accountNumber || "").replace(/-/g, "")}${account.cleRib || ""}`
+  // Format RIB: Code banque (3) + Code agence (3) + Numéro compte (10) + Clé RIB (2)
+  const bankCode = (account.codeBanque || "022").padStart(3, "0").slice(0, 3)
+  const branchCode = (account.codeAgence || "001").padStart(3, "0").slice(0, 3)
+  const accountNumberClean = (account.accountNumber || "").replace(/-/g, "").replace(/\s/g, "")
+  const numeroCompte = accountNumberClean.length > 10 
+    ? accountNumberClean.slice(0, 10) 
+    : accountNumberClean.padStart(10, "0").slice(0, 10)
+  const cleRib = account.cleRib 
+    ? String(account.cleRib).padStart(2, "0").slice(0, 2)
+    : (accountNumberClean.length > 10 ? accountNumberClean.slice(-2) : "00")
+  const ribRaw = `${bankCode}${branchCode}${numeroCompte}${cleRib}`
 
   return {
     accountHolder,
     iban: iban.trim(),
     ribRaw,
-    bankCode: account.codeBanque || "BNG",
-    branchCode: account.codeAgence || "001",
+    bankCode: (account.codeBanque || "022").padStart(3, "0").slice(0, 3),
+    branchCode: (account.codeAgence || "001").padStart(3, "0").slice(0, 3),
     bankName: "Banque Nationale de Guinée",
     swiftCode: "BNGNGNCX",
     branchName: "Agence " + (account.codeAgence || "Centrale"),
