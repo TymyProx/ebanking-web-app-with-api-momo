@@ -25,6 +25,15 @@ export const metadata: Metadata = {
   keywords: ["banque", "digital", "BNG", "Astra", "eBanking", "finance"],
   authors: [{ name: "BNG Digital Team" }],
   generator: "v0.dev",
+  icons: {
+    icon: [
+      { url: "/images/favicon-96x96.png", sizes: "96x96", type: "image/png" },
+      { url: "/images/favicon.svg", type: "image/svg+xml" },
+    ],
+    shortcut: "/images/favicon.ico",
+    apple: "/images/apple-touch-icon.png",
+  },
+  manifest: "/images/site.webmanifest",
 }
 
 export const viewport = {
