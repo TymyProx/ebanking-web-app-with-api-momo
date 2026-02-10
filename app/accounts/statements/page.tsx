@@ -94,7 +94,6 @@ export default function StatementsPage() {
   const [showDownloadLink, setShowDownloadLink] = useState(false)
   const [isLoadingTransactions, setIsLoadingTransactions] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string>("")
-  const [sixMonthsWarning, setSixMonthsWarning] = useState(false)
   const [accounts, setAccounts] = useState<Account[]>([])
   const [isLoadingAccounts, setIsLoadingAccounts] = useState(true)
   const [transactions, setTransactions] = useState<any[]>([]) // Kept for potential future use, but not used in the new generation logic
@@ -169,7 +168,6 @@ export default function StatementsPage() {
         setTransactionCount(0)
         setShowDownloadLink(false)
         setHasGeneratedStatement(false)
-        setSixMonthsWarning(false)
         return
       }
 
@@ -179,7 +177,6 @@ export default function StatementsPage() {
 
       setIsLoadingTransactions(true)
       setErrorMessage("")
-      setSixMonthsWarning(false)
       setShowDownloadLink(false)
       setHasGeneratedStatement(false)
 
@@ -197,11 +194,6 @@ export default function StatementsPage() {
         // Créer les dates de début et fin en s'assurant d'inclure toute la journée
         const start = new Date(startDate + "T00:00:00")
         const end = new Date(endDate + "T23:59:59")
-        const sixMonthsBeforeEnd = new Date(end)
-        sixMonthsBeforeEnd.setMonth(sixMonthsBeforeEnd.getMonth() - 6)
-
-        const exceedsSixMonths = start < sixMonthsBeforeEnd
-        // Utiliser toujours la date de début demandée, pas de limitation à 6 mois
         const effectiveStartDate = start
 
         console.log("[STATEMENTS] 🔍 Analyse des transactions...")
@@ -335,10 +327,6 @@ export default function StatementsPage() {
         setFilteredTransactions(cleanedTransactions)
         setTransactionCount(cleanedTransactions.length)
         setShowDownloadLink(true)
-
-        if (exceedsSixMonths) {
-          setSixMonthsWarning(true)
-        }
       } catch (error) {
         console.error("[v0] Erreur lors de la récupération des transactions:", error)
         setErrorMessage("Erreur lors de la récupération des transactions")
@@ -807,18 +795,6 @@ export default function StatementsPage() {
               </CardContent>
             </Card>
 
-            {sixMonthsWarning && (
-              <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-4">
-                <div className="flex items-start gap-2">
-                  <AlertCircle className="h-4 w-4 text-amber-600 mt-0.5" />
-                  <p className="text-amber-800 text-sm leading-relaxed">
-                    Les transactions de plus de <span className="font-medium">6 mois</span> ne sont pas affichées dans
-                    l’aperçu et ne figureront pas sur le relevé. Pour les consulter, veuillez vous rendre dans votre
-                    agence.
-                  </p>
-                </div>
-              </div>
-            )}
 
             {/* Actions */}
             <Card>
