@@ -812,6 +812,55 @@ export default function NewTransferPage() {
 
       <form onSubmit={handleTransferSubmit} className="grid grid-cols-1 lg:grid-cols-7 gap-6 relative">
         <div className="lg:col-span-4 space-y-6 lg:max-w-3xl lg:w-full">
+            {/* Compte débiteur */}
+            <Card className="border-2 hover:border-primary/50 transition-colors">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <div className="p-2 rounded-lg bg-primary/10">
+                  <Wallet className="h-5 w-5 text-primary" />
+                </div>
+                Compte débiteur
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                <Label htmlFor="account" className="font-medium">
+                  Sélectionner le compte à débiter *
+                </Label>
+                <Select value={selectedAccount} onValueChange={handleDebitAccountChange}>
+                  <SelectTrigger className="h-12 border-2 hover:border-primary/50 focus:border-primary transition-colors">
+                    <SelectValue placeholder={isLoadingAccounts ? "Chargement..." : "Choisir un compte"} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {isLoadingAccounts ? (
+                      <SelectItem value="loading" disabled>
+                        Chargement des comptes...
+                      </SelectItem>
+                    ) : accounts.length === 0 ? (
+                      <SelectItem value="empty" disabled>
+                        Aucun compte trouvé
+                      </SelectItem>
+                    ) : (
+                      accounts.map((account) => (
+                        <SelectItem key={account.id} value={account.id} className="py-3 cursor-pointer">
+                          <div className="flex items-center justify-between w-full gap-4">
+                            <div>
+                              <div className="font-medium">{account.name}</div>
+                              <div className="text-sm text-muted-foreground">{account.number}</div>
+                            </div>
+                            <span className="font-semibold text-primary">
+                              {formatCurrency(account.balance, account.currency)}
+                            </span>
+                          </div>
+                        </SelectItem>
+                      ))
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
+            </CardContent>
+          </Card>
+          
           {/* Type de virement */}
           <Card className="border-2 hover:border-primary/50 transition-colors">
             <CardHeader>
@@ -860,54 +909,7 @@ export default function NewTransferPage() {
             </CardContent>
           </Card>
 
-          {/* Compte débiteur */}
-          <Card className="border-2 hover:border-primary/50 transition-colors">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <div className="p-2 rounded-lg bg-primary/10">
-                  <Wallet className="h-5 w-5 text-primary" />
-                </div>
-                Compte débiteur
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                <Label htmlFor="account" className="font-medium">
-                  Sélectionner le compte à débiter *
-                </Label>
-                <Select value={selectedAccount} onValueChange={handleDebitAccountChange}>
-                  <SelectTrigger className="h-12 border-2 hover:border-primary/50 focus:border-primary transition-colors">
-                    <SelectValue placeholder={isLoadingAccounts ? "Chargement..." : "Choisir un compte"} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {isLoadingAccounts ? (
-                      <SelectItem value="loading" disabled>
-                        Chargement des comptes...
-                      </SelectItem>
-                    ) : accounts.length === 0 ? (
-                      <SelectItem value="empty" disabled>
-                        Aucun compte trouvé
-                      </SelectItem>
-                    ) : (
-                      accounts.map((account) => (
-                        <SelectItem key={account.id} value={account.id} className="py-3 cursor-pointer">
-                          <div className="flex items-center justify-between w-full gap-4">
-                            <div>
-                              <div className="font-medium">{account.name}</div>
-                              <div className="text-sm text-muted-foreground">{account.number}</div>
-                            </div>
-                            <span className="font-semibold text-primary">
-                              {formatCurrency(account.balance, account.currency)}
-                            </span>
-                          </div>
-                        </SelectItem>
-                      ))
-                    )}
-                  </SelectContent>
-                </Select>
-              </div>
-            </CardContent>
-          </Card>
+        
 
           {/* Compte créditeur ou Bénéficiaire */}
           {transferType === "account-to-account" ? (
