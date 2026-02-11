@@ -100,12 +100,25 @@ export default function ReclamationPage() {
     const loadUserInfo = async () => {
       try {
         const user = await getCurrentUser()
+        console.log("[Reclamation] Utilisateur chargé:", {
+          email: user?.email,
+          phoneNumber: user?.phoneNumber,
+          phone: user?.phone,
+        })
+        
         if (user) {
+          const email = user.email || ""
+          const phone = user.phoneNumber || user.phone || ""
+          
           setFormData((prev) => ({
             ...prev,
-            email: user.email || "",
-            phone: user.phoneNumber || user.phone || "",
+            email: email,
+            phone: phone,
           }))
+          
+          console.log("[Reclamation] formData mis à jour avec:", { email, phone })
+        } else {
+          console.warn("[Reclamation] Aucun utilisateur trouvé")
         }
       } catch (error) {
         console.error("Erreur lors du chargement des informations utilisateur:", error)
@@ -169,16 +182,41 @@ export default function ReclamationPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    // Validation des champs requis
-    if (
-      !formData.complainType ||
-      !formData.complainDate ||
-      !formData.description ||
-      !formData.phone ||
-      !formData.email ||
-      !formData.terms
-    ) {
-      setSubmitState({ error: "Veuillez remplir tous les champs obligatoires" })
+    // Récupérer les valeurs depuis formData et les champs du formulaire
+    // Pour les champs en lecture seule, on récupère depuis formData
+    // Pour les autres champs, on peut aussi vérifier directement depuis les éléments du DOM si nécessaire
+    const phone = String(formData.phone || "").trim()
+    const email = String(formData.email || "").trim()
+    const description = String(formData.description || "").trim()
+    const complainType = String(formData.complainType || selectedType || "").trim()
+    const complainDate = String(formData.complainDate || new Date().toISOString().split("T")[0]).trim()
+
+    console.log("[Reclamation] Validation - formData complet:", formData)
+    console.log("[Reclamation] Validation - valeurs extraites:", {
+      complainType,
+      complainDate,
+      description: description.substring(0, 50) + (description.length > 50 ? "..." : ""),
+      phone,
+      email,
+      terms: formData.terms,
+      complainObject: formData.complainObject,
+      availableObjectsLength: availableObjects.length,
+      selectedType,
+    })
+
+    // Validation détaillée avec messages spécifiques
+    const missingFields: string[] = []
+    
+    if (!complainType) missingFields.push("Type de réclamation")
+    if (!complainDate) missingFields.push("Date")
+    if (!description) missingFields.push("Description")
+    if (!phone) missingFields.push("Téléphone")
+    if (!email) missingFields.push("Email")
+    if (!formData.terms) missingFields.push("Acceptation des conditions")
+
+    if (missingFields.length > 0) {
+      console.error("[Reclamation] Champs manquants:", missingFields)
+      setSubmitState({ error: `Veuillez remplir tous les champs obligatoires. Manquants: ${missingFields.join(", ")}` })
       return
     }
 
@@ -191,14 +229,22 @@ export default function ReclamationPage() {
     setSubmitState(null)
 
     try {
-      const result = await createReclamation({
-        complainType: formData.complainType,
-        complainObject: formData.complainObject || formData.complainType,
-        description: formData.description,
-        complainDate: formData.complainDate,
-        phone: formData.phone,
-        email: formData.email,
+      // S'assurer que les valeurs sont bien présentes
+      const submissionData = {
+        complainType: complainType,
+        complainObject: formData.complainObject || complainType,
+        description: description,
+        complainDate: complainDate,
+        phone: phone,
+        email: email,
+      }
+
+      console.log("[Reclamation] Soumission avec données:", {
+        ...submissionData,
+        description: submissionData.description.substring(0, 50) + "...",
       })
+
+      const result = await createReclamation(submissionData)
 
       setSubmitState({ success: true, reference: result.reference })
 
@@ -385,11 +431,21 @@ export default function ReclamationPage() {
                   </div>
                 </div>
 
-                {/* Date cachée - automatiquement la date du jour */}
+                {/* Champs cachés pour garantir l'envoi des valeurs en lecture seule */}
                 <input
                   type="hidden"
                   name="complainDate"
                   value={formData.complainDate || ""}
+                />
+                <input
+                  type="hidden"
+                  name="phone"
+                  value={formData.phone || ""}
+                />
+                <input
+                  type="hidden"
+                  name="email"
+                  value={formData.email || ""}
                 />
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -397,6 +453,7 @@ export default function ReclamationPage() {
                     <Label htmlFor="phone">Téléphone *</Label>
                     <Input
                       id="phone"
+                      name="phone"
                       type="text"
                       inputMode="numeric"
                       value={formData.phone || ""}
@@ -411,13 +468,13 @@ export default function ReclamationPage() {
                     <Label htmlFor="email">Email *</Label>
                     <Input
                       id="email"
+                      name="email"
                       type="email"
                       value={formData.email || ""}
-                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                       placeholder="votre@email.com"
                       required
-                      readOnly={!!(formData.email)}
-                      className={formData.email ? "bg-gray-50 cursor-not-allowed" : ""}
+                      readOnly={true}
+                      className="bg-gray-50 cursor-not-allowed"
                     />
                   </div>
                 </div>
