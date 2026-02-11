@@ -281,7 +281,7 @@ export default function LoginPage() {
                       </div>
 
                       {/* Remember Me */}
-                      <div className="flex items-center justify-between pt-0.5">
+                      {/* <div className="flex items-center justify-between pt-0.5">
                         <div className="flex items-center space-x-2 group">
                           <Checkbox
                             id="remember"
@@ -297,7 +297,7 @@ export default function LoginPage() {
                             Se rappeler de moi
                           </Label>
                         </div>
-                      </div>
+                      </div> */}
 
                       {/* Submit Button */}
                       <Button

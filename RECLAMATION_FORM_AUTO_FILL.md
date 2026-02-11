@@ -13,8 +13,8 @@ Les formulaires de réclamation dans l'ePortal pré-remplissent maintenant autom
 | Champ | Source | Exemple | Visible | Modifiable |
 |-------|--------|---------|---------|------------|
 | **Date de réclamation** | Date actuelle | `2026-02-03` | ❌ Non (cachée) | ❌ Non (automatique) |
-| **Email** | `user.email` | `client@example.com` | ✅ Oui | ❌ Non (si pré-rempli) / ✅ Oui (si vide) |
-| **Téléphone** | `user.phoneNumber` ou `user.phone` | `+224 6XX XXX XXX` | ✅ Oui | ❌ Non (si pré-rempli) / ✅ Oui (si vide) |
+| **Email** | `user.email` | `client@example.com` | ✅ Oui | ✅ Oui (toujours modifiable) |
+| **Téléphone** | `user.phoneNumber` ou `user.phone` | `+224 6XX XXX XXX` | ✅ Oui | ✅ Oui (toujours modifiable) |
 
 ---
 
@@ -121,8 +121,8 @@ setFormData({
 ### 2. **Cohérence et Sécurité des Données**
 - ✅ Les informations proviennent directement du profil utilisateur
 - ✅ Garantit l'utilisation des coordonnées à jour
-- ✅ **Champs en lecture seule** : Empêche la modification des informations sensibles
-- ✅ **Traçabilité** : Les réclamations sont toujours liées au bon email/téléphone
+- ✅ **Champs modifiables** : L'utilisateur peut corriger ou mettre à jour ses informations si nécessaire
+- ✅ **Traçabilité** : Les réclamations contiennent les informations de contact actuelles
 - ✅ Facilite le suivi des réclamations
 
 ### 3. **Persistance Après Soumission**
@@ -175,40 +175,39 @@ setFormData({
    - ✅ Un champ `<input type="hidden" name="complainDate">` existe
    - ✅ Sa valeur est la date du jour
 
-### Test 2 : Vérifier la Lecture Seule (Profil Complet)
+### Test 2 : Vérifier le Pré-remplissage et la Modifiabilité
 
 **Avec un utilisateur ayant email ET téléphone :**
 1. Ouvrir le formulaire
-2. Essayer de cliquer dans le champ email
-3. Essayer de modifier le texte
-4. Vérifier que :
-   - ❌ Le champ ne peut pas être modifié
-   - 🎨 Le fond est gris clair
-   - 🚫 Le curseur montre "non autorisé"
-5. Répéter pour le champ téléphone
+2. Vérifier que :
+   - ✅ Le champ email est pré-rempli avec l'email de l'utilisateur
+   - ✅ Le champ téléphone est pré-rempli avec le numéro de l'utilisateur
+   - ✅ Les deux champs sont modifiables (curseur texte normal)
+3. Essayer de modifier les champs
+4. Vérifier que la modification fonctionne correctement
 
-### Test 3 : Vérifier la Saisie Libre (Profil Incomplet)
+### Test 3 : Vérifier la Saisie avec Profil Incomplet
 
 **Avec un utilisateur SANS téléphone dans son profil :**
 1. Ouvrir le formulaire
 2. Vérifier que :
-   - 🔒 Email est pré-rempli et en lecture seule (gris)
-   - ✏️ Téléphone est vide et modifiable (blanc)
+   - ✅ Email est pré-rempli et modifiable
+   - ⬜ Téléphone est vide et modifiable
 3. Saisir un numéro de téléphone
 4. Soumettre la réclamation
 5. Vérifier que la réclamation est soumise avec le téléphone saisi
 
-### Test 4 : Vérifier le Champ Vide Complet
+### Test 4 : Vérifier avec Profil Sans Informations
 
 **Avec un utilisateur SANS email NI téléphone :**
 1. Ouvrir le formulaire
 2. Vérifier que :
-   - ✏️ Email est vide et modifiable
-   - ✏️ Téléphone est vide et modifiable
+   - ⬜ Email est vide et modifiable
+   - ⬜ Téléphone est vide et modifiable
 3. Remplir les deux champs
 4. Soumettre la réclamation
 
-### Test 3 : Persistance Après Soumission
+### Test 5 : Persistance Après Soumission
 
 1. Soumettre une réclamation
 2. Le formulaire se réinitialise
@@ -216,12 +215,6 @@ setFormData({
    - ✅ Email
    - ✅ Téléphone
    - ✅ Date (mise à jour)
-
-### Test 4 : Utilisateur Sans Téléphone
-
-1. Se connecter avec un compte sans numéro de téléphone
-2. Vérifier que le champ téléphone est vide
-3. Vérifier que l'email est quand même pré-rempli
 
 ---
 
@@ -256,11 +249,12 @@ phone: user.phoneNumber || user.phone || ""
 
 ## 🎨 Interface Utilisateur
 
-### Logique Conditionnelle : Lecture Seule ou Modifiable
+### Logique des Champs : Pré-remplissage et Modifiabilité
 
-Les champs Email et Téléphone sont **dynamiques** :
-- **Si pré-remplis** : Lecture seule (protégés)
-- **Si vides** : Modifiables (l'utilisateur peut les remplir)
+Les champs Email et Téléphone sont **toujours modifiables** :
+- **Si pré-remplis** : Contiennent les informations du profil utilisateur
+- **Si vides** : L'utilisateur peut les remplir
+- **Dans tous les cas** : L'utilisateur peut modifier les valeurs
 
 ```typescript
 <Input
@@ -270,8 +264,6 @@ Les champs Email et Téléphone sont **dynamiques** :
   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
   placeholder="votre@email.com"
   required
-  readOnly={!!(formData.email)}                      // ← Lecture seule SI pré-rempli
-  className={formData.email ? "bg-gray-50 cursor-not-allowed" : ""}  // ← Style SI pré-rempli
 />
 ```
 
@@ -279,28 +271,23 @@ Les champs Email et Téléphone sont **dynamiques** :
 
 | Scénario | Email Disponible | Téléphone Disponible | Comportement |
 |----------|------------------|----------------------|--------------|
-| **Profil complet** | ✅ Oui | ✅ Oui | 🔒 Les deux champs en lecture seule |
-| **Email uniquement** | ✅ Oui | ❌ Non | 🔒 Email en lecture seule<br>✏️ Téléphone modifiable |
-| **Téléphone uniquement** | ❌ Non | ✅ Oui | ✏️ Email modifiable<br>🔒 Téléphone en lecture seule |
-| **Profil incomplet** | ❌ Non | ❌ Non | ✏️ Les deux champs modifiables |
+| **Profil complet** | ✅ Oui | ✅ Oui | ✏️ Les deux champs pré-remplis et modifiables |
+| **Email uniquement** | ✅ Oui | ❌ Non | ✏️ Email pré-rempli et modifiable<br>✏️ Téléphone vide et modifiable |
+| **Téléphone uniquement** | ❌ Non | ✅ Oui | ✏️ Email vide et modifiable<br>✏️ Téléphone pré-rempli et modifiable |
+| **Profil incomplet** | ❌ Non | ❌ Non | ✏️ Les deux champs vides et modifiables |
 
-**Apparence visuelle (si pré-rempli) :**
-- 🔒 Fond gris clair (`bg-gray-50`)
-- 🚫 Curseur "non autorisé" (`cursor-not-allowed`)
-- ❌ Impossible de modifier le texte
-
-**Apparence visuelle (si vide) :**
+**Apparence visuelle (pré-rempli ou vide) :**
 - ⬜ Fond blanc (normal)
 - ✏️ Curseur texte (normal)
-- ✅ Peut saisir le texte
+- ✅ Toujours modifiable
 
 ### Champs Modifiables vs Non Modifiables
 
 | Champ | Visible | Modifiable | Raison |
 |-------|---------|------------|--------|
 | Date | ❌ Non | ❌ Non | 🔒 Automatique (date du jour, cachée) |
-| Email | ✅ Oui | **Conditionnel** 🔀 | 🔒 Si pré-rempli (protégé)<br>✏️ Si vide (saisie libre) |
-| Téléphone | ✅ Oui | **Conditionnel** 🔀 | 🔒 Si pré-rempli (protégé)<br>✏️ Si vide (saisie libre) |
+| Email | ✅ Oui | ✅ Toujours | ✏️ Pré-rempli si disponible, toujours modifiable |
+| Téléphone | ✅ Oui | ✅ Toujours | ✏️ Pré-rempli si disponible, toujours modifiable |
 | Type | ✅ Oui | ✅ Toujours | Choix de l'utilisateur |
 | Motif | ✅ Oui | ✅ Toujours | Choix de l'utilisateur |
 | Description | ✅ Oui | ✅ Toujours | Saisie libre |
@@ -309,9 +296,9 @@ Les champs Email et Téléphone sont **dynamiques** :
 
 Tous les champs restent **obligatoires** :
 
-- 🔒 Email (required, readOnly)
-- 🔒 Téléphone (required, readOnly)
-- ✅ Date (required, modifiable)
+- ✏️ Email (required, modifiable)
+- ✏️ Téléphone (required, modifiable)
+- 🔒 Date (required, automatique et cachée)
 - ✅ Type (required, modifiable)
 - ✅ Description (required, modifiable)
 
@@ -405,8 +392,8 @@ npm run deploy  # ou votre commande de déploiement
 │ Type: [             ] *         │
 │ Motif: [            ]           │
 │                                 │ ← ❌ Date CACHÉE (automatique)
-│ Email: [user@mail.com] * 🔒     │ ← ✅ Pré-rempli (LECTURE SEULE)
-│ Téléphone: [+224 6XX...] * 🔒   │ ← ✅ Pré-rempli (LECTURE SEULE)
+│ Email: [user@mail.com] * ✏️     │ ← ✅ Pré-rempli (MODIFIABLE)
+│ Téléphone: [+224 6XX...] * ✏️   │ ← ✅ Pré-rempli (MODIFIABLE)
 │ Description: [     ] *          │
 │ [ ] J'accepte                   │
 │ [Soumettre]                     │
@@ -419,7 +406,7 @@ npm run deploy  # ou votre commande de déploiement
 │ Type: [             ] *         │
 │ Motif: [            ]           │
 │                                 │ ← ❌ Date CACHÉE (automatique)
-│ Email: [user@mail.com] * 🔒     │ ← ✅ Pré-rempli (LECTURE SEULE)
+│ Email: [user@mail.com] * ✏️     │ ← ✅ Pré-rempli (MODIFIABLE)
 │ Téléphone: [           ] * ✏️   │ ← ⬜ VIDE (MODIFIABLE)
 │ Description: [     ] *          │
 │ [ ] J'accepte                   │
@@ -427,8 +414,7 @@ npm run deploy  # ou votre commande de déploiement
 └─────────────────────────────────┘
 
 ❌ = Date cachée (automatique, invisible)
-🔒 = Champ en lecture seule (fond gris, pré-rempli)
-✏️ = Champ modifiable (fond blanc, vide)
+✏️ = Champ modifiable (toujours modifiable, pré-rempli ou vide)
 ```
 
 ---

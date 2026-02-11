@@ -340,8 +340,6 @@ export default function ComplainPage() {
                       onChange={(e) => handleInputChange("phone", e.target.value)}
                       placeholder="+224 6XX XXX XXX"
                       required
-                      readOnly={!!(formData.phone)}
-                      className={formData.phone ? "bg-gray-50 cursor-not-allowed" : ""}
                     />
                   </div>
 
@@ -355,8 +353,6 @@ export default function ComplainPage() {
                       onChange={(e) => handleInputChange("email", e.target.value)}
                       placeholder="votre@email.com"
                       required
-                      readOnly={!!(formData.email)}
-                      className={formData.email ? "bg-gray-50 cursor-not-allowed" : ""}
                     />
                   </div>
                 </div>

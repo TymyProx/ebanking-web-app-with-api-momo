@@ -406,8 +406,6 @@ export default function CheckbookRequestPage() {
                     <SelectContent>
                       <SelectItem value="Standard - Barré">Chéquier standard - Barré</SelectItem>
                       <SelectItem value="Standard - Non barré">Chéquier standard - Non barré</SelectItem>
-                      <SelectItem value="Certifié">Chèques certifiés (chèque standard certifié)</SelectItem>
-                      <SelectItem value="Banque">Chèques de banque (format différent)</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

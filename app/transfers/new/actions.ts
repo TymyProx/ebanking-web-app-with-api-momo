@@ -822,9 +822,9 @@ export async function executeTransfer(prevState: any, formData: FormData) {
     let successMessage = `Virement de ${new Intl.NumberFormat("fr-FR").format(transferAmount)} GNF effectué avec succès.`
 
     if (validatedData.transferType === "account-to-account") {
-      successMessage += " Comptes débité et crédité automatiquement."
+      successMessage 
     } else {
-      successMessage += " Compte source débité, virement vers bénéficiaire en cours."
+      successMessage 
     }
 
     if ((process.env.NEXT_PUBLIC_LOG_LEVEL || "error").toLowerCase() === "debug") {
