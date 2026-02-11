@@ -16,7 +16,6 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { createReclamation, getReclamations, getReclamationById } from "./actions"
 import { getCurrentUser } from "@/app/user/actions"
-import { handleNumericChange } from "@/lib/numeric-input"
 
 const complainTypes = {
   Compte: [
@@ -401,15 +400,10 @@ export default function ReclamationPage() {
                       type="text"
                       inputMode="numeric"
                       value={formData.phone || ""}
-                      onChange={(e) => {
-                        const cleaned = handleNumericChange(e.target.value)
-                        setFormData({ ...formData, phone: cleaned })
-                      }}
                       placeholder="624123456"
                       required
-                      maxLength={15}
-                      readOnly={!!(formData.phone)}
-                      className={formData.phone ? "bg-gray-50 cursor-not-allowed" : ""}
+                      readOnly={true}
+                      className="bg-gray-50 cursor-not-allowed"
                     />
                   </div>
 
