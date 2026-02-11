@@ -185,6 +185,11 @@ const navigationData: {
           url: "/transfers/mes-virements",
           icon: Clock,
         },
+        {
+          title: "Mise à disposition des fonds",
+          url: "/operations/mise-disposition-fonds",
+          icon: HandCoins,
+        },
       ],
     },
     {
@@ -208,11 +213,7 @@ const navigationData: {
         },
       ],
     },
-    {
-      title: "Mise à disposition des fonds",
-      url: "/operations/mise-disposition-fonds",
-      icon: HandCoins,
-    },
+  
   ],
   services: [
     {
