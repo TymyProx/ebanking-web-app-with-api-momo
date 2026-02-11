@@ -266,10 +266,14 @@ export default function AccountDetailsPage({ params }: AccountDetailPageProps) {
 
       if (transactionsData.success && transactionsData.data && Array.isArray(transactionsData.data)) {
         const accountNumber = account?.number || accountId
+        
+        // 🔄 Récupérer toutes les transactions où ce compte est impliqué (source OU bénéficiaire)
         const accountTransactions = transactionsData.data
           .filter((txn: any) => {
             const txnAccountNumber = txn.numCompte || txn.accountNumber || txn.accountId
-            return txnAccountNumber === accountNumber
+            const txnCreditAccount = txn.creditAccount
+            // Inclure si le compte est source OU bénéficiaire
+            return txnAccountNumber === accountNumber || txnCreditAccount === accountNumber
           })
           .map((txn: any) => {
             const amount = Number.parseFloat(txn.montantOperation || txn.amount || "0")

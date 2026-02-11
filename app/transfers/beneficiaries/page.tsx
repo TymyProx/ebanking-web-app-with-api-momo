@@ -642,27 +642,6 @@ export default function BeneficiariesPage() {
       if (!validateAccountNumber(accountNumber)) {
         return
       }
-
-      if (selectedType === "BNG-BNG" || selectedType === "BNG-CONFRERE") {
-        const agencyCode = (formData.get("codeAgence") as string) || ""
-        const cleRib = (formData.get("cleRib") as string) || ""
-        const bankCodeForRib =
-          selectedType === "BNG-BNG"
-            ? selectedBankCode || "022"
-            : selectedBankCode || (formData.get("bank") as string) || ""
-
-        const ribValidation = validateRibLocally(bankCodeForRib, agencyCode, accountNumber, cleRib)
-        if (!ribValidation.valid) {
-          setRibError(ribValidation.error)
-          toast({
-            title: "RIB invalide",
-            description: ribValidation.error,
-            variant: "destructive",
-          })
-          return
-        }
-        setRibError(null)
-      }
     }
 
     formData.set("type", selectedType)
@@ -703,27 +682,6 @@ export default function BeneficiariesPage() {
       const accountNumber = formData.get("account") as string
       if (!validateAccountNumber(accountNumber)) {
         return
-      }
-
-      if (selectedType === "BNG-BNG" || selectedType === "BNG-CONFRERE") {
-        const agencyCode = (formData.get("codeAgence") as string) || ""
-        const cleRib = (formData.get("cleRib") as string) || ""
-        const bankCodeForRib =
-          selectedType === "BNG-BNG"
-            ? selectedBankCode || "022"
-            : selectedBankCode || (formData.get("bank") as string) || ""
-
-        const ribValidation = validateRibLocally(bankCodeForRib, agencyCode, accountNumber, cleRib)
-        if (!ribValidation.valid) {
-          setRibError(ribValidation.error)
-          toast({
-            title: "RIB invalide",
-            description: ribValidation.error,
-            variant: "destructive",
-          })
-          return
-        }
-        setRibError(null)
       }
     }
 
