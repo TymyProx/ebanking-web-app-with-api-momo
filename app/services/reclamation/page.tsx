@@ -115,8 +115,22 @@ export default function ReclamationPage() {
         const clientData = await getClientByUserId(user.id)
         
         if (clientData) {
+          // Utiliser l'email du client en priorité, sinon celui de l'utilisateur
           const email = clientData.email || user.email || ""
-          const phone = clientData.telephone || clientData.phoneNumber || ""
+          
+          // Pour le téléphone, essayer d'abord le client, puis l'utilisateur
+          const clientPhone = clientData.telephone || clientData.phoneNumber || ""
+          const userPhone = user.phoneNumber || user.phone || ""
+          const phone = clientPhone || userPhone || ""
+          
+          console.log("[Reclamation] Données client récupérées:", {
+            clientEmail: clientData.email,
+            clientPhone: clientPhone,
+            userEmail: user.email,
+            userPhone: userPhone,
+            finalEmail: email,
+            finalPhone: phone,
+          })
           
           setFormData((prev) => ({
             ...prev,
@@ -135,6 +149,7 @@ export default function ReclamationPage() {
             email: email,
             phone: phone,
           }))
+          console.log("[Reclamation] formData mis à jour avec données utilisateur (fallback):", { email, phone })
         }
       } catch (error) {
         console.error("Erreur lors du chargement des informations utilisateur:", error)
