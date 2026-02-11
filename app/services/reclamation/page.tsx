@@ -14,7 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { AlertCircle, Clock, CheckCircle, Send, Search, MessageSquare } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { createReclamation, getReclamations, getReclamationById } from "./actions"
+import { createReclamation, getReclamations, getReclamationById, getClientByUserId } from "./actions"
 import { getCurrentUser } from "@/app/user/actions"
 
 const complainTypes = {
@@ -95,11 +95,11 @@ export default function ReclamationPage() {
   const [selectedReclamationDetails, setSelectedReclamationDetails] = useState<any>(null)
   const [isLoadingDetails, setIsLoadingDetails] = useState(false)
 
-  // Charger les informations de l'utilisateur et du client au montage du composant
+  // Charger les informations de l'utilisateur au montage du composant
   useEffect(() => {
     const loadUserInfo = async () => {
       try {
-        // 1. Récupérer l'utilisateur depuis /auth/me
+        // 1. Récupérer l'utilisateur connecté pour obtenir son ID (userid)
         const user = await getCurrentUser()
         console.log("[Reclamation] Utilisateur chargé:", {
           id: user?.id,
@@ -107,132 +107,29 @@ export default function ReclamationPage() {
         })
         
         if (!user || !user.id) {
-          console.warn("[Reclamation] Aucun utilisateur trouvé")
+          console.warn("[Reclamation] Aucun utilisateur trouvé ou ID manquant")
           return
         }
 
-        const email = user.email || ""
-        let phone = ""
-
-        // 2. Récupérer les données complètes du client depuis la table client
-        try {
-          const cookieToken = document.cookie
-            .split('; ')
-            .find(row => row.startsWith('token='))
-            ?.split('=')[1] || localStorage.getItem('auth_token') || ''
-
-          if (!cookieToken) {
-            console.warn("[Reclamation] Pas de token disponible pour récupérer les données client")
-            setFormData((prev) => ({
-              ...prev,
-              email: email,
-              phone: phone,
-            }))
-            return
-          }
-
-          // Récupérer le client depuis l'API
-          const { getApiBaseUrl, TENANT_ID } = await import('@/lib/api-url')
-          const API_BASE_URL = getApiBaseUrl()
+        // 2. Récupérer le client depuis la table client en filtrant sur userid
+        const clientData = await getClientByUserId(user.id)
+        
+        if (clientData) {
+          const email = clientData.email || user.email || ""
+          const phone = clientData.telephone || clientData.phoneNumber || ""
           
-          // L'ID de l'utilisateur correspond au userid dans la table client
-          const userId = user.id
-          console.log("[Reclamation] Récupération données client depuis l'API, userid:", userId)
-          
-          // Essayer d'abord de récupérer le client par ID direct
-          let clientResponse = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/client/${userId}`, {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${cookieToken}`,
-            },
-          })
-
-          // Si échec, essayer de chercher par userid (recherche dans la liste)
-          if (!clientResponse.ok) {
-            console.log("[Reclamation] Client non trouvé par ID, recherche par userid...")
-            const searchResponse = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/client?filter[userid]=${userId}&limit=1`, {
-              method: "GET",
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${cookieToken}`,
-              },
-            })
-            
-            if (searchResponse.ok) {
-              const searchData = await searchResponse.json()
-              if (searchData.rows && searchData.rows.length > 0) {
-                // Utiliser le premier résultat
-                const clientData = searchData.rows[0]
-                console.log("[Reclamation] Client trouvé par userid:", {
-                  id: clientData.id,
-                  email: clientData.email,
-                  telephone: clientData.telephone,
-                  phone: clientData.phone,
-                  phoneNumber: clientData.phoneNumber,
-                })
-                
-                // Extraire le téléphone depuis la table client
-                phone = clientData.telephone || clientData.phone || clientData.phoneNumber || ""
-                
-                // Utiliser l'email du client si disponible, sinon celui de l'utilisateur
-                const clientEmail = clientData.email || email
-                
-                setFormData((prev) => ({
-                  ...prev,
-                  email: clientEmail,
-                  phone: phone,
-                }))
-                
-                console.log("[Reclamation] formData mis à jour avec données client (trouvé par userid):", { 
-                  email: clientEmail, 
-                  phone 
-                })
-                return // Sortir de la fonction si le client est trouvé
-              }
-            }
-          } else {
-            // Client trouvé par ID direct
-            const clientData = await clientResponse.json()
-            console.log("[Reclamation] Données client récupérées:", {
-              id: clientData.id,
-              email: clientData.email,
-              telephone: clientData.telephone,
-              phone: clientData.phone,
-              phoneNumber: clientData.phoneNumber,
-            })
-            
-            // Extraire le téléphone depuis la table client
-            phone = clientData.telephone || clientData.phone || clientData.phoneNumber || ""
-            
-            // Utiliser l'email du client si disponible, sinon celui de l'utilisateur
-            const clientEmail = clientData.email || email
-            
-            setFormData((prev) => ({
-              ...prev,
-              email: clientEmail,
-              phone: phone,
-            }))
-            
-            console.log("[Reclamation] formData mis à jour avec données client:", { 
-              email: clientEmail, 
-              phone 
-            })
-            return // Sortir de la fonction si le client est trouvé
-          }
-
-          // Si aucun client n'est trouvé, utiliser les données de l'utilisateur comme fallback
-          console.warn("[Reclamation] Impossible de récupérer les données client, utilisation des données utilisateur")
-          phone = (user as any).phoneNumber || (user as any).phone || ""
           setFormData((prev) => ({
             ...prev,
             email: email,
             phone: phone,
           }))
-        } catch (clientError) {
-          console.error("[Reclamation] Erreur lors de la récupération des données client:", clientError)
-          // Fallback: utiliser les données de l'utilisateur
-          phone = (user as any).phoneNumber || (user as any).phone || ""
+          
+          console.log("[Reclamation] formData mis à jour avec données client (table client):", { email, phone })
+        } else {
+          console.warn("[Reclamation] Aucun client trouvé avec userid:", user.id, "- Utilisation des données utilisateur")
+          // Fallback sur les données de l'utilisateur si le client n'est pas trouvé
+          const email = user.email || ""
+          const phone = user.phoneNumber || user.phone || ""
           setFormData((prev) => ({
             ...prev,
             email: email,

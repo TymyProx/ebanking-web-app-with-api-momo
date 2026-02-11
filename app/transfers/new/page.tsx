@@ -198,11 +198,18 @@ export default function NewTransferPage() {
 
   const sanitizeRibPart = (value: string) => value.replace(/\s+/g, "").toUpperCase()
 
-  /**
-   * Calcul du modulo 97 selon la procédure BCRG
-   * @param numeric - Chaîne de chiffres
-   * @returns Le reste de la division par 97
-   */
+  const replaceLettersWithDigits = (value: string) =>
+    value
+      .split("")
+      .map((char) => {
+        if (/[0-9]/.test(char)) {
+          return char
+        }
+        const code = char.charCodeAt(0) - 55
+        return code >= 10 && code <= 35 ? String(code) : ""
+      })
+      .join("")
+
   const mod97 = (numeric: string) => {
     let remainder = 0
     for (let i = 0; i < numeric.length; i += 1) {
@@ -215,125 +222,50 @@ export default function NewTransferPage() {
     return remainder
   }
 
-  /**
-   * Calcule la clé RIB selon la procédure officielle de la BCRG
-   * (Banque Centrale de la République de Guinée)
-   * 
-   * Procédure CleRIBBCRG :
-   * 1. CompteBCRG = Complète(CodeBank,3) + Complète(CodeAgence,3) + Droite(LeCompte10,10) + "00"
-   * 2. Reste = 0
-   * 3. Pour chaque chiffre : Reste = modulo(Reste*10 + Valeur, 97)
-   * 4. K = 97 - Reste
-   * 5. Retourner K formaté sur 2 chiffres
-   * 
-   * @param bankCode - Code banque (sera complété à 3 chiffres)
-   * @param agencyCode - Code agence (sera complété à 3 chiffres)
-   * @param accountNumber - Numéro de compte (10 chiffres, on prend les 10 derniers)
-   * @returns Clé RIB sur 2 chiffres (ex: "45")
-   */
   const computeRibKey = (bankCode: string, agencyCode: string, accountNumber: string) => {
-    // 1. Compléter les codes à 3 chiffres et prendre les 10 derniers chiffres du compte
-    const completedBankCode = bankCode.padStart(3, '0').slice(0, 3)
-    const completedAgencyCode = agencyCode.padStart(3, '0').slice(0, 3)
-    const last10Digits = accountNumber.slice(-10).padStart(10, '0')
-    
-    // 2. Construire CompteBCRG = CodeBank(3) + CodeAgence(3) + Compte(10) + "00"
-    const compteBCRG = `${completedBankCode}${completedAgencyCode}${last10Digits}00`
-    
-    // 3. Calculer le modulo 97
-    const remainder = mod97(compteBCRG)
+    const numeric = `${replaceLettersWithDigits(bankCode)}${replaceLettersWithDigits(agencyCode)}${replaceLettersWithDigits(accountNumber)}`
+    const remainder = mod97(numeric)
     if (remainder < 0) {
       return ""
     }
-
-    // 4. K = 97 - Reste
     const key = 97 - remainder
-    
-    // 5. Retourner K formaté sur 2 chiffres
     return key.toString().padStart(2, "0")
   }
 
-  /**
-   * Valide un RIB complet selon la procédure BCRG
-   * @param bankCode - Code banque (3 chiffres)
-   * @param agencyCode - Code agence (3 chiffres)
-   * @param accountNumber - Numéro de compte (10 chiffres)
-   * @param ribKey - Clé RIB saisie (2 chiffres)
-   * @returns Résultat de la validation avec erreur éventuelle
-   */
   const validateRibLocally = (bankCode: string, agencyCode: string, accountNumber: string, ribKey: string) => {
     const sanitizedBank = sanitizeRibPart(bankCode)
     const sanitizedAgency = sanitizeRibPart(agencyCode)
     const sanitizedAccount = sanitizeRibPart(accountNumber)
     const sanitizedKey = sanitizeRibPart(ribKey)
 
-    // Vérifications des champs requis
     if (!sanitizedBank || !sanitizedAgency || !sanitizedAccount || !sanitizedKey) {
       return { valid: false, error: "Tous les champs RIB sont requis" }
     }
 
-    // Vérification de la longueur du code banque
     if (sanitizedBank.length !== 3) {
       return { valid: false, error: "Le code banque doit contenir exactement 3 caractères" }
     }
 
-    // Vérification que le code banque est numérique
-    if (!/^[0-9]{3}$/.test(sanitizedBank)) {
-      return { valid: false, error: "Le code banque doit contenir uniquement des chiffres" }
-    }
-
-    // Vérification de la longueur du code agence
     if (sanitizedAgency.length !== 3) {
       return { valid: false, error: "Le code agence doit contenir exactement 3 caractères" }
     }
 
-    // Vérification que le code agence est numérique
-    if (!/^[0-9]{3}$/.test(sanitizedAgency)) {
-      return { valid: false, error: "Le code agence doit contenir uniquement des chiffres" }
-    }
-
-    // Vérification de la longueur du numéro de compte
     if (sanitizedAccount.length !== 10) {
       return { valid: false, error: "Le numéro de compte doit contenir exactement 10 chiffres" }
     }
 
-    // Vérification que le numéro de compte est numérique
-    if (!/^[0-9]{10}$/.test(sanitizedAccount)) {
-      return { valid: false, error: "Le numéro de compte doit contenir uniquement des chiffres" }
-    }
-
-    // Vérification de la clé RIB
     if (!/^[0-9]{2}$/.test(sanitizedKey)) {
-      return { valid: false, error: "La clé RIB doit contenir exactement 2 chiffres" }
+      return { valid: false, error: "La clé RIB doit contenir 2 chiffres" }
     }
 
-    // Calcul de la clé RIB attendue selon la procédure BCRG
     const expectedKey = computeRibKey(sanitizedBank, sanitizedAgency, sanitizedAccount)
     if (!expectedKey) {
-      console.error("[RIB] Erreur lors du calcul de la clé RIB")
       return { valid: false, error: "Impossible de calculer la clé RIB" }
     }
 
-    // Comparaison de la clé saisie avec la clé calculée
     if (expectedKey !== sanitizedKey) {
-      console.warn("[RIB] ❌ Clé RIB incorrecte !")
-      console.warn("[RIB] 📝 Détails de la validation :")
-      console.warn("[RIB]   - Code Banque:", sanitizedBank)
-      console.warn("[RIB]   - Code Agence:", sanitizedAgency)
-      console.warn("[RIB]   - Numéro de compte:", sanitizedAccount)
-      console.warn("[RIB]   - Clé RIB saisie:", sanitizedKey)
-      console.warn("[RIB]   - Clé RIB attendue (BCRG):", expectedKey)
-      return { 
-        valid: false, 
-        error: `Clé RIB invalide. Clé attendue : ${expectedKey}, clé saisie : ${sanitizedKey}` 
-      }
+      return { valid: false, error: "Clé RIB invalide" }
     }
-
-    console.log("[RIB] ✅ Validation réussie selon la procédure BCRG")
-    console.log("[RIB]   - Code Banque:", sanitizedBank)
-    console.log("[RIB]   - Code Agence:", sanitizedAgency)
-    console.log("[RIB]   - Numéro de compte:", sanitizedAccount)
-    console.log("[RIB]   - Clé RIB:", sanitizedKey)
 
     return { valid: true, error: null }
   }

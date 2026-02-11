@@ -41,6 +41,63 @@ interface GetReclamationsResponse {
   count: number
 }
 
+/**
+ * Récupère le client depuis la table client en filtrant sur userid
+ */
+export async function getClientByUserId(userId: string): Promise<{ email?: string; telephone?: string; phoneNumber?: string } | null> {
+  try {
+    const cookieToken = (await cookies()).get("token")?.value
+
+    if (!cookieToken) {
+      console.error("[Reclamation] Token introuvable pour récupérer le client")
+      return null
+    }
+
+    // Récupérer le client depuis l'API en filtrant par userid
+    const response = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/client?filter[userid]=${userId}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${cookieToken}`,
+      },
+      cache: "no-store",
+    })
+
+    if (!response.ok) {
+      console.error("[Reclamation] Erreur API lors de la récupération du client:", response.status)
+      return null
+    }
+
+    const data = await response.json()
+    
+    // L'API peut retourner soit un objet avec rows, soit directement un tableau
+    const clients = data.rows || data.data || (Array.isArray(data) ? data : [])
+    
+    if (clients.length > 0) {
+      const client = clients[0]
+      console.log("[Reclamation] Client trouvé par userid:", {
+        id: client.id,
+        email: client.email,
+        telephone: client.telephone,
+        phoneNumber: client.phoneNumber,
+        phone: client.phone,
+      })
+      
+      return {
+        email: client.email || "",
+        telephone: client.telephone || client.phoneNumber || client.phone || "",
+        phoneNumber: client.telephone || client.phoneNumber || client.phone || "",
+      }
+    }
+
+    console.warn("[Reclamation] Aucun client trouvé avec userid:", userId)
+    return null
+  } catch (error) {
+    console.error("[Reclamation] Erreur lors de la récupération du client par userid:", error)
+    return null
+  }
+}
+
 async function generateReclamationReference(): Promise<string> {
   try {
     const cookieToken = (await cookies()).get("token")?.value
