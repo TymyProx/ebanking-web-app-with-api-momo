@@ -16,6 +16,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { createReclamation, getReclamations, getReclamationById } from "./actions"
 import { getCurrentUser } from "@/app/user/actions"
+import { handleNumericChange } from "@/lib/numeric-input"
 
 const complainTypes = {
   Compte: [
@@ -397,11 +398,16 @@ export default function ReclamationPage() {
                     <Label htmlFor="phone">Téléphone *</Label>
                     <Input
                       id="phone"
-                      type="tel"
+                      type="text"
+                      inputMode="numeric"
                       value={formData.phone || ""}
-                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                      placeholder="+224 6XX XXX XXX"
+                      onChange={(e) => {
+                        const cleaned = handleNumericChange(e.target.value)
+                        setFormData({ ...formData, phone: cleaned })
+                      }}
+                      placeholder="624123456"
                       required
+                      maxLength={15}
                       readOnly={!!(formData.phone)}
                       className={formData.phone ? "bg-gray-50 cursor-not-allowed" : ""}
                     />

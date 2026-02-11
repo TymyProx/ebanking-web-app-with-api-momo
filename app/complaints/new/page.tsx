@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge"
 import { submitComplaint } from "./actions"
 import { useActionState } from "react"
+import { handleNumericChange } from "@/lib/numeric-input"
 
 const complaintTypes = [
   { value: "transaction", label: "Transaction", description: "Débit non autorisé, montant incorrect" },
@@ -99,7 +100,20 @@ export default function NewComplaintPage() {
 
                     <div>
                       <Label htmlFor="phone">Numéro de téléphone *</Label>
-                      <Input id="phone" name="phone" placeholder="+224 XXX XXX XXX" required className="mt-1" />
+                      <Input
+                        id="phone"
+                        name="phone"
+                        type="text"
+                        inputMode="numeric"
+                        placeholder="624123456"
+                        required
+                        maxLength={15}
+                        onChange={(e) => {
+                          const cleaned = handleNumericChange(e.target.value)
+                          e.target.value = cleaned
+                        }}
+                        className="mt-1"
+                      />
                     </div>
                   </div>
                 </div>
