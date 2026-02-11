@@ -2,6 +2,7 @@
 
 import type React from "react"
 import { useState, useTransition, useEffect, useRef } from "react"
+import { useRouter } from "next/navigation"
 import { addBeneficiaryAndActivate } from "../beneficiaries/actions"
 import { executeTransfer } from "./actions"
 import { getAccounts } from "../../accounts/actions"
@@ -66,6 +67,7 @@ const countries = [
 ]
 
 export default function NewTransferPage() {
+  const router = useRouter()
   const [transferType, setTransferType] = useState<TransferType>("account-to-beneficiary")
 
   // États pour le virement
@@ -712,12 +714,20 @@ export default function NewTransferPage() {
         successMessageRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })
       }, 100)
 
+      // Rafraîchir la page après 2 secondes pour mettre à jour les données
+      const refreshTimer = setTimeout(() => {
+        router.refresh()
+      }, 2000)
+
       const timer = setTimeout(() => {
         setShowSuccessMessage(false)
       }, 8000)
-      return () => clearTimeout(timer)
+      return () => {
+        clearTimeout(timer)
+        clearTimeout(refreshTimer)
+      }
     }
-  }, [transferState?.success])
+  }, [transferState?.success, router])
 
   useEffect(() => {
     if (transferState?.error) {
@@ -831,7 +841,7 @@ export default function NewTransferPage() {
                   <SelectTrigger className="h-12 border-2 hover:border-primary/50 focus:border-primary transition-colors">
                     <SelectValue placeholder={isLoadingAccounts ? "Chargement..." : "Choisir un compte"} />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent side="bottom">
                     {isLoadingAccounts ? (
                       <SelectItem value="loading" disabled>
                         Chargement des comptes...
@@ -876,7 +886,7 @@ export default function NewTransferPage() {
                 <SelectTrigger className="h-12 border-2 hover:border-primary/50 focus:border-primary transition-colors">
                   <SelectValue placeholder="Choisir le type de virement" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent side="bottom">
                   <SelectItem value="account-to-beneficiary" className="py-3 cursor-pointer">
                     <div className="flex items-center gap-3">
                       <User className="h-4 w-4 text-primary" />
@@ -1370,7 +1380,7 @@ export default function NewTransferPage() {
                   <SelectTrigger>
                     <SelectValue placeholder="Sélectionnez le type" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent side="bottom">
                     <SelectItem value="BNG-BNG">Interne</SelectItem>
                     <SelectItem value="BNG-CONFRERE">Confrère(Guinée)</SelectItem>
                     <SelectItem value="BNG-INTERNATIONAL">International</SelectItem>
@@ -1396,7 +1406,7 @@ export default function NewTransferPage() {
                       <SelectTrigger>
                         <SelectValue placeholder={loadingBanks ? "Chargement..." : "Sélectionnez une banque"} />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent side="bottom">
                         {banks.map((bank) => (
                           <SelectItem key={bank.id} value={bank.bankName}>
                             {bank.bankName}
