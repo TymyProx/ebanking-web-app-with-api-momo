@@ -41,6 +41,99 @@ interface GetReclamationsResponse {
   count: number
 }
 
+/**
+ * Récupère le client depuis la table client en utilisant l'ID de l'utilisateur connecté
+ * L'ID de l'utilisateur correspond directement à l'ID du client (clientId)
+ */
+export async function getClientByUserId(userId: string): Promise<{ email?: string; telephone?: string; phoneNumber?: string } | null> {
+  try {
+    const cookieToken = (await cookies()).get("token")?.value
+
+    if (!cookieToken) {
+      console.error("[Reclamation] Token introuvable pour récupérer le client")
+      return null
+    }
+
+    // Essayer d'abord de récupérer le client par son ID (l'ID utilisateur = ID client)
+    let response = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/client/${userId}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${cookieToken}`,
+      },
+      cache: "no-store",
+    })
+
+    let client = null
+
+    if (response.ok) {
+      client = await response.json()
+      console.log("[Reclamation] Client trouvé par ID direct:", {
+        id: client.id,
+        email: client.email,
+        telephone: client.telephone,
+      })
+    } else {
+      // Si pas trouvé par ID, utiliser l'endpoint spécifique by-userid
+      console.log("[Reclamation] Client non trouvé par ID, essai par userid...")
+      response = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/client/by-userid/${userId}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${cookieToken}`,
+        },
+        cache: "no-store",
+      })
+
+      if (response.ok) {
+        client = await response.json()
+        console.log("[Reclamation] Client trouvé par userid endpoint:", {
+          id: client.id,
+          email: client.email,
+          telephone: client.telephone,
+        })
+      } else {
+        console.error("[Reclamation] Erreur API lors de la récupération du client:", response.status, response.statusText)
+        return null
+      }
+    }
+
+    if (!client) {
+      return null
+    }
+    console.log("[Reclamation] Client trouvé par ID - Toutes les propriétés:", Object.keys(client))
+    console.log("[Reclamation] Client trouvé par ID - Détails:", {
+      id: client.id,
+      email: client.email,
+      telephone: client.telephone,
+      phoneNumber: client.phoneNumber,
+      phone: client.phone,
+      userid: client.userid,
+    })
+    
+    // Essayer tous les champs possibles pour le téléphone
+    const phone = client.telephone || 
+                  client.phoneNumber || 
+                  client.phone || 
+                  client.mobile || 
+                  client.mobilePhone || 
+                  client.contactPhone ||
+                  client.tel ||
+                  ""
+    
+    console.log("[Reclamation] Téléphone extrait du client:", phone || "(vide)")
+    
+    return {
+      email: client.email || "",
+      telephone: phone,
+      phoneNumber: phone,
+    }
+  } catch (error) {
+    console.error("[Reclamation] Erreur lors de la récupération du client par ID:", error)
+    return null
+  }
+}
+
 async function generateReclamationReference(): Promise<string> {
   try {
     const cookieToken = (await cookies()).get("token")?.value

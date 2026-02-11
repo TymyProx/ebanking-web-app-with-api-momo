@@ -14,7 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { AlertCircle, Clock, CheckCircle, Send, Search, MessageSquare } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { createReclamation, getReclamations, getReclamationById } from "./actions"
+import { createReclamation, getReclamations, getReclamationById, getClientByUserId } from "./actions"
 import { getCurrentUser } from "@/app/user/actions"
 
 const complainTypes = {
@@ -99,16 +99,38 @@ export default function ReclamationPage() {
   useEffect(() => {
     const loadUserInfo = async () => {
       try {
+        // 1. Récupérer l'utilisateur connecté pour obtenir son ID (userid)
         const user = await getCurrentUser()
         console.log("[Reclamation] Utilisateur chargé:", {
+          id: user?.id,
           email: user?.email,
-          phoneNumber: user?.phoneNumber,
-          phone: user?.phone,
         })
         
-        if (user) {
-          const email = user.email || ""
-          const phone = user.phoneNumber || user.phone || ""
+        if (!user || !user.id) {
+          console.warn("[Reclamation] Aucun utilisateur trouvé ou ID manquant")
+          return
+        }
+
+        // 2. Récupérer le client depuis la table client en filtrant sur userid
+        const clientData = await getClientByUserId(user.id)
+        
+        if (clientData) {
+          // Utiliser l'email du client en priorité, sinon celui de l'utilisateur
+          const email = clientData.email || user.email || ""
+          
+          // Pour le téléphone, essayer d'abord le client, puis l'utilisateur
+          const clientPhone = clientData.telephone || clientData.phoneNumber || ""
+          const userPhone = user.phoneNumber || user.phone || ""
+          const phone = clientPhone || userPhone || ""
+          
+          console.log("[Reclamation] Données client récupérées:", {
+            clientEmail: clientData.email,
+            clientPhone: clientPhone,
+            userEmail: user.email,
+            userPhone: userPhone,
+            finalEmail: email,
+            finalPhone: phone,
+          })
           
           setFormData((prev) => ({
             ...prev,
@@ -116,9 +138,18 @@ export default function ReclamationPage() {
             phone: phone,
           }))
           
-          console.log("[Reclamation] formData mis à jour avec:", { email, phone })
+          console.log("[Reclamation] formData mis à jour avec données client (table client):", { email, phone })
         } else {
-          console.warn("[Reclamation] Aucun utilisateur trouvé")
+          console.warn("[Reclamation] Aucun client trouvé avec userid:", user.id, "- Utilisation des données utilisateur")
+          // Fallback sur les données de l'utilisateur si le client n'est pas trouvé
+          const email = user.email || ""
+          const phone = user.phoneNumber || user.phone || ""
+          setFormData((prev) => ({
+            ...prev,
+            email: email,
+            phone: phone,
+          }))
+          console.log("[Reclamation] formData mis à jour avec données utilisateur (fallback):", { email, phone })
         }
       } catch (error) {
         console.error("Erreur lors du chargement des informations utilisateur:", error)
