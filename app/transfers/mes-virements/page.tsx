@@ -183,37 +183,22 @@ export default function MesVirementsPage() {
     )
     const currency = account?.currency || "GNF"
     
-    // ✅ Use reliable classification based on account relationships
-    const accountNumber = account?.accountNumber || account?.numCompte
-    const isCreditAccount = accountNumber && txn.creditAccount === accountNumber
-    const isDebitAccount = accountNumber && txn.numCompte === accountNumber
-    
-    let isDebit = false
-    let isCredit = false
-    
-    if (isCreditAccount) {
-      // Account is receiving money → CREDIT
-      isCredit = true
-      isDebit = false
-    } else if (isDebitAccount) {
-      // Account is sending money → DEBIT
-      isDebit = true
-      isCredit = false
-    } else {
-      // Fallback to txnType field
-      const txnType = (txn.txnType || "").toUpperCase()
-      isDebit = txnType === "DEBIT"
-      isCredit = txnType === "CREDIT"
-    }
+    // ✅ Utiliser directement txnType pour déterminer DEBIT ou CREDIT
+    const txnType = (txn.txnType || "").toUpperCase()
+    const isDebit = txnType === "DEBIT"
+    const isCredit = txnType === "CREDIT"
     
     // Montant avec signe : négatif pour DEBIT, positif pour CREDIT
     const signedAmount = isDebit ? -Math.abs(baseAmount) : Math.abs(baseAmount)
+    
+    // Préfixer avec "+" pour les crédits
+    const amountPrefix = isCredit ? "+" : ""
     
     const when = txn.valueDate || txn.createdAt || new Date().toISOString()
     return {
       type: isDebit ? "Virement émis" : "Virement reçu",
       from: txn.description || txn.referenceOperation || "Transaction",
-      amount: `${formatAmount(signedAmount, currency)} ${currency}`,
+      amount: `${amountPrefix}${formatAmount(signedAmount, currency)} ${currency}`,
       date: new Date(when).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" }),
       time: new Date(when).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }),
       status: txn.status || "COMPLETED",
@@ -306,7 +291,7 @@ export default function MesVirementsPage() {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
               {/* Filtre par date */}
               <div className="space-y-2">
                 <Label htmlFor="dateFrom" className="text-sm font-medium">
@@ -341,7 +326,7 @@ export default function MesVirementsPage() {
               </div>
 
               {/* Filtre par montant */}
-              <div className="space-y-2">
+              <div className="space-y-3">
                 <Label htmlFor="minAmount" className="text-sm font-medium">
                   Montant minimum (GNF)
                 </Label>
@@ -360,7 +345,7 @@ export default function MesVirementsPage() {
                 />
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-3">
                 <Label htmlFor="maxAmount" className="text-sm font-medium">
                   Montant maximum (GNF)
                 </Label>
@@ -379,29 +364,7 @@ export default function MesVirementsPage() {
                 />
               </div>
 
-              {/* Filtre par statut */}
-              <div className="space-y-2">
-                <Label htmlFor="status" className="text-sm font-medium">
-                  Statut
-                </Label>
-                <Select
-                  value={filters.status}
-                  onValueChange={(value) => {
-                    setFilters({ ...filters, status: value })
-                    setCurrentPage(1)
-                  }}
-                >
-                  <SelectTrigger id="status" className="h-10">
-                    <SelectValue placeholder="Tous" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Tous</SelectItem>
-                    <SelectItem value="completed">Exécuté</SelectItem>
-                    <SelectItem value="pending">En attente</SelectItem>
-                    <SelectItem value="failed">Échoué</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+            
             </div>
           </CardContent>
         </Card>

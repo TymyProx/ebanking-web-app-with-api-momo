@@ -82,17 +82,17 @@ export async function getUserTransactions(): Promise<{ success: boolean; data: T
           accounts = accountsData
         }
 
-        // Filtrer par clientId si disponible
+        // Filtrer par clientId si disponible pour obtenir les comptes de l'utilisateur
         if (currentUserId) {
           accounts = accounts.filter((acc: any) => acc.clientId === currentUserId)
         }
 
-        // Extraire les numéros de compte
+        // Extraire les numéros de compte (numCompte en priorité)
         userAccountNumbers = accounts
-          .map((acc: any) => acc.accountNumber || acc.numCompte || acc.accountId)
+          .map((acc: any) => acc.numCompte || acc.accountNumber || acc.accountId)
           .filter(Boolean)
 
-        console.log("[v0] Numéros de compte de l'utilisateur:", userAccountNumbers)
+        console.log("[v0] Numéros de compte (numCompte) de l'utilisateur:", userAccountNumbers)
       }
     } catch (error) {
       console.error("[v0] Erreur lors de la récupération des comptes:", error)
@@ -129,20 +129,23 @@ export async function getUserTransactions(): Promise<{ success: boolean; data: T
 
     console.log("[v0] Total transactions récupérées:", allTransactions.length)
 
-    // 4. Filtrer les transactions par comptes de l'utilisateur
+    // 4. Filtrer les transactions par numCompte de l'utilisateur (sans utiliser clientId)
     let userTransactions: Transaction[] = []
 
     if (userAccountNumbers.length > 0) {
-      // Transactions où le compte de l'utilisateur est le compte source (numCompte/accountId)
+      // Filtrer uniquement par numCompte - transactions où le compte de l'utilisateur est le compte source (numCompte)
       const directTransactions = allTransactions.filter((txn: any) => {
-        const txnAccountNumber = txn.numCompte || txn.accountNumber || txn.accountId
-        return userAccountNumbers.includes(txnAccountNumber)
+        const txnNumCompte = txn.numCompte
+        // Filtrer uniquement si numCompte correspond à un des numCompte de l'utilisateur
+        return txnNumCompte && userAccountNumbers.includes(txnNumCompte)
       })
 
       // Transactions où le compte de l'utilisateur est le compte crédité (creditAccount)
+      // Vérifier que creditAccount correspond à un numCompte de l'utilisateur
       const creditTransactions = allTransactions
         .filter((txn: any) => {
           const creditAccount = txn.creditAccount
+          // Filtrer uniquement si creditAccount correspond à un des numCompte de l'utilisateur
           return creditAccount && userAccountNumbers.includes(creditAccount)
         })
         .map((txn: any) => {
@@ -177,7 +180,8 @@ export async function getUserTransactions(): Promise<{ success: boolean; data: T
 
       userTransactions = Array.from(uniqueTransactions.values())
     } else {
-      userTransactions = allTransactions
+      // Si aucun numCompte trouvé, retourner un tableau vide au lieu de toutes les transactions
+      userTransactions = []
     }
 
     console.log("[v0] Transactions filtrées pour l'utilisateur:", userTransactions.length)

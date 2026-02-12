@@ -143,16 +143,6 @@ const navigationData: {
       icon: Wallet,
       items: [
         {
-          title: "Consultation de solde",
-          url: "/accounts/balance",
-          icon: BarChart3,
-        },
-        {
-          title: "Relevés de compte",
-          url: "/accounts/statements",
-          icon: FileText,
-        },
-        {
           title: "Ouverture compte",
           url: "/accounts/new",
           icon: PlusCircle,
@@ -162,62 +152,71 @@ const navigationData: {
           url: "/accounts/rib",
           icon: FileText,
         },
+        {
+          title: "Consultation de solde",
+          url: "/accounts/balance",
+          icon: BarChart3,
+        },
+        {
+          title: "Relevés bancaires",
+          url: "/accounts/statements",
+          icon: FileText,
+        },
       ],
     },
   ],
-  operations: [
-    {
-      title: "Virements",
-      icon: ArrowLeftRight,
-      items: [
-        {
-          title: "Effectuer un virement",
-          url: "/transfers/new",
-          icon: ArrowLeftRight,
-        },
-        {
-          title: "Bénéficiaires",
-          url: "/transfers/beneficiaries",
-          icon: User,
-        },
-        {
-          title: "Mes virements",
-          url: "/transfers/mes-virements",
-          icon: Clock,
-        },
-        {
-          title: "Mise à disposition des fonds",
-          url: "/operations/mise-disposition-fonds",
-          icon: HandCoins,
-        },
-      ],
-    },
-    {
-      title: "Opérations en attente",
-      url: "/operations/pending",
-      icon: Clock,
-    },
-    {
-      title: "Gestion des cartes",
-      icon: CreditCard,
-      items: [
-        {
-          title: "Mes cartes",
-          url: "/cartes",
-          icon: CreditCard,
-        },
-        {
-          title: "Demande de carte",
-          url: "/cartes/demande",
-          icon: FileCheck,
-        },
-      ],
-    },
-  
-  ],
+  // operations: [
+  //   {
+  //     title: "Virements",
+  //     icon: ArrowLeftRight,
+  //     items: [
+  //       {
+  //         title: "Effectuer un virement",
+  //         url: "/transfers/new",
+  //         icon: ArrowLeftRight,
+  //       },
+  //       {
+  //         title: "Bénéficiaires",
+  //         url: "/transfers/beneficiaries",
+  //         icon: User,
+  //       },
+  //       {
+  //         title: "Mise à disposition des fonds",
+  //         url: "/operations/mise-disposition-fonds",
+  //         icon: HandCoins,
+  //       },
+  //       {
+  //         title: "Mes virements",
+  //         url: "/transfers/mes-virements",
+  //         icon: Clock,
+  //       },
+  //     ],
+  //   },
+  //   {
+  //     title: "Opérations en attente",
+  //     url: "/operations/pending",
+  //     icon: Clock,
+  //   },
+  //   {
+  //     title: "Gestion des cartes",
+  //     icon: CreditCard,
+  //     items: [
+  //       {
+  //         title: "Mes cartes",
+  //         url: "/cartes",
+  //         icon: CreditCard,
+  //       },
+  //       {
+  //         title: "Demande de carte",
+  //         url: "/cartes/demande",
+  //         icon: FileCheck,
+  //       },
+  //     ],
+  //   },
+  // ],
   services: [
     {
-      title: "E-Services",
+      title: "Autres services",
       icon: FileText,
       items: [
         {
@@ -225,15 +224,20 @@ const navigationData: {
           url: "/services/checkbook",
           icon: BookOpen,
         },
-        {
-          title: "Demande de crédit",
-          url: "/services/credit",
-          icon: CreditCard,
-        },
+        // {
+        //   title: "Demande de crédit",
+        //   url: "/services/credit",
+        //   icon: CreditCard,
+        // },
         {
           title: "Réclamations",
           url: "/services/reclamation",
           icon: AlertCircle,
+        },
+        {
+          title: "Agences",
+          url: "/agences",
+          icon: Building2,
         },
       ],
     },
@@ -260,11 +264,7 @@ const navigationData: {
         },
       ],
     },
-    {
-      title: "Agences",
-      url: "/agences",
-      icon: Building2,
-    },
+   
   ],
   other: [
     {
@@ -274,6 +274,7 @@ const navigationData: {
       badge: "3",
     },
   ],
+  operations: []
 }
 
 // ✅ Force toutes les icônes Lucide en blanc (stroke & fill via currentColor)
@@ -577,7 +578,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>): 
             </SidebarGroup>
 
             {/* Opérations */}
-            <SidebarGroup className="mt-4">
+            <SidebarGroup className="mt-4 hidden">
               <SidebarGroupLabel asChild>
                 <div>Opérations</div>
               </SidebarGroupLabel>
@@ -624,7 +625,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>): 
             </SidebarGroup>
 
             {/* Support */}
-            <SidebarGroup className="mt-4">
+            <SidebarGroup className="mt-4 hidden">
               <SidebarGroupLabel asChild>
                 <div>Support</div>
               </SidebarGroupLabel>
@@ -655,7 +656,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>): 
             </SidebarGroup>
 
             {/* Autres */}
-            <SidebarGroup className="mt-4">
+            <SidebarGroup className="mt-4 hidden">
               <SidebarGroupLabel asChild>
                 <div>Autres</div>
               </SidebarGroupLabel>

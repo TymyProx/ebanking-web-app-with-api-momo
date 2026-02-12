@@ -454,20 +454,18 @@ export default function StatementsPage() {
 
     let filtered = [...allTransactions]
 
-    // Filtre par type (débit/crédit)
+    // Filtre par type (débit/crédit) - utiliser uniquement txnType
     if (filterType === "debit") {
       filtered = filtered.filter((txn) => {
-        const amount = Number.parseFloat(String(txn.montantOperation ?? 0))
         const txnType = String(txn.txnType || "").toUpperCase()
-        // Un débit est soit un montant négatif, soit un txnType DEBIT
-        return amount < 0 || txnType === "DEBIT"
+        // Un débit est uniquement si txnType === "DEBIT"
+        return txnType === "DEBIT"
       })
     } else if (filterType === "credit") {
       filtered = filtered.filter((txn) => {
-        const amount = Number.parseFloat(String(txn.montantOperation ?? 0))
         const txnType = String(txn.txnType || "").toUpperCase()
-        // Un crédit est soit un montant positif, soit un txnType CREDIT
-        return amount >= 0 && txnType !== "DEBIT"
+        // Un crédit est uniquement si txnType === "CREDIT"
+        return txnType === "CREDIT"
       })
     }
 
@@ -1022,15 +1020,19 @@ export default function StatementsPage() {
                 </TableHeader>
                 <TableBody>
                   {filteredTransactions.map((txn, index) => {
+                    // ✅ Utiliser directement txnType pour déterminer DEBIT ou CREDIT
                     const txnType = String(txn.txnType || "").toUpperCase()
                     const baseAmount = Number.parseFloat(String(txn.montantOperation || 0))
                     
-                    // Déterminer si c'est un débit ou un crédit
-                    const isDebit = txnType === "DEBIT" || baseAmount < 0
-                    const isCredit = txnType === "CREDIT" || (baseAmount >= 0 && txnType !== "DEBIT")
+                    // Déterminer si c'est un débit ou un crédit basé uniquement sur txnType
+                    const isDebit = txnType === "DEBIT"
+                    const isCredit = txnType === "CREDIT"
                     
-                    // Montant avec signe : négatif pour DEBIT, positif pour CREDIT (comme dans mes-virements)
+                    // Montant avec signe : négatif pour DEBIT, positif pour CREDIT
                     const signedAmount = isDebit ? -Math.abs(baseAmount) : Math.abs(baseAmount)
+                    
+                    // Préfixer avec "+" pour les crédits
+                    const amountPrefix = isCredit ? "+" : ""
                     
                     return (
                       <TableRow key={index}>
@@ -1044,7 +1046,7 @@ export default function StatementsPage() {
                             isDebit ? "text-red-600" : isCredit ? "text-green-600" : "text-gray-600"
                           }`}
                         >
-                          {signedAmount >= 0 ? "+" : ""}{formatAmount(signedAmount)} GNF
+                          {amountPrefix}{formatAmount(signedAmount)} GNF
                         </TableCell>
                       </TableRow>
                     )
