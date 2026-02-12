@@ -130,7 +130,6 @@ export default function BeneficiariesPage() {
   const [selectedSwiftCode, setSelectedSwiftCode] = useState("")
   const [loadingBanks, setLoadingBanks] = useState(false)
   const [accountNumberError, setAccountNumberError] = useState<string | null>(null)
-  const [ribError, setRibError] = useState<string | null>(null)
   const [formDirty, setFormDirty] = useState(false)
   const formRef = useRef<HTMLFormElement>(null)
   const editFormRef = useRef<HTMLFormElement>(null)
@@ -247,9 +246,6 @@ export default function BeneficiariesPage() {
       setSelectedBank("")
       setSelectedBankCode("")
       setSelectedSwiftCode("")
-    }
-    if (selectedType === "BNG-INTERNATIONAL") {
-      setRibError(null)
     }
   }, [selectedType])
 
@@ -461,86 +457,6 @@ export default function BeneficiariesPage() {
     return true
   }
 
-  const sanitizeRibPart = (value: string) => value.replace(/\s+/g, "").toUpperCase()
-
-  const replaceLettersWithDigits = (value: string) =>
-    value
-      .split("")
-      .map((char) => {
-        if (/[0-9]/.test(char)) {
-          return char
-        }
-        const code = char.charCodeAt(0) - 55
-        return code >= 10 && code <= 35 ? String(code) : ""
-      })
-      .join("")
-
-  const mod97 = (numeric: string) => {
-    let remainder = 0
-    for (let i = 0; i < numeric.length; i += 1) {
-      const digit = numeric.charCodeAt(i) - 48
-      if (digit < 0 || digit > 9) {
-        return -1
-      }
-      remainder = (remainder * 10 + digit) % 97
-    }
-    return remainder
-  }
-
-  const computeRibKey = (bankCode: string, agencyCode: string, accountNumber: string) => {
-    const numeric = `${replaceLettersWithDigits(bankCode)}${replaceLettersWithDigits(agencyCode)}${replaceLettersWithDigits(accountNumber)}`
-    const remainder = mod97(numeric)
-    if (remainder < 0) {
-      return ""
-    }
-    const key = 97 - remainder
-    return key.toString().padStart(2, "0")
-  }
-
-  const validateRibLocally = (bankCode: string, agencyCode: string, accountNumber: string, ribKey: string) => {
-    const sanitizedBank = sanitizeRibPart(bankCode)
-    const sanitizedAgency = sanitizeRibPart(agencyCode)
-    const sanitizedAccount = sanitizeRibPart(accountNumber)
-    const sanitizedKey = sanitizeRibPart(ribKey)
-
-    if (!sanitizedBank || !sanitizedAgency || !sanitizedAccount || !sanitizedKey) {
-      return { valid: false, error: "Tous les champs RIB sont requis" }
-    }
-
-    if (sanitizedBank.length !== 3) {
-      return { valid: false, error: "Le code banque doit contenir exactement 3 caractères" }
-    }
-
-    if (sanitizedAgency.length !== 3) {
-      return { valid: false, error: "Le code agence doit contenir exactement 3 caractères" }
-    }
-
-    if (sanitizedAccount.length !== 10) {
-      return { valid: false, error: "Le numéro de compte doit contenir exactement 10 chiffres" }
-    }
-
-    if (!/^[0-9]{2}$/.test(sanitizedKey)) {
-      return { valid: false, error: "La clé RIB doit contenir 2 chiffres" }
-    }
-
-    const expectedKey = computeRibKey(sanitizedBank, sanitizedAgency, sanitizedAccount)
-    if (!expectedKey) {
-      return { valid: false, error: "Impossible de calculer la clé RIB" }
-    }
-
-    if (expectedKey !== sanitizedKey) {
-      console.log("[v0] Clé RIB incorrecte !")
-      console.log("[v0] Clé RIB saisie:", sanitizedKey)
-      console.log("[v0] Clé RIB attendue:", expectedKey)
-      console.log("[v0] Code Banque:", sanitizedBank)
-      console.log("[v0] Code Agence:", sanitizedAgency)
-      console.log("[v0] Numéro de compte:", sanitizedAccount)
-      return { valid: false, error: "Clé RIB invalide" }
-    }
-
-    return { valid: true, error: null }
-  }
-
   const handleBankSelection = (bankName: string) => {
     setSelectedBank(bankName)
     const selectedBankData = banks.find((bank) => bank.bankName === bankName)
@@ -559,7 +475,6 @@ export default function BeneficiariesPage() {
     setSelectedBankCode("")
     setSelectedSwiftCode("")
     setAccountNumberError(null)
-    setRibError(null)
     setFormDirty(false)
     if (formRef.current) {
       formRef.current.reset()
@@ -567,7 +482,6 @@ export default function BeneficiariesPage() {
   }
 
   const handleRibFieldChange = () => {
-    setRibError(null)
     setFormDirty(true)
   }
 
@@ -579,27 +493,6 @@ export default function BeneficiariesPage() {
       const accountNumber = formData.get("account") as string
       if (!validateAccountNumber(accountNumber)) {
         return
-      }
-
-      if (selectedType === "BNG-BNG" || selectedType === "BNG-CONFRERE") {
-        const agencyCode = (formData.get("codeAgence") as string) || ""
-        const cleRib = (formData.get("cleRib") as string) || ""
-        const bankCodeForRib =
-          selectedType === "BNG-BNG"
-            ? selectedBankCode || "022"
-            : selectedBankCode || (formData.get("bank") as string) || ""
-
-        const ribValidation = validateRibLocally(bankCodeForRib, agencyCode, accountNumber, cleRib)
-        if (!ribValidation.valid) {
-          setRibError(ribValidation.error)
-          toast({
-            title: "RIB invalide",
-            description: ribValidation.error,
-            variant: "destructive",
-          })
-          return
-        }
-        setRibError(null)
       }
     }
 
@@ -641,27 +534,6 @@ export default function BeneficiariesPage() {
       const accountNumber = formData.get("account") as string
       if (!validateAccountNumber(accountNumber)) {
         return
-      }
-
-      if (selectedType === "BNG-BNG" || selectedType === "BNG-CONFRERE") {
-        const agencyCode = (formData.get("codeAgence") as string) || ""
-        const cleRib = (formData.get("cleRib") as string) || ""
-        const bankCodeForRib =
-          selectedType === "BNG-BNG"
-            ? selectedBankCode || "022"
-            : selectedBankCode || (formData.get("bank") as string) || ""
-
-        const ribValidation = validateRibLocally(bankCodeForRib, agencyCode, accountNumber, cleRib)
-        if (!ribValidation.valid) {
-          setRibError(ribValidation.error)
-          toast({
-            title: "RIB invalide",
-            description: ribValidation.error,
-            variant: "destructive",
-          })
-          return
-        }
-        setRibError(null)
       }
     }
 
@@ -1014,9 +886,6 @@ export default function BeneficiariesPage() {
                       onChange={handleRibFieldChange}
                       required
                     />
-                    {ribError && selectedType !== "BNG-INTERNATIONAL" && (
-                      <p className="text-sm text-red-600">{ribError}</p>
-                    )}
                   </div>
                 </div>
               )}
@@ -1041,7 +910,7 @@ export default function BeneficiariesPage() {
                   type="submit"
                   disabled={
                     isAddAndActivatePending ||
-                    ((accountNumberError !== null || ribError !== null) && selectedType !== "BNG-INTERNATIONAL")
+                    (accountNumberError !== null && selectedType !== "BNG-INTERNATIONAL")
                   }
                 >
                   {isAddAndActivatePending ? "Traitement..." : "Ajouter"}
@@ -1710,9 +1579,6 @@ export default function BeneficiariesPage() {
                     onChange={handleRibFieldChange}
                     required
                   />
-                  {ribError && selectedType !== "BNG-INTERNATIONAL" && (
-                    <p className="text-sm text-red-600">{ribError}</p>
-                  )}
                 </div>
               </div>
             )}
@@ -1746,7 +1612,7 @@ export default function BeneficiariesPage() {
                 type="submit"
                 disabled={
                   isUpdatePending ||
-                  ((accountNumberError !== null || ribError !== null) && selectedType !== "BNG-INTERNATIONAL")
+                  (accountNumberError !== null && selectedType !== "BNG-INTERNATIONAL")
                 }
               >
                 {isUpdatePending ? "Traitement..." : "Modifier"}
