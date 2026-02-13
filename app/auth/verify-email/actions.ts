@@ -137,18 +137,38 @@ const fetchBdClientBngByNumClient = async (supportToken: string, numClient: stri
   return null
 }
 
-export async function completeSignup(token: string, password: string) {
+export async function completeSignup(token: string, password: string, email?: string) {
   try {
     const cookieStore = await cookies()
     const pendingCookie = cookieStore.get("pending_signup_data")
-    if (!pendingCookie) throw new Error("Session expirée. Recommence l'inscription.")
-
-    const pending = JSON.parse(pendingCookie.value)
-    if (pending.verificationToken !== token) {
-      throw new Error("Token de vérification invalide")
+    
+    let pending: any = null
+    if (pendingCookie) {
+      try {
+        pending = JSON.parse(pendingCookie.value)
+        // Vérifier que le token correspond si le cookie existe
+        if (pending.verificationToken !== token) {
+          throw new Error("Token de vérification invalide")
+        }
+      } catch (e) {
+        // Si le cookie est invalide, continuer sans cookie
+        console.log("[completeSignup] Cookie invalide, continuation avec token uniquement")
+        pending = null
+      }
     }
 
-    const clientType = normalizeClientType(pending)
+    // Si pas de cookie mais email fourni, permettre de continuer
+    if (!pending && !email) {
+      throw new Error("Email requis pour finaliser l'inscription")
+    }
+
+    // Utiliser les données du cookie si disponibles, sinon utiliser l'email fourni
+    const signupEmail = pending?.email || email
+    if (!signupEmail) {
+      throw new Error("Email requis pour finaliser l'inscription")
+    }
+
+    const clientType = pending ? normalizeClientType(pending) : "new"
 
     // ============================================================
     // PREFLIGHT GET (support token)
@@ -157,7 +177,7 @@ export async function completeSignup(token: string, password: string) {
 
     // Determine codeClient for compte fetching (existing clients only)
     const codeClient =
-      clientType === "existing"
+      clientType === "existing" && pending
         ? String(pending.numClient || "").trim()
         : ""
 
@@ -205,13 +225,13 @@ export async function completeSignup(token: string, password: string) {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ 
-        email: pending.email, 
+        email: signupEmail, 
         password, 
         tenantId: TENANT_ID,
-        // Extra client data
-        fullName: pending.fullName,
-        phone: pending.phone,
-        address: pending.address,
+        // Extra client data (utiliser les données du cookie si disponibles, sinon valeurs par défaut)
+        fullName: pending?.fullName || "",
+        phone: pending?.phone || "",
+        address: pending?.address || "",
         clientType: clientType,
         numClient: clientType === "existing" ? codeClient : undefined,
       }),
@@ -297,7 +317,10 @@ export async function completeSignup(token: string, password: string) {
     }
 
     await setSecureCookie("user", JSON.stringify(userData))
-    cookieStore.delete("pending_signup_data")
+    // Supprimer le cookie seulement s'il existe
+    if (pendingCookie) {
+      cookieStore.delete("pending_signup_data")
+    }
 
     return {
       success: true,
