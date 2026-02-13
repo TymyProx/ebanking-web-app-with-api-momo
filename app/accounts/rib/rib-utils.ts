@@ -32,8 +32,8 @@ export interface RibInfo {
  */
 export function generateRibData(account: RibInfo, userProfile: UserProfile | null) {
   const accountHolder = userProfile
-    ? `${userProfile.firstName || ""} ${userProfile.lastName || ""}`.trim() || userProfile.email
-    : "Titulaire du compte"
+    ? (userProfile.fullName || `${userProfile.firstName || ""} ${userProfile.lastName || ""}`.trim() || "TITULAIRE")
+    : "TITULAIRE"
 
   // Construire l'IBAN si non disponible
   // Format IBAN: GN82 + Code banque (3) + Code agence (3) + Numéro compte (10) + Clé RIB (2)

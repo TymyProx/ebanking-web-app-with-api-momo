@@ -307,7 +307,9 @@ export default function RIBPage() {
                   : (accountNumberClean.length > 10 ? accountNumberClean.slice(-2) : "00")
                 return `GN82${bankCode}${branchCode}${numeroCompte}${cleRib}`
               })(),
-              accountHolder: profile ? `${profile.firstName || ""} ${profile.lastName || ""}`.trim() : "TITULAIRE",
+              accountHolder: profile 
+                ? (profile.fullName || `${profile.firstName || ""} ${profile.lastName || ""}`.trim() || profile.email || "TITULAIRE")
+                : "TITULAIRE",
               bankName: "Banque Nationale de Guinée",
               bankCode: (acc.codeBanque || "022").padStart(3, "0").slice(0, 3),
               branchCode: (acc.codeAgence || "001").padStart(3, "0").slice(0, 3),
@@ -346,8 +348,8 @@ export default function RIBPage() {
                   return `GN82${bankCode}${branchCode}${numeroCompte}${cleRib}`
                 })(),
                 accountHolder: profile
-                  ? `${profile.firstName || ""} ${profile.lastName || ""}`.trim()
-                  : "DIALLO Mamadou",
+                  ? (profile.fullName || `${profile.firstName || ""} ${profile.lastName || ""}`.trim() || "TITULAIRE")
+                  : "TITULAIRE",
                 bankName: "Banque Nationale de Guinée",
           bankCode: "022",
           branchCode: "001",
@@ -380,8 +382,8 @@ export default function RIBPage() {
             return `GN82${bankCode}${branchCode}${numeroCompte}${cleRib}`
           })(),
           accountHolder: userProfile
-            ? `${userProfile.firstName || ""} ${userProfile.lastName || ""}`.trim()
-            : "DIALLO Mamadou",
+            ? (userProfile.fullName || `${userProfile.firstName || ""} ${userProfile.lastName || ""}`.trim() || "TITULAIRE")
+            : "TITULAIRE",
           bankName: "Banque Nationale de Guinée",
           bankCode: "022",
           branchCode: "001",
