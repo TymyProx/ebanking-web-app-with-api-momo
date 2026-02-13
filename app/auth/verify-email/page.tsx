@@ -121,11 +121,17 @@ function VerifyEmailContent() {
           <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent animate-shimmer"></div>
 
           {/* Banking illustration */}
-          <div className="hidden lg:block absolute bottom-0 left-1/2 -translate-x-1/2 opacity-30">
-            <Image src="/images/image2.png" alt="Banking" width={550} height={400} className="object-contain" />
+          <div className="hidden lg:block absolute bottom-0 left-[35%] -translate-x-1/2 w-[90%] opacity-50">
+            <Image
+              src="/images/image2.png"
+              alt="Banking"
+              width={2000}
+              height={1600}
+              className="w-full h-auto object-contain"
+            />
           </div>
 
-          <div className="absolute top-28 sm:top-32 lg:top-1/2 lg:-translate-y-1/2 left-4 sm:left-6 right-4 lg:right-auto lg:max-w-2xl px-2 sm:px-0">
+          <div className="absolute top-32 sm:top-36 lg:top-[60%] lg:-translate-y-1/2 left-4 sm:left-6 right-4 lg:right-auto lg:max-w-2xl px-2 sm:px-0">
             <div className="text-left text-white space-y-3 sm:space-y-4 transition-all duration-700 ease-in-out">
               <div className="flex items-center justify-start space-x-2 mb-2 sm:mb-3">
                 <span className="text-xs sm:text-sm font-semibold text-[#f4c430] uppercase tracking-wider px-3 py-1 bg-white/10 backdrop-blur-sm rounded-full">
