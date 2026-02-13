@@ -195,24 +195,10 @@ export default function AccountDetailsPage({ params }: AccountDetailPageProps) {
             .map((txn: any) => {
               const amount = Number.parseFloat(txn.montantOperation || txn.amount || "0")
               
-              // ✅ Reliable classification based on account relationship
-              const txnDebitAccount = txn.numCompte
-              const txnCreditAccount = txn.creditAccount
-              
-              let isCredit = false
-              let isDebit = false
-              
-              if (txnCreditAccount === accountNumber) {
-                // This account is receiving money → CREDIT
-                isCredit = true
-              } else if (txnDebitAccount === accountNumber) {
-                // This account is sending money → DEBIT
-                isDebit = true
-              } else {
-                // Fallback to txnType
-                isCredit = txn.txnType === "CREDIT"
-                isDebit = !isCredit
-              }
+              // ✅ Utiliser directement txnType pour déterminer DEBIT ou CREDIT
+              const txnType = (txn.txnType || "").toUpperCase()
+              const isCredit = txnType === "CREDIT"
+              const isDebit = txnType === "DEBIT"
 
               return {
                 id: txn.txnId || txn.id || txn.transactionId,
@@ -228,7 +214,8 @@ export default function AccountDetailsPage({ params }: AccountDetailPageProps) {
                   : (txn.creditAccount || txn.beneficiaryId || "Système"),
                 reference: txn.txnId || txn.referenceOperation || txn.reference || "REF-" + Date.now(),
                 balanceAfter: 0,
-              } as Transaction
+                txnType: txnType, // Ajouter txnType pour l'affichage
+              } as Transaction & { txnType?: string }
             })
 
           // Sort transactions by date (most recent first)
@@ -277,7 +264,10 @@ export default function AccountDetailsPage({ params }: AccountDetailPageProps) {
           })
           .map((txn: any) => {
             const amount = Number.parseFloat(txn.montantOperation || txn.amount || "0")
-            const isCredit = txn.txnType === "CREDIT"
+            // ✅ Utiliser directement txnType pour déterminer DEBIT ou CREDIT
+            const txnType = (txn.txnType || "").toUpperCase()
+            const isCredit = txnType === "CREDIT"
+            const isDebit = txnType === "DEBIT"
 
             return {
               id: txn.txnId || txn.id || txn.transactionId,
@@ -291,7 +281,8 @@ export default function AccountDetailsPage({ params }: AccountDetailPageProps) {
               counterparty: txn.creditAccount || txn.beneficiaryId || txn.beneficiary || "Système",
               reference: txn.txnId || txn.referenceOperation || txn.reference || "REF-" + Date.now(),
               balanceAfter: 0,
-            } as Transaction
+              txnType: txnType, // Ajouter txnType pour l'affichage
+            } as Transaction & { txnType?: string }
           })
           .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
 
@@ -697,12 +688,20 @@ export default function AccountDetailsPage({ params }: AccountDetailPageProps) {
                       <div className="flex items-center space-x-4">
                         <div
                           className={`w-12 h-12 rounded-full flex items-center justify-center ${
-                            transaction.amount > 0
+                            (transaction as any).txnType === "CREDIT"
+                              ? "bg-gradient-to-br from-green-500/20 to-green-600/10"
+                              : (transaction as any).txnType === "DEBIT"
+                              ? "bg-gradient-to-br from-red-500/20 to-red-600/10"
+                              : transaction.amount > 0
                               ? "bg-gradient-to-br from-primary/20 to-secondary/20"
                               : "bg-gradient-to-br from-destructive/20 to-destructive/10"
                           }`}
                         >
-                          {transaction.amount > 0 ? (
+                          {(transaction as any).txnType === "CREDIT" ? (
+                            <ArrowDownRight className="w-5 h-5 text-green-600" />
+                          ) : (transaction as any).txnType === "DEBIT" ? (
+                            <ArrowUpRight className="w-5 h-5 text-red-600" />
+                          ) : transaction.amount > 0 ? (
                             <ArrowDownRight className="w-5 h-5 text-primary" />
                           ) : (
                             <ArrowUpRight className="w-5 h-5 text-destructive" />
@@ -718,9 +717,17 @@ export default function AccountDetailsPage({ params }: AccountDetailPageProps) {
                       </div>
                       <div className="text-right">
                         <p
-                          className={`text-lg font-bold ${transaction.amount > 0 ? "text-primary" : "text-destructive"}`}
+                          className={`text-lg font-bold ${
+                            (transaction as any).txnType === "CREDIT" 
+                              ? "text-green-600" 
+                              : (transaction as any).txnType === "DEBIT"
+                              ? "text-red-600"
+                              : transaction.amount > 0 
+                              ? "text-primary" 
+                              : "text-destructive"
+                          }`}
                         >
-                          {transaction.amount > 0 ? "+" : "-"}
+                          {(transaction as any).txnType === "CREDIT" ? "+" : ""}
                           {formatAmount(Math.abs(transaction.amount), account?.currency || transaction.currency)}{" "}
                           {account?.currency || transaction.currency}
                         </p>
