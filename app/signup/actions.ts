@@ -11,6 +11,21 @@ import { getApiBaseUrl, TENANT_ID } from "@/lib/api-url"
 const API_BASE_URL = getApiBaseUrl()
 const APP_URL = config.EBANKING_URL || "http://localhost:3000"
 
+// Fonction fetch avec gestion des erreurs SSL
+async function safeFetch(url: string, options: RequestInit = {}): Promise<Response> {
+  try {
+    return await fetch(url, options)
+  } catch (error: any) {
+    // Si erreur SSL et URL HTTPS, essayer avec HTTP
+    if ((error?.code === "ERR_SSL_WRONG_VERSION_NUMBER" || error?.message?.includes("SSL")) && url.startsWith("https://")) {
+      console.warn(`[safeFetch] Erreur SSL, tentative avec HTTP: ${url}`)
+      const httpUrl = url.replace("https://", "http://")
+      return await fetch(httpUrl, options)
+    }
+    throw error
+  }
+}
+
 interface SignupData {
   fullName: string
   email: string
@@ -264,7 +279,7 @@ export async function initiateExistingClientSignup(data: { clientCode: string })
       invitationToken: "",
     }
 
-    const loginResponse = await fetch(`${API_BASE_URL}/auth/sign-in`, {
+    const loginResponse = await safeFetch(`${API_BASE_URL}/auth/sign-in`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -289,7 +304,7 @@ export async function initiateExistingClientSignup(data: { clientCode: string })
 
     const searchUrl = `${API_BASE_URL}/tenant/${TENANT_ID}/bd-client-bng?numClient=${encodeURIComponent(data.clientCode)}`
 
-    const bdClientResponse = await fetch(searchUrl, {
+    const bdClientResponse = await safeFetch(searchUrl, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -352,12 +367,46 @@ export async function initiateExistingClientSignup(data: { clientCode: string })
 
     console.log("[v0] Client found in BdClientBng:", clientFullName, clientEmail)
 
-    // Check if client already exists in the client table
-    console.log("[v0] Step 3: Checking if client already exists in client table...")
+    // Step 3: Vérifier dans compteBng si cette racine a des comptes
+    console.log("[v0] Step 3: Checking for accounts in CompteBng...")
+    
+    const COMPTE_BNG_ENDPOINT = `${API_BASE_URL}/tenant/${TENANT_ID}/compte-bng`
+    const compteBngUrl = `${COMPTE_BNG_ENDPOINT}?filter=clientId||$eq||${encodeURIComponent(numClient)}`
+    
+    const compteBngResponse = await safeFetch(compteBngUrl, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${supportToken}`,
+      },
+    })
+
+    let comptesBng: any[] = []
+    if (compteBngResponse.ok) {
+      const compteBngData = await compteBngResponse.json()
+      
+      if (Array.isArray(compteBngData)) {
+        comptesBng = compteBngData
+      } else if (compteBngData.data && Array.isArray(compteBngData.data)) {
+        comptesBng = compteBngData.data
+      } else if (compteBngData.rows && Array.isArray(compteBngData.rows)) {
+        comptesBng = compteBngData.rows
+      }
+      
+      // Filtrer pour s'assurer que clientId correspond exactement
+      comptesBng = comptesBng.filter((c: any) => String(c.clientId || "").trim() === String(numClient).trim())
+      
+      console.log(`[v0] Found ${comptesBng.length} compte(s) in CompteBng for client ${numClient}`)
+    } else if (compteBngResponse.status !== 404) {
+      console.warn("[v0] Error fetching CompteBng:", compteBngResponse.status)
+    }
+
+    // Step 4: Vérifier dans la table client si le client existe déjà (seulement après avoir vérifié bdClientBng et compteBng)
+    console.log("[v0] Step 4: Checking if client already exists in client table...")
     
     const existingClientUrl = `${API_BASE_URL}/tenant/${TENANT_ID}/client?filter=codeClient||$eq||${encodeURIComponent(numClient)}`
     
-    const existingClientResponse = await fetch(existingClientUrl, {
+    const existingClientResponse = await safeFetch(existingClientUrl, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -378,7 +427,7 @@ export async function initiateExistingClientSignup(data: { clientCode: string })
       }
 
       if (existingClients.length > 0) {
-        console.log("[v0] Client with this codeClient already exists")
+        console.log("[v0] Client with this codeClient already exists in client table")
         return {
           success: false,
           message: "Le client a déjà un compte. Veuillez vous connecter.",
@@ -387,11 +436,11 @@ export async function initiateExistingClientSignup(data: { clientCode: string })
     }
 
     // Check if email already has an account
-    console.log("[v0] Step 4: Checking if email already exists...")
+    console.log("[v0] Step 5: Checking if email already exists...")
 
     const existingUsersUrl = `${API_BASE_URL}/tenant/${TENANT_ID}/users?filter=email||$eq||${encodeURIComponent(clientEmail)}`
 
-    const existingUsersResponse = await fetch(existingUsersUrl, {
+    const existingUsersResponse = await safeFetch(existingUsersUrl, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -447,7 +496,7 @@ export async function initiateExistingClientSignup(data: { clientCode: string })
     // ============================================================
     // SEND VERIFICATION EMAIL
     // ============================================================
-    console.log("[v0] Step 5: Sending verification email...")
+    console.log("[v0] Step 6: Sending verification email...")
 
     const resend = new Resend(process.env.RESEND_API_KEY)
     const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || "no-reply@bngebanking.com"
