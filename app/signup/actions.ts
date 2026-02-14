@@ -403,8 +403,10 @@ export async function initiateExistingClientSignup(data: { clientCode: string })
 
     // Step 4: Vérifier dans la table client si le client existe déjà (seulement après avoir vérifié bdClientBng et compteBng)
     console.log("[v0] Step 4: Checking if client already exists in client table...")
+    console.log("[v0] Searching for codeClient:", numClient)
     
     const existingClientUrl = `${API_BASE_URL}/tenant/${TENANT_ID}/client?filter=codeClient||$eq||${encodeURIComponent(numClient)}`
+    console.log("[v0] Client search URL:", existingClientUrl)
     
     const existingClientResponse = await safeFetch(existingClientUrl, {
       method: "GET",
@@ -414,25 +416,71 @@ export async function initiateExistingClientSignup(data: { clientCode: string })
       },
     })
 
-    if (existingClientResponse.ok) {
-      const existingClientData = await existingClientResponse.json()
+    console.log("[v0] Client search response status:", existingClientResponse.status)
 
-      let existingClients: any[] = []
-      if (Array.isArray(existingClientData)) {
-        existingClients = existingClientData
-      } else if (existingClientData.data && Array.isArray(existingClientData.data)) {
-        existingClients = existingClientData.data
-      } else if (existingClientData.rows && Array.isArray(existingClientData.rows)) {
-        existingClients = existingClientData.rows
-      }
+    // Vérifier seulement si la réponse est OK (200)
+    if (existingClientResponse.ok && existingClientResponse.status === 200) {
+      const responseText = await existingClientResponse.text()
+      console.log("[v0] Client search response text (first 500 chars):", responseText.substring(0, 500))
+      
+      // Si la réponse est vide ou null, pas de client existant
+      if (!responseText || responseText.trim() === "" || responseText.trim() === "null") {
+        console.log("[v0] Empty response, no existing client found")
+      } else {
+        try {
+          const existingClientData = JSON.parse(responseText)
+          console.log("[v0] Client search response parsed:", JSON.stringify(existingClientData).substring(0, 500))
 
-      if (existingClients.length > 0) {
-        console.log("[v0] Client with this codeClient already exists in client table")
-        return {
-          success: false,
-          message: "Le client a déjà un compte. Veuillez vous connecter.",
+          let existingClients: any[] = []
+          if (Array.isArray(existingClientData)) {
+            existingClients = existingClientData
+          } else if (existingClientData.data && Array.isArray(existingClientData.data)) {
+            existingClients = existingClientData.data
+          } else if (existingClientData.rows && Array.isArray(existingClientData.rows)) {
+            existingClients = existingClientData.rows
+          } else if (existingClientData.count !== undefined) {
+            // Si la réponse contient un count, vérifier s'il est > 0
+            const count = Number(existingClientData.count) || 0
+            console.log("[v0] Response contains count:", count)
+            if (count > 0 && existingClientData.rows && Array.isArray(existingClientData.rows)) {
+              existingClients = existingClientData.rows
+            }
+          }
+
+          console.log("[v0] Found existing clients count:", existingClients.length)
+          
+          // Vérifier que le codeClient correspond exactement - SEULEMENT si on trouve un match exact
+          const exactMatch = existingClients.find((c: any) => {
+            const clientCode = String(c.codeClient || "").trim()
+            const searchCode = String(numClient).trim()
+            const match = clientCode === searchCode
+            if (match) {
+              console.log("[v0] ✅ Exact match found:", { clientCode, searchCode, clientId: c.id })
+            }
+            return match
+          })
+          
+          if (exactMatch) {
+            console.log("[v0] ❌ Client with codeClient", numClient, "already exists in client table - blocking signup")
+            return {
+              success: false,
+              message: "Le client a déjà un compte. Veuillez vous connecter.",
+            }
+          } else {
+            if (existingClients.length > 0) {
+              console.log("[v0] ⚠️ Some clients found but NO exact match for codeClient", numClient)
+              console.log("[v0] Found clients have codeClient:", existingClients.map((c: any) => c.codeClient))
+            } else {
+              console.log("[v0] ✅ No existing clients found for codeClient", numClient, "- continuing with signup...")
+            }
+          }
+        } catch (parseError) {
+          console.error("[v0] Error parsing client search response:", parseError)
+          console.log("[v0] Response text was:", responseText)
         }
       }
+    } else {
+      console.log("[v0] Client search returned non-ok status or empty, assuming no existing client")
     }
 
     // Check if email already has an account
