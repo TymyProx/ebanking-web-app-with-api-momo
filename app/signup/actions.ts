@@ -352,8 +352,42 @@ export async function initiateExistingClientSignup(data: { clientCode: string })
 
     console.log("[v0] Client found in BdClientBng:", clientFullName, clientEmail)
 
+    // Check if client already exists in the client table
+    console.log("[v0] Step 3: Checking if client already exists in client table...")
+    
+    const existingClientUrl = `${API_BASE_URL}/tenant/${TENANT_ID}/client?filter=codeClient||$eq||${encodeURIComponent(numClient)}`
+    
+    const existingClientResponse = await fetch(existingClientUrl, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${supportToken}`,
+      },
+    })
+
+    if (existingClientResponse.ok) {
+      const existingClientData = await existingClientResponse.json()
+
+      let existingClients: any[] = []
+      if (Array.isArray(existingClientData)) {
+        existingClients = existingClientData
+      } else if (existingClientData.data && Array.isArray(existingClientData.data)) {
+        existingClients = existingClientData.data
+      } else if (existingClientData.rows && Array.isArray(existingClientData.rows)) {
+        existingClients = existingClientData.rows
+      }
+
+      if (existingClients.length > 0) {
+        console.log("[v0] Client with this codeClient already exists")
+        return {
+          success: false,
+          message: "Le client a déjà un compte. Veuillez vous connecter.",
+        }
+      }
+    }
+
     // Check if email already has an account
-    console.log("[v0] Step 3: Checking if email already exists...")
+    console.log("[v0] Step 4: Checking if email already exists...")
 
     const existingUsersUrl = `${API_BASE_URL}/tenant/${TENANT_ID}/users?filter=email||$eq||${encodeURIComponent(clientEmail)}`
 
@@ -413,7 +447,7 @@ export async function initiateExistingClientSignup(data: { clientCode: string })
     // ============================================================
     // SEND VERIFICATION EMAIL
     // ============================================================
-    console.log("[v0] Step 4: Sending verification email...")
+    console.log("[v0] Step 5: Sending verification email...")
 
     const resend = new Resend(process.env.RESEND_API_KEY)
     const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || "no-reply@bngebanking.com"
