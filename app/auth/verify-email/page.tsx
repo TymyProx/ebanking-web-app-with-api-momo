@@ -121,17 +121,19 @@ function VerifyEmailContent() {
           <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent animate-shimmer"></div>
 
           {/* Banking illustration */}
-          <div className="hidden lg:block absolute bottom-0 left-[35%] -translate-x-1/2 w-[90%] opacity-50">
+          <div className="hidden lg:block absolute bottom-0 left-[35%] -translate-x-1/2 w-[90%] max-w-[1800px] opacity-50 lg:left-[35%] lg:w-[90%] xl:left-[35%] xl:w-[90%] 2xl:left-[35%] 2xl:w-[90%]">
             <Image
               src="/images/image2.png"
               alt="Banking"
               width={2000}
               height={1600}
               className="w-full h-auto object-contain"
+              priority
+              sizes="(max-width: 1024px) 0vw, 90vw"
             />
           </div>
 
-          <div className="absolute top-32 sm:top-36 lg:top-[60%] lg:-translate-y-1/2 left-4 sm:left-6 right-4 lg:right-auto lg:max-w-2xl px-2 sm:px-0">
+          <div className="absolute top-32 sm:top-36 lg:top-[60%] lg:-translate-y-1/2 left-4 sm:left-6 right-4 lg:right-auto lg:max-w-[28%] xl:max-w-[30%] 2xl:max-w-[32%] px-2 sm:px-0">
             <div className="text-left text-white space-y-3 sm:space-y-4 transition-all duration-700 ease-in-out">
               <div className="flex items-center justify-start space-x-2 mb-2 sm:mb-3">
                 <span className="text-xs sm:text-sm font-semibold text-[#f4c430] uppercase tracking-wider px-3 py-1 bg-white/10 backdrop-blur-sm rounded-full">
@@ -152,9 +154,9 @@ function VerifyEmailContent() {
       <main className="w-full px-4 sm:px-6 pt-64 sm:pt-72 md:pt-80 lg:pt-16 pb-2 relative z-10 min-h-screen lg:h-screen flex flex-col justify-between">
         {/* Verification Form - Top Right */}
         <div className="w-full max-w-full mb-0">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
-            <div className="lg:col-start-3">
-              <div className="relative group">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 lg:gap-6">
+            <div className="sm:col-start-3 flex justify-end">
+              <div className="relative group w-full max-w-[90%] sm:max-w-[85%]">
                 <div className="absolute inset-0 bg-gradient-to-br from-[#2d6e3e]/30 via-[#f4c430]/20 to-[#2d6e3e]/30 rounded-2xl blur-2xl opacity-40 group-hover:opacity-60 transition-opacity"></div>
                 <div className="bg-white/40 backdrop-blur-2xl rounded-2xl shadow-2xl p-4 sm:p-5 border border-white/20">
                   {/* Decorative corner */}
