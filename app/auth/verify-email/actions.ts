@@ -185,36 +185,12 @@ export async function completeSignup(token: string, password: string, email?: st
       throw new Error("Code client BNG invalide (numClient attendu depuis BdClientBng).")
     }
 
-    // comptes duplicates (existing only)
-    let comptesBng: any[] = []
-    if (clientType === "existing") {
-      const comptes = await getAll(COMPTE_ENDPOINT, supportToken)
-      const existingAccountNumbers = new Set(
-        comptes.map((c: any) => String(c.accountNumber || "").trim()).filter(Boolean),
-      )
-
-      const resBng = await fetch(
-        `${COMPTE_BNG_ENDPOINT}?filter=clientId||$eq||${encodeURIComponent(codeClient)}`,
-        { headers: { Authorization: `Bearer ${supportToken}` } },
-      )
-      if (!resBng.ok) {
-        const t = await resBng.text().catch(() => "")
-        throw new Error(`Erreur récupération CompteBng: ${t}`)
-      }
-
-      const bngPayload = await safeJson(resBng)
-      comptesBng = getRows(bngPayload).filter(
-        (c: any) => String(c.clientId || "").trim() === codeClient,
-      )
-
-      const duplicates = comptesBng
-        .map((c: any) => String(c.numCompte || "").trim())
-        .filter((n: string) => existingAccountNumbers.has(n))
-
-      if (duplicates.length > 0) {
-        throw new Error(`Compte(s) déjà existant(s): ${duplicates.join(", ")}`)
-      }
-    }
+    // ============================================================
+    // ✅ COMPTES: Will be created by backend during signup
+    // ============================================================
+    // The backend (AuthService.signup) will automatically create all accounts
+    // for existing clients during the signup process. No need to check for duplicates
+    // or create them manually here.
 
     // ============================================================
     // POST FLOW (aucun doublon user ; new client validé ; comptes validés)
@@ -269,52 +245,13 @@ export async function completeSignup(token: string, password: string, email?: st
     // We don't need to create it manually here anymore
 
     // ============================================================
-    // COMPTES (existing)
+    // ✅ COMPTES: Already created by backend during signup
     // ============================================================
-    if (clientType === "existing") {
-      for (const c of comptesBng) {
-        const accountNumber = String(c.numCompte || "").trim()
-        
-        // Préparer les données du compte
-        const accountPayload: any = {
-          accountName: c.accountName || c.typeCompte || "Compte",
-          currency: c.devise || "GNF",
-          bookBalance: c.bookBalance || "0",
-          availableBalance: c.availableBalance || "0",
-          status: "ACTIF",
-          type: c.typeCompte || "CURRENT",
-          clientId: String(userId),
-          // Le backend calculera automatiquement codeBanque, codeAgence, cleRib
-          // si ces valeurs sont disponibles depuis le formulaire, on les envoie
-          ...(c.codeBanque && c.codeBanque !== "N/A" && { codeBanque: c.codeBanque }),
-          ...(c.codeAgence && c.codeAgence !== "N/A" && { codeAgence: c.codeAgence }),
-          ...(c.cleRib && c.cleRib !== "N/A" && { cleRib: c.cleRib }),
-        }
-        
-        // Si un numéro de compte existe, l'envoyer (client existant avec compte réel)
-        // Sinon, le backend générera un nouveau numéro de compte
-        if (accountNumber) {
-          accountPayload.accountNumber = accountNumber
-          accountPayload.accountId = accountNumber
-        }
-
-        const res = await fetch(COMPTE_ENDPOINT, {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${authToken}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            data: accountPayload,
-          }),
-        })
-
-        if (!res.ok) {
-          const t = await res.text().catch(() => "")
-          throw new Error(`Erreur création compte ${accountNumber}: ${t}`)
-        }
-      }
-    }
+    console.log("[completeSignup] Comptes automatically created by backend during signup")
+    // The AuthService.signup method in the backend already creates all accounts
+    // for existing clients. We don't need to create them manually here anymore.
+    // If accounts were not created by the backend, they will be created on next login
+    // or can be manually created by the admin if needed.
 
     await setSecureCookie("user", JSON.stringify(userData))
     // Supprimer le cookie seulement s'il existe
