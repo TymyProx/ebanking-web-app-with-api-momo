@@ -6,16 +6,22 @@ const SESSION_FLAG = "session_active"
 
 /**
  * Composant qui supprime les cookies de session à la fermeture de l'onglet
- * Utilise sessionStorage pour détecter si l'onglet a été fermé
+ * Ne supprime PAS les cookies lors d'un rafraîchissement de page
+ * 
+ * Logique :
+ * - sessionStorage est préservé lors d'un rafraîchissement mais vidé lors de la fermeture de l'onglet
+ * - Si le flag n'existe pas au chargement, c'est une nouvelle session (onglet fermé puis rouvert)
+ * - On ne supprime PAS le flag lors de beforeunload pour permettre la distinction
  */
 export function SessionCleanup() {
   useEffect(() => {
-    // Vérifier si c'est un nouveau chargement de page (onglet fermé puis rouvert)
+    // Vérifier si le flag de session existe
+    // Si le flag n'existe pas, cela signifie que l'onglet a été fermé puis rouvert
+    // (car sessionStorage est vidé lors de la fermeture de l'onglet)
     const sessionFlag = sessionStorage.getItem(SESSION_FLAG)
     
     if (!sessionFlag) {
-      // Si le flag n'existe pas, cela signifie que l'onglet a été fermé
-      // Supprimer les cookies de session
+      // Nouvelle session (onglet fermé puis rouvert) - supprimer les cookies
       const clearSession = async () => {
         try {
           await fetch("/api/auth/clear-session", {
@@ -32,9 +38,11 @@ export function SessionCleanup() {
     }
 
     // Définir le flag de session active
+    // Ce flag sera préservé lors d'un rafraîchissement mais supprimé lors de la fermeture de l'onglet
     sessionStorage.setItem(SESSION_FLAG, "true")
 
     // Fonction pour supprimer les cookies de session
+    // Cette fonction est appelée uniquement lors de la fermeture de l'onglet
     const clearSession = async () => {
       try {
         // Supprimer le flag de sessionStorage
@@ -64,28 +72,28 @@ export function SessionCleanup() {
       }
     }
 
-    // Écouter l'événement beforeunload (avant la fermeture de l'onglet)
-    const handleBeforeUnload = () => {
-      clearSession()
+    // Écouter l'événement visibilitychange pour détecter quand l'onglet devient caché
+    // On ne supprime pas les cookies ici car l'onglet peut être juste caché (changement d'onglet)
+    
+    // Écouter l'événement pagehide pour détecter la fermeture de l'onglet
+    // pagehide est plus fiable que unload pour distinguer fermeture vs rafraîchissement
+    const handlePageHide = (e: PageTransitionEvent) => {
+      // Si persisted est false, c'est une fermeture d'onglet (pas un rafraîchissement)
+      // persisted = true signifie que la page est mise en cache (rafraîchissement)
+      if (!e.persisted) {
+        // C'est une fermeture d'onglet, supprimer les cookies
+        clearSession()
+      }
+      // Si persisted = true, c'est un rafraîchissement, on ne fait rien
+      // Le flag reste dans sessionStorage et sera préservé
     }
 
-    // Écouter l'événement unload (pendant la fermeture de l'onglet)
-    const handleUnload = () => {
-      clearSession()
-    }
+    // Ajouter l'écouteur d'événement
+    window.addEventListener("pagehide", handlePageHide)
 
-    // Écouter l'événement visibilitychange (quand l'onglet devient caché)
-    // Note: On ne supprime pas les cookies ici car l'onglet peut être juste caché
-    // et non fermé (ex: changement d'onglet)
-
-    // Ajouter les écouteurs d'événements
-    window.addEventListener("beforeunload", handleBeforeUnload)
-    window.addEventListener("unload", handleUnload)
-
-    // Nettoyer les écouteurs lors du démontage
+    // Nettoyer l'écouteur lors du démontage
     return () => {
-      window.removeEventListener("beforeunload", handleBeforeUnload)
-      window.removeEventListener("unload", handleUnload)
+      window.removeEventListener("pagehide", handlePageHide)
     }
   }, [])
 
