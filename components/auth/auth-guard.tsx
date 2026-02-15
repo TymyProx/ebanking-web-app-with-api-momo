@@ -50,6 +50,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
       if (!AuthService.isAuthenticated()) {
         setIsAuthenticated(false)
         setIsLoading(false)
+        // Rediriger vers la page de d'accueil si pas de cookie
         router.push("/")
         return
       }
@@ -60,6 +61,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
           user = await AuthService.fetchMe()
         } catch (error) {
           console.error("Erreur lors de la récupération des informations utilisateur:", error)
+          // Rediriger vers la page de d'acceuil en cas d'erreur
           router.push("/")
           return
         }

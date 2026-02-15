@@ -19,7 +19,8 @@ export function getCookieConfig(): CookieOptions {
     httpOnly: true,
     secure: isProduction,
     sameSite: "lax",
-    maxAge: 60 * 60 * 24 * 7, // 7 days
+    // Pas de maxAge = session cookie (supprimé quand le navigateur se ferme)
+    // maxAge: 60 * 60 * 24 * 7, // 7 days - DÉSACTIVÉ pour plus de sécurité
     path: "/",
   }
 
