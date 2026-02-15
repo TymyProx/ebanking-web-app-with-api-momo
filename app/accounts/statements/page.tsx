@@ -1040,7 +1040,7 @@ export default function StatementsPage() {
                           {txn.valueDate ? new Date(txn.valueDate).toLocaleDateString("fr-FR") : "N/A"}
                         </TableCell>
                         <TableCell className="font-mono text-sm">{txn.referenceOperation || "N/A"}</TableCell>
-                        <TableCell className="max-w-[300px] truncate">{txn.description || "N/A"}</TableCell>
+                        <TableCell className="max-w-[300px] whitespace-normal break-words">{txn.description || "N/A"}</TableCell>
                         <TableCell
                           className={`text-right font-semibold ${
                             isDebit ? "text-red-600" : isCredit ? "text-green-600" : "text-gray-600"
@@ -1270,7 +1270,7 @@ export default function StatementsPage() {
             doc.line(cx, y, cx, y + h)
           }
           const dateValeur = fmtDate(txn?.valueDate)
-          const description = safe(txn?.description || "N/A").substring(0, 25)
+          const description = safe(txn?.description || "N/A")
           const reference = safe(txn?.referenceOperation || "N/A").substring(0, 18)
           const dateOp = fmtDate(txn?.dateEcriture)
           const m = Number(txn?.montantOperation ?? 0)
@@ -1283,29 +1283,68 @@ export default function StatementsPage() {
           currentBalance += amountToAdd
           const soldeText = money(Math.trunc(currentBalance))
 
+          // Diviser la description en plusieurs lignes si nécessaire
+          // Largeur disponible pour la description : col2 (38mm) moins les marges
+          const descriptionWidth = col2 - 4 // Réserver 4mm pour les marges
+          const descriptionLines = doc.splitTextToSize(description, descriptionWidth)
+          const lineHeight = 4 // Hauteur de chaque ligne de texte
+          const descriptionHeight = Math.max(h, descriptionLines.length * lineHeight + 2) // Au moins la hauteur de base, plus l'espace pour les lignes
+
+          // Ajuster la hauteur de la ligne si la description nécessite plus d'espace
+          const actualRowHeight = Math.max(h, descriptionHeight)
+
+          // Redessiner le rectangle avec la nouvelle hauteur si nécessaire
+          if (actualRowHeight > h) {
+            // Effacer l'ancien rectangle
+            doc.setFillColor(...white)
+            doc.rect(tableX, y, w, h, "F")
+            if (idx % 2 === 1) {
+              doc.setFillColor(...lightGray)
+              doc.rect(tableX, y, w, actualRowHeight, "F")
+            }
+            doc.setDrawColor(...borderGray)
+            doc.setLineWidth(0.25)
+            doc.rect(tableX, y, w, actualRowHeight, "S")
+            // Redessiner les séparateurs verticaux
+            let cx = tableX
+            for (let i = 0; i < cols.length - 1; i++) {
+              cx += cols[i]
+              doc.line(cx, y, cx, y + actualRowHeight)
+            }
+          }
+
           doc.setTextColor(...blackText)
-          doc.text(dateValeur, tableX + col1 / 2, y + 6, { align: "center" })
-          doc.text(description, tableX + col1 + col2 / 2, y + 6, { align: "center" })
-          doc.text(reference, tableX + col1 + col2 + col3 / 2, y + 6, { align: "center" })
-          doc.text(dateOp, tableX + col1 + col2 + col3 + col4 / 2, y + 6, { align: "center" })
+          // Afficher les autres colonnes centrées verticalement
+          const verticalCenter = y + actualRowHeight / 2
+          doc.text(dateValeur, tableX + col1 / 2, verticalCenter, { align: "center" })
+          
+          // Afficher la description sur plusieurs lignes
+          let descriptionY = y + 3
+          descriptionLines.forEach((line: string, lineIdx: number) => {
+            doc.text(line, tableX + col1 + 2, descriptionY, { align: "left" })
+            descriptionY += lineHeight
+          })
+          
+          doc.text(reference, tableX + col1 + col2 + col3 / 2, verticalCenter, { align: "center" })
+          doc.text(dateOp, tableX + col1 + col2 + col3 + col4 / 2, verticalCenter, { align: "center" })
 
           if (txnType === "DEBIT") {
             doc.setTextColor(...blackText)
-            doc.text(montant, tableX + col1 + col2 + col3 + col4 + col5 / 2, y + 6, { align: "center" })
+            doc.text(montant, tableX + col1 + col2 + col3 + col4 + col5 / 2, verticalCenter, { align: "center" })
             // Colonne crédit vide
-            doc.text("", tableX + col1 + col2 + col3 + col4 + col5 + col6 / 2, y + 6, { align: "center" })
+            doc.text("", tableX + col1 + col2 + col3 + col4 + col5 + col6 / 2, verticalCenter, { align: "center" })
           } else {
             // Colonne débit vide
-            doc.text("", tableX + col1 + col2 + col3 + col4 + col5 / 2, y + 6, { align: "center" })
+            doc.text("", tableX + col1 + col2 + col3 + col4 + col5 / 2, verticalCenter, { align: "center" })
             doc.setTextColor(...primaryGreen)
-            doc.text(montant, tableX + col1 + col2 + col3 + col4 + col5 + col6 / 2, y + 6, { align: "center" })
+            doc.text(montant, tableX + col1 + col2 + col3 + col4 + col5 + col6 / 2, verticalCenter, { align: "center" })
             doc.setTextColor(...blackText)
           }
 
           doc.setTextColor(...blackText)
-          doc.text(soldeText, tableX + col1 + col2 + col3 + col4 + col5 + col6 + col7 / 2, y + 6, { align: "center" })
+          doc.text(soldeText, tableX + col1 + col2 + col3 + col4 + col5 + col6 + col7 / 2, verticalCenter, { align: "center" })
 
-          y += h
+          y += actualRowHeight
         })
         
         return y
@@ -2371,8 +2410,7 @@ async function generateExcelStatement(
       const solde = formatAmount(Math.round(currentBalance))
 
       const row = worksheet.getRow(currentRow)
-      row.height = 18
-
+      
       const values = [
         txn?.valueDate ? new Date(txn.valueDate).toLocaleDateString("fr-FR") : "",
         txn?.description || "",
@@ -2383,10 +2421,21 @@ async function generateExcelStatement(
         solde,
       ]
 
+      // Calculer le nombre de lignes nécessaires pour la description
+      const description = String(txn?.description || "")
+      const descriptionCellWidth = 40 // Largeur approximative de la colonne description en caractères
+      const descriptionLines = Math.ceil(description.length / descriptionCellWidth) || 1
+      const rowHeight = Math.max(18, descriptionLines * 15) // Au moins 18, plus 15 par ligne supplémentaire
+      row.height = rowHeight
+
       values.forEach((value, index) => {
         const cell = row.getCell(index + 1)
         cell.value = String(value ?? "")
-        cell.alignment = { horizontal: index >= 4 ? "right" : "left", vertical: "middle" }
+        cell.alignment = { 
+          horizontal: index >= 4 ? "right" : "left", 
+          vertical: "middle",
+          wrapText: index === 1 // Activer le retour à la ligne pour la colonne Description (index 1)
+        }
         cell.border = {
           top: { style: "thin" },
           left: { style: "thin" },

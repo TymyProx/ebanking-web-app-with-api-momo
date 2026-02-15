@@ -121,7 +121,7 @@ function VerifyEmailContent() {
           <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent animate-shimmer"></div>
 
           {/* Banking illustration */}
-          <div className="hidden lg:block absolute bottom-0 left-[35%] -translate-x-1/2 w-[90%] max-w-[1800px] opacity-50 lg:left-[35%] lg:w-[90%] xl:left-[35%] xl:w-[90%] 2xl:left-[35%] 2xl:w-[90%]">
+          <div className="hidden lg:block absolute bottom-0 left-[35%] -translate-x-1/2 w-[90%] max-w-[1800px] opacity-100 lg:left-[35%] lg:w-[90%] xl:left-[35%] xl:w-[90%] 2xl:left-[35%] 2xl:w-[90%]">
             <Image
               src="/images/image2.png"
               alt="Banking"
