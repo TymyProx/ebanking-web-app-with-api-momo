@@ -51,14 +51,23 @@ export default function RootLayout({
     <html lang="fr" suppressHydrationWarning>
       <head>
         {/* Script pour définir le flag de session le plus tôt possible */}
+        {/* Ce script s'exécute AVANT tout autre code JavaScript pour protéger le token lors des refresh */}
         <script
           dangerouslySetInnerHTML={{
             __html: `
-              // Définir le flag de session immédiatement pour protéger contre les refresh
-              // Ce flag sera préservé lors d'un rafraîchissement mais supprimé lors de la fermeture de l'onglet
-              if (typeof sessionStorage !== 'undefined') {
-                sessionStorage.setItem('session_active', 'true');
-              }
+              (function() {
+                // Définir le flag de session IMMÉDIATEMENT pour protéger contre les refresh
+                // Ce flag sera préservé lors d'un rafraîchissement mais supprimé lors de la fermeture de l'onglet
+                // IMPORTANT: Ce script doit s'exécuter avant tout autre code pour garantir que le flag existe
+                try {
+                  if (typeof sessionStorage !== 'undefined') {
+                    sessionStorage.setItem('session_active', 'true');
+                  }
+                } catch (e) {
+                  // Si sessionStorage n'est pas disponible, on ne peut rien faire
+                  console.warn('sessionStorage not available in head script:', e);
+                }
+              })();
             `,
           }}
         />
