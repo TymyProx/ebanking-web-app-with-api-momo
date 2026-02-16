@@ -49,6 +49,20 @@ export default function RootLayout({
 }) {
   return (
     <html lang="fr" suppressHydrationWarning>
+      <head>
+        {/* Script pour définir le flag de session le plus tôt possible */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              // Définir le flag de session immédiatement pour protéger contre les refresh
+              // Ce flag sera préservé lors d'un rafraîchissement mais supprimé lors de la fermeture de l'onglet
+              if (typeof sessionStorage !== 'undefined') {
+                sessionStorage.setItem('session_active', 'true');
+              }
+            `,
+          }}
+        />
+      </head>
       <body className={`${spaceGrotesk.variable} ${dmSans.variable} font-body antialiased`}>
         <SessionCleanup />
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
