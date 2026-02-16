@@ -55,8 +55,29 @@ function translateBeneficiaryError(
   defaultMessage: string
 ): string {
   // Extraire le message d'erreur du backend
-  const backendMessage = errorDetails?.message || errorDetails?.error || ""
-  const errorString = String(backendMessage).toLowerCase()
+  let backendMessage = errorDetails?.message || errorDetails?.error || ""
+  let errorString = String(backendMessage).toLowerCase().trim()
+  
+  // Nettoyer le defaultMessage pour enlever les codes d'erreur techniques
+  let cleanDefaultMessage = defaultMessage
+    .replace(/Erreur API:\s*\d+/gi, "")
+    .replace(/\(\d{3}\)/g, "")
+    .replace(/Bad Request/gi, "")
+    .trim()
+
+  // Si le message backend contient uniquement des codes d'erreur techniques, l'ignorer
+  if (status === 400 && (
+    errorString === "400" || 
+    errorString === "bad request" || 
+    errorString === "" ||
+    errorString === "error 400" ||
+    errorString === "erreur 400" ||
+    errorString.includes("erreur api: 400") ||
+    errorString.includes("error api: 400")
+  )) {
+    backendMessage = "" // Forcer l'utilisation des messages traduits
+    errorString = ""
+  }
 
   // Messages spécifiques selon le code de statut HTTP
   if (status === 400) {
@@ -140,13 +161,40 @@ function translateBeneficiaryError(
     return "Une erreur technique s'est produite. Veuillez réessayer dans quelques instants."
   }
 
-  // Si le backend a fourni un message spécifique, l'utiliser
-  if (backendMessage && !defaultMessage.includes("Erreur API")) {
+  // Si le backend a fourni un message spécifique et qu'il ne contient pas de codes d'erreur techniques
+  if (backendMessage && 
+      backendMessage.trim().length > 0 &&
+      !errorString.includes("400") &&
+      !errorString.includes("bad request") &&
+      !errorString.includes("erreur api") &&
+      !errorString.includes("error api") &&
+      !errorString.includes("500") &&
+      !errorString.includes("internal server error")) {
     return backendMessage
   }
 
-  // Message par défaut
-  return defaultMessage
+  // Si le defaultMessage ou le backendMessage contient des codes d'erreur techniques, utiliser un message générique clair
+  const hasTechnicalError = 
+    defaultMessage.includes("400") || 
+    defaultMessage.includes("Bad Request") || 
+    defaultMessage.includes("Erreur API") ||
+    errorString.includes("erreur api: 400") ||
+    errorString.includes("error api: 400") ||
+    errorString.includes("400 bad request")
+  
+  if (hasTechnicalError) {
+    if (status === 400) {
+      return "Les informations saisies sont incorrectes. Veuillez vérifier tous les champs et réessayer."
+    }
+    if (status === 500 || status === 502 || status === 503) {
+      return "Une erreur technique s'est produite. Veuillez réessayer dans quelques instants."
+    }
+    // Pour les autres codes, utiliser un message générique
+    return "Une erreur s'est produite. Veuillez réessayer."
+  }
+
+  // Message par défaut nettoyé
+  return cleanDefaultMessage || defaultMessage
 }
 
 const WORKFLOW_STATUS = {
