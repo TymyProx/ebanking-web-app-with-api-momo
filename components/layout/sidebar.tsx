@@ -306,7 +306,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>): 
   const [userData, setUserData] = useState<any>(null)
   const [hasActiveAccount, setHasActiveAccount] = useState<boolean>(false)
   const [isCheckingAccounts, setIsCheckingAccounts] = useState<boolean>(true)
-  const { state } = useSidebar()
+  const { state, isMobile, setOpenMobile } = useSidebar()
+
+  // Fermer le sidebar sur mobile après navigation
+  useEffect(() => {
+    if (isMobile) {
+      setOpenMobile(false)
+    }
+  }, [pathname, isMobile, setOpenMobile])
 
   useEffect(() => {
     const storedUserData = localStorage.getItem("user")
@@ -385,13 +392,13 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>): 
           <CollapsibleTrigger asChild>
             <SidebarMenuButton
               tooltip={item.title}
-              className="h-11 rounded-xl text-white hover:bg-white/20 transition-all duration-200"
+              className="h-10 sm:h-11 rounded-xl text-white hover:bg-white/20 transition-all duration-200 px-2 sm:px-3"
             >
-              <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-white/10 text-white">
-                <item.icon className={ICON_WHITE_MD} />
+              <div className="flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-white/10 text-white shrink-0">
+                <item.icon className="h-4 w-4 sm:h-5 sm:w-5 text-white stroke-white" />
               </div>
-              <span className="font-semibold text-white">{item.title}</span>
-              <ChevronRight className="ml-auto h-4 w-4 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90 text-white stroke-white" />
+              <span className="font-semibold text-white text-sm sm:text-base truncate min-w-0">{item.title}</span>
+              <ChevronRight className="ml-auto h-4 w-4 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90 text-white stroke-white shrink-0" />
             </SidebarMenuButton>
           </CollapsibleTrigger>
 
@@ -399,21 +406,21 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>): 
             <SidebarMenuSub className="ml-4 mt-1 space-y-1 border-l-2 border-white/20 pl-3">
               {item.items?.map((subItem: any) => (
                 <SidebarMenuSubItem key={subItem.title}>
-                  <SidebarMenuSubButton
-                    asChild
-                    isActive={pathname === subItem.url}
-                    className="h-10 rounded-lg text-white/90 hover:bg-white/15 hover:text-white data-[active=true]:bg-white/25 data-[active=true]:text-white data-[active=true]:font-semibold data-[active=true]:border-l-2 data-[active=true]:border-[#f4c430] transition-all duration-200"
-                  >
-                    <Link href={subItem.url} className="flex items-center gap-2.5">
-                      <subItem.icon className={ICON_WHITE} />
-                      <span className="text-sm text-white">{subItem.title}</span>
-                      {subItem.badge && (
-                        <Badge variant="outline" className="ml-auto text-[10px] px-1.5 border-white/30 text-white">
-                          {subItem.badge}
-                        </Badge>
-                      )}
-                    </Link>
-                  </SidebarMenuSubButton>
+                    <SidebarMenuSubButton
+                      asChild
+                      isActive={pathname === subItem.url}
+                      className="h-9 sm:h-10 rounded-lg text-white/90 hover:bg-white/15 hover:text-white data-[active=true]:bg-white/25 data-[active=true]:text-white data-[active=true]:font-semibold data-[active=true]:border-l-2 data-[active=true]:border-[#f4c430] transition-all duration-200 px-2 sm:px-3"
+                    >
+                      <Link href={subItem.url} className="flex items-center gap-2 sm:gap-2.5 min-w-0">
+                        <subItem.icon className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-white stroke-white shrink-0" />
+                        <span className="text-xs sm:text-sm text-white truncate">{subItem.title}</span>
+                        {subItem.badge && (
+                          <Badge variant="outline" className="ml-auto text-[9px] sm:text-[10px] px-1 sm:px-1.5 border-white/30 text-white shrink-0">
+                            {subItem.badge}
+                          </Badge>
+                        )}
+                      </Link>
+                    </SidebarMenuSubButton>
                 </SidebarMenuSubItem>
               ))}
             </SidebarMenuSub>
@@ -513,13 +520,13 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>): 
                     <SidebarMenuButton
                       asChild
                       isActive={pathname === "/accounts/new"}
-                      className="h-11 rounded-xl text-white hover:bg-white/20 data-[active=true]:bg-white/30 data-[active=true]:text-white data-[active=true]:shadow-lg data-[active=true]:border-l-4 data-[active=true]:border-[#f4c430] transition-all duration-200"
+                      className="h-10 sm:h-11 rounded-xl text-white hover:bg-white/20 data-[active=true]:bg-white/30 data-[active=true]:text-white data-[active=true]:shadow-lg data-[active=true]:border-l-4 data-[active=true]:border-[#f4c430] transition-all duration-200 px-2 sm:px-3"
                     >
-                      <Link href="/accounts/new" className="flex items-center gap-3">
-                        <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-white/10 group-data-[active=true]:bg-white/20">
-                          <PlusCircle className={ICON_WHITE_MD} />
+                      <Link href="/accounts/new" className="flex items-center gap-2 sm:gap-3 min-w-0">
+                        <div className="flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-white/10 group-data-[active=true]:bg-white/20 shrink-0">
+                          <PlusCircle className="h-4 w-4 sm:h-5 sm:w-5 text-white stroke-white" />
                         </div>
-                        <span className="font-semibold text-white">Ouverture compte</span>
+                        <span className="font-semibold text-white text-sm sm:text-base truncate">Ouverture compte</span>
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
@@ -541,15 +548,15 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>): 
                       <SidebarMenuButton
                         asChild
                         isActive={pathname === item.url}
-                        className="h-11 rounded-xl text-white hover:bg-white/20 data-[active=true]:bg-white/30 data-[active=true]:text-white data-[active=true]:shadow-lg data-[active=true]:border-l-4 data-[active=true]:border-[#f4c430] transition-all duration-200"
+                        className="h-10 sm:h-11 rounded-xl text-white hover:bg-white/20 data-[active=true]:bg-white/30 data-[active=true]:text-white data-[active=true]:shadow-lg data-[active=true]:border-l-4 data-[active=true]:border-[#f4c430] transition-all duration-200 px-2 sm:px-3"
                       >
-                        <Link href={item.url} className="flex items-center gap-3">
-                          <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-white/10 group-data-[active=true]:bg-white/20">
-                            <item.icon className={ICON_WHITE_MD} />
+                        <Link href={item.url} className="flex items-center gap-2 sm:gap-3 min-w-0">
+                          <div className="flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-white/10 group-data-[active=true]:bg-white/20 shrink-0">
+                            <item.icon className="h-4 w-4 sm:h-5 sm:w-5 text-white stroke-white" />
                           </div>
-                          <span className="font-semibold text-white">{item.title}</span>
+                          <span className="font-semibold text-white text-sm sm:text-base truncate">{item.title}</span>
                           {item.badge && (
-                            <Badge className="ml-auto bg-gradient-to-r from-[#f4c430] to-[#e0b020] text-gray-900 border-0 font-bold text-[10px] px-2 shadow-sm">
+                            <Badge className="ml-auto bg-gradient-to-r from-[#f4c430] to-[#e0b020] text-gray-900 border-0 font-bold text-[10px] px-1.5 sm:px-2 shadow-sm shrink-0">
                               {item.badge}
                             </Badge>
                           )}
@@ -697,21 +704,21 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>): 
               <DropdownMenuTrigger asChild>
                 <SidebarMenuButton
                   size="lg"
-                  className="data-[state=open]:bg-white/30 data-[state=open]:text-white hover:bg-white/20 transition-all duration-200 rounded-xl border border-transparent hover:border-white/30 shadow-sm hover:shadow-md text-white"
+                  className="data-[state=open]:bg-white/30 data-[state=open]:text-white hover:bg-white/20 transition-all duration-200 rounded-xl border border-transparent hover:border-white/30 shadow-sm hover:shadow-md text-white px-2 sm:px-3 py-2 sm:py-3"
                 >
-                  <Avatar className="h-10 w-10 rounded-xl ring-2 ring-white/30 ring-offset-2 ring-offset-transparent">
+                  <Avatar className="h-8 w-8 sm:h-10 sm:w-10 rounded-xl ring-2 ring-white/30 ring-offset-2 ring-offset-transparent shrink-0">
                     <AvatarImage src="/placeholder-user.jpg" alt={userData?.fullName || "Utilisateur"} />
-                    <AvatarFallback className="rounded-xl bg-gradient-to-br from-white/90 to-white/70 text-[#34763E] font-bold text-sm">
+                    <AvatarFallback className="rounded-xl bg-gradient-to-br from-white/90 to-white/70 text-[#34763E] font-bold text-xs sm:text-sm">
                       {userData?.fullName ? getInitials(userData.fullName) : "U"}
                     </AvatarFallback>
                   </Avatar>
-                  <div className="grid flex-1 text-left text-sm leading-tight">
+                  <div className="grid flex-1 text-left text-xs sm:text-sm leading-tight min-w-0">
                     <span className="truncate font-bold text-white">{userData?.fullName || "Utilisateur"}</span>
-                    <span className="truncate text-xs text-white/70 font-medium">
+                    <span className="truncate text-[10px] sm:text-xs text-white/70 font-medium">
                       {userData?.email || "Client Particulier"}
                     </span>
                   </div>
-                  <ChevronRight className="ml-auto size-4 text-white/70 stroke-white" />
+                  <ChevronRight className="ml-auto size-3 sm:size-4 text-white/70 stroke-white shrink-0" />
                 </SidebarMenuButton>
               </DropdownMenuTrigger>
 

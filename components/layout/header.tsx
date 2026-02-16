@@ -79,34 +79,34 @@ export function Header() {
 
   return (
     <TooltipProvider>
-      <header className="sticky top-0 z-50 flex h-16 shrink-0 items-center gap-2 border-b bg-background px-4">
-        <SidebarTrigger className="-ml-1" />
-        <Separator orientation="vertical" className="mr-2 h-4" />
+      <header className="sticky top-0 z-50 flex h-14 sm:h-16 shrink-0 items-center gap-1 sm:gap-2 border-b bg-background px-2 sm:px-4 overflow-x-auto">
+        <SidebarTrigger className="-ml-1 shrink-0" />
+        <Separator orientation="vertical" className="mr-1 sm:mr-2 h-4 shrink-0 hidden sm:block" />
 
         {!isCheckingAccounts && userData && (
-          <div className="flex flex-col gap-[2px]">
-            <span className="text-sm text-muted-foreground">Bonjour,</span>
-            <span className="text-xl font-bold text-primary">{displayName}</span>
+          <div className="flex flex-col gap-[2px] min-w-0 flex-1 sm:flex-initial">
+            <span className="text-xs sm:text-sm text-muted-foreground truncate">Bonjour,</span>
+            <span className="text-base sm:text-xl font-bold text-primary truncate">{displayName}</span>
           </div>
         )}
 
-        <div className="ml-auto flex items-center gap-2">
+        <div className="ml-auto flex items-center gap-1 sm:gap-2 shrink-0">
           <NotificationDropdown />
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+              <Button variant="ghost" className="relative h-8 w-8 rounded-full shrink-0">
                 <Avatar className="h-8 w-8">
                   <AvatarImage src="/placeholder-user.jpg" alt="Avatar" />
-                  <AvatarFallback>{getInitials(displayName)}</AvatarFallback>
+                  <AvatarFallback className="text-xs">{getInitials(displayName)}</AvatarFallback>
                 </Avatar>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-56" align="end" forceMount>
               <DropdownMenuLabel className="font-normal">
                 <div className="flex flex-col space-y-1">
-                  <p className="text-sm font-medium leading-none">{displayName}</p>
-                  <p className="text-xs leading-none text-muted-foreground">{userData?.email || "email@example.com"}</p>
+                  <p className="text-sm font-medium leading-none truncate">{displayName}</p>
+                  <p className="text-xs leading-none text-muted-foreground truncate">{userData?.email || "email@example.com"}</p>
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />

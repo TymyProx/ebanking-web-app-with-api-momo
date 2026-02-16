@@ -135,13 +135,13 @@ async function RecentTransactions() {
               return (
                 <div
                   key={transaction.txnId || index}
-                  className="flex items-center justify-between p-3 bg-gradient-to-r from-muted/50 to-muted/30 rounded-xl border border-border/50 hover:shadow-md transition-all duration-200"
+                  className="flex items-center justify-between p-2 sm:p-3 bg-gradient-to-r from-muted/50 to-muted/30 rounded-xl border border-border/50 hover:shadow-md transition-all duration-200 min-w-0"
                 >
                   {/* Reduced space between icon and text */}
-                  <div className="flex items-center space-x-3">
+                  <div className="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1">
                     {/* Reduced icon container size */}
                     <div
-                      className={`w-9 h-9 rounded-full flex items-center justify-center ${
+                      className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center shrink-0 ${
                         formattedTransaction.isDebit
                           ? "bg-red-500/20 text-red-600"
                           : "bg-green-500/20 text-green-600"
@@ -215,9 +215,9 @@ function TransactionsLoading() {
 
 function AccountsLoading() {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
       {[1, 2, 3].map((i) => (
-        <div key={i} className="h-48 bg-gradient-to-br from-muted to-muted/50 rounded-xl animate-pulse" />
+        <div key={i} className="h-40 sm:h-48 bg-gradient-to-br from-muted to-muted/50 rounded-xl animate-pulse" />
       ))}
     </div>
   )
@@ -225,14 +225,14 @@ function AccountsLoading() {
 
 export default async function Dashboard() {
   return (
-    <div className="space-y-4 fade-in pt-6 pb-12">
+    <div className="space-y-3 sm:space-y-4 fade-in pt-3 sm:pt-6 pb-6 sm:pb-12 px-1 sm:px-0">
       <Suspense fallback={<AccountsLoading />}>
         <AccountsSection />
       </Suspense>
 
       <Card className="border-0 shadow-sm bg-muted/30">
-        <CardContent className="pt-3 p-3">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+        <CardContent className="pt-3 p-2 sm:p-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
             <Link href="/transfers/new">
               <Button size="sm" className="h-11 flex flex-col space-y-0.5 w-full btn-primary group">
                 <Send className="h-3.5 w-3.5 group-hover:scale-110 transition-transform pt-1" />
@@ -246,7 +246,7 @@ export default async function Dashboard() {
                 className="h-11 flex flex-col space-y-0.5 w-full hover:bg-secondary/10 hover:border-secondary group bg-transparent"
               >
                 <Users className="h-3.5 w-3.5 group-hover:scale-110 transition-transform pt-1" />
-                <span className="text-xs font-medium">Gestion des bénéficiaires</span>
+                <span className="text-xs font-medium truncate">Gestion des bénéficiaires</span>
               </Button>
             </Link>
             <Link href="/accounts/balance">
@@ -263,15 +263,15 @@ export default async function Dashboard() {
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
         <Suspense fallback={<TransactionsLoading />}>
           <RecentTransactions />
         </Suspense>
 
-        <div>
+        <div className="min-w-0">
           <div className="mb-2">
-            <h2 className="text-lg font-heading font-semibold">Nos Produits</h2>
-            <p className="text-sm text-muted-foreground">Découvrez nos offres exclusives</p>
+            <h2 className="text-base sm:text-lg font-heading font-semibold">Nos Produits</h2>
+            <p className="text-xs sm:text-sm text-muted-foreground">Découvrez nos offres exclusives</p>
           </div>
           <BankProductsCarousel />
         </div>

@@ -36,7 +36,9 @@ export function ConditionalLayout({ children }: ConditionalLayoutProps) {
       <AppSidebar />
       <SidebarInset>
         <Header />
-        <div className="flex flex-1 flex-col gap-4 p-4 pt-0">{children}</div>
+        <div className="flex flex-1 flex-col gap-4 p-2 sm:p-4 pt-0 overflow-x-hidden">
+          <div className="w-full max-w-full overflow-x-hidden">{children}</div>
+        </div>
       </SidebarInset>
       <Toaster />
     </SidebarProvider>
