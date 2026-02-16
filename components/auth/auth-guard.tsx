@@ -55,21 +55,19 @@ export function AuthGuard({ children }: AuthGuardProps) {
           cache: "no-store",
         })
 
-        if (!authCheckResponse.ok) {
-          // Si l'API retourne une erreur, essayer avec localStorage comme fallback
-          throw new Error("Auth check failed")
+        if (authCheckResponse.ok) {
+          const authData = await authCheckResponse.json()
+
+          if (authData.authenticated) {
+            // Utilisateur authentifié avec informations complètes
+            setIsAuthenticated(true)
+            setIsLoading(false)
+            return
+          }
         }
 
-        const authData = await authCheckResponse.json()
-
-        if (authData.authenticated) {
-          // Utilisateur authentifié avec informations complètes
-          setIsAuthenticated(true)
-          setIsLoading(false)
-          return
-        }
-
-        // Si pas authentifié via cookies, vérifier localStorage comme fallback
+        // Si l'API retourne false ou une erreur, vérifier localStorage comme fallback
+        // Cela permet de maintenir la session même si l'API échoue temporairement
         if (AuthService.isAuthenticated()) {
           try {
             await AuthService.fetchMe()
@@ -78,16 +76,22 @@ export function AuthGuard({ children }: AuthGuardProps) {
             return
           } catch (fetchError) {
             console.error("Erreur lors de la récupération des informations utilisateur:", fetchError)
+            // Si fetchMe échoue aussi, alors vraiment pas authentifié
+            setIsAuthenticated(false)
+            setIsLoading(false)
+            router.push("/")
+            return
           }
         }
 
-        // Pas authentifié du tout
+        // Pas authentifié du tout (ni cookie, ni localStorage)
         setIsAuthenticated(false)
         setIsLoading(false)
         router.push("/")
       } catch (error) {
         console.error("Erreur lors de la vérification de l'authentification:", error)
         // En cas d'erreur réseau, vérifier localStorage comme fallback
+        // Cela évite de déconnecter l'utilisateur en cas de problème réseau temporaire
         if (AuthService.isAuthenticated()) {
           try {
             await AuthService.fetchMe()
@@ -95,6 +99,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
             setIsLoading(false)
           } catch (fetchError) {
             console.error("Erreur lors de la récupération des informations utilisateur:", fetchError)
+            // Seulement déconnecter si vraiment aucune authentification ne fonctionne
             setIsAuthenticated(false)
             setIsLoading(false)
             router.push("/")

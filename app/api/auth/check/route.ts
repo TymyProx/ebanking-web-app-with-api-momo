@@ -8,8 +8,11 @@ export async function GET() {
     const token = cookieStore.get("token")?.value
 
     if (!token) {
+      console.log("[Auth Check] No token cookie found")
       return NextResponse.json({ authenticated: false }, { status: 200 })
     }
+
+    console.log("[Auth Check] Token found, validating with API...")
 
     // Vérifier que le token est valide en appelant /auth/me
     const API_BASE_URL = getApiBaseUrl()
@@ -24,12 +27,14 @@ export async function GET() {
 
     if (response.ok) {
       const userData = await response.json()
+      console.log("[Auth Check] Token is valid, user authenticated")
       return NextResponse.json({ authenticated: true, user: userData }, { status: 200 })
     }
 
+    console.log("[Auth Check] Token validation failed, status:", response.status)
     return NextResponse.json({ authenticated: false }, { status: 200 })
   } catch (error) {
-    console.error("Error checking authentication:", error)
+    console.error("[Auth Check] Error checking authentication:", error)
     return NextResponse.json({ authenticated: false }, { status: 200 })
   }
 }
