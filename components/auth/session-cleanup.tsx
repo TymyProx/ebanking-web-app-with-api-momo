@@ -40,11 +40,13 @@ export function SessionCleanup() {
     // Écouter l'événement pagehide pour détecter la fermeture de l'onglet ou du navigateur
     // pagehide est plus fiable que unload pour distinguer fermeture vs rafraîchissement
     const handlePageHide = (e: PageTransitionEvent) => {
-      // Si persisted est true, c'est un rafraîchissement (page mise en cache)
+      // IMPORTANT: Si persisted est true, c'est un rafraîchissement (page mise en cache)
       // Dans ce cas, on ne supprime JAMAIS les cookies ni le localStorage
+      // Le token doit être conservé lors d'un refresh
       if (e.persisted) {
-        // C'est un rafraîchissement, on ne fait rien
+        // C'est un rafraîchissement, on ne fait RIEN
         // Le flag reste dans sessionStorage et sera préservé
+        // Les cookies (token, user) restent intacts
         return
       }
       
@@ -55,9 +57,9 @@ export function SessionCleanup() {
       
       if (currentFlag) {
         // Le flag existe, donc c'est une vraie fermeture d'onglet/navigateur
-        // On supprime le localStorage et les cookies
+        // On doit supprimer le token des cookies et le localStorage
         
-        // Supprimer le localStorage (token, user, et autres données d'authentification)
+        // 1. Supprimer le localStorage (token, user, et autres données d'authentification)
         try {
           localStorage.removeItem("token")
           localStorage.removeItem("user")
@@ -66,23 +68,26 @@ export function SessionCleanup() {
           console.error("Error clearing localStorage:", localStorageError)
         }
         
-        // Supprimer le flag
+        // 2. Supprimer le flag de sessionStorage
         sessionStorage.removeItem(SESSION_FLAG)
         
-        // Supprimer les cookies via API
+        // 3. Supprimer les cookies (token, user) via API
+        // Utiliser sendBeacon pour garantir l'envoi même si la page se ferme
         const url = "/api/auth/clear-session"
         const blob = new Blob([JSON.stringify({})], { type: "application/json" })
         
         if (navigator.sendBeacon) {
+          // sendBeacon est plus fiable pour les requêtes lors de la fermeture
           navigator.sendBeacon(url, blob)
         } else {
+          // Fallback pour les navigateurs qui ne supportent pas sendBeacon
           fetch(url, {
             method: "POST",
             body: JSON.stringify({}),
             headers: { "Content-Type": "application/json" },
-            keepalive: true,
+            keepalive: true, // Important pour les requêtes lors de la fermeture
           }).catch(() => {
-            // Ignorer les erreurs
+            // Ignorer les erreurs lors de la fermeture
           })
         }
       }
