@@ -11,33 +11,29 @@ const SESSION_FLAG = "session_active"
  * Logique :
  * - sessionStorage est préservé lors d'un rafraîchissement mais vidé lors de la fermeture de l'onglet
  * - Si le flag n'existe pas au chargement, c'est une nouvelle session (onglet fermé puis rouvert)
- * - On ne supprime PAS le flag lors de beforeunload pour permettre la distinction
+ * - On utilise performance.navigation.type pour détecter un refresh
  */
 export function SessionCleanup() {
   useEffect(() => {
     // Vérifier si le flag de session existe
-    // Si le flag n'existe pas, cela signifie que l'onglet a été fermé puis rouvert
-    // (car sessionStorage est vidé lors de la fermeture de l'onglet)
+    // sessionStorage est préservé lors d'un rafraîchissement mais vidé lors de la fermeture de l'onglet
     const sessionFlag = sessionStorage.getItem(SESSION_FLAG)
     
-    if (!sessionFlag) {
-      // Nouvelle session (onglet fermé puis rouvert) - supprimer les cookies
-      const clearSession = async () => {
-        try {
-          await fetch("/api/auth/clear-session", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({}),
-          })
-        } catch (error) {
-          // Ignorer les erreurs
-          console.error("Error clearing session:", error)
-        }
-      }
-      clearSession()
+    // Si le flag existe, c'est soit un refresh, soit une navigation normale
+    // Dans ce cas, on ne supprime PAS les cookies - c'est une session continue
+    if (sessionFlag) {
+      // Le flag existe, donc c'est une session continue (refresh ou navigation)
+      // On ne fait rien, les cookies restent intacts
+      return
     }
-
-    // Définir le flag de session active
+    
+    // Si le flag n'existe pas, cela peut être :
+    // 1. Un premier chargement après connexion (on garde les cookies)
+    // 2. Un nouvel onglet après fermeture (on supprime les cookies)
+    // On ne peut pas vraiment distinguer ces deux cas au chargement initial
+    // Donc on NE supprime PAS les cookies ici, seulement lors de la fermeture de l'onglet
+    
+    // Définir le flag de session active pour les prochains chargements
     // Ce flag sera préservé lors d'un rafraîchissement mais supprimé lors de la fermeture de l'onglet
     sessionStorage.setItem(SESSION_FLAG, "true")
 
