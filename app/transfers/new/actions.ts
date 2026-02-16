@@ -797,14 +797,14 @@ export async function executeTransfer(prevState: any, formData: FormData) {
 
       // Retiré : restauration du solde disponible
 
-      let errorMessage = `❌ Erreur API: ${response.status} ${response.statusText}`
+      let errorMessage = `Erreur API: ${response.status} ${response.statusText}`
 
       try {
         const errorData = JSON.parse(responseText)
         errorMessage = errorData.message || errorMessage
       } catch (e) {
         if (responseText) {
-          errorMessage = `❌ ${responseText}`
+          errorMessage = `${responseText}`
         }
       }
 
@@ -857,7 +857,7 @@ export async function executeTransfer(prevState: any, formData: FormData) {
 
     return {
       success: false,
-      error: "❌ Erreur lors du traitement du virement. Veuillez réessayer.",
+      error: "Erreur lors du traitement du virement. Veuillez réessayer.",
     }
   }
 }

@@ -485,6 +485,114 @@ export default function BeneficiariesPage() {
     setFormDirty(true)
   }
 
+  /**
+   * Calcule la clé RIB selon la procédure officielle de la BCRG
+   * Utilise la même logique que le backend (ribValidator.ts)
+   */
+  const computeRibKey = (bankCode: string, agencyCode: string, accountNumber: string): string => {
+    // Nettoyer les valeurs (supprimer les espaces et convertir en majuscules)
+    // Correspond à la fonction sanitize du backend
+    const sanitize = (value: string) => {
+      if (!value) return ""
+      // En mode sécurisé, on ne nettoie pas (mais on n'est pas en mode sécurisé côté frontend)
+      return value.replace(/\s+/g, "").toUpperCase()
+    }
+    
+    const cleanBankCode = sanitize(bankCode)
+    const cleanAgencyCode = sanitize(agencyCode)
+    const cleanAccountNumber = sanitize(accountNumber)
+
+    // Compléter les codes à 3 chiffres et prendre les 10 derniers chiffres du compte
+    // Correspond exactement à la logique du backend
+    const completedBankCode = cleanBankCode.padStart(3, "0").slice(0, 3)
+    const completedAgencyCode = cleanAgencyCode.padStart(3, "0").slice(0, 3)
+    const last10Digits = cleanAccountNumber.slice(-10).padStart(10, "0")
+
+    // Construire CompteBCRG = CodeBank(3) + CodeAgence(3) + Compte(10) + "00"
+    const compteBCRG = `${completedBankCode}${completedAgencyCode}${last10Digits}00`
+
+    // Calculer le modulo 97 (même logique que mod97 du backend)
+    let remainder = 0
+    for (let i = 0; i < compteBCRG.length; i++) {
+      const charCode = compteBCRG.charCodeAt(i) - 48 // '0' => 48
+      if (charCode < 0 || charCode > 9) {
+        return ""
+      }
+      remainder = (remainder * 10 + charCode) % 97
+    }
+
+    // K = 97 - Reste
+    const key = 97 - remainder
+
+    // Retourner K formaté sur 2 chiffres
+    return key.toString().padStart(2, "0")
+  }
+
+  /**
+   * Valide le RIB localement avant l'envoi de l'OTP
+   */
+  const validateRibLocally = (
+    bankCode: string,
+    agencyCode: string,
+    accountNumber: string,
+    ribKey: string,
+  ): { valid: boolean; error?: string } => {
+    const errors: string[] = []
+
+    // Nettoyer les valeurs
+    const sanitize = (value: string) => (value || "").replace(/\s+/g, "").toUpperCase()
+    const cleanBankCode = sanitize(bankCode)
+    const cleanAgencyCode = sanitize(agencyCode)
+    const cleanAccountNumber = sanitize(accountNumber)
+    const cleanRibKey = sanitize(ribKey)
+
+    // Validation du code banque
+    if (!cleanBankCode) {
+      errors.push("Le code banque est requis")
+    } else if (cleanBankCode.length !== 3) {
+      errors.push("Le code banque doit contenir exactement 3 caractères")
+    }
+
+    // Validation du code agence
+    if (!cleanAgencyCode) {
+      errors.push("Le code agence est requis")
+    } else if (cleanAgencyCode.length !== 3) {
+      errors.push("Le code agence doit contenir exactement 3 caractères")
+    }
+
+    // Validation du numéro de compte
+    if (!cleanAccountNumber) {
+      errors.push("Le numéro de compte est requis")
+    } else if (cleanAccountNumber.length !== 10) {
+      errors.push("Le numéro de compte doit contenir exactement 10 caractères")
+    }
+
+    // Validation de la clé RIB
+    if (!cleanRibKey) {
+      errors.push("La clé RIB est requise")
+    } else if (!/^[0-9]{2}$/.test(cleanRibKey)) {
+      errors.push("La clé RIB doit contenir exactement 2 chiffres")
+    }
+
+    // Si des erreurs de format, retourner immédiatement
+    if (errors.length > 0) {
+      return { valid: false, error: errors.join(". ") }
+    }
+
+    // Calculer la clé RIB attendue
+    const computedKey = computeRibKey(cleanBankCode, cleanAgencyCode, cleanAccountNumber)
+
+    if (!computedKey) {
+      return { valid: false, error: "Impossible de calculer la clé RIB" }
+    }
+
+    if (computedKey !== cleanRibKey) {
+      return { valid: false, error: `Clé RIB invalide. La clé attendue est ${computedKey}` }
+    }
+
+    return { valid: true }
+  }
+
   const handleAddBeneficiary = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     const formData = new FormData(e.currentTarget)
@@ -493,6 +601,26 @@ export default function BeneficiariesPage() {
       const accountNumber = formData.get("account") as string
       if (!validateAccountNumber(accountNumber)) {
         return
+      }
+
+      // Validation RIB avant l'envoi de l'OTP
+      if (selectedType === "BNG-BNG" || selectedType === "BNG-CONFRERE") {
+        const agencyCode = (formData.get("codeAgence") as string) || ""
+        const cleRib = (formData.get("cleRib") as string) || ""
+        const bankCodeForRib =
+          selectedType === "BNG-BNG"
+            ? selectedBankCode || "022"
+            : selectedBankCode || (formData.get("bank") as string) || ""
+
+        const ribValidation = validateRibLocally(bankCodeForRib, agencyCode, accountNumber, cleRib)
+        if (!ribValidation.valid) {
+          toast({
+            title: "RIB invalide",
+            description: ribValidation.error || "La clé RIB saisie est incorrecte",
+            variant: "destructive",
+          })
+          return
+        }
       }
     }
 
@@ -519,7 +647,7 @@ export default function BeneficiariesPage() {
       }
     }
 
-    // Sauvegarder les données et ouvrir le modal OTP
+    // Sauvegarder les données et ouvrir le modal OTP (seulement si la validation RIB est OK)
     setPendingBeneficiaryData(formData)
     setShowOtpModal(true)
   }
@@ -743,7 +871,7 @@ export default function BeneficiariesPage() {
               {addAndActivateState?.error && (
                 <Alert variant="destructive">
                   <AlertCircle className="h-4 w-4" />
-                  <AlertDescription>❌ {addAndActivateState.error}</AlertDescription>
+                  <AlertDescription>{addAndActivateState.error}</AlertDescription>
                 </Alert>
               )}
 
@@ -934,7 +1062,7 @@ export default function BeneficiariesPage() {
       {addAndActivateState?.error && (
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
-          <AlertDescription>❌ {addAndActivateState.error}</AlertDescription>
+          <AlertDescription>{addAndActivateState.error}</AlertDescription>
         </Alert>
       )}
 
@@ -948,21 +1076,21 @@ export default function BeneficiariesPage() {
       {updateState?.error && (
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
-          <AlertDescription>❌ {updateState.error}</AlertDescription>
+          <AlertDescription>{updateState.error}</AlertDescription>
         </Alert>
       )}
 
       {showDeactivateSuccess && (
         <Alert className="border-green-200 bg-green-50">
           <CheckCircle className="h-4 w-4 text-green-600" />
-          <AlertDescription className="text-green-800">✅ Bénéficiaire désactivé avec succès.</AlertDescription>
+          <AlertDescription className="text-green-800">Bénéficiaire désactivé avec succès.</AlertDescription>
         </Alert>
       )}
 
       {reactivateState?.error && (
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
-          <AlertDescription>❌ Erreur lors de la réactivation. Veuillez réessayer.</AlertDescription>
+          <AlertDescription>Erreur lors de la réactivation. Veuillez réessayer.</AlertDescription>
         </Alert>
       )}
 
