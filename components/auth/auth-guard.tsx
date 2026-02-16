@@ -56,25 +56,38 @@ export function AuthGuard({ children }: AuthGuardProps) {
         })
 
         if (!authCheckResponse.ok) {
+          // Si l'API retourne une erreur, essayer avec localStorage comme fallback
           throw new Error("Auth check failed")
         }
 
         const authData = await authCheckResponse.json()
 
-        if (!authData.authenticated) {
-          setIsAuthenticated(false)
+        if (authData.authenticated) {
+          // Utilisateur authentifié avec informations complètes
+          setIsAuthenticated(true)
           setIsLoading(false)
-          // Rediriger vers la page d'accueil si pas authentifié
-          router.push("/")
           return
         }
 
-        // Utilisateur authentifié avec informations complètes
-        setIsAuthenticated(true)
+        // Si pas authentifié via cookies, vérifier localStorage comme fallback
+        if (AuthService.isAuthenticated()) {
+          try {
+            await AuthService.fetchMe()
+            setIsAuthenticated(true)
+            setIsLoading(false)
+            return
+          } catch (fetchError) {
+            console.error("Erreur lors de la récupération des informations utilisateur:", fetchError)
+          }
+        }
+
+        // Pas authentifié du tout
+        setIsAuthenticated(false)
         setIsLoading(false)
+        router.push("/")
       } catch (error) {
         console.error("Erreur lors de la vérification de l'authentification:", error)
-        // En cas d'erreur, vérifier aussi localStorage comme fallback
+        // En cas d'erreur réseau, vérifier localStorage comme fallback
         if (AuthService.isAuthenticated()) {
           try {
             await AuthService.fetchMe()
