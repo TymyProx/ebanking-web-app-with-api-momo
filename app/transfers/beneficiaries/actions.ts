@@ -47,6 +47,56 @@ import { getApiBaseUrl, TENANT_ID } from "@/lib/api-url"
 const API_BASE_URL = getApiBaseUrl()
 
 /**
+ * Extrait le message d'erreur d'une réponse HTTP
+ * Gère les cas où le backend renvoie du JSON ou une chaîne de caractères
+ * Le backend renvoie généralement une chaîne de caractères pour les erreurs 400
+ */
+async function extractErrorMessage(response: Response): Promise<string> {
+  let errorMessage = `Erreur API: ${response.status} ${response.statusText}`
+  
+  try {
+    // Le backend renvoie généralement une chaîne de caractères pour Error400
+    // Essayons d'abord de lire comme texte
+    const textResponse = await response.text()
+    
+    if (textResponse && textResponse.trim()) {
+      // Essayer de parser comme JSON au cas où
+      try {
+        const parsed = JSON.parse(textResponse)
+        if (parsed && typeof parsed === "object") {
+          // Extraire le message d'erreur de différentes structures possibles
+          errorMessage = 
+            parsed.message || 
+            parsed.error || 
+            parsed.errors?.join?.("\n") ||
+            (Array.isArray(parsed.errors) ? parsed.errors.join("\n") : null) ||
+            textResponse
+        } else {
+          errorMessage = textResponse
+        }
+      } catch {
+        // Si ce n'est pas du JSON, utiliser directement le texte
+        // C'est le cas pour Error400 qui renvoie directement le message
+        errorMessage = textResponse
+      }
+    }
+  } catch (parseError) {
+    console.error("Erreur lors de l'extraction du message d'erreur:", parseError)
+    // Si tout échoue, garder le message par défaut
+  }
+  
+  // Nettoyer et formater le message d'erreur
+  errorMessage = errorMessage.trim()
+  
+  // Si le message contient plusieurs lignes (erreurs multiples), les formater proprement
+  if (errorMessage.includes("\n")) {
+    errorMessage = errorMessage.split("\n").map(line => line.trim()).filter(line => line).join(". ")
+  }
+  
+  return errorMessage
+}
+
+/**
  * Traduit les erreurs du backend en messages utilisateur clairs en français
  */
 function translateBeneficiaryError(
@@ -556,21 +606,10 @@ export async function addBeneficiaryAndActivate(
     })
 
     if (!response.ok) {
-      let errorDetails: any = null
-      try {
-        errorDetails = await response.json()
-      } catch (parseError) {
-        // ignore JSON parse errors
-      }
-      
-      // Traduire l'erreur en message utilisateur clair
-      const defaultMessage = `Erreur lors de l'ajout du bénéficiaire (${response.status})`
-      const errorMessage = translateBeneficiaryError(response.status, errorDetails, defaultMessage)
-      
+      const errorMessage = await extractErrorMessage(response)
       return {
         success: false,
         error: errorMessage,
-        details: errorDetails,
       }
     }
 
@@ -726,9 +765,7 @@ export async function addBeneficiary(prevState: ActionResult | null, formData: F
     })
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}))
-      const defaultMessage = `Erreur lors de l'opération (${response.status})`
-      const errorMessage = translateBeneficiaryError(response.status, errorData, defaultMessage)
+      const errorMessage = await extractErrorMessage(response)
       return {
         success: false,
         error: errorMessage,
@@ -844,9 +881,7 @@ export async function updateBeneficiary(prevState: ActionResult | null, formData
     })
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}))
-      const defaultMessage = `Erreur lors de l'opération (${response.status})`
-      const errorMessage = translateBeneficiaryError(response.status, errorData, defaultMessage)
+      const errorMessage = await extractErrorMessage(response)
       return {
         success: false,
         error: errorMessage,
@@ -898,9 +933,7 @@ export async function deleteBeneficiary(prevState: ActionResult | null, formData
     })
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}))
-      const defaultMessage = `Erreur lors de l'opération (${response.status})`
-      const errorMessage = translateBeneficiaryError(response.status, errorData, defaultMessage)
+      const errorMessage = await extractErrorMessage(response)
       return {
         success: false,
         error: errorMessage,
@@ -1007,9 +1040,7 @@ export async function deactivateBeneficiary(prevState: ActionResult | null, form
     })
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}))
-      const defaultMessage = `Erreur lors de l'opération (${response.status})`
-      const errorMessage = translateBeneficiaryError(response.status, errorData, defaultMessage)
+      const errorMessage = await extractErrorMessage(response)
       return {
         success: false,
         error: errorMessage,
@@ -1066,9 +1097,7 @@ export async function reactivateBeneficiary(prevState: ActionResult | null, form
     })
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}))
-      const defaultMessage = `Erreur lors de l'opération (${response.status})`
-      const errorMessage = translateBeneficiaryError(response.status, errorData, defaultMessage)
+      const errorMessage = await extractErrorMessage(response)
       return {
         success: false,
         error: errorMessage,
