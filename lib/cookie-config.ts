@@ -19,11 +19,8 @@ export function getCookieConfig(): CookieOptions {
     httpOnly: true,
     secure: isProduction,
     sameSite: "lax",
-    // maxAge défini pour que le cookie persiste pendant la session du navigateur
-    // Même si l'onglet est fermé, le cookie reste jusqu'à la fermeture complète du navigateur
-    // Pour une sécurité maximale, on utilise une durée raisonnable (24h)
-    // Le cookie sera supprimé uniquement par SessionCleanup lors de la fermeture de l'onglet
-    maxAge: 60 * 60 * 24, // 24 heures - suffisant pour une session de travail
+    // Pas de maxAge = session cookie (supprimé quand le navigateur se ferme)
+    // maxAge: 60 * 60 * 24 * 7, // 7 days - DÉSACTIVÉ pour plus de sécurité
     path: "/",
   }
 

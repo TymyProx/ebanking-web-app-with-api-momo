@@ -2,20 +2,52 @@
 
 import { useEffect } from "react"
 
+const SESSION_FLAG = "session_active"
+
 /**
- * Composant qui supprime les cookies de session UNIQUEMENT à la fermeture de l'onglet
- * Ne supprime JAMAIS les cookies lors d'un rafraîchissement de page
+ * Composant qui supprime les cookies de session à la fermeture de l'onglet
+ * Ne supprime PAS les cookies lors d'un rafraîchissement de page
  * 
- * IMPORTANT: Ce composant ne supprime plus les cookies au chargement pour éviter
- * les problèmes lors du rafraîchissement. Les cookies sont supprimés uniquement
- * lors de la fermeture de l'onglet via l'événement pagehide.
+ * Logique :
+ * - sessionStorage est préservé lors d'un rafraîchissement mais vidé lors de la fermeture de l'onglet
+ * - Si le flag n'existe pas au chargement, c'est une nouvelle session (onglet fermé puis rouvert)
+ * - On ne supprime PAS le flag lors de beforeunload pour permettre la distinction
  */
 export function SessionCleanup() {
   useEffect(() => {
+    // Vérifier si le flag de session existe
+    // Si le flag n'existe pas, cela signifie que l'onglet a été fermé puis rouvert
+    // (car sessionStorage est vidé lors de la fermeture de l'onglet)
+    const sessionFlag = sessionStorage.getItem(SESSION_FLAG)
+    
+    if (!sessionFlag) {
+      // Nouvelle session (onglet fermé puis rouvert) - supprimer les cookies
+      const clearSession = async () => {
+        try {
+          await fetch("/api/auth/clear-session", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({}),
+          })
+        } catch (error) {
+          // Ignorer les erreurs
+          console.error("Error clearing session:", error)
+        }
+      }
+      clearSession()
+    }
+
+    // Définir le flag de session active
+    // Ce flag sera préservé lors d'un rafraîchissement mais supprimé lors de la fermeture de l'onglet
+    sessionStorage.setItem(SESSION_FLAG, "true")
+
     // Fonction pour supprimer les cookies de session
     // Cette fonction est appelée uniquement lors de la fermeture de l'onglet
     const clearSession = async () => {
       try {
+        // Supprimer le flag de sessionStorage
+        sessionStorage.removeItem(SESSION_FLAG)
+        
         // Utiliser sendBeacon pour garantir l'envoi même si la page se ferme
         const url = "/api/auth/clear-session"
         const blob = new Blob([JSON.stringify({})], { type: "application/json" })
@@ -40,6 +72,9 @@ export function SessionCleanup() {
       }
     }
 
+    // Écouter l'événement visibilitychange pour détecter quand l'onglet devient caché
+    // On ne supprime pas les cookies ici car l'onglet peut être juste caché (changement d'onglet)
+    
     // Écouter l'événement pagehide pour détecter la fermeture de l'onglet
     // pagehide est plus fiable que unload pour distinguer fermeture vs rafraîchissement
     const handlePageHide = (e: PageTransitionEvent) => {
@@ -50,7 +85,7 @@ export function SessionCleanup() {
         clearSession()
       }
       // Si persisted = true, c'est un rafraîchissement, on ne fait rien
-      // Les cookies restent intacts
+      // Le flag reste dans sessionStorage et sera préservé
     }
 
     // Ajouter l'écouteur d'événement
