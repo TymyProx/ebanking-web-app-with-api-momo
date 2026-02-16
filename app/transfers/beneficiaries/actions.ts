@@ -46,6 +46,109 @@ import { getApiBaseUrl, TENANT_ID } from "@/lib/api-url"
 
 const API_BASE_URL = getApiBaseUrl()
 
+/**
+ * Traduit les erreurs du backend en messages utilisateur clairs en français
+ */
+function translateBeneficiaryError(
+  status: number,
+  errorDetails: any,
+  defaultMessage: string
+): string {
+  // Extraire le message d'erreur du backend
+  const backendMessage = errorDetails?.message || errorDetails?.error || ""
+  const errorString = String(backendMessage).toLowerCase()
+
+  // Messages spécifiques selon le code de statut HTTP
+  if (status === 400) {
+    // Erreurs de validation
+    if (
+      errorString.includes("rib") || 
+      errorString.includes("clé") || 
+      errorString.includes("cle rib") || 
+      errorString.includes("clerib") ||
+      errorString.includes("cle-rib") ||
+      errorString.includes("key") ||
+      errorString.includes("cle") ||
+      errorString.includes("rib key") ||
+      errorString.includes("ribkey") ||
+      errorString.includes("invalid rib") ||
+      errorString.includes("rib invalide") ||
+      errorString.includes("rib incorrect")
+    ) {
+      return "La clé RIB saisie est incorrecte. Veuillez vérifier la clé RIB sur vos documents bancaires."
+    }
+    if (errorString.includes("account") || errorString.includes("compte") || errorString.includes("accountnumber")) {
+      return "Le numéro de compte saisi est invalide. Veuillez vérifier le numéro de compte."
+    }
+    if (errorString.includes("bank") || errorString.includes("banque") || errorString.includes("bankcode")) {
+      return "Le code banque ou le nom de la banque est invalide. Veuillez vérifier ces informations."
+    }
+    if (errorString.includes("agence") || errorString.includes("agency") || errorString.includes("codagence")) {
+      return "Le code agence saisi est invalide. Veuillez vérifier le code agence."
+    }
+    if (errorString.includes("name") || errorString.includes("nom")) {
+      return "Le nom du bénéficiaire est invalide. Veuillez saisir un nom valide."
+    }
+    if (errorString.includes("validation") || errorString.includes("invalid")) {
+      return "Les informations saisies sont invalides. Veuillez vérifier tous les champs et réessayer."
+    }
+    if (errorString.includes("duplicate") || errorString.includes("existe") || errorString.includes("déjà")) {
+      return "Ce bénéficiaire existe déjà dans votre liste. Veuillez vérifier les informations saisies."
+    }
+    // Message générique pour les erreurs 400
+    return "Les informations saisies sont incorrectes. Veuillez vérifier tous les champs et réessayer."
+  }
+
+  if (status === 401) {
+    return "Votre session a expiré. Veuillez vous reconnecter."
+  }
+
+  if (status === 403) {
+    return "Vous n'avez pas l'autorisation d'effectuer cette action."
+  }
+
+  if (status === 404) {
+    return "La ressource demandée est introuvable."
+  }
+
+  if (status === 409) {
+    return "Ce bénéficiaire existe déjà dans votre liste."
+  }
+
+  if (status === 422) {
+    // Erreurs de validation spécifiques
+    if (
+      errorString.includes("rib") || 
+      errorString.includes("clé") || 
+      errorString.includes("cle rib") ||
+      errorString.includes("clerib") ||
+      errorString.includes("cle-rib") ||
+      errorString.includes("key") ||
+      errorString.includes("cle") ||
+      errorString.includes("rib key") ||
+      errorString.includes("ribkey") ||
+      errorString.includes("invalid rib") ||
+      errorString.includes("rib invalide") ||
+      errorString.includes("rib incorrect")
+    ) {
+      return "La clé RIB saisie est incorrecte. Veuillez vérifier la clé RIB sur vos documents bancaires."
+    }
+    return "Les données saisies ne sont pas valides. Veuillez vérifier tous les champs."
+  }
+
+  if (status === 500 || status === 502 || status === 503) {
+    return "Une erreur technique s'est produite. Veuillez réessayer dans quelques instants."
+  }
+
+  // Si le backend a fourni un message spécifique, l'utiliser
+  if (backendMessage && !defaultMessage.includes("Erreur API")) {
+    return backendMessage
+  }
+
+  // Message par défaut
+  return defaultMessage
+}
+
 const WORKFLOW_STATUS = {
   CREATED: "cree",
   VERIFIED: "verifie",
@@ -405,16 +508,17 @@ export async function addBeneficiaryAndActivate(
     })
 
     if (!response.ok) {
-      let errorMessage = `Erreur API: ${response.status} ${response.statusText}`
       let errorDetails: any = null
       try {
         errorDetails = await response.json()
-        if (errorDetails && typeof errorDetails === "object") {
-          errorMessage = errorDetails.message || errorDetails.error || errorMessage
-        }
       } catch (parseError) {
         // ignore JSON parse errors
       }
+      
+      // Traduire l'erreur en message utilisateur clair
+      const defaultMessage = `Erreur lors de l'ajout du bénéficiaire (${response.status})`
+      const errorMessage = translateBeneficiaryError(response.status, errorDetails, defaultMessage)
+      
       return {
         success: false,
         error: errorMessage,
@@ -575,9 +679,11 @@ export async function addBeneficiary(prevState: ActionResult | null, formData: F
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}))
+      const defaultMessage = `Erreur lors de l'opération (${response.status})`
+      const errorMessage = translateBeneficiaryError(response.status, errorData, defaultMessage)
       return {
         success: false,
-        error: errorData.message || `Erreur API: ${response.status} ${response.statusText}`,
+        error: errorMessage,
       }
     }
 
@@ -691,9 +797,11 @@ export async function updateBeneficiary(prevState: ActionResult | null, formData
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}))
+      const defaultMessage = `Erreur lors de l'opération (${response.status})`
+      const errorMessage = translateBeneficiaryError(response.status, errorData, defaultMessage)
       return {
         success: false,
-        error: errorData.message || `Erreur API: ${response.status} ${response.statusText}`,
+        error: errorMessage,
       }
     }
 
@@ -743,9 +851,11 @@ export async function deleteBeneficiary(prevState: ActionResult | null, formData
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}))
+      const defaultMessage = `Erreur lors de l'opération (${response.status})`
+      const errorMessage = translateBeneficiaryError(response.status, errorData, defaultMessage)
       return {
         success: false,
-        error: errorData.message || `Erreur API: ${response.status} ${response.statusText}`,
+        error: errorMessage,
       }
     }
 
@@ -791,9 +901,11 @@ export async function toggleBeneficiaryFavorite(
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}))
       console.error("[toggleBeneficiaryFavorite] API Error:", errorData)
+      const defaultMessage = `Erreur lors de la modification du favori (${response.status})`
+      const errorMessage = translateBeneficiaryError(response.status, errorData, defaultMessage)
       return {
         success: false,
-        error: errorData.message || `Erreur API: ${response.status} ${response.statusText}`,
+        error: errorMessage,
       }
     }
 
@@ -848,9 +960,11 @@ export async function deactivateBeneficiary(prevState: ActionResult | null, form
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}))
+      const defaultMessage = `Erreur lors de l'opération (${response.status})`
+      const errorMessage = translateBeneficiaryError(response.status, errorData, defaultMessage)
       return {
         success: false,
-        error: errorData.message || `Erreur API: ${response.status} ${response.statusText}`,
+        error: errorMessage,
       }
     }
 
@@ -905,9 +1019,11 @@ export async function reactivateBeneficiary(prevState: ActionResult | null, form
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}))
+      const defaultMessage = `Erreur lors de l'opération (${response.status})`
+      const errorMessage = translateBeneficiaryError(response.status, errorData, defaultMessage)
       return {
         success: false,
-        error: errorData.message || `Erreur API: ${response.status} ${response.statusText}`,
+        error: errorMessage,
       }
     }
 
