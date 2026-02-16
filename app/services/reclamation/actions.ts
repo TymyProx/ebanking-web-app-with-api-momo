@@ -248,7 +248,6 @@ export async function createReclamation(formData: {
   complainObject: string
   description: string
   complainDate: string
-  phone: string
   email: string
 }) {
   try {
@@ -272,6 +271,17 @@ export async function createReclamation(formData: {
     const userData = await userResponse.json()
     const clientId = userData.id
 
+    // Résoudre le téléphone côté serveur (pas de champ saisi côté UI)
+    const client = await getClientByUserId(clientId)
+    const telephone =
+      client?.telephone ||
+      client?.phoneNumber ||
+      userData.phoneNumber ||
+      userData.phone ||
+      userData.mobile ||
+      userData.mobilePhone ||
+      ""
+
     const reference = await generateReclamationReference()
 
     // Préparer les données pour l'API
@@ -282,7 +292,7 @@ export async function createReclamation(formData: {
       status: "En cours",
       email: formData.email,
       motifRecl: formData.complainObject || formData.complainType,
-      telephone: formData.phone,
+      telephone: telephone,
       clientId: clientId,
     }
 

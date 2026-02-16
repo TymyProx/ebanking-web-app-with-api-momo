@@ -117,39 +117,28 @@ export default function ReclamationPage() {
         if (clientData) {
           // Utiliser l'email du client en priorité, sinon celui de l'utilisateur
           const email = clientData.email || user.email || ""
-          
-          // Pour le téléphone, essayer d'abord le client, puis l'utilisateur
-          const clientPhone = clientData.telephone || clientData.phoneNumber || ""
-          const userPhone = user.phoneNumber || user.phone || ""
-          const phone = clientPhone || userPhone || ""
-          
+
           console.log("[Reclamation] Données client récupérées:", {
             clientEmail: clientData.email,
-            clientPhone: clientPhone,
             userEmail: user.email,
-            userPhone: userPhone,
             finalEmail: email,
-            finalPhone: phone,
           })
           
           setFormData((prev) => ({
             ...prev,
             email: email,
-            phone: phone,
           }))
           
-          console.log("[Reclamation] formData mis à jour avec données client (table client):", { email, phone })
+          console.log("[Reclamation] formData mis à jour avec données client (table client):", { email })
         } else {
           console.warn("[Reclamation] Aucun client trouvé avec userid:", user.id, "- Utilisation des données utilisateur")
           // Fallback sur les données de l'utilisateur si le client n'est pas trouvé
           const email = user.email || ""
-          const phone = user.phoneNumber || user.phone || ""
           setFormData((prev) => ({
             ...prev,
             email: email,
-            phone: phone,
           }))
-          console.log("[Reclamation] formData mis à jour avec données utilisateur (fallback):", { email, phone })
+          console.log("[Reclamation] formData mis à jour avec données utilisateur (fallback):", { email })
         }
       } catch (error) {
         console.error("Erreur lors du chargement des informations utilisateur:", error)
@@ -216,7 +205,6 @@ export default function ReclamationPage() {
     // Récupérer les valeurs depuis formData et les champs du formulaire
     // Pour les champs en lecture seule, on récupère depuis formData
     // Pour les autres champs, on peut aussi vérifier directement depuis les éléments du DOM si nécessaire
-    const phone = String(formData.phone || "").trim()
     const email = String(formData.email || "").trim()
     const description = String(formData.description || "").trim()
     const complainType = String(formData.complainType || selectedType || "").trim()
@@ -227,7 +215,6 @@ export default function ReclamationPage() {
       complainType,
       complainDate,
       description: description.substring(0, 50) + (description.length > 50 ? "..." : ""),
-      phone,
       email,
       terms: formData.terms,
       complainObject: formData.complainObject,
@@ -241,7 +228,6 @@ export default function ReclamationPage() {
     if (!complainType) missingFields.push("Type de réclamation")
     if (!complainDate) missingFields.push("Date")
     if (!description) missingFields.push("Description")
-    if (!phone) missingFields.push("Téléphone")
     if (!email) missingFields.push("Email")
     if (!formData.terms) missingFields.push("Acceptation des conditions")
 
@@ -266,7 +252,6 @@ export default function ReclamationPage() {
         complainObject: formData.complainObject || complainType,
         description: description,
         complainDate: complainDate,
-        phone: phone,
         email: email,
       }
 
@@ -470,31 +455,11 @@ export default function ReclamationPage() {
                 />
                 <input
                   type="hidden"
-                  name="phone"
-                  value={formData.phone || ""}
-                />
-                <input
-                  type="hidden"
                   name="email"
                   value={formData.email || ""}
                 />
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="phone">Téléphone *</Label>
-                    <Input
-                      id="phone"
-                      name="phone"
-                      type="text"
-                      inputMode="numeric"
-                      value={formData.phone || ""}
-                      placeholder="624123456"
-                      required
-                      readOnly={true}
-                      className="bg-gray-50 cursor-not-allowed"
-                    />
-                  </div>
-
                   <div className="space-y-2">
                     <Label htmlFor="email">Email *</Label>
                     <Input
