@@ -3,6 +3,7 @@ import type { NextRequest } from "next/server"
 
 // Pages publiques qui ne nécessitent pas d'authentification
 const publicPaths = [
+  "/",
   "/login",
   "/signup",
   "/auth/verify-email",

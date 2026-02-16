@@ -46,30 +46,52 @@ export function AuthGuard({ children }: AuthGuardProps) {
         return
       }
 
-      // Pour les pages protégées, vérifier le token et les infos utilisateur
-      if (!AuthService.isAuthenticated()) {
-        setIsAuthenticated(false)
-        setIsLoading(false)
-        // Rediriger vers la page de d'accueil si pas de cookie
-        router.push("/")
-        return
-      }
+      // Pour les pages protégées, vérifier l'authentification via les cookies HttpOnly
+      try {
+        // Vérifier l'authentification via l'API qui utilise les cookies HttpOnly
+        const authCheckResponse = await fetch("/api/auth/check", {
+          method: "GET",
+          credentials: "include", // Important pour envoyer les cookies
+          cache: "no-store",
+        })
 
-      let user = AuthService.getCurrentUser()
-      if (!user) {
-        try {
-          user = await AuthService.fetchMe()
-        } catch (error) {
-          console.error("Erreur lors de la récupération des informations utilisateur:", error)
-          // Rediriger vers la page de d'acceuil en cas d'erreur
+        if (!authCheckResponse.ok) {
+          throw new Error("Auth check failed")
+        }
+
+        const authData = await authCheckResponse.json()
+
+        if (!authData.authenticated) {
+          setIsAuthenticated(false)
+          setIsLoading(false)
+          // Rediriger vers la page d'accueil si pas authentifié
           router.push("/")
           return
         }
-      }
 
-      // Utilisateur authentifié avec informations complètes
-      setIsAuthenticated(true)
-      setIsLoading(false)
+        // Utilisateur authentifié avec informations complètes
+        setIsAuthenticated(true)
+        setIsLoading(false)
+      } catch (error) {
+        console.error("Erreur lors de la vérification de l'authentification:", error)
+        // En cas d'erreur, vérifier aussi localStorage comme fallback
+        if (AuthService.isAuthenticated()) {
+          try {
+            await AuthService.fetchMe()
+            setIsAuthenticated(true)
+            setIsLoading(false)
+          } catch (fetchError) {
+            console.error("Erreur lors de la récupération des informations utilisateur:", fetchError)
+            setIsAuthenticated(false)
+            setIsLoading(false)
+            router.push("/")
+          }
+        } else {
+          setIsAuthenticated(false)
+          setIsLoading(false)
+          router.push("/")
+        }
+      }
     }
 
     // Délai pour éviter les problèmes d'hydratation
