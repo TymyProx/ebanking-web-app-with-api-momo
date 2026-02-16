@@ -216,7 +216,7 @@ export default function AcceptInvitePage() {
         {/* Activation Form - Top Right */}
         <div className="w-full max-w-full mb-0">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 lg:gap-6">
-            <div className="sm:col-start-3 flex justify-end">
+            <div className="sm:col-start-3 flex justify-center sm:justify-end mt-8 sm:mt-0">
               <div className="relative group w-full max-w-[90%] sm:max-w-[85%]">
                 <div className="absolute inset-0 bg-gradient-to-br from-[#2d6e3e]/30 via-[#f4c430]/20 to-[#2d6e3e]/30 rounded-2xl blur-2xl opacity-40 group-hover:opacity-60 transition-opacity"></div>
                 <div className="bg-white/40 backdrop-blur-2xl rounded-2xl shadow-2xl p-4 sm:p-5 border border-white/20">
