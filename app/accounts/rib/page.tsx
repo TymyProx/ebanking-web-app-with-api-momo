@@ -24,6 +24,7 @@ import {
 } from "lucide-react"
 import { getAccounts } from "../../accounts/actions"
 import { getUserProfile, getAccountForRib, sendRibEmail } from "./actions"
+import { isAccountActive } from "@/lib/status-utils"
 import { generateStandardizedPDF, formatAmount as formatAmountUtil, savePDF, type PDFContentOptions } from "@/lib/pdf-generator"
 import {
   AlertDialog,
@@ -275,26 +276,31 @@ export default function RIBPage() {
         console.log("[RIB] Comptes récupérés:", accountsData)
 
         if (Array.isArray(accountsData)) {
-          const adaptedAccounts: Account[] = accountsData.map((acc: any) => {
-            // Normaliser le statut
-            let status: "Actif" | "Bloqué" | "Fermé" = "Actif"
-            const rawStatus = (acc.status || "").toUpperCase()
-            if (rawStatus === "ACTIF" || rawStatus === "ACTIVE") {
-              status = "Actif"
-            } else if (rawStatus === "BLOQUÉ" || rawStatus === "BLOCKED" || rawStatus === "BLOQUE") {
-              status = "Bloqué"
-            } else if (rawStatus === "FERMÉ" || rawStatus === "CLOSED" || rawStatus === "FERME") {
-              status = "Fermé"
-            }
+          const adaptedAccounts: Account[] = accountsData
+            .filter((acc: any) => {
+              // Filtrer seulement les comptes actifs avant de les adapter
+              return isAccountActive(acc.status)
+            })
+            .map((acc: any) => {
+              // Normaliser le statut
+              let status: "Actif" | "Bloqué" | "Fermé" = "Actif"
+              const rawStatus = (acc.status || "").toUpperCase()
+              if (rawStatus === "ACTIF" || rawStatus === "ACTIVE") {
+                status = "Actif"
+              } else if (rawStatus === "BLOQUÉ" || rawStatus === "BLOCKED" || rawStatus === "BLOQUE") {
+                status = "Bloqué"
+              } else if (rawStatus === "FERMÉ" || rawStatus === "CLOSED" || rawStatus === "FERME") {
+                status = "Fermé"
+              }
 
-            return {
-              id: acc.id || acc.accountId,
-              name: acc.accountName || acc.name || `Compte ${acc.accountNumber}`,
-              number: acc.accountNumber,
-              balance: Number.parseFloat(acc.bookBalance || acc.balance || "0"),
-              currency: acc.currency || "GNF",
-              type: acc.type === "SAVINGS" ? ("Épargne" as const) : ("Courant" as const),
-              status,
+              return {
+                id: acc.id || acc.accountId,
+                name: acc.accountName || acc.name || `Compte ${acc.accountNumber}`,
+                number: acc.accountNumber,
+                balance: Number.parseFloat(acc.bookBalance || acc.balance || "0"),
+                currency: acc.currency || "GNF",
+                type: acc.type === "SAVINGS" ? ("Épargne" as const) : ("Courant" as const),
+                status,
               iban: (() => {
                 const bankCode = (acc.codeBanque || "022").padStart(3, "0").slice(0, 3)
                 const branchCode = (acc.codeAgence || "001").padStart(3, "0").slice(0, 3)
@@ -319,9 +325,14 @@ export default function RIBPage() {
             }
           })
 
-          // Filtrer seulement les comptes avec un numéro valide (gardez tous les statuts pour déboguer)
+          // Filtrer seulement les comptes avec un numéro valide
+          // (Les comptes actifs ont déjà été filtrés avant la normalisation)
           const validAccounts = adaptedAccounts.filter(
-            (account: Account) => account.number && String(account.number).trim() !== "",
+            (account: Account) => {
+              // Vérifier que le compte a un numéro valide
+              const hasValidNumber = account.number && String(account.number).trim() !== ""
+              return hasValidNumber
+            },
           )
 
           console.log("[RIB] Tous les comptes récupérés:", adaptedAccounts)
