@@ -237,14 +237,17 @@ export default function AgencesPage() {
               {/* Filtre par statut */}
               <Select
                 value={selectedStatus}
-                onValueChange={(value) => setSelectedStatus(value as "all" | "open" | "closed")}
+                onValueChange={(value) => {
+                  setSelectedStatus(value as "all" | "open" | "closed")
+                  setCurrentPage(1) // Réinitialiser à la page 1 lors du changement de filtre
+                }}
               >
                 <SelectTrigger aria-label="Filtrer par statut">
                   <SelectValue placeholder="Tous les statuts" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Tous les statuts</SelectItem>
-                  <SelectItem value="open">Ouvert maintenant</SelectItem>
+                  <SelectItem value="open">Ouvert</SelectItem>
                   <SelectItem value="closed">Fermé</SelectItem>
                 </SelectContent>
               </Select>

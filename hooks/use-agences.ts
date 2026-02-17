@@ -136,6 +136,8 @@ export function useAgences(initialQuery: AgencesQuery = {}): UseAgencesResult {
   }, [])
 
   // Filtrage et pagination côté client
+  const [filteredAgences, setFilteredAgences] = useState<Agence[]>([])
+
   useEffect(() => {
     let filtered = [...allAgences]
 
@@ -164,8 +166,7 @@ export function useAgences(initialQuery: AgencesQuery = {}): UseAgencesResult {
     // Filtre par statut (ouvert/fermé)
     if (query.status && query.status !== "all") {
       const now = new Date()
-      const currentDay = now.toLocaleLowerCase() as keyof typeof agence.openingHours
-      const dayMap: Record<number, keyof typeof agence.openingHours> = {
+      const dayMap: Record<number, keyof NonNullable<Agence["openingHours"]>> = {
         0: "sun",
         1: "mon",
         2: "tue",
@@ -182,6 +183,9 @@ export function useAgences(initialQuery: AgencesQuery = {}): UseAgencesResult {
       })
     }
 
+    // Mettre à jour les agences filtrées pour le calcul du total
+    setFilteredAgences(filtered)
+
     // Pagination
     const page = query.page || 1
     const limit = query.limit || 25
@@ -195,7 +199,7 @@ export function useAgences(initialQuery: AgencesQuery = {}): UseAgencesResult {
     fetchAgences()
   }, [fetchAgences])
 
-  const totalCount = allAgences.length
+  const totalCount = filteredAgences.length
   const totalPages = Math.ceil(totalCount / (query.limit || 25))
 
   return {
