@@ -165,38 +165,39 @@ const navigationData: {
       ],
     },
   ],
-  // operations: [
-  //   {
-  //     title: "Virements",
-  //     icon: ArrowLeftRight,
-  //     items: [
-  //       {
-  //         title: "Effectuer un virement",
-  //         url: "/transfers/new",
-  //         icon: ArrowLeftRight,
-  //       },
-  //       {
-  //         title: "Bénéficiaires",
-  //         url: "/transfers/beneficiaries",
-  //         icon: User,
-  //       },
-  //       {
-  //         title: "Mise à disposition des fonds",
-  //         url: "/operations/mise-disposition-fonds",
-  //         icon: HandCoins,
-  //       },
-  //       {
-  //         title: "Mes virements",
-  //         url: "/transfers/mes-virements",
-  //         icon: Clock,
-  //       },
-  //     ],
-  //   },
-  //   {
-  //     title: "Opérations en attente",
-  //     url: "/operations/pending",
-  //     icon: Clock,
-  //   },
+  operations: [
+    {
+      title: "Virements",
+      icon: ArrowLeftRight,
+      items: [
+        {
+          title: "Effectuer un virement",
+          url: "/transfers/new",
+          icon: ArrowLeftRight,
+        },
+        {
+          title: "Bénéficiaires",
+          url: "/transfers/beneficiaries",
+          icon: User,
+        },
+        {
+          title: "Mise à disposition des fonds",
+          url: "/operations/mise-disposition-fonds",
+          icon: HandCoins,
+        },
+        {
+          title: "Mes virements",
+          url: "/transfers/mes-virements",
+          icon: Clock,
+        },
+      ],
+    },
+    {
+      title: "Opérations en attente",
+      url: "/operations/pending",
+      icon: Clock,
+    },
+  ],
   //   {
   //     title: "Gestion des cartes",
   //     icon: CreditCard,
@@ -274,7 +275,7 @@ const navigationData: {
       badge: "3",
     },
   ],
-  operations: []
+  //operations: []
 }
 
 // ✅ Force toutes les icônes Lucide en blanc (stroke & fill via currentColor)
