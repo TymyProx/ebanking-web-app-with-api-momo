@@ -459,13 +459,13 @@ export default function FundsProvisionPage() {
                       <SelectValue placeholder="Sélectionnez une agence" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Agence Centrale">Agence Centrale</SelectItem>
-                      <SelectItem value="Agence Kaloum">Agence Kaloum</SelectItem>
-                      <SelectItem value="Agence Matam">Agence Matam</SelectItem>
-                      <SelectItem value="Agence Ratoma">Agence Ratoma</SelectItem>
-                      <SelectItem value="Agence Dixinn">Agence Dixinn</SelectItem>
-                      <SelectItem value="Agence Labé">Agence Labé</SelectItem>
-                      <SelectItem value="Agence Kankan">Agence Kankan</SelectItem>
+                      <SelectItem value="Agence Principale">Agence Principale — Koulewondy (Code: 12)</SelectItem>
+                      <SelectItem value="Agence Port">Agence Port — Port Almamya (Code: 252)</SelectItem>
+                      <SelectItem value="Agence Madina">Agence Madina — Madina Ecole (Code: 212)</SelectItem>
+                      <SelectItem value="Agence Lambanyi">Agence Lambanyi — Lambanyi (50m du Rond point) (Code: 22)</SelectItem>
+                      <SelectItem value="Agence Kagbelen">Agence Kagbelen — Kagbelen (50m du Pont Paul Kagami) (Code: 32)</SelectItem>
+                      <SelectItem value="Agance Kamsar">Agance Kamsar — Kamsar Cité (Nord France) (Code: 007)</SelectItem>
+                      <SelectItem value="Agence Kankan">Agence Kankan — Kankan centre ville (Code: 152)</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
