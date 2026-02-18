@@ -267,35 +267,30 @@ export default function StatementsPage() {
           endDate   // dateFin
         )
 
-        let openingBalance = 0
-        let closingBalance = 0
-        let useSttmsBalances = false
+        // Utiliser uniquement les soldes récupérés depuis STTMS, sans calcul
+        const openingBalance = sttmsBalances.success 
+          ? sttmsBalances.openingBalance 
+          : 0
+        
+        const closingBalance = sttmsBalances.success 
+          ? sttmsBalances.closingBalance 
+          : 0
 
-        if (sttmsBalances.success && (sttmsBalances.openingBalance !== 0 || sttmsBalances.closingBalance !== 0)) {
-          // Utiliser les soldes depuis STTMS
-          openingBalance = sttmsBalances.openingBalance
-          closingBalance = sttmsBalances.closingBalance
-          useSttmsBalances = true
-          console.log("[STATEMENTS] Soldes récupérés depuis STTMS:", { openingBalance, closingBalance })
-        } else {
-          // Fallback : utiliser l'ancienne méthode si STTMS n'est pas disponible
-          console.warn("[STATEMENTS] STTMS non disponible, utilisation du calcul par défaut:", sttmsBalances.error)
-          closingBalance = Number.parseFloat(accountDetails.data.bookBalance || "0")
-          const transactionsSum = filteredTxns.reduce((sum: number, txn: any) => {
-            return sum + Number.parseFloat(txn.montantOperation || "0")
-          }, 0)
-          openingBalance = closingBalance - transactionsSum
-        }
+        console.log("[STATEMENTS] Soldes récupérés depuis STTMS:", { 
+          openingBalance, 
+          closingBalance,
+          success: sttmsBalances.success,
+          error: sttmsBalances.error
+        })
 
         const sortedTransactions = filteredTxns.sort((a: any, b: any) => {
           const dateA = new Date(a.valueDate || 0).getTime()
           const dateB = new Date(b.valueDate || 0).getTime()
-          return dateB - dateA
+          // Ordre croissant : du plus ancien au plus récent
+          return dateA - dateB
         })
 
-        // The first row should show the opening balance
-        let calculatedBalance = openingBalance
-
+        // Utiliser uniquement les soldes STTMS, sans calcul de balance intermédiaire
         const cleanedTransactions = sortedTransactions.map((txn: any, index: number) => {
           let amount = Number.parseFloat(String(txn?.montantOperation ?? 0))
           
@@ -325,8 +320,6 @@ export default function StatementsPage() {
               txnType = amount < 0 ? "DEBIT" : "CREDIT"
             }
           }
-          
-          calculatedBalance += amount // Add transaction to get new balance
 
           const transactionData = {
             referenceOperation: txn.referenceOperation || "",
@@ -336,11 +329,12 @@ export default function StatementsPage() {
             dateEcriture: txn.dateEcriture || "",
             txnType: txnType,
             balanceOuverture: index === 0 ? openingBalance : undefined,
-            // Le solde de clôture doit être celui de STTMS si disponible, sinon le solde calculé de la dernière transaction
+            // Le solde de clôture est toujours celui récupéré depuis STTMS
             balanceFermeture: index === sortedTransactions.length - 1 
-              ? (useSttmsBalances ? closingBalance : calculatedBalance) 
+              ? closingBalance 
               : undefined,
-            currentTransactionBalance: calculatedBalance, // Balance after this transaction
+            // Ne plus calculer le solde courant, utiliser uniquement les valeurs STTMS
+            currentTransactionBalance: undefined,
           }
 
           return transactionData
@@ -393,14 +387,14 @@ export default function StatementsPage() {
       endDate   // dateFin
     )
 
-    // Utiliser les soldes STTMS si disponibles, sinon utiliser ceux calculés
+    // Utiliser uniquement les soldes récupérés depuis STTMS, sans calcul
     const balanceOuverture = sttmsBalances.success 
       ? sttmsBalances.openingBalance 
-      : (filteredTransactions[0]?.balanceOuverture || selectedAccount.balance)
+      : 0
     
     const balanceFermeture = sttmsBalances.success 
       ? sttmsBalances.closingBalance 
-      : (filteredTransactions[filteredTransactions.length - 1]?.currentTransactionBalance || selectedAccount.balance)
+      : 0
 
     // Call the appropriate generation function based on the selected format
     if (format === "pdf") {
