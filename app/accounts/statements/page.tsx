@@ -27,7 +27,7 @@ import {
   Search,
   X,
 } from "lucide-react"
-import { generateStatement, sendStatementByEmail, getTransactionsByNumCompte } from "./actions"
+import { generateStatement, sendStatementByEmail, getTransactionsByNumCompte, getStatementBalancesFromSTTMS } from "./actions"
 import { useActionState } from "react"
 import { getAccounts, getAccountById } from "../actions"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -258,13 +258,34 @@ export default function StatementsPage() {
           return
         }
 
-        const closingBalance = Number.parseFloat(accountDetails.data.bookBalance || "0")
-        const transactionsSum = filteredTxns.reduce((sum: number, txn: any) => {
-          return sum + Number.parseFloat(txn.montantOperation || "0")
-        }, 0)
-        // Since transactions are sorted by date descending (most recent first),
-        // we need to calculate backwards from the current balance
-        const openingBalance = closingBalance - transactionsSum
+        // Récupérer les soldes depuis la table STTMS
+        // Solde d'ouverture : closingbalance où dateto = dateDepart
+        // Solde de clôture : closingbalance où datefrom = dateFin
+        const sttmsBalances = await getStatementBalancesFromSTTMS(
+          selectedAccount.number, // acno = numéro de compte
+          startDate, // dateDepart
+          endDate   // dateFin
+        )
+
+        let openingBalance = 0
+        let closingBalance = 0
+        let useSttmsBalances = false
+
+        if (sttmsBalances.success && (sttmsBalances.openingBalance !== 0 || sttmsBalances.closingBalance !== 0)) {
+          // Utiliser les soldes depuis STTMS
+          openingBalance = sttmsBalances.openingBalance
+          closingBalance = sttmsBalances.closingBalance
+          useSttmsBalances = true
+          console.log("[STATEMENTS] Soldes récupérés depuis STTMS:", { openingBalance, closingBalance })
+        } else {
+          // Fallback : utiliser l'ancienne méthode si STTMS n'est pas disponible
+          console.warn("[STATEMENTS] STTMS non disponible, utilisation du calcul par défaut:", sttmsBalances.error)
+          closingBalance = Number.parseFloat(accountDetails.data.bookBalance || "0")
+          const transactionsSum = filteredTxns.reduce((sum: number, txn: any) => {
+            return sum + Number.parseFloat(txn.montantOperation || "0")
+          }, 0)
+          openingBalance = closingBalance - transactionsSum
+        }
 
         const sortedTransactions = filteredTxns.sort((a: any, b: any) => {
           const dateA = new Date(a.valueDate || 0).getTime()
@@ -272,7 +293,7 @@ export default function StatementsPage() {
           return dateB - dateA
         })
 
-        // The first row should show the closing balance (current account balance)
+        // The first row should show the opening balance
         let calculatedBalance = openingBalance
 
         const cleanedTransactions = sortedTransactions.map((txn: any, index: number) => {
@@ -315,7 +336,10 @@ export default function StatementsPage() {
             dateEcriture: txn.dateEcriture || "",
             txnType: txnType,
             balanceOuverture: index === 0 ? openingBalance : undefined,
-            balanceFermeture: index === sortedTransactions.length - 1 ? calculatedBalance : undefined,
+            // Le solde de clôture doit être celui de STTMS si disponible, sinon le solde calculé de la dernière transaction
+            balanceFermeture: index === sortedTransactions.length - 1 
+              ? (useSttmsBalances ? closingBalance : calculatedBalance) 
+              : undefined,
             currentTransactionBalance: calculatedBalance, // Balance after this transaction
           }
 
@@ -357,14 +381,26 @@ export default function StatementsPage() {
     }
   }
 
-  const handleGenerateStatement = () => {
+  const handleGenerateStatement = async () => {
     if (!selectedAccount || !startDate || !endDate || filteredTransactions.length === 0) return
 
     setErrorMessage("") // Clear previous errors
 
-    const balanceOuverture = filteredTransactions[0]?.balanceOuverture || selectedAccount.balance
-    const balanceFermeture = filteredTransactions[0]?.currentTransactionBalance || selectedAccount.balance
-    // </CHANGE>
+    // Récupérer les soldes depuis STTMS pour la génération du relevé
+    const sttmsBalances = await getStatementBalancesFromSTTMS(
+      selectedAccount.number, // acno = numéro de compte
+      startDate, // dateDepart
+      endDate   // dateFin
+    )
+
+    // Utiliser les soldes STTMS si disponibles, sinon utiliser ceux calculés
+    const balanceOuverture = sttmsBalances.success 
+      ? sttmsBalances.openingBalance 
+      : (filteredTransactions[0]?.balanceOuverture || selectedAccount.balance)
+    
+    const balanceFermeture = sttmsBalances.success 
+      ? sttmsBalances.closingBalance 
+      : (filteredTransactions[filteredTransactions.length - 1]?.currentTransactionBalance || selectedAccount.balance)
 
     // Call the appropriate generation function based on the selected format
     if (format === "pdf") {

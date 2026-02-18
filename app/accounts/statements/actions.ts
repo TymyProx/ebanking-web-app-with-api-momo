@@ -391,6 +391,183 @@ async function getStatementMetadata(statementId: string) {
   }
 }
 
+/**
+ * Récupère les soldes d'ouverture et de clôture depuis la table STTMS
+ * @param acno - Numéro de compte (acno)
+ * @param dateDepart - Date de début de la période (pour solde d'ouverture)
+ * @param dateFin - Date de fin de la période (pour solde de clôture)
+ * @returns Object avec openingBalance et closingBalance
+ */
+export async function getStatementBalancesFromSTTMS(
+  acno: string,
+  dateDepart: string,
+  dateFin: string
+): Promise<{ openingBalance: number; closingBalance: number; success: boolean; error?: string }> {
+  const cookieToken = (await cookies()).get("token")?.value
+  const usertoken = cookieToken
+
+  try {
+    if (!usertoken) {
+      return {
+        success: false,
+        openingBalance: 0,
+        closingBalance: 0,
+        error: "Token d'authentification manquant",
+      }
+    }
+
+    // Format des dates pour la requête (YYYY-MM-DD)
+    const startDate = new Date(dateDepart).toISOString().split("T")[0]
+    const endDate = new Date(dateFin).toISOString().split("T")[0]
+
+    // Requête pour récupérer les données STTMS
+    // On cherche :
+    // 1. Le solde d'ouverture : closingbalance où dateto = dateDepart
+    // 2. Le solde de clôture : closingbalance où datefrom = dateFin
+    // Note: L'endpoint peut être /sttms ou /statement selon la configuration du backend
+    const possibleUrls = [
+      `${API_BASE_URL}/tenant/${TENANT_ID}/sttms?filter=acno eq '${acno}'`,
+      `${API_BASE_URL}/tenant/${TENANT_ID}/statement?filter=acno eq '${acno}'`,
+      `${API_BASE_URL}/tenant/${TENANT_ID}/sttms?acno=${acno}`,
+    ]
+
+    console.log("[STATEMENTS] Récupération des soldes STTMS:", { acno, startDate, endDate })
+
+    let response: Response | null = null
+    let data: any = null
+    let lastError: string | null = null
+
+    // Essayer chaque URL possible
+    for (const url of possibleUrls) {
+      try {
+        console.log("[STATEMENTS] Tentative avec URL:", url)
+        response = await fetch(url, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${usertoken}`,
+          },
+          cache: "no-store",
+        })
+
+        if (response.ok) {
+          data = await response.json()
+          console.log("[STATEMENTS] Données STTMS récupérées avec succès")
+          break
+        } else {
+          lastError = `HTTP ${response.status}: ${response.statusText}`
+          console.warn("[STATEMENTS] Échec avec URL:", url, lastError)
+        }
+      } catch (err) {
+        lastError = err instanceof Error ? err.message : "Erreur inconnue"
+        console.warn("[STATEMENTS] Erreur avec URL:", url, lastError)
+        continue
+      }
+    }
+
+    if (!data) {
+      console.error("[STATEMENTS] Impossible de récupérer les données STTMS:", lastError)
+      return {
+        success: false,
+        openingBalance: 0,
+        closingBalance: 0,
+        error: `Impossible d'accéder à la table STTMS: ${lastError || "Endpoint non disponible"}`,
+      }
+    }
+
+    // Gérer différents formats de réponse
+    let sttmsRecords = []
+    if (Array.isArray(data.content)) {
+      sttmsRecords = data.content
+    } else if (Array.isArray(data.rows)) {
+      sttmsRecords = data.rows
+    } else if (Array.isArray(data)) {
+      sttmsRecords = data
+    } else if (data.data) {
+      sttmsRecords = Array.isArray(data.data) ? data.data : [data.data]
+    } else if (data.value) {
+      // Format OData
+      sttmsRecords = Array.isArray(data.value) ? data.value : [data.value]
+    }
+
+    console.log("[STATEMENTS] Enregistrements STTMS trouvés:", sttmsRecords.length)
+    if (sttmsRecords.length > 0) {
+      console.log("[STATEMENTS] Exemple d'enregistrement STTMS:", sttmsRecords[0])
+    }
+
+    // Rechercher le solde d'ouverture : closingbalance où dateto = dateDepart
+    const openingRecord = sttmsRecords.find((record: any) => {
+      const recordDateTo = record.dateto || record.dateTo || record.date_to || record.date_to
+      if (!recordDateTo) return false
+      // Normaliser la date pour comparaison
+      const recordDate = new Date(recordDateTo).toISOString().split("T")[0]
+      return recordDate === startDate
+    })
+
+    // Rechercher le solde de clôture : closingbalance où datefrom = dateFin
+    const closingRecord = sttmsRecords.find((record: any) => {
+      const recordDateFrom = record.datefrom || record.dateFrom || record.date_from || record.date_from
+      if (!recordDateFrom) return false
+      // Normaliser la date pour comparaison
+      const recordDate = new Date(recordDateFrom).toISOString().split("T")[0]
+      return recordDate === endDate
+    })
+
+    const openingBalance = openingRecord
+      ? Number.parseFloat(
+          openingRecord.closingbalance ||
+            openingRecord.closingBalance ||
+            openingRecord.closing_balance ||
+            openingRecord.closingBalance ||
+            "0"
+        )
+      : 0
+
+    const closingBalance = closingRecord
+      ? Number.parseFloat(
+          closingRecord.closingbalance ||
+            closingRecord.closingBalance ||
+            closingRecord.closing_balance ||
+            closingRecord.closingBalance ||
+            "0"
+        )
+      : 0
+
+    console.log("[STATEMENTS] Soldes STTMS:", {
+      openingBalance,
+      closingBalance,
+      openingRecordFound: !!openingRecord,
+      closingRecordFound: !!closingRecord,
+      startDate,
+      endDate,
+    })
+
+    // Si aucun enregistrement trouvé, retourner une erreur
+    if (!openingRecord && !closingRecord) {
+      return {
+        success: false,
+        openingBalance: 0,
+        closingBalance: 0,
+        error: `Aucun enregistrement STTMS trouvé pour le compte ${acno} avec les dates spécifiées`,
+      }
+    }
+
+    return {
+      success: true,
+      openingBalance,
+      closingBalance,
+    }
+  } catch (error) {
+    console.error("[STATEMENTS] Erreur lors de la récupération des soldes STTMS:", error)
+    return {
+      success: false,
+      openingBalance: 0,
+      closingBalance: 0,
+      error: error instanceof Error ? error.message : "Erreur inconnue",
+    }
+  }
+}
+
 export async function getTransactionsByNumCompte(numCompte: string) {
   const cookieToken = (await cookies()).get("token")?.value
   const usertoken = cookieToken
