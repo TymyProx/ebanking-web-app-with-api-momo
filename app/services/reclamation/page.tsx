@@ -117,7 +117,7 @@ export default function ReclamationPage() {
         if (clientData) {
           // Utiliser l'email du client en priorité, sinon celui de l'utilisateur
           const email = clientData.email || user.email || ""
-
+          
           console.log("[Reclamation] Données client récupérées:", {
             clientEmail: clientData.email,
             userEmail: user.email,

@@ -7,6 +7,7 @@ export interface Agence {
   agenceNumber?: string
   agenceCode?: string
   isHidden?: boolean
+  publishEportal?: boolean
   address?: string
   city?: string
   country?: string
@@ -93,7 +94,7 @@ export function useAgences(initialQuery: AgencesQuery = {}): UseAgencesResult {
       // Tentative de récupération depuis l'API principale
       try {
         const base = config.API_BASE_URL.replace(/\/$/, "")
-        const url = `${base}/api/portal/${config.TENANT_ID}/agences`
+        const url = `${base}/api/portal/${config.TENANT_ID}/agences?platform=eportal`
         const res = await fetch(url, {
           headers: { Accept: "application/json" },
         })
@@ -101,7 +102,29 @@ export function useAgences(initialQuery: AgencesQuery = {}): UseAgencesResult {
         if (!res.ok) throw new Error(`HTTP ${res.status}`)
 
         const json = await res.json()
-        const rows: Agence[] = json.rows || []
+        const rowsRaw: any[] = json.rows || []
+        const rows: Agence[] = rowsRaw.map((r) => ({
+          id: r.id,
+          agenceName: r.agenceName,
+          agenceNumber: r.agenceNumber ?? r.branchId ?? undefined,
+          agenceCode: r.agenceCode ?? undefined,
+          isHidden: r.isHidden ?? undefined,
+          publishEportal: r.publishEportal ?? undefined,
+          address: r.address ?? undefined,
+          city: r.city ?? undefined,
+          country: r.country ?? undefined,
+          postalCode: r.postalCode ?? undefined,
+          latitude: r.lat != null ? Number(r.lat) : r.latitude != null ? Number(r.latitude) : undefined,
+          longitude: r.lng != null ? Number(r.lng) : r.longitude != null ? Number(r.longitude) : undefined,
+          telephone: r.telephone ?? undefined,
+          email: r.email ?? undefined,
+          services: r.services ?? undefined,
+          openingHours: r.openingHours ?? undefined,
+          exceptionalClosures: r.exceptionalClosures ?? undefined,
+          publicHolidays: r.publicHolidays ?? undefined,
+          isTemporarilyClosed: r.isTemporarilyClosed ?? undefined,
+          mapEmbedUrl: r.mapEmbedUrl ?? undefined,
+        }))
 
         // Mise à jour du cache
         cache = {
@@ -145,7 +168,7 @@ export function useAgences(initialQuery: AgencesQuery = {}): UseAgencesResult {
     let filtered = [...allAgences]
 
     // Masquage (ex: agences non publiées)
-    filtered = filtered.filter((agence) => !agence.isHidden)
+    filtered = filtered.filter((agence) => !agence.isHidden && agence.publishEportal !== false)
 
     // Recherche textuelle
     if (query.search) {
