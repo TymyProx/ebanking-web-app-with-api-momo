@@ -66,6 +66,16 @@ const countries = [
   "Liberia",
 ]
 
+const AGENCE_CODE_OPTIONS: Array<{ label: string; value: string }> = [
+  { label: "Agence Principale — Koulewondy", value: "012" },
+  { label: "Agence Port — Port Almamya", value: "252" },
+  { label: "Agence Madina — Madina Ecole", value: "212" },
+  { label: "Agence Lambanyi — Lambanyi", value: "022" },
+  { label: "Agence Kagbelen — Kagbelen", value: "032" },
+  { label: "Agance Kamsar — Kamsar", value: "007" },
+  { label: "Agence Kankan — Kankan", value: "152" },
+]
+
 export default function NewTransferPage() {
   const router = useRouter()
   const [transferType, setTransferType] = useState<TransferType>("account-to-beneficiary")
@@ -113,6 +123,7 @@ export default function NewTransferPage() {
   const [loadingBanks, setLoadingBanks] = useState(false)
   const [accountNumberError, setAccountNumberError] = useState<string | null>(null)
   const [addFormSuccess, setAddFormSuccess] = useState(false)
+  const [selectedAgenceCode, setSelectedAgenceCode] = useState("")
   const beneficiaryFormRef = useRef<HTMLFormElement>(null)
 
   const [beneficiaryMessage, setBeneficiaryMessage] = useState<{ type: "success" | "error"; text: string } | null>(null)
@@ -216,6 +227,7 @@ export default function NewTransferPage() {
     setSelectedSwiftCode("")
     setAccountNumberError(null)
     setAddFormSuccess(false)
+    setSelectedAgenceCode("")
     if (beneficiaryFormRef.current) {
       beneficiaryFormRef.current.reset()
     }
@@ -1364,14 +1376,39 @@ export default function NewTransferPage() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="codeAgence">Code agence *</Label>
-                  <Input
-                    id="codeAgence"
-                    name="codeAgence"
-                    placeholder="Ex: 001"
-                    maxLength={3}
-                    onChange={handleRibFieldChange}
-                    required
-                  />
+                  {selectedType === "BNG-BNG" ? (
+                    <>
+                      <input type="hidden" name="codeAgence" value={selectedAgenceCode} />
+                      <Select
+                        value={selectedAgenceCode}
+                        onValueChange={(v) => {
+                          setSelectedAgenceCode(v)
+                          handleRibFieldChange()
+                        }}
+                        required
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Sélectionnez un code agence" />
+                        </SelectTrigger>
+                        <SelectContent side="bottom">
+                          {AGENCE_CODE_OPTIONS.map((opt) => (
+                            <SelectItem key={opt.value} value={opt.value}>
+                              {opt.label} (Code: {opt.value})
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </>
+                  ) : (
+                    <Input
+                      id="codeAgence"
+                      name="codeAgence"
+                      placeholder="Ex: 001"
+                      maxLength={3}
+                      onChange={handleRibFieldChange}
+                      required
+                    />
+                  )}
                 </div>
 
                 <div className="space-y-2">
