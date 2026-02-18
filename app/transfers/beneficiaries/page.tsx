@@ -89,6 +89,22 @@ const STATUS_BENEFICIAIRE = {
 type WorkflowStatus = (typeof WORKFLOW_STATUS)[keyof typeof WORKFLOW_STATUS]
 type StatusBeneficiaire = (typeof STATUS_BENEFICIAIRE)[keyof typeof STATUS_BENEFICIAIRE]
 
+const AGENCE_CODE_OPTIONS: Array<{ label: string; value: string }> = [
+  { label: "Agence Principale — Koulewondy", value: "012" },
+  { label: "Agence Port — Port Almamya", value: "252" },
+  { label: "Agence Madina — Madina Ecole", value: "212" },
+  { label: "Agence Lambanyi — Lambanyi", value: "022" },
+  { label: "Agence Kagbelen — Kagbelen", value: "032" },
+  { label: "Agance Kamsar — Kamsar", value: "007" },
+  { label: "Agence Kankan — Kankan", value: "152" },
+]
+
+const normalizeAgenceCode = (value: string) => {
+  const digits = String(value || "").replace(/\D/g, "")
+  if (!digits) return ""
+  return digits.padStart(3, "0").slice(0, 3)
+}
+
 const PENDING_WORKFLOW_STATUSES: WorkflowStatus[] = [
   WORKFLOW_STATUS.CREATED,
   WORKFLOW_STATUS.VERIFIED,
@@ -131,6 +147,8 @@ export default function BeneficiariesPage() {
   const [loadingBanks, setLoadingBanks] = useState(false)
   const [accountNumberError, setAccountNumberError] = useState<string | null>(null)
   const [formDirty, setFormDirty] = useState(false)
+  const [selectedAgenceCode, setSelectedAgenceCode] = useState("")
+  const [editAgenceCode, setEditAgenceCode] = useState("")
   const formRef = useRef<HTMLFormElement>(null)
   const editFormRef = useRef<HTMLFormElement>(null)
 
@@ -476,6 +494,8 @@ export default function BeneficiariesPage() {
     setSelectedSwiftCode("")
     setAccountNumberError(null)
     setFormDirty(false)
+    setSelectedAgenceCode("")
+    setEditAgenceCode("")
     if (formRef.current) {
       formRef.current.reset()
     }
@@ -728,6 +748,7 @@ export default function BeneficiariesPage() {
 
     setSelectedType(beneficiary.type)
     setSelectedBank(beneficiary.bank)
+    setEditAgenceCode(normalizeAgenceCode((fullBeneficiary as any)?.codagence ?? beneficiary.codagence ?? ""))
     setIsEditDialogOpen(true)
   }
 
@@ -976,14 +997,39 @@ export default function BeneficiariesPage() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="codeAgence">Code agence *</Label>
-                    <Input
-                      id="codeAgence"
-                      name="codeAgence"
-                      placeholder="Ex: 001"
-                      maxLength={3}
-                      onChange={handleRibFieldChange}
-                      required
-                    />
+                    {selectedType === "BNG-BNG" ? (
+                      <>
+                        <input type="hidden" name="codeAgence" value={selectedAgenceCode} />
+                        <Select
+                          value={selectedAgenceCode}
+                          onValueChange={(v) => {
+                            setSelectedAgenceCode(v)
+                            handleRibFieldChange()
+                          }}
+                          required
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Sélectionnez un code agence" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {AGENCE_CODE_OPTIONS.map((opt) => (
+                              <SelectItem key={opt.value} value={opt.value}>
+                                {opt.label} (Code: {opt.value})
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </>
+                    ) : (
+                      <Input
+                        id="codeAgence"
+                        name="codeAgence"
+                        placeholder="Ex: 001"
+                        maxLength={3}
+                        onChange={handleRibFieldChange}
+                        required
+                      />
+                    )}
                   </div>
 
                   <div className="space-y-2">
@@ -1667,15 +1713,40 @@ export default function BeneficiariesPage() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="edit-codeAgence">Code agence *</Label>
-                  <Input
-                    id="edit-codeAgence"
-                    name="codeAgence"
-                    defaultValue={editingBeneficiary?.codagence || ""}
-                    placeholder="Ex: 001"
-                    maxLength={3}
-                    onChange={handleRibFieldChange}
-                    required
-                  />
+                  {selectedType === "BNG-BNG" ? (
+                    <>
+                      <input type="hidden" name="codeAgence" value={editAgenceCode} />
+                      <Select
+                        value={editAgenceCode}
+                        onValueChange={(v) => {
+                          setEditAgenceCode(v)
+                          handleRibFieldChange()
+                        }}
+                        required
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Sélectionnez un code agence" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {AGENCE_CODE_OPTIONS.map((opt) => (
+                            <SelectItem key={opt.value} value={opt.value}>
+                              {opt.label} (Code: {opt.value})
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </>
+                  ) : (
+                    <Input
+                      id="edit-codeAgence"
+                      name="codeAgence"
+                      defaultValue={editingBeneficiary?.codagence || ""}
+                      placeholder="Ex: 001"
+                      maxLength={3}
+                      onChange={handleRibFieldChange}
+                      required
+                    />
+                  )}
                 </div>
 
                 <div className="space-y-2">

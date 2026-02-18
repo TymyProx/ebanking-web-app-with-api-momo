@@ -4,6 +4,9 @@ import { config } from "@/lib/config"
 export interface Agence {
   id: string
   agenceName: string
+  agenceNumber?: string
+  agenceCode?: string
+  isHidden?: boolean
   address?: string
   city?: string
   country?: string
@@ -141,12 +144,17 @@ export function useAgences(initialQuery: AgencesQuery = {}): UseAgencesResult {
   useEffect(() => {
     let filtered = [...allAgences]
 
+    // Masquage (ex: agences non publiées)
+    filtered = filtered.filter((agence) => !agence.isHidden)
+
     // Recherche textuelle
     if (query.search) {
       const searchLower = query.search.toLowerCase()
       filtered = filtered.filter(
         (agence) =>
           agence.agenceName?.toLowerCase().includes(searchLower) ||
+          agence.agenceNumber?.toLowerCase().includes(searchLower) ||
+          agence.agenceCode?.toLowerCase().includes(searchLower) ||
           agence.address?.toLowerCase().includes(searchLower) ||
           agence.city?.toLowerCase().includes(searchLower) ||
           agence.country?.toLowerCase().includes(searchLower)
