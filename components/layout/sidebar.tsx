@@ -586,7 +586,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>): 
             </SidebarGroup>
 
             {/* Opérations */}
-            <SidebarGroup className="mt-4 hidden">
+            <SidebarGroup className="mt-4">
               <SidebarGroupLabel asChild>
                 <div>Opérations</div>
               </SidebarGroupLabel>
