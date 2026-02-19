@@ -15,6 +15,8 @@ import { storeAuthToken } from "./actions"
 import { getAccounts } from "@/app/accounts/actions"
 import { isAccountActive } from "@/lib/status-utils"
 import { initiateSignup, initiateExistingClientSignup } from "@/app/signup/actions"
+import { verifyClientForPasswordReset, sendPasswordResetEmail } from "./forgot-password-actions"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 
 const welcomeMessages = [
   {
@@ -47,6 +49,12 @@ export default function LoginPage() {
   const [formType, setFormType] = useState<"login" | "signup" | "newClient">("login")
   const [verificationSent, setVerificationSent] = useState(false)
   const [maskedEmail, setMaskedEmail] = useState("")
+  const [showForgotPassword, setShowForgotPassword] = useState(false)
+  const [forgotPasswordEmail, setForgotPasswordEmail] = useState("")
+  const [forgotPasswordCodeClient, setForgotPasswordCodeClient] = useState("")
+  const [forgotPasswordLoading, setForgotPasswordLoading] = useState(false)
+  const [forgotPasswordError, setForgotPasswordError] = useState("")
+  const [forgotPasswordSuccess, setForgotPasswordSuccess] = useState(false)
   const router = useRouter()
 
   // Carrousel automatique pour les messages de bienvenue
@@ -156,6 +164,37 @@ export default function LoginPage() {
       setError(err.message || "Une erreur est survenue")
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  const handleForgotPasswordSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setForgotPasswordLoading(true)
+    setForgotPasswordError("")
+    setForgotPasswordSuccess(false)
+
+    try {
+      // Vérifier le client
+      const verifyResult = await verifyClientForPasswordReset(forgotPasswordEmail, forgotPasswordCodeClient)
+
+      if (!verifyResult.success) {
+        setForgotPasswordError(verifyResult.error || "Aucun client trouvé avec ces informations.")
+        return
+      }
+
+      // Envoyer l'email de réinitialisation
+      const emailResult = await sendPasswordResetEmail(forgotPasswordEmail)
+
+      if (!emailResult.success) {
+        setForgotPasswordError(emailResult.error || "Erreur lors de l'envoi de l'email")
+        return
+      }
+
+      setForgotPasswordSuccess(true)
+    } catch (err: any) {
+      setForgotPasswordError(err.message || "Une erreur est survenue")
+    } finally {
+      setForgotPasswordLoading(false)
     }
   }
 
@@ -289,24 +328,17 @@ export default function LoginPage() {
                         </div>
                       </div>
 
-                      {/* Remember Me */}
-                      {/* <div className="flex items-center justify-between pt-0.5">
-                        <div className="flex items-center space-x-2 group">
-                          <Checkbox
-                            id="remember"
-                            checked={rememberMe}
-                            onCheckedChange={(checked) => setRememberMe(checked as boolean)}
-                            disabled={isLoading}
-                            className="border-0 bg-[#2d6e3e]/60 data-[state=checked]:bg-white data-[state=checked]:border-0 data-[state=checked]:text-[#2d6e3e] rounded w-4 h-4 shadow-md"
-                          />
-                          <Label
-                            htmlFor="remember"
-                            className="text-xs text-white/90 cursor-pointer font-medium group-hover:text-white transition-colors drop-shadow-md"
-                          >
-                            Se rappeler de moi
-                          </Label>
-                        </div>
-                      </div> */}
+                      {/* Mot de passe oublié */}
+                      <div className="flex items-center justify-end pt-0.5">
+                        <button
+                          type="button"
+                          onClick={() => setShowForgotPassword(true)}
+                          className="text-xs text-white/90 hover:text-white font-medium transition-colors drop-shadow-md underline"
+                          disabled={isLoading}
+                        >
+                          Mot de passe oublié ?
+                        </button>
+                      </div>
 
                       {/* Submit Button */}
                       <Button
@@ -709,6 +741,114 @@ export default function LoginPage() {
           </div>
         </div>
       </main>
+
+      {/* Modal Mot de passe oublié */}
+      <Dialog open={showForgotPassword} onOpenChange={setShowForgotPassword}>
+        <DialogContent className="bg-white/95 backdrop-blur-xl border border-white/20 rounded-2xl shadow-2xl max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold text-gray-900">Mot de passe oublié</DialogTitle>
+            <DialogDescription className="text-sm text-gray-600">
+              Entrez votre email et votre code client pour recevoir un lien de réinitialisation
+            </DialogDescription>
+          </DialogHeader>
+
+          {forgotPasswordSuccess ? (
+            <div className="space-y-4">
+              <div className="p-4 rounded-lg bg-green-50 border border-green-200">
+                <p className="text-sm text-green-800 font-medium">
+                  Un email de réinitialisation a été envoyé à <span className="font-semibold">{forgotPasswordEmail}</span>
+                </p>
+                <p className="text-xs text-green-700 mt-2">
+                  Cliquez sur le lien dans l'email pour réinitialiser votre mot de passe.
+                </p>
+              </div>
+              <Button
+                onClick={() => {
+                  setShowForgotPassword(false)
+                  setForgotPasswordSuccess(false)
+                  setForgotPasswordEmail("")
+                  setForgotPasswordCodeClient("")
+                  setForgotPasswordError("")
+                }}
+                className="w-full bg-gradient-to-r from-[#2d6e3e] via-[#36803e] to-[#2d6e3e] hover:from-[#1f5a2e] hover:via-[#2d6e3e] hover:to-[#1f5a2e] text-white"
+              >
+                Fermer
+              </Button>
+            </div>
+          ) : (
+            <form onSubmit={handleForgotPasswordSubmit} className="space-y-4">
+              {forgotPasswordError && (
+                <div className="p-3 rounded-lg bg-red-50 border border-red-200">
+                  <p className="text-sm text-red-800 font-medium">{forgotPasswordError}</p>
+                </div>
+              )}
+
+              <div className="space-y-2">
+                <Label htmlFor="forgotEmail" className="text-sm font-semibold text-gray-900">
+                  Email <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  id="forgotEmail"
+                  type="email"
+                  placeholder="votre.email@exemple.com"
+                  value={forgotPasswordEmail}
+                  onChange={(e) => setForgotPasswordEmail(e.target.value)}
+                  className="bg-white/80 border-gray-300 text-gray-900"
+                  required
+                  disabled={forgotPasswordLoading}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="forgotCodeClient" className="text-sm font-semibold text-gray-900">
+                  Code client <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  id="forgotCodeClient"
+                  type="text"
+                  placeholder="Votre code client"
+                  value={forgotPasswordCodeClient}
+                  onChange={(e) => setForgotPasswordCodeClient(e.target.value)}
+                  className="bg-white/80 border-gray-300 text-gray-900"
+                  required
+                  disabled={forgotPasswordLoading}
+                />
+              </div>
+
+              <div className="flex space-x-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setShowForgotPassword(false)
+                    setForgotPasswordEmail("")
+                    setForgotPasswordCodeClient("")
+                    setForgotPasswordError("")
+                  }}
+                  className="flex-1"
+                  disabled={forgotPasswordLoading}
+                >
+                  Annuler
+                </Button>
+                <Button
+                  type="submit"
+                  className="flex-1 bg-gradient-to-r from-[#f4c430] via-[#f8d060] to-[#f4c430] hover:from-[#e0b020] hover:via-[#f4c430] hover:to-[#e0b020] text-gray-900 font-semibold"
+                  disabled={forgotPasswordLoading}
+                >
+                  {forgotPasswordLoading ? (
+                    <div className="flex items-center space-x-2">
+                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-gray-900/30 border-t-gray-900"></div>
+                      <span>Envoi...</span>
+                    </div>
+                  ) : (
+                    "Valider"
+                  )}
+                </Button>
+              </div>
+            </form>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
