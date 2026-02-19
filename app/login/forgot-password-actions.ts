@@ -31,8 +31,15 @@ export async function verifyClientForPasswordReset(email: string, codeClient: st
       }
     }
 
-    const authData = await authResponse.json()
-    const token = authData.token
+    // const authData = await authResponse.json()
+    // const token = authData.token
+    const txt = await authResponse.text()
+    const token = txt.startsWith("eyJ")
+      ? txt
+      : JSON.parse(txt)?.token || JSON.parse(txt)?.data?.token
+  
+    if (!token) throw new Error("Token support introuvable")
+    return token as string
 
     // Rechercher le client avec email et codeClient
     // Le backend utilise filter[email] et filter[codeClient] séparément, ce qui fait un AND
