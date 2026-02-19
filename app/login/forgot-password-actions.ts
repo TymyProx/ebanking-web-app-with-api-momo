@@ -12,7 +12,7 @@ const API_BASE_URL = getApiBaseUrl()
 export async function verifyClientForPasswordReset(email: string, codeClient: string) {
   try {
     // Authentification avec les identifiants support
-    const authResponse = await fetch(`${API_BASE_URL}/auth/signin`, {
+    const authResponse = await fetch(`${API_BASE_URL}/auth/sign-in`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
