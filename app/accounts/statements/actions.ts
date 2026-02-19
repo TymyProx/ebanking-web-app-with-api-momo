@@ -424,45 +424,39 @@ export async function getStatementBalancesFromSTTMS(
     // On cherche :
     // 1. Le solde d'ouverture : closingbalance où dateto = dateDepart
     // 2. Le solde de clôture : closingbalance où datefrom = dateFin
-    // Note: L'endpoint peut être /sttms ou /statement selon la configuration du backend
-    const possibleUrls = [
-      `${API_BASE_URL}/tenant/${TENANT_ID}/sttms?filter=acno eq '${acno}'`,
-      `${API_BASE_URL}/tenant/${TENANT_ID}/statement?filter=acno eq '${acno}'`,
-      `${API_BASE_URL}/tenant/${TENANT_ID}/sttms?acno=${acno}`,
-    ]
+    // Le backend utilise req.query.filter.acno pour les filtres (parsé automatiquement depuis filter[acno])
+    const url = new URL(`${API_BASE_URL}/tenant/${TENANT_ID}/sttm`)
+    // Utiliser le format filter[acno] qui sera parsé par Express en filter.acno
+    url.searchParams.append("filter[acno]", acno)
 
-    console.log("[STATEMENTS] Récupération des soldes STTMS:", { acno, startDate, endDate })
+    console.log("[STATEMENTS] Récupération des soldes STTMS:", { acno, startDate, endDate, url: url.toString() })
 
     let response: Response | null = null
     let data: any = null
     let lastError: string | null = null
 
-    // Essayer chaque URL possible
-    for (const url of possibleUrls) {
-      try {
-        console.log("[STATEMENTS] Tentative avec URL:", url)
-        response = await fetch(url, {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${usertoken}`,
-          },
-          cache: "no-store",
-        })
+    try {
+      response = await fetch(url.toString(), {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${usertoken}`,
+        },
+        cache: "no-store",
+      })
 
-        if (response.ok) {
-          data = await response.json()
-          console.log("[STATEMENTS] Données STTMS récupérées avec succès")
-          break
-        } else {
-          lastError = `HTTP ${response.status}: ${response.statusText}`
-          console.warn("[STATEMENTS] Échec avec URL:", url, lastError)
-        }
-      } catch (err) {
-        lastError = err instanceof Error ? err.message : "Erreur inconnue"
-        console.warn("[STATEMENTS] Erreur avec URL:", url, lastError)
-        continue
+      if (response.ok) {
+        data = await response.json()
+        console.log("[STATEMENTS] Données STTMS récupérées avec succès")
+      } else {
+        lastError = `HTTP ${response.status}: ${response.statusText}`
+        console.error("[STATEMENTS] Erreur API STTMS:", lastError)
+        const errorText = await response.text().catch(() => "")
+        console.error("[STATEMENTS] Détails de l'erreur:", errorText)
       }
+    } catch (err) {
+      lastError = err instanceof Error ? err.message : "Erreur inconnue"
+      console.error("[STATEMENTS] Erreur lors de l'appel API STTMS:", lastError)
     }
 
     if (!data) {
@@ -475,19 +469,24 @@ export async function getStatementBalancesFromSTTMS(
       }
     }
 
-    // Gérer différents formats de réponse
+    // Gérer différents formats de réponse du backend
+    // Le backend retourne généralement { rows: [...], count: ... }
     let sttmsRecords = []
-    if (Array.isArray(data.content)) {
-      sttmsRecords = data.content
-    } else if (Array.isArray(data.rows)) {
-      sttmsRecords = data.rows
-    } else if (Array.isArray(data)) {
-      sttmsRecords = data
-    } else if (data.data) {
-      sttmsRecords = Array.isArray(data.data) ? data.data : [data.data]
-    } else if (data.value) {
-      // Format OData
-      sttmsRecords = Array.isArray(data.value) ? data.value : [data.value]
+    if (data && typeof data === 'object') {
+      if (Array.isArray(data.rows)) {
+        sttmsRecords = data.rows
+      } else if (Array.isArray(data.content)) {
+        sttmsRecords = data.content
+      } else if (Array.isArray(data.data)) {
+        sttmsRecords = data.data
+      } else if (Array.isArray(data.value)) {
+        // Format OData
+        sttmsRecords = data.value
+      } else if (Array.isArray(data)) {
+        sttmsRecords = data
+      } else if (data.data && !Array.isArray(data.data)) {
+        sttmsRecords = [data.data]
+      }
     }
 
     console.log("[STATEMENTS] Enregistrements STTMS trouvés:", sttmsRecords.length)
@@ -496,40 +495,73 @@ export async function getStatementBalancesFromSTTMS(
     }
 
     // Rechercher le solde d'ouverture : closingbalance où dateto = dateDepart
+    // La date dateto doit correspondre exactement à la date de début de la période
     const openingRecord = sttmsRecords.find((record: any) => {
-      const recordDateTo = record.dateto || record.dateTo || record.date_to || record.date_to
+      const recordDateTo = record.dateto || record.dateTo || record.date_to
       if (!recordDateTo) return false
-      // Normaliser la date pour comparaison
-      const recordDate = new Date(recordDateTo).toISOString().split("T")[0]
-      return recordDate === startDate
+      try {
+        // Normaliser la date pour comparaison (format YYYY-MM-DD)
+        const recordDate = new Date(recordDateTo).toISOString().split("T")[0]
+        const match = recordDate === startDate
+        if (match) {
+          console.log("[STATEMENTS] ✅ Enregistrement d'ouverture trouvé:", {
+            dateto: recordDateTo,
+            normalized: recordDate,
+            startDate,
+            closingbalance: record.closingbalance || record.closingBalance || record.closing_balance
+          })
+        }
+        return match
+      } catch (e) {
+        console.warn("[STATEMENTS] ⚠️ Erreur lors de la comparaison de date dateto:", recordDateTo, e)
+        return false
+      }
     })
 
     // Rechercher le solde de clôture : closingbalance où datefrom = dateFin
+    // La date datefrom doit correspondre exactement à la date de fin de la période
     const closingRecord = sttmsRecords.find((record: any) => {
-      const recordDateFrom = record.datefrom || record.dateFrom || record.date_from || record.date_from
+      const recordDateFrom = record.datefrom || record.dateFrom || record.date_from
       if (!recordDateFrom) return false
-      // Normaliser la date pour comparaison
-      const recordDate = new Date(recordDateFrom).toISOString().split("T")[0]
-      return recordDate === endDate
+      try {
+        // Normaliser la date pour comparaison (format YYYY-MM-DD)
+        const recordDate = new Date(recordDateFrom).toISOString().split("T")[0]
+        const match = recordDate === endDate
+        if (match) {
+          console.log("[STATEMENTS] ✅ Enregistrement de clôture trouvé:", {
+            datefrom: recordDateFrom,
+            normalized: recordDate,
+            endDate,
+            closingbalance: record.closingbalance || record.closingBalance || record.closing_balance
+          })
+        }
+        return match
+      } catch (e) {
+        console.warn("[STATEMENTS] ⚠️ Erreur lors de la comparaison de date datefrom:", recordDateFrom, e)
+        return false
+      }
     })
 
+    // Extraire les soldes depuis closingbalance
     const openingBalance = openingRecord
       ? Number.parseFloat(
-          openingRecord.closingbalance ||
+          String(
+            openingRecord.closingbalance ||
             openingRecord.closingBalance ||
             openingRecord.closing_balance ||
-            openingRecord.closingBalance ||
-            "0"
+            0
+          )
         )
       : 0
 
     const closingBalance = closingRecord
       ? Number.parseFloat(
-          closingRecord.closingbalance ||
+          String(
+            closingRecord.closingbalance ||
             closingRecord.closingBalance ||
             closingRecord.closing_balance ||
-            closingRecord.closingBalance ||
-            "0"
+            0
+          )
         )
       : 0
 
