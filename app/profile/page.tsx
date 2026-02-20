@@ -4,9 +4,10 @@ import { useState, useTransition, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { User, MapPin, CheckCircle, AlertCircle } from "lucide-react"
+import { User, MapPin, CheckCircle, AlertCircle, Lock } from "lucide-react"
 import { getUserProfileData } from "./actions"
 import { AuthService, type User as AuthUser } from "@/lib/auth-service"
 
@@ -62,6 +63,8 @@ export default function ProfilePage() {
   const [isLoading, setIsLoading] = useState(true)
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null)
   const [isPending, startTransition] = useTransition()
+  const [pwd, setPwd] = useState({ oldPassword: "", newPassword: "", confirmPassword: "" })
+  const [pwdMessage, setPwdMessage] = useState<{ type: "success" | "error"; text: string } | null>(null)
 
   useEffect(() => {
     const loadUserData = async () => {
@@ -239,7 +242,121 @@ export default function ProfilePage() {
               </div>
             </CardContent>
           </Card>
+
+          {/* Sécurité */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Lock className="w-5 h-5" />
+                Sécurité
+              </CardTitle>
+              <CardDescription>Changez votre mot de passe</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {pwdMessage && (
+                <Alert className={pwdMessage.type === "success" ? "border-green-500 bg-green-50" : "border-red-500 bg-red-50"}>
+                  {pwdMessage.type === "success" ? (
+                    <CheckCircle className="h-4 w-4 text-green-600" />
+                  ) : (
+                    <AlertCircle className="h-4 w-4 text-red-600" />
+                  )}
+                  <AlertDescription className={pwdMessage.type === "success" ? "text-green-800" : "text-red-800"}>
+                    {pwdMessage.text}
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <Label htmlFor="oldPassword">Mot de passe actuel</Label>
+                  <Input
+                    id="oldPassword"
+                    type="password"
+                    value={pwd.oldPassword}
+                    onChange={(e) => setPwd((p) => ({ ...p, oldPassword: e.target.value }))}
+                    placeholder="••••••••"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="newPassword">Nouveau mot de passe</Label>
+                  <Input
+                    id="newPassword"
+                    type="password"
+                    value={pwd.newPassword}
+                    onChange={(e) => setPwd((p) => ({ ...p, newPassword: e.target.value }))}
+                    placeholder="••••••••"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="confirmPassword">Confirmer</Label>
+                  <Input
+                    id="confirmPassword"
+                    type="password"
+                    value={pwd.confirmPassword}
+                    onChange={(e) => setPwd((p) => ({ ...p, confirmPassword: e.target.value }))}
+                    placeholder="••••••••"
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end">
+                <Button
+                  className="bg-[#34763E] hover:bg-[#2a5f32]"
+                  disabled={
+                    isPending ||
+                    !pwd.oldPassword ||
+                    !pwd.newPassword ||
+                    pwd.newPassword !== pwd.confirmPassword
+                  }
+                  onClick={() => {
+                    setPwdMessage(null)
+                    startTransition(async () => {
+                      try {
+                        if (pwd.oldPassword === pwd.newPassword) {
+                          setPwdMessage({ type: "error", text: "Le nouveau mot de passe doit être différent de l’ancien." })
+                          return
+                        }
+                        await AuthService.changePassword(pwd.oldPassword, pwd.newPassword)
+                        setPwdMessage({ type: "success", text: "Mot de passe modifié avec succès." })
+                        setPwd({ oldPassword: "", newPassword: "", confirmPassword: "" })
+                      } catch (e: any) {
+                        const raw = String(e?.message || "")
+                        const status = e?.status
+                        const isInvalidOld = /old password is invalid/i.test(raw)
+                        const isWeak = /weak|too weak/i.test(raw)
+
+                        if (status === 401) {
+                          setPwdMessage({ type: "error", text: "Session expirée. Veuillez vous reconnecter." })
+                          return
+                        }
+                        if (isInvalidOld) {
+                          setPwdMessage({ type: "error", text: "Mot de passe actuel incorrect." })
+                          return
+                        }
+                        if (isWeak) {
+                          setPwdMessage({ type: "error", text: "Le nouveau mot de passe est trop faible." })
+                          return
+                        }
+
+                        setPwdMessage({
+                          type: "error",
+                          text: raw || "Erreur lors du changement de mot de passe.",
+                        })
+                      }
+                    })
+                  }}
+                >
+                  {isPending ? "Modification..." : "Modifier le mot de passe"}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
       </div>
     </div>
   )
 }
+
+
+
+
+

@@ -1,6 +1,6 @@
 import axios from "axios"
 import Cookies from "js-cookie"
-import { getApiBaseUrl } from "./api-url"
+import { getApiBaseUrl, TENANT_ID } from "./api-url"
 
 const API_BASE_URL = getApiBaseUrl();
 
@@ -258,6 +258,64 @@ export class AuthService {
   static getToken(): string | null {
     if (typeof window === "undefined") return null
     return localStorage.getItem("token")
+  }
+
+  static async sendPasswordResetEmail(email: string) {
+    try {
+      await authAxios.post("/auth/send-password-reset-email", {
+        email,
+        tenantId: TENANT_ID,
+      })
+      return { success: true }
+    } catch (error: any) {
+      console.error("Erreur sendPasswordResetEmail:", error)
+      const msg =
+        error?.response?.data?.message ||
+        error?.response?.data?.error ||
+        error?.message ||
+        "Erreur lors de l'envoi de l'email"
+      throw new Error(msg)
+    }
+  }
+
+  static async passwordReset(token: string, password: string) {
+    try {
+      await authAxios.put("/auth/password-reset", {
+        token,
+        password,
+      })
+      return { success: true }
+    } catch (error: any) {
+      console.error("Erreur passwordReset:", error)
+      const data = error?.response?.data
+      const msg =
+        (typeof data === "string" ? data : data?.message || data?.error) ||
+        error?.message ||
+        "Erreur lors de la réinitialisation"
+      const e: any = new Error(msg)
+      e.status = error?.response?.status
+      throw e
+    }
+  }
+
+  static async changePassword(oldPassword: string, newPassword: string) {
+    try {
+      await authAxios.put("/auth/change-password", {
+        oldPassword,
+        newPassword,
+      })
+      return { success: true }
+    } catch (error: any) {
+      console.error("Erreur changePassword:", error)
+      const data = error?.response?.data
+      const msg =
+        (typeof data === "string" ? data : data?.message || data?.error) ||
+        error?.message ||
+        "Erreur lors du changement de mot de passe"
+      const e: any = new Error(msg)
+      e.status = error?.response?.status
+      throw e
+    }
   }
 }
 

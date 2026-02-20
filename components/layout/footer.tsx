@@ -73,7 +73,7 @@ export function Footer() {
           <div>
             <h3 className="font-semibold text-gray-900 mb-3">Contact</h3>
             <ul className="space-y-2 text-sm text-gray-600">
-              <li>+225 20 20 20 20</li>
+              <li>+224 20 20 20 20</li>
               <li>contact@bng.ci</li>
               <li>Plateau, Abidjan</li>
             </ul>

@@ -162,10 +162,10 @@ Structure:
       "postalCode": "BP 1234",
       "latitude": 3.8667,
       "longitude": 11.5167,
-      "telephone": "+237 222 123 456",
+      "telephone": "+224 222 123 456",
       "email": "yaounde.central@bng.cm",
       "branchManagerName": "Marie NKOTTO",
-      "branchManagerPhone": "+237 699 123 456",
+      "branchManagerPhone": "+224 699 123 456",
       "services": ["Comptes courants", "Épargne", "Crédits", "..."],
       "openingHours": {
         "mon": { "open": "08:00", "close": "16:00", "closed": false },

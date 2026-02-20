@@ -17,10 +17,13 @@ export function ConditionalLayout({ children }: ConditionalLayoutProps) {
 
   const isPublicPage =
     pathname === "/" ||
+    pathname === "/agences" ||
     pathname === "/login" ||
     pathname === "/signup" ||
     pathname.startsWith("/auth/accept-invite") ||
-    pathname.startsWith("/auth/verify-email")
+    pathname.startsWith("/auth/verify-email") ||
+    pathname.startsWith("/auth/forgot-password") ||
+    pathname.startsWith("/auth/password-reset")
 
   if (isPublicPage) {
     return (

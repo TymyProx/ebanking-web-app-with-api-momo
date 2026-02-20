@@ -4,17 +4,30 @@ import type { NextRequest } from "next/server"
 // Pages publiques qui ne nécessitent pas d'authentification
 const publicPaths = [
   "/",
+  "/agences",
   "/login",
   "/signup",
   "/auth/verify-email",
   "/auth/accept-invite",
+  "/auth/forgot-password",
+  "/auth/password-reset",
 ]
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
+  // Some email clients / in-app browsers may open links using POST.
+  // Pages are GET-only in Next, so we normalize to GET to avoid 405.
+  if (
+    request.method === "POST" &&
+    (pathname.startsWith("/auth/password-reset") || pathname.startsWith("/auth/forgot-password"))
+  ) {
+    const url = new URL(request.nextUrl.pathname + request.nextUrl.search, request.url)
+    return NextResponse.redirect(url, 303)
+  }
+
   // Vérifier si c'est une page publique
-  const isPublicPage = publicPaths.some((path) => pathname.startsWith(path))
+  const isPublicPage = publicPaths.some((path) => (path === "/" ? pathname === "/" : pathname.startsWith(path)))
 
   // Si c'est une page publique, laisser passer
   if (isPublicPage) {

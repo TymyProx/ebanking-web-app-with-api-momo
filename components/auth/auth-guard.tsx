@@ -20,27 +20,19 @@ export function AuthGuard({ children }: AuthGuardProps) {
 
   useEffect(() => {
     const checkAuth = async () => {
-      const publicPaths = ["/", "/login", "/signup", "/auth/accept-invite", "/auth/verify-email"]
+      const publicPaths = [
+        "/",
+        "/agences",
+        "/login",
+        "/signup",
+        "/auth/accept-invite",
+        "/auth/verify-email",
+        "/auth/forgot-password",
+        "/auth/password-reset",
+      ]
       const isPublicPage = publicPaths.some((path) => pathname.startsWith(path))
 
       if (isPublicPage) {
-        if (AuthService.isAuthenticated() && pathname === "/") {
-          try {
-            const accounts = await getAccounts()
-            // Utiliser la fonction normalisée pour vérifier les comptes actifs
-            const hasActiveAccount = accounts.some((account) => isAccountActive(account.status))
-
-            if (hasActiveAccount) {
-              router.push("/dashboard")
-            } else {
-              router.push("/accounts/new")
-            }
-          } catch (error) {
-            console.error("Error checking accounts:", error)
-            router.push("/accounts/new")
-          }
-          return
-        }
         setIsAuthenticated(true)
         setIsLoading(false)
         return

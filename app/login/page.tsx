@@ -15,6 +15,7 @@ import { storeAuthToken } from "./actions"
 import { getAccounts } from "@/app/accounts/actions"
 import { isAccountActive } from "@/lib/status-utils"
 import { initiateSignup, initiateExistingClientSignup } from "@/app/signup/actions"
+import Link from "next/link"
 
 const welcomeMessages = [
   {
@@ -286,6 +287,11 @@ export default function LoginPage() {
                           >
                             {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                           </button>
+                        </div>
+                        <div className="pt-1 text-right">
+                          <Link href="/auth/forgot-password" className="text-xs text-white/80 hover:text-white font-semibold">
+                            Mot de passe oublié ?
+                          </Link>
                         </div>
                       </div>
 

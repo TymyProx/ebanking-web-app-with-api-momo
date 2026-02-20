@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react"
 import { config } from "@/lib/config"
+import { getApiBaseUrl } from "@/lib/api-url"
 
 export interface Agence {
   id: string
@@ -93,13 +94,38 @@ export function useAgences(initialQuery: AgencesQuery = {}): UseAgencesResult {
 
       // Tentative de récupération depuis l'API principale
       try {
-        const base = config.API_BASE_URL.replace(/\/$/, "")
-        const url = `${base}/api/portal/${config.TENANT_ID}/agences?platform=eportal`
+        const base = getApiBaseUrl() // ensures `/api` is added only once
+        const url = `${base}/portal/${config.TENANT_ID}/agences?platform=eportal`
         const res = await fetch(url, {
           headers: { Accept: "application/json" },
         })
 
-        if (!res.ok) throw new Error(`HTTP ${res.status}`)
+        if (!res.ok) {
+          const status = res.status
+          const bodyPreview = await res
+            .text()
+            .then((t) => t.slice(0, 120).replace(/\s+/g, " "))
+            .catch(() => "")
+
+          // 4xx: configuration/auth/endpoint issue → don't silently fallback to backup
+          if (status >= 400 && status < 500) {
+            throw new Error(
+              `API agences: HTTP ${status}. URL=${url}. Vérifiez NEXT_PUBLIC_API_URL (backend) et NEXT_PUBLIC_TENANT_ID. Extrait=${bodyPreview}`
+            )
+          }
+
+          throw new Error(`HTTP ${status}`)
+        }
+
+        const contentType = res.headers.get("content-type") || ""
+        if (!contentType.toLowerCase().includes("application/json")) {
+          const text = await res.text()
+          const hint =
+            "La réponse n'est pas du JSON. Vérifiez que NEXT_PUBLIC_API_URL pointe vers le backend (ex: http://localhost:4000) et n'inclut pas déjà '/api'."
+          throw new Error(
+            `${hint} Content-Type=${contentType}. Extrait=${text.slice(0, 80).replace(/\s+/g, " ")}`
+          )
+        }
 
         const json = await res.json()
         const rowsRaw: any[] = json.rows || []
@@ -134,6 +160,16 @@ export function useAgences(initialQuery: AgencesQuery = {}): UseAgencesResult {
 
         setAllAgences(rows)
       } catch (apiError) {
+        // Cas "mauvaise config" → ne pas masquer avec le backup, on veut la DB
+        const msg = apiError instanceof Error ? apiError.message : String(apiError)
+        if (msg.startsWith("API agences:") || msg.includes("La réponse n'est pas du JSON")) {
+          console.warn("API agences invalide (pas de fallback backup):", apiError)
+          setAllAgences([])
+          setError(msg)
+          setLoading(false)
+          return
+        }
+
         console.warn("API principale indisponible, utilisation du backup:", apiError)
 
         // Fallback sur le backup JSON Marketing

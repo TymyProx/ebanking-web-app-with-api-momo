@@ -305,7 +305,7 @@ export default function SignupPage() {
                                 id="phone"
                                 name="phone"
                                 type="tel"
-                                placeholder="+225 XX XX XX XX XX"
+                                placeholder="+224 XX XX XX XX XX"
                                 className="h-9 sm:h-10 bg-[#2d6e3e]/60 border-0 text-white text-sm placeholder:text-white/60 focus:bg-[#2d6e3e]/70 focus:ring-0 rounded-lg transition-all group-hover:bg-[#2d6e3e]/65 shadow-md"
                                 required
                                 disabled={isLoading}

@@ -421,10 +421,10 @@ export default function AgencesPage() {
                 <li>
                   Pour toute question, contactez notre service client au{" "}
                   <a
-                    href="tel:+237222000000"
+                    href="tel:+224222000000"
                     className="text-primary hover:underline focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded"
                   >
-                    +237 222 000 000
+                    +224 222 000 000
                   </a>
                   .
                 </li>
