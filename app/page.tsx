@@ -619,24 +619,21 @@ export default function LandingPage() {
       <section id="agences" className="py-20 md:py-28 bg-gray-50 border-y border-gray-200" ref={agencesAnimation.ref}>
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div
-            className={`flex flex-col md:flex-row md:items-end md:justify-between gap-6 mb-10 transition-all duration-1000 ${
+            className={`text-center mb-12 md:mb-16 space-y-4 transition-all duration-1000 ${
               agencesAnimation.isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"
             }`}
           >
-            <div className="space-y-3">
-              <Badge variant="outline" className="border-gray-300">
-                Nos agences
-              </Badge>
-              <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900">Trouvez une agence près de vous</h2>
-              <p className="text-base sm:text-lg text-gray-600 max-w-2xl">
-                Consultez quelques agences et obtenez un itinéraire en un clic.
-              </p>
-              {agencesError && (
-                <p className="text-sm text-gray-500">{agencesError}</p>
-              )}
-            </div>
-
-            <div className="flex gap-3">
+            <Badge variant="outline" className="mb-4 border-gray-300">
+              Nos agences
+            </Badge>
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900">Trouvez une agence près de vous</h2>
+            <p className="text-lg sm:text-xl text-gray-600 max-w-2xl mx-auto">
+              Consultez quelques agences et obtenez un itinéraire en un clic.
+            </p>
+            {agencesError && (
+              <p className="text-sm text-gray-500 mt-2">{agencesError}</p>
+            )}
+            <div className="flex justify-center pt-4">
               <Link href="/agences">
                 <Button className="bg-green-700 hover:bg-green-800">
                   Voir toutes les agences
@@ -672,62 +669,94 @@ export default function LandingPage() {
             </Card>
           ) : (
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {agencesPreview.map((agence) => {
+              {agencesPreview.map((agence, index) => {
                 const status = getAgenceStatus(agence)
                 const badgeClass =
                   status.color === "green"
-                    ? "bg-green-100 text-green-800 border border-green-200"
+                    ? "bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg shadow-green-500/30"
                     : status.color === "red"
-                      ? "bg-red-100 text-red-800 border border-red-200"
+                      ? "bg-gradient-to-r from-red-500 to-rose-500 text-white shadow-lg shadow-red-500/30"
                       : status.color === "yellow"
-                        ? "bg-yellow-100 text-yellow-900 border border-yellow-200"
-                        : "bg-gray-100 text-gray-700 border border-gray-200"
+                        ? "bg-gradient-to-r from-yellow-400 to-amber-500 text-white shadow-lg shadow-yellow-500/30"
+                        : "bg-gradient-to-r from-gray-500 to-slate-500 text-white shadow-lg shadow-gray-500/30"
 
                 return (
-                  <Card key={agence.id} className="border-2 hover:shadow-xl transition-all duration-300 bg-white">
-                    <CardContent className="p-6 space-y-4">
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0">
-                          <p className="font-semibold text-gray-900 text-lg leading-snug break-words">{agence.agenceName}</p>
+                  <Card
+                    key={agence.id}
+                    className={`group overflow-hidden hover:shadow-2xl transition-all duration-500 border-2 hover:border-green-300 hover:-translate-y-2 bg-gradient-to-br from-white to-gray-50/50 ${
+                      agencesAnimation.isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-20"
+                    }`}
+                    style={{ transitionDelay: `${index * 100}ms` }}
+                  >
+                    <CardContent className="p-6 space-y-5 relative">
+                      {/* Effet de fond animé */}
+                      <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-green-100/50 to-transparent rounded-full blur-3xl group-hover:scale-150 transition-transform duration-700" />
+                      
+                      {/* Header avec badge */}
+                      <div className="flex items-start justify-between gap-3 relative z-10">
+                        <div className="min-w-0 flex-1">
+                          <h3 className="font-bold text-gray-900 text-xl leading-tight break-words group-hover:text-green-700 transition-colors">
+                            {agence.agenceName}
+                          </h3>
                           <div className="mt-2 flex items-center gap-2 text-sm text-gray-600">
-                            <MapPin className="h-4 w-4 flex-shrink-0" />
-                            <span className="break-words">
+                            <div className="p-1.5 rounded-lg bg-green-100 group-hover:bg-green-200 transition-colors">
+                              <MapPin className="h-4 w-4 text-green-700 flex-shrink-0" />
+                            </div>
+                            <span className="break-words font-medium">
                               {agence.city}
                               {agence.country ? `, ${agence.country}` : ""}
                             </span>
                           </div>
                         </div>
-                        <span className={`text-xs font-medium px-2 py-1 rounded-full whitespace-nowrap ${badgeClass}`}>
+                        <span className={`text-xs font-semibold px-3 py-1.5 rounded-full whitespace-nowrap shadow-md ${badgeClass}`}>
                           {status.label}
                         </span>
                       </div>
 
+                      {/* Adresse avec icône */}
                       {(agence.address || agence.postalCode) && (
-                        <p className="text-sm text-gray-600 break-words">
-                          {agence.address}
-                          {agence.postalCode ? ` - ${agence.postalCode}` : ""}
-                        </p>
+                        <div className="relative z-10">
+                          <p className="text-sm text-gray-600 break-words leading-relaxed pl-7 relative">
+                            <MapPin className="absolute left-0 top-0.5 h-4 w-4 text-gray-400" />
+                            {agence.address}
+                            {agence.postalCode ? ` - ${agence.postalCode}` : ""}
+                          </p>
+                        </div>
                       )}
 
+                      {/* Téléphone avec icône */}
                       {agence.telephone && (
-                        <div className="flex items-center gap-2 text-sm text-gray-700">
-                          <Phone className="h-4 w-4 text-gray-600" />
-                          <a href={`tel:${agence.telephone}`} className="hover:underline">
+                        <div className="flex items-center gap-3 text-sm text-gray-700 relative z-10 group/phone">
+                          <div className="p-2 rounded-lg bg-blue-50 group-hover/phone:bg-blue-100 transition-colors">
+                            <Phone className="h-4 w-4 text-blue-600" />
+                          </div>
+                          <a 
+                            href={`tel:${agence.telephone}`} 
+                            className="hover:text-blue-600 hover:underline font-medium transition-colors"
+                          >
                             {agence.telephone}
                           </a>
                         </div>
                       )}
 
-                      <div className="flex items-center justify-between gap-3 pt-2">
-                        <Link href="/agences" className="text-sm text-green-700 hover:text-green-800 hover:underline">
+                      {/* Divider */}
+                      <div className="h-px bg-gradient-to-r from-transparent via-gray-200 to-transparent relative z-10" />
+
+                      {/* Actions */}
+                      <div className="flex items-center justify-between gap-3 pt-1 relative z-10">
+                        <Link 
+                          href="/agences" 
+                          className="text-sm font-medium text-green-700 hover:text-green-800 hover:underline transition-colors flex items-center gap-1 group/link"
+                        >
                           Détails
+                          <ChevronRight className="h-3 w-3 transition-transform group-hover/link:translate-x-1" />
                         </Link>
                         <Button
                           size="sm"
-                          className="bg-yellow-400 hover:bg-yellow-450 text-white"
+                          className="bg-gradient-to-r from-yellow-400 to-amber-500 hover:from-yellow-500 hover:to-amber-600 text-white shadow-lg hover:shadow-xl transition-all duration-300 group/btn"
                           onClick={() => handleGetDirections(agence)}
                         >
-                          <Navigation className="mr-2 h-4 w-4" />
+                          <Navigation className="mr-2 h-4 w-4 transition-transform group-hover/btn:rotate-12" />
                           Itinéraire
                         </Button>
                       </div>
