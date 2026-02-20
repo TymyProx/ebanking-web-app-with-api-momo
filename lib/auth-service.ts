@@ -294,16 +294,16 @@ export class AuthService {
       }
       
       // Traduire les messages d'erreur courants en français
-      const msgLower = msg.toLowerCase()
-      if (msgLower.includes("email not recognized") || msgLower.includes("email not found") || msgLower.includes("email n'est pas reconnu")) {
-        msg = "Cet email n'est pas reconnu. Vérifiez votre adresse email ou contactez le support."
-      } else if (msgLower.includes("user not found") || msgLower.includes("utilisateur trouvé")) {
-        msg = "Aucun utilisateur trouvé avec cet email."
-      } else if (msgLower.includes("email.error") || msgLower.includes("email sender") || msgLower.includes("email n'est pas configuré")) {
-        msg = "Le service d'email n'est pas configuré. Veuillez contacter le support."
-      } else if (msgLower.includes("passwordreset.error") || msgLower.includes("password reset error")) {
-        msg = "Erreur lors de la réinitialisation du mot de passe. Veuillez réessayer ou contacter le support."
-      }
+      // const msgLower = msg.toLowerCase()
+      // if (msgLower.includes("email not recognized") || msgLower.includes("email not found") || msgLower.includes("email n'est pas reconnu")) {
+      //   msg = "Cet email n'est pas reconnu. Vérifiez votre adresse email ou contactez le support."
+      // } else if (msgLower.includes("user not found") || msgLower.includes("utilisateur trouvé")) {
+      //   msg = "Aucun utilisateur trouvé avec cet email."
+      // } else if (msgLower.includes("email.error") || msgLower.includes("email sender") || msgLower.includes("email n'est pas configuré")) {
+      //   msg = "Le service d'email n'est pas configuré. Veuillez contacter le support."
+      // } else if (msgLower.includes("passwordreset.error") || msgLower.includes("password reset error")) {
+      //   msg = "Erreur lors de la réinitialisation du mot de passe. Veuillez réessayer ou contacter le support."
+      // }
       
       throw new Error(msg)
     }
