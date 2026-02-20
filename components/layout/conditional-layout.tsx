@@ -17,7 +17,6 @@ export function ConditionalLayout({ children }: ConditionalLayoutProps) {
 
   const isPublicPage =
     pathname === "/" ||
-    pathname === "/agences" ||
     pathname === "/login" ||
     pathname === "/signup" ||
     pathname.startsWith("/auth/accept-invite") ||
