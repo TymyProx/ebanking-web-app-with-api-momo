@@ -673,7 +673,7 @@ export default function LandingPage() {
                 const status = getAgenceStatus(agence)
                 const badgeClass =
                   status.color === "green"
-                    ? "bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg shadow-green-500/30"
+                    ? "bg-gradient-to-r from-green-700 to-green-800 text-white shadow-lg shadow-green-700/30"
                     : status.color === "red"
                       ? "bg-gradient-to-r from-red-500 to-rose-500 text-white shadow-lg shadow-red-500/30"
                       : status.color === "yellow"
@@ -683,14 +683,14 @@ export default function LandingPage() {
                 return (
                   <Card
                     key={agence.id}
-                    className={`group overflow-hidden hover:shadow-2xl transition-all duration-500 border-2 hover:border-green-300 hover:-translate-y-2 bg-gradient-to-br from-white to-gray-50/50 ${
+                    className={`group overflow-hidden hover:shadow-2xl transition-all duration-500 border-2 hover:border-green-700 hover:-translate-y-2 bg-gradient-to-br from-white to-gray-50/50 ${
                       agencesAnimation.isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-20"
                     }`}
                     style={{ transitionDelay: `${index * 100}ms` }}
                   >
                     <CardContent className="p-6 space-y-5 relative">
                       {/* Effet de fond animé */}
-                      <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-green-100/50 to-transparent rounded-full blur-3xl group-hover:scale-150 transition-transform duration-700" />
+                      <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-green-700/20 to-transparent rounded-full blur-3xl group-hover:scale-150 transition-transform duration-700" />
                       
                       {/* Header avec badge */}
                       <div className="flex items-start justify-between gap-3 relative z-10">
@@ -699,7 +699,7 @@ export default function LandingPage() {
                             {agence.agenceName}
                           </h3>
                           <div className="mt-2 flex items-center gap-2 text-sm text-gray-600">
-                            <div className="p-1.5 rounded-lg bg-green-100 group-hover:bg-green-200 transition-colors">
+                            <div className="p-1.5 rounded-lg bg-green-700/10 group-hover:bg-green-700/20 transition-colors">
                               <MapPin className="h-4 w-4 text-green-700 flex-shrink-0" />
                             </div>
                             <span className="break-words font-medium">
