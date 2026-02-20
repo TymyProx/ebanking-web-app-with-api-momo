@@ -476,8 +476,8 @@ export default function PendingOperationsPage() {
                   </div>
 
                   <div className="text-right">
-                    <p className="text-lg font-semibold text-gray-900">
-                      {formatAmount(operation.amount, operation.currency)} {operation.currency}
+                    <p className="text-lg font-semibold text-red-600">
+                      - {formatAmount(operation.amount, operation.currency)} {operation.currency}
                     </p>
                     <p className="text-xs text-gray-500">
                       Créé le {new Date(operation.createdAt).toLocaleDateString("fr-FR")}
@@ -542,8 +542,8 @@ export default function PendingOperationsPage() {
                 </div>
                 <div>
                   <p className="text-sm text-gray-600">Montant</p>
-                  <p className="font-semibold text-lg">
-                    {formatAmount(selectedOperation.amount, selectedOperation.currency)} {selectedOperation.currency}
+                  <p className="font-semibold text-lg text-red-600">
+                    - {formatAmount(selectedOperation.amount, selectedOperation.currency)} {selectedOperation.currency}
                   </p>
                 </div>
                 <div>
