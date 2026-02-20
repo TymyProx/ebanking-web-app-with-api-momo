@@ -72,20 +72,24 @@ export function ConditionalLayout({ children }: ConditionalLayoutProps) {
   // Pour la page Agences, attendre la vérification de l'authentification
   if (isAgencesPage && isAuthenticated === null) {
     return (
-      <>
-        {children}
+      <div className="min-h-screen bg-background">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+          {children}
+        </div>
         <Toaster />
-      </>
+      </div>
     )
   }
 
-  // Pour la page Agences, si l'utilisateur n'est pas connecté, afficher sans layout
+  // Pour la page Agences, si l'utilisateur n'est pas connecté, afficher sans layout avec marges
   if (isAgencesPage && !isAuthenticated) {
     return (
-      <>
-        {children}
+      <div className="min-h-screen bg-background">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+          {children}
+        </div>
         <Toaster />
-      </>
+      </div>
     )
   }
 
