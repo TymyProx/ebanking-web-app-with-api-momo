@@ -20,8 +20,13 @@ import {
   Check,
   ArrowRight,
   Clock,
+  MapPin,
+  Navigation,
+  Phone,
+  Loader2,
 } from "lucide-react"
 import { useState, useEffect, useRef } from "react"
+import { getAgenceStatus, type Agence, useAgences } from "@/hooks/use-agences"
 
 // Custom hook for scroll animations
 function useScrollAnimation() {
@@ -125,7 +130,13 @@ export default function LandingPage() {
   const servicesAnimation = useScrollAnimation()
   const ebankingAnimation = useScrollAnimation()
   const featuresAnimation = useScrollAnimation()
+  const agencesAnimation = useScrollAnimation()
   const ctaAnimation = useScrollAnimation()
+
+  const { agences: agencesPreview, loading: agencesLoading, error: agencesError } = useAgences({
+    page: 1,
+    limit: 6,
+  })
 
   const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
     e.preventDefault()
@@ -133,6 +144,21 @@ export default function LandingPage() {
     if (element) {
       element.scrollIntoView({ behavior: "smooth", block: "start" })
       setMobileMenuOpen(false)
+    }
+  }
+
+  const handleGetDirections = (agence: Agence) => {
+    if (agence.mapEmbedUrl) {
+      window.open(agence.mapEmbedUrl, "_blank")
+      return
+    }
+
+    if (agence.latitude && agence.longitude) {
+      const url = `https://www.google.com/maps/dir/?api=1&destination=${agence.latitude},${agence.longitude}`
+      window.open(url, "_blank")
+    } else if (agence.address || agence.city) {
+      const query = encodeURIComponent(`${agence.address || ""} ${agence.city || ""}`.trim())
+      window.open(`https://www.google.com/maps/search/?api=1&query=${query}`, "_blank")
     }
   }
 
@@ -194,6 +220,14 @@ export default function LandingPage() {
               <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-gray-700 transition-all group-hover:w-full" />
             </a>
             <a
+              href="#agences"
+              onClick={(e) => handleNavClick(e, "#agences")}
+              className="text-sm font-medium hover:text-gray-700 transition-colors relative group cursor-pointer"
+            >
+              Agences
+              <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-gray-700 transition-all group-hover:w-full" />
+            </a>
+            <a
               href="#contact"
               onClick={(e) => handleNavClick(e, "#contact")}
               className="text-sm font-medium hover:text-gray-700 transition-colors relative group cursor-pointer"
@@ -245,6 +279,13 @@ export default function LandingPage() {
                 className="text-sm font-medium hover:text-gray-700 transition-colors cursor-pointer"
               >
                 E-Banking
+              </a>
+              <a
+                href="#agences"
+                onClick={(e) => handleNavClick(e, "#agences")}
+                className="text-sm font-medium hover:text-gray-700 transition-colors cursor-pointer"
+              >
+                Agences
               </a>
               <a
                 href="#contact"
@@ -572,6 +613,130 @@ export default function LandingPage() {
               </Card>
             ))}
           </div>
+        </div>
+      </section>
+
+      <section id="agences" className="py-20 md:py-28 bg-gray-50 border-y border-gray-200" ref={agencesAnimation.ref}>
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div
+            className={`flex flex-col md:flex-row md:items-end md:justify-between gap-6 mb-10 transition-all duration-1000 ${
+              agencesAnimation.isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"
+            }`}
+          >
+            <div className="space-y-3">
+              <Badge variant="outline" className="border-gray-300">
+                Nos agences
+              </Badge>
+              <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900">Trouvez une agence près de vous</h2>
+              <p className="text-base sm:text-lg text-gray-600 max-w-2xl">
+                Consultez quelques agences et obtenez un itinéraire en un clic.
+              </p>
+              {agencesError && (
+                <p className="text-sm text-gray-500">{agencesError}</p>
+              )}
+            </div>
+
+            <div className="flex gap-3">
+              <Link href="/agences">
+                <Button className="bg-green-700 hover:bg-green-800">
+                  Voir toutes les agences
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </Link>
+            </div>
+          </div>
+
+          {agencesLoading ? (
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <Card key={i} className="border-2">
+                  <CardContent className="p-6">
+                    <div className="flex items-center gap-2 text-gray-600">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <span className="text-sm">Chargement des agences...</span>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : agencesPreview.length === 0 ? (
+            <Card className="border-2">
+              <CardContent className="p-8 text-center space-y-3">
+                <p className="text-gray-700 font-medium">Aucune agence disponible pour le moment.</p>
+                <Link href="/agences">
+                  <Button variant="outline" className="bg-transparent">
+                    Ouvrir la page agences
+                  </Button>
+                </Link>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {agencesPreview.map((agence) => {
+                const status = getAgenceStatus(agence)
+                const badgeClass =
+                  status.color === "green"
+                    ? "bg-green-100 text-green-800 border border-green-200"
+                    : status.color === "red"
+                      ? "bg-red-100 text-red-800 border border-red-200"
+                      : status.color === "yellow"
+                        ? "bg-yellow-100 text-yellow-900 border border-yellow-200"
+                        : "bg-gray-100 text-gray-700 border border-gray-200"
+
+                return (
+                  <Card key={agence.id} className="border-2 hover:shadow-xl transition-all duration-300 bg-white">
+                    <CardContent className="p-6 space-y-4">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="font-semibold text-gray-900 text-lg leading-snug break-words">{agence.agenceName}</p>
+                          <div className="mt-2 flex items-center gap-2 text-sm text-gray-600">
+                            <MapPin className="h-4 w-4 flex-shrink-0" />
+                            <span className="break-words">
+                              {agence.city}
+                              {agence.country ? `, ${agence.country}` : ""}
+                            </span>
+                          </div>
+                        </div>
+                        <span className={`text-xs font-medium px-2 py-1 rounded-full whitespace-nowrap ${badgeClass}`}>
+                          {status.label}
+                        </span>
+                      </div>
+
+                      {(agence.address || agence.postalCode) && (
+                        <p className="text-sm text-gray-600 break-words">
+                          {agence.address}
+                          {agence.postalCode ? ` - ${agence.postalCode}` : ""}
+                        </p>
+                      )}
+
+                      {agence.telephone && (
+                        <div className="flex items-center gap-2 text-sm text-gray-700">
+                          <Phone className="h-4 w-4 text-gray-600" />
+                          <a href={`tel:${agence.telephone}`} className="hover:underline">
+                            {agence.telephone}
+                          </a>
+                        </div>
+                      )}
+
+                      <div className="flex items-center justify-between gap-3 pt-2">
+                        <Link href="/agences" className="text-sm text-green-700 hover:text-green-800 hover:underline">
+                          Détails
+                        </Link>
+                        <Button
+                          size="sm"
+                          className="bg-yellow-400 hover:bg-yellow-450 text-white"
+                          onClick={() => handleGetDirections(agence)}
+                        >
+                          <Navigation className="mr-2 h-4 w-4" />
+                          Itinéraire
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )
+              })}
+            </div>
+          )}
         </div>
       </section>
 
