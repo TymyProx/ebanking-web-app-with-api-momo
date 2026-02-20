@@ -753,7 +753,7 @@ export default function LandingPage() {
                         </Link>
                         <Button
                           size="sm"
-                          className="bg-gray-100 hover:bg-gray-200 text-gray-900 border-2 border-yellow-400 hover:border-yellow-500 shadow-md hover:shadow-lg transition-all duration-300 group/btn"
+                          className="bg-gray-100 hover:bg-gray-200 text-gray-900 border-2 border-yellow-400 hover:border-yellow-400 shadow-md hover:shadow-lg transition-all duration-300 group/btn"
                           onClick={() => handleGetDirections(agence)}
                         >
                           <Navigation className="mr-2 h-4 w-4 transition-transform group-hover/btn:rotate-12" />
