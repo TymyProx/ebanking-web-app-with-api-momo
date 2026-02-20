@@ -269,11 +269,42 @@ export class AuthService {
       return { success: true }
     } catch (error: any) {
       console.error("Erreur sendPasswordResetEmail:", error)
-      const msg =
-        error?.response?.data?.message ||
-        error?.response?.data?.error ||
-        error?.message ||
-        "Erreur lors de l'envoi de l'email"
+      
+      // Gérer différents formats de réponse d'erreur
+      let msg = "Erreur lors de l'envoi de l'email"
+      
+      if (error?.response?.data) {
+        const responseData = error.response.data
+        
+        // Si data est directement une chaîne de caractères (ex: "Email not recognized")
+        if (typeof responseData === "string") {
+          msg = responseData
+        }
+        // Si data est un objet avec message ou error
+        else if (responseData.message) {
+          msg = responseData.message
+        } else if (responseData.error) {
+          msg = responseData.error
+        } else if (responseData.errors && Array.isArray(responseData.errors) && responseData.errors.length > 0) {
+          // Si c'est un tableau d'erreurs, prendre la première
+          msg = responseData.errors[0].message || responseData.errors[0] || msg
+        }
+      } else if (error?.message) {
+        msg = error.message
+      }
+      
+      // Traduire les messages d'erreur courants en français
+      const msgLower = msg.toLowerCase()
+      if (msgLower.includes("email not recognized") || msgLower.includes("email not found") || msgLower.includes("email n'est pas reconnu")) {
+        msg = "Cet email n'est pas reconnu. Vérifiez votre adresse email ou contactez le support."
+      } else if (msgLower.includes("user not found") || msgLower.includes("utilisateur trouvé")) {
+        msg = "Aucun utilisateur trouvé avec cet email."
+      } else if (msgLower.includes("email.error") || msgLower.includes("email sender") || msgLower.includes("email n'est pas configuré")) {
+        msg = "Le service d'email n'est pas configuré. Veuillez contacter le support."
+      } else if (msgLower.includes("passwordreset.error") || msgLower.includes("password reset error")) {
+        msg = "Erreur lors de la réinitialisation du mot de passe. Veuillez réessayer ou contacter le support."
+      }
+      
       throw new Error(msg)
     }
   }

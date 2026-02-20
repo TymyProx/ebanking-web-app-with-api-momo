@@ -60,7 +60,10 @@ export default function ForgotPasswordPage() {
       await AuthService.sendPasswordResetEmail(email.trim().toLowerCase())
       setSuccess(true)
     } catch (err: any) {
-      setError(err?.message || "Erreur lors de l'envoi de l'email")
+      // Afficher le message d'erreur détaillé du backend
+      const errorMessage = err?.message || err?.response?.data || "Erreur lors de l'envoi de l'email"
+      setError(errorMessage)
+      console.error("Erreur lors de l'envoi de l'email de réinitialisation:", err)
     } finally {
       setIsLoading(false)
     }
