@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import {
   RefreshCw,
   Wallet,
@@ -23,9 +24,8 @@ import {
   CheckCircle,
 } from "lucide-react"
 import { createAccount, getAccounts } from "../actions"
-import { normalizeAccountStatus } from "@/lib/status-utils"
+import { getAccountStatusBadge, normalizeAccountStatus, isAccountPending } from "@/lib/status-utils"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { isAccountActive } from "@/lib/status-utils"
 
 interface Account {
   id: string
@@ -143,9 +143,8 @@ export default function BalancesPage() {
     }
   }, [refreshState?.success])
 
-  // Filtrer uniquement les comptes actifs
-  const activeFilteredAccounts = filteredAccounts.filter((account) => isAccountActive(account.status))
-  const count = activeFilteredAccounts.length
+  const pendingAccountsCount = accounts.filter((a) => isAccountPending(a.status)).length
+  const count = filteredAccounts.length
 
   useEffect(() => {
     if (count <= 1) return
@@ -322,6 +321,16 @@ export default function BalancesPage() {
         <p className="text-sm text-muted-foreground">Gérez tous vos comptes en un seul endroit</p>
       </div>
       <div className="flex items-center justify-end gap-3">
+        <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <SelectTrigger className="w-44 bg-white/80 backdrop-blur-sm">
+            <SelectValue placeholder="Filtrer" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="ACTIF">Actifs</SelectItem>
+            <SelectItem value="PENDING">En attente</SelectItem>
+            <SelectItem value="ALL">Tous</SelectItem>
+          </SelectContent>
+        </Select>
         {/* <Dialog open={isNewAccountDialogOpen} onOpenChange={setIsNewAccountDialogOpen}>
           <DialogTrigger asChild>
             <Button>
@@ -460,6 +469,20 @@ export default function BalancesPage() {
         </Button>
       </div>
 
+      {statusFilter === "ACTIF" && pendingAccountsCount > 0 && (
+        <Alert className="border-orange-200 bg-orange-50/80 backdrop-blur-sm">
+          <AlertCircle className="h-4 w-4 text-orange-700" />
+          <AlertDescription className="text-orange-900 flex items-center justify-between gap-3">
+            <span>
+              {pendingAccountsCount} demande(s) de compte en <strong>attente</strong> de validation.
+            </span>
+            <Button size="sm" variant="outline" className="bg-white/70" onClick={() => setStatusFilter("PENDING")}>
+              Voir
+            </Button>
+          </AlertDescription>
+        </Alert>
+      )}
+
       {balanceState?.success && (
         <Alert className="border-primary/20 bg-gradient-to-r from-primary/5 to-secondary/5 backdrop-blur-sm">
           <CheckCircle className="h-4 w-4 text-primary" />
@@ -510,13 +533,13 @@ export default function BalancesPage() {
             </CardContent>
           </Card>
         </div>
-      ) : activeFilteredAccounts.length > 0 ? (
+      ) : filteredAccounts.length > 0 ? (
         <div className="w-full">
           <Card className="border-0 shadow-none bg-transparent">
             <CardContent className="p-0">
               <div className="relative w-full">
-                {activeFilteredAccounts[current] && (
-                  <Link href={`/accounts/${activeFilteredAccounts[current].id}`}>
+                {filteredAccounts[current] && (
+                  <Link href={`/accounts/${filteredAccounts[current].id}`}>
                     <Card
                       className="card-hover border-0 shadow-md bg-gradient-to-br from-primary/10 via-background to-secondary/10 backdrop-blur-sm transition-opacity duration-500 ease-in-out"
                       style={{ opacity: isFading ? 0 : 1 }}
@@ -527,25 +550,35 @@ export default function BalancesPage() {
                           <div className="flex-1 space-y-3">
                             <div className="flex items-center gap-2">
                               <div className="p-3 rounded-lg bg-primary/10">
-                                {getAccountIcon(activeFilteredAccounts[current].type)}
+                                {getAccountIcon(filteredAccounts[current].type)}
                               </div>
                               <div>
                                 <CardTitle className="text-lg font-heading font-semibold mb-0.5">
-                                  {activeFilteredAccounts[current].name}
+                                  {filteredAccounts[current].name}
                                 </CardTitle>
-                                <Badge
-                                  variant="secondary"
-                                  className="bg-secondary/20 text-secondary-foreground border-secondary/30 text-xs"
-                                >
-                                  {getAccountTypeDisplay(activeFilteredAccounts[current].type)}
-                                </Badge>
+                                <div className="flex items-center gap-2">
+                                  <Badge
+                                    variant="secondary"
+                                    className="bg-secondary/20 text-secondary-foreground border-secondary/30 text-xs"
+                                  >
+                                    {getAccountTypeDisplay(filteredAccounts[current].type)}
+                                  </Badge>
+                                  {(() => {
+                                    const s = getAccountStatusBadge(filteredAccounts[current].status)
+                                    return (
+                                      <Badge variant={s.variant} className={`${s.className} text-xs`}>
+                                        {s.label}
+                                      </Badge>
+                                    )
+                                  })()}
+                                </div>
                               </div>
                             </div>
 
                             <div>
                               <p className="text-xs text-muted-foreground mb-1">Numéro de compte</p>
                               <p className="text-sm font-mono font-semibold bg-muted/50 px-4 py-2 rounded-md inline-block">
-                                {activeFilteredAccounts[current].number}
+                                {filteredAccounts[current].number}
                               </p>
                             </div>
                           </div>
@@ -583,13 +616,13 @@ export default function BalancesPage() {
                               <div className="text-3xl font-heading font-bold text-foreground">
                                 {showBalance
                                   ? formatAmount(
-                                      activeFilteredAccounts[current].availableBalance,
-                                      activeFilteredAccounts[current].currency,
+                                      filteredAccounts[current].availableBalance,
+                                      filteredAccounts[current].currency,
                                     )
                                   : "••••••••"}
                               </div>
                               <div className="text-sm text-muted-foreground mt-1">
-                                {showBalance ? activeFilteredAccounts[current].currency : "•••"}
+                                {showBalance ? filteredAccounts[current].currency : "•••"}
                               </div>
                             </div>
 
@@ -598,9 +631,9 @@ export default function BalancesPage() {
                               <div className="text-xl font-heading font-semibold text-muted-foreground">
                                 {showBalance
                                   ? `${formatAmount(
-                                      activeFilteredAccounts[current].balance,
-                                      activeFilteredAccounts[current].currency,
-                                    )} ${activeFilteredAccounts[current].currency}`
+                                      filteredAccounts[current].balance,
+                                      filteredAccounts[current].currency,
+                                    )} ${filteredAccounts[current].currency}`
                                   : "••••••••"}
                               </div>
                             </div>

@@ -262,6 +262,7 @@ async function getCurrentClientId(): Promise<string> {
   }
 
   try {
+    // 1) Fetch auth user id
     const response = await fetch(`${API_BASE_URL}/auth/me`, {
       method: "GET",
       headers: {
@@ -275,7 +276,40 @@ async function getCurrentClientId(): Promise<string> {
     }
 
     const userData = await response.json()
-    return userData.id
+    const userId = userData.id as string
+
+    // 2) Resolve client record id from CLIENT table (used by mobile for beneficiaire.clientId)
+    try {
+      const clientResp = await fetch(
+        `${API_BASE_URL}/tenant/${TENANT_ID}/client/by-userid/${userId}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${cookieToken}`,
+          },
+          cache: "no-store",
+        },
+      )
+
+      if (clientResp.ok) {
+        const clientProfile = await clientResp.json()
+        if (clientProfile?.id) {
+          return String(clientProfile.id)
+        }
+      } else {
+        const text = await clientResp.text().catch(() => "")
+        console.warn("[getCurrentClientId] client/by-userid not available, fallback to userId", {
+          status: clientResp.status,
+          text,
+        })
+      }
+    } catch (e) {
+      console.warn("[getCurrentClientId] client/by-userid fetch error, fallback to userId", e)
+    }
+
+    // Fallback: historically some records stored beneficiaire.clientId = userId
+    return userId
   } catch (error) {
     console.error("Erreur lors de la récupération du clientId:", error)
     throw error
@@ -286,27 +320,16 @@ export async function getBeneficiaries(): Promise<ApiBeneficiary[]> {
   const cookieToken = (await cookies()).get("token")?.value
   const usertoken = cookieToken
   try {
-    let currentUserId: string | null = null
+    let currentClientId: string | null = null
     try {
-      const userResponse = await fetch(`${API_BASE_URL}/auth/me`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${usertoken}`,
-        },
-      })
-
-      if (userResponse.ok) {
-        const userData = await userResponse.json()
-        currentUserId = userData.id
-      }
+      currentClientId = await getCurrentClientId()
     } catch (error) {
-      console.error("Erreur lors de la récupération du user ID:", error)
+      console.error("Erreur lors de la récupération du client ID:", error)
     }
 
     const queryParams = new URLSearchParams()
-    if (currentUserId) {
-      queryParams.set("filter[clientId]", currentUserId)
+    if (currentClientId) {
+      queryParams.set("filter[clientId]", currentClientId)
     }
     queryParams.set("limit", "200")
 
@@ -330,8 +353,8 @@ export async function getBeneficiaries(): Promise<ApiBeneficiary[]> {
 
     let beneficiaries: ApiBeneficiary[] = []
     if (data.rows && Array.isArray(data.rows)) {
-      if (currentUserId) {
-        beneficiaries = data.rows.filter((beneficiary) => beneficiary.clientId === currentUserId)
+      if (currentClientId) {
+        beneficiaries = data.rows.filter((beneficiary) => beneficiary.clientId === currentClientId)
       } else {
         beneficiaries = data.rows
       }

@@ -476,7 +476,7 @@ const fonctionnalites = [
         name: "Réclamations",
         description: "Soumettez et suivez vos réclamations",
         icon: AlertTriangle,
-        href: "/complaints",
+        href: "/services/reclamation",
         status: "Disponible",
         details: [
           "Formulaire de réclamation guidé",

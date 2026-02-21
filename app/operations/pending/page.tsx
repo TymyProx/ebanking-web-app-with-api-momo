@@ -177,11 +177,8 @@ export default function PendingOperationsPage() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "pending":
-        return (
-          <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">
-            En attente
-          </Badge>
-        )
+        // Demande: retirer le sticker "pending"
+        return null
       case "processing":
         return (
           <Badge variant="secondary" className="bg-blue-100 text-blue-800">
@@ -213,6 +210,14 @@ export default function PendingOperationsPage() {
         return "Retrait"
       default:
         return "Opération"
+    }
+  }
+
+  const getAmountDisplay = (operation: PendingOperation) => {
+    const isCredit = operation.type === "deposit"
+    return {
+      sign: isCredit ? "+" : "-",
+      className: isCredit ? "text-green-600" : "text-red-600",
     }
   }
 
@@ -456,37 +461,47 @@ export default function PendingOperationsPage() {
               onDoubleClick={() => handleViewDetails(operation)}
             >
               <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-4">
-                    <div className="flex-shrink-0">{getOperationIcon(operation.type)}</div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center space-x-2 mb-1">
-                        <p className="text-sm font-medium text-gray-900">{getOperationTypeLabel(operation.type)}</p>
+                <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                  <div className="flex items-start gap-3 min-w-0">
+                    <div className="mt-0.5 flex-shrink-0">{getOperationIcon(operation.type)}</div>
+
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm font-semibold text-gray-900">{getOperationTypeLabel(operation.type)}</p>
                         {getStatusBadge(operation.status)}
                       </div>
-                      <p className="text-sm text-gray-600 mb-1">{operation.description}</p>
-                      {operation.recipient && <p className="text-xs text-gray-500">Vers: {operation.recipient}</p>}
-                      {operation.failureReason && (
-                        <p className="text-xs text-red-600 mt-1">
+
+                      <p className="text-sm text-gray-700 mt-1 truncate" title={operation.description}>
+                        {operation.description}
+                      </p>
+
+                      <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-500">
+                        {operation.recipient ? (
+                          <span className="max-w-full sm:max-w-[260px] truncate" title={operation.recipient}>
+                            Bénéficiaire: {operation.recipient}
+                          </span>
+                        ) : null}
+                        <span>Créé le {new Date(operation.createdAt).toLocaleDateString("fr-FR")}</span>
+                      </div>
+
+                      {operation.failureReason ? (
+                        <p className="text-xs text-red-600 mt-2">
                           <AlertCircle className="h-3 w-3 inline mr-1" />
                           {operation.failureReason}
                         </p>
-                      )}
+                      ) : null}
                     </div>
                   </div>
 
-                  <div className="text-right">
-                    <p className="text-lg font-semibold text-red-600">
-                      - {formatAmount(operation.amount, operation.currency)} {operation.currency}
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      Créé le {new Date(operation.createdAt).toLocaleDateString("fr-FR")}
-                    </p>
-                    {operation.estimatedCompletion && (
-                      <p className="text-xs text-gray-500">
-                        Finalisation estimée: {new Date(operation.estimatedCompletion).toLocaleDateString("fr-FR")}
-                      </p>
-                    )}
+                  <div className="md:text-right md:pl-6">
+                    {(() => {
+                      const amt = getAmountDisplay(operation)
+                      return (
+                        <p className={`text-lg font-semibold ${amt.className}`}>
+                          {amt.sign} {formatAmount(operation.amount, operation.currency)} {operation.currency}
+                        </p>
+                      )
+                    })()}
                   </div>
                 </div>
               </CardContent>

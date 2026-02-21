@@ -58,7 +58,7 @@ export function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/complaints" className="hover:text-blue-600">
+                <Link href="/services/reclamation" className="hover:text-blue-600">
                   Réclamations
                 </Link>
               </li>

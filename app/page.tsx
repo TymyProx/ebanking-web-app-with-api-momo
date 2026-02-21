@@ -662,7 +662,11 @@ export default function LandingPage() {
           ) : agencesPreview.length === 0 ? (
             <Card className="border-2">
               <CardContent className="p-8 text-center space-y-3">
-                <p className="text-gray-700 font-medium">Aucune agence disponible pour le moment.</p>
+                <p className="text-gray-700 font-medium">Aucune agence publiée pour le moment.</p>
+                <p className="text-sm text-gray-600">
+                  Les agences affichées ici proviennent de la base de données. Si vous êtes administrateur, publiez des
+                  agences (e-portal) dans le Back-Office.
+                </p>
                 <Link href="/agences">
                   <Button variant="outline" className="bg-transparent">
                     Ouvrir la page agences

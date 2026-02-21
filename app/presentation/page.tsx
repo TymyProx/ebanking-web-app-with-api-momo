@@ -181,7 +181,7 @@ const features = [
       {
         title: "Réclamations",
         description: "Soumettez et suivez vos réclamations",
-        href: "/complaints",
+        href: "/services/reclamation",
         status: "Disponible",
       },
     ],

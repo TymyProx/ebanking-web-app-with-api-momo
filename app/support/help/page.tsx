@@ -310,7 +310,7 @@ export default function HelpCenterPage() {
                     </div>
                   </div>
                   <Button asChild size="sm" variant="outline" className="w-full bg-transparent">
-                    <a href="/complaints">Soumettre une réclamation</a>
+                    <a href="/services/reclamation">Soumettre une réclamation</a>
                   </Button>
                 </CardContent>
               </Card>

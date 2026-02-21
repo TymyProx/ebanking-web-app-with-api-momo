@@ -6,7 +6,7 @@ import { Card, CardContent, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { Wallet, PiggyBank, DollarSign, Eye, EyeOff } from "lucide-react"
-import { isAccountActive } from "@/lib/status-utils"
+import { getAccountStatusBadge, isAccountActive, isAccountPending } from "@/lib/status-utils"
 // Utiliser les variables d'environnement directement côté client
 const getApiBaseUrl = (): string => {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || "https://35.184.98.9:4000"
@@ -210,6 +210,8 @@ export function AccountsCarousel({ accounts: initialAccounts = [] }: AccountsCar
     }
     return isActive
   })
+
+  const pendingAccounts = accounts.filter((account) => isAccountPending(account.status))
   const count = activeAccounts.length
   
   console.log(`[AccountsCarousel] Comptes actifs: ${count} sur ${accounts.length} total`)
@@ -283,8 +285,10 @@ export function AccountsCarousel({ accounts: initialAccounts = [] }: AccountsCar
   if (activeAccounts.length === 0) {
     // Afficher un message plus informatif si on a des comptes mais qu'ils ne sont pas actifs
     if (accounts.length > 0) {
-      console.warn(`[AccountsCarousel] ${accounts.length} comptes trouvés mais aucun n'est actif. Statuts:`, 
-        accounts.map(a => ({ name: a.accountName, status: a.status })))
+      console.warn(
+        `[AccountsCarousel] ${accounts.length} comptes trouvés mais aucun n'est actif. Statuts:`,
+        accounts.map((a) => ({ name: a.accountName, status: a.status })),
+      )
     }
     return (
       <Card className="border-dashed border-2 border-muted">
@@ -294,10 +298,38 @@ export function AccountsCarousel({ accounts: initialAccounts = [] }: AccountsCar
           </div>
           <h3 className="text-lg font-heading font-semibold mb-2">Aucun compte disponible</h3>
           <p className="text-muted-foreground text-center">
-            {accounts.length > 0 
-              ? `${accounts.length} compte(s) trouvé(s) mais aucun n'est actif.`
+            {pendingAccounts.length > 0
+              ? `${pendingAccounts.length} demande(s) en attente de validation.`
+              : accounts.length > 0
+                ? `${accounts.length} compte(s) trouvé(s) mais aucun n'est actif.`
               : "Aucun compte n'est disponible pour le moment."}
           </p>
+          {pendingAccounts.length > 0 && (
+            <div className="mt-4 w-full max-w-md space-y-2">
+              {pendingAccounts.slice(0, 3).map((a) => {
+                const s = getAccountStatusBadge(a.status)
+                return (
+                  <div
+                    key={a.id}
+                    className="flex items-center justify-between rounded-lg border bg-white/50 px-3 py-2"
+                  >
+                    <div className="min-w-0">
+                      <div className="truncate text-sm font-medium">{a.accountName}</div>
+                      <div className="truncate text-xs text-muted-foreground font-mono">{a.accountNumber}</div>
+                    </div>
+                    <Badge variant={s.variant} className={`${s.className} text-xs`}>
+                      {s.label}
+                    </Badge>
+                  </div>
+                )
+              })}
+              {pendingAccounts.length > 3 && (
+                <div className="text-xs text-muted-foreground text-center">
+                  +{pendingAccounts.length - 3} autre(s) demande(s)
+                </div>
+              )}
+            </div>
+          )}
         </CardContent>
       </Card>
     )
@@ -429,6 +461,12 @@ export function AccountsCarousel({ accounts: initialAccounts = [] }: AccountsCar
                 aria-label={`Aller au compte ${index + 1}`}
               />
             ))}
+          </div>
+        )}
+
+        {pendingAccounts.length > 0 && (
+          <div className="mt-3 text-center text-xs text-muted-foreground">
+            {pendingAccounts.length} demande(s) en attente de validation
           </div>
         )}
       </CardContent>
