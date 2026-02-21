@@ -143,7 +143,7 @@ export default function AgencesPage() {
   }
 
   return (
-   <div className="mt-6 space-y-6" lang="fr">
+   <div className="space-y-6" lang="fr">
       {/* En-tête */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div className="space-y-2">
