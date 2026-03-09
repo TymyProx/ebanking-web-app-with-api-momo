@@ -20,6 +20,10 @@ import {
   ChevronRight,
   Upload,
   User,
+  MapPin,
+  CreditCard,
+  FileCheck,
+  Image as ImageIcon,
 } from "lucide-react"
 import { createAccount } from "../actions"
 import { saveClientAdditionalInfo } from "./actions"
@@ -290,12 +294,25 @@ export default function NewAccountPage() {
           idExpiryDate: formData.idExpiryDate,
           idFrontImageUrl: formData.idFrontImageUrl || "",
           idBackImageUrl: formData.idBackImageUrl || "",
+          // Documents généraux
+          identityPhoto1Url: formData.identityPhoto1Url || "",
+          identityPhoto2Url: formData.identityPhoto2Url || "",
+          residenceCertificateUrl: formData.residenceCertificateUrl || "",
+          utilityBillUrl: formData.utilityBillUrl || "",
+          accountOpeningRequestUrl: formData.accountOpeningRequestUrl || "",
         }
 
         if (formData.accountType === "MINEUR") {
           additionalInfoData.minorFirstName = formData.minorFirstName
           additionalInfoData.minorLastName = formData.minorLastName
           additionalInfoData.minorDateOfBirth = formData.minorDateOfBirth
+          additionalInfoData.minorBirthCertificateUrl = formData.minorBirthCertificateUrl || ""
+          additionalInfoData.minorIdentityPhoto1Url = formData.minorIdentityPhoto1Url || ""
+          additionalInfoData.minorIdentityPhoto2Url = formData.minorIdentityPhoto2Url || ""
+          additionalInfoData.guardianIdentityPhoto1Url = formData.guardianIdentityPhoto1Url || ""
+          additionalInfoData.guardianIdentityPhoto2Url = formData.guardianIdentityPhoto2Url || ""
+          additionalInfoData.guardianUtilityBillUrl = formData.guardianUtilityBillUrl || ""
+          additionalInfoData.guardianResidenceCertificateUrl = formData.guardianResidenceCertificateUrl || ""
         }
 
         const result = await saveClientAdditionalInfo(additionalInfoData)
@@ -437,73 +454,86 @@ export default function NewAccountPage() {
       )}
 
       {step === 2 && selectedAccountType && (
-        <Card className="border-2 border-primary/20 shadow-lg">
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center space-x-2 text-lg">
-              <FileText className="w-5 h-5 text-primary" />
-              <span>Détails du compte {shouldShowAdditionalFields && "et informations personnelles"}</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-              <div className="space-y-1">
-                <Label htmlFor="accountName" className="text-sm">
-                  Intitulé du Compte *
-                </Label>
-                <Input
-                  id="accountName"
-                  placeholder="Ex: Mon Compte Courant"
-                  value={formData.accountName || ""}
-                  onChange={(e) => handleInputChange("accountName", e.target.value)}
-                  className="border-2 focus:border-primary h-9 text-sm"
-                />
+        <div className="space-y-6">
+          {/* Section: Informations du Compte */}
+          <Card className="border-2 border-primary/20 shadow-lg">
+            <CardHeader className="pb-4">
+              <CardTitle className="flex items-center space-x-2 text-lg">
+                <Building2 className="w-5 h-5 text-primary" />
+                <span>Informations du Compte</span>
+              </CardTitle>
+              <CardDescription className="text-sm">
+                Renseignez les détails de base de votre nouveau compte
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="accountName" className="text-sm font-medium">
+                    Intitulé du Compte *
+                  </Label>
+                  <Input
+                    id="accountName"
+                    placeholder="Ex: Mon Compte Courant"
+                    value={formData.accountName || ""}
+                    onChange={(e) => handleInputChange("accountName", e.target.value)}
+                    className="border-2 focus:border-primary h-10"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="currency" className="text-sm font-medium">
+                    Devise *
+                  </Label>
+                  <Select value={formData.currency || ""} onValueChange={(value) => handleInputChange("currency", value)}>
+                    <SelectTrigger className="border-2 focus:border-primary h-10">
+                      <SelectValue placeholder="Sélectionnez une devise" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="GNF">GNF - Franc Guinéen</SelectItem>
+                      <SelectItem value="USD">USD - Dollar US</SelectItem>
+                      <SelectItem value="EUR">EUR - Euro</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="accountPurpose" className="text-sm font-medium">
+                    Objectif du Compte *
+                  </Label>
+                  <Select
+                    value={formData.accountPurpose}
+                    onValueChange={(value) => handleInputChange("accountPurpose", value)}
+                  >
+                    <SelectTrigger className="border-2 focus:border-primary h-10">
+                      <SelectValue placeholder="Sélectionnez un objectif" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="personal">Personnel</SelectItem>
+                      <SelectItem value="business">Professionnel</SelectItem>
+                      <SelectItem value="savings">Épargne</SelectItem>
+                      <SelectItem value="investment">Investissement</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
-              <div className="space-y-1">
-                <Label htmlFor="currency" className="text-sm">
-                  Devise *
-                </Label>
-                <Select value={formData.currency || ""} onValueChange={(value) => handleInputChange("currency", value)}>
-                  <SelectTrigger className="border-2 focus:border-primary h-9 text-sm">
-                    <SelectValue placeholder="Dévise" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="GNF">GNF</SelectItem>
-                    <SelectItem value="USD">USD</SelectItem>
-                    <SelectItem value="EUR">EUR</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-1">
-                <Label htmlFor="accountPurpose" className="text-sm">
-                  Objectif du Compte *
-                </Label>
-                <Select
-                  value={formData.accountPurpose}
-                  onValueChange={(value) => handleInputChange("accountPurpose", value)}
-                >
-                  <SelectTrigger className="border-2 focus:border-primary h-9 text-sm">
-                    <SelectValue placeholder="Objectif" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="personal">Personnel</SelectItem>
-                    <SelectItem value="business">Professionnel</SelectItem>
-                    <SelectItem value="savings">Épargne</SelectItem>
-                    <SelectItem value="investment">Investissement</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
+            </CardContent>
+          </Card>
 
-            {(hasExistingAccounts || hasClientInfo) && selectedType === "MINEUR" && (
-              <div className="pt-4 border-t border-gray-200">
-                <h3 className="text-sm font-semibold text-primary mb-3 flex items-center">
-                  <User className="w-4 h-4 mr-2" />
-                  Informations du Mineur
-                </h3>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                  <div className="space-y-1">
-                    <Label htmlFor="minorFirstName" className="text-sm">
+          {/* Section: Informations du Mineur (si compte mineur et utilisateur existant) */}
+          {(hasExistingAccounts || hasClientInfo) && selectedType === "MINEUR" && (
+            <Card className="border-2 border-primary/20 shadow-lg">
+              <CardHeader className="pb-4">
+                <CardTitle className="flex items-center space-x-2 text-lg">
+                  <User className="w-5 h-5 text-primary" />
+                  <span>Informations du Mineur</span>
+                </CardTitle>
+                <CardDescription className="text-sm">
+                  Renseignez les informations du titulaire mineur du compte
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="minorFirstName" className="text-sm font-medium">
                       Prénom du Mineur *
                     </Label>
                     <Input
@@ -511,11 +541,11 @@ export default function NewAccountPage() {
                       placeholder="Ex: Amadou"
                       value={formData.minorFirstName || ""}
                       onChange={(e) => handleInputChange("minorFirstName", e.target.value)}
-                      className="border-2 focus:border-primary h-9 text-sm"
+                      className="border-2 focus:border-primary h-10"
                     />
                   </div>
-                  <div className="space-y-1">
-                    <Label htmlFor="minorLastName" className="text-sm">
+                  <div className="space-y-2">
+                    <Label htmlFor="minorLastName" className="text-sm font-medium">
                       Nom du Mineur *
                     </Label>
                     <Input
@@ -523,11 +553,11 @@ export default function NewAccountPage() {
                       placeholder="Ex: Diallo"
                       value={formData.minorLastName || ""}
                       onChange={(e) => handleInputChange("minorLastName", e.target.value)}
-                      className="border-2 focus:border-primary h-9 text-sm"
+                      className="border-2 focus:border-primary h-10"
                     />
                   </div>
-                  <div className="space-y-1">
-                    <Label htmlFor="minorDateOfBirth" className="text-sm">
+                  <div className="space-y-2">
+                    <Label htmlFor="minorDateOfBirth" className="text-sm font-medium">
                       Date de Naissance *
                     </Label>
                     <Input
@@ -535,24 +565,32 @@ export default function NewAccountPage() {
                       type="date"
                       value={formData.minorDateOfBirth || ""}
                       onChange={(e) => handleInputChange("minorDateOfBirth", e.target.value)}
-                      className="border-2 focus:border-primary h-9 text-sm"
+                      className="border-2 focus:border-primary h-10"
                     />
                   </div>
                 </div>
-              </div>
-            )}
+              </CardContent>
+            </Card>
+          )}
 
-            {shouldShowAdditionalFields && (
-              <>
-                <div className="pt-4 border-t border-gray-200">
-                  <h3 className="text-sm font-semibold text-primary mb-3 flex items-center">
-                    <User className="w-4 h-4 mr-2" />
-                    Informations Personnelles
-                  </h3>
 
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
-                    <div className="space-y-1">
-                      <Label htmlFor="country" className="text-sm">
+          {/* Section: Informations Personnelles */}
+          {shouldShowAdditionalFields && (
+            <>
+              <Card className="border-2 border-primary/20 shadow-lg">
+                <CardHeader className="pb-4">
+                  <CardTitle className="flex items-center space-x-2 text-lg">
+                    <MapPin className="w-5 h-5 text-primary" />
+                    <span>Adresse et Localisation</span>
+                  </CardTitle>
+                  <CardDescription className="text-sm">
+                    Renseignez votre adresse de résidence
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="country" className="text-sm font-medium">
                         Pays *
                       </Label>
                       <Select
@@ -562,7 +600,7 @@ export default function NewAccountPage() {
                           handleInputChange("country", value)
                         }}
                       >
-                        <SelectTrigger className="border-2 focus:border-primary h-9 text-sm">
+                        <SelectTrigger className="border-2 focus:border-primary h-10">
                           <SelectValue placeholder="Sélectionnez un pays" />
                         </SelectTrigger>
                         <SelectContent>
@@ -574,8 +612,8 @@ export default function NewAccountPage() {
                         </SelectContent>
                       </Select>
                     </div>
-                    <div className="space-y-1">
-                      <Label htmlFor="city" className="text-sm">
+                    <div className="space-y-2">
+                      <Label htmlFor="city" className="text-sm font-medium">
                         Ville *
                       </Label>
                       <Select
@@ -583,7 +621,7 @@ export default function NewAccountPage() {
                         onValueChange={(value) => handleInputChange("city", value)}
                         disabled={!selectedCountry || availableCities.length === 0}
                       >
-                        <SelectTrigger className="border-2 focus:border-primary h-9 text-sm">
+                        <SelectTrigger className="border-2 focus:border-primary h-10">
                           <SelectValue placeholder={selectedCountry ? "Sélectionnez une ville" : "Sélectionnez d'abord un pays"} />
                         </SelectTrigger>
                         <SelectContent>
@@ -595,8 +633,8 @@ export default function NewAccountPage() {
                         </SelectContent>
                       </Select>
                     </div>
-                    <div className="space-y-1">
-                      <Label htmlFor="postalCode" className="text-sm">
+                    <div className="space-y-2">
+                      <Label htmlFor="postalCode" className="text-sm font-medium">
                         Code Postal
                       </Label>
                       <Input
@@ -604,14 +642,14 @@ export default function NewAccountPage() {
                         placeholder="Ex: BP 123"
                         value={formData.postalCode || ""}
                         onChange={(e) => handleInputChange("postalCode", e.target.value)}
-                        className="border-2 focus:border-primary h-9 text-sm"
+                        className="border-2 focus:border-primary h-10"
                       />
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
-                    <div className="space-y-1">
-                      <Label htmlFor="addressLine1" className="text-sm">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="addressLine1" className="text-sm font-medium">
                         Adresse ligne 1 *
                       </Label>
                       <Input
@@ -619,11 +657,11 @@ export default function NewAccountPage() {
                         placeholder="Ex: 123 Avenue de la République"
                         value={formData.addressLine1 || ""}
                         onChange={(e) => handleInputChange("addressLine1", e.target.value)}
-                        className="border-2 focus:border-primary h-9 text-sm"
+                        className="border-2 focus:border-primary h-10"
                       />
                     </div>
-                    <div className="space-y-1">
-                      <Label htmlFor="addressLine2" className="text-sm">
+                    <div className="space-y-2">
+                      <Label htmlFor="addressLine2" className="text-sm font-medium">
                         Adresse ligne 2
                       </Label>
                       <Input
@@ -631,24 +669,36 @@ export default function NewAccountPage() {
                         placeholder="Ex: Quartier Kaloum"
                         value={formData.addressLine2 || ""}
                         onChange={(e) => handleInputChange("addressLine2", e.target.value)}
-                        className="border-2 focus:border-primary h-9 text-sm"
+                        className="border-2 focus:border-primary h-10"
                       />
                     </div>
                   </div>
+                </CardContent>
+              </Card>
 
-                  <h4 className="text-sm font-semibold text-primary mb-3 mt-4">Pièce d'Identité</h4>
-
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
-                    <div className="space-y-1">
-                      <Label htmlFor="idType" className="text-sm">
+              {/* Section: Pièce d'Identité */}
+              <Card className="border-2 border-primary/20 shadow-lg">
+                <CardHeader className="pb-4">
+                  <CardTitle className="flex items-center space-x-2 text-lg">
+                    <CreditCard className="w-5 h-5 text-primary" />
+                    <span>Pièce d'Identité</span>
+                  </CardTitle>
+                  <CardDescription className="text-sm">
+                    Informations et photos de votre pièce d'identité
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="idType" className="text-sm font-medium">
                         Type de Pièce *
                       </Label>
                       <Select
                         value={formData.idType || ""}
                         onValueChange={(value) => handleInputChange("idType", value)}
                       >
-                        <SelectTrigger className="border-2 focus:border-primary h-9 text-sm">
-                          <SelectValue placeholder="Type" />
+                        <SelectTrigger className="border-2 focus:border-primary h-10">
+                          <SelectValue placeholder="Sélectionnez un type" />
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="CNI">Carte Nationale d'Identité</SelectItem>
@@ -658,8 +708,8 @@ export default function NewAccountPage() {
                         </SelectContent>
                       </Select>
                     </div>
-                    <div className="space-y-1">
-                      <Label htmlFor="idNumber" className="text-sm">
+                    <div className="space-y-2">
+                      <Label htmlFor="idNumber" className="text-sm font-medium">
                         Numéro de Pièce *
                       </Label>
                       <Input
@@ -667,11 +717,11 @@ export default function NewAccountPage() {
                         placeholder="Ex: CNI123456789"
                         value={formData.idNumber || ""}
                         onChange={(e) => handleInputChange("idNumber", e.target.value)}
-                        className="border-2 focus:border-primary h-9 text-sm"
+                        className="border-2 focus:border-primary h-10"
                       />
                     </div>
-                    <div className="space-y-1">
-                      <Label htmlFor="idIssuingCountry" className="text-sm">
+                    <div className="space-y-2">
+                      <Label htmlFor="idIssuingCountry" className="text-sm font-medium">
                         Pays d'Émission *
                       </Label>
                       <Input
@@ -679,14 +729,14 @@ export default function NewAccountPage() {
                         placeholder="Ex: Guinée"
                         value={formData.idIssuingCountry || ""}
                         onChange={(e) => handleInputChange("idIssuingCountry", e.target.value)}
-                        className="border-2 focus:border-primary h-9 text-sm"
+                        className="border-2 focus:border-primary h-10"
                       />
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
-                    <div className="space-y-1">
-                      <Label htmlFor="idIssueDate" className="text-sm">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="idIssueDate" className="text-sm font-medium">
                         Date d'Émission *
                       </Label>
                       <Input
@@ -694,11 +744,11 @@ export default function NewAccountPage() {
                         type="date"
                         value={formData.idIssueDate || ""}
                         onChange={(e) => handleInputChange("idIssueDate", e.target.value)}
-                        className="border-2 focus:border-primary h-9 text-sm"
+                        className="border-2 focus:border-primary h-10"
                       />
                     </div>
-                    <div className="space-y-1">
-                      <Label htmlFor="idExpiryDate" className="text-sm">
+                    <div className="space-y-2">
+                      <Label htmlFor="idExpiryDate" className="text-sm font-medium">
                         Date d'Expiration *
                       </Label>
                       <Input
@@ -706,189 +756,651 @@ export default function NewAccountPage() {
                         type="date"
                         value={formData.idExpiryDate || ""}
                         onChange={(e) => handleInputChange("idExpiryDate", e.target.value)}
-                        className="border-2 focus:border-primary h-9 text-sm"
+                        className="border-2 focus:border-primary h-10"
                       />
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <div className="space-y-1">
-                      <Label htmlFor="idFrontImage" className="text-sm">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="idFrontImage" className="text-sm font-medium flex items-center gap-2">
+                        <ImageIcon className="w-4 h-4" />
                         Photo Recto de la Pièce
                       </Label>
-                      <div className="flex items-center gap-2">
-                        <Input
-                          id="idFrontImage"
-                          type="file"
-                          accept="image/*"
-                          onChange={(e) => {
-                            const file = e.target.files?.[0]
-                            if (file) handleFileUpload("idFrontImageUrl", file)
-                          }}
-                          className="border-2 focus:border-primary h-9 text-sm"
-                        />
-                        <Upload className="w-4 h-4 text-muted-foreground" />
-                      </div>
-                      {formData.idFrontImageUrl && (
-                        <div className="mt-2">
-                          <img
-                            src={formData.idFrontImageUrl || "/placeholder.svg"}
-                            alt="Recto ID"
-                            className="w-32 h-20 object-cover rounded border"
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <Input
+                            id="idFrontImage"
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0]
+                              if (file) handleFileUpload("idFrontImageUrl", file)
+                            }}
+                            className="border-2 focus:border-primary h-10"
                           />
+                          <Upload className="w-5 h-5 text-muted-foreground" />
                         </div>
-                      )}
+                        {formData.idFrontImageUrl && (
+                          <div className="mt-2 p-2 bg-green-50 rounded border border-green-200">
+                            <img
+                              src={formData.idFrontImageUrl || "/placeholder.svg"}
+                              alt="Recto ID"
+                              className="w-full max-w-xs h-auto object-contain rounded"
+                            />
+                            <p className="text-xs text-green-600 mt-2 flex items-center gap-1">
+                              <CheckCircle className="w-3 h-3" />
+                              Photo recto téléchargée
+                            </p>
+                          </div>
+                        )}
+                      </div>
                     </div>
-                    <div className="space-y-1">
-                      <Label htmlFor="idBackImage" className="text-sm">
+                    <div className="space-y-2">
+                      <Label htmlFor="idBackImage" className="text-sm font-medium flex items-center gap-2">
+                        <ImageIcon className="w-4 h-4" />
                         Photo Verso de la Pièce
+                      </Label>
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <Input
+                            id="idBackImage"
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0]
+                              if (file) handleFileUpload("idBackImageUrl", file)
+                            }}
+                            className="border-2 focus:border-primary h-10"
+                          />
+                          <Upload className="w-5 h-5 text-muted-foreground" />
+                        </div>
+                        {formData.idBackImageUrl && (
+                          <div className="mt-2 p-2 bg-green-50 rounded border border-green-200">
+                            <img
+                              src={formData.idBackImageUrl || "/placeholder.svg"}
+                              alt="Verso ID"
+                              className="w-full max-w-xs h-auto object-contain rounded"
+                            />
+                            <p className="text-xs text-green-600 mt-2 flex items-center gap-1">
+                              <CheckCircle className="w-3 h-3" />
+                              Photo verso téléchargée
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Section: Documents Requis (Compte Courant/Épargne) */}
+              {shouldShowAdditionalFields && (selectedType === "COURANT_CHEQUE" || selectedType === "EPARGNE_ORDINAIRE") && (
+                <Card className="border-2 border-primary/20 shadow-lg">
+                  <CardHeader className="pb-4">
+                    <CardTitle className="flex items-center space-x-2 text-lg">
+                      <FileCheck className="w-5 h-5 text-primary" />
+                      <span>Documents Requis</span>
+                    </CardTitle>
+                    <CardDescription className="text-sm">
+                      Téléchargez les documents nécessaires pour l'ouverture de votre compte
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="identityPhoto1" className="text-sm font-medium flex items-center gap-2">
+                          <ImageIcon className="w-4 h-4" />
+                          1ère Photo d'Identité Récente *
+                        </Label>
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2">
+                            <Input
+                              id="identityPhoto1"
+                              type="file"
+                              accept="image/*"
+                              onChange={(e) => {
+                                const file = e.target.files?.[0]
+                                if (file) handleFileUpload("identityPhoto1Url", file)
+                              }}
+                              className="border-2 focus:border-primary h-10"
+                            />
+                            <Upload className="w-5 h-5 text-muted-foreground" />
+                          </div>
+                          {formData.identityPhoto1Url && (
+                            <div className="p-2 bg-green-50 rounded border border-green-200">
+                              <img
+                                src={formData.identityPhoto1Url || "/placeholder.svg"}
+                                alt="Photo identité 1"
+                                className="w-full max-w-xs h-auto object-contain rounded"
+                              />
+                              <p className="text-xs text-green-600 mt-2 flex items-center gap-1">
+                                <CheckCircle className="w-3 h-3" />
+                                Photo téléchargée
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="identityPhoto2" className="text-sm font-medium flex items-center gap-2">
+                          <ImageIcon className="w-4 h-4" />
+                          2ème Photo d'Identité Récente *
+                        </Label>
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2">
+                            <Input
+                              id="identityPhoto2"
+                              type="file"
+                              accept="image/*"
+                              onChange={(e) => {
+                                const file = e.target.files?.[0]
+                                if (file) handleFileUpload("identityPhoto2Url", file)
+                              }}
+                              className="border-2 focus:border-primary h-10"
+                            />
+                            <Upload className="w-5 h-5 text-muted-foreground" />
+                          </div>
+                          {formData.identityPhoto2Url && (
+                            <div className="p-2 bg-green-50 rounded border border-green-200">
+                              <img
+                                src={formData.identityPhoto2Url || "/placeholder.svg"}
+                                alt="Photo identité 2"
+                                className="w-full max-w-xs h-auto object-contain rounded"
+                              />
+                              <p className="text-xs text-green-600 mt-2 flex items-center gap-1">
+                                <CheckCircle className="w-3 h-3" />
+                                Photo téléchargée
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="residenceCertificate" className="text-sm font-medium flex items-center gap-2">
+                          <FileCheck className="w-4 h-4" />
+                          Certificat de Résidence (moins de 3 mois) *
+                        </Label>
+                        <div className="flex items-center gap-2">
+                          <Input
+                            id="residenceCertificate"
+                            type="file"
+                            accept=".pdf,image/*"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0]
+                              if (file) handleFileUpload("residenceCertificateUrl", file)
+                            }}
+                            className="border-2 focus:border-primary h-10"
+                          />
+                          <Upload className="w-5 h-5 text-muted-foreground" />
+                        </div>
+                        {formData.residenceCertificateUrl && (
+                          <p className="text-xs text-green-600 mt-2 flex items-center gap-1">
+                            <CheckCircle className="w-3 h-3" />
+                            Document téléchargé
+                          </p>
+                        )}
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="utilityBill" className="text-sm font-medium flex items-center gap-2">
+                          <FileCheck className="w-4 h-4" />
+                          Facture d'Eau ou d'Électricité *
+                        </Label>
+                        <div className="flex items-center gap-2">
+                          <Input
+                            id="utilityBill"
+                            type="file"
+                            accept=".pdf,image/*"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0]
+                              if (file) handleFileUpload("utilityBillUrl", file)
+                            }}
+                            className="border-2 focus:border-primary h-10"
+                          />
+                          <Upload className="w-5 h-5 text-muted-foreground" />
+                        </div>
+                        {formData.utilityBillUrl && (
+                          <p className="text-xs text-green-600 mt-2 flex items-center gap-1">
+                            <CheckCircle className="w-3 h-3" />
+                            Document téléchargé
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    {selectedType === "COURANT_CHEQUE" && (
+                      <div className="space-y-2">
+                        <Label htmlFor="accountOpeningRequest" className="text-sm font-medium flex items-center gap-2">
+                          <FileCheck className="w-4 h-4" />
+                          Demande d'Ouverture (si entreprise non domiciliée à la BNG)
+                        </Label>
+                        <div className="flex items-center gap-2">
+                          <Input
+                            id="accountOpeningRequest"
+                            type="file"
+                            accept=".pdf,image/*"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0]
+                              if (file) handleFileUpload("accountOpeningRequestUrl", file)
+                            }}
+                            className="border-2 focus:border-primary h-10"
+                          />
+                          <Upload className="w-5 h-5 text-muted-foreground" />
+                        </div>
+                        {formData.accountOpeningRequestUrl && (
+                          <p className="text-xs text-green-600 mt-2 flex items-center gap-1">
+                            <CheckCircle className="w-3 h-3" />
+                            Document téléchargé
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
+            </>
+          )}
+
+          {/* Section: Informations du Mineur (si compte mineur et pas d'enregistrement) */}
+          {shouldShowAdditionalFields && selectedType === "MINEUR" && (
+            <>
+              <Card className="border-2 border-primary/20 shadow-lg">
+                <CardHeader className="pb-4">
+                  <CardTitle className="flex items-center space-x-2 text-lg">
+                    <User className="w-5 h-5 text-primary" />
+                    <span>Informations du Mineur</span>
+                  </CardTitle>
+                  <CardDescription className="text-sm">
+                    Renseignez les informations du titulaire mineur du compte
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="minorFirstName" className="text-sm font-medium">
+                        Prénom du Mineur *
+                      </Label>
+                      <Input
+                        id="minorFirstName"
+                        placeholder="Ex: Amadou"
+                        value={formData.minorFirstName || ""}
+                        onChange={(e) => handleInputChange("minorFirstName", e.target.value)}
+                        className="border-2 focus:border-primary h-10"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="minorLastName" className="text-sm font-medium">
+                        Nom du Mineur *
+                      </Label>
+                      <Input
+                        id="minorLastName"
+                        placeholder="Ex: Diallo"
+                        value={formData.minorLastName || ""}
+                        onChange={(e) => handleInputChange("minorLastName", e.target.value)}
+                        className="border-2 focus:border-primary h-10"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="minorDateOfBirth" className="text-sm font-medium">
+                        Date de Naissance *
+                      </Label>
+                      <Input
+                        id="minorDateOfBirth"
+                        type="date"
+                        value={formData.minorDateOfBirth || ""}
+                        onChange={(e) => handleInputChange("minorDateOfBirth", e.target.value)}
+                        className="border-2 focus:border-primary h-10"
+                      />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Section: Documents du Mineur */}
+              <Card className="border-2 border-primary/20 shadow-lg">
+                <CardHeader className="pb-4">
+                  <CardTitle className="flex items-center space-x-2 text-lg">
+                    <FileCheck className="w-5 h-5 text-primary" />
+                    <span>Documents du Mineur</span>
+                  </CardTitle>
+                  <CardDescription className="text-sm">
+                    Téléchargez les documents nécessaires pour le compte mineur
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="minorBirthCertificate" className="text-sm font-medium flex items-center gap-2">
+                      <FileCheck className="w-4 h-4" />
+                      Extrait de Naissance du Mineur *
+                    </Label>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        id="minorBirthCertificate"
+                        type="file"
+                        accept=".pdf,image/*"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0]
+                          if (file) handleFileUpload("minorBirthCertificateUrl", file)
+                        }}
+                        className="border-2 focus:border-primary h-10"
+                      />
+                      <Upload className="w-5 h-5 text-muted-foreground" />
+                    </div>
+                    {formData.minorBirthCertificateUrl && (
+                      <p className="text-xs text-green-600 mt-2 flex items-center gap-1">
+                        <CheckCircle className="w-3 h-3" />
+                        Document téléchargé
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="minorIdentityPhoto1" className="text-sm font-medium flex items-center gap-2">
+                        <ImageIcon className="w-4 h-4" />
+                        1ère Photo d'Identité du Mineur *
+                      </Label>
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <Input
+                            id="minorIdentityPhoto1"
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0]
+                              if (file) handleFileUpload("minorIdentityPhoto1Url", file)
+                            }}
+                            className="border-2 focus:border-primary h-10"
+                          />
+                          <Upload className="w-5 h-5 text-muted-foreground" />
+                        </div>
+                        {formData.minorIdentityPhoto1Url && (
+                          <div className="p-2 bg-green-50 rounded border border-green-200">
+                            <img
+                              src={formData.minorIdentityPhoto1Url || "/placeholder.svg"}
+                              alt="Photo mineur 1"
+                              className="w-full max-w-xs h-auto object-contain rounded"
+                            />
+                            <p className="text-xs text-green-600 mt-2 flex items-center gap-1">
+                              <CheckCircle className="w-3 h-3" />
+                              Photo téléchargée
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="minorIdentityPhoto2" className="text-sm font-medium flex items-center gap-2">
+                        <ImageIcon className="w-4 h-4" />
+                        2ème Photo d'Identité du Mineur *
+                      </Label>
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <Input
+                            id="minorIdentityPhoto2"
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0]
+                              if (file) handleFileUpload("minorIdentityPhoto2Url", file)
+                            }}
+                            className="border-2 focus:border-primary h-10"
+                          />
+                          <Upload className="w-5 h-5 text-muted-foreground" />
+                        </div>
+                        {formData.minorIdentityPhoto2Url && (
+                          <div className="p-2 bg-green-50 rounded border border-green-200">
+                            <img
+                              src={formData.minorIdentityPhoto2Url || "/placeholder.svg"}
+                              alt="Photo mineur 2"
+                              className="w-full max-w-xs h-auto object-contain rounded"
+                            />
+                            <p className="text-xs text-green-600 mt-2 flex items-center gap-1">
+                              <CheckCircle className="w-3 h-3" />
+                              Photo téléchargée
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Section: Documents du Tuteur */}
+              <Card className="border-2 border-primary/20 shadow-lg">
+                <CardHeader className="pb-4">
+                  <CardTitle className="flex items-center space-x-2 text-lg">
+                    <User className="w-5 h-5 text-primary" />
+                    <span>Documents du Tuteur</span>
+                  </CardTitle>
+                  <CardDescription className="text-sm">
+                    Téléchargez les documents d'identité et de résidence du tuteur légal
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="guardianIdentityPhoto1" className="text-sm font-medium flex items-center gap-2">
+                        <ImageIcon className="w-4 h-4" />
+                        1ère Photo d'Identité du Tuteur *
+                      </Label>
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <Input
+                            id="guardianIdentityPhoto1"
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0]
+                              if (file) handleFileUpload("guardianIdentityPhoto1Url", file)
+                            }}
+                            className="border-2 focus:border-primary h-10"
+                          />
+                          <Upload className="w-5 h-5 text-muted-foreground" />
+                        </div>
+                        {formData.guardianIdentityPhoto1Url && (
+                          <div className="p-2 bg-green-50 rounded border border-green-200">
+                            <img
+                              src={formData.guardianIdentityPhoto1Url || "/placeholder.svg"}
+                              alt="Photo tuteur 1"
+                              className="w-full max-w-xs h-auto object-contain rounded"
+                            />
+                            <p className="text-xs text-green-600 mt-2 flex items-center gap-1">
+                              <CheckCircle className="w-3 h-3" />
+                              Photo téléchargée
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="guardianIdentityPhoto2" className="text-sm font-medium flex items-center gap-2">
+                        <ImageIcon className="w-4 h-4" />
+                        2ème Photo d'Identité du Tuteur *
+                      </Label>
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <Input
+                            id="guardianIdentityPhoto2"
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0]
+                              if (file) handleFileUpload("guardianIdentityPhoto2Url", file)
+                            }}
+                            className="border-2 focus:border-primary h-10"
+                          />
+                          <Upload className="w-5 h-5 text-muted-foreground" />
+                        </div>
+                        {formData.guardianIdentityPhoto2Url && (
+                          <div className="p-2 bg-green-50 rounded border border-green-200">
+                            <img
+                              src={formData.guardianIdentityPhoto2Url || "/placeholder.svg"}
+                              alt="Photo tuteur 2"
+                              className="w-full max-w-xs h-auto object-contain rounded"
+                            />
+                            <p className="text-xs text-green-600 mt-2 flex items-center gap-1">
+                              <CheckCircle className="w-3 h-3" />
+                              Photo téléchargée
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="guardianUtilityBill" className="text-sm font-medium flex items-center gap-2">
+                        <FileCheck className="w-4 h-4" />
+                        Facture d'Eau ou d'Électricité du Tuteur *
                       </Label>
                       <div className="flex items-center gap-2">
                         <Input
-                          id="idBackImage"
+                          id="guardianUtilityBill"
                           type="file"
-                          accept="image/*"
+                          accept=".pdf,image/*"
                           onChange={(e) => {
                             const file = e.target.files?.[0]
-                            if (file) handleFileUpload("idBackImageUrl", file)
+                            if (file) handleFileUpload("guardianUtilityBillUrl", file)
                           }}
-                          className="border-2 focus:border-primary h-9 text-sm"
+                          className="border-2 focus:border-primary h-10"
                         />
-                        <Upload className="w-4 h-4 text-muted-foreground" />
+                        <Upload className="w-5 h-5 text-muted-foreground" />
                       </div>
-                      {formData.idBackImageUrl && (
-                        <div className="mt-2">
-                          <img
-                            src={formData.idBackImageUrl || "/placeholder.svg"}
-                            alt="Verso ID"
-                            className="w-32 h-20 object-cover rounded border"
-                          />
-                        </div>
+                      {formData.guardianUtilityBillUrl && (
+                        <p className="text-xs text-green-600 mt-2 flex items-center gap-1">
+                          <CheckCircle className="w-3 h-3" />
+                          Document téléchargé
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="guardianResidenceCertificate" className="text-sm font-medium flex items-center gap-2">
+                        <FileCheck className="w-4 h-4" />
+                        Certificat de Résidence du Tuteur *
+                      </Label>
+                      <div className="flex items-center gap-2">
+                        <Input
+                          id="guardianResidenceCertificate"
+                          type="file"
+                          accept=".pdf,image/*"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0]
+                            if (file) handleFileUpload("guardianResidenceCertificateUrl", file)
+                          }}
+                          className="border-2 focus:border-primary h-10"
+                        />
+                        <Upload className="w-5 h-5 text-muted-foreground" />
+                      </div>
+                      {formData.guardianResidenceCertificateUrl && (
+                        <p className="text-xs text-green-600 mt-2 flex items-center gap-1">
+                          <CheckCircle className="w-3 h-3" />
+                          Document téléchargé
+                        </p>
                       )}
                     </div>
                   </div>
-                </div>
-              </>
-            )}
+                </CardContent>
+              </Card>
+            </>
+          )}
 
-            {shouldShowAdditionalFields && selectedType === "MINEUR" && (
-              <div className="pt-4 border-t border-gray-200">
-                <h3 className="text-sm font-semibold text-primary mb-3 flex items-center">
-                  <User className="w-4 h-4 mr-2" />
-                  Informations du Mineur
-                </h3>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                  <div className="space-y-1">
-                    <Label htmlFor="minorFirstName" className="text-sm">
-                      Prénom du Mineur *
-                    </Label>
-                    <Input
-                      id="minorFirstName"
-                      placeholder="Ex: Amadou"
-                      value={formData.minorFirstName || ""}
-                      onChange={(e) => handleInputChange("minorFirstName", e.target.value)}
-                      className="border-2 focus:border-primary h-9 text-sm"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <Label htmlFor="minorLastName" className="text-sm">
-                      Nom du Mineur *
-                    </Label>
-                    <Input
-                      id="minorLastName"
-                      placeholder="Ex: Diallo"
-                      value={formData.minorLastName || ""}
-                      onChange={(e) => handleInputChange("minorLastName", e.target.value)}
-                      className="border-2 focus:border-primary h-9 text-sm"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <Label htmlFor="minorDateOfBirth" className="text-sm">
-                      Date de Naissance *
-                    </Label>
-                    <Input
-                      id="minorDateOfBirth"
-                      type="date"
-                      value={formData.minorDateOfBirth || ""}
-                      onChange={(e) => handleInputChange("minorDateOfBirth", e.target.value)}
-                      className="border-2 focus:border-primary h-9 text-sm"
-                    />
-                  </div>
-                </div>
-              </div>
-            )}
-
-            <div className="flex justify-between pt-2">
-              <Button onClick={() => setStep(1)} variant="outline" size="sm">
-                <ArrowLeft className="w-3 h-3 mr-1" />
-                Retour
-              </Button>
-              <Button
-                onClick={() => setStep(3)}
-                disabled={!canProceedToStep3}
-                className="bg-primary hover:opacity-90 transition-opacity"
-                size="sm"
-              >
-                Continuer
-                <ChevronRight className="w-4 h-4 ml-1" />
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+          {/* Navigation Buttons */}
+          <div className="flex justify-between pt-4 border-t border-gray-200">
+            <Button onClick={() => setStep(1)} variant="outline" size="default">
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Retour
+            </Button>
+            <Button
+              onClick={() => setStep(3)}
+              disabled={!canProceedToStep3}
+              className="bg-primary hover:opacity-90 transition-opacity"
+              size="default"
+            >
+              Continuer
+              <ChevronRight className="w-4 h-4 ml-2" />
+            </Button>
+          </div>
+        </div>
       )}
 
       {step === 3 && selectedAccountType && (
-        <Card className="border-2 border-primary/20 shadow-lg">
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center space-x-2 text-lg">
-              <CheckCircle className="w-5 h-5 text-primary" />
-              <span>Récapitulatif et Validation</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-              <div className="p-2 rounded bg-gradient-to-br from-primary/5 to-secondary/5">
-                <p className="text-sm text-muted-foreground">Type</p>
-                <p className="text-sm font-semibold">{selectedAccountType.name}</p>
+        <div className="space-y-6">
+          <Card className="border-2 border-primary/20 shadow-lg">
+            <CardHeader className="pb-4">
+              <CardTitle className="flex items-center space-x-2 text-lg">
+                <CheckCircle className="w-5 h-5 text-primary" />
+                <span>Récapitulatif et Validation</span>
+              </CardTitle>
+              <CardDescription className="text-sm">
+                Vérifiez les informations avant de soumettre votre demande
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* Récapitulatif des informations du compte */}
+              <div className="space-y-3">
+                <h3 className="text-sm font-semibold text-primary flex items-center gap-2">
+                  <Building2 className="w-4 h-4" />
+                  Informations du Compte
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="p-4 rounded-lg bg-gradient-to-br from-primary/5 to-secondary/5 border border-primary/10">
+                    <p className="text-xs text-muted-foreground mb-1">Type de Compte</p>
+                    <p className="text-base font-semibold text-primary">{selectedAccountType.name}</p>
+                  </div>
+                  <div className="p-4 rounded-lg bg-gradient-to-br from-primary/5 to-secondary/5 border border-primary/10">
+                    <p className="text-xs text-muted-foreground mb-1">Intitulé</p>
+                    <p className="text-base font-semibold">{formData.accountName}</p>
+                  </div>
+                  <div className="p-4 rounded-lg bg-gradient-to-br from-primary/5 to-secondary/5 border border-primary/10">
+                    <p className="text-xs text-muted-foreground mb-1">Devise</p>
+                    <p className="text-base font-semibold">{formData.currency}</p>
+                  </div>
+                </div>
               </div>
-              <div className="p-2 rounded bg-gradient-to-br from-primary/5 to-secondary/5">
-                <p className="text-sm text-muted-foreground">Nom</p>
-                <p className="text-sm font-semibold">{formData.accountName}</p>
-              </div>
-              <div className="p-2 rounded bg-gradient-to-br from-primary/5 to-secondary/5">
-                <p className="text-sm text-muted-foreground">Dévise</p>
-                <p className="text-sm font-semibold">{formData.currency}</p>
-              </div>
-            </div>
 
-            <div className="space-y-2 p-3 rounded-lg bg-gradient-to-br from-primary/5 to-secondary/5">
-              <div className="flex items-start space-x-2">
-                <Checkbox
-                  id="terms"
-                  checked={formData.terms || false}
-                  onCheckedChange={(checked) => handleInputChange("terms", checked)}
-                  className="mt-0.5"
-                />
-                <Label htmlFor="terms" className="text-xs leading-tight cursor-pointer">
-                  J'accepte les{" "}
-                  <a href="#" className="text-primary hover:underline font-semibold">
-                    conditions générales
-                  </a>
-                </Label>
+              {/* Acceptation des conditions */}
+              <div className="space-y-3 p-4 rounded-lg bg-gradient-to-br from-primary/5 to-secondary/5 border border-primary/10">
+                <h3 className="text-sm font-semibold text-primary mb-3">Acceptation des Conditions</h3>
+                <div className="space-y-3">
+                  <div className="flex items-start space-x-3">
+                    <Checkbox
+                      id="terms"
+                      checked={formData.terms || false}
+                      onCheckedChange={(checked) => handleInputChange("terms", checked)}
+                      className="mt-0.5"
+                    />
+                    <Label htmlFor="terms" className="text-sm leading-relaxed cursor-pointer flex-1">
+                      J'accepte les{" "}
+                      <a href="#" className="text-primary hover:underline font-semibold">
+                        conditions générales
+                      </a>{" "}
+                      d'ouverture de compte *
+                    </Label>
+                  </div>
+                  <div className="flex items-start space-x-3">
+                    <Checkbox
+                      id="dataProcessing"
+                      checked={formData.dataProcessing || false}
+                      onCheckedChange={(checked) => handleInputChange("dataProcessing", checked)}
+                      className="mt-0.5"
+                    />
+                    <Label htmlFor="dataProcessing" className="text-sm leading-relaxed cursor-pointer flex-1">
+                      J'autorise le traitement de mes données personnelles conformément à la politique de confidentialité *
+                    </Label>
+                  </div>
+                </div>
               </div>
-              <div className="flex items-start space-x-2">
-                <Checkbox
-                  id="dataProcessing"
-                  checked={formData.dataProcessing || false}
-                  onCheckedChange={(checked) => handleInputChange("dataProcessing", checked)}
-                  className="mt-0.5"
-                />
-                <Label htmlFor="dataProcessing" className="text-xs leading-tight cursor-pointer">
-                  J'autorise le traitement de mes données personnelles
-                </Label>
-              </div>
-            </div>
             <form onSubmit={handleSubmit}>
               {/* Le backend générera automatiquement accountId et accountNumber */}
               <input type="hidden" name="customerId" value="CUSTOMER_ID_PLACEHOLDER" />
@@ -905,40 +1417,42 @@ export default function NewAccountPage() {
                 </>
               )}
 
-              <div className="flex justify-between pt-2">
-                <Button onClick={() => setStep(2)} variant="outline" size="sm" type="button">
-                  <ArrowLeft className="w-3 h-3 mr-1" />
+              {/* Navigation et Soumission */}
+              <div className="flex justify-between pt-4 border-t border-gray-200">
+                <Button onClick={() => setStep(2)} variant="outline" size="default" type="button">
+                  <ArrowLeft className="w-4 h-4 mr-2" />
                   Retour
                 </Button>
                 <Button
                   type="submit"
                   disabled={isCreating || !canSubmit}
-                  className="bg-primary hover:opacity-90 transition-opacity"
-                  size="sm"
+                  className="bg-primary hover:opacity-90 transition-opacity min-w-[140px]"
+                  size="default"
                 >
                   {isCreating ? (
                     <>
-                      <Clock className="w-3 h-3 mr-1 animate-spin" />
+                      <Clock className="w-4 h-4 mr-2 animate-spin" />
                       Soumission...
                     </>
                   ) : (
                     <>
-                      <CheckCircle className="w-3 h-3 mr-1" />
-                      Soumettre
+                      <CheckCircle className="w-4 h-4 mr-2" />
+                      Soumettre la Demande
                     </>
                   )}
                 </Button>
               </div>
             </form>
 
-            {createState?.error && (
-              <Alert variant="destructive" className="py-2">
-                <AlertCircle className="h-3 w-3" />
-                <AlertDescription className="text-xs">{createState.error}</AlertDescription>
-              </Alert>
-            )}
-          </CardContent>
-        </Card>
+              {createState?.error && (
+                <Alert variant="destructive" className="py-3">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription className="text-sm">{createState.error}</AlertDescription>
+                </Alert>
+              )}
+            </CardContent>
+          </Card>
+        </div>
       )}
     </div>
   )

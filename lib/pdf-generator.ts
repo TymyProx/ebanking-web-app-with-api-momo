@@ -32,11 +32,11 @@ const VERTICAL_STRIPE_YELLOW_HEIGHT = 10
 
 // Informations de la banque pour le footer
 const BANK_INFO = {
-  name: "Banque Nationale de Guinée SA",
-  approval: "Agrément par décision N° 06/019/93/CAB/PE 06/06/1993",
-  capital: "60.000.000.000 GNF",
-  address: "Boulevard Tidiani Kaba - Quartier Boulbinet/Almamya, Kaloum, Conakry, Guinée",
-  contact: "Tél: +224 - 622 454 049 - B.P 1781 - mail: contact@bng.gn",
+  name: "BNG SA",
+  approval: "Agrément par décision N D/2012/022/CAM du 08/02 ;RCCM/GC-KAKL/038.712A/12",
+  capital: "200.000.000.000 GNF ; Code NIFp : 646172940 ;Clé TVA : 3k",
+  address: "Boulevard Diallo Telly Quatier kouléwoundy. Commune de Kaloum-Conakry( République de guinée)",
+  contact: "BP :1787 Tél : +224628083780 E-mail : info@bng-guinee.com",
 }
 
 export interface PDFContentOptions {

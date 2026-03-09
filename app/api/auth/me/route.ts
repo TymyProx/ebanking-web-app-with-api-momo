@@ -2,7 +2,7 @@ import { type NextRequest, NextResponse } from "next/server"
 import axios from "axios"
 import https from "https"
 
-const API_BASE_URL = process.env.API_BASE_URL || "https://35.184.98.9:4000/api"
+const API_BASE_URL = process.env.API_BASE_URL //|| "https://astra-apps.net/api" //"https://35.184.98.9:4000/api"
 
 // Create axios instance with SSL certificate bypass for server-side requests
 const serverAxios = axios.create({

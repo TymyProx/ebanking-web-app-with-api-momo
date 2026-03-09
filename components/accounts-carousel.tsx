@@ -9,7 +9,7 @@ import { Wallet, PiggyBank, DollarSign, Eye, EyeOff } from "lucide-react"
 import { getAccountStatusBadge, isAccountActive, isAccountPending } from "@/lib/status-utils"
 // Utiliser les variables d'environnement directement côté client
 const getApiBaseUrl = (): string => {
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "https://35.184.98.9:4000"
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "https://astra-apps.net" //"https://35.184.98.9:4000"
   const normalize = (u?: string) => (u ? u.replace(/\/$/, "") : "")
   const cleanBaseUrl = normalize(apiUrl).replace(/\/api$/, "")
   return `${cleanBaseUrl}/api`

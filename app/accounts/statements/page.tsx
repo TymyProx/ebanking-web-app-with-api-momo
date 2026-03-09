@@ -2204,10 +2204,10 @@ async function generateExcelStatement(
     // Footer
     currentRow += 2
     const footerRows = [
-      "Banque Nationale de Guinée SA - Agrément par décision N° 06/019/93/CAB/PE 06/06/1993",
-      "Capital : 60.000.000.000 GNF",
-      "Boulevard Tidiani Kaba - Quartier Boulbinet/Almamya, Kaloum, Conakry, Guinée",
-      "Tél: +224 - 622 454 049 - B.P 1781 - mail: contact@bng.gn",
+      "BNG SA-Agrément par décision N D/2012/022/CAM du 08/02 ;RCCM/GC-KAKL/038.712A/12",
+      "Capital : 200.000.000.000 GNF ; Code NIFp : 646172940 ;Clé TVA : 3k",
+      "Boulevard Diallo Telly Quatier kouléwoundy. Commune de Kaloum-Conakry( République de guinée)",
+      "BP :1787 Tél : +224628083780 E-mail : info@bng-guinee.com",
     ]
 
     footerRows.forEach((text) => {

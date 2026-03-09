@@ -19,9 +19,25 @@ interface ClientAdditionalInfo {
   idExpiryDate: string
   idFrontImageUrl: string
   idBackImageUrl: string
+  // Documents généraux
+  identityPhoto1Url?: string
+  identityPhoto2Url?: string
+  residenceCertificateUrl?: string
+  utilityBillUrl?: string
+  accountOpeningRequestUrl?: string
+  // Informations mineur
   minorFirstName?: string
   minorLastName?: string
   minorDateOfBirth?: string
+  // Documents mineur
+  minorBirthCertificateUrl?: string
+  minorIdentityPhoto1Url?: string
+  minorIdentityPhoto2Url?: string
+  // Documents tuteur
+  guardianIdentityPhoto1Url?: string
+  guardianIdentityPhoto2Url?: string
+  guardianUtilityBillUrl?: string
+  guardianResidenceCertificateUrl?: string
 }
 
 export async function saveClientAdditionalInfo(data: ClientAdditionalInfo) {
