@@ -201,9 +201,9 @@ export default function NewAccountPage() {
   const canProceedToStep2 = selectedType !== ""
 
   const canProceedToStep3 =
-    hasExistingAccounts !== null && hasClientInfo !== null
-      ? hasExistingAccounts || hasClientInfo
-        ? // User has either active account OR client info already → only basic fields required
+    hasClientInfo !== null
+      ? hasClientInfo
+        ? // Le client a déjà des informations complémentaires enregistrées → seuls les champs de base sont requis
           selectedType === "MINEUR"
           ? formData.accountName &&
             formData.currency &&
@@ -212,7 +212,7 @@ export default function NewAccountPage() {
             formData.minorLastName &&
             formData.minorDateOfBirth
           : formData.accountName && formData.currency && formData.accountPurpose
-        : // User has NO active account AND NO client info → all fields required
+        : // Aucun enregistrement dans clientAdditionalInfo → on exige aussi les informations complémentaires
           selectedType === "MINEUR"
           ? formData.accountName &&
             formData.currency &&
@@ -260,7 +260,7 @@ export default function NewAccountPage() {
     }
   }, [createState, router])
 
-  const shouldShowAdditionalFields = hasExistingAccounts === false && hasClientInfo === false
+  const shouldShowAdditionalFields = hasClientInfo === false
 
   // Log for debugging
   useEffect(() => {
@@ -273,7 +273,7 @@ export default function NewAccountPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (hasExistingAccounts === false && hasClientInfo === false) {
+    if (hasClientInfo === false) {
       try {
         const user = AuthService.getCurrentUser()
         if (!user) {
