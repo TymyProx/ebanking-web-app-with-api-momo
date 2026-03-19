@@ -1,87 +1,116 @@
 "use client"
 
-import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
+import { createContext, useContext, useState, useEffect, useCallback, useRef, type ReactNode } from "react"
+import { fetchUserNotifications, type NotificationItem } from "@/app/notifications/actions"
 
-interface Notification {
-  id: number
-  type: "debit" | "credit" | "account_status"
-  title: string
-  message: string
-  amount?: number
-  date: string
+export interface Notification extends NotificationItem {
   read: boolean
-  channels: string[]
-  account?: string
-  recipient?: string
-  sender?: string
 }
 
 interface NotificationContextType {
   notifications: Notification[]
   unreadCount: number
-  addNotification: (notification: Omit<Notification, "id" | "date" | "read">) => void
-  markAsRead: (notificationId: number) => void
+  loading: boolean
+  markAsRead: (notificationId: string) => void
   markAllAsRead: () => void
   getRecentNotifications: (limit?: number) => Notification[]
+  refresh: () => Promise<void>
 }
 
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined)
 
+const READ_IDS_KEY = "notification_read_ids"
+const POLL_INTERVAL = 60_000
+
+function getReadIds(): Set<string> {
+  try {
+    const stored = localStorage.getItem(READ_IDS_KEY)
+    if (stored) return new Set(JSON.parse(stored))
+  } catch {}
+  return new Set()
+}
+
+function saveReadIds(ids: Set<string>) {
+  try {
+    const arr = [...ids].slice(-500)
+    localStorage.setItem(READ_IDS_KEY, JSON.stringify(arr))
+  } catch {}
+}
+
 export function NotificationProvider({ children }: { children: ReactNode }) {
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [unreadCount, setUnreadCount] = useState(0)
+  const [loading, setLoading] = useState(true)
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const mountedRef = useRef(true)
 
-  // Charger les notifications depuis localStorage au démarrage
-  useEffect(() => {
-    const savedNotifications = localStorage.getItem("notifications")
-    if (savedNotifications) {
-      const parsed = JSON.parse(savedNotifications)
-      setNotifications(parsed)
-      setUnreadCount(parsed.filter((n: Notification) => !n.read).length)
+  const loadNotifications = useCallback(async () => {
+    try {
+      const items = await fetchUserNotifications()
+      if (!mountedRef.current) return
+      const readIds = getReadIds()
+      const withRead = items.map((n) => ({ ...n, read: readIds.has(n.id) }))
+      setNotifications(withRead)
+      setUnreadCount(withRead.filter((n) => !n.read).length)
+    } catch {
+      // silently fail – keep previous notifications
+    } finally {
+      if (mountedRef.current) setLoading(false)
     }
   }, [])
 
-  // Sauvegarder les notifications dans localStorage à chaque changement
   useEffect(() => {
-    if (notifications.length > 0) {
-      localStorage.setItem("notifications", JSON.stringify(notifications))
-      setUnreadCount(notifications.filter((n) => !n.read).length)
-    }
-  }, [notifications])
+    mountedRef.current = true
+    loadNotifications()
+    return () => { mountedRef.current = false }
+  }, [loadNotifications])
 
-  const addNotification = (notificationData: Omit<Notification, "id" | "date" | "read">) => {
-    const newNotification: Notification = {
-      ...notificationData,
-      id: Date.now(),
-      date: new Date().toISOString(),
-      read: false,
-    }
+  useEffect(() => {
+    intervalRef.current = setInterval(loadNotifications, POLL_INTERVAL)
+    return () => { if (intervalRef.current) clearInterval(intervalRef.current) }
+  }, [loadNotifications])
 
-    setNotifications((prev) => [newNotification, ...prev].slice(0, 100)) // Garder seulement les 100 dernières
-  }
+  useEffect(() => {
+    const onFocus = () => loadNotifications()
+    window.addEventListener("focus", onFocus)
+    return () => window.removeEventListener("focus", onFocus)
+  }, [loadNotifications])
 
-  const markAsRead = (notificationId: number) => {
-    setNotifications((prev) => prev.map((n) => (n.id === notificationId ? { ...n, read: true } : n)))
-  }
+  const markAsRead = useCallback((notificationId: string) => {
+    const readIds = getReadIds()
+    readIds.add(notificationId)
+    saveReadIds(readIds)
 
-  const markAllAsRead = () => {
-    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })))
-  }
+    setNotifications((prev) => {
+      const updated = prev.map((n) => (n.id === notificationId ? { ...n, read: true } : n))
+      setUnreadCount(updated.filter((n) => !n.read).length)
+      return updated
+    })
+  }, [])
 
-  const getRecentNotifications = (limit = 5) => {
-    return notifications.slice(0, limit)
-  }
+  const markAllAsRead = useCallback(() => {
+    setNotifications((prev) => {
+      const readIds = getReadIds()
+      prev.forEach((n) => readIds.add(n.id))
+      saveReadIds(readIds)
+      setUnreadCount(0)
+      return prev.map((n) => ({ ...n, read: true }))
+    })
+  }, [])
+
+  const getRecentNotifications = useCallback(
+    (limit = 5) => notifications.slice(0, limit),
+    [notifications],
+  )
+
+  const refresh = useCallback(async () => {
+    setLoading(true)
+    await loadNotifications()
+  }, [loadNotifications])
 
   return (
     <NotificationContext.Provider
-      value={{
-        notifications,
-        unreadCount,
-        addNotification,
-        markAsRead,
-        markAllAsRead,
-        getRecentNotifications,
-      }}
+      value={{ notifications, unreadCount, loading, markAsRead, markAllAsRead, getRecentNotifications, refresh }}
     >
       {children}
     </NotificationContext.Provider>

@@ -1,439 +1,266 @@
 "use server"
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0"
 
-interface Notification {
-  id: number
-  type: "debit" | "credit" | "account_status"
+import { cookies } from "next/headers"
+import { getApiBaseUrl, TENANT_ID } from "@/lib/api-url"
+
+const API_BASE_URL = getApiBaseUrl()
+
+export interface NotificationItem {
+  id: string
+  type:
+    | "client_update"
+    | "account_update"
+    | "transaction"
+    | "transfer"
+    | "beneficiary"
+    | "reclamation_status"
+    | "commande_status"
   title: string
   message: string
-  amount?: number
   date: string
-  read: boolean
-  channels: string[]
-  account?: string
-  recipient?: string
-  sender?: string
+  amount?: number
+  entityName: string
+  action: string
 }
 
-interface NotificationSettings {
-  email: boolean
-  sms: boolean
-  push: boolean
-  debitNotifications: boolean
-  creditNotifications: boolean
-  minAmount: number
-}
-
-// Simulation d'une base de données de notifications
-const mockNotifications: Notification[] = [
-  {
-    id: 1,
-    type: "debit",
-    title: "Débit automatique",
-    message:
-      "Vous avez été débité de 25,000 GNF le 22/07/2025 pour un paiement à ORANGE CI. Solde actuel : 125,000 GNF.",
-    amount: -25000,
-    date: "2024-01-15T10:30:00Z",
-    read: false,
-    channels: ["email", "sms", "push"],
-    account: "0001-234567-89",
-    recipient: "ORANGE CI",
-  },
-  {
-    id: 2,
-    type: "credit",
-    title: "Crédit reçu",
-    message:
-      "Vous avez reçu un crédit de 50,000 GNF le 22/07/2025 pour un virement de SOTRAGUI. Solde actuel : 150,000 GNF.",
-    amount: 50000,
-    date: "2024-01-15T10:15:00Z",
-    read: false,
-    channels: ["email", "sms", "push"],
-    account: "0001-234567-89",
-    sender: "SOTRAGUI",
-  },
-  {
-    id: 3,
-    type: "account_status",
-    title: "Changement de statut de compte",
-    message:
-      'Le statut de votre compte 0001-234567-89 a été modifié de "PENDING" vers "ACTIF". Votre compte est maintenant activé.',
-    date: "2024-01-14T16:45:00Z",
-    read: false,
-    channels: ["email", "sms", "push"],
-    account: "0001-234567-89",
-  },
-  {
-    id: 4,
-    type: "debit",
-    title: "Débit automatique",
-    message: "Vous avez été débité de 15,000 GNF le 21/07/2025 pour un retrait DAB. Solde actuel : 100,000 GNF.",
-    amount: -15000,
-    date: "2024-01-14T16:45:00Z",
-    read: true,
-    channels: ["email", "sms", "push"],
-    account: "0001-234567-89",
-    recipient: "Agence Kaloum",
-  },
-  {
-    id: 5,
-    type: "credit",
-    title: "Crédit reçu",
-    message:
-      "Vous avez reçu un crédit de 75,000 GNF le 21/07/2025 pour un virement de Mamadou Diallo. Solde actuel : 115,000 GNF.",
-    amount: 75000,
-    date: "2024-01-14T09:20:00Z",
-    read: true,
-    channels: ["email", "sms", "push"],
-    account: "0001-234567-89",
-    sender: "Mamadou Diallo",
-  },
+const RELEVANT_ENTITIES = [
+  "client",
+  "compte",
+  "transactions",
+  "virementCompte",
+  "beneficiaire",
+  "reclamation",
+  "commande",
 ]
 
-export async function getNotifications(filters?: {
-  type?: "debit" | "credit" | "account_status" | "all"
-  read?: boolean
-  limit?: number
-}) {
-  try {
-    // Simulation d'un délai de récupération
-    await new Promise((resolve) => setTimeout(resolve, 500))
-
-    // Simulation d'une erreur occasionnelle (2% de chance)
-    if (Math.random() < 0.02) {
-      throw new Error("Erreur de connexion au serveur de notifications")
-    }
-
-    let filteredNotifications = mockNotifications
-
-    if (filters?.type && filters.type !== "all") {
-      filteredNotifications = filteredNotifications.filter((n) => n.type === filters.type)
-    }
-
-    if (filters?.read !== undefined) {
-      filteredNotifications = filteredNotifications.filter((n) => n.read === filters.read)
-    }
-
-    if (filters?.limit) {
-      filteredNotifications = filteredNotifications.slice(0, filters.limit)
-    }
-
-    // Log d'audit
-    //console.log(`[AUDIT] Consultation notifications - Client: USER123 à ${new Date().toISOString()}`)
-
-    return {
-      success: true,
-      data: filteredNotifications,
-      timestamp: new Date().toISOString(),
-    }
-  } catch (error) {
-    console.error("Erreur lors de la récupération des notifications:", error)
-    return {
-      success: false,
-      error: "Impossible de récupérer les notifications. Veuillez réessayer.",
-      timestamp: new Date().toISOString(),
-    }
+function parseValues(raw: any): Record<string, any> {
+  if (!raw) return {}
+  if (typeof raw === "string") {
+    try { return JSON.parse(raw) } catch { return {} }
   }
+  return raw
 }
 
-export async function markAsRead(notificationId: number) {
-  try {
-    // Simulation d'un délai de traitement
-    await new Promise((resolve) => setTimeout(resolve, 300))
+function buildNotification(entry: any): NotificationItem | null {
+  const values = parseValues(entry.values)
 
-    // Simulation d'une erreur occasionnelle (1% de chance)
-    if (Math.random() < 0.01) {
-      throw new Error("Erreur lors du marquage comme lu")
+  switch (entry.entityName) {
+    case "client": {
+      if (entry.action === "update") {
+        return {
+          id: entry.id, type: "client_update",
+          title: "Informations mises à jour",
+          message: "Vos informations personnelles ont été modifiées.",
+          date: entry.timestamp, entityName: entry.entityName, action: entry.action,
+        }
+      }
+      return null
     }
 
-    // Simulation de la mise à jour en base
-    const notification = mockNotifications.find((n) => n.id === notificationId)
-    if (notification) {
-      notification.read = true
+    case "compte": {
+      const name = values.accountName || "Votre compte"
+      if (entry.action === "update") {
+        const status = values.status
+        const msg = status
+          ? `Le statut du compte « ${name} » est passé à « ${status} ».`
+          : `Le compte « ${name} » a été mis à jour.`
+        return {
+          id: entry.id, type: "account_update",
+          title: "Compte modifié",
+          message: msg,
+          date: entry.timestamp, entityName: entry.entityName, action: entry.action,
+        }
+      }
+      if (entry.action === "delete") {
+        return {
+          id: entry.id, type: "account_update",
+          title: "Compte clôturé",
+          message: `Le compte « ${name} » a été clôturé.`,
+          date: entry.timestamp, entityName: entry.entityName, action: entry.action,
+        }
+      }
+      return null
     }
 
-    // Log d'audit
-    //console.log(
-    //   `[AUDIT] Notification marquée comme lue - ID: ${notificationId} - Client: USER123 à ${new Date().toISOString()}`,
-    // )
-
-    return {
-      success: true,
-      message: "Notification marquée comme lue",
-      timestamp: new Date().toISOString(),
-    }
-  } catch (error) {
-    console.error("Erreur lors du marquage comme lu:", error)
-    return {
-      success: false,
-      error: "Impossible de marquer la notification comme lue",
-      timestamp: new Date().toISOString(),
-    }
-  }
-}
-
-export async function updateNotificationSettings(settings: NotificationSettings) {
-  try {
-    // Simulation d'un délai de traitement
-    await new Promise((resolve) => setTimeout(resolve, 1000))
-
-    // Simulation d'une erreur occasionnelle (2% de chance)
-    if (Math.random() < 0.02) {
-      throw new Error("Erreur lors de la mise à jour des paramètres")
-    }
-
-    // Validation des paramètres
-    if (settings.minAmount < 0) {
+    case "transactions": {
+      if (entry.action === "create") return null
+      const amount = Number(values.amount || values.montant || 0)
+      const desc = values.description || values.motif || values.reference || ""
+      const currency = values.currency || values.devise || "GNF"
+      let message: string
+      if (amount) {
+        const formatted = new Intl.NumberFormat("fr-FR").format(Math.abs(amount))
+        message = `Transaction de ${formatted} ${currency}${desc ? ` — ${desc}` : ""}`
+      } else {
+        message = desc || "Une transaction a été enregistrée sur votre compte."
+      }
       return {
-        success: false,
-        error: "Le montant minimum ne peut pas être négatif",
-        timestamp: new Date().toISOString(),
+        id: entry.id, type: "transaction",
+        title: entry.action === "delete" ? "Transaction supprimée" : "Transaction mise à jour",
+        message, date: entry.timestamp, amount,
+        entityName: entry.entityName, action: entry.action,
       }
     }
 
-    // Simulation de la sauvegarde en base
-    //console.log("Paramètres de notification mis à jour:", settings)
-
-    // Log d'audit
-    //console.log(`[AUDIT] Paramètres de notification mis à jour - Client: USER123 à ${new Date().toISOString()}`)
-
-    return {
-      success: true,
-      message: "Paramètres mis à jour avec succès",
-      settings,
-      timestamp: new Date().toISOString(),
+    case "virementCompte": {
+      if (entry.action === "create") return null
+      const amount = Number(values.montant || values.amount || 0)
+      const currency = values.devise || values.currency || "GNF"
+      let message: string
+      if (amount) {
+        const formatted = new Intl.NumberFormat("fr-FR").format(Math.abs(amount))
+        message = `Virement de ${formatted} ${currency} effectué avec succès.`
+      } else {
+        message = "Un virement a été effectué sur votre compte."
+      }
+      return {
+        id: entry.id, type: "transfer",
+        title: entry.action === "delete" ? "Virement supprimé" : "Virement mis à jour",
+        message, date: entry.timestamp,
+        amount: amount ? -Math.abs(amount) : undefined,
+        entityName: entry.entityName, action: entry.action,
+      }
     }
-  } catch (error) {
-    console.error("Erreur lors de la mise à jour des paramètres:", error)
-    return {
-      success: false,
-      error: "Impossible de mettre à jour les paramètres",
-      timestamp: new Date().toISOString(),
+
+    case "beneficiaire": {
+      const benefName = values.nom || values.name || values.fullName || ""
+      const label = benefName ? `« ${benefName} »` : "Un bénéficiaire"
+      if (entry.action === "update") {
+        return {
+          id: entry.id, type: "beneficiary",
+          title: "Bénéficiaire modifié",
+          message: `Le bénéficiaire ${label} a été mis à jour.`,
+          date: entry.timestamp, entityName: entry.entityName, action: entry.action,
+        }
+      }
+      if (entry.action === "delete") {
+        return {
+          id: entry.id, type: "beneficiary",
+          title: "Bénéficiaire supprimé",
+          message: `${label} a été retiré de votre liste.`,
+          date: entry.timestamp, entityName: entry.entityName, action: entry.action,
+        }
+      }
+      return null
     }
+
+    case "reclamation": {
+      if (entry.action !== "update") return null
+      const rawStatus = values.status ?? values.statut
+      if (rawStatus === undefined || rawStatus === null || rawStatus === "") return null
+      const statusNum = Number(rawStatus)
+      let statusLabel: string
+      if (statusNum === 1) {
+        statusLabel = "prise en compte"
+      } else if (statusNum === 2) {
+        statusLabel = "clôturée"
+      } else {
+        statusLabel = `mise à jour (${rawStatus})`
+      }
+      const ref = values.claimId || values.reference || values.ref || entry.entityId
+      return {
+        id: entry.id, type: "reclamation_status",
+        title: "Statut de réclamation modifié",
+        message: `La réclamation ${ref ? `« ${ref} »` : ""} est ${statusLabel}.`,
+        date: entry.timestamp, entityName: entry.entityName, action: entry.action,
+      }
+    }
+
+    case "commande": {
+      if (entry.action !== "update") return null
+      const stepflow = values.stepflow
+      if (stepflow === undefined || stepflow === null) return null
+      const step = Number(stepflow)
+      const STEP_LABELS: Record<number, string> = {
+        1: "prise en charge",
+        2: "envoyée à l'imprimeur",
+        3: "disponible en agence",
+        4: "client notifié",
+        5: "retirée",
+      }
+      const stepLabel = STEP_LABELS[step]
+      if (!stepLabel) return null
+      const ref = values.referenceCommande || values.reference || entry.entityId
+      return {
+        id: entry.id, type: "commande_status",
+        title: "Commande de chéquier mise à jour",
+        message: `La commande ${ref ? `« ${ref} » ` : ""}est ${stepLabel}.`,
+        date: entry.timestamp, entityName: entry.entityName, action: entry.action,
+      }
+    }
+
+    default:
+      return null
   }
 }
 
-// Fonction pour simuler l'envoi d'une notification automatique de débit
-export async function sendDebitNotification(transactionData: {
-  account: string
-  amount: number
-  description: string
-  recipient: string
-}) {
+export async function fetchUserNotifications(): Promise<NotificationItem[]> {
   try {
-    // Simulation du traitement de notification
-    await new Promise((resolve) => setTimeout(resolve, 500))
+    const cookieStore = await cookies()
+    const token = cookieStore.get("token")?.value
+    if (!token) return []
 
-    const notification = await createTransactionNotification({
-      type: "debit",
-      amount: transactionData.amount,
-      account: transactionData.account,
-      description: transactionData.description,
-      recipient: transactionData.recipient,
+    const meRes = await fetch(`${API_BASE_URL}/auth/me`, {
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      cache: "no-store",
+    })
+    if (!meRes.ok) return []
+    const me = await meRes.json()
+    const userId: string = me.id
+
+    const comptesRes = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/compte`, {
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      cache: "no-store",
+    })
+    let userAccountIds: string[] = []
+    if (comptesRes.ok) {
+      const comptesData = await comptesRes.json()
+      const rows = comptesData.rows || comptesData.data || comptesData || []
+      userAccountIds = (Array.isArray(rows) ? rows : [])
+        .filter((a: any) => a.clientId === userId)
+        .map((a: any) => a.id)
+    }
+
+    const params = new URLSearchParams()
+    RELEVANT_ENTITIES.forEach((e) => params.append("filter[entityNames][]", e))
+    params.set("limit", "50")
+    params.set("orderBy", "timestamp_DESC")
+
+    const auditRes = await fetch(
+      `${API_BASE_URL}/tenant/${TENANT_ID}/audit-log?${params.toString()}`,
+      {
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        cache: "no-store",
+      },
+    )
+    if (!auditRes.ok) return []
+
+    const auditData = await auditRes.json()
+    const entries: any[] = auditData.rows || auditData.data || []
+
+    const relevant = entries.filter((e) => {
+      const vals = parseValues(e.values)
+      switch (e.entityName) {
+        case "client":
+          return e.entityId === userId
+        case "compte":
+          return userAccountIds.includes(e.entityId)
+        case "transactions":
+        case "virementCompte":
+        case "beneficiaire":
+          return e.createdById === userId
+        case "reclamation":
+        case "commande":
+          return vals.clientId === userId || vals.createdById === userId || e.createdById === userId
+        default:
+          return false
+      }
     })
 
-    if ("id" in notification) {
-      return {
-        success: true,
-        notificationId: notification.id,
-        channelsSent: "channels" in notification ? notification.channels : [],
-        message: "Notification de débit envoyée avec succès",
-        timestamp: new Date().toISOString(),
-      }
-    } else {
-      return {
-        success: false,
-        error: "Impossible de créer la notification de débit",
-        timestamp: new Date().toISOString(),
-      }
-    }
+    return relevant.map(buildNotification).filter((n): n is NotificationItem => n !== null)
   } catch (error) {
-    console.error("Erreur lors de l'envoi de la notification de débit:", error)
-    return {
-      success: false,
-      error: "Impossible d'envoyer la notification de débit",
-      timestamp: new Date().toISOString(),
-    }
-  }
-}
-
-// Fonction pour simuler l'envoi d'une notification automatique de crédit
-export async function sendCreditNotification(transactionData: {
-  account: string
-  amount: number
-  description: string
-  sender: string
-}) {
-  try {
-    // Simulation du traitement de notification
-    await new Promise((resolve) => setTimeout(resolve, 500))
-
-    const notification = await createTransactionNotification({
-      type: "credit",
-      amount: transactionData.amount,
-      account: transactionData.account,
-      description: transactionData.description,
-      sender: transactionData.sender,
-    })
-
-    if ("id" in notification) {
-      return {
-        success: true,
-        notificationId: notification.id,
-        channelsSent: "channels" in notification ? notification.channels : [],
-        message: "Notification de crédit envoyée avec succès",
-        timestamp: new Date().toISOString(),
-      }
-    } else {
-      return {
-        success: false,
-        error: "Impossible de créer la notification de crédit",
-        timestamp: new Date().toISOString(),
-      }
-    }
-  } catch (error) {
-    console.error("Erreur lors de l'envoi de la notification de crédit:", error)
-    return {
-      success: false,
-      error: "Impossible d'envoyer la notification de crédit",
-      timestamp: new Date().toISOString(),
-    }
-  }
-}
-
-// Fonction pour récupérer l'historique des notifications au format exportable
-export async function exportNotifications(
-  format: string,
-  filters?: {
-    type?: string
-    period?: string
-  },
-) {
-  try {
-    // Simulation d'un délai de génération
-    await new Promise((resolve) => setTimeout(resolve, 1000))
-
-    const filename = `notifications_${new Date().toISOString().split("T")[0]}.${format}`
-
-    // Log d'audit
-    //console.log(
-    //   `[AUDIT] Export historique notifications - Format: ${format} - Client: USER123 à ${new Date().toISOString()}`,
-    // )
-
-    return {
-      success: true,
-      filename,
-      downloadUrl: `/api/downloads/${filename}`,
-      message: `Export ${format.toUpperCase()} généré avec succès`,
-      timestamp: new Date().toISOString(),
-    }
-  } catch (error) {
-    console.error("Erreur lors de l'export:", error)
-    return {
-      success: false,
-      error: "Impossible de générer l'export",
-      timestamp: new Date().toISOString(),
-    }
-  }
-}
-
-// Fonction pour créer automatiquement une notification lors d'une transaction
-export async function createTransactionNotification(transaction: {
-  type: "debit" | "credit" | "account_status"
-  amount?: number
-  account?: string
-  description?: string
-  recipient?: string
-  sender?: string
-  title?: string
-  message?: string
-}) {
-  try {
-    // Simulation d'attente
-    await new Promise((resolve) => setTimeout(resolve, 200))
-
-    const notification = {
-      id: Date.now(),
-      type: transaction.type,
-      title:
-        transaction.title ||
-        (transaction.type === "debit"
-          ? "Débit automatique"
-          : transaction.type === "credit"
-            ? "Crédit reçu"
-            : "Notification système"),
-      message: transaction.message || generateNotificationMessage(transaction),
-      amount: transaction.amount
-        ? transaction.type === "debit"
-          ? -Math.abs(transaction.amount)
-          : Math.abs(transaction.amount)
-        : undefined,
-      date: new Date().toISOString(),
-      read: false,
-      channels: ["email", "sms", "push"], // Selon les paramètres utilisateur
-      account: transaction.account,
-      recipient: transaction.recipient,
-      sender: transaction.sender,
-    }
-
-    //console.log("Notification créée:", notification)
-
-    // Ici on enverrait les notifications via les différents canaux
-    await sendNotificationChannels(notification)
-
-    return notification
-  } catch (error) {
-    console.error("Erreur lors de la création de la notification:", error)
-    return {
-      success: false,
-      error: "Impossible de créer la notification",
-      timestamp: new Date().toISOString(),
-    }
-  }
-}
-
-function generateNotificationMessage(transaction: {
-  type: "debit" | "credit" | "account_status"
-  amount?: number
-  account?: string
-  description?: string
-  recipient?: string
-  sender?: string
-}): string {
-  if (transaction.type === "account_status") {
-    return transaction.description || "Le statut de votre compte a été modifié."
-  }
-
-  if (!transaction.amount) return transaction.description || "Transaction effectuée."
-
-  const formattedAmount = new Intl.NumberFormat("fr-FR").format(transaction.amount)
-  const currentDate = new Date().toLocaleDateString("fr-FR")
-
-  // Simulation du solde actuel (dans une vraie app, on récupérerait le vrai solde)
-  const currentBalance = 125000
-  const formattedBalance = new Intl.NumberFormat("fr-FR").format(currentBalance)
-
-  if (transaction.type === "debit") {
-    const recipient = transaction.recipient || transaction.description
-    return `Vous avez été débité de ${formattedAmount} GNF le ${currentDate} pour un paiement à ${recipient}. Solde actuel : ${formattedBalance} GNF.`
-  } else {
-    const sender = transaction.sender || transaction.description
-    return `Vous avez reçu un crédit de ${formattedAmount} GNF le ${currentDate} de la part de ${sender}. Solde actuel : ${formattedBalance} GNF.`
-  }
-}
-
-async function sendNotificationChannels(notification: any) {
-  // Simulation d'envoi par email
-  //console.log("📧 Email envoyé:", notification.message)
-
-  // Simulation d'envoi par SMS
-  //console.log("📱 SMS envoyé:", notification.message)
-
-  // Simulation de notification push
-  //console.log("🔔 Push notification:", notification.message)
-
-  return {
-    email: { sent: true, timestamp: new Date().toISOString() },
-    sms: { sent: true, timestamp: new Date().toISOString() },
-    push: { sent: true, timestamp: new Date().toISOString() },
+    console.error("Error fetching user notifications:", error)
+    return []
   }
 }
