@@ -353,7 +353,7 @@ export default function NewAccountPage() {
             </CardHeader>
             <CardContent>
               <p className="text-green-800 text-sm">
-                Vous recevrez un e-mail dès que le statut de votre compte sera mis à jour.
+                Un e-mail récapitulatif a été envoyé à votre adresse pour confirmer la prise en compte de votre demande.
               </p>
             </CardContent>
           </Card>

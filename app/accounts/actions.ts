@@ -5,6 +5,215 @@ import { revalidatePath } from "next/cache"
 import { getApiBaseUrl, TENANT_ID } from "@/lib/api-url"
 
 const API_BASE_URL = getApiBaseUrl()
+const BANK_NAME = "BNG E-Banking"
+
+function generateAccountOpeningRecapHtml(params: {
+  clientName: string
+  accountName: string
+  accountType: string
+  accountNumber?: string | null
+}) {
+  const ebankingUrl = process.env.NEXT_PUBLIC_EBANKING_URL || "http://localhost:3000"
+  const accountNumber = params.accountNumber ? String(params.accountNumber) : null
+
+  return `
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Demande reçue - ${BANK_NAME}</title>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        line-height: 1.6;
+        color: #111827;
+        background-color: #f5f5f5;
+        padding: 20px;
+      }
+      .email-wrapper {
+        max-width: 600px;
+        margin: 0 auto;
+        background-color: #ffffff;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        border-radius: 14px;
+        overflow: hidden;
+      }
+      .email-header {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        padding: 34px 28px;
+        text-align: center;
+      }
+      .brand {
+        color: #ffffff;
+        font-size: 28px;
+        font-weight: 800;
+        letter-spacing: 1px;
+        margin-bottom: 6px;
+        text-transform: uppercase;
+      }
+      .subtitle {
+        color: rgba(255,255,255,0.95);
+        font-size: 13px;
+      }
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 64px;
+        height: 64px;
+        border-radius: 50%;
+        background: rgba(255,255,255,0.18);
+        margin: 18px auto 0;
+        font-size: 32px;
+      }
+      .email-body { padding: 30px 28px; }
+      .title {
+        font-size: 22px;
+        font-weight: 800;
+        color: #065f46;
+        margin-bottom: 10px;
+      }
+      .text { color: #047857; font-size: 15px; margin-bottom: 16px; }
+      .card {
+        background: #f0fdf4;
+        border-left: 5px solid #10b981;
+        padding: 18px;
+        border-radius: 10px;
+        margin: 18px 0;
+      }
+      .row {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 8px 0;
+        border-bottom: 1px solid rgba(16,185,129,0.15);
+      }
+      .row:last-child { border-bottom: none; }
+      .label { color: #6b7280; font-size: 13px; }
+      .value { color: #0f172a; font-weight: 700; font-size: 14px; text-align: right; }
+      .next {
+        margin-top: 18px;
+        background: #fffbeb;
+        border-left: 5px solid #f59e0b;
+        padding: 16px 18px;
+        border-radius: 10px;
+      }
+      .next h3 {
+        font-size: 15px;
+        margin-bottom: 8px;
+        color: #92400e;
+      }
+      .next ul { padding-left: 18px; }
+      .next li { margin: 6px 0; color: #92400e; font-size: 14px; }
+      .cta {
+        display: inline-block;
+        margin-top: 18px;
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: #ffffff;
+        padding: 12px 22px;
+        border-radius: 10px;
+        text-decoration: none;
+        font-weight: 700;
+      }
+      .footer {
+        background-color: #111827;
+        color: #ffffff;
+        padding: 18px 22px;
+        text-align: center;
+      }
+      .footer small { color: #9ca3af; display: block; margin-top: 8px; }
+    </style>
+  </head>
+  <body>
+    <div class="email-wrapper">
+      <div class="email-header">
+        <div class="brand">${BANK_NAME}</div>
+        <div class="subtitle">Votre banque en ligne sécurisée</div>
+        <div class="badge">✅</div>
+      </div>
+      <div class="email-body">
+        <div class="title">Demande bien prise en compte</div>
+        <div class="text">Bonjour <strong>${params.clientName}</strong>, nous avons enregistré votre demande d'ouverture de compte.</div>
+
+        <div class="card">
+          <div class="row"><span class="label">Intitulé du compte</span><span class="value">${params.accountName}</span></div>
+          <div class="row"><span class="label">Type de compte</span><span class="value">${params.accountType}</span></div>
+          <div class="row"><span class="label">Statut</span><span class="value">EN ATTENTE</span></div>
+          ${
+            accountNumber
+              ? `<div class="row"><span class="label">Numéro de compte</span><span class="value">${accountNumber}</span></div>`
+              : ""
+          }
+        </div>
+
+        <div class="next">
+          <h3>Prochaines étapes</h3>
+          <ul>
+            <li>Nous traiterons votre demande et mettrons à jour le statut lorsque c'est validé.</li>
+            <li>Vous recevrez un e-mail dès que le statut de votre compte changera.</li>
+          </ul>
+        </div>
+
+        <a class="cta" href="${ebankingUrl}/login">Accéder à mon espace</a>
+      </div>
+
+      <div class="footer">
+        <div style="font-weight:800">${BANK_NAME}</div>
+        <small>Cet email a été envoyé automatiquement. Merci de ne pas y répondre.</small>
+      </div>
+    </div>
+  </body>
+</html>
+  `
+}
+
+async function sendAccountOpeningRecapEmail(payload: {
+  to: string
+  clientName: string
+  accountName: string
+  accountType: string
+  accountNumber?: string | null
+}) {
+  const resendApiKey = process.env.RESEND_API_KEY
+  const fromEmail = process.env.RESEND_FROM_EMAIL ?? "no-reply@bngebanking.com"
+
+  if (!resendApiKey) {
+    console.error("[Account Opening Email] RESEND_API_KEY manquante")
+    return { success: false as const, error: "RESEND_API_KEY manquante" }
+  }
+
+  const html = generateAccountOpeningRecapHtml({
+    clientName: payload.clientName,
+    accountName: payload.accountName,
+    accountType: payload.accountType,
+    accountNumber: payload.accountNumber ?? null,
+  })
+
+  const response = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${resendApiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      from: fromEmail,
+      to: payload.to,
+      subject: `✅ Votre demande d'ouverture de compte est prise en compte`,
+      html,
+      text: `Votre demande d'ouverture de compte a été prise en compte. Intitulé: ${payload.accountName}, type: ${payload.accountType}.`,
+    }),
+  })
+
+  if (!response.ok) {
+    const errorBody = await response.json().catch(() => null)
+    const message = errorBody?.message || errorBody?.error || response.statusText
+    throw new Error(message || "Erreur lors de l'envoi de l'email")
+  }
+
+  return { success: true as const }
+}
 
 export interface Account {
   id: string
@@ -179,6 +388,8 @@ export async function createAccount(prevState: any, formData: FormData) {
     }
 
     let clientId = "CUSTOMER_ID_PLACEHOLDER"
+    let userEmail: string | null = null
+    let userFullName: string | null = null
     try {
       const userResponse = await fetch(`${API_BASE_URL}/auth/me`, {
         method: "GET",
@@ -191,6 +402,8 @@ export async function createAccount(prevState: any, formData: FormData) {
       if (userResponse.ok) {
         const userData = await userResponse.json()
         clientId = userData.id || "CUSTOMER_ID_PLACEHOLDER"
+        userEmail = userData.email ?? null
+        userFullName = userData.fullName ?? null
       }
     } catch (error) {
       console.error("Erreur lors de la récupération du client ID:", error)
@@ -259,6 +472,25 @@ export async function createAccount(prevState: any, formData: FormData) {
     }
 
     const result = await response.json()
+
+    // Envoi d'un mail de récapitulatif au moment où la demande est prise en compte
+    try {
+      const returnedData = result?.data ?? result
+      const accountNumber = returnedData?.accountNumber ?? returnedData?.id
+
+      if (userEmail && (userFullName || userEmail)) {
+        await sendAccountOpeningRecapEmail({
+          to: userEmail,
+          clientName: userFullName || userEmail.split("@")[0] || "Client",
+          accountName: String(accountData.accountName ?? ""),
+          accountType: String(accountData.type ?? accountType ?? ""),
+          accountNumber: accountNumber ? String(accountNumber) : null,
+        })
+      }
+    } catch (emailError) {
+      // On ne bloque pas la création du compte si l'e-mail échoue
+      console.error("[Account Opening Email] Erreur d'envoi:", emailError)
+    }
 
     revalidatePath("/accounts")
 
