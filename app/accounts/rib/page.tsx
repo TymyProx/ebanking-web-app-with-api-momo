@@ -972,6 +972,17 @@ export default function RIBPage() {
                         <p className="font-mono text-sm">{(selectedAccount.branchCode || "001").padStart(3, "0").slice(0, 3)}</p>
                       </div>
                       <div>
+                        <p className="text-xs text-gray-500 uppercase">Clé RIB</p>
+                        <p className="font-mono text-sm">
+                          {selectedAccount.ribKey
+                            ? String(selectedAccount.ribKey).padStart(2, "0").slice(0, 2)
+                            : (() => {
+                                const accountNumberClean = (selectedAccount.number ?? "").replace(/-/g, "").replace(/\s/g, "")
+                                return accountNumberClean.length > 10 ? accountNumberClean.slice(-2) : "00"
+                              })()}
+                        </p>
+                      </div>
+                      <div>
                         <p className="text-xs text-gray-500 uppercase">RIB</p>
                         <p className="font-mono font-semibold text-sm">
                           {selectedAccount?.bankCode ?? ""}

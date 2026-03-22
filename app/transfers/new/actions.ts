@@ -473,8 +473,8 @@ export async function executeTransfer(prevState: any, formData: FormData) {
     const cleanedData = {
       sourceAccount: data.sourceAccount,
       transferType: data.transferType,
-      beneficiaryId: data.beneficiaryId || undefined,
-      targetAccount: data.targetAccount || undefined,
+      beneficiaryId: data.beneficiaryId?.trim() || undefined,
+      targetAccount: data.targetAccount?.trim() || undefined,
       amount: data.amount,
       purpose: data.purpose,
       transferDate: data.transferDate,
@@ -1106,6 +1106,12 @@ async function getBeneficiaryById(beneficiaryId: string, context: BeneficiarySec
     const data = await response.json()
     const beneficiary = data.data || data
 
+    // Déjà validé côté executeTransfer : la liste provient de fetchBeneficiaries()
+    // (filtrée par clientId). Ne pas comparer clientId au user id /auth/me — souvent différents.
+    if (context.allowedBeneficiaryIds?.has(beneficiaryId)) {
+      return beneficiary
+    }
+
     const ownerId = extractBeneficiaryOwnerId(beneficiary)
     if (currentUser?.id && ownerId && ownerId !== currentUser.id) {
       console.warn(
@@ -1115,7 +1121,6 @@ async function getBeneficiaryById(beneficiaryId: string, context: BeneficiarySec
     }
 
     if (context.allowedBeneficiaryIds && !ownerId) {
-      // Si nous ne pouvons pas confirmer le propriétaire, refuser par défaut
       console.warn(`[v0] Propriété bénéficiaire inconnue pour ${beneficiaryId}, accès refusé`)
       return null
     }

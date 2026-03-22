@@ -217,7 +217,7 @@ const navigationData: {
   // ],
   services: [
     {
-      title: "Autres services",
+      title: "E-Services",
       icon: FileText,
       items: [
         {
