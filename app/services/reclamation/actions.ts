@@ -289,7 +289,7 @@ export async function createReclamation(formData: {
       claimId: reference,
       description: formData.description,
       dateRecl: new Date(formData.complainDate).toISOString(),
-      status: "En cours",
+      status: "0",
       email: formData.email,
       motifRecl: formData.complainObject || formData.complainType,
       telephone: telephone,

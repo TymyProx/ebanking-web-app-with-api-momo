@@ -27,7 +27,7 @@ import {
   Search,
   X,
 } from "lucide-react"
-import { generateStatement, sendStatementByEmail, getTransactionsByNumCompte, getStatementBalancesFromSTTMS } from "./actions"
+import { sendStatementByEmail, getTransactionsByNumCompte, getStatementBalancesFromSTTMS } from "./actions"
 import { useActionState } from "react"
 import { getAccounts, getAccountById } from "../actions"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -95,11 +95,9 @@ export default function StatementsPage() {
   const [accounts, setAccounts] = useState<Account[]>([])
   const [isLoadingAccounts, setIsLoadingAccounts] = useState(true)
   const [transactions, setTransactions] = useState<any[]>([]) // Kept for potential future use, but not used in the new generation logic
-  const [generateState, generateAction, isGenerating] = useActionState(generateStatement, null)
   const [emailState, emailAction, isSending] = useActionState(sendStatementByEmail, null)
   const [isPending, startTransition] = useTransition()
   const [hasSearched, setHasSearched] = useState(false) // Track if user has initiated a search
-  const [hasGeneratedStatement, setHasGeneratedStatement] = useState(false)
   
   // États pour les filtres de transactions
   const [allTransactions, setAllTransactions] = useState<any[]>([]) // Toutes les transactions (non filtrées)
@@ -165,7 +163,6 @@ export default function StatementsPage() {
         setFilteredTransactions([])
         setTransactionCount(0)
         setShowDownloadLink(false)
-        setHasGeneratedStatement(false)
         return
       }
 
@@ -176,7 +173,6 @@ export default function StatementsPage() {
       setIsLoadingTransactions(true)
       setErrorMessage("")
       setShowDownloadLink(false)
-      setHasGeneratedStatement(false)
 
       try {
         const result = await getTransactionsByNumCompte(selectedAccount.number)
@@ -438,8 +434,6 @@ export default function StatementsPage() {
         balanceFermeture,
       )
     }
-
-    setHasGeneratedStatement(true)
   }
 
   const handleDownloadPDF = () => {
@@ -473,14 +467,18 @@ export default function StatementsPage() {
     })()
   }
 
-  const handleSendByEmail = async () => {
-    if (!emailAddress || !generateState?.success) {
+  const handleSendByEmail = () => {
+    const to = emailAddress.trim()
+    if (!to || !selectedAccount || !startDate || !endDate || filteredTransactions.length === 0) {
       return
     }
 
     const formData = new FormData()
-    formData.append("email", emailAddress)
-    formData.append("statementId", generateState.statementId ?? "")
+    formData.append("email", to)
+    formData.append("accountId", selectedAccount.id)
+    formData.append("startDate", startDate)
+    formData.append("endDate", endDate)
+    formData.append("accountNumber", selectedAccount.number)
 
     startTransition(() => {
       emailAction(formData)
@@ -612,44 +610,19 @@ export default function StatementsPage() {
           </div>
         )}
 
-        {generateState?.success && (
-          <Alert className="border-green-200 bg-green-50">
-            <CheckCircle className="h-4 w-4 text-green-600" />
-            <AlertDescription className="text-green-800">
-              ✅ Relevé généré avec succès ! ({generateState.transactionCount} transactions)
-              <Button
-                variant="link"
-                className="p-0 h-auto text-green-700 underline ml-2"
-                onClick={() => {
-                  // Note: The logic to actually download here is removed as generation happens directly in handleGenerateStatement
-                }}
-              >
-                Télécharger maintenant
-              </Button>
-            </AlertDescription>
-          </Alert>
-        )}
-
-        {generateState?.error && (
-          <Alert variant="destructive">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>❌ {generateState.error}</AlertDescription>
-          </Alert>
-        )}
-
         {emailState?.success && (
           <Alert className="border-blue-200 bg-blue-50">
             <CheckCircle className="h-4 w-4 text-blue-600" />
-            <AlertDescription className="text-blue-800">✅ Relevé envoyé par email à {emailAddress}</AlertDescription>
+            <AlertDescription className="text-blue-800">
+              Relevé envoyé par email à {emailAddress.trim()}.
+            </AlertDescription>
           </Alert>
         )}
 
-        {isGenerating && (
-          <Alert className="border-yellow-200 bg-yellow-50">
-            <Clock className="h-4 w-4 text-yellow-600 animate-pulse" />
-            <AlertDescription className="text-yellow-800">
-              ⏳ Téléchargement du relevé en cours... Veuillez patienter.
-            </AlertDescription>
+        {emailState?.success === false && emailState?.error && (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>{emailState.error}</AlertDescription>
           </Alert>
         )}
 
@@ -872,32 +845,40 @@ export default function StatementsPage() {
               <CardHeader className="py-2">
                 <CardTitle className="flex items-center text-base">
                   <Download className="w-4 h-4 mr-2" />
-                  Téléchargement
+                  Téléchargement et envoi
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3 pt-2 pb-3">
+                <div className="space-y-2">
+                  <Label htmlFor="email" className="text-sm">
+                    Adresse email (pour l&apos;envoi)
+                  </Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="votre@email.com"
+                    value={emailAddress}
+                    onChange={(e) => setEmailAddress(e.target.value)}
+                    className="h-9"
+                    autoComplete="email"
+                  />
+                  {format === "excel" && (
+                    <p className="text-xs text-muted-foreground">
+                      L&apos;envoi par email joint toujours le relevé au format PDF (document officiel).
+                    </p>
+                  )}
+                </div>
+
                 <div className="flex flex-col sm:flex-row gap-2">
                   <Button
                     onClick={handleGenerateStatement}
-                    disabled={
-                      !isFormValid || isLoadingTransactions || filteredTransactions.length === 0 || isGenerating
-                    }
+                    disabled={!isFormValid || isLoadingTransactions || filteredTransactions.length === 0}
                     className="flex-1 h-9"
                   >
                     {isLoadingTransactions ? (
                       <>
                         <Clock className="w-4 h-4 mr-2 animate-spin" />
                         Recherche en cours...
-                      </>
-                    ) : isGenerating ? (
-                      <>
-                        <Clock className="w-4 h-4 mr-2 animate-spin" />
-                        Génération en cours...
-                      </>
-                    ) : hasGeneratedStatement ? (
-                      <>
-                        <Download className="w-4 h-4 mr-2" />
-                        Télécharger {format === "pdf" ? "PDF" : "Excel"}
                       </>
                     ) : (
                       <>
@@ -906,37 +887,33 @@ export default function StatementsPage() {
                       </>
                     )}
                   </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleSendByEmail}
+                    disabled={
+                      !emailAddress.trim() ||
+                      !isFormValid ||
+                      isLoadingTransactions ||
+                      filteredTransactions.length === 0 ||
+                      isSending ||
+                      isPending
+                    }
+                    className="flex-1 h-9 bg-transparent"
+                  >
+                    {isSending || isPending ? (
+                      <>
+                        <Clock className="w-4 h-4 mr-2 animate-spin" />
+                        Envoi en cours...
+                      </>
+                    ) : (
+                      <>
+                        <Mail className="w-4 h-4 mr-2" />
+                        Envoi par email
+                      </>
+                    )}
+                  </Button>
                 </div>
-
-                {generateState?.success && (
-                  <div className="border-t pt-3 space-y-2">
-                    <Label htmlFor="email" className="text-sm">
-                      Envoyer par email (optionnel)
-                    </Label>
-                    <div className="flex gap-2">
-                      <Input
-                        id="email"
-                        type="email"
-                        placeholder="votre@email.com"
-                        value={emailAddress}
-                        onChange={(e) => setEmailAddress(e.target.value)}
-                        className="flex-1 h-9"
-                      />
-                      <Button
-                        onClick={handleSendByEmail}
-                        disabled={!emailAddress || isSending || isPending}
-                        variant="outline"
-                        className="h-9 bg-transparent"
-                      >
-                        {isSending || isPending ? (
-                          <Clock className="w-4 h-4 animate-spin" />
-                        ) : (
-                          <Mail className="w-4 h-4" />
-                        )}
-                      </Button>
-                    </div>
-                  </div>
-                )}
 
                 {!isFormValid && (
                   <Alert>

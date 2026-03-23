@@ -151,12 +151,14 @@ function buildNotification(entry: any): NotificationItem | null {
       if (rawStatus === undefined || rawStatus === null || rawStatus === "") return null
       const statusNum = Number(rawStatus)
       let statusLabel: string
-      if (statusNum === 1) {
-        statusLabel = "prise en compte"
+      if (statusNum === 0) {
+        statusLabel = "en attente"
+      } else if (statusNum === 1) {
+        statusLabel = "en cours de traitement"
       } else if (statusNum === 2) {
         statusLabel = "clôturée"
       } else {
-        statusLabel = `mise à jour (${rawStatus})`
+        statusLabel = "mise à jour"
       }
       const ref = values.claimId || values.reference || values.ref || entry.entityId
       return {

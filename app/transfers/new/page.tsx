@@ -1,10 +1,10 @@
 "use client"
 
 import type React from "react"
-import { useState, useTransition, useEffect, useRef } from "react"
+import { useState, useTransition, useEffect, useRef, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import { addBeneficiaryAndActivate } from "../beneficiaries/actions"
-import { executeTransfer } from "./actions"
+import { executeTransfer, validateTransferBeforeOtp } from "./actions"
 import { getAccounts } from "../../accounts/actions"
 import { getBeneficiaries, getBanks } from "../beneficiaries/actions"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -17,7 +17,7 @@ import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Checkbox } from "@/components/ui/checkbox"
-import { ArrowRight, Plus, User, Check, AlertCircle, Wallet } from "lucide-react"
+import { ArrowRight, Plus, User, Check, AlertCircle, Wallet, Loader2 } from "lucide-react"
 import { useActionState } from "react"
 import { OtpModal } from "@/components/otp-modal"
 import { toast } from "@/hooks/use-toast"
@@ -52,6 +52,30 @@ interface Bank {
 }
 
 type TransferType = "account-to-account" | "account-to-beneficiary" | "account-to-occasional-beneficiary"
+
+function TransferFieldHint({ message }: { message?: string }) {
+  if (!message) return null
+  return (
+    <p className="text-sm text-destructive mt-1.5" role="alert">
+      {message}
+    </p>
+  )
+}
+
+/** Nombre de chiffres attendu pour le compte bénéficiaire ponctuel (aligné sur le formulaire) */
+const OCCASIONAL_BENEFICIARY_ACCOUNT_DIGITS = 18
+
+function getOccasionalAccountFormatMessage(accountValue: string): string | undefined {
+  const acc = accountValue.trim()
+  if (!acc) return undefined
+  if (!/^\d+$/.test(acc)) {
+    return "Le numéro de compte ne doit contenir que des chiffres."
+  }
+  if (acc.length !== OCCASIONAL_BENEFICIARY_ACCOUNT_DIGITS) {
+    return `Le numéro doit comporter exactement ${OCCASIONAL_BENEFICIARY_ACCOUNT_DIGITS} chiffres (actuellement : ${acc.length}).`
+  }
+  return undefined
+}
 
 const countries = [
   "France",
@@ -140,6 +164,8 @@ export default function NewTransferPage() {
   // États pour la modale de confirmation
   const [showConfirmationModal, setShowConfirmationModal] = useState(false)
   const [isTransferConfirmed, setIsTransferConfirmed] = useState(false)
+  const [isPreOtpValidating, setIsPreOtpValidating] = useState(false)
+  const [confirmPreOtpError, setConfirmPreOtpError] = useState("")
 
   // Refs pour le scroll automatique vers les messages
   const successMessageRef = useRef<HTMLDivElement>(null)
@@ -323,6 +349,12 @@ export default function NewTransferPage() {
         setTransferSubmitted(false)
         return
       }
+      const occasionalAcctMsg = getOccasionalAccountFormatMessage(occasionalBeneficiaryAccount)
+      if (occasionalAcctMsg) {
+        setTransferValidationError(occasionalAcctMsg)
+        setTransferSubmitted(false)
+        return
+      }
     } else {
       if (!selectedCreditAccount) {
         setTransferValidationError("Veuillez sélectionner un compte créditeur")
@@ -351,6 +383,13 @@ export default function NewTransferPage() {
       return
     }
 
+    const amountNum = Number.parseFloat(amount)
+    if (amountNum < 1000) {
+      setTransferValidationError("Montant minimum : 1 000 GNF")
+      setTransferSubmitted(false)
+      return
+    }
+
     const debitAccount = accounts.find((acc) => acc.id === selectedAccount)
     if (debitAccount && Number.parseFloat(amount) > debitAccount.balance) {
       setTransferValidationError(
@@ -360,8 +399,21 @@ export default function NewTransferPage() {
       return
     }
 
-    if (!motif.trim()) {
-      setTransferValidationError("Veuillez saisir le motif du virement")
+    if (motif.trim().length < 5) {
+      setTransferValidationError("Le motif doit contenir au moins 5 caractères")
+      setTransferSubmitted(false)
+      return
+    }
+
+    if (!transferDate?.trim()) {
+      setTransferValidationError("Veuillez choisir une date d'exécution")
+      setTransferSubmitted(false)
+      return
+    }
+
+    const execDate = new Date(transferDate)
+    if (Number.isNaN(execDate.getTime())) {
+      setTransferValidationError("La date d'exécution n'est pas valide")
       setTransferSubmitted(false)
       return
     }
@@ -431,24 +483,38 @@ export default function NewTransferPage() {
     formData.append("transferDate", transferDate)
 
     // Stocker les données du virement pour la modale de confirmation
+    setConfirmPreOtpError("")
     setPendingTransferData(formData)
     setIsTransferConfirmed(false)
     setShowConfirmationModal(true)
   }
 
-  // Fonction pour déclencher l'OTP après confirmation
-  const handleConfirmAndProceed = () => {
+  // Fonction pour déclencher l'OTP après confirmation (contrôles serveur d'abord)
+  const handleConfirmAndProceed = async () => {
     if (!isTransferConfirmed || !pendingTransferData) {
       return
     }
 
-    // Fermer la modale de confirmation
-    setShowConfirmationModal(false)
-    
-    // Générer un référence unique pour ce virement
-    const referenceId = `TRANSFER-${Date.now()}-${selectedAccount.substring(0, 8)}`
-    setOtpReferenceId(referenceId)
-    setShowOtpModal(true)
+    setConfirmPreOtpError("")
+    setIsPreOtpValidating(true)
+    try {
+      const check = await validateTransferBeforeOtp(pendingTransferData)
+      if (!check.success) {
+        setConfirmPreOtpError(check.error || "Impossible de valider le virement")
+        return
+      }
+
+      setShowConfirmationModal(false)
+
+      const referenceId = `TRANSFER-${Date.now()}-${selectedAccount.substring(0, 8)}`
+      setOtpReferenceId(referenceId)
+      setShowOtpModal(true)
+    } catch (e) {
+      console.error("[v0] validateTransferBeforeOtp:", e)
+      setConfirmPreOtpError("Erreur lors de la vérification. Veuillez réessayer.")
+    } finally {
+      setIsPreOtpValidating(false)
+    }
   }
 
   // Fonction appelée après validation OTP
@@ -702,6 +768,97 @@ export default function NewTransferPage() {
     }
   }, [selectedAccount])
 
+  /** Messages de validation affichés sous chaque champ (temps réel) */
+  const transferFieldMessages = useMemo(() => {
+    const msg: {
+      debitAccount?: string
+      destination?: string
+      occasionalName?: string
+      occasionalAccount?: string
+      amount?: string
+      motif?: string
+      transferDate?: string
+    } = {}
+
+    if (!selectedAccount) {
+      msg.debitAccount = "Sélectionnez le compte à débiter."
+    }
+
+    if (transferType === "account-to-beneficiary") {
+      if (!selectedBeneficiary) {
+        msg.destination = "Choisissez un bénéficiaire enregistré dans la liste."
+      }
+    } else if (transferType === "account-to-occasional-beneficiary") {
+      if (!occasionalBeneficiaryName.trim()) {
+        msg.occasionalName = "Renseignez le nom du bénéficiaire ponctuel."
+      }
+      const accTrim = occasionalBeneficiaryAccount.trim()
+      if (!accTrim) {
+        msg.occasionalAccount = "Renseignez le numéro de compte du bénéficiaire ponctuel."
+      } else {
+        const formatMsg = getOccasionalAccountFormatMessage(occasionalBeneficiaryAccount)
+        if (formatMsg) {
+          msg.occasionalAccount = formatMsg
+        }
+      }
+    } else {
+      if (!selectedCreditAccount) {
+        msg.destination = "Sélectionnez le compte à créditer."
+      } else if (selectedAccount && selectedCreditAccount === selectedAccount) {
+        msg.destination = "Le compte à créditer doit être différent du compte à débiter."
+      } else {
+        const debitAccount = accounts.find((acc) => acc.id === selectedAccount)
+        const creditAccount = accounts.find((acc) => acc.id === selectedCreditAccount)
+        if (debitAccount && creditAccount && debitAccount.currency !== creditAccount.currency) {
+          msg.destination = "Les deux comptes doivent avoir la même devise pour ce type de virement."
+        }
+      }
+    }
+
+    const amtTrim = amount.trim().replace(",", ".")
+    if (amountError) {
+      msg.amount = amountError
+    } else if (!amtTrim) {
+      msg.amount = "Indiquez le montant du virement."
+    } else {
+      const n = Number.parseFloat(amtTrim)
+      if (!Number.isFinite(n) || n <= 0) {
+        msg.amount = "Le montant doit être un nombre valide strictement supérieur à zéro."
+      } else if (n < 1000) {
+        msg.amount = "Le montant minimum autorisé est de 1 000 GNF."
+      } else if (selectedAccount && !isAmountValid && Number.isFinite(n) && n >= 1000) {
+        msg.amount = "Le montant saisi dépasse le solde disponible sur le compte à débiter."
+      }
+    }
+
+    if (motif.trim().length < 5) {
+      msg.motif = `Le motif doit contenir au moins 5 caractères (actuellement : ${motif.trim().length}).`
+    }
+
+    if (!transferDate?.trim()) {
+      msg.transferDate = "Choisissez une date d'exécution."
+    } else if (Number.isNaN(new Date(transferDate).getTime())) {
+      msg.transferDate = "La date d'exécution n'est pas valide."
+    }
+
+    return msg
+  }, [
+    selectedAccount,
+    transferType,
+    selectedBeneficiary,
+    selectedCreditAccount,
+    occasionalBeneficiaryName,
+    occasionalBeneficiaryAccount,
+    amount,
+    amountError,
+    isAmountValid,
+    motif,
+    transferDate,
+    accounts,
+  ])
+
+  const isTransferFormReady = Object.keys(transferFieldMessages).length === 0
+
   return (
     <div className="mt-6 space-y-6 relative">
       <div className="space-y-2">
@@ -779,6 +936,7 @@ export default function NewTransferPage() {
                     )}
                   </SelectContent>
                 </Select>
+                <TransferFieldHint message={transferFieldMessages.debitAccount} />
               </div>
             </CardContent>
           </Card>
@@ -887,6 +1045,7 @@ export default function NewTransferPage() {
                       )}
                     </SelectContent>
                   </Select>
+                  <TransferFieldHint message={transferFieldMessages.destination} />
                   {selectedAccountData && transferType === "account-to-account" && (
                     <div className="p-3 rounded-lg bg-muted/50 border">
                       <p className="text-sm text-muted-foreground">
@@ -920,8 +1079,13 @@ export default function NewTransferPage() {
                       onChange={(e) => setOccasionalBeneficiaryName(e.target.value)}
                       placeholder="Saisissez le nom et prénoms du bénéficiaire"
                       required
-                      className="h-12 border-2 hover:border-primary/50 focus:border-primary transition-colors"
+                      className={`h-12 border-2 transition-colors ${
+                        transferFieldMessages.occasionalName
+                          ? "border-destructive focus:border-destructive"
+                          : "hover:border-primary/50 focus:border-primary"
+                      }`}
                     />
+                    <TransferFieldHint message={transferFieldMessages.occasionalName} />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="occasionalBeneficiaryAccount" className="font-medium">
@@ -940,9 +1104,16 @@ export default function NewTransferPage() {
                       placeholder="Saisissez le numéro de compte (18 chiffres)"
                       maxLength={18}
                       required
-                      className="h-12 border-2 hover:border-primary/50 focus:border-primary transition-colors"
+                      className={`h-12 border-2 transition-colors ${
+                        transferFieldMessages.occasionalAccount
+                          ? "border-destructive focus:border-destructive"
+                          : "hover:border-primary/50 focus:border-primary"
+                      }`}
                     />
-                    <p className="text-sm text-muted-foreground">18 chiffres</p>
+                    <TransferFieldHint message={transferFieldMessages.occasionalAccount} />
+                    <p className="text-sm text-muted-foreground">
+                      {OCCASIONAL_BENEFICIARY_ACCOUNT_DIGITS} chiffres exactement, sans espace
+                    </p>
                   </div>
                 </div>
               </CardContent>
@@ -1023,6 +1194,7 @@ export default function NewTransferPage() {
                       )}
                     </SelectContent>
                   </Select>
+                  <TransferFieldHint message={transferFieldMessages.destination} />
                 </div>
               </CardContent>
             </Card>
@@ -1052,18 +1224,13 @@ export default function NewTransferPage() {
                   placeholder="0"
                   required
                   className={`h-12 text-lg border-2 transition-colors ${
-                    amountError
+                    transferFieldMessages.amount
                       ? "border-destructive focus:border-destructive"
                       : "hover:border-primary/50 focus:border-primary"
                   }`}
                 />
-                {amountError && (
-                  <Alert variant="destructive" className="border-l-4">
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertDescription className="text-sm">{amountError}</AlertDescription>
-                  </Alert>
-                )}
-                {selectedAccountData && !amountError && (
+                <TransferFieldHint message={transferFieldMessages.amount} />
+                {selectedAccountData && !transferFieldMessages.amount && (
                   <div className="p-3 rounded-lg bg-muted/50 border">
                     <p className="text-sm text-muted-foreground">
                       Solde disponible:{" "}
@@ -1086,8 +1253,13 @@ export default function NewTransferPage() {
                   placeholder="Indiquez le motif du virement..."
                   rows={3}
                   required
-                  className="border-2 hover:border-primary/50 focus:border-primary transition-colors resize-none"
+                  className={`border-2 transition-colors resize-none ${
+                    transferFieldMessages.motif
+                      ? "border-destructive focus:border-destructive"
+                      : "hover:border-primary/50 focus:border-primary"
+                  }`}
                 />
+                <TransferFieldHint message={transferFieldMessages.motif} />
               </div>
 
               <div className="space-y-2">
@@ -1101,8 +1273,13 @@ export default function NewTransferPage() {
                   onChange={(e) => setTransferDate(e.target.value)}
                   min={new Date().toISOString().split("T")[0]}
                   required
-                  className="h-12 border-2 hover:border-primary/50 focus:border-primary transition-colors"
+                  className={`h-12 border-2 transition-colors ${
+                    transferFieldMessages.transferDate
+                      ? "border-destructive focus:border-destructive"
+                      : "hover:border-primary/50 focus:border-primary"
+                  }`}
                 />
+                <TransferFieldHint message={transferFieldMessages.transferDate} />
               </div>
             </CardContent>
           </Card>
@@ -1110,18 +1287,7 @@ export default function NewTransferPage() {
           <div className="flex justify-end">
             <Button
               type="submit"
-              disabled={
-                isTransferPending ||
-                !selectedAccount ||
-                (transferType === "account-to-beneficiary"
-                  ? !selectedBeneficiary
-                  : transferType === "account-to-occasional-beneficiary"
-                    ? !occasionalBeneficiaryName.trim() || !occasionalBeneficiaryAccount.trim()
-                    : !selectedCreditAccount) ||
-                !amount ||
-                !motif ||
-                !isAmountValid
-              }
+              disabled={isTransferPending || !isTransferFormReady}
               className="h-12 px-8 font-semibold bg-primary hover:bg-primary/90 transition-all shadow-lg hover:shadow-xl disabled:opacity-50"
             >
               <Check className="h-5 w-5 mr-2" />
@@ -1474,7 +1640,16 @@ export default function NewTransferPage() {
       </Dialog>
 
       {/* Modale de confirmation */}
-      <Dialog open={showConfirmationModal} onOpenChange={setShowConfirmationModal}>
+      <Dialog
+        open={showConfirmationModal}
+        onOpenChange={(open) => {
+          setShowConfirmationModal(open)
+          if (!open) {
+            setConfirmPreOtpError("")
+            setIsTransferConfirmed(false)
+          }
+        }}
+      >
         <DialogContent className="sm:max-w-[750px] max-h-[95vh] overflow-hidden flex flex-col p-0">
           <DialogHeader className="px-6 pt-6 pb-3 border-b">
             <DialogTitle className="text-lg">Confirmation du virement</DialogTitle>
@@ -1484,6 +1659,13 @@ export default function NewTransferPage() {
             <div className="text-xs text-muted-foreground mb-3">
               Veuillez vérifier les informations ci-dessous avant de procéder au virement.
             </div>
+
+            {confirmPreOtpError ? (
+              <Alert variant="destructive" className="mb-3 py-2">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription className="text-sm">{confirmPreOtpError}</AlertDescription>
+              </Alert>
+            ) : null}
 
             {/* Résumé du virement - Disposition en grille compacte */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -1608,25 +1790,44 @@ export default function NewTransferPage() {
             </div>
           </div>
 
-          <DialogFooter className="px-6 py-4 border-t bg-muted/30 flex-row gap-2">
-            <Button
-              variant="outline"
-              onClick={() => {
-                setShowConfirmationModal(false)
-                setIsTransferConfirmed(false)
-              }}
-              className="flex-1 sm:flex-initial"
-            >
-              Annuler
-            </Button>
-            <Button
-              onClick={handleConfirmAndProceed}
-              disabled={!isTransferConfirmed}
-              className="flex-1 sm:flex-initial h-10 px-6 font-semibold bg-primary hover:bg-primary/90 transition-all disabled:opacity-50"
-            >
-              <ArrowRight className="h-4 w-4 mr-2" />
-              Effectuer virement
-            </Button>
+          <DialogFooter className="px-6 py-4 border-t bg-muted/30 flex-col gap-3 sm:flex-col">
+            {!isPreOtpValidating && !isTransferConfirmed ? (
+              <p className="text-xs text-muted-foreground text-center sm:text-left order-first sm:order-none" role="status">
+                Le bouton « Effectuer virement » est grisé : cochez la case « J&apos;ai lu et confirme les informations du
+                transfert » pour poursuivre vers l&apos;envoi du code de vérification.
+              </p>
+            ) : null}
+            {isPreOtpValidating ? (
+              <p className="text-xs text-muted-foreground text-center sm:text-left" role="status">
+                Vérification de votre virement auprès du serveur… Le bouton est momentanément indisponible.
+              </p>
+            ) : null}
+            <div className="flex flex-row gap-2 w-full">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowConfirmationModal(false)
+                  setIsTransferConfirmed(false)
+                  setConfirmPreOtpError("")
+                }}
+                disabled={isPreOtpValidating}
+                className="flex-1 sm:flex-initial"
+              >
+                Annuler
+              </Button>
+              <Button
+                onClick={() => void handleConfirmAndProceed()}
+                disabled={!isTransferConfirmed || isPreOtpValidating}
+                className="flex-1 sm:flex-initial h-10 px-6 font-semibold bg-primary hover:bg-primary/90 transition-all disabled:opacity-50"
+              >
+                {isPreOtpValidating ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <ArrowRight className="h-4 w-4 mr-2" />
+                )}
+                {isPreOtpValidating ? "Vérification…" : "Effectuer virement"}
+              </Button>
+            </div>
           </DialogFooter>
         </DialogContent>
       </Dialog>

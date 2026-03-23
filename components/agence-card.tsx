@@ -4,6 +4,16 @@ import { Button } from "@/components/ui/button"
 import { MapPin, Phone, Clock, Navigation, Mail } from "lucide-react"
 import { Agence, getAgenceStatus } from "@/hooks/use-agences"
 
+/** Numéro utilisable dans href tel: (espaces et séparateurs retirés, préserve le + pays). */
+function toTelHref(phone: string): string {
+  const compact = phone.trim().replace(/\s/g, "")
+  if (!compact) return ""
+  if (compact.startsWith("+")) {
+    return `+${compact.slice(1).replace(/\D/g, "")}`
+  }
+  return compact.replace(/\D/g, "")
+}
+
 interface AgenceCardProps {
   agence: Agence
   onGetDirections?: (agence: Agence) => void
@@ -11,6 +21,9 @@ interface AgenceCardProps {
 
 export function AgenceCard({ agence, onGetDirections }: AgenceCardProps) {
   const status = getAgenceStatus(agence)
+  const telDigits = agence.telephone?.trim() ? toTelHref(agence.telephone) : ""
+  const telHref = telDigits ? `tel:${telDigits}` : null
+  const mailHref = agence.email?.trim() ? `mailto:${agence.email.trim()}` : null
 
   const getStatusBadgeVariant = () => {
     switch (status.color) {
@@ -22,18 +35,6 @@ export function AgenceCard({ agence, onGetDirections }: AgenceCardProps) {
         return "secondary"
       default:
         return "outline"
-    }
-  }
-
-  const handleCall = () => {
-    if (agence.telephone) {
-      window.location.href = `tel:${agence.telephone}`
-    }
-  }
-
-  const handleEmail = () => {
-    if (agence.email) {
-      window.location.href = `mailto:${agence.email}`
     }
   }
 
@@ -98,11 +99,11 @@ export function AgenceCard({ agence, onGetDirections }: AgenceCardProps) {
 
         {/* Contact */}
         <div className="space-y-2">
-          {agence.telephone && (
+          {telHref && (
             <div className="flex items-center text-sm text-muted-foreground">
               <Phone className="w-4 h-4 mr-2 flex-shrink-0" aria-hidden="true" />
               <a 
-                href={`tel:${agence.telephone}`}
+                href={telHref}
                 className="hover:text-primary hover:underline focus:text-primary focus:underline focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded"
                 aria-label={`Appeler l'agence ${agence.agenceName}`}
               >
@@ -110,13 +111,13 @@ export function AgenceCard({ agence, onGetDirections }: AgenceCardProps) {
               </a>
             </div>
           )}
-          {agence.email && (
+          {mailHref && (
             <div className="flex items-center text-sm text-muted-foreground">
               <Mail className="w-4 h-4 mr-2 flex-shrink-0" aria-hidden="true" />
               <a 
-                href={`mailto:${agence.email}`}
+                href={mailHref}
                 className="hover:text-primary hover:underline focus:text-primary focus:underline focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded break-all"
-                aria-label={`Envoyer un email à l'agence ${agence.agenceName}`}
+                aria-label={`Envoyer un mail à l'agence ${agence.agenceName}`}
               >
                 {agence.email}
               </a>
@@ -185,28 +186,30 @@ export function AgenceCard({ agence, onGetDirections }: AgenceCardProps) {
 
         {/* Actions */}
         <div className="flex flex-wrap gap-2 pt-2">
-          {agence.telephone && (
+          {telHref && (
             <Button
               variant="outline"
               size="sm"
               className="flex-1 min-w-[120px]"
-              onClick={handleCall}
-              aria-label={`Appeler l'agence ${agence.agenceName}`}
+              asChild
             >
-              <Phone className="w-4 h-4 mr-1" aria-hidden="true" />
-              Appeler
+              <a href={telHref} aria-label={`Appeler l'agence ${agence.agenceName}`}>
+                <Phone className="w-4 h-4 mr-1" aria-hidden="true" />
+                Appeler
+              </a>
             </Button>
           )}
-          {agence.email && (
+          {mailHref && (
             <Button
               variant="outline"
               size="sm"
               className="flex-1 min-w-[120px]"
-              onClick={handleEmail}
-              aria-label={`Envoyer un email à l'agence ${agence.agenceName}`}
+              asChild
             >
-              <Mail className="w-4 h-4 mr-1" aria-hidden="true" />
-              Email
+              <a href={mailHref} aria-label={`Envoyer un mail à l'agence ${agence.agenceName}`}>
+                <Mail className="w-4 h-4 mr-1" aria-hidden="true" />
+                Envoyer un mail
+              </a>
             </Button>
           )}
           <Button

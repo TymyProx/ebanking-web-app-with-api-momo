@@ -457,137 +457,220 @@ export async function creditAccountBalance(accountId: string, amount: number, co
   }
 }
 
+interface PreparedTransferContext {
+  validatedData: z.infer<typeof transferSchema>
+  transferAmount: number
+  usertoken: string
+  currentUser: CurrentUserInfo
+  ribClient: string
+  nomBeneficiaire: string
+  ribBeneficiaire: string
+}
+
+/** Validations métier + appels API nécessaires avant envoi OTP ou exécution du virement */
+async function prevalidateAndPrepareTransfer(
+  formData: FormData,
+): Promise<{ ok: true; ctx: PreparedTransferContext } | { ok: false; error: string }> {
+  const data = {
+    sourceAccount: formData.get("sourceAccount") as string,
+    transferType: formData.get("transferType") as string,
+    beneficiaryId: formData.get("beneficiaryId") as string | null,
+    targetAccount: formData.get("targetAccount") as string | null,
+    amount: formData.get("amount") as string,
+    purpose: formData.get("purpose") as string,
+    transferDate: formData.get("transferDate") as string,
+  }
+
+  const cleanedData = {
+    sourceAccount: data.sourceAccount?.trim() || "",
+    transferType: data.transferType,
+    beneficiaryId: data.beneficiaryId?.trim() || undefined,
+    targetAccount: data.targetAccount?.trim() || undefined,
+    amount: data.amount,
+    purpose: data.purpose?.trim() ?? "",
+    transferDate: data.transferDate?.trim() ?? "",
+  }
+
+  const parsed = transferSchema.safeParse(cleanedData)
+  if (!parsed.success) {
+    const first = parsed.error.errors[0]
+    return { ok: false, error: first?.message || "Données du virement invalides" }
+  }
+
+  const validatedData = parsed.data
+  const transferAmount = Number.parseFloat(validatedData.amount)
+
+  const executionDate = new Date(validatedData.transferDate)
+  if (Number.isNaN(executionDate.getTime())) {
+    return { ok: false, error: "La date d'exécution n'est pas valide" }
+  }
+
+  const cookieToken = (await cookies()).get("token")?.value
+  const usertoken = cookieToken
+  if (!usertoken) {
+    return { ok: false, error: "Utilisateur non authentifié" }
+  }
+
+  const [currentUser, userAccounts] = await Promise.all([getCurrentUserInfo(usertoken), fetchAccounts()])
+  if (!currentUser?.id) {
+    return { ok: false, error: "Utilisateur non authentifié" }
+  }
+
+  const allowedAccountIds = buildAllowedAccountIdSet(userAccounts)
+  if (!allowedAccountIds.has(validatedData.sourceAccount)) {
+    return { ok: false, error: "Compte débiteur non autorisé" }
+  }
+
+  if (validatedData.transferType === "account-to-account" && validatedData.targetAccount) {
+    if (!allowedAccountIds.has(validatedData.targetAccount)) {
+      return { ok: false, error: "Compte destinataire non autorisé" }
+    }
+  }
+
+  let allowedBeneficiaryIds: Set<string> | undefined
+  if (validatedData.transferType === "account-to-beneficiary" && validatedData.beneficiaryId) {
+    const userBeneficiaries = await fetchBeneficiaries()
+    allowedBeneficiaryIds = new Set<string>(userBeneficiaries.map((b: any) => String(b.id)))
+    if (!allowedBeneficiaryIds.has(validatedData.beneficiaryId)) {
+      return { ok: false, error: "Bénéficiaire non autorisé" }
+    }
+  }
+
+  let sourceAccountData: any = null
+  let ribClient = ""
+  try {
+    const accountResponse = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/compte/${validatedData.sourceAccount}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${usertoken}`,
+      },
+    })
+
+    if (!accountResponse.ok) {
+      console.error("[v0] Failed to fetch source account details:", accountResponse.status)
+      return { ok: false, error: "Impossible de récupérer les informations du compte source" }
+    }
+
+    const accountDataResponse = await accountResponse.json()
+    sourceAccountData = accountDataResponse.data || accountDataResponse
+
+    const ownerId = extractAccountOwnerId(sourceAccountData)
+    if (ownerId && ownerId !== currentUser.id) {
+      console.warn(
+        `[v0] Source account ownership mismatch: compte ${validatedData.sourceAccount} -> ${ownerId}, utilisateur ${currentUser.id}`,
+      )
+      return { ok: false, error: "Compte débiteur non autorisé" }
+    }
+
+    ribClient = sourceAccountData.accountNumber || ""
+    console.log("[v0] Source account number:", ribClient)
+
+    const rawBal = sourceAccountData.availableBalance ?? sourceAccountData.balance ?? "0"
+    const available = Number.parseFloat(String(rawBal).replace(",", "."))
+    if (!Number.isFinite(available) || transferAmount > available) {
+      return {
+        ok: false,
+        error: "Solde insuffisant sur le compte débiteur pour ce montant",
+      }
+    }
+  } catch (error) {
+    console.error("[v0] Error fetching source account details:", error)
+    return { ok: false, error: "Impossible de récupérer les informations du compte source" }
+  }
+
+  let nomBeneficiaire = ""
+  let ribBeneficiaire = ""
+
+  if (validatedData.transferType === "account-to-account") {
+    if (validatedData.targetAccount) {
+      try {
+        const targetAccountResponse = await fetch(
+          `${API_BASE_URL}/tenant/${TENANT_ID}/compte/${validatedData.targetAccount}`,
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${usertoken}`,
+            },
+          },
+        )
+
+        if (!targetAccountResponse.ok) {
+          console.error("[v0] Failed to fetch target account details:", targetAccountResponse.status)
+          return { ok: false, error: "Impossible de récupérer le compte destinataire" }
+        }
+
+        const targetAccountData = await targetAccountResponse.json()
+        const targetAccount = targetAccountData.data || targetAccountData
+
+        const targetOwnerId = extractAccountOwnerId(targetAccount)
+        if (targetOwnerId && targetOwnerId !== currentUser.id) {
+          console.warn(
+            `[v0] Target account ownership mismatch: compte ${validatedData.targetAccount} -> ${targetOwnerId}, utilisateur ${currentUser.id}`,
+          )
+          return { ok: false, error: "Compte destinataire non autorisé" }
+        }
+
+        nomBeneficiaire = targetAccount.accountName || ""
+        ribBeneficiaire = `${targetAccount.codeBanque || ""}${targetAccount.codeAgence || ""}${targetAccount.accountNumber || ""}${targetAccount.cleRib || ""}`
+        console.log("[v0] Target account details retrieved:", { nomBeneficiaire, ribBeneficiaire })
+      } catch (error) {
+        console.error("[v0] Error fetching target account details:", error)
+        return { ok: false, error: "Erreur lors de la récupération du compte destinataire" }
+      }
+    }
+  } else if (validatedData.beneficiaryId) {
+    console.log(`[v0] Récupération des informations du bénéficiaire: ${validatedData.beneficiaryId}`)
+    const beneficiary = await getBeneficiaryById(validatedData.beneficiaryId, {
+      token: usertoken,
+      currentUser,
+      allowedBeneficiaryIds,
+    })
+
+    if (!beneficiary) {
+      console.log("[v0] Bénéficiaire non trouvé")
+      return { ok: false, error: "Bénéficiaire non trouvé" }
+    }
+
+    nomBeneficiaire = beneficiary.name || ""
+    ribBeneficiaire = `${beneficiary.bankCode || ""}${beneficiary.codagence || ""}${beneficiary.accountNumber || ""}${beneficiary.clerib || ""}`
+    console.log(`[v0] Bénéficiaire trouvé - nomBeneficiaire: ${nomBeneficiaire}, ribBeneficiaire: ${ribBeneficiaire}`)
+  }
+
+  return {
+    ok: true,
+    ctx: {
+      validatedData,
+      transferAmount,
+      usertoken,
+      currentUser,
+      ribClient,
+      nomBeneficiaire,
+      ribBeneficiaire,
+    },
+  }
+}
+
+/** À appeler avant l’envoi du code OTP : mêmes contrôles que l’exécution du virement */
+export async function validateTransferBeforeOtp(formData: FormData) {
+  const pre = await prevalidateAndPrepareTransfer(formData)
+  if (!pre.ok) {
+    return { success: false as const, error: pre.error }
+  }
+  return { success: true as const }
+}
+
 // Action pour exécuter le virement
 export async function executeTransfer(prevState: any, formData: FormData) {
   try {
-    const data = {
-      sourceAccount: formData.get("sourceAccount") as string,
-      transferType: formData.get("transferType") as string,
-      beneficiaryId: formData.get("beneficiaryId") as string | null,
-      targetAccount: formData.get("targetAccount") as string | null,
-      amount: formData.get("amount") as string,
-      purpose: formData.get("purpose") as string,
-      transferDate: formData.get("transferDate") as string,
+    const pre = await prevalidateAndPrepareTransfer(formData)
+    if (!pre.ok) {
+      return { success: false, error: pre.error }
     }
 
-    const cleanedData = {
-      sourceAccount: data.sourceAccount,
-      transferType: data.transferType,
-      beneficiaryId: data.beneficiaryId?.trim() || undefined,
-      targetAccount: data.targetAccount?.trim() || undefined,
-      amount: data.amount,
-      purpose: data.purpose,
-      transferDate: data.transferDate,
-    }
-
-    // Validation des données
-    const validatedData = transferSchema.parse(cleanedData)
-    const transferAmount = Number.parseFloat(validatedData.amount)
-
-    const cookieToken = (await cookies()).get("token")?.value
-    const usertoken = cookieToken
-
-    if (!usertoken) {
-      return {
-        success: false,
-        error: "Utilisateur non authentifié",
-      }
-    }
-
-    const [currentUser, userAccounts] = await Promise.all([getCurrentUserInfo(usertoken), fetchAccounts()])
-
-    if (!currentUser?.id) {
-      return {
-        success: false,
-        error: "Utilisateur non authentifié",
-      }
-    }
-
-    const allowedAccountIds = buildAllowedAccountIdSet(userAccounts)
-    if (!allowedAccountIds.has(validatedData.sourceAccount)) {
-      return {
-        success: false,
-        error: "Compte débiteur non autorisé",
-      }
-    }
-
-    if (validatedData.transferType === "account-to-account" && validatedData.targetAccount) {
-      if (!allowedAccountIds.has(validatedData.targetAccount)) {
-        return {
-          success: false,
-          error: "Compte destinataire non autorisé",
-        }
-      }
-    }
-
-    let allowedBeneficiaryIds: Set<string> | undefined
-    if (validatedData.transferType === "account-to-beneficiary" && validatedData.beneficiaryId) {
-      const userBeneficiaries = await fetchBeneficiaries()
-      allowedBeneficiaryIds = new Set<string>(userBeneficiaries.map((b: any) => String(b.id)))
-      if (!allowedBeneficiaryIds.has(validatedData.beneficiaryId)) {
-        return {
-          success: false,
-          error: "Bénéficiaire non autorisé",
-        }
-      }
-    }
-
-    let sourceAccountData: any = null
-    let ribClient = ""
-    try {
-      const accountResponse = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/compte/${validatedData.sourceAccount}`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${usertoken}`,
-        },
-      })
-
-      if (!accountResponse.ok) {
-        console.error("[v0] Failed to fetch source account details:", accountResponse.status)
-        return {
-          success: false,
-          error: "Impossible de récupérer les informations du compte source",
-        }
-      }
-
-      const accountDataResponse = await accountResponse.json()
-      sourceAccountData = accountDataResponse.data || accountDataResponse
-
-      const ownerId = extractAccountOwnerId(sourceAccountData)
-      if (ownerId && ownerId !== currentUser.id) {
-        console.warn(
-          `[v0] Source account ownership mismatch: compte ${validatedData.sourceAccount} -> ${ownerId}, utilisateur ${currentUser.id}`,
-        )
-        return {
-          success: false,
-          error: "Compte débiteur non autorisé",
-        }
-      }
-
-      ribClient = sourceAccountData.accountNumber || ""
-      console.log("[v0] Source account number:", ribClient)
-    } catch (error) {
-      console.error("[v0] Error fetching source account details:", error)
-      return {
-        success: false,
-        error: "Impossible de récupérer les informations du compte source",
-      }
-    }
-
-    // Retiré : modification du solde disponible lors du virement
-    // const debitResult = await debitAccountBalance(validatedData.sourceAccount, transferAmount, {
-    //   token: usertoken,
-    //   currentUser,
-    //   allowedAccountIds,
-    // })
-
-    // if (!debitResult.success) {
-    //   return {
-    //     success: false,
-    //     error: debitResult.error || "Impossible de débiter le compte source",
-    //   }
-    // }
+    const { validatedData, transferAmount, usertoken, currentUser, ribClient, nomBeneficiaire, ribBeneficiaire } =
+      pre.ctx
 
     const timestamp = Date.now().toString()
     const random = Math.floor(Math.random() * 1000000)
@@ -599,106 +682,6 @@ export async function executeTransfer(prevState: any, formData: FormData) {
     const referenceOperation = `TXN${timestamp.slice(-10)}${random.slice(0, 3)}`.substring(0, 16)
     console.log("[v0] Generated requestID:", requestID, "(length:", requestID.length, ")")
     console.log("[v0] Generated referenceOperation:", referenceOperation, "(length:", referenceOperation.length, ")")
-
-    let nomBeneficiaire = ""
-    let ribBeneficiaire = ""
-
-    if (validatedData.transferType === "account-to-account") {
-      // Pour les virements compte à compte
-      if (validatedData.targetAccount) {
-        console.log(`[v0] Crédit automatique du compte destinataire: ${validatedData.targetAccount}`)
-
-        try {
-          const targetAccountResponse = await fetch(
-            `${API_BASE_URL}/tenant/${TENANT_ID}/compte/${validatedData.targetAccount}`,
-            {
-              method: "GET",
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${usertoken}`,
-              },
-            },
-          )
-
-          if (!targetAccountResponse.ok) {
-            console.error("[v0] Failed to fetch target account details:", targetAccountResponse.status)
-            // Retiré : restauration du solde
-            return {
-              success: false,
-              error: "Impossible de récupérer le compte destinataire",
-            }
-          }
-
-          const targetAccountData = await targetAccountResponse.json()
-          const targetAccount = targetAccountData.data || targetAccountData
-
-          const targetOwnerId = extractAccountOwnerId(targetAccount)
-          if (targetOwnerId && targetOwnerId !== currentUser.id) {
-            console.warn(
-              `[v0] Target account ownership mismatch: compte ${validatedData.targetAccount} -> ${targetOwnerId}, utilisateur ${currentUser.id}`,
-            )
-            // Retiré : restauration du solde
-            return {
-              success: false,
-              error: "Compte destinataire non autorisé",
-            }
-          }
-
-          nomBeneficiaire = targetAccount.accountName || ""
-          ribBeneficiaire = `${targetAccount.codeBanque || ""}${targetAccount.codeAgence || ""}${targetAccount.accountNumber || ""}${targetAccount.cleRib || ""}`
-          console.log("[v0] Target account details retrieved:", { nomBeneficiaire, ribBeneficiaire })
-        } catch (error) {
-          console.error("[v0] Error fetching target account details:", error)
-          // Retiré : restauration du solde
-          return {
-            success: false,
-            error: "Erreur lors de la récupération du compte destinataire",
-          }
-        }
-
-        // Retiré : crédit du solde disponible
-        // const creditResult = await creditAccountBalance(validatedData.targetAccount, transferAmount, {
-        //   token: usertoken,
-        //   currentUser,
-        //   allowedAccountIds,
-        // })
-
-        // if (!creditResult.success) {
-        //   console.log("[v0] Erreur lors du crédit, restauration du solde source")
-        //   await debitAccountBalance(validatedData.sourceAccount, -transferAmount, {
-        //     token: usertoken,
-        //     currentUser,
-        //     allowedAccountIds,
-        //   })
-        //   return {
-        //     success: false,
-        //     error: creditResult.error || "Impossible de créditer le compte destinataire",
-        //   }
-        // }
-
-        // console.log(`[v0] Compte destinataire crédité avec succès - Nouveau solde: ${creditResult.newBalance}`)
-      }
-    } else if (validatedData.beneficiaryId) {
-      console.log(`[v0] Récupération des informations du bénéficiaire: ${validatedData.beneficiaryId}`)
-      const beneficiary = await getBeneficiaryById(validatedData.beneficiaryId, {
-        token: usertoken,
-        currentUser,
-        allowedBeneficiaryIds,
-      })
-
-      if (!beneficiary) {
-        console.log("[v0] Bénéficiaire non trouvé")
-        // Retiré : restauration du solde
-        return {
-          success: false,
-          error: "Bénéficiaire non trouvé",
-        }
-      }
-
-      nomBeneficiaire = beneficiary.name || ""
-      ribBeneficiaire = `${beneficiary.bankCode || ""}${beneficiary.codagence || ""}${beneficiary.accountNumber || ""}${beneficiary.clerib || ""}`
-      console.log(`[v0] Bénéficiaire trouvé - nomBeneficiaire: ${nomBeneficiaire}, ribBeneficiaire: ${ribBeneficiaire}`)
-    }
 
     let clientId = ""
     let nomClient = ""

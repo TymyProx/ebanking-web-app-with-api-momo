@@ -309,7 +309,17 @@ export default function ReclamationPage() {
         label: "Date de réclamation",
         value: details.dateRecl ? new Date(details.dateRecl).toLocaleDateString("fr-FR") : "Non spécifiée",
       },
-      { label: "Statut", value: details.status || "En cours" },
+      {
+        label: "Statut",
+        value:
+          details.status === "0" || details.status === 0
+            ? "En attente"
+            : details.status === "1" || details.status === 1
+              ? "En cours de traitement"
+              : details.status === "2" || details.status === 2
+                ? "Clôturé"
+                : details.status || "En attente",
+      },
       { label: "Email", value: details.email || "Non spécifié" },
       { label: "Téléphone", value: details.telephone || "Non spécifié" },
       { label: "Description", value: details.description || "Aucune description" },
@@ -325,20 +335,41 @@ export default function ReclamationPage() {
   }
 
   const getStatusBadge = (status: string) => {
+    const s = String(status ?? "").trim()
+    const label =
+      s === "0"
+        ? "En attente"
+        : s === "1"
+          ? "En cours de traitement"
+          : s === "2"
+            ? "Clôturé"
+            : s === "En cours"
+              ? "En cours"
+              : s === "Résolue"
+                ? "Résolue"
+                : s === "Rejetée"
+                  ? "Rejetée"
+                  : s === "En attente"
+                    ? "En attente"
+                    : s
+
     const statusConfig: Record<string, { variant: "default" | "secondary" | "destructive" | "outline"; icon: any }> = {
+      "0": { variant: "outline", icon: Clock },
+      "1": { variant: "default", icon: Clock },
+      "2": { variant: "secondary", icon: CheckCircle },
       "En cours": { variant: "default", icon: Clock },
       Résolue: { variant: "secondary", icon: CheckCircle },
       Rejetée: { variant: "destructive", icon: AlertCircle },
       "En attente": { variant: "outline", icon: Clock },
     }
 
-    const config = statusConfig[status] || { variant: "outline" as const, icon: Clock }
+    const config = statusConfig[s] || { variant: "outline" as const, icon: Clock }
     const Icon = config.icon
 
     return (
       <Badge variant={config.variant} className="flex items-center gap-1.5 font-medium">
         <Icon className="w-3.5 h-3.5" />
-        {status}
+        {label}
       </Badge>
     )
   }

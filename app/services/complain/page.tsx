@@ -218,7 +218,14 @@ export default function ComplainPage() {
   }
 
   const getStatusBadge = (status: string) => {
-    switch (status) {
+    const s = String(status ?? "").trim()
+    switch (s) {
+      case "0":
+        return <Badge className="bg-slate-100 text-slate-800">En attente</Badge>
+      case "1":
+        return <Badge className="bg-blue-100 text-blue-800">En cours de traitement</Badge>
+      case "2":
+        return <Badge className="bg-green-100 text-green-800">Clôturé</Badge>
       case "En cours":
         return <Badge className="bg-blue-100 text-blue-800">En cours</Badge>
       case "Résolue":

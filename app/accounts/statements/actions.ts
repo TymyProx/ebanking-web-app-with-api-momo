@@ -16,10 +16,13 @@ const generateStatementSchema = z.object({
   language: z.enum(["fr", "en"]).default("fr"),
 })
 
-// Schéma pour l'envoi par email
-const emailStatementSchema = z.object({
+// Envoi par email : génère le PDF côté backend (même source que /api/pdf/statement) puis pièce jointe Resend
+const sendStatementEmailSchema = z.object({
   email: z.string().email("Email invalide"),
-  statementId: z.string().min(1, "ID du relevé requis"),
+  accountId: z.string().min(1, "Compte requis"),
+  startDate: z.string().min(1, "Date de début requise"),
+  endDate: z.string().min(1, "Date de fin requise"),
+  accountNumber: z.string().optional(),
 })
 
 // Génération du relevé
@@ -196,47 +199,99 @@ export async function generateStatement(prevState: any, formData: FormData) {
   }
 }
 
-// Envoi du relevé par email
+// Envoi du relevé par email (PDF généré par le backend, pièce jointe via Resend)
 export async function sendStatementByEmail(prevState: any, formData: FormData) {
   try {
-    const validatedData = emailStatementSchema.parse({
+    const validated = sendStatementEmailSchema.parse({
       email: formData.get("email"),
-      statementId: formData.get("statementId"),
+      accountId: formData.get("accountId"),
+      startDate: formData.get("startDate"),
+      endDate: formData.get("endDate"),
+      accountNumber: (formData.get("accountNumber") as string) || undefined,
     })
 
-    const { email, statementId } = validatedData
-
-    // Simulation d'un délai d'envoi
-    await new Promise((resolve) => setTimeout(resolve, 2000))
-
-    // Simulation d'une erreur d'envoi (3% de chance)
-    if (Math.random() < 0.03) {
-      throw new Error("Erreur lors de l'envoi de l'email")
+    const cookieToken = (await cookies()).get("token")?.value
+    if (!cookieToken) {
+      return { success: false, error: "Non authentifié" }
     }
 
-    // Récupération des métadonnées du relevé
-    const statementMetadata = await getStatementMetadata(statementId)
+    const url = `${API_BASE_URL}/tenant/${TENANT_ID}/pdf/statement`
+    const backendRes = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${cookieToken}`,
+      },
+      body: JSON.stringify({
+        accountId: validated.accountId,
+        startDate: validated.startDate,
+        endDate: validated.endDate,
+      }),
+      cache: "no-store",
+    })
 
-    if (!statementMetadata) {
+    if (!backendRes.ok) {
+      const text = await backendRes.text().catch(() => "")
+      console.error("[STATEMENTS EMAIL] Erreur génération PDF:", backendRes.status, text?.slice(0, 500))
       return {
         success: false,
-        error: "Relevé introuvable",
+        error: "Impossible de générer le relevé PDF pour l'envoi. Réessayez plus tard.",
       }
     }
 
-    // Simulation de l'envoi d'email
-    // console.log(`Envoi email à ${email}:`, {
-    //   subject: `Relevé de compte - ${statementMetadata.period}`,
-    //   attachmentName: statementMetadata.fileName,
-    //   attachmentSize: statementMetadata.fileSize,
-    // })
+    const pdfBuffer = await backendRes.arrayBuffer()
+    const base64 = Buffer.from(pdfBuffer).toString("base64")
 
-    // Log d'audit
-    //console.log(`[AUDIT] Relevé envoyé par email - ID: ${statementId}, Destinataire: ${email}`)
+    const safeNum = String(validated.accountNumber || validated.accountId).replace(/[^a-zA-Z0-9_-]/g, "_")
+    const filename = `Releve_${safeNum}_${validated.startDate}_${validated.endDate}.pdf`
+
+    const resendApiKey = process.env.RESEND_API_KEY
+    const fromEmail = process.env.RESEND_FROM_EMAIL ?? "BNG eBanking <no-reply@bngebanking.com>"
+
+    if (!resendApiKey) {
+      console.error("[STATEMENTS EMAIL] RESEND_API_KEY manquante")
+      return {
+        success: false,
+        error: "Envoi par email indisponible (configuration serveur).",
+      }
+    }
+
+    const periodLabel = `${new Date(validated.startDate).toLocaleDateString("fr-FR")} au ${new Date(validated.endDate).toLocaleDateString("fr-FR")}`
+
+    const response = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${resendApiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from: fromEmail,
+        to: validated.email.trim(),
+        subject: `Votre relevé de compte BNG — ${periodLabel}`,
+        html: `<p>Bonjour,</p><p>Veuillez trouver ci-joint votre <strong>relevé de compte</strong> pour la période du <strong>${periodLabel}</strong>.</p><p>Cordialement,<br/>Banque Nationale de Guinée</p>`,
+        text: `Votre relevé de compte pour la période du ${periodLabel} est en pièce jointe (PDF).`,
+        attachments: [
+          {
+            filename,
+            content: base64,
+            content_type: "application/pdf",
+          },
+        ],
+      }),
+    })
+
+    if (!response.ok) {
+      const errorBody = await response.json().catch(() => null)
+      const message = errorBody?.message || errorBody?.error || response.statusText
+      return {
+        success: false,
+        error: message || "Échec de l'envoi de l'email.",
+      }
+    }
 
     return {
       success: true,
-      message: `Relevé envoyé avec succès à ${email}`,
+      message: `Relevé envoyé à ${validated.email.trim()}`,
       timestamp: new Date().toISOString(),
     }
   } catch (error) {
@@ -245,7 +300,7 @@ export async function sendStatementByEmail(prevState: any, formData: FormData) {
     if (error instanceof z.ZodError) {
       return {
         success: false,
-        error: error.errors[0]?.message || "Email invalide",
+        error: error.errors[0]?.message || "Données invalides",
       }
     }
 
