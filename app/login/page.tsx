@@ -181,12 +181,12 @@ export default function LoginPage() {
           <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent animate-shimmer"></div>
 
           {/* Banking illustration */}
-          <div className="hidden lg:block absolute bottom-0 left-[35%] -translate-x-1/2 w-[90%] max-w-[1800px] opacity-100 lg:left-[35%] lg:w-[90%] xl:left-[35%] xl:w-[90%] 2xl:left-[35%] 2xl:w-[90%]">
+          <div className="hidden lg:block absolute bottom-0 left-[50%] -translate-x-1/2 w-[80%] max-w-[800px] opacity-100 lg:left-[50%] lg:w-[80%] xl:left-[60%] xl:w-[80%] 2xl:left-[60%] 2xl:w-[80%]">
             <Image
               src="/images/image2.png"
               alt="Banking"
-              width={2000}
-              height={1600}
+              width={800}
+              height={600}
               className="w-full h-auto object-contain"
               priority
               sizes="(max-width: 1024px) 0vw, 90vw"
