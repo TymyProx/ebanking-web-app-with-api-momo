@@ -90,9 +90,11 @@ function buildAllowedAccountIdSet(accounts: any[]): Set<string> {
 const transferSchema = z
   .object({
     sourceAccount: z.string().min(1, "Le compte débiteur est requis"),
-    transferType: z.enum(["account-to-account", "account-to-beneficiary"]),
-    beneficiaryId: z.string().optional(), // Optionnel pour les virements compte à compte
+    transferType: z.enum(["account-to-account", "account-to-beneficiary", "account-to-occasional-beneficiary"]),
+    beneficiaryId: z.string().optional(), // Optionnel pour les virements compte à compte ou bénéficiaire ponctuel
     targetAccount: z.string().optional(), // Pour les virements compte à compte
+    occasionalBeneficiaryName: z.string().optional(), // Pour bénéficiaire ponctuel
+    occasionalBeneficiaryAccount: z.string().optional(), // Pour bénéficiaire ponctuel
     amount: z.string().refine((val) => Number.parseFloat(val) >= 1000, "Montant minimum: 1,000 GNF"),
     purpose: z.string().min(5, "Le motif doit contenir au moins 5 caractères"),
     transferDate: z.string().min(1, "La date d'exécution est requise"),
@@ -102,11 +104,25 @@ const transferSchema = z
       if (data.transferType === "account-to-beneficiary") {
         return data.beneficiaryId && data.beneficiaryId.length > 0
       }
-      return true // Pas de validation du beneficiaryId pour account-to-account
+      return true // Pas de validation du beneficiaryId pour account-to-account ou occasional
     },
     {
       message: "Veuillez sélectionner un bénéficiaire",
       path: ["beneficiaryId"],
+    },
+  )
+  .refine(
+    (data) => {
+      if (data.transferType === "account-to-occasional-beneficiary") {
+        const name = (data.occasionalBeneficiaryName || "").trim()
+        const account = (data.occasionalBeneficiaryAccount || "").trim()
+        return name.length > 0 && account.length > 0
+      }
+      return true
+    },
+    {
+      message: "Veuillez renseigner le nom et le numéro de compte du bénéficiaire ponctuel",
+      path: ["occasionalBeneficiaryName"],
     },
   )
   .refine(
@@ -476,6 +492,8 @@ async function prevalidateAndPrepareTransfer(
     transferType: formData.get("transferType") as string,
     beneficiaryId: formData.get("beneficiaryId") as string | null,
     targetAccount: formData.get("targetAccount") as string | null,
+    occasionalBeneficiaryName: formData.get("occasionalBeneficiaryName") as string | null,
+    occasionalBeneficiaryAccount: formData.get("occasionalBeneficiaryAccount") as string | null,
     amount: formData.get("amount") as string,
     purpose: formData.get("purpose") as string,
     transferDate: formData.get("transferDate") as string,
@@ -486,6 +504,8 @@ async function prevalidateAndPrepareTransfer(
     transferType: data.transferType,
     beneficiaryId: data.beneficiaryId?.trim() || undefined,
     targetAccount: data.targetAccount?.trim() || undefined,
+    occasionalBeneficiaryName: data.occasionalBeneficiaryName?.trim() || undefined,
+    occasionalBeneficiaryAccount: data.occasionalBeneficiaryAccount?.trim() || undefined,
     amount: data.amount,
     purpose: data.purpose?.trim() ?? "",
     transferDate: data.transferDate?.trim() ?? "",
@@ -533,6 +553,22 @@ async function prevalidateAndPrepareTransfer(
     allowedBeneficiaryIds = new Set<string>(userBeneficiaries.map((b: any) => String(b.id)))
     if (!allowedBeneficiaryIds.has(validatedData.beneficiaryId)) {
       return { ok: false, error: "Bénéficiaire non autorisé" }
+    }
+  }
+
+  // Pour le bénéficiaire ponctuel, vérifier la présence des champs
+  if (validatedData.transferType === "account-to-occasional-beneficiary") {
+    const name = validatedData.occasionalBeneficiaryName?.trim() || ""
+    const account = validatedData.occasionalBeneficiaryAccount?.trim() || ""
+    if (!name || !account) {
+      return { ok: false, error: "Nom et numéro de compte du bénéficiaire ponctuel requis" }
+    }
+    const digitsOnly = account.replace(/\D/g, "")
+    if (digitsOnly.length !== 18 || account !== digitsOnly) {
+      return {
+        ok: false,
+        error: "Le numéro de compte ponctuel doit contenir exactement 18 chiffres",
+      }
     }
   }
 
@@ -620,6 +656,13 @@ async function prevalidateAndPrepareTransfer(
         return { ok: false, error: "Erreur lors de la récupération du compte destinataire" }
       }
     }
+  } else if (validatedData.transferType === "account-to-occasional-beneficiary" && validatedData.occasionalBeneficiaryName && validatedData.occasionalBeneficiaryAccount) {
+    // Bénéficiaire ponctuel : utiliser directement les champs de saisie
+    nomBeneficiaire = validatedData.occasionalBeneficiaryName.trim()
+    // RIB BNG-BNG : code banque 022 + numéro de compte 18 chiffres (déjà complet ou à construire)
+    const accountDigits = validatedData.occasionalBeneficiaryAccount.replace(/\D/g, "")
+    ribBeneficiaire = accountDigits.length === 18 ? accountDigits : `022${accountDigits}`
+    console.log(`[v0] Bénéficiaire ponctuel - nomBeneficiaire: ${nomBeneficiaire}, ribBeneficiaire: ${ribBeneficiaire}`)
   } else if (validatedData.beneficiaryId) {
     console.log(`[v0] Récupération des informations du bénéficiaire: ${validatedData.beneficiaryId}`)
     const beneficiary = await getBeneficiaryById(validatedData.beneficiaryId, {

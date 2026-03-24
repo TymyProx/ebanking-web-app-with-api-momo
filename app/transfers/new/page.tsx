@@ -130,6 +130,9 @@ export default function NewTransferPage() {
 
   const [transferValidationError, setTransferValidationError] = useState<string>("")
   const [transferSubmitted, setTransferSubmitted] = useState(false)
+  /** Afficher les erreurs de champ uniquement après toucher ou soumission (évite le rouge au chargement) */
+  const [touchedFields, setTouchedFields] = useState<Record<string, boolean>>({})
+  const [submitAttempted, setSubmitAttempted] = useState(false)
 
   const [isAddBeneficiaryDialogOpen, setIsAddBeneficiaryDialogOpen] = useState(false)
   const [isPending, startTransition] = useTransition()
@@ -306,6 +309,10 @@ export default function NewTransferPage() {
     })
   }
 
+  /** Marque un champ comme touché pour afficher ses erreurs */
+  const markFieldTouched = (field: string) =>
+    setTouchedFields((prev) => (prev[field] ? prev : { ...prev, [field]: true }))
+
   const handleTransferTypeChange = (type: TransferType) => {
     setTransferType(type)
     setSelectedBeneficiary("")
@@ -315,6 +322,8 @@ export default function NewTransferPage() {
     setOccasionalBeneficiaryAccount("")
     setTransferValidationError("")
     setTransferSubmitted(false)
+    setTouchedFields({})
+    setSubmitAttempted(false) // Nouveau type = formulaire visuellement réinitialisé
   }
 
   const handleDebitAccountChange = (accountId: string) => {
@@ -329,6 +338,7 @@ export default function NewTransferPage() {
     e.preventDefault()
 
     setTransferSubmitted(true)
+    setSubmitAttempted(true) // Afficher les erreurs de champs après soumission
     setTransferValidationError("") // Réinitialiser les erreurs
 
     if (!selectedAccount) {
@@ -418,45 +428,29 @@ export default function NewTransferPage() {
       return
     }
 
-    // Si c'est un bénéficiaire ponctuel, enregistrer d'abord en BD avec statut 100
+    // Si c'est un bénéficiaire ponctuel, enregistrer optionnellement en BD (pour historique)
+    // Le virement utilise toujours les champs de saisie directement
     if (transferType === "account-to-occasional-beneficiary" && occasionalBeneficiaryName && occasionalBeneficiaryAccount) {
-      // Créer un FormData pour enregistrer le bénéficiaire ponctuel
       const beneficiaryFormData = new FormData()
       beneficiaryFormData.append("name", occasionalBeneficiaryName.trim())
       beneficiaryFormData.append("account", occasionalBeneficiaryAccount.trim())
-      beneficiaryFormData.append("type", "BNG-BNG") // Type par défaut pour bénéficiaire ponctuel
+      beneficiaryFormData.append("type", "BNG-BNG")
       beneficiaryFormData.append("bankname", "Banque Nationale de Guinée")
-      // S'assurer que le statut est bien "100" comme string
       beneficiaryFormData.append("status", "100")
       beneficiaryFormData.append("bankCode", "022")
       beneficiaryFormData.append("codeBanque", "022")
 
-      // Vérifier que le statut est bien dans le FormData
-      console.log("[handleTransferSubmit] Status in FormData:", beneficiaryFormData.get("status"))
-
-      // Enregistrer le bénéficiaire ponctuel en BD
-      try {
-        const result = await addBeneficiaryAndActivate(null, beneficiaryFormData)
-        if (!result.success) {
-          setTransferValidationError(result.error || "Erreur lors de l'enregistrement du bénéficiaire ponctuel")
-          setTransferSubmitted(false)
-          return
+      addBeneficiaryAndActivate(null, beneficiaryFormData).then((result) => {
+        if (result.success) {
+          setOccasionalBeneficiary({
+            name: occasionalBeneficiaryName.trim(),
+            account: occasionalBeneficiaryAccount.trim(),
+            bank: "Banque Nationale de Guinée",
+            type: "BNG-BNG",
+            id: `BEN_${Date.now()}`,
+          })
         }
-        // Créer l'objet bénéficiaire ponctuel avec l'ID généré
-        const generatedId = `BEN_${Date.now()}`
-        setOccasionalBeneficiary({
-          name: occasionalBeneficiaryName.trim(),
-          account: occasionalBeneficiaryAccount.trim(),
-          bank: "Banque Nationale de Guinée",
-          type: "BNG-BNG",
-          id: generatedId,
-        })
-      } catch (error) {
-        console.error("[handleTransferSubmit] Erreur lors de l'enregistrement:", error)
-        setTransferValidationError("Erreur lors de l'enregistrement du bénéficiaire ponctuel")
-        setTransferSubmitted(false)
-        return
-      }
+      }).catch(() => { /* Ignorer l'erreur, le virement utilise les champs directs */ })
     }
 
     const formData = new FormData()
@@ -466,14 +460,9 @@ export default function NewTransferPage() {
     if (transferType === "account-to-beneficiary") {
       formData.append("beneficiaryId", selectedBeneficiary)
     } else if (transferType === "account-to-occasional-beneficiary") {
-      // Pour le bénéficiaire ponctuel, on passe l'ID du bénéficiaire créé
-      if (occasionalBeneficiary?.id) {
-        formData.append("beneficiaryId", occasionalBeneficiary.id)
-      } else {
-        // Si l'enregistrement a échoué, utiliser les données directes
-        formData.append("occasionalBeneficiaryName", occasionalBeneficiaryName.trim())
-        formData.append("occasionalBeneficiaryAccount", occasionalBeneficiaryAccount.trim())
-      }
+      // Toujours utiliser les champs de saisie directement (comme demandé)
+      formData.append("occasionalBeneficiaryName", occasionalBeneficiaryName.trim())
+      formData.append("occasionalBeneficiaryAccount", occasionalBeneficiaryAccount.trim())
     } else {
       formData.append("targetAccount", selectedCreditAccount)
     }
@@ -547,7 +536,9 @@ export default function NewTransferPage() {
       setAmount("")
       setMotif("")
       setTransferDate(new Date().toISOString().split("T")[0])
-      setTransferSubmitted(false) // Réinitialiser l'état de soumission
+      setTransferSubmitted(false)
+      setTouchedFields({})
+      setSubmitAttempted(false)
     }
   }, [transferState?.success, transferSubmitted])
 
@@ -768,80 +759,54 @@ export default function NewTransferPage() {
     }
   }, [selectedAccount])
 
-  /** Messages de validation affichés sous chaque champ (temps réel) */
-  const transferFieldMessages = useMemo(() => {
-    const msg: {
-      debitAccount?: string
-      destination?: string
-      occasionalName?: string
-      occasionalAccount?: string
-      amount?: string
-      motif?: string
-      transferDate?: string
-    } = {}
+  /** Validation réelle : toutes les erreurs (pour désactiver le bouton) */
+  const rawValidationErrors = useMemo(() => {
+    const raw: Record<string, string> = {}
 
-    if (!selectedAccount) {
-      msg.debitAccount = "Sélectionnez le compte à débiter."
-    }
-
+    if (!selectedAccount) raw.debitAccount = "Sélectionnez le compte à débiter."
     if (transferType === "account-to-beneficiary") {
-      if (!selectedBeneficiary) {
-        msg.destination = "Choisissez un bénéficiaire enregistré dans la liste."
-      }
+      if (!selectedBeneficiary) raw.destination = "Choisissez un bénéficiaire enregistré dans la liste."
     } else if (transferType === "account-to-occasional-beneficiary") {
-      if (!occasionalBeneficiaryName.trim()) {
-        msg.occasionalName = "Renseignez le nom du bénéficiaire ponctuel."
-      }
+      if (!occasionalBeneficiaryName.trim()) raw.occasionalName = "Renseignez le nom du bénéficiaire ponctuel."
       const accTrim = occasionalBeneficiaryAccount.trim()
       if (!accTrim) {
-        msg.occasionalAccount = "Renseignez le numéro de compte du bénéficiaire ponctuel."
+        raw.occasionalAccount = "Renseignez le numéro de compte du bénéficiaire ponctuel."
       } else {
         const formatMsg = getOccasionalAccountFormatMessage(occasionalBeneficiaryAccount)
-        if (formatMsg) {
-          msg.occasionalAccount = formatMsg
-        }
+        if (formatMsg) raw.occasionalAccount = formatMsg
       }
     } else {
-      if (!selectedCreditAccount) {
-        msg.destination = "Sélectionnez le compte à créditer."
-      } else if (selectedAccount && selectedCreditAccount === selectedAccount) {
-        msg.destination = "Le compte à créditer doit être différent du compte à débiter."
+      if (!selectedCreditAccount) raw.destination = "Sélectionnez le compte à créditer."
+      else if (selectedAccount && selectedCreditAccount === selectedAccount) {
+        raw.destination = "Le compte à créditer doit être différent du compte à débiter."
       } else {
         const debitAccount = accounts.find((acc) => acc.id === selectedAccount)
         const creditAccount = accounts.find((acc) => acc.id === selectedCreditAccount)
         if (debitAccount && creditAccount && debitAccount.currency !== creditAccount.currency) {
-          msg.destination = "Les deux comptes doivent avoir la même devise pour ce type de virement."
+          raw.destination = "Les deux comptes doivent avoir la même devise pour ce type de virement."
         }
       }
     }
 
     const amtTrim = amount.trim().replace(",", ".")
-    if (amountError) {
-      msg.amount = amountError
-    } else if (!amtTrim) {
-      msg.amount = "Indiquez le montant du virement."
-    } else {
+    if (amountError) raw.amount = amountError
+    else if (!amtTrim) raw.amount = "Indiquez le montant du virement."
+    else {
       const n = Number.parseFloat(amtTrim)
-      if (!Number.isFinite(n) || n <= 0) {
-        msg.amount = "Le montant doit être un nombre valide strictement supérieur à zéro."
-      } else if (n < 1000) {
-        msg.amount = "Le montant minimum autorisé est de 1 000 GNF."
-      } else if (selectedAccount && !isAmountValid && Number.isFinite(n) && n >= 1000) {
-        msg.amount = "Le montant saisi dépasse le solde disponible sur le compte à débiter."
+      if (!Number.isFinite(n) || n <= 0) raw.amount = "Le montant doit être un nombre valide strictement supérieur à zéro."
+      else if (n < 1000) raw.amount = "Le montant minimum autorisé est de 1 000 GNF."
+      else if (selectedAccount && !isAmountValid && Number.isFinite(n) && n >= 1000) {
+        raw.amount = "Le montant saisi dépasse le solde disponible sur le compte à débiter."
       }
     }
 
     if (motif.trim().length < 5) {
-      msg.motif = `Le motif doit contenir au moins 5 caractères (actuellement : ${motif.trim().length}).`
+      raw.motif = `Le motif doit contenir au moins 5 caractères (actuellement : ${motif.trim().length}).`
     }
+    if (!transferDate?.trim()) raw.transferDate = "Choisissez une date d'exécution."
+    else if (Number.isNaN(new Date(transferDate).getTime())) raw.transferDate = "La date d'exécution n'est pas valide."
 
-    if (!transferDate?.trim()) {
-      msg.transferDate = "Choisissez une date d'exécution."
-    } else if (Number.isNaN(new Date(transferDate).getTime())) {
-      msg.transferDate = "La date d'exécution n'est pas valide."
-    }
-
-    return msg
+    return raw
   }, [
     selectedAccount,
     transferType,
@@ -857,7 +822,39 @@ export default function NewTransferPage() {
     accounts,
   ])
 
-  const isTransferFormReady = Object.keys(transferFieldMessages).length === 0
+  /** L'utilisateur a rempli tous les champs requis (mais certains peuvent être invalides) */
+  const allRequiredFieldsFilled = useMemo(() => {
+    if (!selectedAccount || !amount.trim() || !motif.trim() || !transferDate?.trim()) return false
+    if (transferType === "account-to-beneficiary") return !!selectedBeneficiary
+    if (transferType === "account-to-occasional-beneficiary") {
+      return !!occasionalBeneficiaryName.trim() && !!occasionalBeneficiaryAccount.trim()
+    }
+    return !!selectedCreditAccount
+  }, [
+    selectedAccount,
+    transferType,
+    selectedBeneficiary,
+    selectedCreditAccount,
+    occasionalBeneficiaryName,
+    occasionalBeneficiaryAccount,
+    amount,
+    motif,
+    transferDate,
+  ])
+
+  /** Messages affichés sous chaque champ — après toucher, soumission, ou lorsque tous les champs sont remplis mais certains invalides */
+  const transferFieldMessages = useMemo(() => {
+    const displayed: Record<string, string> = {}
+    const fieldKeys = ["debitAccount", "destination", "occasionalName", "occasionalAccount", "amount", "motif", "transferDate"] as const
+    const shouldShow = (k: string) => touchedFields[k] || submitAttempted || (allRequiredFieldsFilled && Object.keys(rawValidationErrors).length > 0)
+    for (const k of fieldKeys) {
+      const msg = rawValidationErrors[k]
+      if (msg && shouldShow(k)) displayed[k] = msg
+    }
+    return displayed
+  }, [rawValidationErrors, touchedFields, submitAttempted, allRequiredFieldsFilled])
+
+  const isTransferFormReady = Object.keys(rawValidationErrors).length === 0
 
   return (
     <div className="mt-6 space-y-6 relative">
@@ -906,8 +903,18 @@ export default function NewTransferPage() {
                 <Label htmlFor="account" className="font-medium">
                   Sélectionner le compte à débiter *
                 </Label>
-                <Select value={selectedAccount} onValueChange={handleDebitAccountChange}>
-                  <SelectTrigger className="h-12 border-2 hover:border-primary/50 focus:border-primary transition-colors">
+                <Select
+                  value={selectedAccount}
+                  onValueChange={handleDebitAccountChange}
+                  onOpenChange={(open) => !open && markFieldTouched("debitAccount")}
+                >
+                  <SelectTrigger
+                    className={`h-12 border-2 transition-colors ${
+                      transferFieldMessages.debitAccount
+                        ? "border-destructive focus:border-destructive"
+                        : "hover:border-primary/50 focus:border-primary"
+                    }`}
+                  >
                     <SelectValue placeholder={isLoadingAccounts ? "Chargement..." : "Choisir un compte"} />
                   </SelectTrigger>
                   <SelectContent side="bottom">
@@ -1007,8 +1014,18 @@ export default function NewTransferPage() {
                   <Label htmlFor="creditAccount" className="font-medium">
                     Sélectionner le compte à créditer *
                   </Label>
-                  <Select value={selectedCreditAccount} onValueChange={setSelectedCreditAccount}>
-                    <SelectTrigger className="h-12 border-2 hover:border-primary/50 focus:border-primary transition-colors">
+                  <Select
+                    value={selectedCreditAccount}
+                    onValueChange={setSelectedCreditAccount}
+                    onOpenChange={(open) => !open && markFieldTouched("destination")}
+                  >
+                    <SelectTrigger
+                      className={`h-12 border-2 transition-colors ${
+                        transferFieldMessages.destination
+                          ? "border-destructive focus:border-destructive"
+                          : "hover:border-primary/50 focus:border-primary"
+                      }`}
+                    >
                       <SelectValue placeholder={isLoadingAccounts ? "Chargement..." : "Choisir un compte"} />
                     </SelectTrigger>
                     <SelectContent>
@@ -1077,6 +1094,7 @@ export default function NewTransferPage() {
                       type="text"
                       value={occasionalBeneficiaryName}
                       onChange={(e) => setOccasionalBeneficiaryName(e.target.value)}
+                      onBlur={() => markFieldTouched("occasionalName")}
                       placeholder="Saisissez le nom et prénoms du bénéficiaire"
                       required
                       className={`h-12 border-2 transition-colors ${
@@ -1101,6 +1119,7 @@ export default function NewTransferPage() {
                           setOccasionalBeneficiaryAccount(value)
                         }
                       }}
+                      onBlur={() => markFieldTouched("occasionalAccount")}
                       placeholder="Saisissez le numéro de compte (18 chiffres)"
                       maxLength={18}
                       required
@@ -1148,8 +1167,18 @@ export default function NewTransferPage() {
                   <Label htmlFor="beneficiary" className="font-medium">
                     Sélectionner le bénéficiaire *
                   </Label>
-                  <Select value={selectedBeneficiary} onValueChange={setSelectedBeneficiary}>
-                    <SelectTrigger className="min-h-12 h-auto py-2 border-2 hover:border-primary/50 focus:border-primary transition-colors">
+                  <Select
+                    value={selectedBeneficiary}
+                    onValueChange={setSelectedBeneficiary}
+                    onOpenChange={(open) => !open && markFieldTouched("destination")}
+                  >
+                    <SelectTrigger
+                      className={`min-h-12 h-auto py-2 border-2 transition-colors ${
+                        transferFieldMessages.destination
+                          ? "border-destructive focus:border-destructive"
+                          : "hover:border-primary/50 focus:border-primary"
+                      }`}
+                    >
                       <SelectValue placeholder={isLoadingBeneficiaries ? "Chargement..." : "Choisir un bénéficiaire"}>
                         {selectedBeneficiary && beneficiaries.find((b) => b.id === selectedBeneficiary) && (
                           <div className="flex items-start gap-3 py-1">
@@ -1221,6 +1250,7 @@ export default function NewTransferPage() {
                   inputMode="decimal"
                   value={amount}
                   onChange={handleAmountChange}
+                  onBlur={() => markFieldTouched("amount")}
                   placeholder="0"
                   required
                   className={`h-12 text-lg border-2 transition-colors ${
@@ -1250,6 +1280,7 @@ export default function NewTransferPage() {
                   id="motif"
                   value={motif}
                   onChange={(e) => setMotif(e.target.value)}
+                  onBlur={() => markFieldTouched("motif")}
                   placeholder="Indiquez le motif du virement..."
                   rows={3}
                   required
@@ -1271,6 +1302,7 @@ export default function NewTransferPage() {
                   type="date"
                   value={transferDate}
                   onChange={(e) => setTransferDate(e.target.value)}
+                  onBlur={() => markFieldTouched("transferDate")}
                   min={new Date().toISOString().split("T")[0]}
                   required
                   className={`h-12 border-2 transition-colors ${
