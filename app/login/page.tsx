@@ -162,14 +162,14 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen lg:h-screen relative overflow-x-hidden overflow-y-auto lg:overflow-hidden">
-      {/* Logo aligné avec le texte de bienvenue */}
-      <div className="absolute top-4 sm:top-4 lg:top-2 left-1/2 -translate-x-1/2 lg:left-2 lg:translate-x-0 z-50">
+      {/* Logo - taille proportionnelle */}
+      <div className="absolute top-4 sm:top-4 lg:top-[2vw] left-1/2 -translate-x-1/2 lg:left-[2vw] lg:translate-x-0 z-50">
         <Image
           src="/images/logowhite.png"
           alt="BNG Logo"
           width={160}
           height={48}
-          className="object-contain drop-shadow-lg w-32 sm:w-36 lg:w-[200px]"
+          className="object-contain drop-shadow-lg w-32 sm:w-36 lg:w-[12vw] lg:min-w-[180px] lg:max-w-[260px]"
           priority
         />
       </div>
@@ -180,8 +180,8 @@ export default function LoginPage() {
           {/* Animated gradient overlay */}
           <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent animate-shimmer"></div>
 
-          {/* Banking illustration */}
-          <div className="hidden lg:block absolute bottom-0 left-[50%] -translate-x-1/2 w-[80%] max-w-[800px] opacity-100 lg:left-[50%] lg:w-[80%] xl:left-[60%] xl:w-[80%] 2xl:left-[60%] 2xl:w-[80%]">
+          {/* Banking illustration - ~50% viewport pour une bonne visibilité */}
+          <div className="hidden lg:block absolute bottom-0 left-[55%] -translate-x-1/2 w-[60vw] min-w-[500px] max-w-[1500px] opacity-100">
             <Image
               src="/images/image2.png"
               alt="Banking"
@@ -194,17 +194,20 @@ export default function LoginPage() {
           </div>
 
 
-          <div className="absolute top-32 sm:top-36 lg:top-[60%] lg:-translate-y-1/2 left-4 sm:left-6 right-4 lg:right-auto lg:max-w-[28%] xl:max-w-[30%] 2xl:max-w-[32%] px-2 sm:px-0">
-            <div className="text-left text-white space-y-3 sm:space-y-4 transition-all duration-700 ease-in-out">
-              <div className="flex items-center justify-start space-x-2 mb-2 sm:mb-3">
-                <span className="text-xs sm:text-sm font-semibold text-[#f4c430] uppercase tracking-wider px-3 py-1 bg-white/10 backdrop-blur-sm rounded-full">
-                  Astra e-Banking
-                </span>
-              </div>
-              <h1 className="text-lg sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-bold animate-fadeIn drop-shadow-2xl leading-tight">
+          {/* Badge fixe */}
+          <div className="absolute top-32 sm:top-36 lg:top-[28%] left-4 sm:left-6 lg:left-[2vw] right-4 lg:right-auto lg:max-w-[28%] px-0 z-10">
+            <span className="text-xs sm:text-sm lg:text-[clamp(0.75rem,0.9vw,1rem)] font-semibold text-[#f4c430] uppercase tracking-wider px-3 py-1 lg:px-[0.8vw] lg:py-[0.3vw] bg-white/10 backdrop-blur-sm rounded-full inline-block">
+              Astra e-Banking
+            </span>
+          </div>
+
+          {/* Bloc carousel texte */}
+          <div className="absolute top-36 sm:top-40 lg:top-[56%] lg:-translate-y-1/2 left-4 sm:left-6 lg:left-[2vw] right-4 lg:right-auto lg:max-w-[28%] px-0">
+            <div className="text-left text-white space-y-[1vw] transition-all duration-700 ease-in-out">
+              <h1 className="text-lg sm:text-2xl md:text-3xl lg:text-[2.2vw] lg:min-w-[16px] lg:leading-tight font-bold animate-fadeIn drop-shadow-2xl leading-tight">
                 {welcomeMessages[currentMessageIndex].title}
               </h1>
-              <p className="text-sm sm:text-base md:text-lg lg:text-xl text-white/90 animate-fadeIn drop-shadow-lg leading-relaxed">
+              <p className="text-sm sm:text-base md:text-lg lg:text-[clamp(0.875rem,1.1vw,1.25rem)] text-white/90 animate-fadeIn drop-shadow-lg leading-relaxed">
                 {welcomeMessages[currentMessageIndex].description}
               </p>
             </div>
@@ -212,26 +215,26 @@ export default function LoginPage() {
         </div>
       </div>
 
-      <main className="w-full px-4 sm:px-6 pt-64 sm:pt-72 md:pt-80 lg:pt-16 pb-2 relative z-10 min-h-screen lg:h-screen flex flex-col justify-between">
+      <main className="w-full px-4 sm:px-6 lg:px-[2vw] pt-64 sm:pt-72 md:pt-80 lg:pt-[2vw] lg:pb-[1.5vw] relative z-10 min-h-screen lg:h-screen flex flex-col justify-between">
         {/* Login Form - Top Right */}
         <div className="w-full max-w-full mb-0">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 lg:gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 lg:gap-[1.5vw]">
             <div className="sm:col-start-3 flex justify-center sm:justify-end mt-8 sm:mt-0">
-              <div className="relative group w-full max-w-[90%] sm:max-w-[85%]">
+              <div className="relative group w-full max-w-[90%] sm:max-w-[85%] lg:max-w-[28vw] lg:min-w-[360px]">
                 <div className="absolute inset-0 bg-gradient-to-br from-[#2d6e3e]/30 via-[#f4c430]/20 to-[#2d6e3e]/30 rounded-2xl blur-2xl opacity-40 group-hover:opacity-60 transition-opacity"></div>
-                <div className="bg-white/40 backdrop-blur-2xl rounded-2xl shadow-2xl p-4 sm:p-5 border border-white/20">
+                <div className="bg-white/40 backdrop-blur-2xl rounded-2xl shadow-2xl p-4 sm:p-5 lg:p-[1.6vw] border border-white/20">
                   {/* Decorative corner */}
                   <div className="absolute top-0 right-0 w-20 sm:w-24 h-20 sm:h-24 bg-gradient-to-br from-white/15 to-transparent rounded-bl-full"></div>
 
                   {formType === "login" && (
                     <>
-                      <div className="text-center mb-2 sm:mb-3 relative z-10">
-                        <h2 className="text-lg sm:text-xl font-bold text-white mb-1 drop-shadow-2xl">Connexion</h2>
+                      <div className="text-center mb-2 sm:mb-3 lg:mb-[1vw] relative z-10">
+                        <h2 className="text-lg sm:text-xl lg:text-[clamp(1.1rem,1.4vw,1.5rem)] font-bold text-white mb-1 drop-shadow-2xl">Connexion</h2>
                       </div>
 
                       {/* Login Form */}
-                      <form onSubmit={handleSubmit} className="space-y-2 sm:space-y-3">
-                    <div className="space-y-2 sm:space-y-2.5">
+                      <form onSubmit={handleSubmit} className="space-y-2 sm:space-y-3 lg:space-y-[0.8vw]">
+                    <div className="space-y-2 sm:space-y-2.5 lg:space-y-[0.8vw]">
                       {error && (
                         <div className="p-2.5 rounded-lg bg-[#2d6e3e]/70 border-0 shadow-md">
                           <p className="text-xs text-white text-center font-semibold drop-shadow-md">{error}</p>
@@ -242,7 +245,7 @@ export default function LoginPage() {
                       <div className="space-y-1">
                         <Label
                           htmlFor="email"
-                          className="text-xs font-semibold text-white/90 flex items-center space-x-1 drop-shadow-lg"
+                          className="text-xs lg:text-[clamp(0.75rem,0.85vw,0.95rem)] font-semibold text-white/90 flex items-center space-x-1 drop-shadow-lg"
                         >
                           <span>Identifiant / E-mail</span>
                           <span className="text-red-300 drop-shadow-md">*</span>
@@ -253,7 +256,7 @@ export default function LoginPage() {
                             name="email"
                             type="email"
                             placeholder="exemple@email.com"
-                            className="h-9 sm:h-10 bg-[#2d6e3e]/60 border-0 text-white text-sm placeholder:text-white/60 focus:bg-[#2d6e3e]/60 focus:ring-0 rounded-lg transition-all hover:bg-[#2d6e3e]/60 shadow-md"
+                            className="h-9 sm:h-10 lg:h-[clamp(2.5rem,3vw,3.25rem)] bg-[#2d6e3e]/60 border-0 text-white text-sm lg:text-[clamp(0.8rem,0.9vw,1rem)] placeholder:text-white/60 focus:bg-[#2d6e3e]/60 focus:ring-0 rounded-lg transition-all hover:bg-[#2d6e3e]/60 shadow-md"
                             required
                             disabled={isLoading}
                           />
@@ -264,7 +267,7 @@ export default function LoginPage() {
                       <div className="space-y-1">
                         <Label
                           htmlFor="password"
-                          className="text-xs font-semibold text-white/90 flex items-center space-x-1 drop-shadow-lg"
+                          className="text-xs lg:text-[clamp(0.75rem,0.85vw,0.95rem)] font-semibold text-white/90 flex items-center space-x-1 drop-shadow-lg"
                         >
                           <span>Mot de passe</span>
                           <span className="text-red-300 drop-shadow-md">*</span>
@@ -275,7 +278,7 @@ export default function LoginPage() {
                             name="password"
                             type={showPassword ? "text" : "password"}
                             placeholder="••••••••"
-                            className="h-9 sm:h-10 bg-[#2d6e3e]/60 border-0 text-white text-sm pr-11 placeholder:text-white/60 focus:bg-[#2d6e3e]/60 focus:ring-0 rounded-lg transition-all hover:bg-[#2d6e3e]/60 shadow-md"
+                            className="h-9 sm:h-10 lg:h-[clamp(2.5rem,3vw,3.25rem)] lg:pr-12 bg-[#2d6e3e]/60 border-0 text-white text-sm lg:text-[clamp(0.8rem,0.9vw,1rem)] pr-11 placeholder:text-white/60 focus:bg-[#2d6e3e]/60 focus:ring-0 rounded-lg transition-all hover:bg-[#2d6e3e]/60 shadow-md"
                             required
                             disabled={isLoading}
                           />
@@ -317,7 +320,7 @@ export default function LoginPage() {
                       {/* Submit Button */}
                       <Button
                         type="submit"
-                        className="relative w-full h-10 sm:h-11 bg-gradient-to-r from-[#f4c430] via-[#f8d060] to-[#f4c430] hover:from-[#e0b020] hover:via-[#f4c430] hover:to-[#e0b020] text-gray-900 font-semibold text-sm shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden group rounded-lg"
+                        className="relative w-full h-10 sm:h-11 lg:h-[clamp(2.75rem,3.2vw,3.5rem)] bg-gradient-to-r from-[#f4c430] via-[#f8d060] to-[#f4c430] hover:from-[#e0b020] hover:via-[#f4c430] hover:to-[#e0b020] text-gray-900 font-semibold text-sm lg:text-[clamp(0.85rem,1vw,1.1rem)] shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden group rounded-lg"
                         disabled={isLoading}
                       >
                         <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-1000"></div>
@@ -335,7 +338,7 @@ export default function LoginPage() {
                       </Button>
 
                       {/* Séparateur */}
-                      <div className="relative my-3">
+                      <div className="relative my-3 lg:my-[0.8vw]">
                         <div className="absolute inset-0 flex items-center">
                           <div className="w-full border-t border-white/30"></div>
                         </div>
@@ -344,7 +347,7 @@ export default function LoginPage() {
                       {/* S'inscrire Button */}
                       <Button
                         type="button"
-                        className="relative w-full h-10 sm:h-11 bg-gradient-to-r from-[#f4c430] via-[#f8d060] to-[#f4c430] hover:from-[#e0b020] hover:via-[#f4c430] hover:to-[#e0b020] text-gray-900 font-semibold text-sm shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden group rounded-lg"
+                        className="relative w-full h-10 sm:h-11 lg:h-[clamp(2.75rem,3.2vw,3.5rem)] bg-gradient-to-r from-[#f4c430] via-[#f8d060] to-[#f4c430] hover:from-[#e0b020] hover:via-[#f4c430] hover:to-[#e0b020] text-gray-900 font-semibold text-sm lg:text-[clamp(0.85rem,1vw,1.1rem)] shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden group rounded-lg"
                         onClick={() => setFormType("signup")}
                       >
                         <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-1000"></div>
@@ -357,7 +360,7 @@ export default function LoginPage() {
                       {/* Devenir client Button */}
                       <Button
                         type="button"
-                        className="relative w-full h-10 sm:h-11 bg-gradient-to-r from-[#2d6e3e] via-[#36803e] to-[#2d6e3e] hover:from-[#1f5a2e] hover:via-[#2d6e3e] hover:to-[#1f5a2e] text-white font-semibold text-sm shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden group rounded-lg"
+                        className="relative w-full h-10 sm:h-11 lg:h-[clamp(2.75rem,3.2vw,3.5rem)] bg-gradient-to-r from-[#2d6e3e] via-[#36803e] to-[#2d6e3e] hover:from-[#1f5a2e] hover:via-[#2d6e3e] hover:to-[#1f5a2e] text-white font-semibold text-sm lg:text-[clamp(0.85rem,1vw,1.1rem)] shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden group rounded-lg"
                         onClick={() => setFormType("newClient")}
                       >
                         <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-1000"></div>
@@ -417,7 +420,7 @@ export default function LoginPage() {
                                 pattern="[0-9]{6}"
                                 maxLength={6}
                                 placeholder="Votre racine du compte"
-                                className="h-9 sm:h-10 bg-[#2d6e3e]/60 border-0 text-white text-sm placeholder:text-white/60 focus:bg-[#2d6e3e]/70 focus:ring-0 rounded-lg transition-all group-hover:bg-[#2d6e3e]/65 shadow-md"
+                                className="h-9 sm:h-10 lg:h-[clamp(2.5rem,3vw,3.25rem)] bg-[#2d6e3e]/60 border-0 text-white text-sm lg:text-[clamp(0.8rem,0.9vw,1rem)] placeholder:text-white/60 focus:bg-[#2d6e3e]/70 focus:ring-0 rounded-lg transition-all group-hover:bg-[#2d6e3e]/65 shadow-md"
                                 required
                                 disabled={isLoading}
                                 onInput={(e) => {
@@ -432,7 +435,7 @@ export default function LoginPage() {
 
                           <Button
                             type="submit"
-                            className="relative w-full h-9 sm:h-10 bg-gradient-to-r from-[#f4c430] via-[#f8d060] to-[#f4c430] hover:from-[#e0b020] hover:via-[#f4c430] hover:to-[#e0b020] text-gray-900 font-semibold text-xs sm:text-sm shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden group rounded-lg"
+                            className="relative w-full h-9 sm:h-10 lg:h-[clamp(2.75rem,3.2vw,3.5rem)] bg-gradient-to-r from-[#f4c430] via-[#f8d060] to-[#f4c430] hover:from-[#e0b020] hover:via-[#f4c430] hover:to-[#e0b020] text-gray-900 font-semibold text-xs sm:text-sm lg:text-[clamp(0.85rem,1vw,1.1rem)] shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden group rounded-lg"
                             disabled={isLoading}
                           >
                             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-1000"></div>
@@ -497,7 +500,7 @@ export default function LoginPage() {
                                 name="fullName"
                                 type="text"
                                 placeholder="Votre nom complet"
-                                className="h-9 sm:h-10 bg-[#2d6e3e]/60 border-0 text-white text-sm placeholder:text-white/60 focus:bg-[#2d6e3e]/70 focus:ring-0 rounded-lg transition-all group-hover:bg-[#2d6e3e]/65 shadow-md"
+                                className="h-9 sm:h-10 lg:h-[clamp(2.5rem,3vw,3.25rem)] bg-[#2d6e3e]/60 border-0 text-white text-sm lg:text-[clamp(0.8rem,0.9vw,1rem)] placeholder:text-white/60 focus:bg-[#2d6e3e]/70 focus:ring-0 rounded-lg transition-all group-hover:bg-[#2d6e3e]/65 shadow-md"
                                 required
                                 disabled={isLoading}
                               />
@@ -520,7 +523,7 @@ export default function LoginPage() {
                                 name="email"
                                 type="email"
                                 placeholder="votre.email@exemple.com"
-                                className="h-9 sm:h-10 bg-[#2d6e3e]/60 border-0 text-white text-sm placeholder:text-white/60 focus:bg-[#2d6e3e]/70 focus:ring-0 rounded-lg transition-all group-hover:bg-[#2d6e3e]/65 shadow-md"
+                                className="h-9 sm:h-10 lg:h-[clamp(2.5rem,3vw,3.25rem)] bg-[#2d6e3e]/60 border-0 text-white text-sm lg:text-[clamp(0.8rem,0.9vw,1rem)] placeholder:text-white/60 focus:bg-[#2d6e3e]/70 focus:ring-0 rounded-lg transition-all group-hover:bg-[#2d6e3e]/65 shadow-md"
                                 required
                                 disabled={isLoading}
                               />
@@ -545,7 +548,7 @@ export default function LoginPage() {
                                 inputMode="numeric"
                                 maxLength={9}
                                 placeholder="012345678"
-                                className="h-9 sm:h-10 bg-[#2d6e3e]/60 border-0 text-white text-sm placeholder:text-white/60 focus:bg-[#2d6e3e]/70 focus:ring-0 rounded-lg transition-all group-hover:bg-[#2d6e3e]/65 shadow-md"
+                                className="h-9 sm:h-10 lg:h-[clamp(2.5rem,3vw,3.25rem)] bg-[#2d6e3e]/60 border-0 text-white text-sm lg:text-[clamp(0.8rem,0.9vw,1rem)] placeholder:text-white/60 focus:bg-[#2d6e3e]/70 focus:ring-0 rounded-lg transition-all group-hover:bg-[#2d6e3e]/65 shadow-md"
                                 required
                                 disabled={isLoading}
                                 onInput={(e) => {
@@ -572,7 +575,7 @@ export default function LoginPage() {
                                 name="address"
                                 type="text"
                                 placeholder="Votre adresse complète"
-                                className="h-9 sm:h-10 bg-[#2d6e3e]/60 border-0 text-white text-sm placeholder:text-white/60 focus:bg-[#2d6e3e]/70 focus:ring-0 rounded-lg transition-all group-hover:bg-[#2d6e3e]/65 shadow-md"
+                                className="h-9 sm:h-10 lg:h-[clamp(2.5rem,3vw,3.25rem)] bg-[#2d6e3e]/60 border-0 text-white text-sm lg:text-[clamp(0.8rem,0.9vw,1rem)] placeholder:text-white/60 focus:bg-[#2d6e3e]/70 focus:ring-0 rounded-lg transition-all group-hover:bg-[#2d6e3e]/65 shadow-md"
                                 required
                                 disabled={isLoading}
                               />
@@ -583,7 +586,7 @@ export default function LoginPage() {
                           {/* Submit Button */}
                           <Button
                             type="submit"
-                            className="relative w-full h-9 sm:h-10 bg-gradient-to-r from-[#f4c430] via-[#f8d060] to-[#f4c430] hover:from-[#e0b020] hover:via-[#f4c430] hover:to-[#e0b020] text-gray-900 font-semibold text-xs sm:text-sm shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden group rounded-lg"
+                            className="relative w-full h-9 sm:h-10 lg:h-[clamp(2.75rem,3.2vw,3.5rem)] bg-gradient-to-r from-[#f4c430] via-[#f8d060] to-[#f4c430] hover:from-[#e0b020] hover:via-[#f4c430] hover:to-[#e0b020] text-gray-900 font-semibold text-xs sm:text-sm lg:text-[clamp(0.85rem,1vw,1.1rem)] shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden group rounded-lg"
                             disabled={isLoading}
                           >
                             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-1000"></div>
@@ -629,7 +632,7 @@ export default function LoginPage() {
                             setVerificationSent(false)
                             setMaskedEmail("")
                           }}
-                          className="relative w-full h-10 sm:h-11 bg-gradient-to-r from-[#f4c430] via-[#f8d060] to-[#f4c430] hover:from-[#e0b020] hover:via-[#f4c430] hover:to-[#e0b020] text-gray-900 font-semibold text-sm shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden group rounded-lg"
+                          className="relative w-full h-10 sm:h-11 lg:h-[clamp(2.75rem,3.2vw,3.5rem)] bg-gradient-to-r from-[#f4c430] via-[#f8d060] to-[#f4c430] hover:from-[#e0b020] hover:via-[#f4c430] hover:to-[#e0b020] text-gray-900 font-semibold text-sm lg:text-[clamp(0.85rem,1vw,1.1rem)] shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden group rounded-lg"
                         >
                           <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-1000"></div>
                           <span className="relative z-10 text-sm">Retour à la connexion</span>
@@ -643,13 +646,13 @@ export default function LoginPage() {
           </div>
         </div>
 
-         {/* Information Cards - Full Width at Bottom */}
-         <div className="w-full max-w-full -mt-2 sm:-mt-3 mb-4 sm:mb-5 md:mb-6">
-           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 lg:gap-6">
+         {/* Information Cards - proportions et marges cohérentes */}
+         <div className="w-full max-w-full -mt-2 sm:-mt-3 mb-4 sm:mb-5 md:mb-6 lg:mb-[1.5vw]">
+           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 lg:gap-[1.5vw]">
             {/* New User */}
             <div className="group relative">
               <div className="absolute inset-0 bg-gradient-to-br from-[#2d6e3e]/10 to-transparent rounded-xl blur-lg opacity-0 group-hover:opacity-100 transition-opacity"></div>
-              <div className="relative bg-white/75 backdrop-blur-xl rounded-xl shadow-lg p-3 sm:p-4 hover:shadow-xl hover:-translate-y-1 hover:bg-white/85 transition-all duration-300 border border-white/40 overflow-hidden">
+              <div className="relative bg-white/75 backdrop-blur-xl rounded-xl shadow-lg p-3 sm:p-4 lg:p-[1.2vw] hover:shadow-xl hover:-translate-y-1 hover:bg-white/85 transition-all duration-300 border border-white/40 overflow-hidden">
                 {/* Decorative element */}
                 <div className="absolute top-0 right-0 w-12 sm:w-16 h-12 sm:h-16 bg-gradient-to-br from-[#2d6e3e]/10 to-transparent rounded-bl-full"></div>
 
@@ -660,8 +663,8 @@ export default function LoginPage() {
                     </div>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-bold text-gray-900 text-xs sm:text-sm drop-shadow-sm">Nous Trouver</h3>
-                    <p className="text-xs text-gray-700 font-medium mt-0.5 drop-shadow-sm">
+                    <h3 className="font-bold text-gray-900 text-xs sm:text-sm lg:text-[clamp(0.75rem,0.9vw,1rem)] drop-shadow-sm">Nous Trouver</h3>
+                    <p className="text-xs lg:text-[clamp(0.65rem,0.75vw,0.9rem)] text-gray-700 font-medium mt-0.5 drop-shadow-sm">
                       Notre équipe est à votre disposition
                     </p>
                   </div>
@@ -672,7 +675,7 @@ export default function LoginPage() {
             {/* Mobile Banking */}
             <div className="group relative">
               <div className="absolute inset-0 bg-gradient-to-br from-[#f4c430]/10 to-transparent rounded-xl blur-lg opacity-0 group-hover:opacity-100 transition-opacity"></div>
-              <div className="relative bg-white/75 backdrop-blur-xl rounded-xl shadow-lg p-3 sm:p-4 hover:shadow-xl hover:-translate-y-1 hover:bg-white/85 transition-all duration-300 border border-white/40 overflow-hidden">
+              <div className="relative bg-white/75 backdrop-blur-xl rounded-xl shadow-lg p-3 sm:p-4 lg:p-[1.2vw] hover:shadow-xl hover:-translate-y-1 hover:bg-white/85 transition-all duration-300 border border-white/40 overflow-hidden">
                 {/* Decorative element */}
                 <div className="absolute top-0 right-0 w-12 sm:w-16 h-12 sm:h-16 bg-gradient-to-br from-[#f4c430]/10 to-transparent rounded-bl-full"></div>
 
@@ -683,8 +686,8 @@ export default function LoginPage() {
                     </div>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-bold text-gray-900 text-xs sm:text-sm drop-shadow-sm">Application Mobile</h3>
-                    <p className="text-xs text-gray-700 font-medium mt-0.5 drop-shadow-sm">Banking en mobilité 24/7</p>
+                    <h3 className="font-bold text-gray-900 text-xs sm:text-sm lg:text-[clamp(0.75rem,0.9vw,1rem)] drop-shadow-sm">Application Mobile</h3>
+                    <p className="text-xs lg:text-[clamp(0.65rem,0.75vw,0.9rem)] text-gray-700 font-medium mt-0.5 drop-shadow-sm">Banking en mobilité 24/7</p>
                   </div>
                 </div>
               </div>
@@ -693,7 +696,7 @@ export default function LoginPage() {
             {/* Support */}
             <div className="group relative">
               <div className="absolute inset-0 bg-gradient-to-br from-[#2d6e3e]/10 to-transparent rounded-xl blur-lg opacity-0 group-hover:opacity-100 transition-opacity"></div>
-              <div className="relative bg-white/75 backdrop-blur-xl rounded-xl shadow-lg p-3 sm:p-4 hover:shadow-xl hover:-translate-y-1 hover:bg-white/85 transition-all duration-300 border border-white/40 overflow-hidden">
+              <div className="relative bg-white/75 backdrop-blur-xl rounded-xl shadow-lg p-3 sm:p-4 lg:p-[1.2vw] hover:shadow-xl hover:-translate-y-1 hover:bg-white/85 transition-all duration-300 border border-white/40 overflow-hidden">
                 {/* Decorative element */}
                 <div className="absolute top-0 right-0 w-12 sm:w-16 h-12 sm:h-16 bg-gradient-to-br from-[#2d6e3e]/10 to-transparent rounded-bl-full"></div>
 
@@ -704,8 +707,8 @@ export default function LoginPage() {
                     </div>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-bold text-gray-900 text-xs sm:text-sm drop-shadow-sm">Support Client</h3>
-                    <p className="text-xs text-gray-700 font-medium mt-0.5 drop-shadow-sm">
+                    <h3 className="font-bold text-gray-900 text-xs sm:text-sm lg:text-[clamp(0.75rem,0.9vw,1rem)] drop-shadow-sm">Support Client</h3>
+                    <p className="text-xs lg:text-[clamp(0.65rem,0.75vw,0.9rem)] text-gray-700 font-medium mt-0.5 drop-shadow-sm">
                       Assistance disponible 24/7
                     </p>
                   </div>
