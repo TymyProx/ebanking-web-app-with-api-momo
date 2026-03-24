@@ -174,6 +174,8 @@ export default function NewTransferPage() {
   const successMessageRef = useRef<HTMLDivElement>(null)
   const errorMessageRef = useRef<HTMLDivElement>(null)
   const validationErrorMessageRef = useRef<HTMLDivElement>(null)
+  /** Évite de réinitialiser le formulaire au 2e clic sur Confirmer quand transferState.success est encore celui du virement précédent */
+  const lastProcessedSuccessRef = useRef<unknown>(null)
 
   // États pour contrôler l'affichage des messages
   const [showSuccessMessage, setShowSuccessMessage] = useState(false)
@@ -525,22 +527,33 @@ export default function NewTransferPage() {
   const selectedCreditAccountData = accounts.find((acc) => acc.id === selectedCreditAccount)
 
   useEffect(() => {
-    if (transferState?.success && transferSubmitted) {
-      setTransferValidationError("")
-      setSelectedAccount("")
-      setSelectedBeneficiary("")
-      setSelectedCreditAccount("")
-      setOccasionalBeneficiaryName("")
-      setOccasionalBeneficiaryAccount("")
-      setOccasionalBeneficiary(null)
-      setAmount("")
-      setMotif("")
-      setTransferDate(new Date().toISOString().split("T")[0])
-      setTransferSubmitted(false)
-      setTouchedFields({})
-      setSubmitAttempted(false)
-    }
-  }, [transferState?.success, transferSubmitted])
+    if (!transferState?.success || !transferSubmitted) return
+    if (lastProcessedSuccessRef.current === transferState) return
+    lastProcessedSuccessRef.current = transferState
+    setTransferValidationError("")
+    setSelectedAccount("")
+    setSelectedBeneficiary("")
+    setSelectedCreditAccount("")
+    setOccasionalBeneficiaryName("")
+    setOccasionalBeneficiaryAccount("")
+    setOccasionalBeneficiary(null)
+    setAmount("")
+    setMotif("")
+    setTransferDate(new Date().toISOString().split("T")[0])
+    setTransferSubmitted(false)
+    setTouchedFields({})
+    setSubmitAttempted(false)
+    setTransferType("account-to-beneficiary")
+    setShowConfirmationModal(false)
+    setShowOtpModal(false)
+    setPendingTransferData(null)
+    setIsTransferConfirmed(false)
+    setConfirmPreOtpError("")
+    setOtpReferenceId(null)
+    setIsPreOtpValidating(false)
+    loadAccounts()
+    loadBeneficiaries()
+  }, [transferState, transferSubmitted])
 
   const loadAccounts = async () => {
     try {

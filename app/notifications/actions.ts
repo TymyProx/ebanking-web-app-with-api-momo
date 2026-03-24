@@ -42,8 +42,25 @@ function parseValues(raw: any): Record<string, any> {
   return raw
 }
 
+/** Détecte les champs réellement modifiés (uniquement si l'API fournit oldValues/previousValues) */
+function getChangedFields(entry: any): { changed: Set<string>; hasPreviousState: boolean } {
+  const oldVals = parseValues(entry.oldValues ?? entry.previousValues ?? entry.before)
+  const newVals = parseValues(entry.values ?? entry.newValues ?? entry.after)
+  const hasPreviousState = Object.keys(oldVals).length > 0
+  const changed = new Set<string>()
+  if (!hasPreviousState) return { changed, hasPreviousState: false }
+  const allKeys = new Set([...Object.keys(oldVals), ...Object.keys(newVals)])
+  for (const k of allKeys) {
+    const ov = oldVals[k]
+    const nv = newVals[k]
+    if (JSON.stringify(ov) !== JSON.stringify(nv)) changed.add(k)
+  }
+  return { changed, hasPreviousState: true }
+}
+
 function buildNotification(entry: any): NotificationItem | null {
-  const values = parseValues(entry.values)
+  const values = parseValues(entry.values ?? entry.newValues ?? entry.after)
+  const { changed: changedFields, hasPreviousState } = getChangedFields(entry)
 
   switch (entry.entityName) {
     case "client": {
@@ -61,14 +78,31 @@ function buildNotification(entry: any): NotificationItem | null {
     case "compte": {
       const name = values.accountName || "Votre compte"
       if (entry.action === "update") {
-        const status = values.status
-        const msg = status
-          ? `Le statut du compte « ${name} » est passé à « ${status} ».`
-          : `Le compte « ${name} » a été mis à jour.`
+        const statusChanged = hasPreviousState && (changedFields.has("status") || changedFields.has("statut"))
+        const balanceChanged =
+          hasPreviousState &&
+          (changedFields.has("availableBalance") ||
+            changedFields.has("balance") ||
+            changedFields.has("solde"))
+        const availableBalance = values.availableBalance ?? values.balance
+        const hasBalanceInValues = availableBalance !== undefined && availableBalance !== null
+        const onlyBalanceChanged = balanceChanged && !statusChanged
+        const likelyBalanceOnly = !hasPreviousState && hasBalanceInValues
+
+        if (onlyBalanceChanged || likelyBalanceOnly) {
+          return null
+        }
+        const status = values.status ?? values.statut
+        let message: string
+        if (statusChanged && status != null && String(status).trim() !== "") {
+          message = `Le statut du compte « ${name} » est passé à « ${status} ».`
+        } else {
+          message = `Le compte « ${name} » a été mis à jour.`
+        }
         return {
           id: entry.id, type: "account_update",
           title: "Compte modifié",
-          message: msg,
+          message,
           date: entry.timestamp, entityName: entry.entityName, action: entry.action,
         }
       }
