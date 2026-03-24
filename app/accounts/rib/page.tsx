@@ -24,6 +24,7 @@ import {
 } from "lucide-react"
 import { getAccounts } from "../../accounts/actions"
 import { getUserProfile, getAccountForRib, sendRibEmail } from "./actions"
+import { buildEmailHtml, buildEmailText } from "@/lib/email-template"
 import { isAccountActive } from "@/lib/status-utils"
 import { generateStandardizedPDF, formatAmount as formatAmountUtil, savePDF, type PDFContentOptions } from "@/lib/pdf-generator"
 import {
@@ -756,14 +757,21 @@ export default function RIBPage() {
       const pdfArrayBuffer = await pdfBlob.arrayBuffer()
       const pdfBase64 = arrayBufferToBase64(pdfArrayBuffer)
 
+      const greeting = [userProfile.firstName, userProfile.lastName].filter(Boolean).join(" ") || "Client"
+      const emailHtml = buildEmailHtml({
+        title: "Relevé d'Identité Bancaire",
+        greeting,
+        content: `
+          <p>Veuillez trouver ci-joint votre Relevé d'Identité Bancaire (RIB) pour le compte <strong>${selectedAccount.number}</strong>.</p>
+          <p>Ce document vous permettra de réaliser des virements et domiciliations en toute sécurité.</p>
+        `,
+      })
+      const emailText = buildEmailText({
+        title: "Relevé d'Identité Bancaire",
+        greeting,
+        content: `Veuillez trouver ci-joint votre RIB pour le compte ${selectedAccount.number}. Ce document vous permet de réaliser des virements et domiciliations.`,
+      })
       const emailSubject = `Relevé d'Identité Bancaire - ${selectedAccount.number}`
-      const emailHtml = `
-        <p>Bonjour ${userProfile.firstName || ""} ${userProfile.lastName || ""},</p>
-        <p>Veuillez trouver ci-joint votre Relevé d'Identité Bancaire (RIB) pour le compte <strong>${selectedAccount.number}</strong>.</p>
-        <p>Ce document vous permettra de réaliser des virements et domiciliations en toute sécurité.</p>
-        <p>Cordialement,<br/>Banque Nationale de Guinée</p>
-      `
-      const emailText = `Bonjour ${userProfile.firstName || ""} ${userProfile.lastName || ""},\n\nVeuillez trouver ci-joint votre Relevé d'Identité Bancaire (RIB) pour le compte ${selectedAccount.number}.\nCe document vous permettra de réaliser des virements et domiciliations en toute sécurité.\n\nCordialement,\nBanque Nationale de Guinée`
 
       const result = await sendRibEmail({
         to: userProfile.email,

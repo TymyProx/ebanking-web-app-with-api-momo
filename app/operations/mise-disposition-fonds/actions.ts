@@ -234,21 +234,24 @@ async function sendFundsProvisionEmail(data: {
     
     const clientName = data.clientName || "Client"
     const emailSubject = `Mise à disposition des fonds - Code de retrait ${data.withdrawalCode}`
-    const emailHtml = `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2 style="color: #0B8338;">Mise à disposition des fonds</h2>
-        <p>Bonjour ${clientName},</p>
+    const { buildEmailHtml, buildEmailText } = await import("@/lib/email-template")
+    const emailHtml = buildEmailHtml({
+      title: "Mise à disposition des fonds",
+      greeting: clientName,
+      content: `
         <p>Votre demande de mise à disposition des fonds a été enregistrée avec succès.</p>
-        <div style="background-color: #f5f5f5; padding: 15px; border-radius: 5px; margin: 20px 0;">
-          <p><strong>Code de retrait:</strong> <span style="font-size: 18px; color: #0B8338; font-weight: bold;">${data.withdrawalCode}</span></p>
-          <p><strong>Montant:</strong> ${data.montant.toLocaleString("fr-FR")} GNF</p>
+        <div style="background: #f8fafc; padding: 16px; border-radius: 6px; margin: 20px 0; border-left: 4px solid #0f5132;">
+          <p style="margin: 0 0 8px;"><strong>Code de retrait</strong> <span style="font-size: 18px; color: #0f5132; font-weight: 600;">${data.withdrawalCode}</span></p>
+          <p style="margin: 0;"><strong>Montant</strong> ${data.montant.toLocaleString("fr-FR")} GNF</p>
         </div>
-        <p><strong>Important:</strong> Le bénéficiaire doit se présenter à l'agence avec ce document, sa CNI et le code de retrait ci-dessus.</p>
-        <p>Veuillez trouver ci-joint le récapitulatif de votre opération au format PDF.</p>
-        <p>Cordialement,<br/>Banque Nationale de Guinée</p>
-      </div>
-    `
-    const emailText = `Bonjour ${clientName},\n\nVotre demande de mise à disposition des fonds a été enregistrée avec succès.\n\nCode de retrait: ${data.withdrawalCode}\nMontant: ${data.montant.toLocaleString("fr-FR")} GNF\n\nLe bénéficiaire doit se présenter à l'agence avec ce document, sa CNI et le code de retrait.\n\nCordialement,\nBanque Nationale de Guinée`
+        <p>Le bénéficiaire doit se présenter à l'agence avec ce document, sa CNI et le code de retrait. Veuillez trouver ci-joint le récapitulatif au format PDF.</p>
+      `,
+    })
+    const emailText = buildEmailText({
+      title: "Mise à disposition des fonds",
+      greeting: clientName,
+      content: `Demande enregistrée. Code: ${data.withdrawalCode}. Montant: ${data.montant.toLocaleString("fr-FR")} GNF. Le bénéficiaire doit se présenter à l'agence avec ce document, sa CNI et le code de retrait.`,
+    })
     
     const response = await fetch("https://api.resend.com/emails", {
       method: "POST",

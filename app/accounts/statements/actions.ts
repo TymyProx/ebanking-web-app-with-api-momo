@@ -3,6 +3,7 @@ process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0"
 import { z } from "zod"
 import { cookies } from "next/headers"
 import { getApiBaseUrl, TENANT_ID } from "@/lib/api-url"
+import { buildEmailHtml, buildEmailText } from "@/lib/email-template"
 
 const API_BASE_URL = getApiBaseUrl()
 
@@ -258,6 +259,15 @@ export async function sendStatementByEmail(prevState: any, formData: FormData) {
 
     const periodLabel = `${new Date(validated.startDate).toLocaleDateString("fr-FR")} au ${new Date(validated.endDate).toLocaleDateString("fr-FR")}`
 
+    const emailHtml = buildEmailHtml({
+      title: "Relevé de compte",
+      content: `Veuillez trouver ci-joint votre relevé de compte pour la période du <strong>${periodLabel}</strong>.`,
+    })
+    const emailText = buildEmailText({
+      title: "Relevé de compte",
+      content: `Votre relevé de compte pour la période du ${periodLabel} est en pièce jointe (PDF).`,
+    })
+
     const response = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: {
@@ -268,8 +278,8 @@ export async function sendStatementByEmail(prevState: any, formData: FormData) {
         from: fromEmail,
         to: validated.email.trim(),
         subject: `Votre relevé de compte BNG — ${periodLabel}`,
-        html: `<p>Bonjour,</p><p>Veuillez trouver ci-joint votre <strong>relevé de compte</strong> pour la période du <strong>${periodLabel}</strong>.</p><p>Cordialement,<br/>Banque Nationale de Guinée</p>`,
-        text: `Votre relevé de compte pour la période du ${periodLabel} est en pièce jointe (PDF).`,
+        html: emailHtml,
+        text: emailText,
         attachments: [
           {
             filename,

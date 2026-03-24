@@ -876,28 +876,30 @@ export default function NewTransferPage() {
         <p className="text-muted-foreground">Transférez des fonds vers un bénéficiaire ou entre vos comptes</p>
       </div>
 
-      {transferValidationError && transferSubmitted && (
-        <Alert ref={validationErrorMessageRef} variant="destructive" className="border-l-4">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>{transferValidationError}</AlertDescription>
-        </Alert>
-      )}
+      <div className="lg:max-w-3xl">
+        {transferValidationError && transferSubmitted && (
+          <Alert ref={validationErrorMessageRef} variant="destructive" className="border-l-4">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>{transferValidationError}</AlertDescription>
+          </Alert>
+        )}
 
-      {transferState?.success && showSuccessMessage && (
-        <Alert ref={successMessageRef} className="border-l-4 border-primary bg-primary/5">
-          <Check className="h-4 w-4 text-primary" />
-          <AlertDescription className="text-primary font-medium">
-            {toText(transferState.message) || "Virement effectué avec succès !"}
-          </AlertDescription>
-        </Alert>
-      )}
+        {transferState?.success && showSuccessMessage && (
+          <Alert ref={successMessageRef} className="border-l-4 border-primary bg-primary/5">
+            <Check className="h-4 w-4 text-primary" />
+            <AlertDescription className="text-primary font-medium">
+              {toText(transferState.message) || "Virement effectué avec succès !"}
+            </AlertDescription>
+          </Alert>
+        )}
 
-      {transferState?.error && showErrorMessage && (
-        <Alert ref={errorMessageRef} variant="destructive" className="border-l-4">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>{toText(transferState.error)}</AlertDescription>
-        </Alert>
-      )}
+        {transferState?.error && showErrorMessage && (
+          <Alert ref={errorMessageRef} variant="destructive" className="border-l-4">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>{toText(transferState.error)}</AlertDescription>
+          </Alert>
+        )}
+      </div>
 
       <form onSubmit={handleTransferSubmit} className="grid grid-cols-1 lg:grid-cols-7 gap-6 relative">
         <div className="lg:col-span-4 space-y-6 lg:max-w-3xl lg:w-full">
