@@ -473,10 +473,10 @@ export default function AgencesPage() {
                 <li>
                   Pour toute question, contactez notre service client au{" "}
                   <a
-                    href="tel:+224222000000"
+                    href="tel:+224628083780"
                     className="text-primary hover:underline focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded"
                   >
-                    +224 222 000 000
+                    +224 628 08 37 80
                   </a>
                   .
                 </li>
