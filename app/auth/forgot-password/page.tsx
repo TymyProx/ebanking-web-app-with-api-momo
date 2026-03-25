@@ -88,7 +88,7 @@ export default function ForgotPasswordPage() {
           {/* Animated gradient overlay */}
           <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent animate-shimmer"></div>
 
-          {/* Banking illustration - toujours ~38% de la largeur viewport */}
+          {/* Banking illustration — même bloc que /login */}
           <div className="hidden lg:block absolute bottom-0 left-[55%] -translate-x-1/2 w-[60vw] min-w-[500px] max-w-[1500px] opacity-100">
             <Image
               src="/images/image2.png"
@@ -108,10 +108,10 @@ export default function ForgotPasswordPage() {
             </span>
           </div>
 
-          {/* Bloc carousel texte */}
+          {/* Bloc carousel texte — mêmes tailles que /login */}
           <div className="absolute top-36 sm:top-40 lg:top-[56%] lg:-translate-y-1/2 left-4 sm:left-6 lg:left-[2vw] right-4 lg:right-auto lg:max-w-[28%] px-0">
             <div className="text-left text-white space-y-[1vw] transition-all duration-700 ease-in-out">
-              <h1 className="text-lg sm:text-2xl md:text-3xl lg:text-[clamp(1.5rem,2.2vw,2.5rem)] lg:leading-tight font-bold animate-fadeIn drop-shadow-2xl leading-tight">
+              <h1 className="text-lg sm:text-2xl md:text-3xl lg:text-[2.2vw] lg:min-w-[16px] lg:leading-tight font-bold animate-fadeIn drop-shadow-2xl leading-tight">
                 {welcomeMessages[currentMessageIndex].title}
               </h1>
               <p className="text-sm sm:text-base md:text-lg lg:text-[clamp(0.875rem,1.1vw,1.25rem)] text-white/90 animate-fadeIn drop-shadow-lg leading-relaxed">
@@ -136,6 +136,7 @@ export default function ForgotPasswordPage() {
                   {!success ? (
                     <>
                       <button
+                        type="button"
                         onClick={() => router.push("/login")}
                         className="text-xs text-white/90 hover:text-white flex items-center space-x-1 font-medium mb-3 sm:mb-4"
                       >
@@ -143,15 +144,15 @@ export default function ForgotPasswordPage() {
                         <span>Retour à la connexion</span>
                       </button>
 
-                      <div className="text-center mb-2 sm:mb-3 relative z-10">
-                        <h2 className="text-lg sm:text-xl font-bold text-white mb-1 drop-shadow-2xl">
+                      <div className="text-center mb-2 sm:mb-3 lg:mb-[1vw] relative z-10">
+                        <h2 className="text-lg sm:text-xl lg:text-[clamp(1.1rem,1.4vw,1.5rem)] font-bold text-white mb-1 drop-shadow-2xl">
                           Mot de passe oublié
                         </h2>
                       </div>
 
-                      {/* Forgot Password Form */}
-                      <form onSubmit={handleSubmit} className="space-y-2 sm:space-y-3">
-                        <div className="space-y-2 sm:space-y-2.5">
+                      {/* Forgot Password Form — espacements / champs comme /login */}
+                      <form onSubmit={handleSubmit} className="space-y-2 sm:space-y-3 lg:space-y-[0.8vw]">
+                        <div className="space-y-2 sm:space-y-2.5 lg:space-y-[0.8vw]">
                           {error && (
                             <div className="p-2.5 rounded-lg bg-[#2d6e3e]/70 border-0 shadow-md">
                               <p className="text-xs text-white text-center font-semibold drop-shadow-md">{error}</p>
@@ -162,12 +163,12 @@ export default function ForgotPasswordPage() {
                           <div className="space-y-1">
                             <Label
                               htmlFor="email"
-                              className="text-xs font-semibold text-white/90 flex items-center space-x-1 drop-shadow-lg"
+                              className="text-xs lg:text-[clamp(0.75rem,0.85vw,0.95rem)] font-semibold text-white/90 flex items-center space-x-1 drop-shadow-lg"
                             >
                               <span>Email</span>
                               <span className="text-red-300 drop-shadow-md">*</span>
                             </Label>
-                            <div className="relative group">
+                            <div className="relative">
                               <Input
                                 id="email"
                                 name="email"
@@ -175,13 +176,14 @@ export default function ForgotPasswordPage() {
                                 placeholder="exemple@email.com"
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
-                                className="h-9 sm:h-10 lg:h-[clamp(2.5rem,3vw,3.25rem)] bg-[#2d6e3e]/60 border-0 text-white text-sm lg:text-[clamp(0.8rem,0.9vw,1rem)] placeholder:text-white/60 focus:bg-[#2d6e3e]/70 focus:ring-0 rounded-lg transition-all group-hover:bg-[#2d6e3e]/65 shadow-md"
+                                className="h-9 sm:h-10 lg:h-[clamp(2.5rem,3vw,3.25rem)] bg-[#2d6e3e]/60 border-0 text-white text-sm lg:text-[clamp(0.8rem,0.9vw,1rem)] placeholder:text-white/60 focus:bg-[#2d6e3e]/60 focus:ring-0 rounded-lg transition-all hover:bg-[#2d6e3e]/60 shadow-md"
                                 required
                                 disabled={isLoading}
                               />
-                              <div className="absolute inset-0 bg-gradient-to-r from-white/5 to-transparent rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
                             </div>
-                            <p className="text-xs text-white/70">Entrez votre adresse email pour recevoir un lien de réinitialisation</p>
+                            <p className="text-xs lg:text-[clamp(0.7rem,0.8vw,0.85rem)] text-white/70">
+                              Entrez votre adresse email pour recevoir un lien de réinitialisation
+                            </p>
                           </div>
 
                           {/* Submit Button */}
@@ -249,7 +251,7 @@ export default function ForgotPasswordPage() {
             {/* New User */}
             <div className="group relative">
               <div className="absolute inset-0 bg-gradient-to-br from-[#2d6e3e]/10 to-transparent rounded-xl blur-lg opacity-0 group-hover:opacity-100 transition-opacity"></div>
-              <div className="relative bg-white/75 backdrop-blur-xl rounded-xl shadow-lg p-3 sm:p-4 lg:p-[1.6vw] hover:shadow-xl hover:-translate-y-1 hover:bg-white/85 transition-all duration-300 border border-white/40 overflow-hidden">
+              <div className="relative bg-white/75 backdrop-blur-xl rounded-xl shadow-lg p-3 sm:p-4 lg:p-[1.2vw] hover:shadow-xl hover:-translate-y-1 hover:bg-white/85 transition-all duration-300 border border-white/40 overflow-hidden">
                 {/* Decorative element */}
                 <div className="absolute top-0 right-0 w-12 sm:w-16 h-12 sm:h-16 bg-gradient-to-br from-[#2d6e3e]/10 to-transparent rounded-bl-full"></div>
 
@@ -272,7 +274,7 @@ export default function ForgotPasswordPage() {
             {/* Mobile Banking */}
             <div className="group relative">
               <div className="absolute inset-0 bg-gradient-to-br from-[#f4c430]/10 to-transparent rounded-xl blur-lg opacity-0 group-hover:opacity-100 transition-opacity"></div>
-              <div className="relative bg-white/75 backdrop-blur-xl rounded-xl shadow-lg p-3 sm:p-4 lg:p-[1.6vw] hover:shadow-xl hover:-translate-y-1 hover:bg-white/85 transition-all duration-300 border border-white/40 overflow-hidden">
+              <div className="relative bg-white/75 backdrop-blur-xl rounded-xl shadow-lg p-3 sm:p-4 lg:p-[1.2vw] hover:shadow-xl hover:-translate-y-1 hover:bg-white/85 transition-all duration-300 border border-white/40 overflow-hidden">
                 {/* Decorative element */}
                 <div className="absolute top-0 right-0 w-12 sm:w-16 h-12 sm:h-16 bg-gradient-to-br from-[#f4c430]/10 to-transparent rounded-bl-full"></div>
 
@@ -293,7 +295,7 @@ export default function ForgotPasswordPage() {
             {/* Support */}
             <div className="group relative">
               <div className="absolute inset-0 bg-gradient-to-br from-[#2d6e3e]/10 to-transparent rounded-xl blur-lg opacity-0 group-hover:opacity-100 transition-opacity"></div>
-              <div className="relative bg-white/75 backdrop-blur-xl rounded-xl shadow-lg p-3 sm:p-4 lg:p-[1.6vw] hover:shadow-xl hover:-translate-y-1 hover:bg-white/85 transition-all duration-300 border border-white/40 overflow-hidden">
+              <div className="relative bg-white/75 backdrop-blur-xl rounded-xl shadow-lg p-3 sm:p-4 lg:p-[1.2vw] hover:shadow-xl hover:-translate-y-1 hover:bg-white/85 transition-all duration-300 border border-white/40 overflow-hidden">
                 {/* Decorative element */}
                 <div className="absolute top-0 right-0 w-12 sm:w-16 h-12 sm:h-16 bg-gradient-to-br from-[#2d6e3e]/10 to-transparent rounded-bl-full"></div>
 

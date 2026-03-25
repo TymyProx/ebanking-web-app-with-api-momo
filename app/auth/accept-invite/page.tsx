@@ -200,10 +200,10 @@ export default function AcceptInvitePage() {
             </span>
           </div>
 
-          {/* Bloc carousel texte */}
+          {/* Bloc carousel texte — aligné sur /login */}
           <div className="absolute top-36 sm:top-40 lg:top-[56%] lg:-translate-y-1/2 left-4 sm:left-6 lg:left-[2vw] right-4 lg:right-auto lg:max-w-[28%] px-0">
             <div className="text-left text-white space-y-[1vw] transition-all duration-700 ease-in-out">
-              <h1 className="text-lg sm:text-2xl md:text-3xl lg:text-[clamp(1.5rem,2.2vw,2.5rem)] lg:leading-tight font-bold animate-fadeIn drop-shadow-2xl leading-tight">
+              <h1 className="text-lg sm:text-2xl md:text-3xl lg:text-[2.2vw] lg:min-w-[16px] lg:leading-tight font-bold animate-fadeIn drop-shadow-2xl leading-tight">
                 {welcomeMessages[currentMessageIndex].title}
               </h1>
               <p className="text-sm sm:text-base md:text-lg lg:text-[clamp(0.875rem,1.1vw,1.25rem)] text-white/90 animate-fadeIn drop-shadow-lg leading-relaxed">
@@ -225,14 +225,18 @@ export default function AcceptInvitePage() {
                   {/* Decorative corner */}
                   <div className="absolute top-0 right-0 w-20 sm:w-24 h-20 sm:h-24 bg-gradient-to-br from-white/15 to-transparent rounded-bl-full"></div>
                   
-                  <div className="text-center mb-3 sm:mb-4 relative z-10">
-                    <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-[#f4c430] mb-1 drop-shadow-2xl">Activation</h2>
-                    <p className="text-xs sm:text-sm text-white/90 drop-shadow-md">Finalisez votre inscription</p>
+                  <div className="text-center mb-2 sm:mb-3 lg:mb-[1vw] relative z-10">
+                    <h2 className="text-lg sm:text-xl lg:text-[clamp(1.1rem,1.4vw,1.5rem)] font-bold text-white mb-1 drop-shadow-2xl">
+                      Activation
+                    </h2>
+                    <p className="text-xs sm:text-sm lg:text-[clamp(0.7rem,0.8vw,0.85rem)] text-white/90 drop-shadow-md">
+                      Finalisez votre inscription
+                    </p>
                   </div>
 
                   {/* Activation Form */}
-                  <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
-                    <div className="space-y-2 sm:space-y-3">
+                  <form onSubmit={handleSubmit} className="space-y-2 sm:space-y-3 lg:space-y-[0.8vw]">
+                    <div className="space-y-2 sm:space-y-2.5 lg:space-y-[0.8vw]">
                       {error && (
                         <div className="p-2.5 rounded-lg bg-[#2d6e3e]/70 border-0 shadow-md">
                           <p className="text-xs text-white text-center font-semibold drop-shadow-md">{error}</p>
@@ -241,7 +245,10 @@ export default function AcceptInvitePage() {
 
                       {/* Email Field */}
                       <div className="space-y-1">
-                        <Label htmlFor="email" className="text-xs font-semibold text-white/90 flex items-center space-x-1 drop-shadow-lg">
+                        <Label
+                          htmlFor="email"
+                          className="text-xs lg:text-[clamp(0.75rem,0.85vw,0.95rem)] font-semibold text-white/90 flex items-center space-x-1 drop-shadow-lg"
+                        >
                           <span>Email</span>
                           <span className="text-red-300 drop-shadow-md">*</span>
                         </Label>
@@ -251,7 +258,7 @@ export default function AcceptInvitePage() {
                             type="email"
                             value={formData.email}
                             readOnly
-                            className="h-9 sm:h-10 lg:h-[clamp(2.5rem,3vw,3.25rem)] bg-[#2d6e3e]/60 border-0 text-white text-sm lg:text-[clamp(0.8rem,0.9vw,1rem)] placeholder:text-white/60 focus:bg-[#2d6e3e]/70 focus:ring-0 rounded-lg transition-all group-hover:bg-[#2d6e3e]/65 shadow-md"
+                            className="h-9 sm:h-10 lg:h-[clamp(2.5rem,3vw,3.25rem)] pr-10 bg-[#2d6e3e]/60 border-0 text-white text-sm lg:text-[clamp(0.8rem,0.9vw,1rem)] placeholder:text-white/60 focus:bg-[#2d6e3e]/60 focus:ring-0 rounded-lg transition-all hover:bg-[#2d6e3e]/60 shadow-md"
                             required
                             disabled={isLoading || !!invitedEmail}
                           />
@@ -261,7 +268,10 @@ export default function AcceptInvitePage() {
 
                       {/* First Name Field */}
                       <div className="space-y-1">
-                        <Label htmlFor="firstName" className="text-xs font-semibold text-white/90 flex items-center space-x-1 drop-shadow-lg">
+                        <Label
+                          htmlFor="firstName"
+                          className="text-xs lg:text-[clamp(0.75rem,0.85vw,0.95rem)] font-semibold text-white/90 flex items-center space-x-1 drop-shadow-lg"
+                        >
                           <span>Prénom</span>
                           <span className="text-red-300 drop-shadow-md">*</span>
                         </Label>
@@ -271,7 +281,7 @@ export default function AcceptInvitePage() {
                             type="text"
                             value={formData.firstName}
                             onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-                            className="h-9 sm:h-10 lg:h-[clamp(2.5rem,3vw,3.25rem)] bg-[#2d6e3e]/60 border-0 text-white text-sm lg:text-[clamp(0.8rem,0.9vw,1rem)] placeholder:text-white/60 focus:bg-[#2d6e3e]/70 focus:ring-0 rounded-lg transition-all group-hover:bg-[#2d6e3e]/65 shadow-md"
+                            className="h-9 sm:h-10 lg:h-[clamp(2.5rem,3vw,3.25rem)] pr-10 bg-[#2d6e3e]/60 border-0 text-white text-sm lg:text-[clamp(0.8rem,0.9vw,1rem)] placeholder:text-white/60 focus:bg-[#2d6e3e]/60 focus:ring-0 rounded-lg transition-all hover:bg-[#2d6e3e]/60 shadow-md"
                             required
                             disabled={isLoading}
                           />
@@ -281,7 +291,10 @@ export default function AcceptInvitePage() {
 
                       {/* Last Name Field */}
                       <div className="space-y-1">
-                        <Label htmlFor="lastName" className="text-xs font-semibold text-white/90 flex items-center space-x-1 drop-shadow-lg">
+                        <Label
+                          htmlFor="lastName"
+                          className="text-xs lg:text-[clamp(0.75rem,0.85vw,0.95rem)] font-semibold text-white/90 flex items-center space-x-1 drop-shadow-lg"
+                        >
                           <span>Nom</span>
                           <span className="text-red-300 drop-shadow-md">*</span>
                         </Label>
@@ -291,7 +304,7 @@ export default function AcceptInvitePage() {
                             type="text"
                             value={formData.lastName}
                             onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
-                            className="h-9 sm:h-10 lg:h-[clamp(2.5rem,3vw,3.25rem)] bg-[#2d6e3e]/60 border-0 text-white text-sm lg:text-[clamp(0.8rem,0.9vw,1rem)] placeholder:text-white/60 focus:bg-[#2d6e3e]/70 focus:ring-0 rounded-lg transition-all group-hover:bg-[#2d6e3e]/65 shadow-md"
+                            className="h-9 sm:h-10 lg:h-[clamp(2.5rem,3vw,3.25rem)] pr-10 bg-[#2d6e3e]/60 border-0 text-white text-sm lg:text-[clamp(0.8rem,0.9vw,1rem)] placeholder:text-white/60 focus:bg-[#2d6e3e]/60 focus:ring-0 rounded-lg transition-all hover:bg-[#2d6e3e]/60 shadow-md"
                             required
                             disabled={isLoading}
                           />
@@ -301,7 +314,10 @@ export default function AcceptInvitePage() {
 
                       {/* Password Field */}
                       <div className="space-y-1">
-                        <Label htmlFor="password" className="text-xs font-semibold text-white/90 flex items-center space-x-1 drop-shadow-lg">
+                        <Label
+                          htmlFor="password"
+                          className="text-xs lg:text-[clamp(0.75rem,0.85vw,0.95rem)] font-semibold text-white/90 flex items-center space-x-1 drop-shadow-lg"
+                        >
                           <span>Mot de passe</span>
                           <span className="text-red-300 drop-shadow-md">*</span>
                         </Label>
@@ -312,7 +328,7 @@ export default function AcceptInvitePage() {
                             value={formData.password}
                             onChange={(e) => handlePasswordChange(e.target.value)}
                             placeholder="••••••••"
-                            className="h-9 sm:h-10 lg:h-[clamp(2.5rem,3vw,3.25rem)] lg:pr-12 bg-[#2d6e3e]/60 border-0 text-white text-sm lg:text-[clamp(0.8rem,0.9vw,1rem)] pr-11 placeholder:text-white/60 focus:bg-[#2d6e3e]/70 focus:ring-0 rounded-lg transition-all group-hover:bg-[#2d6e3e]/65 shadow-md"
+                            className="h-9 sm:h-10 lg:h-[clamp(2.5rem,3vw,3.25rem)] lg:pr-12 bg-[#2d6e3e]/60 border-0 text-white text-sm lg:text-[clamp(0.8rem,0.9vw,1rem)] pr-11 placeholder:text-white/60 focus:bg-[#2d6e3e]/60 focus:ring-0 rounded-lg transition-all hover:bg-[#2d6e3e]/60 shadow-md"
                             required
                             disabled={isLoading}
                           />
@@ -336,7 +352,10 @@ export default function AcceptInvitePage() {
 
                       {/* Confirm Password Field */}
                       <div className="space-y-1">
-                        <Label htmlFor="confirmPassword" className="text-xs font-semibold text-white/90 flex items-center space-x-1 drop-shadow-lg">
+                        <Label
+                          htmlFor="confirmPassword"
+                          className="text-xs lg:text-[clamp(0.75rem,0.85vw,0.95rem)] font-semibold text-white/90 flex items-center space-x-1 drop-shadow-lg"
+                        >
                           <span>Confirmer le mot de passe</span>
                           <span className="text-red-300 drop-shadow-md">*</span>
                         </Label>
@@ -347,7 +366,7 @@ export default function AcceptInvitePage() {
                             value={formData.confirmPassword}
                             onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
                             placeholder="••••••••"
-                            className="h-9 sm:h-10 lg:h-[clamp(2.5rem,3vw,3.25rem)] lg:pr-12 bg-[#2d6e3e]/60 border-0 text-white text-sm lg:text-[clamp(0.8rem,0.9vw,1rem)] pr-11 placeholder:text-white/60 focus:bg-[#2d6e3e]/70 focus:ring-0 rounded-lg transition-all group-hover:bg-[#2d6e3e]/65 shadow-md"
+                            className="h-9 sm:h-10 lg:h-[clamp(2.5rem,3vw,3.25rem)] lg:pr-12 bg-[#2d6e3e]/60 border-0 text-white text-sm lg:text-[clamp(0.8rem,0.9vw,1rem)] pr-11 placeholder:text-white/60 focus:bg-[#2d6e3e]/60 focus:ring-0 rounded-lg transition-all hover:bg-[#2d6e3e]/60 shadow-md"
                             required
                             disabled={isLoading}
                           />
@@ -365,7 +384,7 @@ export default function AcceptInvitePage() {
                       {/* Submit Button */}
                       <Button
                         type="submit"
-                        className="relative w-full h-9 sm:h-10 lg:h-[clamp(2.75rem,3.2vw,3.5rem)] bg-gradient-to-r from-[#f4c430] via-[#f8d060] to-[#f4c430] hover:from-[#e0b020] hover:via-[#f4c430] hover:to-[#e0b020] text-gray-900 font-semibold text-xs sm:text-sm lg:text-[clamp(0.85rem,1vw,1.1rem)] shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden group rounded-lg"
+                        className="relative w-full h-10 sm:h-11 lg:h-[clamp(2.75rem,3.2vw,3.5rem)] bg-gradient-to-r from-[#f4c430] via-[#f8d060] to-[#f4c430] hover:from-[#e0b020] hover:via-[#f4c430] hover:to-[#e0b020] text-gray-900 font-semibold text-sm lg:text-[clamp(0.85rem,1vw,1.1rem)] shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden group rounded-lg"
                         disabled={isLoading}
                       >
                         <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-1000"></div>
@@ -392,7 +411,7 @@ export default function AcceptInvitePage() {
               {/* New User */}
               <div className="group relative">
                 <div className="absolute inset-0 bg-gradient-to-br from-[#2d6e3e]/10 to-transparent rounded-xl blur-lg opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                <div className="relative bg-white/75 backdrop-blur-xl rounded-xl shadow-lg p-3 sm:p-4 lg:p-[1.6vw] hover:shadow-xl hover:-translate-y-1 hover:bg-white/85 transition-all duration-300 border border-white/40 overflow-hidden">
+                <div className="relative bg-white/75 backdrop-blur-xl rounded-xl shadow-lg p-3 sm:p-4 lg:p-[1.2vw] hover:shadow-xl hover:-translate-y-1 hover:bg-white/85 transition-all duration-300 border border-white/40 overflow-hidden">
                   <div className="absolute top-0 right-0 w-12 sm:w-16 h-12 sm:h-16 bg-gradient-to-br from-[#2d6e3e]/10 to-transparent rounded-bl-full"></div>
                   
                   <div className="flex items-center space-x-3 relative z-10">
@@ -412,7 +431,7 @@ export default function AcceptInvitePage() {
               {/* Mobile Banking */}
               <div className="group relative">
                 <div className="absolute inset-0 bg-gradient-to-br from-[#f4c430]/10 to-transparent rounded-xl blur-lg opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                <div className="relative bg-white/75 backdrop-blur-xl rounded-xl shadow-lg p-3 sm:p-4 lg:p-[1.6vw] hover:shadow-xl hover:-translate-y-1 hover:bg-white/85 transition-all duration-300 border border-white/40 overflow-hidden">
+                <div className="relative bg-white/75 backdrop-blur-xl rounded-xl shadow-lg p-3 sm:p-4 lg:p-[1.2vw] hover:shadow-xl hover:-translate-y-1 hover:bg-white/85 transition-all duration-300 border border-white/40 overflow-hidden">
                   <div className="absolute top-0 right-0 w-12 sm:w-16 h-12 sm:h-16 bg-gradient-to-br from-[#f4c430]/10 to-transparent rounded-bl-full"></div>
                   
                   <div className="flex items-center space-x-3 relative z-10">
@@ -432,7 +451,7 @@ export default function AcceptInvitePage() {
               {/* Support */}
               <div className="group relative">
                 <div className="absolute inset-0 bg-gradient-to-br from-[#2d6e3e]/10 to-transparent rounded-xl blur-lg opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                <div className="relative bg-white/75 backdrop-blur-xl rounded-xl shadow-lg p-3 sm:p-4 lg:p-[1.6vw] hover:shadow-xl hover:-translate-y-1 hover:bg-white/85 transition-all duration-300 border border-white/40 overflow-hidden">
+                <div className="relative bg-white/75 backdrop-blur-xl rounded-xl shadow-lg p-3 sm:p-4 lg:p-[1.2vw] hover:shadow-xl hover:-translate-y-1 hover:bg-white/85 transition-all duration-300 border border-white/40 overflow-hidden">
                   <div className="absolute top-0 right-0 w-12 sm:w-16 h-12 sm:h-16 bg-gradient-to-br from-[#2d6e3e]/10 to-transparent rounded-bl-full"></div>
                   
                   <div className="flex items-center space-x-3 relative z-10">
