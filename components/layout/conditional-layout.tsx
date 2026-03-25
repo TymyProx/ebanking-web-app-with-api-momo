@@ -57,8 +57,8 @@ export function ConditionalLayout({ children }: ConditionalLayoutProps) {
     pathname.startsWith("/auth/forgot-password") ||
     pathname.startsWith("/auth/password-reset")
 
-  // Page Agences : afficher le layout complet si connecté, sinon sans layout
-  const isAgencesPage = pathname === "/agences"
+  // Pages d’info publiques (agences, support) : layout complet si connecté, sinon shell minimal
+  const isPublicInfoPage = pathname === "/agences" || pathname === "/support"
 
   if (isPublicPage) {
     return (
@@ -69,31 +69,24 @@ export function ConditionalLayout({ children }: ConditionalLayoutProps) {
     )
   }
 
-  // Pour la page Agences, attendre la vérification de l'authentification
-  if (isAgencesPage && isAuthenticated === null) {
-    return (
-      <div className="min-h-screen bg-background">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-          {children}
-        </div>
-        <Toaster />
+  const publicInfoShell = (
+    <div className="min-h-screen bg-background">
+      <div className="w-full max-w-full mx-auto px-2 sm:px-3 md:px-4 py-5 sm:py-7">
+        {children}
       </div>
-    )
+      <Toaster />
+    </div>
+  )
+
+  if (isPublicInfoPage && isAuthenticated === null) {
+    return publicInfoShell
   }
 
-  // Pour la page Agences, si l'utilisateur n'est pas connecté, afficher sans layout avec marges
-  if (isAgencesPage && !isAuthenticated) {
-    return (
-      <div className="min-h-screen bg-background">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-          {children}
-        </div>
-        <Toaster />
-      </div>
-    )
+  if (isPublicInfoPage && !isAuthenticated) {
+    return publicInfoShell
   }
 
-  // Pour toutes les autres pages (ou Agences si connecté), afficher le layout complet
+  // Pour toutes les autres pages (ou pages info si connecté), afficher le layout complet
   return (
     <SidebarProvider defaultOpen={true} collapsible="icon">
       <AppSidebar />

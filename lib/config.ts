@@ -15,4 +15,8 @@ export const config = {
   
   // URL du portail e-banking client (pour les liens d'invitation)
   EBANKING_URL: cleanEnvValue(process.env.NEXT_PUBLIC_EBANKING_URL, "https://astra-apps.net"),//"https://35.184.98.9:4000"),
+
+  /** Coordonnées affichées sur la page Support (public) — surcharger via .env */
+  SUPPORT_PHONE: cleanEnvValue(process.env.NEXT_PUBLIC_SUPPORT_PHONE, "+224 628 08 37 80"),
+  SUPPORT_EMAIL: cleanEnvValue(process.env.NEXT_PUBLIC_SUPPORT_EMAIL, "info@bng-guinee.com"),
 }

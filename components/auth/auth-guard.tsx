@@ -23,6 +23,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
       const publicPaths = [
         "/",
         "/agences",
+        "/support",
         "/login",
         "/signup",
         "/auth/accept-invite",

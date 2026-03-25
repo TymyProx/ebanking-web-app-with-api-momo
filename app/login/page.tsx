@@ -649,8 +649,12 @@ export default function LoginPage() {
          {/* Information Cards - proportions et marges cohérentes */}
          <div className="w-full max-w-full -mt-2 sm:-mt-3 mb-4 sm:mb-5 md:mb-6 lg:mb-[1.5vw]">
            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 lg:gap-[1.5vw]">
-            {/* New User */}
-            <div className="group relative">
+            {/* Nous trouver → /agences (hors connexion : sans sidebar, voir ConditionalLayout) */}
+            <Link
+              href="/agences"
+              className="group relative block cursor-pointer rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2d6e3e] focus-visible:ring-offset-2"
+              aria-label="Voir nos agences"
+            >
               <div className="absolute inset-0 bg-gradient-to-br from-[#2d6e3e]/10 to-transparent rounded-xl blur-lg opacity-0 group-hover:opacity-100 transition-opacity"></div>
               <div className="relative bg-white/75 backdrop-blur-xl rounded-xl shadow-lg p-3 sm:p-4 lg:p-[1.2vw] hover:shadow-xl hover:-translate-y-1 hover:bg-white/85 transition-all duration-300 border border-white/40 overflow-hidden">
                 {/* Decorative element */}
@@ -670,7 +674,7 @@ export default function LoginPage() {
                   </div>
                 </div>
               </div>
-            </div>
+            </Link>
 
             {/* Mobile Banking */}
             <div className="group relative">
@@ -693,11 +697,13 @@ export default function LoginPage() {
               </div>
             </div>
 
-            {/* Support */}
-            <div className="group relative">
+            <Link
+              href="/support"
+              className="group relative block cursor-pointer rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2d6e3e] focus-visible:ring-offset-2"
+              aria-label="Support client — contact et assistance"
+            >
               <div className="absolute inset-0 bg-gradient-to-br from-[#2d6e3e]/10 to-transparent rounded-xl blur-lg opacity-0 group-hover:opacity-100 transition-opacity"></div>
               <div className="relative bg-white/75 backdrop-blur-xl rounded-xl shadow-lg p-3 sm:p-4 lg:p-[1.2vw] hover:shadow-xl hover:-translate-y-1 hover:bg-white/85 transition-all duration-300 border border-white/40 overflow-hidden">
-                {/* Decorative element */}
                 <div className="absolute top-0 right-0 w-12 sm:w-16 h-12 sm:h-16 bg-gradient-to-br from-[#2d6e3e]/10 to-transparent rounded-bl-full"></div>
 
                 <div className="flex items-center space-x-3 relative z-10">
@@ -714,7 +720,7 @@ export default function LoginPage() {
                   </div>
                 </div>
               </div>
-            </div>
+            </Link>
           </div>
         </div>
       </main>

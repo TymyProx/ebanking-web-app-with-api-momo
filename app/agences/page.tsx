@@ -1,6 +1,9 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import Image from "next/image"
+import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -16,7 +19,7 @@ import {
 } from "@/components/ui/pagination"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { MapPin, Search, Filter, ExternalLink, List, Map, AlertCircle, Loader2, Settings } from "lucide-react"
+import { MapPin, Search, Filter, ExternalLink, List, Map, AlertCircle, Loader2, Settings, ArrowLeft } from "lucide-react"
 import { useAgences, type Agence } from "@/hooks/use-agences"
 import { AgenceCard } from "@/components/agence-card"
 import { AgenceMap } from "@/components/agence-map"
@@ -25,6 +28,8 @@ import { config } from "@/lib/config"
 import AuthService, { type User } from "@/lib/auth-service"
 
 export default function AgencesPage() {
+  const router = useRouter()
+
   // État de l'utilisateur et des rôles
   const [currentUser, setCurrentUser] = useState<User | null>(null)
   const [userRole, setUserRole] = useState<string | null>(null)
@@ -60,6 +65,12 @@ export default function AgencesPage() {
 
   // Agence sélectionnée sur la carte
   const [selectedAgence, setSelectedAgence] = useState<Agence | null>(null)
+
+  /** Aligné SSR / client : après montage seulement (évite mismatch d’hydratation) */
+  const [isPublicVisitor, setIsPublicVisitor] = useState(true)
+  useEffect(() => {
+    setIsPublicVisitor(!AuthService.isAuthenticated())
+  }, [])
 
   // Charger les informations utilisateur
   useEffect(() => {
@@ -144,29 +155,70 @@ export default function AgencesPage() {
 
   return (
    <div className="space-y-6" lang="fr">
-      {/* En-tête */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div className="space-y-2">
-          <h1 className="text-3xl font-bold text-primary">
-            Localisation des agences
-          </h1>
-          <p className="text-xs text-muted-foreground">Trouvez l'agence BNG la plus proche de vous</p>
-        </div>
+      {/* En-tête : visiteur non connecté = titre et logo sur une même ligne, alignés verticalement */}
+      {isPublicVisitor ? (
+        <div className="relative overflow-hidden rounded-2xl border border-primary/10 bg-gradient-to-br from-primary/[0.06] via-background to-muted/30 p-4 sm:p-5 md:p-6 shadow-[0_1px_0_0_rgba(0,0,0,0.03),0_8px_24px_-8px_rgba(45,110,62,0.12)]">
+          <div className="relative space-y-4 sm:space-y-5">
+            <button
+              type="button"
+              onClick={() => router.back()}
+              className="group flex h-10 w-10 items-center justify-center rounded-full border border-primary/15 bg-background/80 text-primary shadow-sm backdrop-blur-sm transition-all duration-300 hover:border-primary/30 hover:bg-background hover:shadow-md hover:shadow-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:ring-offset-2"
+              aria-label="Retour à la page précédente"
+            >
+              <ArrowLeft className="h-5 w-5 transition-transform duration-300 group-hover:-translate-x-0.5" aria-hidden />
+            </button>
 
-        {/* Bouton pour le Responsable réseau */}
-        {isNetworkManager && (
-          <Button
-            variant="default"
-            onClick={handleManageAgences}
-            className="shrink-0"
-            aria-label="Gérer les agences dans le Back-Office"
-          >
-            <Settings className="w-4 h-4 mr-2" />
-            Mettre à jour les agences
-            <ExternalLink className="w-4 h-4 ml-2" />
-          </Button>
-        )}
-      </div>
+            <div className="flex flex-row items-center justify-between gap-3 sm:gap-4 pt-0.5">
+              <div className="min-w-0 flex-1 pr-2">
+                <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-primary leading-tight">
+                  <span className="border-b-[3px] border-[#f4c430] pb-0.5">Loc</span>
+                  alisation des agences
+                </h1>
+                <p className="mt-4 sm:mt-5 max-w-md text-xs sm:text-sm leading-relaxed text-muted-foreground">
+                  Trouvez l'agence BNG la plus proche de vous
+                </p>
+              </div>
+              <Link
+                href="/"
+                className="shrink-0 flex items-center self-center rounded-xl p-1.5 ring-1 ring-transparent transition-all duration-300 hover:bg-background/60 hover:ring-primary/15 hover:shadow-md"
+                aria-label="Banque Nationale de Guinée — Accueil"
+              >
+                <Image
+                  src="/images/logo-bng.png"
+                  alt="BNG - Banque Nationale de Guinée"
+                  width={280}
+                  height={84}
+                  className="h-11 w-auto sm:h-12 md:h-14 lg:h-16 object-contain object-right"
+                  priority
+                />
+              </Link>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div className="space-y-2">
+            <h1 className="text-3xl font-bold text-primary">
+              <span className="border-b-[3px] border-[#f4c430] pb-0.5">Loc</span>
+              alisation des agences
+            </h1>
+            <p className="text-xs text-muted-foreground">Trouvez l'agence BNG la plus proche de vous</p>
+          </div>
+
+          {isNetworkManager && (
+            <Button
+              variant="default"
+              onClick={handleManageAgences}
+              className="shrink-0"
+              aria-label="Gérer les agences dans le Back-Office"
+            >
+              <Settings className="w-4 h-4 mr-2" />
+              Mettre à jour les agences
+              <ExternalLink className="w-4 h-4 ml-2" />
+            </Button>
+          )}
+        </div>
+      )}
 
       {/* Message d'erreur avec fallback */}
       {error && (
