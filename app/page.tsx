@@ -811,16 +811,6 @@ export default function LandingPage() {
               </Link>
             </div>
 
-            <div className="flex flex-wrap justify-center items-center gap-8 pt-8">
-              <div className="flex items-center gap-2 text-gray-700">
-                <Shield className="h-5 w-5 text-green-600" />
-                <span className="text-sm font-medium">100% Sécurisé</span>
-              </div>
-              <div className="flex items-center gap-2 text-gray-700">
-                <Clock className="h-5 w-5 text-green-600" />
-                <span className="text-sm font-medium">Activation immédiate</span>
-              </div>
-            </div>
           </div>
         </div>
       </section>

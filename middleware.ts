@@ -5,6 +5,7 @@ import type { NextRequest } from "next/server"
 const publicPaths = [
   "/",
   "/agences",
+  "/support",
   "/login",
   "/signup",
   "/auth/verify-email",
