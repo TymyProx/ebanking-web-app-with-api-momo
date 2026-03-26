@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { DatePickerField, toLocalYmd } from "@/components/ui/date-picker-field"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Alert, AlertDescription } from "@/components/ui/alert"
@@ -91,12 +92,21 @@ export default function FundsProvisionPage() {
       return
     }
 
-    if (formData.hasBlocking && formData.blockingEndDate <= formData.provisionDate) {
-      setResult({
-        success: false,
-        message: "La date de fin de blocage doit être postérieure à la date de mise à disposition.",
-      })
-      return
+    if (formData.hasBlocking) {
+      if (!formData.blockingEndDate?.trim()) {
+        setResult({
+          success: false,
+          message: "Veuillez indiquer la date de fin de blocage.",
+        })
+        return
+      }
+      if (formData.blockingEndDate <= formData.provisionDate) {
+        setResult({
+          success: false,
+          message: "La date de fin de blocage doit être postérieure à la date de mise à disposition.",
+        })
+        return
+      }
     }
 
     setShowConfirmation(true)
@@ -245,13 +255,13 @@ export default function FundsProvisionPage() {
                   </div>
                   <div>
                     <Label htmlFor="provisionDate">Date de mise à disposition *</Label>
-                    <Input
+                    <DatePickerField
                       id="provisionDate"
-                      type="date"
                       value={formData.provisionDate}
-                      onChange={(e) => handleInputChange("provisionDate", e.target.value)}
-                      min={new Date().toISOString().split("T")[0]}
-                      required
+                      onChange={(v) => handleInputChange("provisionDate", v)}
+                      minDate={toLocalYmd()}
+                      fromYear={new Date().getFullYear()}
+                      toYear={new Date().getFullYear() + 5}
                     />
                   </div>
                 </div>
@@ -386,13 +396,13 @@ export default function FundsProvisionPage() {
                     </div>
                     <div>
                       <Label htmlFor="blockingEndDate">Date de fin de blocage *</Label>
-                      <Input
+                      <DatePickerField
                         id="blockingEndDate"
-                        type="date"
                         value={formData.blockingEndDate}
-                        onChange={(e) => handleInputChange("blockingEndDate", e.target.value)}
-                        min={formData.provisionDate}
-                        required={formData.hasBlocking}
+                        onChange={(v) => handleInputChange("blockingEndDate", v)}
+                        minDate={formData.provisionDate}
+                        fromYear={new Date().getFullYear()}
+                        toYear={new Date().getFullYear() + 10}
                       />
                       <p className="text-xs text-orange-600 mt-1">
                         Les fonds seront bloqués jusqu'à cette date et libérés automatiquement

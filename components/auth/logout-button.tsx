@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { LogOut } from "lucide-react"
 import AuthService from "@/lib/auth-service"
+import { dispatchAuthSessionChanged } from "@/lib/auth-events"
 
 interface LogoutButtonProps {
   variant?: "default" | "ghost" | "outline"
@@ -25,6 +26,7 @@ export function LogoutButton({
   const handleLogout = async () => {
     try {
       await AuthService.signOut()
+      dispatchAuthSessionChanged()
 
       // Clear all session storage
       if (typeof window !== "undefined") {
@@ -35,7 +37,7 @@ export function LogoutButton({
       router.push("/login")
     } catch (error) {
       console.error("Erreur lors de la déconnexion:", error)
-      // Even on error, clear session and redirect to login
+      dispatchAuthSessionChanged()
       if (typeof window !== "undefined") {
         sessionStorage.clear()
       }

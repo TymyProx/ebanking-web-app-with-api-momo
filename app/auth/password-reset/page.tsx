@@ -238,9 +238,14 @@ export default function PasswordResetPage() {
                           </button>
                         </div>
                         {passwordErrors.length > 0 && (
-                          <div className="text-xs text-red-200 space-y-1">
+                          <div role="alert" className="mt-1 space-y-1">
                             {passwordErrors.map((err, idx) => (
-                              <p key={idx}>• {err}</p>
+                              <p
+                                key={idx}
+                                className="text-xs font-semibold leading-snug text-red-500"
+                              >
+                                • {err}
+                              </p>
                             ))}
                           </div>
                         )}

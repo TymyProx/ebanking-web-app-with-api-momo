@@ -4,6 +4,7 @@ import { useState, useTransition, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { DatePickerField } from "@/components/ui/date-picker-field"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Alert, AlertDescription } from "@/components/ui/alert"
@@ -189,7 +190,15 @@ export default function ProfilePage() {
 
               <div>
                 <Label htmlFor="dateOfBirth">Date de naissance</Label>
-                <Input id="dateOfBirth" type="date" value={formData.dateOfBirth} disabled className="bg-gray-50" />
+                <DatePickerField
+                  id="dateOfBirth"
+                  value={formData.dateOfBirth || ""}
+                  onChange={() => {}}
+                  disabled
+                  fromYear={1920}
+                  toYear={new Date().getFullYear()}
+                  buttonClassName="bg-gray-50 opacity-100"
+                />
               </div>
             </CardContent>
           </Card>

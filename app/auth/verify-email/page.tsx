@@ -228,9 +228,14 @@ function VerifyEmailContent() {
                               </button>
                             </div>
                             {password && passwordErrors.length > 0 && (
-                              <div className="text-xs text-red-300 space-y-0.5 mt-1">
+                              <div role="alert" className="mt-1 space-y-1">
                                 {passwordErrors.map((err, index) => (
-                                  <p key={index}>• {err}</p>
+                                  <p
+                                    key={index}
+                                    className="text-xs font-semibold leading-snug text-red-500"
+                                  >
+                                    • {err}
+                                  </p>
                                 ))}
                               </div>
                             )}

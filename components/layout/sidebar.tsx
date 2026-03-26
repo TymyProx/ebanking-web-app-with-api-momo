@@ -531,6 +531,20 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>): 
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={pathname === "/notifications"}
+                      className="h-10 sm:h-11 rounded-xl text-white hover:bg-white/20 data-[active=true]:bg-white/30 data-[active=true]:text-white data-[active=true]:shadow-lg data-[active=true]:border-l-4 data-[active=true]:border-[#f4c430] transition-all duration-200 px-2 sm:px-3"
+                    >
+                      <Link href="/notifications" className="flex items-center gap-2 sm:gap-3 min-w-0">
+                        <div className="flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-white/10 group-data-[active=true]:bg-white/20 shrink-0">
+                          <Bell className="h-4 w-4 sm:h-5 sm:w-5 text-white stroke-white" />
+                        </div>
+                        <span className="font-semibold text-white text-sm sm:text-base truncate">Notifications</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
                 </SidebarMenu>
               </SidebarGroupContent>
             </SidebarGroup>

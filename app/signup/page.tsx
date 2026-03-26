@@ -2,14 +2,19 @@
 
 import type React from "react"
 import Image from "next/image"
-import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
+import { useState, useEffect, useLayoutEffect } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { User, Mail, MapPin, CreditCard, HelpCircle, Smartphone, UserPlus, ArrowLeft } from "lucide-react"
-import { initiateSignup, initiateExistingClientSignup } from "./actions"
+import {
+  initiateSignup,
+  initiateExistingClientSignup,
+  verifyNewClientSignupOtp,
+  resendNewClientSignupOtp,
+} from "./actions"
 
 const signupMessages = [
   {
@@ -36,8 +41,19 @@ export default function SignupPage() {
   const [clientType, setClientType] = useState<"new" | "existing" | null>(null)
   const [verificationSent, setVerificationSent] = useState(false)
   const [maskedEmail, setMaskedEmail] = useState("")
+  const [newClientOtpStep, setNewClientOtpStep] = useState(false)
+  const [pendingNewClientEmail, setPendingNewClientEmail] = useState("")
+  const [isResendingOtp, setIsResendingOtp] = useState(false)
   const [currentMessageIndex, setCurrentMessageIndex] = useState(0)
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const flow = searchParams.get("flow")
+  const isDeepLinkedFlow = flow === "new" || flow === "existing"
+
+  useLayoutEffect(() => {
+    if (flow === "new") setClientType("new")
+    else if (flow === "existing") setClientType("existing")
+  }, [flow])
 
   // Carrousel automatique pour les messages
   useEffect(() => {
@@ -57,7 +73,8 @@ export default function SignupPage() {
       const formData = new FormData(e.target as HTMLFormElement)
       const fullName = formData.get("fullName") as string
       const email = formData.get("email") as string
-      const phone = formData.get("phone") as string
+      const phoneLocal = (formData.get("phoneLocal") as string) || ""
+      const phone = `+224${phoneLocal.replace(/\D/g, "")}`
       const address = formData.get("address") as string
 
       const result = await initiateSignup({
@@ -68,7 +85,12 @@ export default function SignupPage() {
       })
 
       if (result.success) {
-        router.push(`/auth/verify-email?email=${encodeURIComponent(email)}`)
+        if (result.requiresOtp) {
+          setPendingNewClientEmail(String(email).trim())
+          setNewClientOtpStep(true)
+        } else {
+          router.push(`/auth/verify-email?email=${encodeURIComponent(email)}`)
+        }
       } else {
         setError(result.message)
       }
@@ -76,6 +98,39 @@ export default function SignupPage() {
       setError(err.message || "Une erreur est survenue lors de l'inscription")
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  const handleVerifyNewClientOtp = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setIsLoading(true)
+    setError("")
+    try {
+      const formData = new FormData(e.target as HTMLFormElement)
+      const code = (formData.get("signupOtp") as string) || ""
+      const result = await verifyNewClientSignupOtp(code)
+      if (result.success) {
+        router.push(`/auth/verify-email?email=${encodeURIComponent(pendingNewClientEmail)}`)
+      } else {
+        setError(result.message)
+      }
+    } catch (err: any) {
+      setError(err.message || "Une erreur est survenue")
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleResendSignupOtp = async () => {
+    setIsResendingOtp(true)
+    setError("")
+    try {
+      const result = await resendNewClientSignupOtp()
+      if (!result.success) setError(result.message)
+    } catch (err: any) {
+      setError(err.message || "Erreur lors du renvoi du code")
+    } finally {
+      setIsResendingOtp(false)
     }
   }
 
@@ -223,21 +278,104 @@ export default function SignupPage() {
 
                   {clientType === "new" && !verificationSent && (
                     <>
-                      <button
-                        onClick={() => setClientType(null)}
-                        className="text-xs text-white/90 hover:text-white flex items-center space-x-1 font-medium mb-3 sm:mb-4"
-                      >
-                        <ArrowLeft className="h-3 w-3" />
-                        <span>Retour</span>
-                      </button>
+                      {!isDeepLinkedFlow && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (newClientOtpStep) {
+                              setNewClientOtpStep(false)
+                              setError("")
+                            } else {
+                              router.replace("/signup")
+                              setClientType(null)
+                              setNewClientOtpStep(false)
+                              setPendingNewClientEmail("")
+                              setError("")
+                            }
+                          }}
+                          className="text-xs text-white/90 hover:text-white flex items-center space-x-1 font-medium mb-3 sm:mb-4"
+                        >
+                          <ArrowLeft className="h-3 w-3" />
+                          <span>Retour</span>
+                        </button>
+                      )}
 
                       <div className="text-center mb-2 sm:mb-3 relative z-10">
                         <h2 className="text-lg sm:text-xl font-bold text-white mb-1 drop-shadow-2xl">
-                          Nouveau compte
+                          {newClientOtpStep ? "Code de vérification" : "Nouveau compte"}
                         </h2>
+                        {newClientOtpStep && pendingNewClientEmail && (
+                          <p className="text-xs text-white/80 mt-1 px-1">
+                            Saisissez le code à 6 chiffres envoyé à{" "}
+                            <span className="font-semibold text-white">{pendingNewClientEmail}</span>
+                          </p>
+                        )}
                       </div>
 
-                      {/* New Client Form */}
+                      {newClientOtpStep ? (
+                        <form onSubmit={handleVerifyNewClientOtp} className="space-y-2 sm:space-y-3">
+                          <div className="space-y-2 sm:space-y-2.5">
+                            {error && (
+                              <div className="p-2.5 rounded-lg bg-[#2d6e3e]/70 border-0 shadow-md">
+                                <p className="text-xs text-white text-center font-semibold drop-shadow-md">{error}</p>
+                              </div>
+                            )}
+
+                            <div className="space-y-1">
+                              <Label
+                                htmlFor="signupOtp"
+                                className="text-xs font-semibold text-white/90 flex items-center space-x-1 drop-shadow-lg"
+                              >
+                                <span>Code à 6 chiffres</span>
+                                <span className="text-red-300 drop-shadow-md">*</span>
+                              </Label>
+                              <Input
+                                id="signupOtp"
+                                name="signupOtp"
+                                type="text"
+                                inputMode="numeric"
+                                autoComplete="one-time-code"
+                                pattern="[0-9]{6}"
+                                maxLength={6}
+                                placeholder="• • • • • •"
+                                className="h-11 text-center text-xl tracking-[0.35em] font-semibold sm:h-12 bg-[#2d6e3e]/60 border-0 text-white placeholder:text-white/40 focus:bg-[#2d6e3e]/70 focus:ring-0 rounded-lg shadow-md"
+                                required
+                                disabled={isLoading}
+                                onInput={(e) => {
+                                  const t = e.target as HTMLInputElement
+                                  t.value = t.value.replace(/\D/g, "").slice(0, 6)
+                                }}
+                              />
+                            </div>
+
+                            <Button
+                              type="submit"
+                              className="relative w-full h-9 sm:h-10 lg:h-[clamp(2.75rem,3.2vw,3.5rem)] bg-gradient-to-r from-[#f4c430] via-[#f8d060] to-[#f4c430] hover:from-[#e0b020] hover:via-[#f4c430] hover:to-[#e0b020] text-gray-900 font-semibold text-xs sm:text-sm lg:text-[clamp(0.85rem,1vw,1.1rem)] shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden group rounded-lg"
+                              disabled={isLoading}
+                            >
+                              {isLoading ? (
+                                <div className="flex items-center justify-center space-x-2">
+                                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-gray-900/30 border-t-gray-900" />
+                                  <span className="text-sm">Vérification...</span>
+                                </div>
+                              ) : (
+                                <span className="text-sm">Valider et recevoir le lien</span>
+                              )}
+                            </Button>
+
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              className="w-full text-white/90 hover:text-white hover:bg-white/10 text-xs"
+                              disabled={isLoading || isResendingOtp}
+                              onClick={handleResendSignupOtp}
+                            >
+                              {isResendingOtp ? "Envoi..." : "Renvoyer le code"}
+                            </Button>
+                          </div>
+                        </form>
+                      ) : (
+                      /* New Client Form */
                       <form onSubmit={handleNewClientSubmit} className="space-y-2 sm:space-y-3">
                         <div className="space-y-2 sm:space-y-2.5">
                           {error && (
@@ -295,22 +433,34 @@ export default function SignupPage() {
                           {/* Phone Field */}
                           <div className="space-y-1">
                             <Label
-                              htmlFor="phone"
+                              htmlFor="phoneLocal"
                               className="text-xs font-semibold text-white/90 flex items-center space-x-1 drop-shadow-lg"
                             >
                               <span>Téléphone</span>
                               <span className="text-red-300 drop-shadow-md">*</span>
                             </Label>
                             <div className="relative group">
-                              <Input
-                                id="phone"
-                                name="phone"
-                                type="tel"
-                                placeholder="+224 XX XX XX XX XX"
-                                className="h-9 sm:h-10 lg:h-[clamp(2.5rem,3vw,3.25rem)] bg-[#2d6e3e]/60 border-0 text-white text-sm lg:text-[clamp(0.8rem,0.9vw,1rem)] placeholder:text-white/60 focus:bg-[#2d6e3e]/70 focus:ring-0 rounded-lg transition-all group-hover:bg-[#2d6e3e]/65 shadow-md"
-                                required
-                                disabled={isLoading}
-                              />
+                              <div className="flex h-9 sm:h-10 lg:h-[clamp(2.5rem,3vw,3.25rem)] rounded-lg shadow-md overflow-hidden">
+                                <div className="px-3 flex items-center bg-[#2d6e3e]/75 text-white text-sm lg:text-[clamp(0.8rem,0.9vw,1rem)] font-semibold border-r border-white/20">
+                                  +224
+                                </div>
+                                <Input
+                                  id="phoneLocal"
+                                  name="phoneLocal"
+                                  type="tel"
+                                  inputMode="numeric"
+                                  pattern="[0-9]{9}"
+                                  maxLength={9}
+                                  placeholder="6XXXXXXXX"
+                                  className="h-full rounded-none bg-[#2d6e3e]/60 border-0 text-white text-sm lg:text-[clamp(0.8rem,0.9vw,1rem)] placeholder:text-white/60 focus:bg-[#2d6e3e]/70 focus:ring-0 transition-all group-hover:bg-[#2d6e3e]/65"
+                                  required
+                                  disabled={isLoading}
+                                  onInput={(e) => {
+                                    const target = e.target as HTMLInputElement
+                                    target.value = target.value.replace(/[^0-9]/g, "").slice(0, 9)
+                                  }}
+                                />
+                              </div>
                               <div className="absolute inset-0 bg-gradient-to-r from-white/5 to-transparent rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
                             </div>
                           </div>
@@ -359,18 +509,33 @@ export default function SignupPage() {
                           </Button>
                         </div>
                       </form>
+                      )}
+
+                      <div className="text-center pt-2 sm:pt-3">
+                        <Link href="/login" className="text-xs text-white/90 hover:text-white font-medium">
+                          Vous avez déjà un compte en ligne ?{" "}
+                          <span className="text-[#f4c430] font-semibold">Se connecter</span>
+                        </Link>
+                      </div>
                     </>
                   )}
 
                   {clientType === "existing" && !verificationSent && (
                     <>
-                      <button
-                        onClick={() => setClientType(null)}
-                        className="text-xs text-white/90 hover:text-white flex items-center space-x-1 font-medium mb-3 sm:mb-4"
-                      >
-                        <ArrowLeft className="h-3 w-3" />
-                        <span>Retour</span>
-                      </button>
+                      {!isDeepLinkedFlow && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            router.replace("/signup")
+                            setClientType(null)
+                            setError("")
+                          }}
+                          className="text-xs text-white/90 hover:text-white flex items-center space-x-1 font-medium mb-3 sm:mb-4"
+                        >
+                          <ArrowLeft className="h-3 w-3" />
+                          <span>Retour</span>
+                        </button>
+                      )}
 
                       <div className="text-center mb-2 sm:mb-3 relative z-10">
                         <h2 className="text-lg sm:text-xl font-bold text-white mb-1 drop-shadow-2xl">
@@ -437,6 +602,13 @@ export default function SignupPage() {
                           </Button>
                         </div>
                       </form>
+
+                      <div className="text-center pt-2 sm:pt-3">
+                        <Link href="/login" className="text-xs text-white/90 hover:text-white font-medium">
+                          Vous avez déjà un compte en ligne ?{" "}
+                          <span className="text-[#f4c430] font-semibold">Se connecter</span>
+                        </Link>
+                      </div>
                     </>
                   )}
 

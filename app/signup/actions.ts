@@ -1,12 +1,18 @@
 "use server"
 
 import { cookies } from "next/headers"
-import { randomBytes } from "crypto"
+import { createHmac, randomBytes, randomInt } from "crypto"
 import { getCookieConfig } from "@/lib/cookie-config"
 import { config } from "@/lib/config"
 import { Resend } from "resend"
 import { VerificationEmail } from "@/emails/verification-email"
+import { OtpEmail } from "@/emails/otp-email"
 import { getApiBaseUrl, TENANT_ID } from "@/lib/api-url"
+import {
+  SIGNUP_STEP_TTL_MS,
+  SIGNUP_STEP_TTL_MINUTES,
+  SIGNUP_PENDING_COOKIE_MAX_AGE_SEC,
+} from "@/lib/signup-flow"
 
 const API_BASE_URL = getApiBaseUrl()
 const APP_URL = config.EBANKING_URL || "http://localhost:3000"
@@ -54,8 +60,32 @@ interface SignupResult {
   success: boolean
   message: string
   requiresVerification?: boolean
+  /** Nouveau client : OTP envoyé, saisie requise avant le lien e-mail */
+  requiresOtp?: boolean
   email?: string
   maskedEmail?: string
+}
+
+const SIGNUP_OTP_MAX_ATTEMPTS = 3
+
+function getSignupOtpSecret(): string {
+  return (
+    process.env.SIGNUP_OTP_SECRET ||
+    process.env.AUTH_SECRET ||
+    "dev-insecure-signup-otp-change-in-production"
+  )
+}
+
+function normalizeOtpInput(raw: string): string {
+  return String(raw || "").replace(/\D/g, "").slice(0, 8)
+}
+
+function hashSignupOtp(code: string): string {
+  return createHmac("sha256", getSignupOtpSecret()).update(normalizeOtpInput(code)).digest("hex")
+}
+
+function generateSignupOtpDigits(): string {
+  return String(randomInt(0, 1_000_000)).padStart(6, "0")
 }
 
 function maskEmail(email: string): string {
@@ -71,9 +101,9 @@ function maskEmail(email: string): string {
   return `${localPart.substring(0, visibleChars)}${maskedPart}@${domain}`
 }
 
-export async function initiateSignup(data: InitialSignupData) {
+export async function initiateSignup(data: InitialSignupData): Promise<SignupResult> {
   try {
-    console.log("[v0] Starting initial signup process for NEW client...")
+    console.log("[v0] Starting initial signup process for NEW client (OTP first)...")
 
     if (!data.email) {
       return { success: false, message: "Email requis" }
@@ -88,61 +118,56 @@ export async function initiateSignup(data: InitialSignupData) {
       return { success: false, message: "Adresse requise" }
     }
 
-    // Generate verification token
-    const verificationToken = randomBytes(32).toString("hex")
+    const emailNorm = String(data.email).trim().toLowerCase()
+    const otpPlain = generateSignupOtpDigits()
+    const otpHash = hashSignupOtp(otpPlain)
+    const expiresAt = Date.now() + SIGNUP_STEP_TTL_MS
 
-    // ============================================================
-    // SAVE DATA IN COOKIE FOR LATER (Backend will create client)
-    // ============================================================
     const cookieStore = await cookies()
     const cookieConfig = getCookieConfig()
     cookieStore.set(
       "pending_signup_data",
       JSON.stringify({
-        fullName: data.fullName,
-        email: data.email,
-        phone: data.phone,
-        address: data.address,
-        verificationToken: verificationToken,
+        fullName: data.fullName.trim(),
+        email: emailNorm,
+        phone: data.phone.trim(),
+        address: data.address.trim(),
         clientType: "new",
+        signupOtpHash: otpHash,
+        signupOtpExpiresAt: expiresAt,
+        signupOtpAttempts: 0,
       }),
       {
         ...cookieConfig,
-        maxAge: 60 * 60 * 24, // 24 hours
+        maxAge: SIGNUP_PENDING_COOKIE_MAX_AGE_SEC,
       },
     )
 
-    // ============================================================
-    // SEND VERIFICATION EMAIL
-    // ============================================================
-    console.log("[v0] Sending verification email via Resend...")
-
     const resend = new Resend(process.env.RESEND_API_KEY)
     const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || "no-reply@bngebanking.com"
-    const verificationUrl = `${APP_URL.replace(/\/$/, "")}/auth/verify-email?token=${verificationToken}&email=${encodeURIComponent(
-      data.email,
-    )}`
 
     const { data: resendData, error: resendError } = await resend.emails.send({
       from: FROM_EMAIL,
-      
-      to: data.email,
-      subject: "Vérifiez votre adresse email - BNG E-Banking",
-      react: VerificationEmail({
-        userName: data.fullName || data.email.split("@")[0],
-        verificationLink: verificationUrl,
+      to: emailNorm,
+      subject: "Code de vérification — inscription BNG E-Banking",
+      react: OtpEmail({
+        otpCode: otpPlain,
+        userName: data.fullName.trim() || emailNorm.split("@")[0],
+        purpose: "votre inscription",
+        validityMinutes: SIGNUP_STEP_TTL_MINUTES,
       }),
     })
 
     if (resendError) {
-      console.error("[v0] Resend error:", resendError)
-      throw new Error(resendError.message || "Erreur lors de l'envoi de l'email de vérification")
+      console.error("[v0] Resend OTP error:", resendError)
+      throw new Error(resendError.message || "Erreur lors de l'envoi du code par e-mail")
     }
-    console.log("[v0] Email sent successfully:", resendData)
+    console.log("[v0] Signup OTP email sent:", resendData)
 
     return {
       success: true,
-      message: "Un email de vérification a été envoyé à votre adresse email.",
+      requiresOtp: true,
+      message: "Un code de vérification a été envoyé à votre adresse e-mail.",
     }
   } catch (error: any) {
     console.error("[v0] Initial signup error:", error)
@@ -150,6 +175,195 @@ export async function initiateSignup(data: InitialSignupData) {
       success: false,
       message: error.message || "Une erreur est survenue lors de l'inscription",
     }
+  }
+}
+
+/** Après OTP valide : enregistre le token de lien et envoie l’e-mail de vérification. */
+export async function verifyNewClientSignupOtp(otp: string): Promise<SignupResult> {
+  try {
+    const normalized = normalizeOtpInput(otp)
+    if (normalized.length !== 6) {
+      return { success: false, message: "Le code doit comporter 6 chiffres." }
+    }
+
+    const cookieStore = await cookies()
+    const raw = cookieStore.get("pending_signup_data")?.value
+    if (!raw) {
+      return { success: false, message: "Session d’inscription expirée. Veuillez recommencer." }
+    }
+
+    let pending: Record<string, unknown>
+    try {
+      pending = JSON.parse(raw)
+    } catch {
+      return { success: false, message: "Données d’inscription invalides. Veuillez recommencer." }
+    }
+
+    if (String(pending.clientType || "") !== "new") {
+      return { success: false, message: "Cette étape ne concerne pas votre parcours." }
+    }
+
+    if (pending.verificationToken) {
+      return {
+        success: false,
+        message: "Un lien a déjà été envoyé. Consultez votre boîte e-mail ou recommencez l’inscription.",
+      }
+    }
+
+    const expiresAt = Number(pending.signupOtpExpiresAt || 0)
+    if (!expiresAt || Date.now() > expiresAt) {
+      return { success: false, message: "Le code a expiré. Demandez un nouveau code." }
+    }
+
+    let attempts = Number(pending.signupOtpAttempts || 0)
+    if (attempts >= SIGNUP_OTP_MAX_ATTEMPTS) {
+      return { success: false, message: "Trop de tentatives incorrectes. Recommencez l’inscription." }
+    }
+
+    const expectedHash = String(pending.signupOtpHash || "")
+    if (!expectedHash || hashSignupOtp(normalized) !== expectedHash) {
+      attempts += 1
+      const cookieConfig = getCookieConfig()
+      cookieStore.set(
+        "pending_signup_data",
+        JSON.stringify({
+          ...pending,
+          signupOtpAttempts: attempts,
+        }),
+        { ...cookieConfig, maxAge: SIGNUP_PENDING_COOKIE_MAX_AGE_SEC },
+      )
+      const left = SIGNUP_OTP_MAX_ATTEMPTS - attempts
+      return {
+        success: false,
+        message:
+          left > 0
+            ? `Code incorrect. Il vous reste ${left} tentative${left > 1 ? "s" : ""}.`
+            : "Trop de tentatives incorrectes. Recommencez l’inscription.",
+      }
+    }
+
+    const verificationToken = randomBytes(32).toString("hex")
+    const email = String(pending.email || "").toLowerCase()
+    const fullName = String(pending.fullName || "")
+
+    const nextPayload = {
+      fullName: pending.fullName,
+      email: pending.email,
+      phone: pending.phone,
+      address: pending.address,
+      clientType: "new",
+      verificationToken,
+      verificationTokenExpiresAt: Date.now() + SIGNUP_STEP_TTL_MS,
+    }
+
+    const cookieConfig = getCookieConfig()
+    cookieStore.set("pending_signup_data", JSON.stringify(nextPayload), {
+      ...cookieConfig,
+      maxAge: SIGNUP_PENDING_COOKIE_MAX_AGE_SEC,
+    })
+
+    const resend = new Resend(process.env.RESEND_API_KEY)
+    const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || "no-reply@bngebanking.com"
+    const verificationUrl = `${APP_URL.replace(/\/$/, "")}/auth/verify-email?token=${verificationToken}&email=${encodeURIComponent(email)}`
+
+    const { error: resendError } = await resend.emails.send({
+      from: FROM_EMAIL,
+      to: email,
+      subject: "Vérifiez votre adresse email - BNG E-Banking",
+      react: VerificationEmail({
+        userName: fullName || email.split("@")[0],
+        verificationLink: verificationUrl,
+        linkValidityMinutes: SIGNUP_STEP_TTL_MINUTES,
+      }),
+    })
+
+    if (resendError) {
+      console.error("[v0] Resend verification error:", resendError)
+      throw new Error(resendError.message || "Erreur lors de l’envoi du lien de vérification")
+    }
+
+    return {
+      success: true,
+      message: "E-mail de vérification envoyé. Ouvrez le lien pour définir votre mot de passe.",
+    }
+  } catch (error: any) {
+    console.error("[v0] verifyNewClientSignupOtp:", error)
+    return {
+      success: false,
+      message: error.message || "Une erreur est survenue",
+    }
+  }
+}
+
+/** Nouveau code OTP (même inscription, avant envoi du lien). */
+export async function resendNewClientSignupOtp(): Promise<SignupResult> {
+  try {
+    const cookieStore = await cookies()
+    const raw = cookieStore.get("pending_signup_data")?.value
+    if (!raw) {
+      return { success: false, message: "Aucune inscription en cours. Recommencez depuis le formulaire." }
+    }
+
+    let pending: Record<string, unknown>
+    try {
+      pending = JSON.parse(raw)
+    } catch {
+      return { success: false, message: "Données invalides. Recommencez l’inscription." }
+    }
+
+    if (String(pending.clientType || "") !== "new") {
+      return { success: false, message: "Renvoi de code non disponible pour ce parcours." }
+    }
+
+    if (pending.verificationToken) {
+      return { success: false, message: "Le lien a déjà été envoyé. Consultez vos e-mails." }
+    }
+
+    const email = String(pending.email || "").trim().toLowerCase()
+    if (!email) {
+      return { success: false, message: "E-mail manquant. Recommencez l’inscription." }
+    }
+
+    const otpPlain = generateSignupOtpDigits()
+    const otpHash = hashSignupOtp(otpPlain)
+    const expiresAt = Date.now() + SIGNUP_STEP_TTL_MS
+
+    const cookieConfig = getCookieConfig()
+    cookieStore.set(
+      "pending_signup_data",
+      JSON.stringify({
+        ...pending,
+        signupOtpHash: otpHash,
+        signupOtpExpiresAt: expiresAt,
+        signupOtpAttempts: 0,
+      }),
+      { ...cookieConfig, maxAge: SIGNUP_PENDING_COOKIE_MAX_AGE_SEC },
+    )
+
+    const resend = new Resend(process.env.RESEND_API_KEY)
+    const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || "no-reply@bngebanking.com"
+    const fullName = String(pending.fullName || "")
+
+    const { error: resendError } = await resend.emails.send({
+      from: FROM_EMAIL,
+      to: email,
+      subject: "Nouveau code — inscription BNG E-Banking",
+      react: OtpEmail({
+        otpCode: otpPlain,
+        userName: fullName || email.split("@")[0],
+        purpose: "votre inscription",
+        validityMinutes: SIGNUP_STEP_TTL_MINUTES,
+      }),
+    })
+
+    if (resendError) {
+      throw new Error(resendError.message || "Erreur lors de l’envoi du code")
+    }
+
+    return { success: true, message: "Un nouveau code a été envoyé." }
+  } catch (error: any) {
+    console.error("[v0] resendNewClientSignupOtp:", error)
+    return { success: false, message: error.message || "Erreur lors du renvoi du code" }
   }
 }
 
@@ -533,11 +747,12 @@ export async function initiateExistingClientSignup(data: { clientCode: string })
         address: bdClientData.adresse || bdClientData.address || "",
         numClient: numClient,
         verificationToken: verificationToken,
+        verificationTokenExpiresAt: Date.now() + SIGNUP_STEP_TTL_MS,
         clientType: "existing",
       }),
       {
         ...cookieConfig,
-        maxAge: 60 * 60 * 24, // 24 hours
+        maxAge: SIGNUP_PENDING_COOKIE_MAX_AGE_SEC,
       },
     )
 
@@ -559,6 +774,7 @@ export async function initiateExistingClientSignup(data: { clientCode: string })
       react: VerificationEmail({
         userName: clientFullName || clientEmail.split("@")[0],
         verificationLink: verificationUrl,
+        linkValidityMinutes: SIGNUP_STEP_TTL_MINUTES,
       }),
     })
 
@@ -685,7 +901,7 @@ export async function initiateExistingClientSignup(data: { clientCode: string })
 //       }),
 //       {
 //         ...cookieConfig,
-//         maxAge: 60 * 60 * 24, // 24 hours
+//         maxAge: SIGNUP_PENDING_COOKIE_MAX_AGE_SEC, // 24 hours
 //       },
 //     )
 

@@ -9,6 +9,7 @@ import { Tabs, TabsContent } from "@/components/ui/tabs"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
+import { DatePickerField, toLocalYmd } from "@/components/ui/date-picker-field"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import {
   Download,
@@ -701,27 +702,29 @@ export default function StatementsPage() {
                       <Label htmlFor="startDate" className="text-sm">
                         Date de début
                       </Label>
-                      <Input
+                      <DatePickerField
                         id="startDate"
-                        type="date"
                         value={startDate}
-                        onChange={(e) => setStartDate(e.target.value)}
-                        max={endDate || undefined}
-                        className="h-9"
+                        onChange={setStartDate}
+                        fromYear={2000}
+                        toYear={new Date().getFullYear() + 1}
+                        maxDate={endDate || undefined}
+                        buttonClassName="h-9"
                       />
                     </div>
                     <div>
                       <Label htmlFor="endDate" className="text-sm">
                         Date de fin
                       </Label>
-                      <Input
+                      <DatePickerField
                         id="endDate"
-                        type="date"
                         value={endDate}
-                        onChange={(e) => setEndDate(e.target.value)}
-                        min={startDate || undefined}
-                        max={new Date().toISOString().split("T")[0]}
-                        className="h-9"
+                        onChange={setEndDate}
+                        fromYear={2000}
+                        toYear={new Date().getFullYear()}
+                        minDate={startDate || undefined}
+                        maxDate={toLocalYmd()}
+                        buttonClassName="h-9"
                       />
                     </div>
                   </div>
@@ -1015,12 +1018,14 @@ export default function StatementsPage() {
                     <Label htmlFor="filterDate" className="text-sm">
                       Date
                     </Label>
-                    <Input
+                    <DatePickerField
                       id="filterDate"
-                      type="date"
                       value={filterDate}
-                      onChange={(e) => setFilterDate(e.target.value)}
-                      className="h-9"
+                      onChange={setFilterDate}
+                      fromYear={2000}
+                      toYear={new Date().getFullYear() + 1}
+                      maxDate={toLocalYmd()}
+                      buttonClassName="h-9"
                     />
                   </div>
                 </div>

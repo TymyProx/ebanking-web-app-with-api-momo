@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { DatePickerField } from "@/components/ui/date-picker-field"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import {
   ArrowUpRight,
@@ -297,15 +298,17 @@ export default function MesVirementsPage() {
                 <Label htmlFor="dateFrom" className="text-sm font-medium">
                   Date de début
                 </Label>
-                <Input
+                <DatePickerField
                   id="dateFrom"
-                  type="date"
                   value={filters.dateFrom}
-                  onChange={(e) => {
-                    setFilters({ ...filters, dateFrom: e.target.value })
+                  onChange={(v) => {
+                    setFilters({ ...filters, dateFrom: v })
                     setCurrentPage(1)
                   }}
-                  className="h-10"
+                  fromYear={2000}
+                  toYear={new Date().getFullYear() + 1}
+                  maxDate={filters.dateTo || undefined}
+                  buttonClassName="h-10"
                 />
               </div>
 
@@ -313,15 +316,17 @@ export default function MesVirementsPage() {
                 <Label htmlFor="dateTo" className="text-sm font-medium">
                   Date de fin
                 </Label>
-                <Input
+                <DatePickerField
                   id="dateTo"
-                  type="date"
                   value={filters.dateTo}
-                  onChange={(e) => {
-                    setFilters({ ...filters, dateTo: e.target.value })
+                  onChange={(v) => {
+                    setFilters({ ...filters, dateTo: v })
                     setCurrentPage(1)
                   }}
-                  className="h-10"
+                  fromYear={2000}
+                  toYear={new Date().getFullYear() + 1}
+                  minDate={filters.dateFrom || undefined}
+                  buttonClassName="h-10"
                 />
               </div>
 

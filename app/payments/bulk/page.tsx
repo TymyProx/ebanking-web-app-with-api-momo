@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { DatePickerField, toLocalYmd } from "@/components/ui/date-picker-field"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Alert, AlertDescription } from "@/components/ui/alert"
@@ -305,12 +306,13 @@ export default function BulkPaymentPage() {
                 </div>
                 <div>
                   <Label htmlFor="paymentDate">Date de paiement</Label>
-                  <Input
+                  <DatePickerField
                     id="paymentDate"
-                    type="date"
                     value={formData.paymentDate}
-                    onChange={(e) => handleInputChange("paymentDate", e.target.value)}
-                    min={new Date().toISOString().split("T")[0]}
+                    onChange={(v) => handleInputChange("paymentDate", v)}
+                    minDate={toLocalYmd()}
+                    fromYear={new Date().getFullYear()}
+                    toYear={new Date().getFullYear() + 5}
                   />
                 </div>
               </div>

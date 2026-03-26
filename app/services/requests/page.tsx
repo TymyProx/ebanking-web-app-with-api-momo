@@ -25,6 +25,7 @@ import { useActionState } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { getAccounts } from "../../accounts/actions"
 import { isAccountActive } from "@/lib/status-utils"
+import { DatePickerField, toLocalYmd } from "@/components/ui/date-picker-field"
 
 const serviceTypes = [
   {
@@ -952,13 +953,16 @@ export default function ServiceRequestsPage() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="dateorder">Date de commande *</Label>
-                <Input
+                <DatePickerField
                   id="dateorder"
                   name="dateorder"
-                  type="date"
-                  value={formData.dateorder || new Date().toISOString().split("T")[0]}
-                  onChange={(e) => handleInputChange("dateorder", e.target.value)}
+                  value={formData.dateorder || toLocalYmd()}
+                  onChange={(v) => handleInputChange("dateorder", v)}
                   required
+                  maxDate={toLocalYmd()}
+                  fromYear={new Date().getFullYear() - 2}
+                  toYear={new Date().getFullYear()}
+                  reverseYears
                   className="w-full"
                 />
               </div>
@@ -1275,12 +1279,14 @@ export default function ServiceRequestsPage() {
 
             <div>
               <Label htmlFor="date_besoin">Date de besoin</Label>
-              <Input
+              <DatePickerField
                 id="date_besoin"
                 name="date_besoin"
-                type="date"
                 value={formData.date_besoin || ""}
-                onChange={(e) => handleInputChange("date_besoin", e.target.value)}
+                onChange={(v) => handleInputChange("date_besoin", v)}
+                fromYear={new Date().getFullYear()}
+                toYear={new Date().getFullYear() + 5}
+                minDate={toLocalYmd()}
               />
             </div>
 

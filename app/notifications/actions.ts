@@ -3,6 +3,7 @@ process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0"
 
 import { cookies } from "next/headers"
 import { getApiBaseUrl, TENANT_ID } from "@/lib/api-url"
+import { normalizeAccountStatus } from "@/lib/status-utils"
 
 const API_BASE_URL = getApiBaseUrl()
 
@@ -42,25 +43,80 @@ function parseValues(raw: any): Record<string, any> {
   return raw
 }
 
-/** Détecte les champs réellement modifiés (uniquement si l'API fournit oldValues/previousValues) */
-function getChangedFields(entry: any): { changed: Set<string>; hasPreviousState: boolean } {
-  const oldVals = parseValues(entry.oldValues ?? entry.previousValues ?? entry.before)
-  const newVals = parseValues(entry.values ?? entry.newValues ?? entry.after)
+/** clientId dans l’audit peut être une string UUID ou un objet Sequelize { id } */
+function clientIdFromValues(v: Record<string, any>): string | undefined {
+  const c = v?.clientId
+  if (c == null) return undefined
+  if (typeof c === "object" && c !== null && "id" in c) return String((c as { id: unknown }).id)
+  return String(c)
+}
+
+/**
+ * Nouveaux clients : leurs demandes de compte ont leur userId en clientId dans les values,
+ * mais l’entityId de l’audit est l’id du compte — il faut aussi matcher sur clientId.
+ */
+function compteAuditConcernsUser(entry: any, userId: string, userAccountIds: string[]): boolean {
+  if (userAccountIds.includes(entry.entityId)) return true
+  const vals = parseValues(entry.values ?? entry.newValues ?? entry.after)
+  const olds = parseValues(entry.oldValues ?? entry.previousValues ?? entry.before)
+  const uid = String(userId)
+  return clientIdFromValues(vals) === uid || clientIdFromValues(olds) === uid
+}
+
+/**
+ * Détecte les champs modifiés.
+ * Le backend peut inclure `__auditPrevious` dans `values` (compte) pour l’état avant update.
+ */
+function getChangedFields(entry: any): {
+  changed: Set<string>
+  hasPreviousState: boolean
+  /** values sans __auditPrevious (affichage / libellés) */
+  cleanNewVals: Record<string, any>
+} {
+  const rawNew = parseValues(entry.values ?? entry.newValues ?? entry.after)
+  let oldVals = parseValues(entry.oldValues ?? entry.previousValues ?? entry.before)
+  let newVals: Record<string, any> = { ...rawNew }
+
+  if (
+    rawNew &&
+    typeof rawNew === "object" &&
+    "__auditPrevious" in rawNew &&
+    Object.keys(oldVals).length === 0
+  ) {
+    const prev = (rawNew as Record<string, unknown>).__auditPrevious
+    oldVals = prev && typeof prev === "object" ? { ...(prev as Record<string, any>) } : parseValues(prev)
+    const { __auditPrevious: _a, ...rest } = rawNew as Record<string, any>
+    newVals = rest
+  }
+
   const hasPreviousState = Object.keys(oldVals).length > 0
   const changed = new Set<string>()
-  if (!hasPreviousState) return { changed, hasPreviousState: false }
+  if (!hasPreviousState) {
+    return { changed, hasPreviousState: false, cleanNewVals: newVals }
+  }
   const allKeys = new Set([...Object.keys(oldVals), ...Object.keys(newVals)])
   for (const k of allKeys) {
+    if (k === "__auditPrevious") continue
     const ov = oldVals[k]
     const nv = newVals[k]
     if (JSON.stringify(ov) !== JSON.stringify(nv)) changed.add(k)
   }
-  return { changed, hasPreviousState: true }
+  return { changed, hasPreviousState: true, cleanNewVals: newVals }
+}
+
+function stripAuditPrevious(raw: Record<string, any>): Record<string, any> {
+  if (!raw || typeof raw !== "object") return raw
+  const { __auditPrevious: _a, ...rest } = raw
+  return rest
 }
 
 function buildNotification(entry: any): NotificationItem | null {
-  const values = parseValues(entry.values ?? entry.newValues ?? entry.after)
-  const { changed: changedFields, hasPreviousState } = getChangedFields(entry)
+  const { changed: changedFields, hasPreviousState, cleanNewVals } = getChangedFields(entry)
+  const parsed = parseValues(entry.values ?? entry.newValues ?? entry.after)
+  const values: Record<string, any> =
+    entry.entityName === "compte"
+      ? stripAuditPrevious(Object.keys(cleanNewVals).length > 0 ? cleanNewVals : parsed)
+      : parsed
 
   switch (entry.entityName) {
     case "client": {
@@ -77,6 +133,19 @@ function buildNotification(entry: any): NotificationItem | null {
 
     case "compte": {
       const name = values.accountName || "Votre compte"
+      if (entry.action === "create") {
+        const statusRaw = values.status ?? values.statut
+        const statusLabel = normalizeAccountStatus(statusRaw)
+        return {
+          id: entry.id,
+          type: "account_update",
+          title: "Demande d'ouverture de compte",
+          message: `Votre demande « ${name} » a été prise en compte. Statut : ${statusLabel}. Vous serez notifié à chaque changement (validation, refus, etc.).`,
+          date: entry.timestamp,
+          entityName: entry.entityName,
+          action: entry.action,
+        }
+      }
       if (entry.action === "update") {
         const statusChanged = hasPreviousState && (changedFields.has("status") || changedFields.has("statut"))
         const balanceChanged =
@@ -87,21 +156,71 @@ function buildNotification(entry: any): NotificationItem | null {
         const availableBalance = values.availableBalance ?? values.balance
         const hasBalanceInValues = availableBalance !== undefined && availableBalance !== null
         const onlyBalanceChanged = balanceChanged && !statusChanged
-        const likelyBalanceOnly = !hasPreviousState && hasBalanceInValues
+        const hasStatusInPayload = values.status !== undefined || values.statut !== undefined
+        const likelyBalanceOnly =
+          !hasPreviousState && hasBalanceInValues && !hasStatusInPayload
 
         if (onlyBalanceChanged || likelyBalanceOnly) {
           return null
         }
-        const status = values.status ?? values.statut
+
+        const rawVals = parseValues(entry.values ?? entry.newValues ?? entry.after)
+        const prevSnap =
+          rawVals && typeof rawVals === "object" ? (rawVals as Record<string, any>).__auditPrevious : undefined
+        const oldStatusRaw =
+          prevSnap && typeof prevSnap === "object" ? prevSnap.status ?? prevSnap.statut : undefined
+        const newStatusRaw = values.status ?? values.statut
+        const oldLabel =
+          oldStatusRaw !== undefined && oldStatusRaw !== null && String(oldStatusRaw).trim() !== ""
+            ? normalizeAccountStatus(oldStatusRaw)
+            : null
+        const newLabel =
+          newStatusRaw !== undefined && newStatusRaw !== null && String(newStatusRaw).trim() !== ""
+            ? normalizeAccountStatus(newStatusRaw)
+            : null
+
         let message: string
-        if (statusChanged && status != null && String(status).trim() !== "") {
-          message = `Le statut du compte « ${name} » est passé à « ${status} ».`
+        let title = "Compte modifié"
+
+        if (oldLabel && newLabel && oldLabel !== newLabel) {
+          if (newLabel === "Actif") {
+            title = "Compte activé"
+            message = `Le statut de votre compte est passé à ACTIF.`
+          } else if (newLabel === "Rejeté") {
+            title = "Demande d’ouverture refusée"
+            message = `Votre demande d’ouverture a été refusée.`
+          } else {
+            title = `Statut : ${newLabel}`
+            if (newLabel === "En attente") {
+              message = `Le compte « ${name} » est au statut « ${newLabel} » (auparavant « ${oldLabel} »).`
+            } else {
+              message = `Le statut du compte « ${name} » est passé de « ${oldLabel} » à « ${newLabel} ».`
+            }
+          }
+        } else if (newLabel) {
+          if (newLabel === "Actif") {
+            title = "Compte activé"
+            message = `Le statut de votre compte est passé à ACTIF.`
+          } else if (newLabel === "Rejeté") {
+            title = "Demande d’ouverture refusée"
+            message = `Votre demande d’ouverture a été refusée.`
+          } else {
+            title = `Statut : ${newLabel}`
+            message = `Le compte « ${name} » — statut actuel : « ${newLabel} ».`
+          }
+        } else if (statusChanged) {
+          const s = values.status ?? values.statut
+          const fallback = s != null && String(s).trim() !== "" ? String(s) : "indéterminé"
+          title = "Compte modifié"
+          message = `Le compte « ${name} » a été modifié. Statut indiqué : ${fallback}.`
         } else {
-          message = `Le compte « ${name} » a été mis à jour.`
+          title = "Compte modifié"
+          message = `Le compte « ${name} » a été modifié. Consultez la fiche compte pour le statut et les détails.`
         }
+
         return {
           id: entry.id, type: "account_update",
-          title: "Compte modifié",
+          title,
           message,
           date: entry.timestamp, entityName: entry.entityName, action: entry.action,
         }
@@ -260,7 +379,7 @@ export async function fetchUserNotifications(): Promise<NotificationItem[]> {
 
     const params = new URLSearchParams()
     RELEVANT_ENTITIES.forEach((e) => params.append("filter[entityNames][]", e))
-    params.set("limit", "50")
+    params.set("limit", "100")
     params.set("orderBy", "timestamp_DESC")
 
     const auditRes = await fetch(
@@ -281,7 +400,7 @@ export async function fetchUserNotifications(): Promise<NotificationItem[]> {
         case "client":
           return e.entityId === userId
         case "compte":
-          return userAccountIds.includes(e.entityId)
+          return compteAuditConcernsUser(e, userId, userAccountIds)
         case "transactions":
         case "virementCompte":
         case "beneficiaire":

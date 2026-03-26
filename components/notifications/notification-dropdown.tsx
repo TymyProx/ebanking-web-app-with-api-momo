@@ -96,9 +96,12 @@ export function NotificationDropdown() {
               <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
             </div>
           ) : recentNotifications.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-10 gap-2">
+            <div className="flex flex-col items-center justify-center py-10 gap-2 px-4 text-center">
               <Bell className="h-8 w-8 text-muted-foreground/30" />
-              <p className="text-sm text-muted-foreground">Aucune notification</p>
+              <p className="text-sm text-muted-foreground">Aucune notification pour le moment</p>
+              <p className="text-xs text-muted-foreground/80 leading-relaxed">
+                Les mises à jour de votre demande d&apos;ouverture de compte et le changement de statut apparaîtront ici.
+              </p>
             </div>
           ) : (
             recentNotifications.map((notification, idx) => {

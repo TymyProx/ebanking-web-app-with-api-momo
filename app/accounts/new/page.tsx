@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { DatePickerField, toLocalYmd } from "@/components/ui/date-picker-field"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -73,6 +74,45 @@ const accountTypes = [
     icon: "📱",
   },
 ]
+
+type AccountPurposeOption = { value: string; label: string }
+
+/** Objectifs proposés selon le type de compte (valeurs stables pour d’éventuels traitements backend). */
+const ACCOUNT_PURPOSES_BY_TYPE: Record<string, AccountPurposeOption[]> = {
+  COURANT_CHEQUE: [
+    { value: "personal_use", label: "Usage personnel (dépenses courantes)" },
+    { value: "salary_income", label: "Encaissement des salaires et revenus" },
+    { value: "business_ops", label: "Activité professionnelle / entreprise" },
+    { value: "payments_bills", label: "Paiement de factures et charges" },
+    { value: "other", label: "Autre" },
+  ],
+  EPARGNE_ORDINAIRE: [
+    { value: "precaution", label: "Épargne de précaution" },
+    { value: "project", label: "Projet personnel (véhicule, mariage, etc.)" },
+    { value: "real_estate", label: "Constitution d’apport / projet immobilier" },
+    { value: "retirement", label: "Préparation retraite" },
+    { value: "yield", label: "Placement à intérêt / rendement" },
+    { value: "other", label: "Autre" },
+  ],
+  MINEUR: [
+    { value: "child_future", label: "Préparer l’avenir de l’enfant" },
+    { value: "education", label: "Scolarité / études" },
+    { value: "gifts_family", label: "Dons et cadeaux familiaux" },
+    { value: "blocked_until_majority", label: "Épargne jusqu’à la majorité" },
+    { value: "other", label: "Autre" },
+  ],
+  WALLET: [
+    { value: "mobile_money", label: "Paiements et transferts mobile money" },
+    { value: "daily_digital", label: "Dépenses digitales du quotidien" },
+    { value: "family_transfers", label: "Envois à la famille / proches" },
+    { value: "online_services", label: "Services en ligne (factures, abonnements)" },
+    { value: "other", label: "Autre" },
+  ],
+}
+
+function getAccountPurposeOptions(accountTypeId: string): AccountPurposeOption[] {
+  return ACCOUNT_PURPOSES_BY_TYPE[accountTypeId] ?? ACCOUNT_PURPOSES_BY_TYPE.COURANT_CHEQUE
+}
 
 // Données des pays et villes
 const countriesAndCities: Record<string, string[]> = {
@@ -167,6 +207,20 @@ export default function NewAccountPage() {
       setSelectedCountry(formData.country)
     }
   }, [formData.country])
+
+  const purposeOptions = selectedType ? getAccountPurposeOptions(selectedType) : []
+
+  useEffect(() => {
+    if (!selectedType) return
+    setFormData((prev) => {
+      const opts = getAccountPurposeOptions(selectedType)
+      const current = prev.accountPurpose
+      if (current && !opts.some((o) => o.value === current)) {
+        return { ...prev, accountPurpose: "" }
+      }
+      return prev
+    })
+  }, [selectedType])
 
   const handleFileUpload = async (field: string, file: File) => {
     try {
@@ -500,19 +554,31 @@ export default function NewAccountPage() {
                     Objectif du Compte *
                   </Label>
                   <Select
-                    value={formData.accountPurpose}
+                    value={formData.accountPurpose || ""}
                     onValueChange={(value) => handleInputChange("accountPurpose", value)}
                   >
                     <SelectTrigger className="border-2 focus:border-primary h-10">
-                      <SelectValue placeholder="Sélectionnez un objectif" />
+                      <SelectValue
+                        placeholder={
+                          selectedType
+                            ? "Sélectionnez un objectif"
+                            : "Choisissez d’abord un type de compte"
+                        }
+                      />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="personal">Personnel</SelectItem>
-                      <SelectItem value="business">Professionnel</SelectItem>
-                      <SelectItem value="savings">Épargne</SelectItem>
-                      <SelectItem value="investment">Investissement</SelectItem>
+                      {purposeOptions.map((opt) => (
+                        <SelectItem key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
+                  {selectedAccountType && (
+                    <p className="text-xs text-muted-foreground">
+                      Objectifs adaptés au compte « {selectedAccountType.name} ».
+                    </p>
+                  )}
                 </div>
               </div>
             </CardContent>
@@ -560,12 +626,15 @@ export default function NewAccountPage() {
                     <Label htmlFor="minorDateOfBirth" className="text-sm font-medium">
                       Date de Naissance *
                     </Label>
-                    <Input
+                    <DatePickerField
                       id="minorDateOfBirth"
-                      type="date"
                       value={formData.minorDateOfBirth || ""}
-                      onChange={(e) => handleInputChange("minorDateOfBirth", e.target.value)}
-                      className="border-2 focus:border-primary h-10"
+                      onChange={(v) => handleInputChange("minorDateOfBirth", v)}
+                      fromYear={1920}
+                      toYear={new Date().getFullYear()}
+                      reverseYears
+                      maxDate={toLocalYmd()}
+                      buttonClassName="border-2 focus:border-primary h-10"
                     />
                   </div>
                 </div>
@@ -739,24 +808,29 @@ export default function NewAccountPage() {
                       <Label htmlFor="idIssueDate" className="text-sm font-medium">
                         Date d'Émission *
                       </Label>
-                      <Input
+                      <DatePickerField
                         id="idIssueDate"
-                        type="date"
                         value={formData.idIssueDate || ""}
-                        onChange={(e) => handleInputChange("idIssueDate", e.target.value)}
-                        className="border-2 focus:border-primary h-10"
+                        onChange={(v) => handleInputChange("idIssueDate", v)}
+                        fromYear={1950}
+                        toYear={new Date().getFullYear()}
+                        reverseYears
+                        maxDate={toLocalYmd()}
+                        buttonClassName="border-2 focus:border-primary h-10"
                       />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="idExpiryDate" className="text-sm font-medium">
                         Date d'Expiration *
                       </Label>
-                      <Input
+                      <DatePickerField
                         id="idExpiryDate"
-                        type="date"
                         value={formData.idExpiryDate || ""}
-                        onChange={(e) => handleInputChange("idExpiryDate", e.target.value)}
-                        className="border-2 focus:border-primary h-10"
+                        onChange={(v) => handleInputChange("idExpiryDate", v)}
+                        fromYear={new Date().getFullYear()}
+                        toYear={new Date().getFullYear() + 25}
+                        minDate={formData.idIssueDate || undefined}
+                        buttonClassName="border-2 focus:border-primary h-10"
                       />
                     </div>
                   </div>
@@ -1049,12 +1123,15 @@ export default function NewAccountPage() {
                       <Label htmlFor="minorDateOfBirth" className="text-sm font-medium">
                         Date de Naissance *
                       </Label>
-                      <Input
+                      <DatePickerField
                         id="minorDateOfBirth"
-                        type="date"
                         value={formData.minorDateOfBirth || ""}
-                        onChange={(e) => handleInputChange("minorDateOfBirth", e.target.value)}
-                        className="border-2 focus:border-primary h-10"
+                        onChange={(v) => handleInputChange("minorDateOfBirth", v)}
+                        fromYear={1920}
+                        toYear={new Date().getFullYear()}
+                        reverseYears
+                        maxDate={toLocalYmd()}
+                        buttonClassName="border-2 focus:border-primary h-10"
                       />
                     </div>
                   </div>
@@ -1366,6 +1443,15 @@ export default function NewAccountPage() {
                     <p className="text-xs text-muted-foreground mb-1">Devise</p>
                     <p className="text-base font-semibold">{formData.currency}</p>
                   </div>
+                  {formData.accountPurpose && (
+                    <div className="p-4 rounded-lg bg-gradient-to-br from-primary/5 to-secondary/5 border border-primary/10 md:col-span-3">
+                      <p className="text-xs text-muted-foreground mb-1">Objectif du compte</p>
+                      <p className="text-base font-semibold">
+                        {purposeOptions.find((o) => o.value === formData.accountPurpose)?.label ||
+                          formData.accountPurpose}
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -1409,6 +1495,7 @@ export default function NewAccountPage() {
               <input type="hidden" name="bookBalance" value={formData.initialDeposit || "0"} />
               <input type="hidden" name="availableBalance" value={formData.initialDeposit || "0"} />
               <input type="hidden" name="accountType" value={selectedType} />
+              <input type="hidden" name="accountPurpose" value={formData.accountPurpose || ""} />
               {selectedType === "MINEUR" && (
                 <>
                   <input type="hidden" name="minorFirstName" value={formData.minorFirstName || ""} />

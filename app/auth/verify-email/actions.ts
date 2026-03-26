@@ -1,10 +1,15 @@
 "use server"
 
 import { cookies } from "next/headers"
+import { Resend } from "resend"
 import { setSecureCookie } from "@/lib/cookie-config"
+import { config } from "@/lib/config"
 import { getApiBaseUrl, TENANT_ID } from "@/lib/api-url"
+import { SIGNUP_STEP_TTL_MINUTES } from "@/lib/signup-flow"
+import { WelcomeRestrictedAccessEmail } from "@/emails/welcome-restricted-access-email"
 
 const API_BASE_URL = getApiBaseUrl()
+const APP_URL = (config.EBANKING_URL || "http://localhost:3000").replace(/\/$/, "")
 
 // Endpoints (adaptables)
 const TENANT_USERS_ENDPOINT = `${API_BASE_URL}/tenant/${TENANT_ID}/tenantUsers`
@@ -146,19 +151,24 @@ export async function completeSignup(token: string, password: string, email?: st
     if (pendingCookie) {
       try {
         pending = JSON.parse(pendingCookie.value)
-        // Vérifier que le token correspond si le cookie existe
-        if (pending.verificationToken !== token) {
-          throw new Error("Token de vérification invalide")
-        }
-      } catch (e) {
-        // Si le cookie est invalide, continuer sans cookie
-        console.log("[completeSignup] Cookie invalide, continuation avec token uniquement")
+      } catch {
         pending = null
       }
     }
 
-    // Si pas de cookie mais email fourni, permettre de continuer
-    if (!pending && !email) {
+    if (token) {
+      if (!pending || pending.verificationToken !== token) {
+        throw new Error(
+          "Lien invalide ou session expirée. Veuillez recommencer l'inscription depuis le formulaire.",
+        )
+      }
+      const exp = Number(pending.verificationTokenExpiresAt || 0)
+      if (!exp || Date.now() > exp) {
+        throw new Error(
+          `Ce lien n'est plus valide (validité ${SIGNUP_STEP_TTL_MINUTES} min). Veuillez recommencer l'inscription.`,
+        )
+      }
+    } else if (!pending && !email) {
       throw new Error("Email requis pour finaliser l'inscription")
     }
 
@@ -257,6 +267,27 @@ export async function completeSignup(token: string, password: string, email?: st
     // Supprimer le cookie seulement s'il existe
     if (pendingCookie) {
       cookieStore.delete("pending_signup_data")
+    }
+
+    if (clientType === "new" && process.env.RESEND_API_KEY) {
+      try {
+        const loginUrl = `${APP_URL}/login`
+        const displayName =
+          String(pending?.fullName || "").trim() || String(signupEmail).split("@")[0]
+        const resend = new Resend(process.env.RESEND_API_KEY)
+        const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || "no-reply@bngebanking.com"
+        await resend.emails.send({
+          from: FROM_EMAIL,
+          to: String(signupEmail).trim().toLowerCase(),
+          subject: "Votre compte BNG e-Banking est prêt — accès et prochaines étapes",
+          react: WelcomeRestrictedAccessEmail({
+            userName: displayName,
+            loginUrl,
+          }),
+        })
+      } catch (welcomeErr) {
+        console.error("[completeSignup] Échec envoi e-mail de bienvenue (accès restreint):", welcomeErr)
+      }
     }
 
     return {

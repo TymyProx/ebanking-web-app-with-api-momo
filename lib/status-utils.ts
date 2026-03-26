@@ -49,6 +49,7 @@ export function normalizeAccountStatus(status: number | string | undefined | nul
     status === 2 || 
     status === "2" ||
     statusStr === "REJECTED" || 
+    statusStr === "REJETE" ||
     statusStr === "REJETÉ" ||
     statusStr === "REJETÉE"
   ) {

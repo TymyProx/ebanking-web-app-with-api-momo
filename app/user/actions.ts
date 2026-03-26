@@ -33,7 +33,7 @@ export async function getCurrentUser(): Promise<UserProfile | null> {
         "Content-Type": "application/json",
         Authorization: `Bearer ${cookieToken}`,
       },
-      next: { revalidate: 60 },
+      cache: "no-store",
     })
 
     if (!response.ok) {

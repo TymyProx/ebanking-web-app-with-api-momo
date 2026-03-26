@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge"
 import { submitComplaint } from "./actions"
 import { useActionState } from "react"
 import { handleNumericChange } from "@/lib/numeric-input"
+import { DatePickerField, toLocalYmd } from "@/components/ui/date-picker-field"
 
 const complaintTypes = [
   { value: "transaction", label: "Transaction", description: "Débit non autorisé, montant incorrect" },
@@ -32,6 +33,7 @@ export default function NewComplaintPage() {
   const [state, action, isPending] = useActionState(submitComplaint, null)
   const [includeTransaction, setIncludeTransaction] = useState(false)
   const [selectedPriority, setSelectedPriority] = useState("normal")
+  const [transactionDate, setTransactionDate] = useState("")
 
   return (
     <div className="space-y-6">
@@ -196,12 +198,16 @@ export default function NewComplaintPage() {
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-gray-50 rounded-lg">
                       <div>
                         <Label htmlFor="transactionDate">Date de la transaction</Label>
-                        <Input
+                        <DatePickerField
                           id="transactionDate"
                           name="transactionDate"
-                          type="date"
-                          max={new Date().toISOString().split("T")[0]}
-                          className="mt-1"
+                          value={transactionDate}
+                          onChange={setTransactionDate}
+                          maxDate={toLocalYmd()}
+                          fromYear={2000}
+                          toYear={new Date().getFullYear()}
+                          reverseYears
+                          className="mt-1 w-full"
                         />
                       </div>
 

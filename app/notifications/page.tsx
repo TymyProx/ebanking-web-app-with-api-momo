@@ -76,7 +76,7 @@ export default function NotificationsPage() {
         <div className="space-y-2">
           <h1 className="text-3xl font-bold text-primary">Notifications</h1>
           <p className="text-sm text-muted-foreground">
-            Suivez les modifications de vos comptes, transactions et informations
+            Demandes d&apos;ouverture de compte, statuts, comptes, transactions et informations personnelles
           </p>
         </div>
         <div className="flex items-center space-x-2">
@@ -135,6 +135,9 @@ export default function NotificationsPage() {
               <CardContent className="py-12 text-center text-muted-foreground">
                 <Bell className="h-10 w-10 mx-auto mb-3 opacity-40" />
                 <p>Aucune notification pour le moment.</p>
+                <p className="text-xs mt-2 max-w-md mx-auto">
+                  Après une demande d&apos;ouverture de compte, vous verrez ici la prise en compte et chaque changement de statut (validation, refus, etc.).
+                </p>
               </CardContent>
             </Card>
           ) : (

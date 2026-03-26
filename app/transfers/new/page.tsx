@@ -22,6 +22,7 @@ import { useActionState } from "react"
 import { OtpModal } from "@/components/otp-modal"
 import { toast } from "@/hooks/use-toast"
 import { isAccountActive } from "@/lib/status-utils"
+import { DatePickerField, toLocalYmd } from "@/components/ui/date-picker-field"
 
 // Types
 interface Beneficiary {
@@ -122,7 +123,7 @@ export default function NewTransferPage() {
   const [occasionalBeneficiaryAccount, setOccasionalBeneficiaryAccount] = useState<string>("")
   const [amount, setAmount] = useState<string>("")
   const [motif, setMotif] = useState<string>("")
-  const [transferDate, setTransferDate] = useState<string>(new Date().toISOString().split("T")[0])
+  const [transferDate, setTransferDate] = useState<string>(toLocalYmd())
   const [beneficiaries, setBeneficiaries] = useState<Beneficiary[]>([])
   const [isLoadingBeneficiaries, setIsLoadingBeneficiaries] = useState(true)
   const [accounts, setAccounts] = useState<Account[]>([])
@@ -1312,15 +1313,15 @@ export default function NewTransferPage() {
                 <Label htmlFor="transferDate" className="font-medium">
                   Date d'exécution *
                 </Label>
-                <Input
+                <DatePickerField
                   id="transferDate"
-                  type="date"
                   value={transferDate}
-                  onChange={(e) => setTransferDate(e.target.value)}
-                  onBlur={() => markFieldTouched("transferDate")}
-                  min={new Date().toISOString().split("T")[0]}
-                  required
-                  className={`h-12 border-2 transition-colors ${
+                  onChange={setTransferDate}
+                  onTriggerBlur={() => markFieldTouched("transferDate")}
+                  minDate={toLocalYmd()}
+                  fromYear={new Date().getFullYear()}
+                  toYear={new Date().getFullYear() + 5}
+                  buttonClassName={`h-12 border-2 transition-colors ${
                     transferFieldMessages.transferDate
                       ? "border-destructive focus:border-destructive"
                       : "hover:border-primary/50 focus:border-primary"
