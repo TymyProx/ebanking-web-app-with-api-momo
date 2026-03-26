@@ -5,8 +5,8 @@ import type React from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { LogOut } from "lucide-react"
-import AuthService from "@/lib/auth-service"
 import { dispatchAuthSessionChanged } from "@/lib/auth-events"
+import { clientLogout } from "@/lib/client-logout"
 
 interface LogoutButtonProps {
   variant?: "default" | "ghost" | "outline"
@@ -25,7 +25,7 @@ export function LogoutButton({
 
   const handleLogout = async () => {
     try {
-      await AuthService.signOut()
+      await clientLogout()
       dispatchAuthSessionChanged()
 
       // Clear all session storage
