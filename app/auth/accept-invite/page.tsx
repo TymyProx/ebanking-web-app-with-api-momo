@@ -194,20 +194,20 @@ export default function AcceptInvitePage() {
             />
           </div>
 
-          {/* Badge fixe */}
-          <div className="absolute top-32 sm:top-36 lg:top-[28%] left-4 sm:left-6 lg:left-[2vw] right-4 lg:right-auto lg:max-w-[28%] px-0 z-10">
+          {/* Badge fixe — aligné /login (mobile) */}
+          <div className="absolute top-24 sm:top-28 lg:top-[28%] left-5 right-5 sm:left-6 sm:right-6 lg:left-[2vw] lg:right-auto lg:max-w-[28%] px-0 z-10">
             <span className="text-xs sm:text-sm lg:text-[clamp(0.75rem,0.9vw,1rem)] font-semibold text-[#f4c430] uppercase tracking-wider px-3 py-1 lg:px-[0.8vw] lg:py-[0.3vw] bg-white/10 backdrop-blur-sm rounded-full inline-block">
               Astra e-Banking
             </span>
           </div>
 
-          {/* Bloc carousel texte — aligné sur /login */}
-          <div className="absolute top-36 sm:top-40 lg:top-[56%] lg:-translate-y-1/2 left-4 sm:left-6 lg:left-[2vw] right-4 lg:right-auto lg:max-w-[28%] px-0">
-            <div className="text-left text-white space-y-[1vw] transition-all duration-700 ease-in-out">
-              <h1 className="text-lg sm:text-2xl md:text-3xl lg:text-[2.2vw] lg:min-w-[16px] lg:leading-tight font-bold animate-fadeIn drop-shadow-2xl leading-tight">
+          {/* Bloc carousel texte — aligné /login */}
+          <div className="absolute top-40 sm:top-44 lg:top-[56%] lg:-translate-y-1/2 left-5 right-5 sm:left-6 sm:right-6 lg:left-[2vw] lg:right-auto lg:max-w-[28%] px-0">
+            <div className="text-left text-white space-y-2 sm:space-y-3 lg:space-y-[1vw] transition-all duration-700 ease-in-out">
+              <h1 className="text-lg sm:text-2xl md:text-3xl lg:text-[2.2vw] lg:min-w-[16px] lg:leading-tight font-bold animate-fadeIn drop-shadow-2xl leading-snug sm:leading-tight pr-1">
                 {welcomeMessages[currentMessageIndex].title}
               </h1>
-              <p className="text-sm sm:text-base md:text-lg lg:text-[clamp(0.875rem,1.1vw,1.25rem)] text-white/90 animate-fadeIn drop-shadow-lg leading-relaxed">
+              <p className="text-sm sm:text-base md:text-lg lg:text-[clamp(0.875rem,1.1vw,1.25rem)] text-white/90 animate-fadeIn drop-shadow-lg leading-relaxed pr-1">
                 {welcomeMessages[currentMessageIndex].description}
               </p>
             </div>
@@ -215,19 +215,19 @@ export default function AcceptInvitePage() {
         </div>
       </div>
 
-      <main className="w-full px-4 sm:px-6 lg:px-[2vw] pt-64 sm:pt-72 md:pt-80 lg:pt-[2vw] lg:pb-[1.5vw] relative z-10 min-h-screen lg:h-screen flex flex-col justify-between">
+      <main className="w-full px-5 pt-64 pb-10 min-[400px]:px-6 sm:px-6 sm:pt-72 sm:pb-8 md:pt-80 lg:px-[2vw] lg:pt-[2vw] lg:pb-[1.5vw] relative z-10 min-h-screen lg:h-screen flex flex-col justify-between [padding-left:max(1.25rem,env(safe-area-inset-left))] [padding-right:max(1.25rem,env(safe-area-inset-right))]">
         {/* Activation Form - Top Right */}
-        <div className="w-full max-w-full mb-0">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 lg:gap-[1.5vw]">
-            <div className="sm:col-start-3 flex justify-center sm:justify-end mt-8 sm:mt-0">
-              <div className="relative group w-full max-w-[90%] sm:max-w-[85%] lg:max-w-[28vw] lg:min-w-[360px]">
-                <div className="absolute inset-0 bg-gradient-to-br from-[#2d6e3e]/30 via-[#f4c430]/20 to-[#2d6e3e]/30 rounded-2xl blur-2xl opacity-40 group-hover:opacity-60 transition-opacity"></div>
-                <div className="bg-white/40 backdrop-blur-2xl rounded-2xl shadow-2xl p-4 sm:p-5 lg:p-[1.6vw] border border-white/20">
+        <div className="w-full max-w-full mb-0 min-w-0">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-4 lg:gap-[1.5vw]">
+            <div className="sm:col-start-3 flex justify-center sm:justify-end mt-6 sm:mt-0 w-full min-w-0">
+              <div className="relative group w-full max-w-md sm:max-w-[85%] lg:max-w-[28vw] lg:min-w-[360px] mx-auto sm:mx-0">
+                <div className="absolute inset-0 bg-gradient-to-br from-[#2d6e3e]/30 via-[#f4c430]/20 to-[#2d6e3e]/30 rounded-2xl blur-2xl opacity-40 group-hover:opacity-60 transition-opacity pointer-events-none"></div>
+                <div className="relative bg-white/40 backdrop-blur-2xl rounded-2xl shadow-2xl px-5 py-6 sm:p-5 lg:p-[1.6vw] border border-white/20">
                   {/* Decorative corner */}
                   <div className="absolute top-0 right-0 w-20 sm:w-24 h-20 sm:h-24 bg-gradient-to-br from-white/15 to-transparent rounded-bl-full"></div>
                   
-                  <div className="text-center mb-2 sm:mb-3 lg:mb-[1vw] relative z-10">
-                    <h2 className="text-lg sm:text-xl lg:text-[clamp(1.1rem,1.4vw,1.5rem)] font-bold text-white mb-1 drop-shadow-2xl">
+                  <div className="text-center mb-3 sm:mb-3 lg:mb-[1vw] relative z-10">
+                    <h2 className="text-lg sm:text-xl lg:text-[clamp(1.1rem,1.4vw,1.5rem)] font-bold text-white mb-0.5 drop-shadow-2xl">
                       Activation
                     </h2>
                     <p className="text-xs sm:text-sm lg:text-[clamp(0.7rem,0.8vw,0.85rem)] text-white/90 drop-shadow-md">
@@ -236,8 +236,8 @@ export default function AcceptInvitePage() {
                   </div>
 
                   {/* Activation Form */}
-                  <form onSubmit={handleSubmit} className="space-y-2 sm:space-y-3 lg:space-y-[0.8vw]">
-                    <div className="space-y-2 sm:space-y-2.5 lg:space-y-[0.8vw]">
+                  <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-3 lg:space-y-[0.8vw]">
+                    <div className="space-y-3 sm:space-y-2.5 lg:space-y-[0.8vw]">
                       {error && (
                         <div className="p-2.5 rounded-lg bg-[#2d6e3e]/70 border-0 shadow-md">
                           <p className="text-xs text-white text-center font-semibold drop-shadow-md">{error}</p>
@@ -412,18 +412,18 @@ export default function AcceptInvitePage() {
         </div>
 
         {/* Information Cards */}
-        <div className="w-full max-w-full -mt-2 sm:-mt-3 mb-4 sm:mb-5 md:mb-6 lg:mb-[1.5vw]">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 lg:gap-[1.5vw]">
+        <div className="w-full max-w-full mt-4 sm:-mt-3 mb-8 sm:mb-5 md:mb-6 lg:mb-[1.5vw]">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-4 lg:gap-[1.5vw] max-w-md mx-auto sm:max-w-none sm:mx-0">
               <Link
                 href="/agences"
                 className="group relative block cursor-pointer rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2d6e3e] focus-visible:ring-offset-2"
                 aria-label="Voir nos agences"
               >
                 <div className="absolute inset-0 bg-gradient-to-br from-[#2d6e3e]/10 to-transparent rounded-xl blur-lg opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                <div className="relative bg-white/75 backdrop-blur-xl rounded-xl shadow-lg p-3 sm:p-4 lg:p-[1.2vw] hover:shadow-xl hover:-translate-y-1 hover:bg-white/85 transition-all duration-300 border border-white/40 overflow-hidden">
+                <div className="relative bg-white/75 backdrop-blur-xl rounded-xl shadow-lg px-4 py-3.5 sm:p-4 lg:p-[1.2vw] hover:shadow-xl hover:-translate-y-1 hover:bg-white/85 transition-all duration-300 border border-white/40 overflow-hidden">
                   <div className="absolute top-0 right-0 w-12 sm:w-16 h-12 sm:h-16 bg-gradient-to-br from-[#2d6e3e]/10 to-transparent rounded-bl-full"></div>
 
-                  <div className="flex items-center space-x-3 relative z-10">
+                  <div className="flex items-center gap-3 relative z-10">
                     <div className="relative flex-shrink-0">
                       <div className="p-2 sm:p-2.5 bg-gradient-to-br from-[#2d6e3e]/10 to-[#2d6e3e]/5 rounded-xl">
                         <MapPin className="h-4 sm:h-5 w-4 sm:w-5 text-[#2d6e3e]" />
@@ -440,10 +440,10 @@ export default function AcceptInvitePage() {
               {/* Mobile Banking */}
               <div className="group relative">
                 <div className="absolute inset-0 bg-gradient-to-br from-[#f4c430]/10 to-transparent rounded-xl blur-lg opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                <div className="relative bg-white/75 backdrop-blur-xl rounded-xl shadow-lg p-3 sm:p-4 lg:p-[1.2vw] hover:shadow-xl hover:-translate-y-1 hover:bg-white/85 transition-all duration-300 border border-white/40 overflow-hidden">
+                <div className="relative bg-white/75 backdrop-blur-xl rounded-xl shadow-lg px-4 py-3.5 sm:p-4 lg:p-[1.2vw] hover:shadow-xl hover:-translate-y-1 hover:bg-white/85 transition-all duration-300 border border-white/40 overflow-hidden">
                   <div className="absolute top-0 right-0 w-12 sm:w-16 h-12 sm:h-16 bg-gradient-to-br from-[#f4c430]/10 to-transparent rounded-bl-full"></div>
                   
-                  <div className="flex items-center space-x-3 relative z-10">
+                  <div className="flex items-center gap-3 relative z-10">
                     <div className="relative flex-shrink-0">
                       <div className="p-2 sm:p-2.5 bg-gradient-to-br from-[#f4c430]/10 to-[#f4c430]/5 rounded-xl">
                         <Smartphone className="h-4 sm:h-5 w-4 sm:w-5 text-[#f4c430]" />
@@ -463,10 +463,10 @@ export default function AcceptInvitePage() {
                 aria-label="Support client — contact et assistance"
               >
                 <div className="absolute inset-0 bg-gradient-to-br from-[#2d6e3e]/10 to-transparent rounded-xl blur-lg opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                <div className="relative bg-white/75 backdrop-blur-xl rounded-xl shadow-lg p-3 sm:p-4 lg:p-[1.2vw] hover:shadow-xl hover:-translate-y-1 hover:bg-white/85 transition-all duration-300 border border-white/40 overflow-hidden">
+                <div className="relative bg-white/75 backdrop-blur-xl rounded-xl shadow-lg px-4 py-3.5 sm:p-4 lg:p-[1.2vw] hover:shadow-xl hover:-translate-y-1 hover:bg-white/85 transition-all duration-300 border border-white/40 overflow-hidden">
                   <div className="absolute top-0 right-0 w-12 sm:w-16 h-12 sm:h-16 bg-gradient-to-br from-[#2d6e3e]/10 to-transparent rounded-bl-full"></div>
 
-                  <div className="flex items-center space-x-3 relative z-10">
+                  <div className="flex items-center gap-3 relative z-10">
                     <div className="relative flex-shrink-0">
                       <div className="p-2 sm:p-2.5 bg-gradient-to-br from-[#2d6e3e]/10 to-[#2d6e3e]/5 rounded-xl">
                         <HelpCircle className="h-4 sm:h-5 w-4 sm:w-5 text-[#2d6e3e]" />
