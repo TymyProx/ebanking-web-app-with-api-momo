@@ -110,6 +110,33 @@ function stripAuditPrevious(raw: Record<string, any>): Record<string, any> {
   return rest
 }
 
+const COMPTE_FIELD_LABELS: Record<string, string> = {
+  avisDC: "préférence avis débit/crédit",
+  accountName: "intitulé du compte",
+  accountNumber: "numéro de compte",
+  accountId: "identifiant compte",
+  currency: "devise",
+  bookBalance: "solde comptable",
+  availableBalance: "solde disponible",
+  codeAgence: "agence",
+  codeBanque: "code banque",
+  cleRib: "clé RIB",
+  rejectionReason: "motif de rejet",
+  type: "type de compte",
+  clientId: "rattachement client",
+  importHash: "référence d’import",
+  status: "statut",
+  statut: "statut",
+}
+
+function describeCompteFieldChanges(keys: string[]): string {
+  const labels = keys.map((k) => COMPTE_FIELD_LABELS[k] || k).filter(Boolean)
+  if (labels.length === 0) return "autres informations"
+  if (labels.length === 1) return labels[0]
+  if (labels.length === 2) return `${labels[0]} et ${labels[1]}`
+  return `${labels.slice(0, -1).join(", ")} et ${labels[labels.length - 1]}`
+}
+
 function buildNotification(entry: any): NotificationItem | null {
   const { changed: changedFields, hasPreviousState, cleanNewVals } = getChangedFields(entry)
   const parsed = parseValues(entry.values ?? entry.newValues ?? entry.after)
@@ -151,6 +178,7 @@ function buildNotification(entry: any): NotificationItem | null {
         const balanceChanged =
           hasPreviousState &&
           (changedFields.has("availableBalance") ||
+            changedFields.has("bookBalance") ||
             changedFields.has("balance") ||
             changedFields.has("solde"))
         const availableBalance = values.availableBalance ?? values.balance
@@ -161,6 +189,22 @@ function buildNotification(entry: any): NotificationItem | null {
           !hasPreviousState && hasBalanceInValues && !hasStatusInPayload
 
         if (onlyBalanceChanged || likelyBalanceOnly) {
+          return null
+        }
+
+        /** Champs techniques : pas de notification « métier » dédiée à eux seuls */
+        const NOISE_KEYS = new Set([
+          "updatedAt",
+          "updatedById",
+          "createdAt",
+          "createdById",
+          "deletedAt",
+        ])
+        const meaningfulChangedKeys = [...changedFields].filter(
+          (k) => !NOISE_KEYS.has(k) && k !== "__auditPrevious",
+        )
+
+        if (hasPreviousState && meaningfulChangedKeys.length === 0) {
           return null
         }
 
@@ -178,6 +222,26 @@ function buildNotification(entry: any): NotificationItem | null {
           newStatusRaw !== undefined && newStatusRaw !== null && String(newStatusRaw).trim() !== ""
             ? normalizeAccountStatus(newStatusRaw)
             : null
+
+        const onlyAvisDcChanged =
+          hasPreviousState &&
+          !statusChanged &&
+          meaningfulChangedKeys.length === 1 &&
+          meaningfulChangedKeys[0] === "avisDC"
+        if (onlyAvisDcChanged) {
+          const on = Number(values.avisDC) === 1
+          return {
+            id: entry.id,
+            type: "account_update",
+            title: on ? "Avis débit/crédit activés" : "Avis débit/crédit désactivés",
+            message: on
+              ? `Pour le compte « ${name} », vous recevrez les avis débit et crédit par e-mail.`
+              : `Pour le compte « ${name} », les avis débit et crédit ne seront plus envoyés par e-mail.`,
+            date: entry.timestamp,
+            entityName: entry.entityName,
+            action: entry.action,
+          }
+        }
 
         let message: string
         let title = "Compte modifié"
@@ -197,7 +261,7 @@ function buildNotification(entry: any): NotificationItem | null {
               message = `Le statut du compte « ${name} » est passé de « ${oldLabel} » à « ${newLabel} ».`
             }
           }
-        } else if (newLabel) {
+        } else if (statusChanged && newLabel) {
           if (newLabel === "Actif") {
             title = "Compte activé"
             message = `Le statut de votre compte est passé à ACTIF.`
@@ -213,9 +277,12 @@ function buildNotification(entry: any): NotificationItem | null {
           const fallback = s != null && String(s).trim() !== "" ? String(s) : "indéterminé"
           title = "Compte modifié"
           message = `Le compte « ${name} » a été modifié. Statut indiqué : ${fallback}.`
+        } else if (meaningfulChangedKeys.length > 0) {
+          title = "Compte modifié"
+          message = `Le compte « ${name} » a été mis à jour (${describeCompteFieldChanges(meaningfulChangedKeys)}).`
         } else {
           title = "Compte modifié"
-          message = `Le compte « ${name} » a été modifié. Consultez la fiche compte pour le statut et les détails.`
+          message = `Le compte « ${name} » a été modifié. Consultez la fiche compte pour le détail.`
         }
 
         return {

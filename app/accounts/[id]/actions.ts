@@ -47,11 +47,73 @@ export async function getAccountDetails(accountId: string): Promise<Account | nu
     }
 
     const accountData = await response.json()
+    const row = accountData?.data ?? accountData
 
-    return accountData as Account
+    return row as Account
   } catch (error) {
     console.error("Erreur lors de la récupération des détails du compte:", error)
     return null
+  }
+}
+
+export async function updateCompteAvisDC(
+  accountId: string,
+  avisDC: 0 | 1,
+): Promise<{ success: true } | { success: false; error: string }> {
+  try {
+    const cookieStore = await cookies()
+    const token = cookieStore.get("token")?.value
+
+    if (!token) {
+      return { success: false, error: "Non authentifié" }
+    }
+
+    if (avisDC !== 0 && avisDC !== 1) {
+      return { success: false, error: "Valeur invalide" }
+    }
+
+    const { getApiBaseUrl } = await import("@/lib/api-url")
+    const API_BASE_URL = getApiBaseUrl()
+
+    const userResponse = await fetch(`${API_BASE_URL}/auth/me`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    })
+
+    if (!userResponse.ok) {
+      return { success: false, error: "Session invalide" }
+    }
+
+    const userData = await userResponse.json()
+    const tenantId = userData.tenants?.[0]?.tenantId || config.TENANT_ID
+
+    const response = await fetch(
+      `${API_BASE_URL}/tenant/${tenantId}/compte/${accountId}/avis-dc`,
+      {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ data: { avisDC } }),
+      },
+    )
+
+    if (!response.ok) {
+      const errText = await response.text().catch(() => "")
+      return {
+        success: false,
+        error: errText || "Impossible de mettre à jour la préférence",
+      }
+    }
+
+    revalidatePath(`/accounts/${accountId}`)
+    return { success: true }
+  } catch (e) {
+    console.error("updateCompteAvisDC:", e)
+    return { success: false, error: "Erreur réseau" }
   }
 }
 

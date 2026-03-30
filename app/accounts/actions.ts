@@ -239,6 +239,8 @@ export interface Account {
   minorFirstName?: string
   minorLastName?: string
   minorDateOfBirth?: string
+  /** 1 = recevoir les avis débit/crédit par e-mail, 0 = non */
+  avisDC?: number
 }
 
 interface AccountsResponse {

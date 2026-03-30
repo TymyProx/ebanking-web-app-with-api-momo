@@ -414,7 +414,21 @@ const SidebarMenuItem = React.forwardRef<HTMLLIElement, React.ComponentProps<"li
 SidebarMenuItem.displayName = "SidebarMenuItem"
 
 const sidebarMenuButtonVariants = cva(
-  "peer/menu-button flex w-full items-center gap-3 overflow-hidden rounded-lg p-2.5 text-left text-sm outline-none ring-sidebar-ring transition-all duration-300 ease-out hover:bg-gradient-to-r hover:from-sidebar-accent/90 hover:to-sidebar-accent/50 hover:text-sidebar-accent-foreground hover:translate-x-1.5 hover:shadow-md focus-visible:ring-2 active:bg-sidebar-accent active:text-sidebar-accent-foreground disabled:pointer-events-none disabled:opacity-50 group-has-[[data-sidebar=menu-action]]/menu-item:pr-8 aria-disabled:pointer-events-none aria-disabled:opacity-50 data-[active=true]:bg-gradient-to-r data-[active=true]:from-primary/15 data-[active=true]:via-primary/10 data-[active=true]:to-transparent data-[active=true]:border-l-[3px] data-[active=true]:border-primary data-[active=true]:font-semibold data-[active=true]:text-primary data-[active=true]:shadow-lg data-[active=true]:shadow-primary/10 data-[state=open]:hover:bg-sidebar-accent data-[state=open]:hover:text-sidebar-accent-foreground group-data-[collapsible=icon]:!size-8 group-data-[collapsible=icon]:!p-2 [&>span:last-child]:truncate [&>span:last-child]:whitespace-nowrap [&>svg]:size-[18px] [&>svg]:shrink-0 data-[active=true]:[&>svg]:text-primary data-[active=true]:[&>svg]:drop-shadow-sm",
+  [
+    "peer/menu-button flex w-full items-center gap-3 overflow-hidden rounded-lg p-2.5 text-left text-sm outline-none ring-sidebar-ring transition-all duration-300 ease-out",
+    "hover:bg-gradient-to-r hover:from-sidebar-accent/90 hover:to-sidebar-accent/50 hover:text-sidebar-accent-foreground hover:translate-x-1.5 hover:shadow-md",
+    "focus-visible:ring-2 active:bg-sidebar-accent active:text-sidebar-accent-foreground",
+    "disabled:pointer-events-none disabled:opacity-50 group-has-[[data-sidebar=menu-action]]/menu-item:pr-8 aria-disabled:pointer-events-none aria-disabled:opacity-50",
+    "data-[active=true]:bg-gradient-to-r data-[active=true]:from-primary/15 data-[active=true]:via-primary/10 data-[active=true]:to-transparent",
+    "data-[active=true]:border-l-[3px] data-[active=true]:border-primary data-[active=true]:font-semibold data-[active=true]:text-primary data-[active=true]:shadow-lg data-[active=true]:shadow-primary/10",
+    "data-[state=open]:hover:bg-sidebar-accent data-[state=open]:hover:text-sidebar-accent-foreground",
+    /* Mode sidebar réduite (icônes) : pas de translation au survol, libellés masqués, bouton centré */
+    "group-data-[collapsible=icon]:!size-8 group-data-[collapsible=icon]:!p-2 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:gap-0",
+    "group-data-[collapsible=icon]:hover:!translate-x-0 group-data-[collapsible=icon]:hover:shadow-sm",
+    "group-data-[collapsible=icon]:[&>span]:hidden",
+    "[&>span:last-child]:truncate [&>span:last-child]:whitespace-nowrap [&>svg]:size-[18px] [&>svg]:shrink-0",
+    "data-[active=true]:[&>svg]:text-primary data-[active=true]:[&>svg]:drop-shadow-sm",
+  ].join(" "),
   {
     variants: {
       variant: {

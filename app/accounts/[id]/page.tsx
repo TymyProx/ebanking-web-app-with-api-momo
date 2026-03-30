@@ -27,7 +27,10 @@ import {
   RefreshCw,
 } from "lucide-react"
 import { getAccounts } from "../actions"
-import { toggleAccountStatus, getAccountDetails } from "./actions"
+import { toggleAccountStatus, getAccountDetails, updateCompteAvisDC } from "./actions"
+import { Switch } from "@/components/ui/switch"
+import { Label } from "@/components/ui/label"
+import { useToast } from "@/hooks/use-toast"
 import { getUserTransactions } from "@/app/transfers/mes-virements/actions"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { getAccountStatusBadge } from "@/lib/status-utils"
@@ -48,6 +51,8 @@ interface Account {
   branch: string
   interestRate?: number
   overdraftLimit?: number
+  /** 1 = recevoir les avis débit/crédit, 0 = non */
+  avisDC?: number
 }
 
 interface Transaction {
@@ -70,9 +75,11 @@ interface AccountDetailPageProps {
 
 export default function AccountDetailsPage({ params }: AccountDetailPageProps) {
   const router = useRouter()
+  const { toast } = useToast()
   const { id: accountId } = React.use(params)
   const [showBalance, setShowBalance] = useState(true)
   const [account, setAccount] = useState<Account | null>(null)
+  const [avisDcSaving, setAvisDcSaving] = useState(false)
 
   const [transactions, setTransactions] = useState<Transaction[]>(() => {
     if (typeof window !== "undefined") {
@@ -139,6 +146,10 @@ export default function AccountDetailsPage({ params }: AccountDetailPageProps) {
             openingDate: accountDetails.createdAt || "2020-01-01",
             branch: accountDetails.codeAgence || "Agence Kaloum",
             overdraftLimit: accountDetails.currency === "GNF" ? 500000 : undefined,
+            avisDC:
+              accountDetails.avisDC !== undefined && accountDetails.avisDC !== null
+                ? Number(accountDetails.avisDC)
+                : 1,
           }
           setAccount(adaptedAccount)
           await loadTransactionsData(accountDetails.accountNumber)
@@ -166,6 +177,10 @@ export default function AccountDetailsPage({ params }: AccountDetailPageProps) {
                 openingDate: foundAccount.createdAt || "2020-01-01",
                 branch: foundAccount.codeAgence || "Agence Kaloum",
                 overdraftLimit: foundAccount.currency === "GNF" ? 500000 : undefined,
+                avisDC:
+                  foundAccount.avisDC !== undefined && foundAccount.avisDC !== null
+                    ? Number(foundAccount.avisDC)
+                    : 1,
               }
               setAccount(adaptedAccount)
               await loadTransactionsData(foundAccount.accountNumber)
@@ -585,6 +600,48 @@ export default function AccountDetailsPage({ params }: AccountDetailPageProps) {
                 <div className="p-3 rounded-lg bg-white/50 backdrop-blur-sm">
                   <p className="text-xs text-muted-foreground uppercase font-medium mb-1">Statut</p>
                   {getStatusBadge(account.status)}
+                </div>
+                <div className="p-3 rounded-lg bg-white/50 backdrop-blur-sm space-y-2">
+                  <div className="flex items-center justify-between gap-3">
+                    <Label htmlFor="avis-dc-toggle" className="text-sm font-medium leading-tight cursor-pointer">
+                      Avis débit/crédit
+                    </Label>
+                    <Switch
+                      id="avis-dc-toggle"
+                      checked={Number(account.avisDC ?? 1) === 1}
+                      disabled={avisDcSaving}
+                      onCheckedChange={async (checked) => {
+                        const next: 0 | 1 = checked ? 1 : 0
+                        const previousAvis =
+                          account.avisDC !== undefined && account.avisDC !== null
+                            ? Number(account.avisDC)
+                            : 1
+                        setAccount((a) => (a ? { ...a, avisDC: next } : a))
+                        setAvisDcSaving(true)
+                        const res = await updateCompteAvisDC(accountId, next)
+                        setAvisDcSaving(false)
+                        if (!res.success) {
+                          setAccount((a) => (a ? { ...a, avisDC: previousAvis } : a))
+                          toast({
+                            variant: "destructive",
+                            title: "Mise à jour impossible",
+                            description: res.error,
+                          })
+                          return
+                        }
+                        toast({
+                          title: "Préférence enregistrée",
+                          description:
+                            next === 1
+                              ? "Vous recevrez les avis débit et crédit par e-mail."
+                              : "Les avis débit et crédit ne seront plus envoyés sur votre e-mail pour ce compte.",
+                        })
+                      }}
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Recevoir par e-mail les notifications d&apos;avis de débit et de crédit pour ce compte.
+                  </p>
                 </div>
               </div>
 
