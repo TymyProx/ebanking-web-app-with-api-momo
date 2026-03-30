@@ -999,7 +999,7 @@ export default function PersonalBudgetPage() {
                 </div>
 
                 <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-                  <h5 className="font-medium text-blue-900 mb-2">💡 Recommandations personnalisées</h5>
+                  <h5 className="font-medium text-blue-900 mb-2">Recommandations personnalisées</h5>
                   <ul className="text-sm text-blue-800 space-y-1">
                     <li>• Vous êtes sur la bonne voie pour atteindre vos objectifs d'épargne</li>
                     <li>• Attention au budget Alimentation qui dépasse de 7%</li>

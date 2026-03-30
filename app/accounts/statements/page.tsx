@@ -29,6 +29,7 @@ import {
   X,
 } from "lucide-react"
 import { sendStatementByEmail, getTransactionsByNumCompte, getStatementBalancesFromSTTMS } from "./actions"
+import { getCurrentUser } from "@/app/user/actions"
 import { useActionState } from "react"
 import { getAccounts, getAccountById } from "../actions"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -156,6 +157,25 @@ export default function StatementsPage() {
     }
 
     loadAccounts()
+  }, [])
+
+  /** Email d’envoi du relevé : par défaut, email du compte connecté */
+  useEffect(() => {
+    let cancelled = false
+    void (async () => {
+      try {
+        const user = await getCurrentUser()
+        if (cancelled || !user?.email) return
+        const em = String(user.email).trim()
+        if (!em) return
+        setEmailAddress((prev) => (prev.trim() ? prev : em))
+      } catch {
+        // ignore
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
   }, [])
 
   useEffect(() => {
@@ -733,7 +753,7 @@ export default function StatementsPage() {
                 {selectedAccount && !startDate && !endDate && (
                   <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
                     <p className="text-sm text-amber-800 mb-2 font-medium">
-                      💡 Suggestions de périodes courantes :
+                      Suggestions de périodes courantes :
                     </p>
                     <div className="flex flex-wrap gap-2">
                       <Button
