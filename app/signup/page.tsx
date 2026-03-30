@@ -18,7 +18,7 @@ import {
 
 const signupMessages = [
   {
-    title: "Rejoignez la famille BNG Bank",
+    title: "Rejoignez la famille BNG CONNECT",
     description: "Créez votre compte en quelques minutes et profitez d'une expérience bancaire moderne et sécurisée.",
   },
   {
@@ -203,7 +203,7 @@ export default function SignupPage() {
           {/* Badge fixe — aligné /login (mobile) */}
           <div className="absolute top-24 sm:top-28 lg:top-[28%] left-5 right-5 sm:left-6 sm:right-6 lg:left-[2vw] lg:right-auto lg:max-w-[28%] px-0 z-10">
             <span className="text-xs sm:text-sm lg:text-[clamp(0.75rem,0.9vw,1rem)] font-semibold text-[#f4c430] uppercase tracking-wider px-3 py-1 lg:px-[0.8vw] lg:py-[0.3vw] bg-white/10 backdrop-blur-sm rounded-full inline-block">
-              Astra e-Banking
+              BNG CONNECT
             </span>
           </div>
 

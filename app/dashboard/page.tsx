@@ -6,6 +6,7 @@ import { getUserTransactions } from "@/app/transfers/mes-virements/actions"
 import { getAccounts } from "@/app/accounts/actions"
 import { AccountsCarousel } from "@/components/accounts-carousel"
 import { BankProductsCarousel } from "@/components/bank-products-carousel"
+import { PersonalizedOffers } from "@/components/personalized-offers"
 import { Suspense } from "react"
 
 async function getCurrentUser() {
@@ -268,7 +269,8 @@ export default async function Dashboard() {
           <RecentTransactions />
         </Suspense>
 
-        <div className="min-w-0">
+        <div className="min-w-0 space-y-3">
+          <PersonalizedOffers />
           <div className="mb-2">
             <h2 className="text-base sm:text-lg font-heading font-semibold">Nos Produits</h2>
             <p className="text-xs sm:text-sm text-muted-foreground">Découvrez nos offres exclusives</p>

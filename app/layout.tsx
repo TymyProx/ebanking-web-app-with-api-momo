@@ -22,10 +22,10 @@ const dmSans = DM_Sans({
 })
 
 export const metadata: Metadata = {
-  title: "Astra eBanking - BNG",
+  title: "BNG CONNECT",
   description: "La banque digitale nouvelle génération de la BNG",
-  keywords: ["banque", "digital", "BNG", "Astra", "eBanking", "finance"],
-  authors: [{ name: "BNG Digital Team" }],
+  keywords: ["banque", "digital", "BNG", "BNG CONNECT", "finance"],
+  authors: [{ name: "BNG CONNECT Team" }],
   generator: "v0.dev",
   icons: {
     icon: [

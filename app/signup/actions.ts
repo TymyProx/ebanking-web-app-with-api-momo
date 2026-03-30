@@ -150,7 +150,7 @@ export async function initiateSignup(data: InitialSignupData): Promise<SignupRes
     const { data: resendData, error: resendError } = await resend.emails.send({
       from: FROM_EMAIL,
       to: emailNorm,
-      subject: "Code de vérification — inscription BNG E-Banking",
+      subject: "Code de vérification — inscription BNG CONNECT",
       react: OtpEmail({
         otpCode: otpPlain,
         userName: data.fullName.trim() || emailNorm.split("@")[0],
@@ -273,8 +273,8 @@ export async function verifyNewClientSignupOtp(otp: string): Promise<SignupResul
 
     const verifySubject =
       flowType === "existing"
-        ? "Activez votre accès en ligne - BNG E-Banking"
-        : "Vérifiez votre adresse email - BNG E-Banking"
+        ? "Activez votre accès en ligne - BNG CONNECT"
+        : "Vérifiez votre adresse email - BNG CONNECT"
 
     const { error: resendError } = await resend.emails.send({
       from: FROM_EMAIL,
@@ -357,8 +357,8 @@ export async function resendNewClientSignupOtp(): Promise<SignupResult> {
 
     const otpSubject =
       flowType === "existing"
-        ? "Nouveau code — activation accès BNG E-Banking"
-        : "Nouveau code — inscription BNG E-Banking"
+        ? "Nouveau code — activation accès BNG CONNECT"
+        : "Nouveau code — inscription BNG CONNECT"
 
     const { error: resendError } = await resend.emails.send({
       from: FROM_EMAIL,
@@ -784,7 +784,7 @@ export async function initiateExistingClientSignup(data: { clientCode: string })
     const { data: resendData, error: resendError } = await resend.emails.send({
       from: FROM_EMAIL,
       to: emailNorm,
-      subject: "Code de vérification — activation accès BNG E-Banking",
+      subject: "Code de vérification — activation accès BNG CONNECT",
       react: OtpEmail({
         otpCode: otpPlain,
         userName: clientFullName || emailNorm.split("@")[0],
@@ -933,7 +933,7 @@ export async function initiateExistingClientSignup(data: { clientCode: string })
 //     const { data: resendData, error: resendError } = await resend.emails.send({
 //       from: FROM_EMAIL,
 //       to: data.email,
-//       subject: "Vérifiez votre adresse email - BNG E-Banking",
+//       subject: "Vérifiez votre adresse email - BNG CONNECT",
 //       react: VerificationEmail({
 //         userName: data.fullName || data.email.split("@")[0],
 //         verificationLink: verificationUrl,

@@ -191,7 +191,7 @@ export default function LandingPage() {
           <div className="flex items-center gap-2 min-w-0 shrink">
             <Image
               src="/images/logo-bng.png"
-              alt="Astra Bank"
+              alt="BNG CONNECT"
               width={140}
               height={48}
               className="object-contain w-[7.5rem] sm:w-32 md:w-36 lg:w-[clamp(8rem,12vw,11rem)] h-auto max-h-12"
@@ -335,7 +335,7 @@ export default function LandingPage() {
               </h1>
 
               <p className="text-base sm:text-lg md:text-xl lg:text-[clamp(1.05rem,1.35vw,1.5rem)] xl:max-w-[min(100%,42rem)] text-gray-600 leading-relaxed">
-                Gérez vos finances en toute simplicité avec Astra eBanking. Des services bancaires modernes, sécurisés
+                Gérez vos finances en toute simplicité avec BNG CONNECT. Des services bancaires modernes, sécurisés
                 et disponibles 24h/24 et 7j/7.
               </p>
 
@@ -521,13 +521,13 @@ export default function LandingPage() {
               <div className="space-y-4">
                 <Badge variant="outline">E-Banking</Badge>
                 <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-[clamp(1.75rem,3.25vw,3.25rem)] xl:text-[clamp(2rem,2.8vw,3.5rem)] font-bold">
-                  Découvrez Astra e-Bank
+                  Découvrez BNG CONNECT
                 </h2>
                 <p className="text-base sm:text-lg md:text-xl lg:text-[clamp(1.05rem,1.35vw,1.35rem)] font-semibold text-gray-900">
                   VOS OPÉRATIONS BANCAIRES DISPONIBLES 24H/24 ET 7J/7
                 </p>
                 <p className="text-base sm:text-lg text-gray-600 leading-relaxed">
-                  Astra e-Bank est une plateforme en ligne qui vous permet de consulter l'activité de vos comptes,
+                  BNG CONNECT est une plateforme en ligne qui vous permet de consulter l'activité de vos comptes,
                   d'effectuer des virements et d'émettre diverses requêtes 24h/24 et 7j/7.
                 </p>
               </div>
@@ -575,7 +575,7 @@ export default function LandingPage() {
           >
             <Badge variant="outline">Fonctionnalités</Badge>
             <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-[clamp(1.75rem,3.25vw,3.25rem)] font-bold text-gray-900 max-w-[min(100%,48rem)] mx-auto">
-              Pourquoi choisir Astra eBanking ?
+              Pourquoi choisir BNG CONNECT ?
             </h2>
             <p className="text-base sm:text-lg md:text-xl lg:text-[clamp(1rem,1.25vw,1.25rem)] text-gray-600 max-w-2xl mx-auto px-1">
               Une expérience bancaire moderne et sécurisée
@@ -822,7 +822,7 @@ export default function LandingPage() {
             </h2>
 
             <p className="text-base sm:text-lg md:text-xl lg:text-[clamp(1.05rem,1.5vw,1.5rem)] text-gray-700 leading-relaxed max-w-2xl mx-auto font-medium">
-              Rejoignez des milliers de clients qui font confiance à Astra eBanking pour gérer leurs finances
+              Rejoignez des milliers de clients qui font confiance à BNG CONNECT pour gérer leurs finances
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center pt-4">
@@ -858,10 +858,10 @@ export default function LandingPage() {
             <div className="space-y-4">
               <Image
                 src="/images/logo-bng.png"
-                alt="Astra Bank"
-                width={140}
-                height={48}
-                className="object-contain w-[7rem] sm:w-32 lg:w-[clamp(7.5rem,10vw,10rem)] h-auto"
+              alt="BNG CONNECT"
+              width={140}
+              height={48}
+              className="object-contain w-[7rem] sm:w-32 lg:w-[clamp(7.5rem,10vw,10rem)] h-auto"
                 loading="lazy"
               />
               <p className="text-sm text-gray-600 leading-relaxed">
@@ -940,7 +940,7 @@ export default function LandingPage() {
             </div>
           </div>
           <div className="mt-12 pt-8 border-t text-center text-sm text-gray-600">
-            <p>© 2025 Astra Bank. Tous droits réservés.</p>
+            <p>© 2025 BNG CONNECT. Tous droits réservés.</p>
           </div>
         </div>
       </footer>
