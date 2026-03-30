@@ -43,6 +43,8 @@ export default function SignupPage() {
   const [maskedEmail, setMaskedEmail] = useState("")
   const [newClientOtpStep, setNewClientOtpStep] = useState(false)
   const [pendingNewClientEmail, setPendingNewClientEmail] = useState("")
+  const [existingClientOtpStep, setExistingClientOtpStep] = useState(false)
+  const [pendingExistingClientEmail, setPendingExistingClientEmail] = useState("")
   const [isResendingOtp, setIsResendingOtp] = useState(false)
   const [currentMessageIndex, setCurrentMessageIndex] = useState(0)
   const router = useRouter()
@@ -110,7 +112,8 @@ export default function SignupPage() {
       const code = (formData.get("signupOtp") as string) || ""
       const result = await verifyNewClientSignupOtp(code)
       if (result.success) {
-        router.push(`/auth/verify-email?email=${encodeURIComponent(pendingNewClientEmail)}`)
+        const em = (pendingExistingClientEmail || pendingNewClientEmail).trim()
+        router.push(`/auth/verify-email?email=${encodeURIComponent(em)}`)
       } else {
         setError(result.message)
       }
@@ -144,6 +147,13 @@ export default function SignupPage() {
       const clientCode = formData.get("clientCode") as string
 
       const result = await initiateExistingClientSignup({ clientCode })
+
+      if (result.success && result.requiresOtp) {
+        setExistingClientOtpStep(true)
+        if (result.maskedEmail) setMaskedEmail(result.maskedEmail)
+        if (result.email) setPendingExistingClientEmail(result.email)
+        return
+      }
 
       if (result.success && result.maskedEmail) {
         setVerificationSent(true)
@@ -525,9 +535,14 @@ export default function SignupPage() {
                         <button
                           type="button"
                           onClick={() => {
-                            router.replace("/signup")
-                            setClientType(null)
-                            setError("")
+                            if (existingClientOtpStep) {
+                              setExistingClientOtpStep(false)
+                              setError("")
+                            } else {
+                              router.replace("/signup")
+                              setClientType(null)
+                              setError("")
+                            }
                           }}
                           className="text-xs text-white/90 hover:text-white flex items-center space-x-1 font-medium mb-3 sm:mb-4"
                         >
@@ -538,11 +553,80 @@ export default function SignupPage() {
 
                       <div className="text-center mb-2 sm:mb-3 relative z-10">
                         <h2 className="text-lg sm:text-xl font-bold text-white mb-1 drop-shadow-2xl">
-                          Client existant
+                          {existingClientOtpStep ? "Code de vérification" : "Client existant"}
                         </h2>
+                        {existingClientOtpStep && maskedEmail && (
+                          <p className="text-xs text-white/80 mt-1 px-1">
+                            Saisissez le code à 6 chiffres envoyé à{" "}
+                            <span className="font-semibold text-white">{maskedEmail}</span>
+                          </p>
+                        )}
                       </div>
 
-                      {/* Existing Client Form */}
+                      {existingClientOtpStep ? (
+                        <form onSubmit={handleVerifyNewClientOtp} className="space-y-2 sm:space-y-3">
+                          <div className="space-y-2 sm:space-y-2.5">
+                            {error && (
+                              <div className="p-2.5 rounded-lg bg-[#2d6e3e]/70 border-0 shadow-md">
+                                <p className="text-xs text-white text-center font-semibold drop-shadow-md">{error}</p>
+                              </div>
+                            )}
+
+                            <div className="space-y-1">
+                              <Label
+                                htmlFor="signupOtpExisting"
+                                className="text-xs font-semibold text-white/90 flex items-center space-x-1 drop-shadow-lg"
+                              >
+                                <span>Code à 6 chiffres</span>
+                                <span className="text-red-300 drop-shadow-md">*</span>
+                              </Label>
+                              <Input
+                                id="signupOtpExisting"
+                                name="signupOtp"
+                                type="text"
+                                inputMode="numeric"
+                                autoComplete="one-time-code"
+                                pattern="[0-9]{6}"
+                                maxLength={6}
+                                placeholder="• • • • • •"
+                                className="h-11 text-center text-xl tracking-[0.35em] font-semibold sm:h-12 bg-[#2d6e3e]/60 border-0 text-white placeholder:text-white/40 focus:bg-[#2d6e3e]/70 focus:ring-0 rounded-lg shadow-md"
+                                required
+                                disabled={isLoading}
+                                onInput={(e) => {
+                                  const t = e.target as HTMLInputElement
+                                  t.value = t.value.replace(/\D/g, "").slice(0, 6)
+                                }}
+                              />
+                            </div>
+
+                            <Button
+                              type="submit"
+                              className="relative w-full h-9 sm:h-10 lg:h-[clamp(2.75rem,3.2vw,3.5rem)] bg-gradient-to-r from-[#f4c430] via-[#f8d060] to-[#f4c430] hover:from-[#e0b020] hover:via-[#f4c430] hover:to-[#e0b020] text-gray-900 font-semibold text-xs sm:text-sm lg:text-[clamp(0.85rem,1vw,1.1rem)] shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden group rounded-lg"
+                              disabled={isLoading}
+                            >
+                              {isLoading ? (
+                                <div className="flex items-center justify-center space-x-2">
+                                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-gray-900/30 border-t-gray-900" />
+                                  <span className="text-sm">Vérification...</span>
+                                </div>
+                              ) : (
+                                <span className="text-sm">Valider et recevoir le lien</span>
+                              )}
+                            </Button>
+
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              className="w-full text-white/90 hover:text-white hover:bg-white/10 text-xs"
+                              disabled={isLoading || isResendingOtp}
+                              onClick={handleResendSignupOtp}
+                            >
+                              {isResendingOtp ? "Envoi..." : "Renvoyer le code"}
+                            </Button>
+                          </div>
+                        </form>
+                      ) : (
+                      /* Existing Client — racine compte */
                       <form onSubmit={handleExistingClientSubmit} className="space-y-2 sm:space-y-3">
                         <div className="space-y-2 sm:space-y-2.5">
                           {error && (
@@ -601,6 +685,7 @@ export default function SignupPage() {
                           </Button>
                         </div>
                       </form>
+                      )}
 
                       <div className="text-center pt-2 sm:pt-3">
                         <Link href="/login" className="text-xs text-white/90 hover:text-white font-medium">

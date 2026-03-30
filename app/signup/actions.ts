@@ -60,8 +60,9 @@ interface SignupResult {
   success: boolean
   message: string
   requiresVerification?: boolean
-  /** Nouveau client : OTP envoyé, saisie requise avant le lien e-mail */
+  /** Nouveau ou client existant : OTP envoyé, saisie requise avant le lien e-mail */
   requiresOtp?: boolean
+  /** E-mail en clair (parcours existant : nécessaire pour la redirection après OTP) */
   email?: string
   maskedEmail?: string
 }
@@ -199,7 +200,8 @@ export async function verifyNewClientSignupOtp(otp: string): Promise<SignupResul
       return { success: false, message: "Données d’inscription invalides. Veuillez recommencer." }
     }
 
-    if (String(pending.clientType || "") !== "new") {
+    const flowType = String(pending.clientType || "")
+    if (flowType !== "new" && flowType !== "existing") {
       return { success: false, message: "Cette étape ne concerne pas votre parcours." }
     }
 
@@ -246,14 +248,17 @@ export async function verifyNewClientSignupOtp(otp: string): Promise<SignupResul
     const email = String(pending.email || "").toLowerCase()
     const fullName = String(pending.fullName || "")
 
-    const nextPayload = {
+    const nextPayload: Record<string, unknown> = {
       fullName: pending.fullName,
       email: pending.email,
       phone: pending.phone,
       address: pending.address,
-      clientType: "new",
+      clientType: flowType === "existing" ? "existing" : "new",
       verificationToken,
       verificationTokenExpiresAt: Date.now() + SIGNUP_STEP_TTL_MS,
+    }
+    if (flowType === "existing" && pending.numClient != null) {
+      nextPayload.numClient = pending.numClient
     }
 
     const cookieConfig = getCookieConfig()
@@ -266,10 +271,15 @@ export async function verifyNewClientSignupOtp(otp: string): Promise<SignupResul
     const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || "no-reply@bngebanking.com"
     const verificationUrl = `${APP_URL.replace(/\/$/, "")}/auth/verify-email?token=${verificationToken}&email=${encodeURIComponent(email)}`
 
+    const verifySubject =
+      flowType === "existing"
+        ? "Activez votre accès en ligne - BNG E-Banking"
+        : "Vérifiez votre adresse email - BNG E-Banking"
+
     const { error: resendError } = await resend.emails.send({
       from: FROM_EMAIL,
       to: email,
-      subject: "Vérifiez votre adresse email - BNG E-Banking",
+      subject: verifySubject,
       react: VerificationEmail({
         userName: fullName || email.split("@")[0],
         verificationLink: verificationUrl,
@@ -311,7 +321,8 @@ export async function resendNewClientSignupOtp(): Promise<SignupResult> {
       return { success: false, message: "Données invalides. Recommencez l’inscription." }
     }
 
-    if (String(pending.clientType || "") !== "new") {
+    const flowType = String(pending.clientType || "")
+    if (flowType !== "new" && flowType !== "existing") {
       return { success: false, message: "Renvoi de code non disponible pour ce parcours." }
     }
 
@@ -344,14 +355,19 @@ export async function resendNewClientSignupOtp(): Promise<SignupResult> {
     const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || "no-reply@bngebanking.com"
     const fullName = String(pending.fullName || "")
 
+    const otpSubject =
+      flowType === "existing"
+        ? "Nouveau code — activation accès BNG E-Banking"
+        : "Nouveau code — inscription BNG E-Banking"
+
     const { error: resendError } = await resend.emails.send({
       from: FROM_EMAIL,
       to: email,
-      subject: "Nouveau code — inscription BNG E-Banking",
+      subject: otpSubject,
       react: OtpEmail({
         otpCode: otpPlain,
         userName: fullName || email.split("@")[0],
-        purpose: "votre inscription",
+        purpose: flowType === "existing" ? "l’activation de votre accès en ligne" : "votre inscription",
         validityMinutes: SIGNUP_STEP_TTL_MINUTES,
       }),
     })
@@ -731,24 +747,28 @@ export async function initiateExistingClientSignup(data: { clientCode: string })
       }
     }
 
-    const verificationToken = randomBytes(32).toString("hex")
+    // ============================================================
+    // OTP puis lien (même logique que le nouveau client)
+    // ============================================================
+    const emailNorm = String(clientEmail).trim().toLowerCase()
+    const otpPlain = generateSignupOtpDigits()
+    const otpHash = hashSignupOtp(otpPlain)
+    const expiresAt = Date.now() + SIGNUP_STEP_TTL_MS
 
-    // ============================================================
-    // SAVE DATA IN COOKIE (Backend will create client later)
-    // ============================================================
     const cookieStore = await cookies()
     const cookieConfig = getCookieConfig()
     cookieStore.set(
       "pending_signup_data",
       JSON.stringify({
-        email: clientEmail,
+        email: emailNorm,
         fullName: clientFullName,
         phone: clientPhone,
         address: bdClientData.adresse || bdClientData.address || "",
         numClient: numClient,
-        verificationToken: verificationToken,
-        verificationTokenExpiresAt: Date.now() + SIGNUP_STEP_TTL_MS,
         clientType: "existing",
+        signupOtpHash: otpHash,
+        signupOtpExpiresAt: expiresAt,
+        signupOtpAttempts: 0,
       }),
       {
         ...cookieConfig,
@@ -756,39 +776,36 @@ export async function initiateExistingClientSignup(data: { clientCode: string })
       },
     )
 
-    // ============================================================
-    // SEND VERIFICATION EMAIL
-    // ============================================================
-    console.log("[v0] Step 6: Sending verification email...")
+    console.log("[v0] Step 6: Sending OTP email (existing client)...")
 
     const resend = new Resend(process.env.RESEND_API_KEY)
     const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || "no-reply@bngebanking.com"
-    const verificationUrl = `${APP_URL.replace(/\/$/, "")}/auth/verify-email?token=${verificationToken}&email=${encodeURIComponent(
-      clientEmail,
-    )}`
 
     const { data: resendData, error: resendError } = await resend.emails.send({
       from: FROM_EMAIL,
-      to: clientEmail,
-      subject: "Activez votre accès en ligne - BNG E-Banking",
-      react: VerificationEmail({
-        userName: clientFullName || clientEmail.split("@")[0],
-        verificationLink: verificationUrl,
-        linkValidityMinutes: SIGNUP_STEP_TTL_MINUTES,
+      to: emailNorm,
+      subject: "Code de vérification — activation accès BNG E-Banking",
+      react: OtpEmail({
+        otpCode: otpPlain,
+        userName: clientFullName || emailNorm.split("@")[0],
+        purpose: "l’activation de votre accès en ligne",
+        validityMinutes: SIGNUP_STEP_TTL_MINUTES,
       }),
     })
 
     if (resendError) {
-      console.error("[v0] Resend error:", resendError)
-      throw new Error("Erreur lors de l'envoi de l'email de vérification")
+      console.error("[v0] Resend OTP error (existing client):", resendError)
+      throw new Error(resendError.message || "Erreur lors de l'envoi du code par e-mail")
     }
 
-    console.log("[v0] Verification email sent successfully:", resendData)
+    console.log("[v0] Existing client signup OTP sent:", resendData)
 
     return {
       success: true,
-      message: "Email de vérification envoyé",
+      requiresOtp: true,
+      message: "Un code de vérification a été envoyé à votre adresse e-mail.",
       maskedEmail: maskEmail(clientEmail),
+      email: emailNorm,
     }
   } catch (error: any) {
     console.error("[v0] Existing client signup error:", error)

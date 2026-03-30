@@ -142,20 +142,20 @@ const navigationData: {
       title: "Gérer vos comptes",
       icon: Wallet,
       items: [
+        // {
+        //   title: "Ouverture compte",
+        //   url: "/accounts/new",
+        //   icon: PlusCircle,
+        // },
         {
-          title: "Ouverture compte",
-          url: "/accounts/new",
-          icon: PlusCircle,
+          title: "Consultation de solde",
+          url: "/accounts/balance",
+          icon: BarChart3,
         },
         {
           title: "Relevé de coordonnées bancaires",
           url: "/accounts/rib",
           icon: FileText,
-        },
-        {
-          title: "Consultation de solde",
-          url: "/accounts/balance",
-          icon: BarChart3,
         },
         {
           title: "Relevés bancaires",
@@ -180,11 +180,11 @@ const navigationData: {
           url: "/transfers/beneficiaries",
           icon: User,
         },
-        {
-          title: "Mise à disposition des fonds",
-          url: "/operations/mise-disposition-fonds",
-          icon: HandCoins,
-        },
+        // {
+        //   title: "Mise à disposition des fonds",
+        //   url: "/operations/mise-disposition-fonds",
+        //   icon: HandCoins,
+        // },
         {
           title: "Mes virements",
           url: "/transfers/mes-virements",
@@ -192,11 +192,11 @@ const navigationData: {
         },
       ],
     },
-    {
-      title: "Opérations en attente",
-      url: "/operations/pending",
-      icon: Clock,
-    },
+    // {
+    //   title: "Opérations en attente",
+    //   url: "/operations/pending",
+    //   icon: Clock,
+    // },
   ],
   //   {
   //     title: "Gestion des cartes",
@@ -220,11 +220,11 @@ const navigationData: {
       title: "E-Services",
       icon: FileText,
       items: [
-        {
-          title: "Demande de chéquier",
-          url: "/services/checkbook",
-          icon: BookOpen,
-        },
+        // {
+        //   title: "Demande de chéquier",
+        //   url: "/services/checkbook",
+        //   icon: BookOpen,
+        // },
         // {
         //   title: "Demande de crédit",
         //   url: "/services/credit",
@@ -243,30 +243,30 @@ const navigationData: {
       ],
     },
   ],
-  support: [
-    {
-      title: "Support",
-      icon: HelpCircle,
-      items: [
-        {
-          title: "Chat en direct",
-          url: "/support/chat",
-          icon: MessageSquare,
-        },
-        {
-          title: "Historique des chats",
-          url: "/support/chat/history",
-          icon: Clock,
-        },
-        {
-          title: "Centre d'aide",
-          url: "/support/help",
-          icon: HelpCircle,
-        },
-      ],
-    },
+  // support: [
+  //   {
+  //     title: "Support",
+  //     icon: HelpCircle,
+  //     items: [
+  //       {
+  //         title: "Chat en direct",
+  //         url: "/support/chat",
+  //         icon: MessageSquare,
+  //       },
+  //       {
+  //         title: "Historique des chats",
+  //         url: "/support/chat/history",
+  //         icon: Clock,
+  //       },
+  //       {
+  //         title: "Centre d'aide",
+  //         url: "/support/help",
+  //         icon: HelpCircle,
+  //       },
+  //     ],
+  //   },
    
-  ],
+  // ],
   other: [
     {
       title: "Notifications",
@@ -275,6 +275,7 @@ const navigationData: {
       badge: "3",
     },
   ],
+  support:[]
   //operations: []
 }
 
