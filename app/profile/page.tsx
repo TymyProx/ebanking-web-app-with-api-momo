@@ -96,7 +96,10 @@ export default function ProfilePage() {
               employer: "",
               monthlyIncome: "",
               codeClient: "",
-              nomComplet: "",
+              nomComplet:
+                user.fullName?.trim() ||
+                [user.firstName, user.lastName].filter(Boolean).join(" ").trim() ||
+                "",
               clientType: "",
             })
           }
@@ -166,15 +169,19 @@ export default function ProfilePage() {
                 </div>
               )}
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="firstName">Prénom *</Label>
-                  <Input id="firstName" value={formData.firstName} disabled className="bg-gray-50" />
-                </div>
-                <div>
-                  <Label htmlFor="lastName">Nom *</Label>
-                  <Input id="lastName" value={formData.lastName} disabled className="bg-gray-50" />
-                </div>
+              <div>
+                <Label htmlFor="nomComplet">Nom complet *</Label>
+                <Input
+                  id="nomComplet"
+                  value={
+                    formData.nomComplet.trim() ||
+                    [formData.firstName, formData.lastName].filter(Boolean).join(" ").trim()
+                  }
+                  disabled
+                  className="bg-gray-50"
+                  readOnly
+                  autoComplete="name"
+                />
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
