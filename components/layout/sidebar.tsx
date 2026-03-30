@@ -120,7 +120,6 @@ const navigationData: {
     }>
     badge?: string
   }>
-  other: MenuItem[]
 } = {
   main: [
     {
@@ -240,6 +239,11 @@ const navigationData: {
           url: "/agences",
           icon: Building2,
         },
+        {
+          title: "Notifications",
+          url: "/notifications",
+          icon: Bell,
+        },
       ],
     },
   ],
@@ -267,15 +271,7 @@ const navigationData: {
   //   },
    
   // ],
-  other: [
-    {
-      title: "Notifications",
-      url: "/notifications",
-      icon: Bell,
-      badge: "3",
-    },
-  ],
-  support:[]
+  support: [],
   //operations: []
 }
 
@@ -672,38 +668,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>): 
                           </Link>
                         </SidebarMenuButton>
                       ) : null}
-                    </SidebarMenuItem>
-                  ))}
-                </SidebarMenu>
-              </SidebarGroupContent>
-            </SidebarGroup>
-
-            {/* Autres */}
-            <SidebarGroup className="mt-4 hidden">
-              <SidebarGroupLabel asChild>
-                <div>Autres</div>
-              </SidebarGroupLabel>
-              <SidebarGroupContent>
-                <SidebarMenu className="space-y-1">
-                  {navigationData.other.map((item) => (
-                    <SidebarMenuItem key={item.title}>
-                      <SidebarMenuButton
-                        asChild
-                        isActive={pathname === item.url}
-                        className="h-11 rounded-xl text-white hover:bg-white/20 data-[active=true]:bg-white/30 data-[active=true]:text-white data-[active=true]:shadow-lg data-[active=true]:border-l-4 data-[active=true]:border-[#f4c430] transition-all duration-200"
-                      >
-                        <Link href={item.url} className="flex items-center gap-3">
-                          <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-white/10 group-data-[active=true]:bg-white/20">
-                            <item.icon className={ICON_WHITE_MD} />
-                          </div>
-                          <span className="font-semibold">{item.title}</span>
-                          {item.badge && (
-                            <Badge className="ml-auto bg-red-500 text-white border-0 font-bold text-[10px] px-2 shadow-sm animate-pulse">
-                              {item.badge}
-                            </Badge>
-                          )}
-                        </Link>
-                      </SidebarMenuButton>
                     </SidebarMenuItem>
                   ))}
                 </SidebarMenu>

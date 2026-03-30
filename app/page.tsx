@@ -28,6 +28,10 @@ import {
 import { useState, useEffect, useRef } from "react"
 import { getAgenceStatus, type Agence, useAgences } from "@/hooks/use-agences"
 
+/** Aligné sur login : largeur max sur ultra-wide + gouttières fluides (vw) + safe areas */
+const PAGE_SHELL =
+  "w-full max-w-[1920px] 2xl:max-w-[min(1920px,96vw)] mx-auto px-4 min-[400px]:px-5 sm:px-6 lg:px-[clamp(1.25rem,2vw,2.5rem)] xl:px-[clamp(1.5rem,2.5vw,3rem)] 2xl:px-[clamp(2rem,3vw,4rem)] [padding-left:max(1rem,env(safe-area-inset-left))] [padding-right:max(1rem,env(safe-area-inset-right))]"
+
 // Custom hook for scroll animations
 function useScrollAnimation() {
   const ref = useRef<HTMLDivElement>(null)
@@ -113,11 +117,13 @@ function AnimatedStat({
         transitionDelay: `${delay}ms`,
       }}
     >
-      <div className="text-4xl md:text-5xl lg:text-6xl font-bold bg-gradient-to-r from-green-800 via-green-700 to-green-600 bg-clip-text text-transparent">
+      <div className="text-3xl min-[400px]:text-4xl md:text-5xl lg:text-[clamp(2rem,4.5vw,3.75rem)] xl:text-[clamp(2.25rem,4vw,4rem)] 2xl:text-[clamp(2.5rem,3.5vw,4.5rem)] font-bold bg-gradient-to-r from-green-800 via-green-700 to-green-600 bg-clip-text text-transparent tabular-nums">
         {count}
         {suffix}
       </div>
-      <div className="text-sm md:text-base text-muted-foreground font-medium uppercase tracking-wide">{label}</div>
+      <div className="text-xs sm:text-sm md:text-base text-muted-foreground font-medium uppercase tracking-wide">
+        {label}
+      </div>
     </div>
   )
 }
@@ -175,30 +181,30 @@ export default function LandingPage() {
   }, [])
 
   return (
-    <div className="min-h-screen bg-white overflow-hidden">
+    <div className="min-h-screen bg-white overflow-x-hidden">
       <header
         className={`fixed top-0 z-50 w-full transition-all duration-300 ${
           scrolled ? "bg-white/80 backdrop-blur-xl border-b shadow-sm" : "bg-transparent"
         }`}
       >
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 flex h-20 items-center justify-between">
-          <div className="flex items-center gap-2">
+        <div className={`${PAGE_SHELL} flex h-[4.5rem] sm:h-20 items-center justify-between gap-3`}>
+          <div className="flex items-center gap-2 min-w-0 shrink">
             <Image
               src="/images/logo-bng.png"
               alt="Astra Bank"
               width={140}
               height={48}
-              className="object-contain"
+              className="object-contain w-[7.5rem] sm:w-32 md:w-36 lg:w-[clamp(8rem,12vw,11rem)] h-auto max-h-12"
               priority
             />
           </div>
 
           {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center gap-8">
+          <nav className="hidden md:flex items-center gap-5 lg:gap-6 xl:gap-8 2xl:gap-10 flex-1 justify-center max-w-3xl mx-4">
             <a
               href="#accueil"
               onClick={(e) => handleNavClick(e, "#accueil")}
-              className="text-sm font-medium hover:text-gray-700 transition-colors relative group cursor-pointer"
+              className="text-sm lg:text-[clamp(0.8125rem,0.95vw,0.9375rem)] font-medium hover:text-gray-700 transition-colors relative group cursor-pointer whitespace-nowrap"
             >
               Accueil
               <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-gray-700 transition-all group-hover:w-full" />
@@ -206,7 +212,7 @@ export default function LandingPage() {
             <a
               href="#services"
               onClick={(e) => handleNavClick(e, "#services")}
-              className="text-sm font-medium hover:text-gray-700 transition-colors relative group cursor-pointer"
+              className="text-sm lg:text-[clamp(0.8125rem,0.95vw,0.9375rem)] font-medium hover:text-gray-700 transition-colors relative group cursor-pointer whitespace-nowrap"
             >
               Services
               <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-gray-700 transition-all group-hover:w-full" />
@@ -214,7 +220,7 @@ export default function LandingPage() {
             <a
               href="#ebanking"
               onClick={(e) => handleNavClick(e, "#ebanking")}
-              className="text-sm font-medium hover:text-gray-700 transition-colors relative group cursor-pointer"
+              className="text-sm lg:text-[clamp(0.8125rem,0.95vw,0.9375rem)] font-medium hover:text-gray-700 transition-colors relative group cursor-pointer whitespace-nowrap"
             >
               E-Banking
               <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-gray-700 transition-all group-hover:w-full" />
@@ -222,7 +228,7 @@ export default function LandingPage() {
             <a
               href="#agences"
               onClick={(e) => handleNavClick(e, "#agences")}
-              className="text-sm font-medium hover:text-gray-700 transition-colors relative group cursor-pointer"
+              className="text-sm lg:text-[clamp(0.8125rem,0.95vw,0.9375rem)] font-medium hover:text-gray-700 transition-colors relative group cursor-pointer whitespace-nowrap"
             >
               Agences
               <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-gray-700 transition-all group-hover:w-full" />
@@ -230,21 +236,24 @@ export default function LandingPage() {
             <a
               href="#contact"
               onClick={(e) => handleNavClick(e, "#contact")}
-              className="text-sm font-medium hover:text-gray-700 transition-colors relative group cursor-pointer"
+              className="text-sm lg:text-[clamp(0.8125rem,0.95vw,0.9375rem)] font-medium hover:text-gray-700 transition-colors relative group cursor-pointer whitespace-nowrap"
             >
               Contact
               <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-gray-700 transition-all group-hover:w-full" />
             </a>
           </nav>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             <Link href="/signup" className="hidden md:inline-flex">
-              <Button variant="outline" className="group bg-transparent hover:bg-yellow-200">
+              <Button
+                variant="outline"
+                className="group bg-transparent hover:bg-yellow-200 text-sm lg:text-[clamp(0.8125rem,0.9vw,0.875rem)] px-3 lg:px-[clamp(0.75rem,1.2vw,1rem)]"
+              >
                 S'inscrire
               </Button>
             </Link>
             <Link href="/login">
-              <Button className="hidden md:inline-flex group bg-green-700 hover:bg-green-800">
+              <Button className="hidden md:inline-flex group bg-green-700 hover:bg-green-800 text-sm lg:text-[clamp(0.8125rem,0.9vw,0.875rem)] px-3 lg:px-[clamp(0.75rem,1.2vw,1.25rem)]">
                 Se connecter
                 <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
               </Button>
@@ -258,7 +267,7 @@ export default function LandingPage() {
         {/* Mobile Menu */}
         {mobileMenuOpen && (
           <div className="md:hidden border-t bg-white/95 backdrop-blur-xl">
-            <nav className="container mx-auto px-4 sm:px-6 lg:px-8 flex flex-col gap-4 py-6">
+            <nav className={`${PAGE_SHELL} flex flex-col gap-4 py-6`}>
               <a
                 href="#accueil"
                 onClick={(e) => handleNavClick(e, "#accueil")}
@@ -309,23 +318,23 @@ export default function LandingPage() {
 
       <section
         id="accueil"
-        className="relative overflow-hidden pt-32 pb-20 md:pt-40 md:pb-32 bg-gradient-to-br from-gray-50 to-white"
+        className="relative overflow-hidden pt-28 pb-16 sm:pt-32 sm:pb-20 md:pt-40 md:pb-28 lg:pb-32 xl:pt-[clamp(8rem,12vw,11rem)] xl:pb-[clamp(4rem,6vw,7rem)] bg-gradient-to-br from-gray-50 to-white"
       >
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative" ref={heroAnimation.ref}>
-          <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+        <div className={`${PAGE_SHELL} relative`} ref={heroAnimation.ref}>
+          <div className="grid lg:grid-cols-2 gap-10 sm:gap-12 lg:gap-[clamp(2.5rem,4vw,5rem)] xl:gap-[clamp(3rem,5vw,6rem)] items-center">
             <div
               className={`space-y-6 md:space-y-8 transition-all duration-1000 ${
                 heroAnimation.isVisible ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-20"
               }`}
             >
-              <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight leading-tight text-green-700">
+              <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-[clamp(2.25rem,4.5vw,3.75rem)] xl:text-[clamp(2.5rem,4vw,4.25rem)] 2xl:text-[clamp(2.75rem,3.5vw,4.75rem)] font-bold tracking-tight leading-[1.12] sm:leading-tight text-green-700">
                 Votre banque,{" "}
-                <span className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold  text-yellow-400">
+                <span className="font-bold text-yellow-400 block sm:inline">
                   accessible partout
                 </span>
               </h1>
 
-              <p className="text-lg sm:text-xl md:text-2xl text-gray-600 leading-relaxed">
+              <p className="text-base sm:text-lg md:text-xl lg:text-[clamp(1.05rem,1.35vw,1.5rem)] xl:max-w-[min(100%,42rem)] text-gray-600 leading-relaxed">
                 Gérez vos finances en toute simplicité avec Astra eBanking. Des services bancaires modernes, sécurisés
                 et disponibles 24h/24 et 7j/7.
               </p>
@@ -334,7 +343,7 @@ export default function LandingPage() {
                 <Link href="/login">
                   <Button
                     size="lg"
-                    className="w-full sm:w-auto text-base px-8 py-6 group shadow-lg hover:shadow-xl transition-all bg-green-700 hover:bg-green-800"
+                    className="w-full sm:w-auto text-base lg:text-[clamp(0.95rem,1.1vw,1.05rem)] px-6 py-5 sm:px-8 sm:py-6 lg:px-[clamp(1.75rem,2.5vw,2.25rem)] lg:py-[clamp(1.25rem,1.8vw,1.65rem)] group shadow-lg hover:shadow-xl transition-all bg-green-700 hover:bg-green-800"
                   >
                     Accéder à mon espace
                     <ChevronRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
@@ -343,7 +352,7 @@ export default function LandingPage() {
                 <Button
                   size="lg"
                   variant="outline"
-                  className="w-full sm:w-auto text-base px-8 py-6 border-2 bg-transparent group bg-transparent hover:bg-yellow-200"
+                  className="w-full sm:w-auto text-base lg:text-[clamp(0.95rem,1.1vw,1.05rem)] px-6 py-5 sm:px-8 sm:py-6 lg:px-[clamp(1.75rem,2.5vw,2.25rem)] lg:py-[clamp(1.25rem,1.8vw,1.65rem)] border-2 bg-transparent group bg-transparent hover:bg-yellow-200"
                 >
                   En savoir plus
                 </Button>
@@ -362,18 +371,18 @@ export default function LandingPage() {
             </div>
 
             <div
-              className={`relative h-[400px] sm:h-[500px] lg:h-[600px] transition-all duration-1000 delay-300 ${
+              className={`relative min-h-[280px] h-[min(52vh,420px)] sm:h-[min(58vh,500px)] md:h-[min(62vh,560px)] lg:h-[min(68vh,640px)] xl:h-[min(72vh,720px)] 2xl:h-[min(75vh,800px)] max-h-[900px] mx-auto w-full max-w-[min(100%,920px)] lg:max-w-none transition-all duration-1000 delay-300 ${
                 heroAnimation.isVisible ? "opacity-100 translate-x-0" : "opacity-0 translate-x-20"
               }`}
             >
-              <div className="relative h-full rounded-3xl overflow-hidden shadow-2xl transform hover:scale-105 transition-transform duration-700">
+              <div className="relative h-full rounded-2xl sm:rounded-3xl overflow-hidden shadow-2xl transform hover:scale-[1.02] lg:hover:scale-105 transition-transform duration-700">
                 <Image
                   src="/images/accessibilite.png"
                   alt="Banking Interface"
                   fill
-                  className="object-contain p-8"
+                  className="object-contain p-4 sm:p-6 lg:p-[clamp(1rem,2vw,2.5rem)]"
                   priority
-                  sizes="(min-width: 1024px) 50vw, 100vw"
+                  sizes="(min-width: 1536px) 42vw, (min-width: 1024px) 48vw, 100vw"
                 />
               </div>
             </div>
@@ -381,9 +390,9 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <section className="py-20 md:py-24 bg-gray-100 border-y border-gray-200 text-black">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-12 lg:gap-16">
+      <section className="py-16 sm:py-20 md:py-24 xl:py-[clamp(5rem,6vw,7rem)] bg-gray-100 border-y border-gray-200 text-black">
+        <div className={`${PAGE_SHELL}`}>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 sm:gap-8 md:gap-12 lg:gap-[clamp(2rem,3vw,4rem)] xl:gap-[clamp(2.5rem,3.5vw,5rem)]">
             <AnimatedStat value={5000} suffix="+" label="Clients actifs" delay={0} />
             <AnimatedStat value={99.9} suffix="%" label="Disponibilité" delay={150} />
             <AnimatedStat value={24} suffix="/7" label="Support client" delay={300} />
@@ -392,8 +401,12 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <section id="services" className="py-20 md:py-32 bg-white" ref={servicesAnimation.ref}>
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+      <section
+        id="services"
+        className="py-16 sm:py-20 md:py-28 lg:py-32 xl:py-[clamp(6rem,8vw,9rem)] bg-white"
+        ref={servicesAnimation.ref}
+      >
+        <div className={`${PAGE_SHELL}`}>
           <div
             className={`text-center mb-12 md:mb-16 space-y-4 transition-all duration-1000 ${
               servicesAnimation.isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"
@@ -402,13 +415,15 @@ export default function LandingPage() {
             <Badge variant="outline" className="mb-4 border-gray-300">
               Nos services
             </Badge>
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900">Solutions bancaires sur mesure</h2>
-            <p className="text-lg sm:text-xl text-gray-600 max-w-2xl mx-auto">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-[clamp(1.75rem,3.5vw,3.25rem)] xl:text-[clamp(2rem,3vw,3.5rem)] font-bold text-gray-900 max-w-[min(100%,48rem)] mx-auto">
+              Solutions bancaires sur mesure
+            </h2>
+            <p className="text-base sm:text-lg md:text-xl lg:text-[clamp(1rem,1.25vw,1.25rem)] text-gray-600 max-w-2xl mx-auto px-1">
               Des solutions adaptées à vos besoins, que vous soyez particulier ou professionnel
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-6 md:gap-8">
+          <div className="grid md:grid-cols-2 gap-6 md:gap-8 lg:gap-[clamp(1.5rem,2.5vw,2.5rem)] xl:gap-10">
             {[
               {
                 image: "/images/particulier.png",
@@ -429,7 +444,7 @@ export default function LandingPage() {
                 style={{ transitionDelay: `${index * 200}ms` }}
               >
                 <CardContent className="p-0">
-                  <div className="relative h-96 overflow-hidden">
+                  <div className="relative h-72 sm:h-80 md:h-96 lg:h-[min(28rem,50vh)] xl:h-[min(32rem,55vh)] 2xl:h-[min(36rem,60vh)] overflow-hidden">
                     <Image
                       src={service.image || "/placeholder.svg"}
                       alt={service.title}
@@ -438,9 +453,13 @@ export default function LandingPage() {
                       sizes="(min-width: 1024px) 50vw, 100vw"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent" />
-                    <div className="absolute bottom-8 left-8 right-8 space-y-4 transform group-hover:translate-y-0 translate-y-2 transition-transform duration-500">
-                      <h3 className="text-4xl md:text-5xl font-bold text-white drop-shadow-lg">{service.title}</h3>
-                      <p className="text-white/90 text-lg md:text-xl">{service.description}</p>
+                    <div className="absolute bottom-6 left-6 right-6 sm:bottom-8 sm:left-8 sm:right-8 space-y-3 sm:space-y-4 transform group-hover:translate-y-0 translate-y-2 transition-transform duration-500">
+                      <h3 className="text-2xl sm:text-3xl md:text-4xl lg:text-[clamp(1.75rem,3vw,2.75rem)] font-bold text-white drop-shadow-lg">
+                        {service.title}
+                      </h3>
+                      <p className="text-white/90 text-base sm:text-lg md:text-[clamp(1rem,1.35vw,1.25rem)]">
+                        {service.description}
+                      </p>
                       <Link href="/login">
                         <Button
                           size="lg"
@@ -459,46 +478,52 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <section id="ebanking" className="py-20 md:py-32 bg-gray-50" ref={ebankingAnimation.ref}>
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+      <section
+        id="ebanking"
+        className="py-16 sm:py-20 md:py-28 lg:py-32 xl:py-[clamp(6rem,8vw,9rem)] bg-gray-50 overflow-x-hidden"
+        ref={ebankingAnimation.ref}
+      >
+        <div className={`${PAGE_SHELL}`}>
+          <div className="grid lg:grid-cols-2 gap-10 lg:gap-[clamp(2rem,4vw,5rem)] xl:gap-[clamp(2.5rem,5vw,6rem)] items-center">
             <div
-              className={`relative h-[500px] sm:h-[600px] md:h-[700px] transition-all duration-1000 ${
+              className={`relative min-h-[320px] h-[min(70vh,520px)] sm:min-h-[400px] sm:h-[min(75vh,600px)] lg:h-[min(78vh,680px)] xl:h-[min(80vh,760px)] w-full max-w-full mx-auto transition-all duration-1000 ${
                 ebankingAnimation.isVisible ? "opacity-100 -translate-x-0" : "opacity-0 -translate-x-20"
               }`}
             >
-              <div className="absolute inset-0 flex items-center justify-center gap-4 md:gap-6 lg:gap-8">
-                <div className="relative w-80 sm:w-[28rem] md:w-[32rem] h-[650px] sm:h-[750px] md:h-[800px] hover:scale-105 transition-transform duration-500">
+              <div className="absolute inset-0 flex flex-row flex-wrap items-center justify-center gap-3 sm:gap-4 md:gap-5 lg:gap-[clamp(0.75rem,2vw,1.5rem)] xl:gap-6 2xl:gap-8 px-1 sm:px-2">
+                <div className="relative w-[42%] max-w-[280px] sm:w-[38%] sm:max-w-[320px] md:max-w-[340px] lg:w-[min(42%,18rem)] xl:w-[min(44%,20rem)] 2xl:w-[min(45%,22rem)] aspect-[9/19] min-h-[280px] sm:min-h-[340px] md:min-h-[380px] lg:min-h-[420px] max-h-[min(85vh,820px)] hover:scale-[1.02] lg:hover:scale-105 transition-transform duration-500">
                   <Image
                     src="/images/mobile-banking-card-list-screen.png"
-                    alt="Mobile App"
+                    alt="Application mobile — liste des cartes"
                     fill
-                    className="object-contain drop-shadow-2xl rounded-2xl"
-                    sizes="(min-width: 1024px) 40vw, 90vw"
+                    className="object-contain object-bottom drop-shadow-2xl rounded-2xl"
+                    sizes="(min-width: 1536px) 22vw, (min-width: 1024px) 28vw, 45vw"
                   />
                 </div>
 
-                <div className="relative w-80 sm:w-[28rem] md:w-[32rem] h-[650px] sm:h-[750px] md:h-[800px] hover:scale-105 transition-transform duration-500">
+                <div className="relative w-[42%] max-w-[280px] sm:w-[38%] sm:max-w-[320px] md:max-w-[340px] lg:w-[min(42%,18rem)] xl:w-[min(44%,20rem)] 2xl:w-[min(45%,22rem)] aspect-[9/19] min-h-[280px] sm:min-h-[340px] md:min-h-[380px] lg:min-h-[420px] max-h-[min(85vh,820px)] hover:scale-[1.02] lg:hover:scale-105 transition-transform duration-500">
                   <Image
                     src="/images/mobile-banking-app-screen-dashboard-interface.png"
-                    alt="Mobile App"
+                    alt="Application mobile — tableau de bord"
                     fill
-                    className="object-contain drop-shadow-2xl rounded-2xl"
-                    sizes="(min-width: 1024px) 40vw, 90vw"
+                    className="object-contain object-bottom drop-shadow-2xl rounded-2xl"
+                    sizes="(min-width: 1536px) 22vw, (min-width: 1024px) 28vw, 45vw"
                   />
                 </div>
               </div>
             </div>
 
             <div
-              className={`space-y-6 md:space-y-8 transition-all duration-1000 delay-300 ${
+              className={`space-y-6 md:space-y-8 min-w-0 transition-all duration-1000 delay-300 ${
                 ebankingAnimation.isVisible ? "opacity-100 translate-x-0" : "opacity-0 translate-x-20"
               }`}
             >
               <div className="space-y-4">
                 <Badge variant="outline">E-Banking</Badge>
-                <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold">Découvrez Astra e-Bank</h2>
-                <p className="text-lg sm:text-xl font-semibold text-gray-900">
+                <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-[clamp(1.75rem,3.25vw,3.25rem)] xl:text-[clamp(2rem,2.8vw,3.5rem)] font-bold">
+                  Découvrez Astra e-Bank
+                </h2>
+                <p className="text-base sm:text-lg md:text-xl lg:text-[clamp(1.05rem,1.35vw,1.35rem)] font-semibold text-gray-900">
                   VOS OPÉRATIONS BANCAIRES DISPONIBLES 24H/24 ET 7J/7
                 </p>
                 <p className="text-base sm:text-lg text-gray-600 leading-relaxed">
@@ -538,23 +563,26 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <section className="py-20 md:py-32 bg-white" ref={featuresAnimation.ref}>
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+      <section
+        className="py-16 sm:py-20 md:py-28 lg:py-32 xl:py-[clamp(6rem,8vw,9rem)] bg-white"
+        ref={featuresAnimation.ref}
+      >
+        <div className={`${PAGE_SHELL}`}>
           <div
             className={`text-center mb-12 md:mb-16 space-y-4 transition-all duration-1000 ${
               featuresAnimation.isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"
             }`}
           >
             <Badge variant="outline">Fonctionnalités</Badge>
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-[clamp(1.75rem,3.25vw,3.25rem)] font-bold text-gray-900 max-w-[min(100%,48rem)] mx-auto">
               Pourquoi choisir Astra eBanking ?
             </h2>
-            <p className="text-lg sm:text-xl text-gray-600 max-w-2xl mx-auto">
+            <p className="text-base sm:text-lg md:text-xl lg:text-[clamp(1rem,1.25vw,1.25rem)] text-gray-600 max-w-2xl mx-auto px-1">
               Une expérience bancaire moderne et sécurisée
             </p>
           </div>
 
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6 md:gap-8 lg:gap-[clamp(1.25rem,2vw,2rem)]">
             {[
               {
                 icon: CreditCard,
@@ -616,8 +644,12 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <section id="agences" className="py-20 md:py-28 bg-gray-50 border-y border-gray-200" ref={agencesAnimation.ref}>
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+      <section
+        id="agences"
+        className="py-16 sm:py-20 md:py-28 xl:py-[clamp(5.5rem,7vw,8rem)] bg-gray-50 border-y border-gray-200"
+        ref={agencesAnimation.ref}
+      >
+        <div className={`${PAGE_SHELL}`}>
           <div
             className={`text-center mb-12 md:mb-16 space-y-4 transition-all duration-1000 ${
               agencesAnimation.isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"
@@ -626,8 +658,10 @@ export default function LandingPage() {
             <Badge variant="outline" className="mb-4 border-gray-300">
               Nos agences
             </Badge>
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900">Trouvez une agence près de vous</h2>
-            <p className="text-lg sm:text-xl text-gray-600 max-w-2xl mx-auto">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-[clamp(1.75rem,3.25vw,3.25rem)] font-bold text-gray-900 max-w-[min(100%,48rem)] mx-auto">
+              Trouvez une agence près de vous
+            </h2>
+            <p className="text-base sm:text-lg md:text-xl lg:text-[clamp(1rem,1.25vw,1.25rem)] text-gray-600 max-w-2xl mx-auto px-1">
               Consultez quelques agences et obtenez un itinéraire en un clic.
             </p>
             {agencesError && (
@@ -773,18 +807,21 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <section className="py-24 md:py-32 relative overflow-hidden bg-green-50" ref={ctaAnimation.ref}>
+      <section
+        className="py-20 sm:py-24 md:py-28 lg:py-32 xl:py-[clamp(6.5rem,9vw,10rem)] relative overflow-hidden bg-green-50"
+        ref={ctaAnimation.ref}
+      >
         <div
-          className={`container mx-auto px-4 sm:px-6 lg:px-8 relative text-center transition-all duration-1000 ${
+          className={`${PAGE_SHELL} relative text-center transition-all duration-1000 ${
             ctaAnimation.isVisible ? "opacity-100 scale-100" : "opacity-0 scale-95"
           }`}
         >
-          <div className="max-w-4xl mx-auto space-y-8 md:space-y-10">
-            <h2 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-green-700 leading-tight">
+          <div className="max-w-[min(100%,56rem)] xl:max-w-[min(100%,60rem)] mx-auto space-y-6 sm:space-y-8 md:space-y-10 px-1">
+            <h2 className="text-4xl sm:text-5xl md:text-6xl lg:text-[clamp(2.25rem,4.5vw,4rem)] xl:text-[clamp(2.5rem,4vw,4.5rem)] 2xl:text-[clamp(2.75rem,3.5vw,5rem)] font-bold text-green-700 leading-[1.1] sm:leading-tight">
               Prêt à commencer ?
             </h2>
 
-            <p className="text-lg sm:text-xl md:text-2xl text-gray-700 leading-relaxed max-w-2xl mx-auto font-medium">
+            <p className="text-base sm:text-lg md:text-xl lg:text-[clamp(1.05rem,1.5vw,1.5rem)] text-gray-700 leading-relaxed max-w-2xl mx-auto font-medium">
               Rejoignez des milliers de clients qui font confiance à Astra eBanking pour gérer leurs finances
             </p>
 
@@ -815,16 +852,16 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <footer id="contact" className="py-16 md:py-20 border-t bg-gray-100 border-gray-200">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid sm:grid-cols-2 md:grid-cols-4 gap-8 md:gap-12">
+      <footer id="contact" className="py-12 sm:py-16 md:py-20 xl:py-[clamp(4rem,5vw,6rem)] border-t bg-gray-100 border-gray-200">
+        <div className={`${PAGE_SHELL}`}>
+          <div className="grid sm:grid-cols-2 md:grid-cols-4 gap-8 md:gap-10 lg:gap-12 xl:gap-[clamp(2rem,3vw,3.5rem)]">
             <div className="space-y-4">
               <Image
                 src="/images/logo-bng.png"
                 alt="Astra Bank"
                 width={140}
                 height={48}
-                className="object-contain"
+                className="object-contain w-[7rem] sm:w-32 lg:w-[clamp(7.5rem,10vw,10rem)] h-auto"
                 loading="lazy"
               />
               <p className="text-sm text-gray-600 leading-relaxed">
