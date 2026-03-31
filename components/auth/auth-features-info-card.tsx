@@ -14,7 +14,7 @@ function sentenceCaseLabel(text: string): string {
 }
 
 /**
- * Carte « Fonctionnalité » (login / auth) : carrousel horizontal (menu sidebar).
+ * Carte « Fonctionnalités » (login / auth) : carrousel horizontal (menu sidebar).
  */
 export function AuthFeaturesInfoCard({ className }: { className?: string }) {
   const [index, setIndex] = useState(0)
@@ -44,7 +44,7 @@ export function AuthFeaturesInfoCard({ className }: { className?: string }) {
           </div>
           <div className="flex-1 min-w-0">
             <h3 className="font-bold text-gray-900 text-xs sm:text-sm lg:text-[clamp(0.75rem,0.9vw,1rem)] drop-shadow-sm uppercase tracking-wide">
-              Fonctionnalité
+              Fonctionnalités
             </h3>
             {n > 0 ? (
               <>
