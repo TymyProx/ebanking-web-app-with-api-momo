@@ -8,8 +8,9 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Mail, ArrowLeft, MapPin, Smartphone, HelpCircle } from "lucide-react"
+import { Mail, ArrowLeft, MapPin, HelpCircle } from "lucide-react"
 import AuthService from "@/lib/auth-service"
+import { AuthFeaturesInfoCard } from "@/components/auth/auth-features-info-card"
 
 const welcomeMessages = [
   {
@@ -265,8 +266,8 @@ export default function ForgotPasswordPage() {
                     </div>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-bold text-gray-900 text-xs sm:text-sm lg:text-[clamp(0.75rem,0.9vw,1rem)] drop-shadow-sm">Nous Trouver</h3>
-                    <p className="text-xs lg:text-[clamp(0.65rem,0.75vw,0.9rem)] text-gray-700 font-medium mt-0.5 drop-shadow-sm">
+                    <h3 className="font-bold text-gray-900 text-xs sm:text-sm lg:text-[clamp(0.75rem,0.9vw,1rem)] drop-shadow-sm uppercase tracking-wide">Nous Trouver</h3>
+                    <p className="text-xs lg:text-[clamp(0.65rem,0.75vw,0.9rem)] text-gray-700 font-medium mt-0.5 drop-shadow-sm lowercase first-letter:uppercase">
                       Notre équipe est à votre disposition
                     </p>
                   </div>
@@ -274,26 +275,7 @@ export default function ForgotPasswordPage() {
               </div>
             </Link>
 
-            {/* Mobile Banking */}
-            <div className="group relative">
-              <div className="absolute inset-0 bg-gradient-to-br from-[#f4c430]/10 to-transparent rounded-xl blur-lg opacity-0 group-hover:opacity-100 transition-opacity"></div>
-              <div className="relative bg-white/75 backdrop-blur-xl rounded-xl shadow-lg px-4 py-3.5 sm:p-4 lg:p-[1.2vw] hover:shadow-xl hover:-translate-y-1 hover:bg-white/85 transition-all duration-300 border border-white/40 overflow-hidden">
-                {/* Decorative element */}
-                <div className="absolute top-0 right-0 w-12 sm:w-16 h-12 sm:h-16 bg-gradient-to-br from-[#f4c430]/10 to-transparent rounded-bl-full"></div>
-
-                <div className="flex items-center gap-3 relative z-10">
-                  <div className="relative flex-shrink-0">
-                    <div className="p-2 sm:p-2.5 bg-gradient-to-br from-[#f4c430]/10 to-[#f4c430]/5 rounded-xl">
-                      <Smartphone className="h-4 sm:h-5 w-4 sm:w-5 text-[#f4c430]" />
-                    </div>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-bold text-gray-900 text-xs sm:text-sm lg:text-[clamp(0.75rem,0.9vw,1rem)] drop-shadow-sm">Application Mobile</h3>
-                    <p className="text-xs lg:text-[clamp(0.65rem,0.75vw,0.9rem)] text-gray-700 font-medium mt-0.5 drop-shadow-sm">Banking en mobilité 24/7</p>
-                  </div>
-                </div>
-              </div>
-            </div>
+            <AuthFeaturesInfoCard />
 
             <Link
               href="/support"
@@ -311,8 +293,8 @@ export default function ForgotPasswordPage() {
                     </div>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-bold text-gray-900 text-xs sm:text-sm lg:text-[clamp(0.75rem,0.9vw,1rem)] drop-shadow-sm">Support Client</h3>
-                    <p className="text-xs lg:text-[clamp(0.65rem,0.75vw,0.9rem)] text-gray-700 font-medium mt-0.5 drop-shadow-sm">
+                    <h3 className="font-bold text-gray-900 text-xs sm:text-sm lg:text-[clamp(0.75rem,0.9vw,1rem)] drop-shadow-sm uppercase tracking-wide">Support Client</h3>
+                    <p className="text-xs lg:text-[clamp(0.65rem,0.75vw,0.9rem)] text-gray-700 font-medium mt-0.5 drop-shadow-sm lowercase first-letter:uppercase">
                       Assistance disponible 24/7
                     </p>
                   </div>

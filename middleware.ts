@@ -17,6 +17,10 @@ const publicPaths = [
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
+  if (pathname === "/") {
+    return NextResponse.redirect(new URL("/login", request.url))
+  }
+
   // Some email clients / in-app browsers may open links using POST.
   // Pages are GET-only in Next, so we normalize to GET to avoid 405.
   if (
@@ -28,7 +32,7 @@ export function middleware(request: NextRequest) {
   }
 
   // Vérifier si c'est une page publique
-  const isPublicPage = publicPaths.some((path) => (path === "/" ? pathname === "/" : pathname.startsWith(path)))
+  const isPublicPage = publicPaths.some((path) => pathname === path || pathname.startsWith(`${path}/`))
 
   // Si c'est une page publique, laisser passer
   if (isPublicPage) {

@@ -7,12 +7,9 @@ import { usePathname } from "next/navigation"
 import Link from "next/link"
 import { useState, useEffect } from "react"
 import {
-  Home,
-  CreditCard,
   ArrowLeftRight,
   Settings,
   FileText,
-  MessageSquare,
   Bell,
   User,
   Building2,
@@ -21,13 +18,9 @@ import {
   Wallet,
   BarChart3,
   Clock,
-  Sparkles,
   AlertCircle,
   Loader2,
   PlusCircle,
-  FileCheck,
-  BookOpen,
-  HandCoins,
 } from "lucide-react"
 import Image from "next/image"
 import { cn } from "@/lib/utils"
@@ -65,215 +58,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { getAccounts } from "@/app/accounts/actions"
 import { isAccountActive } from "@/lib/status-utils"
-
-type MenuItem = {
-  title: string
-  url: string
-  icon: React.ComponentType<{ className?: string }>
-  description?: string
-  badge?: string
-}
-
-const navigationData: {
-  main: MenuItem[]
-  accounts: Array<{
-    title: string
-    icon: React.ComponentType<{ className?: string }>
-    items: Array<{
-      title: string
-      url: string
-      icon: React.ComponentType<{ className?: string }>
-      badge?: string
-    }>
-  }>
-  operations: Array<{
-    title: string
-    url?: string
-    icon: React.ComponentType<{ className?: string }>
-    items?: Array<{
-      title: string
-      url: string
-      icon: React.ComponentType<{ className?: string }>
-      badge?: string
-    }>
-    badge?: string
-  }>
-  services: Array<{
-    title: string
-    icon: React.ComponentType<{ className?: string }>
-    items: Array<{
-      title: string
-      url: string
-      icon: React.ComponentType<{ className?: string }>
-      badge?: string
-    }>
-  }>
-  support: Array<{
-    title: string
-    url?: string
-    icon: React.ComponentType<{ className?: string }>
-    items?: Array<{
-      title: string
-      url: string
-      icon: React.ComponentType<{ className?: string }>
-      badge?: string
-    }>
-    badge?: string
-  }>
-} = {
-  main: [
-    {
-      title: "Dashboard",
-      url: "/dashboard",
-      icon: Home,
-      description: "Vue d'ensemble",
-    },
-    // {
-    //   title: "Fonctionnalités",
-    //   url: "/fonctionnalites",
-    //   icon: Sparkles,
-    //   badge: "Nouveau",
-    //   description: "Nouvelles options",
-    // },
-  ],
-  accounts: [
-    {
-      title: "Gérer vos comptes",
-      icon: Wallet,
-      items: [
-        // {
-        //   title: "Ouverture compte",
-        //   url: "/accounts/new",
-        //   icon: PlusCircle,
-        // },
-        {
-          title: "Consultation de solde",
-          url: "/accounts/balance",
-          icon: BarChart3,
-        },
-        {
-          title: "Relevé de coordonnées bancaires",
-          url: "/accounts/rib",
-          icon: FileText,
-        },
-        {
-          title: "Relevés bancaires",
-          url: "/accounts/statements",
-          icon: FileText,
-        },
-      ],
-    },
-  ],
-  operations: [
-    {
-      title: "Virements",
-      icon: ArrowLeftRight,
-      items: [
-        {
-          title: "Effectuer un virement",
-          url: "/transfers/new",
-          icon: ArrowLeftRight,
-        },
-        {
-          title: "Bénéficiaires",
-          url: "/transfers/beneficiaries",
-          icon: User,
-        },
-        // {
-        //   title: "Mise à disposition des fonds",
-        //   url: "/operations/mise-disposition-fonds",
-        //   icon: HandCoins,
-        // },
-        {
-          title: "Mes virements",
-          url: "/transfers/mes-virements",
-          icon: Clock,
-        },
-      ],
-    },
-    // {
-    //   title: "Opérations en attente",
-    //   url: "/operations/pending",
-    //   icon: Clock,
-    // },
-  ],
-  //   {
-  //     title: "Gestion des cartes",
-  //     icon: CreditCard,
-  //     items: [
-  //       {
-  //         title: "Mes cartes",
-  //         url: "/cartes",
-  //         icon: CreditCard,
-  //       },
-  //       {
-  //         title: "Demande de carte",
-  //         url: "/cartes/demande",
-  //         icon: FileCheck,
-  //       },
-  //     ],
-  //   },
-  // ],
-  services: [
-    {
-      title: "E-Services",
-      icon: FileText,
-      items: [
-        // {
-        //   title: "Demande de chéquier",
-        //   url: "/services/checkbook",
-        //   icon: BookOpen,
-        // },
-        // {
-        //   title: "Demande de crédit",
-        //   url: "/services/credit",
-        //   icon: CreditCard,
-        // },
-        {
-          title: "Réclamations",
-          url: "/services/reclamation",
-          icon: AlertCircle,
-        },
-        {
-          title: "Agences",
-          url: "/agences",
-          icon: Building2,
-        },
-        {
-          title: "Notifications",
-          url: "/notifications",
-          icon: Bell,
-        },
-      ],
-    },
-  ],
-  // support: [
-  //   {
-  //     title: "Support",
-  //     icon: HelpCircle,
-  //     items: [
-  //       {
-  //         title: "Chat en direct",
-  //         url: "/support/chat",
-  //         icon: MessageSquare,
-  //       },
-  //       {
-  //         title: "Historique des chats",
-  //         url: "/support/chat/history",
-  //         icon: Clock,
-  //       },
-  //       {
-  //         title: "Centre d'aide",
-  //         url: "/support/help",
-  //         icon: HelpCircle,
-  //       },
-  //     ],
-  //   },
-   
-  // ],
-  support: [],
-  //operations: []
-}
+import { navigationData } from "@/lib/portal-navigation-data"
 
 // ✅ Force toutes les icônes Lucide en blanc (stroke & fill via currentColor)
 const ICON_WHITE = "h-4 w-4 text-white stroke-white"

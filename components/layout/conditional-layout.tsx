@@ -49,7 +49,6 @@ export function ConditionalLayout({ children }: ConditionalLayoutProps) {
   }, [pathname])
 
   const isPublicPage =
-    pathname === "/" ||
     pathname === "/login" ||
     pathname === "/signup" ||
     pathname.startsWith("/auth/accept-invite") ||
@@ -88,7 +87,7 @@ export function ConditionalLayout({ children }: ConditionalLayoutProps) {
 
   // Pour toutes les autres pages (ou pages info si connecté), afficher le layout complet
   return (
-    <SidebarProvider defaultOpen={true} collapsible="icon">
+    <SidebarProvider defaultOpen={true}>
       <AppSidebar />
       <SidebarInset>
         <Header />

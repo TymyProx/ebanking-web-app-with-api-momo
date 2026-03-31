@@ -21,7 +21,6 @@ export function AuthGuard({ children }: AuthGuardProps) {
   useEffect(() => {
     const checkAuth = async () => {
       const publicPaths = [
-        "/",
         "/agences",
         "/support",
         "/login",
@@ -31,7 +30,9 @@ export function AuthGuard({ children }: AuthGuardProps) {
         "/auth/forgot-password",
         "/auth/password-reset",
       ]
-      const isPublicPage = publicPaths.some((path) => pathname.startsWith(path))
+      const isPublicPage = publicPaths.some(
+        (path) => pathname === path || pathname.startsWith(`${path}/`),
+      )
 
       if (isPublicPage) {
         setIsAuthenticated(true)
@@ -57,8 +58,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
         if (!authData.authenticated) {
           setIsAuthenticated(false)
           setIsLoading(false)
-          // Rediriger vers la page d'accueil si pas authentifié
-          router.push("/")
+          router.push("/login")
           return
         }
 
@@ -77,12 +77,12 @@ export function AuthGuard({ children }: AuthGuardProps) {
             console.error("Erreur lors de la récupération des informations utilisateur:", fetchError)
             setIsAuthenticated(false)
             setIsLoading(false)
-            router.push("/")
+            router.push("/login")
           }
         } else {
           setIsAuthenticated(false)
           setIsLoading(false)
-          router.push("/")
+          router.push("/login")
         }
       }
     }

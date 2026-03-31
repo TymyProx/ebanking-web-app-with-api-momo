@@ -105,9 +105,13 @@ export default function AgencesPage() {
     })
   }, [searchTerm, selectedCity, selectedCountry, selectedStatus, currentPage, setQuery])
 
-  // Extraire les villes et pays uniques
-  const cities = Array.from(new Set(agences.map((a) => a.city).filter(Boolean))).sort()
-  const countries = Array.from(new Set(agences.map((a) => a.country).filter(Boolean))).sort()
+  // Extraire les villes et pays uniques (prédicat de type pour string[] — SelectItem exige value: string)
+  const cities = Array.from(
+    new Set(agences.map((a) => a.city).filter((c): c is string => typeof c === "string" && c.length > 0)),
+  ).sort()
+  const countries = Array.from(
+    new Set(agences.map((a) => a.country).filter((c): c is string => typeof c === "string" && c.length > 0)),
+  ).sort()
 
   // Gérer l'obtention d'itinéraire
   const handleGetDirections = (agence: Agence) => {
