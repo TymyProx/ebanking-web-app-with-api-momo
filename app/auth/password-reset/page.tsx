@@ -131,7 +131,7 @@ export default function PasswordResetPage() {
 
           {/* Badge fixe — aligné /login (mobile) */}
           <div className="absolute top-24 sm:top-28 lg:top-[28%] left-5 right-5 sm:left-6 sm:right-6 lg:left-[2vw] lg:right-auto lg:max-w-[28%] px-0 z-10">
-            <span className="text-xs sm:text-sm lg:text-[clamp(0.75rem,0.9vw,1rem)] font-semibold text-[#f4c430] uppercase tracking-wider px-3 py-1 lg:px-[0.8vw] lg:py-[0.3vw] bg-white/10 backdrop-blur-sm rounded-full inline-block">
+            <span className="text-lg sm:text-[1.35rem] md:text-[1.6rem] lg:text-[1.8vw] font-semibold text-[#f4c430] uppercase tracking-wider px-3 py-1.5 sm:px-4 sm:py-2 md:px-5 md:py-2.5 lg:px-[1vw] lg:py-[0.5vw] bg-white/10 backdrop-blur-sm rounded-full inline-block">
               BNG CONNECT
             </span>
           </div>
@@ -139,10 +139,10 @@ export default function PasswordResetPage() {
           {/* Bloc carousel texte — aligné /login */}
           <div className="absolute top-40 sm:top-44 lg:top-[56%] lg:-translate-y-1/2 left-5 right-5 sm:left-6 sm:right-6 lg:left-[2vw] lg:right-auto lg:max-w-[28%] px-0">
             <div className="text-left text-white space-y-2 sm:space-y-3 lg:space-y-[1vw] transition-all duration-700 ease-in-out">
-              <h1 className="text-lg sm:text-2xl md:text-3xl lg:text-[2.2vw] lg:min-w-[16px] lg:leading-tight font-bold animate-fadeIn drop-shadow-2xl leading-snug sm:leading-tight pr-1">
+              <h1 className="text-2xl sm:text-[1.95rem] md:text-[2.35rem] lg:text-[2.6vw] lg:min-w-[16px] lg:leading-tight font-bold animate-fadeIn drop-shadow-2xl leading-snug sm:leading-tight pr-1">
                 {welcomeMessages[currentMessageIndex].title}
               </h1>
-              <p className="text-sm sm:text-base md:text-lg lg:text-[clamp(0.875rem,1.1vw,1.25rem)] text-white/90 animate-fadeIn drop-shadow-lg leading-relaxed pr-1">
+              <p className="text-lg sm:text-xl md:text-[1.4rem] lg:text-[clamp(1.1rem,1.35vw,1.55rem)] text-white/90 animate-fadeIn drop-shadow-lg leading-relaxed pr-1">
                 {welcomeMessages[currentMessageIndex].description}
               </p>
             </div>
@@ -301,7 +301,7 @@ export default function PasswordResetPage() {
         </div>
 
         {/* Information Cards */}
-        <div className="w-full max-w-full mt-4 sm:-mt-3 mb-8 sm:mb-5 md:mb-6 lg:mb-[1.5vw]">
+        <div className="w-full max-w-full mt-12 sm:mt-10 md:mt-12 mb-8 sm:mb-5 md:mb-6 lg:mb-[1.5vw]">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-4 lg:gap-[1.5vw] max-w-md mx-auto sm:max-w-none sm:mx-0">
             <Link
               href="/agences"
