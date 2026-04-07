@@ -19,4 +19,7 @@ export const config = {
   /** Coordonnées affichées sur la page Support (public) — surcharger via .env */
   SUPPORT_PHONE: cleanEnvValue(process.env.NEXT_PUBLIC_SUPPORT_PHONE, "+224 628 08 37 80"),
   SUPPORT_EMAIL: cleanEnvValue(process.env.NEXT_PUBLIC_SUPPORT_EMAIL, "info@bng-guinee.com"),
+
+  /** Site vitrine BNG Connect (logo des pages auth) */
+  BNG_CONNECT_WEBSITE_URL: cleanEnvValue(process.env.NEXT_PUBLIC_BNG_CONNECT_WEBSITE_URL,"https://bngconnect.com"),
 }
