@@ -216,7 +216,7 @@ export default function AcceptInvitePage() {
         </div>
       </div>
 
-      <main className="w-full px-5 pb-10 min-[400px]:px-6 sm:px-6 sm:pb-8 lg:px-[2vw] lg:pb-[1.5vw] relative z-10 min-h-screen lg:h-screen flex flex-col justify-between [padding-left:max(1.25rem,env(safe-area-inset-left))] [padding-right:max(1.25rem,env(safe-area-inset-right))] [padding-top:calc(env(safe-area-inset-top,0px)+20rem)] max-[380px]:[padding-top:calc(env(safe-area-inset-top,0px)+31rem)] sm:[padding-top:calc(env(safe-area-inset-top,0px)+28rem)] md:[padding-top:calc(env(safe-area-inset-top,0px)+28.5rem)] lg:pt-[2vw]">
+      <main className="w-full px-5 pb-10 min-[400px]:px-6 sm:px-6 sm:pb-8 lg:px-[2vw] lg:pb-[1.5vw] relative z-10 min-h-screen lg:h-screen flex flex-col justify-between [padding-left:max(1.25rem,env(safe-area-inset-left))] [padding-right:max(1.25rem,env(safe-area-inset-right))] [padding-top:calc(env(safe-area-inset-top,0px)+29rem)] max-[380px]:[padding-top:calc(env(safe-area-inset-top,0px)+31rem)] sm:[padding-top:calc(env(safe-area-inset-top,0px)+28rem)] md:[padding-top:calc(env(safe-area-inset-top,0px)+28.5rem)] lg:pt-[2vw]">
         {/* Activation Form - Top Right */}
         <div className="w-full max-w-full mb-0 min-w-0">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-4 lg:gap-[1.5vw]">
