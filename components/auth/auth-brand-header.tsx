@@ -99,7 +99,7 @@ function TypewriterSlogan() {
   return (
     <p
       className={cn(
-        "max-w-[20rem] text-center font-heading antialiased sm:max-w-[22rem] lg:max-w-[min(24rem,32vw)] lg:text-left xl:max-w-[28rem]",
+        "mx-auto w-full max-w-[14.75rem] text-center font-heading antialiased sm:max-w-[16.75rem] md:max-w-[18rem] lg:mx-0 lg:max-w-[min(24rem,32vw)] lg:text-left xl:max-w-[28rem]",
         "text-[0.62rem] font-medium leading-none tracking-wide text-white sm:text-[0.68rem] md:text-xs lg:text-[0.78rem] xl:text-[0.82rem]",
         "drop-shadow-[0_1px_8px_rgba(0,0,0,0.4)] [text-shadow:0_1px_2px_rgba(0,0,0,0.3)]"
       )}
@@ -137,7 +137,7 @@ export function AuthBrandHeader({ className }: AuthBrandHeaderProps) {
         className
       )}
     >
-      <div className="flex flex-col items-center gap-3 sm:gap-4 lg:flex-row lg:items-center lg:gap-0">
+      <div className="flex max-w-full flex-col items-center gap-2.5 sm:gap-3 lg:flex-row lg:items-center lg:gap-0">
         <a
           href={config.BNG_CONNECT_WEBSITE_URL}
           className="inline-flex shrink-0 rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f4c430]/80 focus-visible:ring-offset-2 focus-visible:ring-offset-[#2d6e3e]/80"
@@ -158,7 +158,9 @@ export function AuthBrandHeader({ className }: AuthBrandHeaderProps) {
           aria-hidden
         />
 
-        <TypewriterSlogan />
+        <div className="w-full max-lg:flex max-lg:justify-center lg:w-auto lg:shrink">
+          <TypewriterSlogan />
+        </div>
       </div>
     </header>
   )

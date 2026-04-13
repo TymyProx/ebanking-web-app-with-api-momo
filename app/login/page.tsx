@@ -140,14 +140,14 @@ export default function LoginPage() {
 
 
           {/* Badge fixe — un peu plus haut sur mobile pour aérer le carrousel en dessous */}
-          <div className="absolute top-24 sm:top-28 lg:top-[28%] left-5 right-5 sm:left-6 sm:right-6 lg:left-[2vw] lg:right-auto lg:max-w-[28%] px-0 z-10">
+          <div className="absolute top-[10.75rem] sm:top-[11.5rem] lg:top-[28%] left-5 right-5 sm:left-6 sm:right-6 lg:left-[2vw] lg:right-auto lg:max-w-[28%] px-0 z-10">
             <span className="text-lg sm:text-[1.35rem] md:text-[1.6rem] lg:text-[1.8vw] font-semibold text-[#f4c430] uppercase tracking-wider px-3 py-1.5 sm:px-4 sm:py-2 md:px-5 md:py-2.5 lg:px-[1vw] lg:py-[0.5vw] bg-white/10 backdrop-blur-sm rounded-full inline-block">
               BNG CONNECT
             </span>
           </div>
 
           {/* Bloc carousel texte — plus bas sur mobile/tablette pour aérer sous le badge */}
-          <div className="absolute top-40 sm:top-44 lg:top-[56%] lg:-translate-y-1/2 left-5 right-5 sm:left-6 sm:right-6 lg:left-[2vw] lg:right-auto lg:max-w-[28%] px-0">
+          <div className="absolute top-[14.25rem] sm:top-[15.25rem] lg:top-[56%] lg:-translate-y-1/2 left-5 right-5 sm:left-6 sm:right-6 lg:left-[2vw] lg:right-auto lg:max-w-[28%] px-0">
             <div className="text-left text-white space-y-2 sm:space-y-3 lg:space-y-[1vw] transition-all duration-700 ease-in-out">
               <h1 className="text-2xl sm:text-[1.95rem] md:text-[2.35rem] lg:text-[2.6vw] lg:min-w-[16px] lg:leading-tight font-bold animate-fadeIn drop-shadow-2xl leading-snug sm:leading-tight pr-1">
                 {welcomeMessages[currentMessageIndex].title}
@@ -160,7 +160,7 @@ export default function LoginPage() {
         </div>
       </div>
 
-      <main className="w-full px-5 pb-10 min-[400px]:px-6 sm:px-6 sm:pb-8 lg:px-[2vw] lg:pb-[1.5vw] relative z-10 min-h-screen lg:h-screen flex flex-col justify-between [padding-left:max(1.25rem,env(safe-area-inset-left))] [padding-right:max(1.25rem,env(safe-area-inset-right))] [padding-top:calc(env(safe-area-inset-top,0px)+20rem)] max-[380px]:[padding-top:calc(env(safe-area-inset-top,0px)+31rem)] sm:[padding-top:calc(env(safe-area-inset-top,0px)+28rem)] md:[padding-top:calc(env(safe-area-inset-top,0px)+28.5rem)] lg:pt-[2vw]">
+      <main className="w-full px-5 pb-10 min-[400px]:px-6 sm:px-6 sm:pb-8 lg:px-[2vw] lg:pb-[1.5vw] relative z-10 min-h-screen lg:h-screen flex flex-col justify-between [padding-left:max(1.25rem,env(safe-area-inset-left))] [padding-right:max(1.25rem,env(safe-area-inset-right))] [padding-top:calc(env(safe-area-inset-top,0px)+23rem)] max-[380px]:[padding-top:calc(env(safe-area-inset-top,0px)+34rem)] sm:[padding-top:calc(env(safe-area-inset-top,0px)+31rem)] md:[padding-top:calc(env(safe-area-inset-top,0px)+31.5rem)] lg:pt-[2vw]">
         {/* Login Form - Top Right */}
         <div className="w-full max-w-full mb-0 min-w-0">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-4 lg:gap-[1.5vw]">
