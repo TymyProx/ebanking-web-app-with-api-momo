@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { CheckCircle, XCircle, Loader2, Mail, Eye, EyeOff, HelpCircle, UserPlus, MapPin } from "lucide-react"
 import { AuthFeaturesInfoCard } from "@/components/auth/auth-features-info-card"
+import { AuthBrandHeader } from "@/components/auth/auth-brand-header"
 import { completeSignup } from "./actions"
 import { validatePassword } from "@/lib/password-validation"
 import { config } from "@/lib/config"
@@ -104,22 +105,7 @@ function VerifyEmailContent() {
 
   return (
     <div className="min-h-screen lg:h-screen relative overflow-x-hidden overflow-y-auto lg:overflow-hidden">
-      <div className="absolute top-4 sm:top-4 lg:top-[2vw] left-1/2 -translate-x-1/2 lg:left-[2vw] lg:translate-x-0 z-50">
-        <a
-          href={config.BNG_CONNECT_WEBSITE_URL}
-          className="inline-block rounded-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#2d6e3e]"
-          aria-label="BNG Connect — aller sur bngconnect.com"
-        >
-          <Image
-            src="/images/logowhite.png"
-            alt="BNG Logo"
-            width={160}
-            height={48}
-            className="object-contain drop-shadow-lg w-32 sm:w-36 lg:w-[12vw] lg:min-w-[180px] lg:max-w-[260px]"
-            priority
-          />
-        </a>
-      </div>
+      <AuthBrandHeader />
 
       {/* Full Screen Background Hero */}
       <div className="absolute lg:fixed inset-0 z-0 min-h-screen lg:min-h-0">
