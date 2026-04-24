@@ -3,7 +3,7 @@
 import type React from "react"
 import Image from "next/image"
 import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -58,6 +58,7 @@ export default function LoginPage() {
   const [rememberMe, setRememberMe] = useState(false)
   const [currentMessageIndex, setCurrentMessageIndex] = useState(0)
   const router = useRouter()
+  const searchParams = useSearchParams()
 
   // Carrousel automatique pour les messages de bienvenue
   useEffect(() => {
@@ -67,6 +68,17 @@ export default function LoginPage() {
 
     return () => clearInterval(interval)
   }, [])
+
+  // Message affiché lorsque la session a été invalidée (connexion
+  // depuis un autre appareil, expiration, etc.).
+  useEffect(() => {
+    const reason = searchParams?.get("reason")
+    if (reason === "session_replaced") {
+      setError(
+        "Votre session a été fermée car vous vous êtes connecté depuis un autre appareil ou navigateur.",
+      )
+    }
+  }, [searchParams])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

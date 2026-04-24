@@ -35,11 +35,22 @@ authAxios.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      // Token expiré ou invalide
+      // Token expiré ou invalidé (ex. connexion depuis un autre appareil).
       if (typeof window !== "undefined") {
+        // On n'essaie pas de prolonger la session : on force un retour
+        // vers /login en nettoyant tout stockage local.
         localStorage.removeItem("token")
         localStorage.removeItem("user")
-        window.location.href = "/login"
+        Cookies.remove("token")
+
+        // Évite les redirections en boucle si on est déjà sur /login.
+        const alreadyOnLogin = window.location.pathname.startsWith("/login")
+        if (!alreadyOnLogin) {
+          const params = new URLSearchParams()
+          params.set("reason", "session_replaced")
+          params.set("redirect", window.location.pathname + window.location.search)
+          window.location.href = `/login?${params.toString()}`
+        }
       }
     }
     return Promise.reject(error)
@@ -216,8 +227,17 @@ export class AuthService {
   // Méthode pour se déconnecter
   static async signOut() {
     try {
-      // Optionnel: appeler l'API de déconnexion si elle existe
-      // await authAxios.post('/auth/sign-out')
+      // Libère la session active côté backend (supprime le jti en DB)
+      // pour que l'utilisateur puisse se reconnecter immédiatement
+      // sans attendre l'expiration du JWT.
+      try {
+        await authAxios.post("/auth/sign-out")
+      } catch (apiError) {
+        // Si le token est déjà invalide (ex. session déjà remplacée
+        // depuis un autre appareil), on ignore l'erreur et on nettoie
+        // simplement le stockage local.
+        console.warn("Sign-out API call failed, cleaning up locally:", apiError)
+      }
 
       localStorage.removeItem("token")
       localStorage.removeItem("user")
