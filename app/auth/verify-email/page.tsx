@@ -322,11 +322,11 @@ function VerifyEmailContent() {
                         <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-white drop-shadow-lg">Erreur</h1>
                         <p className="text-sm sm:text-base text-white/90 drop-shadow-md">{message}</p>
                         <Button
-                          onClick={() => router.push("/signup")}
+                          onClick={() => router.push("/login")}
                           className="w-full h-9 sm:h-10 lg:h-[clamp(2.75rem,3.2vw,3.5rem)] bg-gradient-to-r from-[#f4c430] via-[#f8d060] to-[#f4c430] hover:from-[#e0b020] hover:via-[#f4c430] hover:to-[#e0b020] text-gray-900 font-semibold text-xs sm:text-sm lg:text-[clamp(0.85rem,1vw,1.1rem)] shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden group rounded-lg"
                         >
                           <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-1000"></div>
-                          <span className="relative z-10">Retour à l'inscription</span>
+                          <span className="relative z-10">Retour à la connexion</span>
                         </Button>
                       </div>
                     </div>

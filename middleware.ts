@@ -7,7 +7,6 @@ const publicPaths = [
   "/agences",
   "/support",
   "/login",
-  "/signup",
   "/auth/verify-email",
   "/auth/accept-invite",
   "/auth/forgot-password",
@@ -18,6 +17,11 @@ export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   if (pathname === "/") {
+    return NextResponse.redirect(new URL("/login", request.url))
+  }
+
+  // Inscription désactivée — les accès client sont créés depuis le back-office
+  if (pathname === "/signup" || pathname.startsWith("/signup/")) {
     return NextResponse.redirect(new URL("/login", request.url))
   }
 

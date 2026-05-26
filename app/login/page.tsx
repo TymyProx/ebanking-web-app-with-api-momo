@@ -12,11 +12,8 @@ import {
   Eye,
   EyeOff,
   HelpCircle,
-  UserPlus,
   Lock,
   MapPin,
-  CreditCard,
-  ChevronRight,
   Sparkles,
 } from "lucide-react"
 import { AuthFeaturesInfoCard } from "@/components/auth/auth-features-info-card"
@@ -172,11 +169,11 @@ export default function LoginPage() {
         </div>
       </div>
 
-      <main className="w-full px-5 pb-10 min-[400px]:px-6 sm:px-6 sm:pb-8 lg:px-[2vw] lg:pb-[1.5vw] relative z-10 min-h-screen lg:h-screen flex flex-col justify-between [padding-left:max(1.25rem,env(safe-area-inset-left))] [padding-right:max(1.25rem,env(safe-area-inset-right))] [padding-top:calc(env(safe-area-inset-top,0px)+23rem)] max-[380px]:[padding-top:calc(env(safe-area-inset-top,0px)+34rem)] sm:[padding-top:calc(env(safe-area-inset-top,0px)+31rem)] md:[padding-top:calc(env(safe-area-inset-top,0px)+31.5rem)] lg:pt-[2vw]">
-        {/* Login Form - Top Right */}
-        <div className="w-full max-w-full mb-0 min-w-0">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-4 lg:gap-[1.5vw]">
-            <div className="sm:col-start-3 flex justify-center sm:justify-end mt-6 sm:mt-0 w-full min-w-0">
+      <main className="w-full px-5 pb-10 min-[400px]:px-6 sm:px-6 sm:pb-8 lg:px-[2vw] lg:pb-[1.5vw] relative z-10 min-h-screen lg:h-screen flex flex-col lg:grid lg:grid-rows-[1fr_auto] [padding-left:max(1.25rem,env(safe-area-inset-left))] [padding-right:max(1.25rem,env(safe-area-inset-right))] [padding-top:calc(env(safe-area-inset-top,0px)+12rem)] sm:[padding-top:calc(env(safe-area-inset-top,0px)+13rem)] lg:pt-[calc(env(safe-area-inset-top,0px)+5rem)]">
+        {/* Login Form — centré verticalement */}
+        <div className="w-full flex-1 flex items-center min-h-0 lg:py-[1.5vw]">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-4 lg:gap-[1.5vw] w-full">
+            <div className="sm:col-start-3 flex items-center justify-center sm:justify-end w-full min-w-0">
               <div className="relative group w-full max-w-md sm:max-w-[85%] lg:max-w-[28vw] lg:min-w-[360px] mx-auto sm:mx-0">
                 <div className="absolute inset-0 bg-gradient-to-br from-[#2d6e3e]/30 via-[#f4c430]/20 to-[#2d6e3e]/30 rounded-2xl blur-2xl opacity-40 group-hover:opacity-60 transition-opacity pointer-events-none"></div>
                 <div className="relative bg-white/40 backdrop-blur-2xl rounded-2xl shadow-2xl px-5 py-6 sm:p-5 lg:p-[1.6vw] border border-white/20">
@@ -292,70 +289,6 @@ export default function LoginPage() {
                           </div>
                         )}
                       </Button>
-
-                      {/* Séparateur + accès portail (cartes modernes) */}
-                      <div className="relative my-6 sm:my-4 lg:my-[0.85vw]">
-                        <div className="absolute inset-0 flex items-center" aria-hidden>
-                          <div className="w-full border-t border-white/20" />
-                        </div>
-                        <div className="relative flex justify-center px-2">
-                          <span className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-white/75 backdrop-blur-sm">
-                            Inscription
-                          </span>
-                        </div>
-                      </div>
-
-                      <div className="space-y-3 sm:space-y-2.5">
-                        <button
-                          type="button"
-                          onClick={() => router.push("/signup?flow=existing")}
-                          className="group relative w-full overflow-hidden rounded-xl border border-[#2d6e3e]/50 bg-gradient-to-br from-[#2d6e3e]/55 via-[#2d6e3e]/35 to-[#1a4d2a]/40 px-4 py-3.5 text-left shadow-[0_8px_32px_rgba(0,0,0,0.18)] backdrop-blur-md transition-all duration-300 hover:border-[#4a9d5e]/70 hover:shadow-[0_12px_40px_rgba(45,110,62,0.35)] hover:-translate-y-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent active:translate-y-0 active:scale-[0.99] sm:p-3.5"
-                        >
-                          <div className="relative flex items-start gap-3">
-                            <div className="flex h-10 w-10 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-xl bg-white/15 text-white shadow-inner ring-1 ring-white/20 transition-transform duration-300 group-hover:scale-105 group-hover:bg-white/20">
-                              <CreditCard className="h-5 w-5" strokeWidth={2} />
-                            </div>
-                            <div className="min-w-0 flex-1 pt-0.5">
-                              <p className="text-sm font-bold tracking-tight text-white drop-shadow-md">
-                                Déjà client BNG ?
-                              </p>
-                              <p className="mt-0.5 text-[11px] leading-snug text-white/80 sm:text-xs">
-                               Souscrivez à E-banking.
-                              </p>
-                            </div>
-                            <ChevronRight
-                              className="mt-2 h-5 w-5 shrink-0 text-white/40 transition-all duration-300 group-hover:translate-x-0.5 group-hover:text-white"
-                              strokeWidth={2.5}
-                              aria-hidden
-                            />
-                          </div>
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => router.push("/signup?flow=new")}
-                          className="group relative w-full overflow-hidden rounded-xl border border-[#2d6e3e]/50 bg-gradient-to-br from-[#2d6e3e]/55 via-[#2d6e3e]/35 to-[#1a4d2a]/40 px-4 py-3.5 text-left shadow-[0_8px_32px_rgba(0,0,0,0.18)] backdrop-blur-md transition-all duration-300 hover:border-[#4a9d5e]/70 hover:shadow-[0_12px_40px_rgba(45,110,62,0.35)] hover:-translate-y-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent active:translate-y-0 active:scale-[0.99] sm:p-3.5"
-                        >
-                          <div className="relative flex items-start gap-3">
-                            <div className="flex h-10 w-10 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-xl bg-white/15 text-white shadow-inner ring-1 ring-white/20 transition-transform duration-300 group-hover:scale-105 group-hover:bg-white/20">
-                              <UserPlus className="h-5 w-5" strokeWidth={2} />
-                            </div>
-                            <div className="min-w-0 flex-1 pt-0.5">
-                              <p className="text-sm font-bold tracking-tight text-white drop-shadow-md">
-                                Nouveau client ?
-                              </p>
-                              <p className="mt-0.5 text-[11px] leading-snug text-white/85 sm:text-xs">
-                                Demande d'ouverture de compte.
-                              </p>
-                            </div>
-                            <ChevronRight
-                              className="mt-2 h-5 w-5 shrink-0 text-white/40 transition-all duration-300 group-hover:translate-x-0.5 group-hover:text-white"
-                              strokeWidth={2.5}
-                              aria-hidden
-                            />
-                          </div>
-                        </button>
-                      </div>
                     </div>
                   </form>
                   </>
@@ -366,7 +299,7 @@ export default function LoginPage() {
         </div>
 
          {/* Information Cards - proportions et marges cohérentes */}
-         <div className="w-full max-w-full mt-12 sm:mt-10 md:mt-12 mb-8 sm:mb-5 md:mb-6 lg:mb-[1.5vw]">
+         <div className="w-full max-w-full mt-8 sm:mt-6 lg:mt-0 mb-8 sm:mb-5 md:mb-6 lg:mb-[1.5vw]">
            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-4 lg:gap-[1.5vw] max-w-md mx-auto sm:max-w-none sm:mx-0">
             {/* Nous trouver → /agences (hors connexion : sans sidebar, voir ConditionalLayout) */}
             <Link
