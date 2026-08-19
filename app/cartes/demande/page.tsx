@@ -1,4 +1,5 @@
 "use client"
+import { getTabId } from "@/lib/client-tab-id"
 
 import type React from "react"
 
@@ -60,7 +61,7 @@ export default function DemandeCartePage() {
     async function loadAccounts() {
       try {
         setLoadingAccounts(true)
-        const accountsData = await getAccounts()
+        const accountsData = await getAccounts(getTabId())
         // Filtrer uniquement les comptes actifs en utilisant la fonction normalisée
         const activeAccounts = accountsData
           .filter((acc: any) => isAccountActive(acc.status))

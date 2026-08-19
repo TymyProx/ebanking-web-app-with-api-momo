@@ -1,4 +1,5 @@
 "use server"
+import { getServerAuthToken } from "@/lib/server-auth-token"
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0"
 import { cookies } from "next/headers"
 import { getApiBaseUrl, TENANT_ID } from "@/lib/api-url"
@@ -6,10 +7,10 @@ import { getApiBaseUrl, TENANT_ID } from "@/lib/api-url"
 const API_BASE_URL = getApiBaseUrl()
 
 // Récupérer les opérations en attente depuis l'API epayments
-export async function getPendingOperations() {
+export async function getPendingOperations(tabId?: string) {
   try {
     const cookieStore = await cookies()
-    const usertoken = cookieStore.get("token")?.value
+    const usertoken = (await getServerAuthToken(tabId))
 
     if (!usertoken) {
       return {
@@ -173,10 +174,10 @@ export async function getPendingOperations() {
 }
 
 // Annuler une opération
-export async function cancelOperation(operationId: string) {
+export async function cancelOperation(operationId: string, tabId?: string) {
   try {
     const cookieStore = await cookies()
-    const usertoken = cookieStore.get("token")?.value
+    const usertoken = (await getServerAuthToken(tabId))
 
     if (!usertoken) {
       return {
@@ -221,10 +222,10 @@ export async function cancelOperation(operationId: string) {
 }
 
 // Relancer une opération échouée
-export async function retryOperation(operationId: string) {
+export async function retryOperation(operationId: string, tabId?: string) {
   try {
     const cookieStore = await cookies()
-    const usertoken = cookieStore.get("token")?.value
+    const usertoken = (await getServerAuthToken(tabId))
 
     if (!usertoken) {
       return {
@@ -269,10 +270,10 @@ export async function retryOperation(operationId: string) {
 }
 
 // Obtenir les détails d'une opération
-export async function getOperationDetails(operationId: string) {
+export async function getOperationDetails(operationId: string, tabId?: string) {
   try {
     const cookieStore = await cookies()
-    const usertoken = cookieStore.get("token")?.value
+    const usertoken = (await getServerAuthToken(tabId))
 
     if (!usertoken) {
       return {

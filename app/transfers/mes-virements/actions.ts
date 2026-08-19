@@ -1,4 +1,5 @@
 "use server"
+import { getServerAuthToken } from "@/lib/server-auth-token"
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0"
 import { cookies } from "next/headers"
 import { config } from "@/lib/config"
@@ -26,8 +27,8 @@ export interface Transaction {
 /**
  * Récupère toutes les transactions liées aux comptes de l'utilisateur connecté
  */
-export async function getUserTransactions(): Promise<{ success: boolean; data: Transaction[]; error?: string }> {
-  const cookieToken = (await cookies()).get("token")?.value
+export async function getUserTransactions(tabId?: string): Promise<{ success: boolean; data: Transaction[]; error?: string }> {
+  const cookieToken = (await getServerAuthToken(tabId))
   const usertoken = cookieToken
 
   if (!usertoken) {

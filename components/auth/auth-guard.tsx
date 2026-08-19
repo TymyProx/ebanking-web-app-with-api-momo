@@ -5,8 +5,7 @@ import type React from "react"
 import { useEffect, useState } from "react"
 import { useRouter, usePathname } from "next/navigation"
 import AuthService from "@/lib/auth-service"
-import { getAccounts } from "@/app/accounts/actions"
-import { isAccountActive } from "@/lib/status-utils"
+import { validateSessionWithServer } from "@/lib/auth-token-storage"
 
 interface AuthGuardProps {
   children: React.ReactNode
@@ -35,65 +34,42 @@ export function AuthGuard({ children }: AuthGuardProps) {
       )
 
       if (isPublicPage) {
+        if (AuthService.isAuthenticated() && pathname === "/login") {
+          router.push("/dashboard")
+          return
+        }
         setIsAuthenticated(true)
         setIsLoading(false)
         return
       }
 
-      // Pour les pages protégées, vérifier l'authentification via les cookies HttpOnly
-      try {
-        // Vérifier l'authentification via l'API qui utilise les cookies HttpOnly
-        const authCheckResponse = await fetch("/api/auth/check", {
-          method: "GET",
-          credentials: "include", // Important pour envoyer les cookies
-          cache: "no-store",
-        })
-
-        if (!authCheckResponse.ok) {
-          throw new Error("Auth check failed")
-        }
-
-        const authData = await authCheckResponse.json()
-
-        if (!authData.authenticated) {
-          setIsAuthenticated(false)
-          setIsLoading(false)
-          router.push("/login")
-          return
-        }
-
-        // Utilisateur authentifié avec informations complètes
-        setIsAuthenticated(true)
+      if (!AuthService.isAuthenticated()) {
+        setIsAuthenticated(false)
         setIsLoading(false)
-      } catch (error) {
-        console.error("Erreur lors de la vérification de l'authentification:", error)
-        // En cas d'erreur, vérifier aussi localStorage comme fallback
-        if (AuthService.isAuthenticated()) {
-          try {
-            await AuthService.fetchMe()
-            setIsAuthenticated(true)
-            setIsLoading(false)
-          } catch (fetchError) {
-            console.error("Erreur lors de la récupération des informations utilisateur:", fetchError)
-            setIsAuthenticated(false)
-            setIsLoading(false)
-            router.push("/login")
-          }
-        } else {
-          setIsAuthenticated(false)
-          setIsLoading(false)
-          router.push("/login")
-        }
+        router.push("/login")
+        return
       }
+
+      const alive = await validateSessionWithServer()
+      if (!alive) {
+        setIsAuthenticated(false)
+        setIsLoading(false)
+        const params = new URLSearchParams({ reason: "session_replaced" })
+        router.push(`/login?${params.toString()}`)
+        return
+      }
+
+      setIsAuthenticated(true)
+      setIsLoading(false)
     }
 
-    // Délai pour éviter les problèmes d'hydratation
-    const timer = setTimeout(checkAuth, 100)
+    const timer = setTimeout(() => {
+      void checkAuth()
+    }, 100)
 
     return () => clearTimeout(timer)
   }, [pathname, router])
 
-  // Afficher un loader pendant la vérification
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">

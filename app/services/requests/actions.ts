@@ -1,4 +1,5 @@
 "use server"
+import { getServerAuthToken } from "@/lib/server-auth-token"
 // Indique à Next.js que ce fichier contient du code côté serveur
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0"
 import { cookies } from "next/headers"
@@ -64,10 +65,10 @@ interface GetDemandesCreditResponse {
 }
 
 // Fonction pour générer une référence unique
-async function generateReference(prefix: string): Promise<string> {
+async function generateReference(prefix: string, tabId?: string): Promise<string> {
   try {
     // Récupérer le token
-    const cookieToken = (await cookies()).get("token")?.value
+    const cookieToken = (await getServerAuthToken(tabId))
     const usertoken = cookieToken
 
     if (!cookieToken) {
@@ -113,11 +114,11 @@ export async function submitCreditRequest(formData: {
   loan_purpose: string // Objet / raison du crédit
   numcompte: string // Nouveau champ numéro de compte
   typedemande: string // Type de demande
-  accountNumber: string // Numéro de compte (nouveau format)
+  accountNumber: string // Numéro de compte (nouveau format, tabId?: string)
 }) {
   try {
     // 🔑 Récupération du token JWT stocké dans les cookies
-    const cookieToken = (await cookies()).get("token")?.value
+    const cookieToken = (await getServerAuthToken(tabId))
     const usertoken = cookieToken
 
     // Si aucun token n'est trouvé → erreur
@@ -193,9 +194,9 @@ export async function submitCheckbookRequest(formData: {
   commentaire: string
   talonCheque?: boolean // NEW: Talon de chèque option
   typeCheque?: string // NEW: Type de chèque
-}) {
+}, tabId?: string) {
   try {
-    const cookieToken = (await cookies()).get("token")?.value
+    const cookieToken = (await getServerAuthToken(tabId))
     const usertoken = cookieToken
 
     if (!cookieToken) throw new Error("Token introuvable.")
@@ -256,9 +257,9 @@ export async function submitCheckbookRequest(formData: {
 }
 
 // Secure path: submit already-encrypted payload to e-Portal endpoint
-export async function submitCheckbookRequestSecure(encryptedData: any) {
+export async function submitCheckbookRequestSecure(encryptedData: any, tabId?: string) {
   try {
-    const cookieToken = (await cookies()).get("token")?.value
+    const cookieToken = (await getServerAuthToken(tabId))
     const usertoken = cookieToken
 
     if (!cookieToken) throw new Error("Token introuvable.")
@@ -285,10 +286,10 @@ export async function submitCheckbookRequestSecure(encryptedData: any) {
 }
 
 // Fonction asynchrone pour récupérer les demandes de chéquier
-export async function getCheckbookRequest(id?: string): Promise<GetCommandesResponse | Commande> {
+export async function getCheckbookRequest(id?: string, tabId?: string): Promise<GetCommandesResponse | Commande> {
   try {
     // 🔑 Récupération du token JWT stocké dans les cookies
-    const cookieToken = (await cookies()).get("token")?.value
+    const cookieToken = (await getServerAuthToken(tabId))
     const usertoken = cookieToken
 
     if (!cookieToken) {
@@ -439,10 +440,10 @@ export async function getCheckbookRequest(id?: string): Promise<GetCommandesResp
 }
 
 // Fonction asynchrone pour récupérer les demandes de crédit
-export async function getCreditRequest(id?: string): Promise<GetDemandesCreditResponse | DemandeCredit> {
+export async function getCreditRequest(id?: string, tabId?: string): Promise<GetDemandesCreditResponse | DemandeCredit> {
   try {
     // 🔑 Récupération du token JWT stocké dans les cookies
-    const cookieToken = (await cookies()).get("token")?.value
+    const cookieToken = (await getServerAuthToken(tabId))
     const usertoken = cookieToken
 
     if (!cookieToken) {
@@ -577,10 +578,10 @@ export async function getCreditRequest(id?: string): Promise<GetDemandesCreditRe
 }
 
 // Fonction asynchrone pour récupérer une demande de crédit par ID
-export async function getDemandeCreditById(TENANT_ID: string, id: string): Promise<DemandeCredit> {
+export async function getDemandeCreditById(TENANT_ID: string, id: string, tabId?: string): Promise<DemandeCredit> {
   try {
     // 🔑 Récupération du token JWT stocké dans les cookies
-    const cookieToken = (await cookies()).get("token")?.value
+    const cookieToken = (await getServerAuthToken(tabId))
     const usertoken = cookieToken
 
     if (!cookieToken) {
@@ -647,10 +648,10 @@ export async function getDemandeCreditById(TENANT_ID: string, id: string): Promi
 }
 
 // Fonction asynchrone pour récupérer une demande de chéquier (commande) par ID
-export async function getCommandeById(TENANT_ID: string, id: string): Promise<Commande> {
+export async function getCommandeById(TENANT_ID: string, id: string, tabId?: string): Promise<Commande> {
   try {
     // 🔑 Récupération du token JWT stocké dans les cookies
-    const cookieToken = (await cookies()).get("token")?.value
+    const cookieToken = (await getServerAuthToken(tabId))
     const usertoken = cookieToken
 
     if (!cookieToken) {

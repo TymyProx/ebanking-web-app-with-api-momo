@@ -15,6 +15,7 @@ import { Send, Eye, Plus, Search, FileText, MessageSquare, Upload } from "lucide
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { createReclamation, getReclamations } from "./actions"
 import { getCurrentUser } from "@/app/user/actions"
+import { getTabId } from "@/lib/client-tab-id"
 
 const complainTypes = {
   Compte: [],
@@ -102,7 +103,7 @@ export default function ComplainPage() {
   useEffect(() => {
     const loadUserInfo = async () => {
       try {
-        const user = await getCurrentUser()
+        const user = await getCurrentUser(getTabId())
         if (user) {
           setFormData((prev) => ({
             ...prev,
@@ -159,7 +160,7 @@ export default function ComplainPage() {
       setSubmitState({ success: true, reference: result.reference })
 
       // Réinitialiser le formulaire en gardant les infos utilisateur et la date
-      const user = await getCurrentUser()
+      const user = await getCurrentUser(getTabId())
       setFormData({
         complainDate: new Date().toISOString().split("T")[0],
         email: user?.email || "",

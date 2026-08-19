@@ -1,4 +1,5 @@
 "use server"
+import { getServerAuthToken } from "@/lib/server-auth-token"
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0"
 
 import { cookies } from "next/headers"
@@ -24,10 +25,10 @@ interface ProfileData {
   clientType: string
 }
 
-export async function getUserProfileData(): Promise<{ success: boolean; data?: ProfileData; message?: string }> {
+export async function getUserProfileData(tabId?: string): Promise<{ success: boolean; data?: ProfileData; message?: string }> {
   try {
     const cookieStore = await cookies()
-    const token = cookieStore.get("token")?.value
+    const token = (await getServerAuthToken(tabId))
 
     if (!token) {
       return { success: false, message: "Token manquant" }
@@ -141,10 +142,10 @@ export async function getUserProfileData(): Promise<{ success: boolean; data?: P
   }
 }
 
-export async function updateProfile(data: ProfileData) {
+export async function updateProfile(data: ProfileData, tabId?: string) {
   try {
     const cookieStore = await cookies()
-    const token = cookieStore.get("token")?.value
+    const token = (await getServerAuthToken(tabId))
 
     if (!token) {
       return {

@@ -1,4 +1,5 @@
 "use server"
+import { getServerAuthToken } from "@/lib/server-auth-token"
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0"
 import { z } from "zod"
 import { cookies } from "next/headers"
@@ -18,6 +19,7 @@ interface CurrentUserInfo {
 
 interface ActionSecurityContext {
   token?: string
+  tabId?: string
   currentUser?: CurrentUserInfo | null
   allowedAccountIds?: Set<string>
 }
@@ -26,8 +28,8 @@ interface BeneficiarySecurityContext extends ActionSecurityContext {
   allowedBeneficiaryIds?: Set<string>
 }
 
-async function getCurrentUserInfo(token?: string): Promise<CurrentUserInfo | null> {
-  const cookieToken = token ?? (await cookies()).get("token")?.value
+async function getCurrentUserInfo(token?: string, tabId?: string): Promise<CurrentUserInfo | null> {
+  const cookieToken = token ?? (await getServerAuthToken(tabId))
   if (!cookieToken) {
     return null
   }
@@ -162,7 +164,7 @@ const beneficiaries = [
 const otpStorage = new Map<string, { code: string; expires: Date; attempts: number }>()
 
 // Action pour envoyer l'OTP
-export async function sendOTP(prevState: any, formData: FormData) {
+export async function sendOTP(prevState: any, formData: FormData, tabId?: string) {
   try {
     const phone = formData.get("phone") as string
     const amount = formData.get("amount") as string
@@ -205,7 +207,7 @@ export async function sendOTP(prevState: any, formData: FormData) {
 }
 
 // Action pour valider l'OTP
-export async function validateOTP(prevState: any, formData: FormData) {
+export async function validateOTP(prevState: any, formData: FormData, tabId?: string) {
   try {
     const otpCode = formData.get("otpCode") as string
     const phone = "+224 622 123 456" // Numéro du client (normalement récupéré du profil)
@@ -293,8 +295,8 @@ function getTransactionType(beneficiaryType: string): string {
   }
 }
 
-export async function debitAccountBalance(accountId: string, amount: number, context: ActionSecurityContext = {}) {
-  const cookieToken = context.token ?? (await cookies()).get("token")?.value
+export async function debitAccountBalance(accountId: string, amount: number, context: ActionSecurityContext = {}, tabId?: string) {
+  const cookieToken = context.token ?? (await getServerAuthToken(context.tabId ?? tabId))
   const usertoken = cookieToken
 
   try {
@@ -387,8 +389,8 @@ export async function debitAccountBalance(accountId: string, amount: number, con
   }
 }
 
-export async function creditAccountBalance(accountId: string, amount: number, context: ActionSecurityContext = {}) {
-  const cookieToken = context.token ?? (await cookies()).get("token")?.value
+export async function creditAccountBalance(accountId: string, amount: number, context: ActionSecurityContext = {}, tabId?: string) {
+  const cookieToken = context.token ?? (await getServerAuthToken(context.tabId ?? tabId))
   const usertoken = cookieToken
 
   try {
@@ -525,7 +527,7 @@ async function prevalidateAndPrepareTransfer(
     return { ok: false, error: "La date d'exécution n'est pas valide" }
   }
 
-  const cookieToken = (await cookies()).get("token")?.value
+  const cookieToken = (await getServerAuthToken(tabId))
   const usertoken = cookieToken
   if (!usertoken) {
     return { ok: false, error: "Utilisateur non authentifié" }
@@ -696,7 +698,7 @@ async function prevalidateAndPrepareTransfer(
 }
 
 /** À appeler avant l’envoi du code OTP : mêmes contrôles que l’exécution du virement */
-export async function validateTransferBeforeOtp(formData: FormData) {
+export async function validateTransferBeforeOtp(formData: FormData, tabId?: string) {
   const pre = await prevalidateAndPrepareTransfer(formData)
   if (!pre.ok) {
     return { success: false as const, error: pre.error }
@@ -705,7 +707,7 @@ export async function validateTransferBeforeOtp(formData: FormData) {
 }
 
 // Action pour exécuter le virement
-export async function executeTransfer(prevState: any, formData: FormData) {
+export async function executeTransfer(prevState: any, formData: FormData, tabId?: string) {
   try {
     const pre = await prevalidateAndPrepareTransfer(formData)
     if (!pre.ok) {
@@ -888,7 +890,7 @@ export async function executeTransfer(prevState: any, formData: FormData) {
   }
 }
 
-export async function validateBeneficiary(accountNumber: string, bankCode: string) {
+export async function validateBeneficiary(accountNumber: string, bankCode: string, tabId?: string) {
   try {
     // Simulation d'une vérification auprès de la banque destinataire
     await new Promise((resolve) => setTimeout(resolve, 1000))
@@ -916,7 +918,7 @@ export async function validateBeneficiary(accountNumber: string, bankCode: strin
   }
 }
 
-export async function calculateTransferFees(beneficiaryType: string, amount: number) {
+export async function calculateTransferFees(beneficiaryType: string, amount: number, tabId?: string) {
   try {
     let fee = 0
 
@@ -945,8 +947,8 @@ export async function calculateTransferFees(beneficiaryType: string, amount: num
   }
 }
 
-export async function getTransactions(): Promise<{ data: any[] }> {
-  const cookieToken = (await cookies()).get("token")?.value
+export async function getTransactions(tabId?: string): Promise<{ data: any[] }> {
+  const cookieToken = (await getServerAuthToken(tabId))
   const usertoken = cookieToken
 
   if (!usertoken) {
@@ -1065,8 +1067,8 @@ export async function getTransactions(): Promise<{ data: any[] }> {
   }
 }
 
-export async function getEpayments(): Promise<{ rows: any[] }> {
-  const cookieToken = (await cookies()).get("token")?.value
+export async function getEpayments(tabId?: string): Promise<{ rows: any[] }> {
+  const cookieToken = (await getServerAuthToken(tabId))
   const usertoken = cookieToken
   if (!usertoken) return { rows: [] }
 
@@ -1099,7 +1101,7 @@ export async function getEpayments(): Promise<{ rows: any[] }> {
 }
 
 async function getBeneficiaryById(beneficiaryId: string, context: BeneficiarySecurityContext = {}) {
-  const cookieToken = context.token ?? (await cookies()).get("token")?.value
+  const cookieToken = context.token ?? (await getServerAuthToken(context.tabId ?? tabId))
   const usertoken = cookieToken
 
   if (context.allowedBeneficiaryIds && !context.allowedBeneficiaryIds.has(beneficiaryId)) {

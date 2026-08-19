@@ -1,4 +1,5 @@
 "use client"
+import { getTabId } from "@/lib/client-tab-id"
 
 import type React from "react"
 import { useState, useTransition, useEffect, useRef, useMemo } from "react"
@@ -208,7 +209,7 @@ export default function NewTransferPage() {
   const loadBanks = async () => {
     try {
       setLoadingBanks(true)
-      const banksData = await getBanks()
+      const banksData = await getBanks(getTabId())
       setBanks(banksData)
     } catch (error) {
       console.error("Erreur lors du chargement des banques:", error)
@@ -559,7 +560,7 @@ export default function NewTransferPage() {
   const loadAccounts = async () => {
     try {
       setIsLoadingAccounts(true)
-      const result = await getAccounts()
+      const result = await getAccounts(getTabId())
 
       if (Array.isArray(result) && result.length > 0) {
         const adaptedAccounts = result.map((apiAccount: any) => ({
@@ -592,7 +593,7 @@ export default function NewTransferPage() {
   const loadBeneficiaries = async () => {
     try {
       setIsLoadingBeneficiaries(true)
-      const result = await getBeneficiaries()
+      const result = await getBeneficiaries(getTabId())
 
       // No need for client-side decryption, data is already decrypted
 

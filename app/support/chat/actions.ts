@@ -1,4 +1,5 @@
 "use server"
+import { getServerAuthToken } from "@/lib/server-auth-token"
 
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0"
 
@@ -25,7 +26,7 @@ interface Message {
   senderName: string
 }
 
-export async function startChatSession(data: ChatSessionData) {
+export async function startChatSession(data: ChatSessionData, tabId?: string) {
   // Simulation de validation et création de session
   await new Promise((resolve) => setTimeout(resolve, 1000))
 
@@ -85,7 +86,7 @@ export async function startChatSession(data: ChatSessionData) {
   }
 }
 
-export async function sendMessage(sessionId: string, message: string, sender: "user" | "agent") {
+export async function sendMessage(sessionId: string, message: string, sender: "user" | "agent", tabId?: string) {
   // Simulation d'envoi de message
   await new Promise((resolve) => setTimeout(resolve, 500))
 
@@ -103,7 +104,7 @@ export async function sendMessage(sessionId: string, message: string, sender: "u
   return messageData
 }
 
-export async function endChatSession(sessionId: string, rating?: number, feedback?: string) {
+export async function endChatSession(sessionId: string, rating?: number, feedback?: string, tabId?: string) {
   // Simulation de fin de session
   await new Promise((resolve) => setTimeout(resolve, 500))
 
@@ -135,7 +136,7 @@ export async function endChatSession(sessionId: string, rating?: number, feedbac
   }
 }
 
-export async function rateChatSession(sessionId: string, rating: number, feedback?: string) {
+export async function rateChatSession(sessionId: string, rating: number, feedback?: string, tabId?: string) {
   // Simulation de sauvegarde de l'évaluation
   await new Promise((resolve) => setTimeout(resolve, 500))
 
@@ -229,10 +230,10 @@ const formatDuration = (openedAt?: Date | null, closedAt?: Date | null) => {
   return `${days}j${remainingHours}h`
 }
 
-export async function getChatHistory(): Promise<PortalChatHistoryEntry[]> {
+export async function getChatHistory(tabId?: string): Promise<PortalChatHistoryEntry[]> {
   try {
     const cookieStore = await cookies()
-    const token = cookieStore.get("token")?.value
+    const token = (await getServerAuthToken(tabId))
 
     if (!token) {
       console.warn("[LiveChat] Aucun token trouvé pour récupérer l'historique")
@@ -312,7 +313,7 @@ export async function getChatHistory(): Promise<PortalChatHistoryEntry[]> {
   }
 }
 
-export async function getAgentAvailability() {
+export async function getAgentAvailability(tabId?: string) {
   // Simulation de vérification de disponibilité des agents
   await new Promise((resolve) => setTimeout(resolve, 500))
 

@@ -1,4 +1,5 @@
 "use server"
+import { getServerAuthToken } from "@/lib/server-auth-token"
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0"
 
 import { cookies } from "next/headers"
@@ -45,9 +46,9 @@ interface GetReclamationsResponse {
  * Récupère le client depuis la table client en utilisant l'ID de l'utilisateur connecté
  * L'ID de l'utilisateur correspond directement à l'ID du client (clientId)
  */
-export async function getClientByUserId(userId: string): Promise<{ email?: string; telephone?: string; phoneNumber?: string } | null> {
+export async function getClientByUserId(userId: string, tabId?: string): Promise<{ email?: string; telephone?: string; phoneNumber?: string } | null> {
   try {
-    const cookieToken = (await cookies()).get("token")?.value
+    const cookieToken = (await getServerAuthToken(tabId))
 
     if (!cookieToken) {
       console.error("[Reclamation] Token introuvable pour récupérer le client")
@@ -134,9 +135,9 @@ export async function getClientByUserId(userId: string): Promise<{ email?: strin
   }
 }
 
-async function generateReclamationReference(): Promise<string> {
+async function generateReclamationReference(tabId?: string): Promise<string> {
   try {
-    const cookieToken = (await cookies()).get("token")?.value
+    const cookieToken = (await getServerAuthToken(tabId))
 
     if (!cookieToken) {
       throw new Error("Token introuvable.")
@@ -156,9 +157,9 @@ async function generateReclamationReference(): Promise<string> {
   }
 }
 
-export async function getReclamations(): Promise<GetReclamationsResponse> {
+export async function getReclamations(tabId?: string): Promise<GetReclamationsResponse> {
   try {
-    const cookieToken = (await cookies()).get("token")?.value
+    const cookieToken = (await getServerAuthToken(tabId))
 
     if (!cookieToken) {
       return { rows: [], count: 0 }
@@ -213,9 +214,9 @@ export async function getReclamations(): Promise<GetReclamationsResponse> {
   }
 }
 
-export async function getReclamationById(id: string): Promise<Reclamation | null> {
+export async function getReclamationById(id: string, tabId?: string): Promise<Reclamation | null> {
   try {
-    const cookieToken = (await cookies()).get("token")?.value
+    const cookieToken = (await getServerAuthToken(tabId))
 
     if (!cookieToken) {
       throw new Error("Token introuvable.")
@@ -249,9 +250,9 @@ export async function createReclamation(formData: {
   description: string
   complainDate: string
   email: string
-}) {
+}, tabId?: string) {
   try {
-    const cookieToken = (await cookies()).get("token")?.value
+    const cookieToken = (await getServerAuthToken(tabId))
 
     if (!cookieToken) {
       throw new Error("Token d'authentification introuvable.")

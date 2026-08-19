@@ -19,6 +19,7 @@ import { NotificationDropdown } from "@/components/notifications/notification-dr
 import { usePathname } from "next/navigation"
 import { useState, useEffect } from "react"
 import { getAccounts } from "@/app/accounts/actions"
+import { getTabId } from "@/lib/client-tab-id"
 import { getCurrentUser } from "@/app/user/actions"
 import { isAccountActive } from "@/lib/status-utils"
 import Link from "next/link"
@@ -31,7 +32,7 @@ export function Header() {
 
   useEffect(() => {
     const fetchUser = async () => {
-      const user = await getCurrentUser()
+      const user = await getCurrentUser(getTabId())
       console.log("[v0] User data received in header:", user)
       if (user) {
         setUserData(user)
@@ -44,7 +45,7 @@ export function Header() {
   useEffect(() => {
     const checkActiveAccounts = async () => {
       try {
-        const accounts = await getAccounts()
+        const accounts = await getAccounts(getTabId())
         // Utiliser la fonction normalisée pour vérifier les comptes actifs
         const activeAccounts = accounts.filter((account) => isAccountActive(account.status))
         setHasActiveAccount(activeAccounts.length > 0)

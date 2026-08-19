@@ -1,4 +1,5 @@
 "use client"
+import { getTabId } from "@/lib/client-tab-id"
 
 import type React from "react"
 
@@ -59,7 +60,7 @@ export default function FundsProvisionPage() {
   const loadAccounts = async () => {
     try {
       setIsLoadingAccounts(true)
-      const result = await getAccounts()
+      const result = await getAccounts(getTabId())
 
       if (Array.isArray(result) && result.length > 0) {
         const adaptedAccounts = result.map((apiAccount: any) => ({

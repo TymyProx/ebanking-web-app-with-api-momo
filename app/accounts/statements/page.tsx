@@ -1,4 +1,5 @@
 "use client"
+import { getTabId } from "@/lib/client-tab-id"
 
 import { useState, useEffect, useTransition } from "react"
 import { useSearchParams } from "next/navigation"
@@ -111,7 +112,7 @@ export default function StatementsPage() {
   useEffect(() => {
     const loadAccounts = async () => {
       try {
-        const accountsData = await getAccounts()
+        const accountsData = await getAccounts(getTabId())
         //console.log("[v0] Comptes récupérés pour relevés:", accountsData)
 
         if (Array.isArray(accountsData)) {
@@ -164,7 +165,7 @@ export default function StatementsPage() {
     let cancelled = false
     void (async () => {
       try {
-        const user = await getCurrentUser()
+        const user = await getCurrentUser(getTabId())
         if (cancelled || !user?.email) return
         const em = String(user.email).trim()
         if (!em) return

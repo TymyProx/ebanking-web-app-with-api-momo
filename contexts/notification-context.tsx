@@ -4,6 +4,7 @@ import { createContext, useContext, useState, useEffect, useCallback, useRef, ty
 import { fetchUserNotifications, type NotificationItem } from "@/app/notifications/actions"
 import { getCurrentUser } from "@/app/user/actions"
 import { EBANKING_AUTH_SESSION_CHANGED } from "@/lib/auth-events"
+import { getTabId } from "@/lib/client-tab-id"
 
 export interface Notification extends NotificationItem {
   read: boolean
@@ -68,11 +69,12 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
    */
   const silentReload = useCallback(async () => {
     try {
-      const u = await getCurrentUser()
+      const tabId = getTabId()
+      const u = await getCurrentUser(tabId)
       if (!mountedRef.current) return
       readStorageKeyRef.current = u?.id ? readStorageKeyForUser(String(u.id)) : null
 
-      const items = await fetchUserNotifications()
+      const items = await fetchUserNotifications(tabId)
       if (!mountedRef.current) return
 
       const readIds = getReadIds()

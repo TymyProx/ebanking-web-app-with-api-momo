@@ -1,4 +1,5 @@
 "use client"
+import { getTabId } from "@/lib/client-tab-id"
 
 import { useState, useEffect } from "react"
 import { useSearchParams } from "next/navigation"
@@ -269,11 +270,11 @@ export default function RIBPage() {
     const loadData = async () => {
       try {
         // Charger le profil utilisateur
-        const profile = await getUserProfile()
+        const profile = await getUserProfile(getTabId())
         setUserProfile(profile)
 
         // Charger les comptes
-        const accountsData = await getAccounts()
+        const accountsData = await getAccounts(getTabId())
         console.log("[RIB] Comptes récupérés:", accountsData)
 
         if (Array.isArray(accountsData)) {

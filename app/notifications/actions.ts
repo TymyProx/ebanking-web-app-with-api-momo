@@ -1,4 +1,5 @@
 "use server"
+import { getServerAuthToken } from "@/lib/server-auth-token"
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0"
 
 import { cookies } from "next/headers"
@@ -417,10 +418,10 @@ function buildNotification(entry: any): NotificationItem | null {
   }
 }
 
-export async function fetchUserNotifications(): Promise<NotificationItem[]> {
+export async function fetchUserNotifications(tabId?: string): Promise<NotificationItem[]> {
   try {
     const cookieStore = await cookies()
-    const token = cookieStore.get("token")?.value
+    const token = (await getServerAuthToken(tabId))
     if (!token) return []
 
     const meRes = await fetch(`${API_BASE_URL}/auth/me`, {

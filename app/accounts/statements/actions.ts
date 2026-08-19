@@ -1,4 +1,5 @@
 "use server"
+import { getServerAuthToken } from "@/lib/server-auth-token"
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0"
 import { z } from "zod"
 import { cookies } from "next/headers"
@@ -27,7 +28,7 @@ const sendStatementEmailSchema = z.object({
 })
 
 // Génération du relevé
-export async function generateStatement(prevState: any, formData: FormData) {
+export async function generateStatement(prevState: any, formData: FormData, tabId?: string) {
   try {
     // Validation des données
     const validatedData = generateStatementSchema.parse({
@@ -201,7 +202,7 @@ export async function generateStatement(prevState: any, formData: FormData) {
 }
 
 // Envoi du relevé par email (PDF généré par le backend, pièce jointe via Resend)
-export async function sendStatementByEmail(prevState: any, formData: FormData) {
+export async function sendStatementByEmail(prevState: any, formData: FormData, tabId?: string) {
   try {
     const validated = sendStatementEmailSchema.parse({
       email: formData.get("email"),
@@ -211,7 +212,7 @@ export async function sendStatementByEmail(prevState: any, formData: FormData) {
       accountNumber: (formData.get("accountNumber") as string) || undefined,
     })
 
-    const cookieToken = (await cookies()).get("token")?.value
+    const cookieToken = (await getServerAuthToken(tabId))
     if (!cookieToken) {
       return { success: false, error: "Non authentifié" }
     }
@@ -322,7 +323,7 @@ export async function sendStatementByEmail(prevState: any, formData: FormData) {
 }
 
 // Récupération de l'historique des relevés
-export async function getStatementHistory(prevState: any, formData: FormData) {
+export async function getStatementHistory(prevState: any, formData: FormData, tabId?: string) {
   try {
     const accountId = formData.get("accountId") as string
     const limit = Number.parseInt(formData.get("limit") as string) || 10
@@ -463,12 +464,10 @@ async function getStatementMetadata(statementId: string) {
  * @param dateFin - Date de fin de la période (pour solde de clôture)
  * @returns Object avec openingBalance et closingBalance
  */
-export async function getStatementBalancesFromSTTMS(
-  acno: string,
+export async function getStatementBalancesFromSTTMS(acno: string,
   dateDepart: string,
-  dateFin: string
-): Promise<{ openingBalance: number; closingBalance: number; success: boolean; error?: string }> {
-  const cookieToken = (await cookies()).get("token")?.value
+  dateFin: string, tabId?: string): Promise<{ openingBalance: number; closingBalance: number; success: boolean; error?: string }> {
+  const cookieToken = (await getServerAuthToken(tabId))
   const usertoken = cookieToken
 
   try {
@@ -665,8 +664,8 @@ export async function getStatementBalancesFromSTTMS(
   }
 }
 
-export async function getTransactionsByNumCompte(numCompte: string) {
-  const cookieToken = (await cookies()).get("token")?.value
+export async function getTransactionsByNumCompte(numCompte: string, tabId?: string) {
+  const cookieToken = (await getServerAuthToken(tabId))
   const usertoken = cookieToken
   try {
     const url = `${API_BASE_URL}/tenant/${TENANT_ID}/transactions`

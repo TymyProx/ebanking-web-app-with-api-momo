@@ -1,4 +1,5 @@
 "use server"
+import { getServerAuthToken } from "@/lib/server-auth-token"
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0"
 import { cookies } from "next/headers"
 import { config } from "@/lib/config"
@@ -25,8 +26,8 @@ const API_BASE_URL = getApiBaseUrl()
 /**
  * Récupère le profil utilisateur complet
  */
-export async function getUserProfile(): Promise<UserProfile | null> {
-  const cookieToken = (await cookies()).get("token")?.value
+export async function getUserProfile(tabId?: string): Promise<UserProfile | null> {
+  const cookieToken = (await getServerAuthToken(tabId))
 
   if (!cookieToken) {
     console.log("[RIB] Token manquant pour récupérer le profil utilisateur")
@@ -68,8 +69,8 @@ export async function getUserProfile(): Promise<UserProfile | null> {
 /**
  * Récupère les informations détaillées d'un compte pour le RIB
  */
-export async function getAccountForRib(accountId: string): Promise<RibInfo | null> {
-  const cookieToken = (await cookies()).get("token")?.value
+export async function getAccountForRib(accountId: string, tabId?: string): Promise<RibInfo | null> {
+  const cookieToken = (await getServerAuthToken(tabId))
 
   if (!cookieToken) {
     console.log("[RIB] Token manquant pour récupérer le compte")
@@ -115,7 +116,7 @@ export async function getAccountForRib(accountId: string): Promise<RibInfo | nul
   }
 }
 
-export async function sendRibEmail(payload: SendRibEmailPayload) {
+export async function sendRibEmail(payload: SendRibEmailPayload, tabId?: string) {
   const resendApiKey = process.env.RESEND_API_KEY
   const fromEmail = process.env.RESEND_FROM_EMAIL ?? "BNG eBanking <no-reply@bngebanking.com>"
 

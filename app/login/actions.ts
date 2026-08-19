@@ -1,20 +1,19 @@
 "use server"
-import { setSecureCookie } from "@/lib/cookie-config"
+import { setSecureCookie, deleteSecureCookie } from "@/lib/cookie-config"
+import { tokenCookieName, userCookieName } from "@/lib/auth-cookie-names"
 
-export async function storeAuthToken(token: string, userData: any) {
+export async function storeAuthToken(token: string, userData: unknown, tabId: string) {
   try {
-    console.log("[v0] Storing auth token in production...")
-    console.log("[v0] Token length:", token?.length)
-    console.log("[v0] User data:", JSON.stringify(userData))
+    await setSecureCookie(tokenCookieName(tabId), token)
+    await setSecureCookie(userCookieName(tabId), JSON.stringify(userData))
 
-    await setSecureCookie("token", token)
-    await setSecureCookie("user", JSON.stringify(userData))
-
-    console.log("[v0] Auth token and user data stored in HttpOnly cookies successfully")
+    await deleteSecureCookie("token")
+    await deleteSecureCookie("user")
+    await deleteSecureCookie("auth_tab_id")
 
     return { success: true }
   } catch (error) {
-    console.error("[v0] Error storing auth token:", error)
+    console.error("[auth] Error storing tab-scoped auth token:", error)
     return { success: false, error: "Failed to store authentication" }
   }
 }

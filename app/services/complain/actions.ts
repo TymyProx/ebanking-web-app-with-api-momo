@@ -1,4 +1,5 @@
 "use server"
+import { getServerAuthToken } from "@/lib/server-auth-token"
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0"
 
 import { cookies } from "next/headers"
@@ -36,10 +37,10 @@ interface GetReclamationsResponse {
   count: number
 }
 
-async function generateReclamationReference(): Promise<string> {
+async function generateReclamationReference(tabId?: string): Promise<string> {
   try {
     // Récupérer le token
-    const cookieToken = (await cookies()).get("token")?.value
+    const cookieToken = (await getServerAuthToken(tabId))
 
     if (!cookieToken) {
       throw new Error("Token introuvable.")
@@ -61,9 +62,9 @@ async function generateReclamationReference(): Promise<string> {
   }
 }
 
-export async function getReclamations(): Promise<GetReclamationsResponse> {
+export async function getReclamations(tabId?: string): Promise<GetReclamationsResponse> {
   try {
-    const cookieToken = (await cookies()).get("token")?.value
+    const cookieToken = (await getServerAuthToken(tabId))
     const usertoken = cookieToken
 
     if (!cookieToken) {
@@ -127,10 +128,10 @@ export async function createReclamation(formData: {
   complainDate: string
   phone: string
   email: string
-}) {
+}, tabId?: string) {
   try {
     // Récupération du token JWT stocké dans les cookies
-    const cookieToken = (await cookies()).get("token")?.value
+    const cookieToken = (await getServerAuthToken(tabId))
     const usertoken = cookieToken
 
     if (!cookieToken) {
@@ -195,7 +196,7 @@ export async function createReclamation(formData: {
   }
 }
 
-export async function submitComplain(data: any) {
+export async function submitComplain(data: any, tabId?: string) {
   // TODO: Implémenter l'appel API pour soumettre une réclamation
   return {
     success: true,
@@ -203,12 +204,12 @@ export async function submitComplain(data: any) {
   }
 }
 
-export async function getComplains() {
+export async function getComplains(tabId?: string) {
   // TODO: Implémenter l'appel API pour récupérer les réclamations
   return []
 }
 
-export async function getComplainById(id: string) {
+export async function getComplainById(id: string, tabId?: string) {
   // TODO: Implémenter l'appel API pour récupérer une réclamation par ID
   return null
 }

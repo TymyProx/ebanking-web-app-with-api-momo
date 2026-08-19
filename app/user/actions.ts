@@ -1,4 +1,5 @@
 "use server"
+import { getServerAuthToken } from "@/lib/server-auth-token"
 
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0"
 import { cookies } from "next/headers"
@@ -17,9 +18,9 @@ export interface UserProfile {
   [key: string]: any
 }
 
-export async function getCurrentUser(): Promise<UserProfile | null> {
+export async function getCurrentUser(tabId?: string): Promise<UserProfile | null> {
   try {
-    const cookieToken = (await cookies()).get("token")?.value
+    const cookieToken = (await getServerAuthToken(tabId))
 
     if (!cookieToken) {
       console.log("[v0] No token found in cookies")

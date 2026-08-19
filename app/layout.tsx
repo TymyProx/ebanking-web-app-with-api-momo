@@ -7,6 +7,7 @@ import { AuthGuard } from "@/components/auth/auth-guard"
 import { ConditionalLayout } from "@/components/layout/conditional-layout"
 import { NotificationProvider } from "@/contexts/notification-context"
 import { SessionCleanup } from "@/components/auth/session-cleanup"
+import { SessionSync } from "@/components/auth/session-sync"
 import { IdleTimeout } from "@/components/auth/idle-timeout"
 
 const spaceGrotesk = Space_Grotesk({
@@ -75,6 +76,7 @@ export default function RootLayout({
       </head>
       <body className={`${spaceGrotesk.variable} ${dmSans.variable} font-body antialiased`}>
         <SessionCleanup />
+        <SessionSync />
         <IdleTimeout />
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
           <AuthGuard>

@@ -1,4 +1,5 @@
 "use server"
+import { getServerAuthToken } from "@/lib/server-auth-token"
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0"
 import { cookies } from "next/headers"
 import { revalidatePath } from "next/cache"
@@ -248,8 +249,8 @@ interface AccountsResponse {
   count: number
 }
 
-export async function getAccounts(): Promise<Account[]> {
-  const cookieToken = (await cookies()).get("token")?.value
+export async function getAccounts(tabId?: string): Promise<Account[]> {
+  const cookieToken = (await getServerAuthToken(tabId))
   const usertoken = cookieToken
 
   try {
@@ -378,8 +379,8 @@ export async function getAccounts(): Promise<Account[]> {
   }
 }
 
-export async function createAccount(prevState: any, formData: FormData) {
-  const cookieToken = (await cookies()).get("token")?.value
+export async function createAccount(prevState: any, formData: FormData, tabId?: string) {
+  const cookieToken = (await getServerAuthToken(tabId))
   const usertoken = cookieToken
   try {
     if (!usertoken) {
@@ -510,10 +511,10 @@ export async function createAccount(prevState: any, formData: FormData) {
   }
 }
 
-export async function getAccountById(accountId: string) {
+export async function getAccountById(accountId: string, tabId?: string) {
   try {
     const cookieStore = await cookies()
-    const token = cookieStore.get("token")?.value
+    const token = (await getServerAuthToken(tabId))
 
     if (!token) {
       return { data: null }

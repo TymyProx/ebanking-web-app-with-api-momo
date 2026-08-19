@@ -1,6 +1,13 @@
 import axios from "axios"
-import Cookies from "js-cookie"
 import { getApiBaseUrl, TENANT_ID } from "./api-url"
+import {
+  clearAuthStorage,
+  getAuthToken,
+  getUserDataJson,
+  isSessionLoginFresh,
+  setAuthToken,
+  setUserDataJson,
+} from "./auth-token-storage"
 
 const API_BASE_URL = getApiBaseUrl();
 
@@ -19,7 +26,7 @@ const authAxios = axios.create({
 // Intercepteur pour ajouter le token aux requêtes
 authAxios.interceptors.request.use(
   (config) => {
-    const token = typeof window !== "undefined" ? localStorage.getItem("token") : null
+    const token = getAuthToken()
     if (token) {
       config.headers["Authorization"] = `Bearer ${token}`
     }
@@ -35,16 +42,18 @@ authAxios.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      // Token expiré ou invalidé (ex. connexion depuis un autre appareil).
       if (typeof window !== "undefined") {
-        // On n'essaie pas de prolonger la session : on force un retour
-        // vers /login en nettoyant tout stockage local.
-        localStorage.removeItem("token")
-        localStorage.removeItem("user")
-        Cookies.remove("token")
+        if (isSessionLoginFresh()) {
+          return Promise.reject(error)
+        }
 
-        // Évite les redirections en boucle si on est déjà sur /login.
         const alreadyOnLogin = window.location.pathname.startsWith("/login")
+        if (!getAuthToken()) {
+          return Promise.reject(error)
+        }
+
+        clearAuthStorage({ broadcast: false })
+
         if (!alreadyOnLogin) {
           const params = new URLSearchParams()
           params.set("reason", "session_replaced")
@@ -169,8 +178,7 @@ export class AuthService {
 
       const token = response.data
       if (token) {
-        localStorage.setItem("token", token)
-        Cookies.set("token", token)
+        setAuthToken(token, { broadcastReplaced: false })
         return { success: true, token }
       }
 
@@ -202,7 +210,7 @@ export class AuthService {
       const userData = response.data
 
       // Stocker les informations utilisateur
-      localStorage.setItem("user", JSON.stringify(userData))
+      setUserDataJson(userData)
       //console.log("Informations utilisateur récupérées et stockées:", userData)
       return userData
     } catch (error: any) {
@@ -239,17 +247,11 @@ export class AuthService {
         console.warn("Sign-out API call failed, cleaning up locally:", apiError)
       }
 
-      localStorage.removeItem("token")
-      localStorage.removeItem("user")
-      Cookies.remove("token")
-
+      clearAuthStorage({ broadcast: false })
       return { success: true }
     } catch (error) {
       console.error("Erreur lors de la déconnexion:", error)
-      // Même en cas d'erreur, on nettoie le localStorage et les cookies
-      localStorage.removeItem("token")
-      localStorage.removeItem("user")
-      Cookies.remove("token")
+      clearAuthStorage({ broadcast: false })
       return { success: true }
     }
   }
@@ -257,14 +259,13 @@ export class AuthService {
   // Méthode pour vérifier si l'utilisateur est connecté
   static isAuthenticated(): boolean {
     if (typeof window === "undefined") return false
-    return !!localStorage.getItem("token")
+    return !!getAuthToken()
   }
 
-  // Méthode pour récupérer l'utilisateur depuis le localStorage
   static getCurrentUser(): User | null {
     if (typeof window === "undefined") return null
 
-    const userStr = localStorage.getItem("user")
+    const userStr = getUserDataJson()
     if (!userStr) return null
 
     try {
@@ -277,7 +278,7 @@ export class AuthService {
   // Méthode pour récupérer le token
   static getToken(): string | null {
     if (typeof window === "undefined") return null
-    return localStorage.getItem("token")
+    return getAuthToken()
   }
 
   static async sendPasswordResetEmail(email: string) {

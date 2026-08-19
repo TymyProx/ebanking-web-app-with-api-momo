@@ -34,11 +34,6 @@ export function IdleTimeout() {
     try {
       await clientLogout()
       dispatchAuthSessionChanged()
-      try {
-        sessionStorage.clear()
-      } catch {
-        /* ignore */
-      }
       router.push("/login")
     } finally {
       loggingOutRef.current = false

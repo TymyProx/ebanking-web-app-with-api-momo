@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { Wallet, PiggyBank, DollarSign, Eye, EyeOff } from "lucide-react"
 import { getAccountStatusBadge, isAccountActive, isAccountPending } from "@/lib/status-utils"
-// Utiliser les variables d'environnement directement côté client
+import { getAuthToken } from "@/lib/auth-token-storage"
 const getApiBaseUrl = (): string => {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL
   const normalize = (u?: string) => (u ? u.replace(/\/$/, "") : "")
@@ -46,18 +46,7 @@ export function AccountsCarousel({ accounts: initialAccounts = [] }: AccountsCar
       setIsLoading(true)
       setHasTriedFetch(true)
       
-      // Récupérer le token depuis localStorage (priorité) ou cookies (fallback)
-      let token: string | null = null
-      if (typeof window !== "undefined") {
-        token = localStorage.getItem("token")
-        if (!token) {
-          // Fallback sur les cookies
-          token = document.cookie
-            .split("; ")
-            .find((row) => row.startsWith("token="))
-            ?.split("=")[1] || null
-        }
-      }
+      const token = getAuthToken()
 
       if (!token) {
         console.warn("[AccountsCarousel] Aucun token trouvé, utilisation des comptes initiaux")

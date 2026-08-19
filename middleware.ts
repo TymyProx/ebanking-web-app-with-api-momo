@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 
-// Pages publiques qui ne nécessitent pas d'authentification
 const publicPaths = [
   "/",
   "/agences",
@@ -13,6 +12,10 @@ const publicPaths = [
   "/auth/password-reset",
 ]
 
+/**
+ * L'auth est gérée côté client (sessionStorage + cookies HttpOnly par onglet).
+ * Le middleware ne doit plus bloquer via un cookie `token` partagé.
+ */
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
@@ -20,13 +23,10 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL("/login", request.url))
   }
 
-  // Inscription désactivée — les accès client sont créés depuis le back-office
   if (pathname === "/signup" || pathname.startsWith("/signup/")) {
     return NextResponse.redirect(new URL("/login", request.url))
   }
 
-  // Some email clients / in-app browsers may open links using POST.
-  // Pages are GET-only in Next, so we normalize to GET to avoid 405.
   if (
     request.method === "POST" &&
     (pathname.startsWith("/auth/password-reset") || pathname.startsWith("/auth/forgot-password"))
@@ -35,40 +35,25 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(url, 303)
   }
 
-  // Vérifier si c'est une page publique
   const isPublicPage = publicPaths.some((path) => pathname === path || pathname.startsWith(`${path}/`))
 
-  // Si c'est une page publique, laisser passer
-  if (isPublicPage) {
-    return NextResponse.next()
+  const response = isPublicPage ? NextResponse.next() : NextResponse.next()
+
+  if (request.cookies.get("token")) {
+    response.cookies.delete("token")
+  }
+  if (request.cookies.get("user")) {
+    response.cookies.delete("user")
+  }
+  if (request.cookies.get("auth_tab_id")) {
+    response.cookies.delete("auth_tab_id")
   }
 
-  // Pour toutes les autres pages, vérifier la présence du cookie "token"
-  const token = request.cookies.get("token")
-
-  // Si pas de token, rediriger vers la page de connexion
-  if (!token) {
-    const loginUrl = new URL("/login", request.url)
-    // Ajouter le chemin d'origine comme paramètre pour rediriger après connexion
-    loginUrl.searchParams.set("redirect", pathname)
-    return NextResponse.redirect(loginUrl)
-  }
-
-  // Si le token existe, laisser passer
-  return NextResponse.next()
+  return response
 }
 
-// Configurer les chemins sur lesquels le middleware s'applique
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - api (API routes)
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * - images (image files)
-     */
     "/((?!api|_next/static|_next/image|favicon.ico|images).*)",
   ],
 }

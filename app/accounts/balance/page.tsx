@@ -1,4 +1,5 @@
 "use client"
+import { getTabId } from "@/lib/client-tab-id"
 
 import type React from "react"
 
@@ -77,7 +78,7 @@ export default function BalancesPage() {
     const loadBalances = () => {
       startTransition(async () => {
         try {
-          const result = await getAccounts()
+          const result = await getAccounts(getTabId())
           //console.log("[v0] Résultat de getAccounts:", result)
 
           if (Array.isArray(result) && result.length > 0) {
@@ -164,7 +165,7 @@ export default function BalancesPage() {
   const handleRefresh = () => {
     startTransition(async () => {
       try {
-        const result = await getAccounts()
+        const result = await getAccounts(getTabId())
         setLastRefresh(new Date())
 
         if (Array.isArray(result) && result.length > 0) {
@@ -209,7 +210,7 @@ export default function BalancesPage() {
       setCreateAccountState(result)
 
       if (result?.success) {
-        const refreshedAccounts = await getAccounts()
+        const refreshedAccounts = await getAccounts(getTabId())
         if (Array.isArray(refreshedAccounts)) {
           const adaptedAccounts: Account[] = refreshedAccounts.map((account: any) => ({
             id: account.id || account.accountId,
