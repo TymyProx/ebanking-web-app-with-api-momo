@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server"
 import { cookies } from "next/headers"
 import { getApiBaseUrl, TENANT_ID } from "@/lib/api-url"
+import {
+  isStatementStartDateTooOld,
+  STATEMENT_PERIOD_TOO_OLD_MESSAGE,
+} from "@/lib/statement-period-utils"
 
 // NOTE: kept for parity with existing server actions that call external HTTPS endpoints.
 // eslint-disable-next-line no-process-env
@@ -37,6 +41,10 @@ export async function POST(req: Request) {
         { error: "accountId, startDate et endDate sont requis" },
         { status: 400 },
       )
+    }
+
+    if (isStatementStartDateTooOld(String(startDate))) {
+      return NextResponse.json({ error: STATEMENT_PERIOD_TOO_OLD_MESSAGE }, { status: 400 })
     }
 
     const API_BASE_URL = getApiBaseUrl()

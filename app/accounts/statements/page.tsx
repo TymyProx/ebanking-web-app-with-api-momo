@@ -10,6 +10,11 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { DatePickerField, toLocalYmd } from "@/components/ui/date-picker-field"
+import {
+  getEarliestOnlineStatementStartDate,
+  isStatementStartDateTooOld,
+  STATEMENT_PERIOD_TOO_OLD_MESSAGE,
+} from "@/lib/statement-period-utils"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import {
   Download,
@@ -188,6 +193,15 @@ export default function StatementsPage() {
       }
 
       if (new Date(startDate) > new Date(endDate)) {
+        return
+      }
+
+      if (isStatementStartDateTooOld(startDate)) {
+        setFilteredTransactions([])
+        setTransactionCount(0)
+        setShowDownloadLink(false)
+        setIsLoadingTransactions(false)
+        setErrorMessage("")
         return
       }
 
@@ -399,6 +413,11 @@ export default function StatementsPage() {
   const handleGenerateStatement = async () => {
     if (!selectedAccount || !startDate || !endDate || filteredTransactions.length === 0) return
 
+    if (isStatementStartDateTooOld(startDate)) {
+      setErrorMessage(STATEMENT_PERIOD_TOO_OLD_MESSAGE)
+      return
+    }
+
     setErrorMessage("") // Clear previous errors
 
     // Call the appropriate generation function based on the selected format
@@ -460,6 +479,11 @@ export default function StatementsPage() {
   const handleDownloadPDF = () => {
     if (!selectedAccount || filteredTransactions.length === 0) return
 
+    if (isStatementStartDateTooOld(startDate)) {
+      setErrorMessage(STATEMENT_PERIOD_TOO_OLD_MESSAGE)
+      return
+    }
+
     void (async () => {
       try {
         const res = await fetch("/api/pdf/statement", {
@@ -491,6 +515,11 @@ export default function StatementsPage() {
   const handleSendByEmail = () => {
     const to = emailAddress.trim()
     if (!to || !selectedAccount || !startDate || !endDate || filteredTransactions.length === 0) {
+      return
+    }
+
+    if (isStatementStartDateTooOld(startDate)) {
+      setErrorMessage(STATEMENT_PERIOD_TOO_OLD_MESSAGE)
       return
     }
 
@@ -536,7 +565,16 @@ export default function StatementsPage() {
   }
   // --- UPDATE END ---
 
-  const isFormValid = selectedAccount && startDate && endDate && new Date(startDate) <= new Date(endDate)
+  const isPeriodTooOld = startDate ? isStatementStartDateTooOld(startDate) : false
+  const earliestStartDate = toLocalYmd(getEarliestOnlineStatementStartDate())
+  const isFormValid =
+    selectedAccount &&
+    startDate &&
+    endDate &&
+    new Date(startDate) <= new Date(endDate) &&
+    !isPeriodTooOld
+  const isGenerateDisabled =
+    !isFormValid || isPeriodTooOld || isLoadingTransactions || filteredTransactions.length === 0
 
   // Appliquer les filtres quand ils changent
   useEffect(() => {
@@ -728,6 +766,7 @@ export default function StatementsPage() {
                         onChange={setStartDate}
                         fromYear={2000}
                         toYear={new Date().getFullYear() + 1}
+                        minDate={earliestStartDate}
                         maxDate={endDate || undefined}
                         buttonClassName="h-9"
                       />
@@ -789,9 +828,9 @@ export default function StatementsPage() {
                         size="sm"
                         onClick={() => {
                           const today = new Date()
-                          const sixMonthsAgo = new Date(today.getFullYear(), today.getMonth() - 6, 1)
-                          setStartDate(sixMonthsAgo.toISOString().split("T")[0])
-                          setEndDate(today.toISOString().split("T")[0])
+                          const sixMonthsAgo = getEarliestOnlineStatementStartDate(today)
+                          setStartDate(toLocalYmd(sixMonthsAgo))
+                          setEndDate(toLocalYmd(today))
                         }}
                       >
                         6 derniers mois
@@ -808,6 +847,15 @@ export default function StatementsPage() {
                       {new Date(endDate).toLocaleDateString("fr-FR")}
                     </p>
                   </div>
+                )}
+
+                {isPeriodTooOld && (
+                  <Alert className="border-amber-200 bg-amber-50">
+                    <AlertCircle className="h-4 w-4 text-amber-700" />
+                    <AlertDescription className="text-sm text-amber-900">
+                      {STATEMENT_PERIOD_TOO_OLD_MESSAGE}
+                    </AlertDescription>
+                  </Alert>
                 )}
 
                 {/* Format selection */}
@@ -895,8 +943,8 @@ export default function StatementsPage() {
                 <div className="flex flex-col sm:flex-row gap-2">
                   <Button
                     onClick={handleGenerateStatement}
-                    disabled={!isFormValid || isLoadingTransactions || filteredTransactions.length === 0}
-                    className="flex-1 h-9"
+                    disabled={isGenerateDisabled}
+                    className={`flex-1 h-9 ${isPeriodTooOld ? "opacity-50 cursor-not-allowed" : ""}`}
                   >
                     {isLoadingTransactions ? (
                       <>
@@ -916,13 +964,11 @@ export default function StatementsPage() {
                     onClick={handleSendByEmail}
                     disabled={
                       !emailAddress.trim() ||
-                      !isFormValid ||
-                      isLoadingTransactions ||
-                      filteredTransactions.length === 0 ||
+                      isGenerateDisabled ||
                       isSending ||
                       isPending
                     }
-                    className="flex-1 h-9 bg-transparent"
+                    className={`flex-1 h-9 bg-transparent ${isPeriodTooOld ? "opacity-50 cursor-not-allowed" : ""}`}
                   >
                     {isSending || isPending ? (
                       <>
@@ -938,7 +984,7 @@ export default function StatementsPage() {
                   </Button>
                 </div>
 
-                {!isFormValid && (
+                {!isFormValid && !isPeriodTooOld && (
                   <Alert>
                     <AlertCircle className="h-4 w-4" />
                     <AlertDescription className="text-sm">

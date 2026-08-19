@@ -4,6 +4,10 @@ import { z } from "zod"
 import { cookies } from "next/headers"
 import { getApiBaseUrl, TENANT_ID } from "@/lib/api-url"
 import { buildEmailHtml, buildEmailText } from "@/lib/email-template"
+import {
+  isStatementStartDateTooOld,
+  STATEMENT_PERIOD_TOO_OLD_MESSAGE,
+} from "@/lib/statement-period-utils"
 
 const API_BASE_URL = getApiBaseUrl()
 
@@ -68,6 +72,13 @@ export async function generateStatement(prevState: any, formData: FormData) {
       return {
         success: false,
         error: "La date de fin ne peut pas être dans le futur",
+      }
+    }
+
+    if (isStatementStartDateTooOld(startDate)) {
+      return {
+        success: false,
+        error: STATEMENT_PERIOD_TOO_OLD_MESSAGE,
       }
     }
 
@@ -214,6 +225,10 @@ export async function sendStatementByEmail(prevState: any, formData: FormData) {
     const cookieToken = (await cookies()).get("token")?.value
     if (!cookieToken) {
       return { success: false, error: "Non authentifié" }
+    }
+
+    if (isStatementStartDateTooOld(validated.startDate)) {
+      return { success: false, error: STATEMENT_PERIOD_TOO_OLD_MESSAGE }
     }
 
     const url = `${API_BASE_URL}/tenant/${TENANT_ID}/pdf/statement`
