@@ -12,7 +12,6 @@ import { Eye, EyeOff, User, Mail, UserCheck, HelpCircle, UserPlus, MapPin } from
 import { AuthFeaturesInfoCard } from "@/components/auth/auth-features-info-card"
 import { AuthBrandHeader } from "@/components/auth/auth-brand-header"
 import axios from "axios"
-import { setAuthToken, setUserDataJson } from "@/lib/auth-token-storage"
 import { config } from "@/lib/config"
 import { validatePassword } from "@/lib/password-validation"
 
@@ -136,7 +135,7 @@ export default function AcceptInvitePage() {
       const authToken = response.data
 
       if (authToken) {
-        setAuthToken(authToken)
+        localStorage.setItem("token", authToken)
 
         const userResponse = await axios.get(`${API_BASE_URL}/api/auth/me`, {
           headers: {
@@ -144,7 +143,7 @@ export default function AcceptInvitePage() {
           },
         })
 
-        setUserDataJson(userResponse.data)
+        localStorage.setItem("user", JSON.stringify(userResponse.data))
         router.push("/login")
       } else {
         throw new Error("Token d'authentification non reçu")

@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getApiBaseUrl } from "@/lib/api-url";
 import { TENANT_ID } from "@/lib/config";
-import { getAuthToken } from "@/lib/auth-token-storage";
 
 interface Offer {
   id: string;
@@ -22,7 +21,7 @@ export function PersonalizedOffers() {
 
   const loadOffers = async () => {
     try {
-      const token = getAuthToken();
+      const token = localStorage.getItem("token");
       const res = await fetch(`${getApiBaseUrl()}/tenant/${TENANT_ID}/analytics/offers/active`, {
         headers: {
           "Content-Type": "application/json",
@@ -37,7 +36,7 @@ export function PersonalizedOffers() {
 
   const trackInteraction = async (offerId: string, action: string) => {
     try {
-      const token = getAuthToken();
+      const token = localStorage.getItem("token");
       await fetch(`${getApiBaseUrl()}/tenant/${TENANT_ID}/analytics/offers/${offerId}/interact`, {
         method: "POST",
         headers: {

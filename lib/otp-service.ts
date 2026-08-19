@@ -1,5 +1,4 @@
 import axios from "axios"
-import { clearAuthStorage, getAuthToken, isSessionLoginFresh } from "@/lib/auth-token-storage"
 import { getApiBaseUrl, TENANT_ID } from "./api-url"
 
 const isBrowser = typeof window !== "undefined"
@@ -16,7 +15,7 @@ const otpAxios = axios.create({
 // Intercepteur pour ajouter le token aux requêtes
 otpAxios.interceptors.request.use(
   (config) => {
-    const token = getAuthToken()
+    const token = typeof window !== "undefined" ? localStorage.getItem("token") : null
     if (token) {
       config.headers = config.headers ?? {}
       config.headers["Authorization"] = `Bearer ${token}`
@@ -34,17 +33,18 @@ otpAxios.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401 || error.response?.status === 403) {
+      // Token expiré ou non authentifié
+      console.error("❌ [OTP Service] Erreur d'authentification")
       if (typeof window !== "undefined") {
-        if (isSessionLoginFresh() || window.location.pathname.startsWith("/login")) {
-          return Promise.reject(error)
-        }
-
-        const hasToken = getAuthToken()
+        const hasToken = localStorage.getItem("token")
         if (!hasToken) {
-          return Promise.reject(error)
+          console.error("❌ Pas de token - Utilisateur non connecté")
+        } else {
+          console.error("❌ Token invalide ou expiré")
+          localStorage.removeItem("token")
+          localStorage.removeItem("user")
         }
-
-        clearAuthStorage({ broadcast: false })
+        // Rediriger vers login
         window.location.href = "/login"
       }
     }

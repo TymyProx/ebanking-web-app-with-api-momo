@@ -1,5 +1,4 @@
 "use client"
-import { getTabId } from "@/lib/client-tab-id"
 
 import { useRouter } from "next/navigation"
 import { useState, useEffect, useTransition, useMemo } from "react"
@@ -155,7 +154,7 @@ export default function AccountDetailsPage({ params }: AccountDetailPageProps) {
           setAccount(adaptedAccount)
           await loadTransactionsData(accountDetails.accountNumber)
         } else {
-          const accountsData = await getAccounts(getTabId())
+          const accountsData = await getAccounts()
 
           if (Array.isArray(accountsData)) {
             const foundAccount = accountsData.find((acc: any) => acc.id === accountId || acc.accountId === accountId)
@@ -197,7 +196,7 @@ export default function AccountDetailsPage({ params }: AccountDetailPageProps) {
 
     const loadTransactionsData = async (accountNumber?: string) => {
       try {
-        const transactionsData = await getUserTransactions(getTabId())
+        const transactionsData = await getUserTransactions()
 
         if (transactionsData.success && transactionsData.data && Array.isArray(transactionsData.data)) {
           // ✅ Filter and classify transactions using reliable account-based logic
@@ -265,7 +264,7 @@ export default function AccountDetailsPage({ params }: AccountDetailPageProps) {
   const handleRefreshTransactions = async () => {
     setIsLoadingTransactions(true)
     try {
-      const transactionsData = await getUserTransactions(getTabId())
+      const transactionsData = await getUserTransactions()
 
       if (transactionsData.success && transactionsData.data && Array.isArray(transactionsData.data)) {
         const accountNumber = account?.number || accountId

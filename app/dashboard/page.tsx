@@ -1,16 +1,235 @@
 import Link from "next/link"
-import { Card, CardContent } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Eye, Send, Users } from "lucide-react"
+import { Eye, Send, Receipt, ArrowUpRight, ArrowDownRight, Users } from "lucide-react"
+import { getUserTransactions } from "@/app/transfers/mes-virements/actions"
+import { getAccounts } from "@/app/accounts/actions"
 import { AccountsCarousel } from "@/components/accounts-carousel"
 import { BankProductsCarousel } from "@/components/bank-products-carousel"
 import { PersonalizedOffers } from "@/components/personalized-offers"
-import { RecentTransactions } from "@/components/recent-transactions"
+import { Suspense } from "react"
 
-export default function Dashboard() {
+async function getCurrentUser() {
+  try {
+    const cookieModule = await import("next/headers")
+    const cookies = cookieModule.cookies
+    const cookieStore = await cookies()
+    const token = cookieStore.get("token")?.value
+
+    if (!token) return null
+
+    const { getApiBaseUrl } = await import("@/lib/api-url")
+    const API_BASE_URL = getApiBaseUrl()
+
+    const response = await fetch(`${API_BASE_URL}/auth/me`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      cache: "no-store",
+    })
+
+    if (!response.ok) return null
+
+    const userData = await response.json()
+    return userData
+  } catch (error) {
+    console.error("Error fetching user:", error)
+    return null
+  }
+}
+
+async function RecentTransactions() {
+  const transactionsResult = await getUserTransactions()
+  const transactions = transactionsResult?.data || []
+  const accounts = await getAccounts()
+
+  const formatAmount = (amount: number | string, currency = "GNF") => {
+    const numAmount = typeof amount === "string" ? Number.parseFloat(amount) : amount
+    if (currency === "GNF") {
+      return new Intl.NumberFormat("fr-FR").format(Math.trunc(numAmount))
+    }
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: currency,
+    }).format(numAmount)
+  }
+
+  const formatTransaction = (transaction: any, accounts: any[]) => {
+    const baseAmount = Number.parseFloat(transaction.montantOperation || "0")
+    
+    // Find the account this transaction belongs to
+    const account = accounts.find(
+      (acc) =>
+        acc.id === transaction.accountId ||
+        acc.accountId === transaction.accountId ||
+        acc.accountNumber === transaction.numCompte ||
+        acc.accountNumber === transaction.accountId ||
+        acc.numCompte === transaction.numCompte
+    )
+    const currency = account?.currency || "GNF"
+    
+    // ✅ Use reliable classification based on account relationships
+    // Check if this account is the credit account (receiving money)
+    const accountNumber = account?.accountNumber || account?.numCompte
+    const isCreditAccount = accountNumber && transaction.creditAccount === accountNumber
+    const isDebitAccount = accountNumber && transaction.numCompte === accountNumber
+    
+    let isDebit = false
+    let isCredit = false
+    
+    if (isCreditAccount) {
+      // Account is receiving money → CREDIT
+      isCredit = true
+      isDebit = false
+    } else if (isDebitAccount) {
+      // Account is sending money → DEBIT
+      isDebit = true
+      isCredit = false
+    } else {
+      // Fallback to txnType field
+      const txnType = (transaction.txnType || "").toUpperCase()
+      isDebit = txnType === "DEBIT"
+      isCredit = txnType === "CREDIT"
+    }
+    
+    // Montant avec signe : négatif pour DEBIT, positif pour CREDIT
+    const signedAmount = isDebit ? -Math.abs(baseAmount) : Math.abs(baseAmount)
+
+    return {
+      type: isDebit ? "Virement émis" : "Virement reçu",
+      from: transaction.description || "Transaction",
+      amount: `${formatAmount(signedAmount, currency)} ${currency}`,
+      rawAmount: signedAmount,
+      date: new Date(transaction.valueDate || transaction.createdAt || new Date()).toLocaleDateString("fr-FR", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      }),
+      status: transaction.status || "Exécuté",
+      isDebit: isDebit,
+      isCredit: isCredit,
+    }
+  }
+
+  return (
+    <Card className="border-0 shadow-lg">
+      {/* Reduced header padding and title size */}
+      <CardHeader className="flex flex-row items-center justify-between pb-3">
+        <CardTitle className="font-heading text-lg">Dernières transactions</CardTitle>
+        <Link
+          href="/transfers/mes-virements"
+          className="text-xs text-primary hover:text-primary/80 font-medium flex items-center gap-1 transition-colors"
+        >
+          Voir tout
+          <ArrowUpRight className="h-3.5 w-3.5" />
+        </Link>
+      </CardHeader>
+      {/* Reduced card content padding */}
+      <CardContent className="pt-0">
+        {/* Reduced space between transactions */}
+        <div className="space-y-2">
+          {transactions.length > 0 ? (
+            transactions.slice(0, 4).map((transaction: any, index: number) => {
+              const formattedTransaction = formatTransaction(transaction, accounts)
+              return (
+                <div
+                  key={transaction.txnId || index}
+                  className="flex items-center justify-between p-2 sm:p-3 bg-gradient-to-r from-muted/50 to-muted/30 rounded-xl border border-border/50 hover:shadow-md transition-all duration-200 min-w-0"
+                >
+                  {/* Reduced space between icon and text */}
+                  <div className="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1">
+                    {/* Reduced icon container size */}
+                    <div
+                      className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center shrink-0 ${
+                        formattedTransaction.isDebit
+                          ? "bg-red-500/20 text-red-600"
+                          : "bg-green-500/20 text-green-600"
+                      }`}
+                    >
+                      {/* Reduced icon size */}
+                      {formattedTransaction.isDebit ? (
+                        <ArrowUpRight className="w-4 h-4" />
+                      ) : (
+                        <ArrowDownRight className="w-4 h-4" />
+                      )}
+                    </div>
+                    <div>
+                      {/* Reduced text size */}
+                      <p className="font-medium text-xs">{formattedTransaction.type}</p>
+                      <p className="text-xs text-muted-foreground">{formattedTransaction.from}</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    {/* Reduced amount and date text size */}
+                    <p
+                      className={`font-semibold text-xs ${
+                        formattedTransaction.isDebit ? "text-red-600" : "text-green-600"
+                      }`}
+                    >
+                      {formattedTransaction.amount}
+                    </p>
+                    <p className="text-xs text-muted-foreground">{formattedTransaction.date}</p>
+                  </div>
+                </div>
+              )
+            })
+          ) : (
+            <div className="text-center py-8 text-muted-foreground">
+              <div className="p-3 rounded-full bg-muted/50 mx-auto mb-3 w-fit">
+                <Receipt className="h-5 w-5" />
+              </div>
+              <p className="text-xs">Aucune transaction récente</p>
+            </div>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
+async function AccountsSection() {
+  // Charger les comptes côté serveur comme fallback
+  const accounts = await getAccounts()
+  // Le composant AccountsCarousel charge maintenant les comptes côté client
+  // mais on passe les comptes initiaux en cas d'échec du chargement client
+  return <AccountsCarousel accounts={accounts} />
+}
+
+function TransactionsLoading() {
+  return (
+    <Card className="border-0 shadow-lg">
+      <CardHeader>
+        <div className="h-6 w-48 bg-muted rounded-lg animate-pulse" />
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-4">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="h-20 bg-muted/30 rounded-xl animate-pulse" />
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
+function AccountsLoading() {
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+      {[1, 2, 3].map((i) => (
+        <div key={i} className="h-40 sm:h-48 bg-gradient-to-br from-muted to-muted/50 rounded-xl animate-pulse" />
+      ))}
+    </div>
+  )
+}
+
+export default async function Dashboard() {
   return (
     <div className="space-y-3 sm:space-y-4 fade-in pt-3 sm:pt-6 pb-6 sm:pb-12 px-1 sm:px-0">
-      <AccountsCarousel />
+      <Suspense fallback={<AccountsLoading />}>
+        <AccountsSection />
+      </Suspense>
 
       <Card className="border-0 shadow-sm bg-muted/30">
         <CardContent className="pt-3 p-2 sm:p-3">
@@ -46,7 +265,9 @@ export default function Dashboard() {
       </Card>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
-        <RecentTransactions />
+        <Suspense fallback={<TransactionsLoading />}>
+          <RecentTransactions />
+        </Suspense>
 
         <div className="min-w-0 space-y-3">
           <PersonalizedOffers />

@@ -1,5 +1,4 @@
 "use client"
-import { getTabId } from "@/lib/client-tab-id"
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -61,7 +60,7 @@ export default function MesVirementsPage() {
       }
 
       try {
-        const [txnResult, accountsData] = await Promise.all([getUserTransactions(getTabId()), getAccounts(getTabId())])
+        const [txnResult, accountsData] = await Promise.all([getUserTransactions(), getAccounts()])
 
         setTransactions(txnResult.success ? txnResult.data : [])
         setAccounts(accountsData || [])

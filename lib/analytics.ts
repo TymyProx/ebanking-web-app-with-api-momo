@@ -2,7 +2,6 @@
 
 import { getApiBaseUrl } from "./api-url";
 import { TENANT_ID } from "./config";
-import { getAuthToken } from "./auth-token-storage";
 
 const BUFFER_SIZE = 15;
 const FLUSH_INTERVAL_MS = 30000;
@@ -106,7 +105,7 @@ class WebAnalyticsService {
     this.buffer = [];
 
     try {
-      const token = getAuthToken();
+      const token = typeof localStorage !== "undefined" ? localStorage.getItem("token") : null;
       await fetch(`${getApiBaseUrl()}/tenant/${TENANT_ID}/analytics/events`, {
         method: "POST",
         headers: {
@@ -126,7 +125,7 @@ class WebAnalyticsService {
     this.buffer = [];
 
     try {
-      const token = getAuthToken();
+      const token = typeof localStorage !== "undefined" ? localStorage.getItem("token") : null;
       const blob = new Blob(
         [JSON.stringify({ data: events })],
         { type: "application/json" },

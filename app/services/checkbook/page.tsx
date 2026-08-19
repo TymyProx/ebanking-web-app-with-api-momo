@@ -1,5 +1,4 @@
 "use client"
-import { getTabId } from "@/lib/client-tab-id"
 
 import type React from "react"
 
@@ -55,7 +54,7 @@ export default function CheckbookRequestPage() {
   const loadAccounts = async () => {
     try {
       setIsLoadingAccounts(true)
-      const result = await getAccounts(getTabId())
+      const result = await getAccounts()
 
       if (Array.isArray(result) && result.length > 0) {
         const adaptedAccounts = result.map((apiAccount: any) => ({

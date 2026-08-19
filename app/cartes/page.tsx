@@ -1,5 +1,4 @@
 "use client"
-import { getTabId } from "@/lib/client-tab-id"
 
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
@@ -123,7 +122,7 @@ export default function CardsPage() {
   async function loadAccounts() {
     setLoadingAccounts(true)
     try {
-      const accountsData = await getAccounts(getTabId())
+      const accountsData = await getAccounts()
       setAccounts(accountsData || [])
     } catch (e: any) {
       console.error("[v0] Erreur lors du chargement des comptes:", e)

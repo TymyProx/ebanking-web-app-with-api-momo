@@ -1,5 +1,4 @@
 "use server"
-import { getServerAuthToken } from "@/lib/server-auth-token"
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0"
 
 import { cookies } from "next/headers"
@@ -48,7 +47,7 @@ interface GetFundsProvisionsResponse {
   }
 }
 
-async function generateFundsProvisionReference(tabId?: string): Promise<string> {
+async function generateFundsProvisionReference(): Promise<string> {
   try {
     const requests = await getFundsProvisionRequests()
     const existingCount = requests.data?.rows?.length || 0
@@ -300,9 +299,9 @@ export async function submitFundsProvisionRequest(data: {
   fullNameBenef: string
   numCni: string
   agence: string
-}, tabId?: string) {
+}) {
   try {
-    const cookieToken = (await getServerAuthToken(tabId))
+    const cookieToken = (await cookies()).get("token")?.value
 
     if (!cookieToken) {
       throw new Error("Token d'authentification introuvable.")
@@ -401,9 +400,9 @@ export async function submitFundsProvisionRequest(data: {
   }
 }
 
-export async function getFundsProvisionRequests(tabId?: string): Promise<GetFundsProvisionsResponse> {
+export async function getFundsProvisionRequests(): Promise<GetFundsProvisionsResponse> {
   try {
-    const cookieToken = (await getServerAuthToken(tabId))
+    const cookieToken = (await cookies()).get("token")?.value
 
     if (!cookieToken) {
       return { success: false, data: { rows: [], count: 0 } }
@@ -492,9 +491,9 @@ export async function getFundsProvisionRequests(tabId?: string): Promise<GetFund
   }
 }
 
-export async function getFundsProvisionById(id: string, tabId?: string): Promise<any> {
+export async function getFundsProvisionById(id: string): Promise<any> {
   try {
-    const cookieToken = (await getServerAuthToken(tabId))
+    const cookieToken = (await cookies()).get("token")?.value
 
     if (!cookieToken) {
       throw new Error("Token introuvable.")

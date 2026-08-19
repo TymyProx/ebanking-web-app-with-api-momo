@@ -1,5 +1,4 @@
 "use server"
-import { getServerAuthToken } from "@/lib/server-auth-token"
 
 import { cookies } from "next/headers"
 import { decryptDataServer } from "@/lib/server-encryption"
@@ -140,8 +139,8 @@ function getDefaultPlafond(cardType: string): number {
   return plafondDefaults[cardType] || 5000000 // Default to 5M GNF if type not found
 }
 
-export async function fetchAllCards(tabId?: string): Promise<CardsResponse> {
-  const cookieToken = (await getServerAuthToken(tabId))
+export async function fetchAllCards(): Promise<CardsResponse> {
+  const cookieToken = (await cookies()).get("token")?.value
   const usertoken = cookieToken
 
   if (!usertoken) {
@@ -220,8 +219,8 @@ export async function fetchAllCards(tabId?: string): Promise<CardsResponse> {
   }
 }
 
-export async function getCardDetails(cardId: string, tabId?: string): Promise<Card> {
-  const cookieToken = (await getServerAuthToken(tabId))
+export async function getCardDetails(cardId: string): Promise<Card> {
+  const cookieToken = (await cookies()).get("token")?.value
   const usertoken = cookieToken
 
   if (!usertoken) {
@@ -252,8 +251,8 @@ export async function getCardDetails(cardId: string, tabId?: string): Promise<Ca
   throw new Error("Réponse invalide du serveur")
 }
 
-export async function createCardRequest(cardData: NewCardRequest, tabId?: string): Promise<Card> {
-  const cookieToken = (await getServerAuthToken(tabId))
+export async function createCardRequest(cardData: NewCardRequest): Promise<Card> {
+  const cookieToken = (await cookies()).get("token")?.value
   const usertoken = cookieToken
 
   if (!usertoken) {
@@ -341,8 +340,8 @@ export async function createCardRequest(cardData: NewCardRequest, tabId?: string
   throw new Error("Réponse invalide du serveur")
 }
 
-export async function toggleCardStatus(cardId: string, currentStatus: string, tabId?: string) {
-  const cookieToken = (await getServerAuthToken(tabId))
+export async function toggleCardStatus(cardId: string, currentStatus: string) {
+  const cookieToken = (await cookies()).get("token")?.value
   const usertoken = cookieToken
 
   if (!usertoken) {

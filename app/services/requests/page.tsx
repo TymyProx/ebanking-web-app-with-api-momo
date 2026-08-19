@@ -1,5 +1,4 @@
 "use client"
-import { getTabId } from "@/lib/client-tab-id"
 
 import type React from "react"
 import { useEffect, useState } from "react"
@@ -441,7 +440,7 @@ export default function ServiceRequestsPage() {
     try {
       console.log("[v0] Chargement des comptes...")
       setIsLoadingAccounts(true)
-      const result = await getAccounts(getTabId())
+      const result = await getAccounts()
       console.log("[v0] Résultat getAccounts:", result)
 
       if (Array.isArray(result) && result.length > 0) {

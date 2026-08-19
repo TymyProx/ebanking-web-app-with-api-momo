@@ -1,5 +1,4 @@
 "use server"
-import { getServerAuthToken } from "@/lib/server-auth-token"
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0"
 import { revalidatePath } from "next/cache"
 import { cookies } from "next/headers"
@@ -256,8 +255,8 @@ const WORKFLOW_STATUS = {
   SUSPENDED: "suspendu",
 } as const
 
-async function getCurrentClientId(tabId?: string): Promise<string> {
-  const cookieToken = (await getServerAuthToken(tabId))
+async function getCurrentClientId(): Promise<string> {
+  const cookieToken = (await cookies()).get("token")?.value
   if (!cookieToken) {
     throw new Error("Token non trouvé")
   }
@@ -317,8 +316,8 @@ async function getCurrentClientId(tabId?: string): Promise<string> {
   }
 }
 
-export async function getBeneficiaries(tabId?: string): Promise<ApiBeneficiary[]> {
-  const cookieToken = (await getServerAuthToken(tabId))
+export async function getBeneficiaries(): Promise<ApiBeneficiary[]> {
+  const cookieToken = (await cookies()).get("token")?.value
   const usertoken = cookieToken
   try {
     let currentClientId: string | null = null
@@ -372,8 +371,8 @@ export async function getBeneficiaries(tabId?: string): Promise<ApiBeneficiary[]
   }
 }
 
-export async function getBeneficiaryDetails(beneficiaryId: string, tabId?: string): Promise<ApiBeneficiary | null> {
-  const cookieToken = (await getServerAuthToken(tabId))
+export async function getBeneficiaryDetails(beneficiaryId: string): Promise<ApiBeneficiary | null> {
+  const cookieToken = (await cookies()).get("token")?.value
   const usertoken = cookieToken
 
   if (!beneficiaryId) {
@@ -438,8 +437,10 @@ function getBeneficiaryType(bankCode: string): "BNG-BNG" | "BNG-CONFRERE" | "BNG
  * This automatically: creates → verifies RIB → validates → makes available
  * The beneficiary is immediately active and usable
  */
-export async function addBeneficiaryAndActivate(prevState: ActionResult | null,
-  formData: FormData, tabId?: string): Promise<ActionResult> {
+export async function addBeneficiaryAndActivate(
+  prevState: ActionResult | null,
+  formData: FormData,
+): Promise<ActionResult> {
   try {
     await new Promise((resolve) => setTimeout(resolve, 1000))
 
@@ -614,7 +615,7 @@ export async function addBeneficiaryAndActivate(prevState: ActionResult | null,
     console.log("[addBeneficiaryAndActivate] API payload (secureMode:", secureMode, ")", apiData)
     console.log("[addBeneficiaryAndActivate] Payload sent to API (final status:", payloadToSend.status, ")", payloadToSend)
 
-    const cookieToken = (await getServerAuthToken(tabId))
+    const cookieToken = (await cookies()).get("token")?.value
     const usertoken = cookieToken
 
     // ✅ Use new streamlined endpoint
@@ -657,7 +658,7 @@ export async function addBeneficiaryAndActivate(prevState: ActionResult | null,
  * OLD METHOD: Creates beneficiary in "CREATED" status (requires manual verification)
  * Kept for backward compatibility or manual workflows
  */
-export async function addBeneficiary(prevState: ActionResult | null, formData: FormData, tabId?: string): Promise<ActionResult> {
+export async function addBeneficiary(prevState: ActionResult | null, formData: FormData): Promise<ActionResult> {
   try {
     await new Promise((resolve) => setTimeout(resolve, 1000))
 
@@ -775,7 +776,7 @@ export async function addBeneficiary(prevState: ActionResult | null, formData: F
       }
     }
 
-    const cookieToken = (await getServerAuthToken(tabId))
+    const cookieToken = (await cookies()).get("token")?.value
     const usertoken = cookieToken
     const response = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/beneficiaire`, {
       method: "POST",
@@ -812,7 +813,7 @@ export async function addBeneficiary(prevState: ActionResult | null, formData: F
   }
 }
 
-export async function updateBeneficiary(prevState: ActionResult | null, formData: FormData, tabId?: string): Promise<ActionResult> {
+export async function updateBeneficiary(prevState: ActionResult | null, formData: FormData): Promise<ActionResult> {
   try {
     await new Promise((resolve) => setTimeout(resolve, 1000))
 
@@ -891,7 +892,7 @@ export async function updateBeneficiary(prevState: ActionResult | null, formData
       },
     }
 
-    const cookieToken = (await getServerAuthToken(tabId))
+    const cookieToken = (await cookies()).get("token")?.value
     const usertoken = cookieToken
     const response = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/beneficiaire/${id}`, {
       method: "PUT",
@@ -928,7 +929,7 @@ export async function updateBeneficiary(prevState: ActionResult | null, formData
   }
 }
 
-export async function deleteBeneficiary(prevState: ActionResult | null, formData: FormData, tabId?: string): Promise<ActionResult> {
+export async function deleteBeneficiary(prevState: ActionResult | null, formData: FormData): Promise<ActionResult> {
   try {
     await new Promise((resolve) => setTimeout(resolve, 800))
 
@@ -940,7 +941,7 @@ export async function deleteBeneficiary(prevState: ActionResult | null, formData
         error: "Identifiant du bénéficiaire manquant",
       }
     }
-    const cookieToken = (await getServerAuthToken(tabId))
+    const cookieToken = (await cookies()).get("token")?.value
     const usertoken = cookieToken
 
     const response = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/beneficiaire`, {
@@ -978,10 +979,12 @@ export async function deleteBeneficiary(prevState: ActionResult | null, formData
   }
 }
 
-export async function toggleBeneficiaryFavorite(beneficiaryId: string,
-  currentFavoriteStatus: boolean, tabId?: string): Promise<ActionResult> {
+export async function toggleBeneficiaryFavorite(
+  beneficiaryId: string,
+  currentFavoriteStatus: boolean,
+): Promise<ActionResult> {
   try {
-    const cookieToken = (await getServerAuthToken(tabId))
+    const cookieToken = (await cookies()).get("token")?.value
     const usertoken = cookieToken
 
     const apiData = {
@@ -1028,7 +1031,7 @@ export async function toggleBeneficiaryFavorite(beneficiaryId: string,
   }
 }
 
-export async function deactivateBeneficiary(prevState: ActionResult | null, formData: FormData, tabId?: string): Promise<ActionResult> {
+export async function deactivateBeneficiary(prevState: ActionResult | null, formData: FormData): Promise<ActionResult> {
   try {
     await new Promise((resolve) => setTimeout(resolve, 800))
 
@@ -1041,7 +1044,7 @@ export async function deactivateBeneficiary(prevState: ActionResult | null, form
       }
     }
 
-    const cookieToken = (await getServerAuthToken(tabId))
+    const cookieToken = (await cookies()).get("token")?.value
     const usertoken = cookieToken
 
     const apiData = {
@@ -1085,7 +1088,7 @@ export async function deactivateBeneficiary(prevState: ActionResult | null, form
   }
 }
 
-export async function reactivateBeneficiary(prevState: ActionResult | null, formData: FormData, tabId?: string): Promise<ActionResult> {
+export async function reactivateBeneficiary(prevState: ActionResult | null, formData: FormData): Promise<ActionResult> {
   try {
     await new Promise((resolve) => setTimeout(resolve, 800))
 
@@ -1098,7 +1101,7 @@ export async function reactivateBeneficiary(prevState: ActionResult | null, form
       }
     }
 
-    const cookieToken = (await getServerAuthToken(tabId))
+    const cookieToken = (await cookies()).get("token")?.value
     const usertoken = cookieToken
 
     const apiData = {
@@ -1142,8 +1145,8 @@ export async function reactivateBeneficiary(prevState: ActionResult | null, form
   }
 }
 
-export async function getBanks(tabId?: string) {
-  const cookieToken = (await getServerAuthToken(tabId))
+export async function getBanks() {
+  const cookieToken = (await cookies()).get("token")?.value
   const usertoken = cookieToken
 
   try {

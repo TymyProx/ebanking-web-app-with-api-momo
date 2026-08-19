@@ -57,8 +57,6 @@ import { LogoutButton } from "@/components/auth/logout-button"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { getAccounts } from "@/app/accounts/actions"
-import { getTabId } from "@/lib/client-tab-id"
-import { getUserDataJson } from "@/lib/auth-token-storage"
 import { isAccountActive } from "@/lib/status-utils"
 import { navigationData } from "@/lib/portal-navigation-data"
 
@@ -101,7 +99,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>): 
   }, [pathname, isMobile, setOpenMobile])
 
   useEffect(() => {
-    const storedUserData = getUserDataJson()
+    const storedUserData = localStorage.getItem("user")
     if (storedUserData) {
       setUserData(JSON.parse(storedUserData))
     }
@@ -111,7 +109,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>): 
     async function checkActiveAccounts() {
       try {
         setIsCheckingAccounts(true)
-        const accounts = await getAccounts(getTabId())
+        const accounts = await getAccounts()
         // Utiliser la fonction normalisée pour vérifier les comptes actifs
         const hasActive = accounts.some((account) => isAccountActive(account.status))
         setHasActiveAccount(hasActive)

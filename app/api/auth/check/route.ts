@@ -1,21 +1,17 @@
 import { NextResponse } from "next/server"
 import { cookies } from "next/headers"
 import { getApiBaseUrl } from "@/lib/api-url"
-import { getServerAuthToken } from "@/lib/server-auth-token"
 
-export async function GET(request: Request) {
+export async function GET() {
   try {
-    const url = new URL(request.url)
-    const tabId = url.searchParams.get("tabId") ?? undefined
-    const authHeader = request.headers.get("authorization")
-    const bearer = authHeader?.startsWith("Bearer ") ? authHeader.slice(7).trim() : undefined
-
-    const token = bearer || (await getServerAuthToken(tabId ?? undefined))
+    const cookieStore = await cookies()
+    const token = cookieStore.get("token")?.value
 
     if (!token) {
       return NextResponse.json({ authenticated: false }, { status: 200 })
     }
 
+    // Vérifier que le token est valide en appelant /auth/me
     const API_BASE_URL = getApiBaseUrl()
     const response = await fetch(`${API_BASE_URL}/auth/me`, {
       method: "GET",

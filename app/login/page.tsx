@@ -21,12 +21,10 @@ import { AuthBrandHeader } from "@/components/auth/auth-brand-header"
 import AuthService from "@/lib/auth-service"
 import { config } from "@/lib/config"
 import { storeAuthToken } from "./actions"
-import { getTabId } from "@/lib/client-tab-id"
 import { getAccounts } from "@/app/accounts/actions"
 import { isAccountActive } from "@/lib/status-utils"
 import Link from "next/link"
 import { dispatchAuthSessionChanged } from "@/lib/auth-events"
-import { markSessionLoginFresh, notifyOtherTabsSessionReplaced } from "@/lib/auth-token-storage"
 
 const welcomeMessages = [
   {
@@ -97,15 +95,14 @@ export default function LoginPage() {
       if (loginResult.success) {
         const userData = await AuthService.fetchMe()
 
-        await storeAuthToken(loginResult.token, userData, getTabId())
-        markSessionLoginFresh()
+        await storeAuthToken(loginResult.token, userData)
         dispatchAuthSessionChanged()
 
         if (rememberMe) {
           localStorage.setItem("rememberMe", "true")
         }
 
-        const accounts = await getAccounts(getTabId())
+        const accounts = await getAccounts()
 
         console.log("[v0] Fetched accounts:", accounts)
 
@@ -113,8 +110,6 @@ export default function LoginPage() {
         const hasActiveAccounts = accounts.some((acc) => isAccountActive(acc.status))
 
         console.log("[v0] Has active accounts:", hasActiveAccounts)
-
-        notifyOtherTabsSessionReplaced()
 
         if (hasActiveAccounts) {
           router.push("/dashboard")

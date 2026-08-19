@@ -1,5 +1,4 @@
 "use server"
-import { getServerAuthToken } from "@/lib/server-auth-token"
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0"
 import { cookies } from "next/headers"
 import { getApiBaseUrl, TENANT_ID } from "@/lib/api-url"
@@ -7,10 +6,10 @@ import { getApiBaseUrl, TENANT_ID } from "@/lib/api-url"
 const API_BASE_URL = getApiBaseUrl()
 
 // Récupérer les opérations en attente depuis l'API epayments
-export async function getPendingOperations(tabId?: string) {
+export async function getPendingOperations() {
   try {
     const cookieStore = await cookies()
-    const usertoken = (await getServerAuthToken(tabId))
+    const usertoken = cookieStore.get("token")?.value
 
     if (!usertoken) {
       return {
@@ -174,10 +173,10 @@ export async function getPendingOperations(tabId?: string) {
 }
 
 // Annuler une opération
-export async function cancelOperation(operationId: string, tabId?: string) {
+export async function cancelOperation(operationId: string) {
   try {
     const cookieStore = await cookies()
-    const usertoken = (await getServerAuthToken(tabId))
+    const usertoken = cookieStore.get("token")?.value
 
     if (!usertoken) {
       return {
@@ -222,10 +221,10 @@ export async function cancelOperation(operationId: string, tabId?: string) {
 }
 
 // Relancer une opération échouée
-export async function retryOperation(operationId: string, tabId?: string) {
+export async function retryOperation(operationId: string) {
   try {
     const cookieStore = await cookies()
-    const usertoken = (await getServerAuthToken(tabId))
+    const usertoken = cookieStore.get("token")?.value
 
     if (!usertoken) {
       return {
@@ -270,10 +269,10 @@ export async function retryOperation(operationId: string, tabId?: string) {
 }
 
 // Obtenir les détails d'une opération
-export async function getOperationDetails(operationId: string, tabId?: string) {
+export async function getOperationDetails(operationId: string) {
   try {
     const cookieStore = await cookies()
-    const usertoken = (await getServerAuthToken(tabId))
+    const usertoken = cookieStore.get("token")?.value
 
     if (!usertoken) {
       return {

@@ -16,7 +16,6 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { createReclamation, getReclamations, getReclamationById, getClientByUserId } from "./actions"
 import { getCurrentUser } from "@/app/user/actions"
-import { getTabId } from "@/lib/client-tab-id"
 
 const complainTypes = {
   Compte: [
@@ -101,7 +100,7 @@ export default function ReclamationPage() {
     const loadUserInfo = async () => {
       try {
         // 1. Récupérer l'utilisateur connecté pour obtenir son ID (userid)
-        const user = await getCurrentUser(getTabId())
+        const user = await getCurrentUser()
         console.log("[Reclamation] Utilisateur chargé:", {
           id: user?.id,
           email: user?.email,

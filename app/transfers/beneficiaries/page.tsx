@@ -1,5 +1,4 @@
 "use client"
-import { getTabId } from "@/lib/client-tab-id"
 
 import { useState, useEffect, useTransition } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -183,7 +182,7 @@ export default function BeneficiariesPage() {
   const loadBeneficiaries = async () => {
     setIsLoading(true)
     try {
-      const apiBeneficiaries = await getBeneficiaries(getTabId())
+      const apiBeneficiaries = await getBeneficiaries()
 
       const transformedBeneficiaries: Beneficiary[] = apiBeneficiaries
         .map((apiB: any) => {
@@ -236,7 +235,7 @@ export default function BeneficiariesPage() {
   const loadBanks = async () => {
     try {
       setLoadingBanks(true)
-      const banksData = await getBanks(getTabId())
+      const banksData = await getBanks()
       setBanks(banksData)
     } catch (error) {
       console.error("Erreur lors du chargement des banques:", error)
@@ -707,7 +706,7 @@ export default function BeneficiariesPage() {
     }
 
     formData.append("id", editingBeneficiary.id)
-    const apiBeneficiaries = await getBeneficiaries(getTabId())
+    const apiBeneficiaries = await getBeneficiaries()
     const apiBeneficiary = apiBeneficiaries.find((b) => b.id === editingBeneficiary.id)
     if (apiBeneficiary?.beneficiaryId) {
       formData.append("beneficiaryId", apiBeneficiary.beneficiaryId)

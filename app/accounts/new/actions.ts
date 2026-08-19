@@ -1,5 +1,4 @@
 "use server"
-import { getServerAuthToken } from "@/lib/server-auth-token"
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0"
 import { cookies } from "next/headers"
 import { getApiBaseUrl, TENANT_ID } from "@/lib/api-url"
@@ -41,8 +40,8 @@ interface ClientAdditionalInfo {
   guardianResidenceCertificateUrl?: string
 }
 
-export async function saveClientAdditionalInfo(data: ClientAdditionalInfo, tabId?: string) {
-  const cookieToken = (await getServerAuthToken(tabId))
+export async function saveClientAdditionalInfo(data: ClientAdditionalInfo) {
+  const cookieToken = (await cookies()).get("token")?.value
   const usertoken = cookieToken
 
   try {

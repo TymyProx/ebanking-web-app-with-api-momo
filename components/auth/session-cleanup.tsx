@@ -1,11 +1,6 @@
 "use client"
 
 import { useEffect } from "react"
-import {
-  clearAuthStorage,
-  consumeSessionEvicted,
-  getTabId,
-} from "@/lib/auth-token-storage"
 
 const SESSION_FLAG = "session_active"
 const REFRESH_FLAG = "is_refreshing"
@@ -43,8 +38,8 @@ export function SessionCleanup() {
     window.addEventListener("keydown", onKeyDown)
 
     const handlePageHide = (e: PageTransitionEvent) => {
+      // 1) Si la page part en BFCache (back/forward), ne rien faire
       if (e.persisted) return
-      if (consumeSessionEvicted()) return
 
       try {
         const sessionActive = sessionStorage.getItem(SESSION_FLAG)
@@ -60,14 +55,16 @@ export function SessionCleanup() {
         // 3) Sinon, c'est une vraie fermeture onglet/navigateur -> cleanup
         if (sessionActive) {
           try {
-            clearAuthStorage({ broadcast: false })
+            localStorage.removeItem("token")
+            localStorage.removeItem("user")
+            localStorage.removeItem("rememberMe")
           } catch {}
 
           sessionStorage.removeItem(SESSION_FLAG)
           sessionStorage.removeItem(REFRESH_FLAG)
 
           const url = "/api/auth/clear-session"
-          const blob = new Blob([JSON.stringify({ tabId: getTabId() })], {
+          const blob = new Blob([JSON.stringify({})], {
             type: "application/json",
           })
 
@@ -76,7 +73,7 @@ export function SessionCleanup() {
           } else {
             fetch(url, {
               method: "POST",
-              body: JSON.stringify({ tabId: getTabId() }),
+              body: JSON.stringify({}),
               headers: { "Content-Type": "application/json" },
               keepalive: true,
             }).catch(() => {})

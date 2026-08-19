@@ -1,15 +1,14 @@
 "use server"
-import { getServerAuthToken } from "@/lib/server-auth-token"
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0"
 import { revalidatePath } from "next/cache"
 import { cookies } from "next/headers"
 import type { Account } from "../actions"
 import { config } from "@/lib/config"
 
-export async function getAccountDetails(accountId: string, tabId?: string): Promise<Account | null> {
+export async function getAccountDetails(accountId: string): Promise<Account | null> {
   try {
     const cookieStore = await cookies()
-    const token = (await getServerAuthToken(tabId))
+    const token = cookieStore.get("token")?.value
 
     if (!token) {
       throw new Error("Non authentifié")
@@ -57,11 +56,13 @@ export async function getAccountDetails(accountId: string, tabId?: string): Prom
   }
 }
 
-export async function updateCompteAvisDC(accountId: string,
-  avisDC: 0 | 1, tabId?: string): Promise<{ success: true } | { success: false; error: string }> {
+export async function updateCompteAvisDC(
+  accountId: string,
+  avisDC: 0 | 1,
+): Promise<{ success: true } | { success: false; error: string }> {
   try {
     const cookieStore = await cookies()
-    const token = (await getServerAuthToken(tabId))
+    const token = cookieStore.get("token")?.value
 
     if (!token) {
       return { success: false, error: "Non authentifié" }
@@ -116,7 +117,7 @@ export async function updateCompteAvisDC(accountId: string,
   }
 }
 
-export async function toggleAccountStatus(accountId: string, newStatus: string, tabId?: string) {
+export async function toggleAccountStatus(accountId: string, newStatus: string) {
   // Simulation d'un appel API
   await new Promise((resolve) => setTimeout(resolve, 500))
 
