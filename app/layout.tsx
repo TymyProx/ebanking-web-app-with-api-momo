@@ -8,6 +8,9 @@ import { ConditionalLayout } from "@/components/layout/conditional-layout"
 import { NotificationProvider } from "@/contexts/notification-context"
 import { SessionCleanup } from "@/components/auth/session-cleanup"
 import { IdleTimeout } from "@/components/auth/idle-timeout"
+import { ProductionConsoleGuard } from "@/components/production-console-guard"
+
+const isProduction = process.env.NODE_ENV === "production"
 
 const spaceGrotesk = Space_Grotesk({
   subsets: ["latin"],
@@ -57,16 +60,20 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{
             __html: `
               (function() {
-                // Définir le flag de session IMMÉDIATEMENT pour protéger contre les refresh
-                // Ce flag sera préservé lors d'un rafraîchissement mais supprimé lors de la fermeture de l'onglet
-                // IMPORTANT: Ce script doit s'exécuter avant tout autre code pour garantir que le flag existe
+                var isProd = ${isProduction ? "true" : "false"};
+                if (isProd && typeof console !== "undefined") {
+                  var noop = function() {};
+                  ["log","debug","info","warn","error","trace"].forEach(function(m) {
+                    try { console[m] = noop; } catch (e) {}
+                  });
+                }
+
                 try {
                   if (typeof sessionStorage !== 'undefined') {
                     sessionStorage.setItem('session_active', 'true');
                   }
                 } catch (e) {
-                  // Si sessionStorage n'est pas disponible, on ne peut rien faire
-                  console.warn('sessionStorage not available in head script:', e);
+                  // sessionStorage indisponible
                 }
               })();
             `,
@@ -74,6 +81,7 @@ export default function RootLayout({
         />
       </head>
       <body className={`${spaceGrotesk.variable} ${dmSans.variable} font-body antialiased`}>
+        <ProductionConsoleGuard />
         <SessionCleanup />
         <IdleTimeout />
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>

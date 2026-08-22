@@ -25,6 +25,7 @@ import { getAccounts } from "@/app/accounts/actions"
 import { isAccountActive } from "@/lib/status-utils"
 import Link from "next/link"
 import { dispatchAuthSessionChanged } from "@/lib/auth-events"
+import { devLog } from "@/lib/client-logger"
 
 const welcomeMessages = [
   {
@@ -104,12 +105,11 @@ export default function LoginPage() {
 
         const accounts = await getAccounts()
 
-        console.log("[v0] Fetched accounts:", accounts)
+        devLog("[login] comptes récupérés:", accounts.length)
 
-        // Utiliser la fonction normalisée pour vérifier les comptes actifs
         const hasActiveAccounts = accounts.some((acc) => isAccountActive(acc.status))
 
-        console.log("[v0] Has active accounts:", hasActiveAccounts)
+        devLog("[login] comptes actifs:", hasActiveAccounts)
 
         if (hasActiveAccounts) {
           router.push("/dashboard")

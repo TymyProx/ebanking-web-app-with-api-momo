@@ -1,6 +1,7 @@
 import axios from "axios"
 import Cookies from "js-cookie"
 import { getApiBaseUrl, TENANT_ID } from "./api-url"
+import { devError, devWarn, extractApiErrorMessage } from "./client-logger"
 
 const API_BASE_URL = getApiBaseUrl();
 
@@ -175,22 +176,9 @@ export class AuthService {
       }
 
       throw new Error("Token non reçu")
-    } catch (error: any) {
-      console.error("Erreur de connexion:", error)
-      let errorMessage = "Erreur de connexion"
-
-      if (error.response?.data) {
-        // Try different possible error message formats from API
-        errorMessage =
-          error.response.data.message ||
-          error.response.data.error ||
-          error.response.data.msg ||
-          (typeof error.response.data === "string" ? error.response.data : null) ||
-          errorMessage
-      } else if (error.message) {
-        errorMessage = error.message
-      }
-
+    } catch (error: unknown) {
+      devError("Erreur de connexion")
+      const errorMessage = extractApiErrorMessage(error, "Erreur de connexion")
       throw new Error(errorMessage)
     }
   }
@@ -205,22 +193,9 @@ export class AuthService {
       localStorage.setItem("user", JSON.stringify(userData))
       //console.log("Informations utilisateur récupérées et stockées:", userData)
       return userData
-    } catch (error: any) {
-      console.error("Erreur lors de la récupération des informations utilisateur:", error)
-      let errorMessage = "Impossible de récupérer les informations utilisateur"
-
-      if (error.response?.data) {
-        errorMessage =
-          error.response.data.message ||
-          error.response.data.error ||
-          error.response.data.msg ||
-          (typeof error.response.data === "string" ? error.response.data : null) ||
-          errorMessage
-      } else if (error.message) {
-        errorMessage = error.message
-      }
-
-      throw new Error(errorMessage)
+    } catch (error: unknown) {
+      devError("Erreur fetchMe")
+      throw new Error(extractApiErrorMessage(error, "Impossible de récupérer les informations utilisateur"))
     }
   }
 
@@ -232,11 +207,8 @@ export class AuthService {
       // sans attendre l'expiration du JWT.
       try {
         await authAxios.post("/auth/sign-out")
-      } catch (apiError) {
-        // Si le token est déjà invalide (ex. session déjà remplacée
-        // depuis un autre appareil), on ignore l'erreur et on nettoie
-        // simplement le stockage local.
-        console.warn("Sign-out API call failed, cleaning up locally:", apiError)
+      } catch {
+        devWarn("Sign-out API call failed, cleaning up locally")
       }
 
       localStorage.removeItem("token")
@@ -244,8 +216,8 @@ export class AuthService {
       Cookies.remove("token")
 
       return { success: true }
-    } catch (error) {
-      console.error("Erreur lors de la déconnexion:", error)
+    } catch {
+      devError("Erreur signOut")
       // Même en cas d'erreur, on nettoie le localStorage et les cookies
       localStorage.removeItem("token")
       localStorage.removeItem("user")
@@ -287,45 +259,9 @@ export class AuthService {
         tenantId: TENANT_ID,
       })
       return { success: true }
-    } catch (error: any) {
-      console.error("Erreur sendPasswordResetEmail:", error)
-      
-      // Gérer différents formats de réponse d'erreur
-      let msg = "Erreur lors de l'envoi de l'email"
-      
-      if (error?.response?.data) {
-        const responseData = error.response.data
-        
-        // Si data est directement une chaîne de caractères (ex: "Email not recognized")
-        if (typeof responseData === "string") {
-          msg = responseData
-        }
-        // Si data est un objet avec message ou error
-        else if (responseData.message) {
-          msg = responseData.message
-        } else if (responseData.error) {
-          msg = responseData.error
-        } else if (responseData.errors && Array.isArray(responseData.errors) && responseData.errors.length > 0) {
-          // Si c'est un tableau d'erreurs, prendre la première
-          msg = responseData.errors[0].message || responseData.errors[0] || msg
-        }
-      } else if (error?.message) {
-        msg = error.message
-      }
-      
-      // Traduire les messages d'erreur courants en français
-      // const msgLower = msg.toLowerCase()
-      // if (msgLower.includes("email not recognized") || msgLower.includes("email not found") || msgLower.includes("email n'est pas reconnu")) {
-      //   msg = "Cet email n'est pas reconnu. Vérifiez votre adresse email ou contactez le support."
-      // } else if (msgLower.includes("user not found") || msgLower.includes("utilisateur trouvé")) {
-      //   msg = "Aucun utilisateur trouvé avec cet email."
-      // } else if (msgLower.includes("email.error") || msgLower.includes("email sender") || msgLower.includes("email n'est pas configuré")) {
-      //   msg = "Le service d'email n'est pas configuré. Veuillez contacter le support."
-      // } else if (msgLower.includes("passwordreset.error") || msgLower.includes("password reset error")) {
-      //   msg = "Erreur lors de la réinitialisation du mot de passe. Veuillez réessayer ou contacter le support."
-      // }
-      
-      throw new Error(msg)
+    } catch (error: unknown) {
+      devError("Erreur sendPasswordResetEmail")
+      throw new Error(extractApiErrorMessage(error, "Erreur lors de l'envoi de l'email"))
     }
   }
 
@@ -336,15 +272,14 @@ export class AuthService {
         password,
       })
       return { success: true }
-    } catch (error: any) {
-      console.error("Erreur passwordReset:", error)
-      const data = error?.response?.data
-      const msg =
-        (typeof data === "string" ? data : data?.message || data?.error) ||
-        error?.message ||
-        "Erreur lors de la réinitialisation"
-      const e: any = new Error(msg)
-      e.status = error?.response?.status
+    } catch (error: unknown) {
+      devError("Erreur passwordReset")
+      const msg = extractApiErrorMessage(error, "Erreur lors de la réinitialisation")
+      const e = new Error(msg) as Error & { status?: number }
+      if (error && typeof error === "object" && "response" in error) {
+        const status = (error as { response?: { status?: number } }).response?.status
+        if (status) e.status = status
+      }
       throw e
     }
   }
@@ -356,15 +291,14 @@ export class AuthService {
         newPassword,
       })
       return { success: true }
-    } catch (error: any) {
-      console.error("Erreur changePassword:", error)
-      const data = error?.response?.data
-      const msg =
-        (typeof data === "string" ? data : data?.message || data?.error) ||
-        error?.message ||
-        "Erreur lors du changement de mot de passe"
-      const e: any = new Error(msg)
-      e.status = error?.response?.status
+    } catch (error: unknown) {
+      devError("Erreur changePassword")
+      const msg = extractApiErrorMessage(error, "Erreur lors du changement de mot de passe")
+      const e = new Error(msg) as Error & { status?: number }
+      if (error && typeof error === "object" && "response" in error) {
+        const status = (error as { response?: { status?: number } }).response?.status
+        if (status) e.status = status
+      }
       throw e
     }
   }
