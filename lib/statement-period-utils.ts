@@ -3,6 +3,17 @@ export const STATEMENT_ONLINE_MAX_MONTHS = 6
 export const STATEMENT_PERIOD_TOO_OLD_MESSAGE =
   "Pour les relevés de plus de 6 mois, veuillez vous rendre en agence."
 
+/** Désactive la limite 6 mois par défaut (mode test). Mettre NEXT_PUBLIC_STATEMENT_TEST_MODE=false en prod. */
+export function isStatementTestMode(): boolean {
+  const value = process.env.NEXT_PUBLIC_STATEMENT_TEST_MODE
+  if (value === undefined || value.trim() === "") return true
+  return value.trim().toLowerCase() !== "false"
+}
+
+export function isStatementPeriodLimitEnabled(): boolean {
+  return !isStatementTestMode()
+}
+
 export function parseStatementDate(ymd: string): Date {
   return new Date(`${ymd}T00:00:00`)
 }
@@ -16,6 +27,7 @@ export function getEarliestOnlineStatementStartDate(reference = new Date()): Dat
 }
 
 export function isStatementStartDateTooOld(startDate: string, reference = new Date()): boolean {
+  if (!isStatementPeriodLimitEnabled()) return false
   if (!startDate) return false
   const start = parseStatementDate(startDate)
   return start < getEarliestOnlineStatementStartDate(reference)

@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input"
 import { DatePickerField, toLocalYmd } from "@/components/ui/date-picker-field"
 import {
   getEarliestOnlineStatementStartDate,
+  isStatementPeriodLimitEnabled,
   isStatementStartDateTooOld,
   STATEMENT_PERIOD_TOO_OLD_MESSAGE,
 } from "@/lib/statement-period-utils"
@@ -566,7 +567,9 @@ export default function StatementsPage() {
   // --- UPDATE END ---
 
   const isPeriodTooOld = startDate ? isStatementStartDateTooOld(startDate) : false
-  const earliestStartDate = toLocalYmd(getEarliestOnlineStatementStartDate())
+  const earliestStartDate = isStatementPeriodLimitEnabled()
+    ? toLocalYmd(getEarliestOnlineStatementStartDate())
+    : undefined
   const isFormValid =
     selectedAccount &&
     startDate &&
