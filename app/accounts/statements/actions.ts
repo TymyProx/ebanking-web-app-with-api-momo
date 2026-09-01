@@ -5,8 +5,8 @@ import { cookies } from "next/headers"
 import { getApiBaseUrl, TENANT_ID } from "@/lib/api-url"
 import { buildEmailHtml, buildEmailText } from "@/lib/email-template"
 import {
-  isStatementStartDateTooOld,
-  STATEMENT_PERIOD_TOO_OLD_MESSAGE,
+  getStatementPeriodError,
+  normalizeStatementDateRange,
 } from "@/lib/statement-period-utils"
 
 const API_BASE_URL = getApiBaseUrl()
@@ -75,19 +75,11 @@ export async function generateStatement(prevState: any, formData: FormData) {
       }
     }
 
-    if (isStatementStartDateTooOld(startDate)) {
+    const periodError = getStatementPeriodError(startDate, endDate)
+    if (periodError) {
       return {
         success: false,
-        error: STATEMENT_PERIOD_TOO_OLD_MESSAGE,
-      }
-    }
-
-    // Vérification de la limite de période (max 2 ans)
-    const maxPeriod = 2 * 365 * 24 * 60 * 60 * 1000 // 2 ans en millisecondes
-    if (end.getTime() - start.getTime() > maxPeriod) {
-      return {
-        success: false,
-        error: "La période ne peut pas dépasser 2 ans",
+        error: periodError,
       }
     }
 
@@ -227,8 +219,9 @@ export async function sendStatementByEmail(prevState: any, formData: FormData) {
       return { success: false, error: "Non authentifié" }
     }
 
-    if (isStatementStartDateTooOld(validated.startDate)) {
-      return { success: false, error: STATEMENT_PERIOD_TOO_OLD_MESSAGE }
+    const periodError = getStatementPeriodError(validated.startDate, validated.endDate)
+    if (periodError) {
+      return { success: false, error: periodError }
     }
 
     const url = `${API_BASE_URL}/tenant/${TENANT_ID}/pdf/statement`
@@ -680,70 +673,102 @@ export async function getStatementBalancesFromSTTMS(
   }
 }
 
-export async function getTransactionsByNumCompte(numCompte: string) {
+export async function getTransactionsByNumCompte(
+  numCompte: string,
+  startDate?: string,
+  endDate?: string,
+) {
   const cookieToken = (await cookies()).get("token")?.value
   const usertoken = cookieToken
+
+  const extractAccountNumber = (value: string) => {
+    const cleanedDigits = String(value ?? "").trim().replace(/\s/g, "")
+    if (/^\d+$/.test(cleanedDigits) && cleanedDigits.length > 10) {
+      return cleanedDigits.slice(-10)
+    }
+    return cleanedDigits
+  }
+
+  const accountNumber = extractAccountNumber(numCompte)
+  const [rangeStart, rangeEnd] =
+    startDate && endDate ? normalizeStatementDateRange(startDate, endDate) : [undefined, undefined]
+
+  const fetchAllForFilter = async (filterKey: "numCompte" | "creditAccount") => {
+    const PAGE_SIZE = 5000
+    const MAX_ROWS = 50000
+    let offset = 0
+    const allRows: any[] = []
+
+    while (offset < MAX_ROWS) {
+      const params = new URLSearchParams()
+      params.set(`filter[${filterKey}]`, accountNumber)
+      if (rangeStart && rangeEnd) {
+        params.append("filter[valueDateRange][]", rangeStart)
+        params.append("filter[valueDateRange][]", rangeEnd)
+      }
+      params.set("orderBy", "valueDate_ASC")
+      params.set("limit", String(PAGE_SIZE))
+      params.set("offset", String(offset))
+
+      const url = `${API_BASE_URL}/tenant/${TENANT_ID}/transactions?${params.toString()}`
+
+      const response = await fetch(url, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${usertoken}`,
+        },
+        cache: "no-store",
+      })
+
+      if (!response.ok) {
+        throw new Error(`Erreur API: ${response.status}`)
+      }
+
+      const data = await response.json()
+      let pageRows: any[] = []
+      if (Array.isArray(data.content)) {
+        pageRows = data.content
+      } else if (Array.isArray(data.rows)) {
+        pageRows = data.rows
+      } else if (Array.isArray(data)) {
+        pageRows = data
+      } else if (data.data) {
+        pageRows = Array.isArray(data.data) ? data.data : [data.data]
+      }
+
+      allRows.push(...pageRows)
+      if (pageRows.length < PAGE_SIZE) break
+      offset += PAGE_SIZE
+    }
+
+    return allRows
+  }
+
   try {
-    const url = `${API_BASE_URL}/tenant/${TENANT_ID}/transactions`
-
-    console.log("[STATEMENTS] Fetching from:", url)
-    console.log("[STATEMENTS] Looking for numCompte:", numCompte)
-
-    const response = await fetch(url, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${usertoken}`,
-      },
-      cache: "no-store",
+    console.log("[STATEMENTS] Looking for numCompte:", accountNumber, {
+      startDate,
+      endDate,
     })
 
-    if (!response.ok) {
-      console.error("[STATEMENTS] Erreur API:", response.status, response.statusText)
-      return { success: false, data: [], error: `Erreur API: ${response.status}` }
-    }
-
-    const data = await response.json()
-
-    // Handle different response formats
-    let allTransactions = []
-    if (Array.isArray(data.content)) {
-      allTransactions = data.content
-    } else if (Array.isArray(data.rows)) {
-      allTransactions = data.rows
-    } else if (Array.isArray(data)) {
-      allTransactions = data
-    } else if (data.data) {
-      allTransactions = Array.isArray(data.data) ? data.data : [data.data]
-    }
-
-    console.log("[STATEMENTS] Total transactions récupérées:", allTransactions.length)
-    if (allTransactions.length > 0) {
-      console.log("[STATEMENTS] Exemple de transaction:", allTransactions[0])
-    }
-
-    // 1. Transactions où le compte est le compte source (numCompte/accountId) - généralement DEBIT
-    const directTransactions = allTransactions.filter((txn: any) => {
-      const txnAccountNumber = txn.numCompte || txn.accountNumber || txn.accountId
-      return txnAccountNumber === numCompte
-    })
+    const [directTransactions, creditTransactionsRaw] = await Promise.all([
+      fetchAllForFilter("numCompte"),
+      fetchAllForFilter("creditAccount"),
+    ])
 
     console.log("[STATEMENTS] Transactions directes (DEBIT):", directTransactions.length)
 
-    // 2. Transactions où le compte est le compte crédité (creditAccount) - CREDIT
-    const creditTransactions = allTransactions
+    const creditTransactions = creditTransactionsRaw
       .filter((txn: any) => {
         const creditAccount = txn.creditAccount
-        return creditAccount && creditAccount === numCompte
+        return creditAccount && extractAccountNumber(String(creditAccount)) === accountNumber
       })
       .map((txn: any) => {
-        // Créer une copie de la transaction avec txnType = "CREDIT" et numCompte = creditAccount
         return {
           ...txn,
           txnType: "CREDIT" as const,
           numCompte: txn.creditAccount,
           accountId: txn.creditAccount,
-          // Conserver l'ID original pour éviter les doublons
           originalTxnId: txn.txnId || txn.id,
         }
       })

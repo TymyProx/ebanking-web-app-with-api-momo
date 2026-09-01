@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { MapPin, Phone, Clock, Navigation, Mail } from "lucide-react"
 import { Agence, getAgenceStatus } from "@/hooks/use-agences"
+import { getAgenceDayLabel, sortOpeningHoursEntries } from "@/lib/agence-utils"
 
 /** Numéro utilisable dans href tel: (espaces et séparateurs retirés, préserve le + pays). */
 function toTelHref(phone: string): string {
@@ -38,18 +39,8 @@ export function AgenceCard({ agence, onGetDirections }: AgenceCardProps) {
     }
   }
 
-  const getDayLabel = (key: string): string => {
-    const labels: Record<string, string> = {
-      mon: "Lundi",
-      tue: "Mardi",
-      wed: "Mercredi",
-      thu: "Jeudi",
-      fri: "Vendredi",
-      sat: "Samedi",
-      sun: "Dimanche",
-    }
-    return labels[key] || key
-  }
+  const getDayLabel = getAgenceDayLabel
+  const sortedOpeningHours = sortOpeningHoursEntries(agence.openingHours)
 
   return (
     <Card 
@@ -133,7 +124,7 @@ export function AgenceCard({ agence, onGetDirections }: AgenceCardProps) {
               Horaires d'ouverture
             </div>
             <div className="text-sm text-muted-foreground space-y-1 pl-6">
-              {Object.entries(agence.openingHours).map(([key, hours]) => (
+              {sortedOpeningHours.map(([key, hours]) => (
                 <div key={key} className="flex justify-between">
                   <span className="font-medium">{getDayLabel(key)}:</span>
                   <span>

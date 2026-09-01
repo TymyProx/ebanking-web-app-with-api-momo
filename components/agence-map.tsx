@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Navigation, Loader2, AlertCircle } from "lucide-react"
+import { Navigation, Loader2, AlertCircle, Phone } from "lucide-react"
 import { Agence } from "@/hooks/use-agences"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -156,7 +156,7 @@ export function AgenceMap({
         </div>
 
         {/* Sélecteur d'agence (pour déplacer l'épingle correctement) */}
-        <div className="absolute top-4 left-4 z-20 w-[320px] max-w-[calc(100%-2rem)]">
+        <div className="absolute top-4 left-4 z-20 w-[320px] max-w-[calc(100%-2rem)] space-y-2">
           <Select
             value={selectedAgence?.id || ""}
             onValueChange={(id) => {
@@ -175,6 +175,19 @@ export function AgenceMap({
               ))}
             </SelectContent>
           </Select>
+          {selectedAgence?.telephone?.trim() && (
+            <div className="rounded-lg bg-white/90 backdrop-blur shadow-lg px-3 py-2 text-sm">
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <Phone className="w-4 h-4 shrink-0" />
+                <a
+                  href={`tel:${selectedAgence.telephone.replace(/\s/g, "")}`}
+                  className="font-medium text-foreground hover:text-primary hover:underline"
+                >
+                  {selectedAgence.telephone}
+                </a>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Légende */}

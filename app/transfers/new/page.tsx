@@ -177,6 +177,7 @@ export default function NewTransferPage() {
   const validationErrorMessageRef = useRef<HTMLDivElement>(null)
   /** Évite de réinitialiser le formulaire au 2e clic sur Confirmer quand transferState.success est encore celui du virement précédent */
   const lastProcessedSuccessRef = useRef<unknown>(null)
+  const lastExecutedTransferBeneficiaryTypeRef = useRef<string>("")
 
   // États pour contrôler l'affichage des messages
   const [showSuccessMessage, setShowSuccessMessage] = useState(false)
@@ -462,6 +463,8 @@ export default function NewTransferPage() {
 
     if (transferType === "account-to-beneficiary") {
       formData.append("beneficiaryId", selectedBeneficiary)
+      const beneficiaryType = beneficiaries.find((b) => b.id === selectedBeneficiary)?.type || ""
+      lastExecutedTransferBeneficiaryTypeRef.current = beneficiaryType
     } else if (transferType === "account-to-occasional-beneficiary") {
       // Toujours utiliser les champs de saisie directement (comme demandé)
       formData.append("occasionalBeneficiaryName", occasionalBeneficiaryName.trim())
@@ -662,16 +665,19 @@ export default function NewTransferPage() {
       setAddFormSuccess(true)
       loadBeneficiaries()
       resetBeneficiaryForm()
+      const isConfrere = selectedType === "BNG-CONFRERE"
       toast({
-        title: "Succès",
-        description: "Bénéficiaire ajouté avec succès!",
+        title: "Confirmation",
+        description: isConfrere
+          ? "Bénéficiaire confrère ajouté avec succès."
+          : "Bénéficiaire ajouté avec succès.",
       })
       setTimeout(() => {
         setAddFormSuccess(false)
         setIsAddBeneficiaryDialogOpen(false)
       }, 2000)
     }
-  }, [addBeneficiaryState?.success, transferType])
+  }, [addBeneficiaryState?.success, transferType, selectedType])
 
 
   useEffect(() => {
@@ -692,6 +698,15 @@ export default function NewTransferPage() {
   useEffect(() => {
     if (transferState?.success) {
       setShowSuccessMessage(true)
+      const isConfrere = lastExecutedTransferBeneficiaryTypeRef.current === "BNG-CONFRERE"
+      toast({
+        title: "Confirmation",
+        description:
+          toText(transferState.message) ||
+          (isConfrere
+            ? "Votre virement confrère a été exécuté avec succès."
+            : "Votre virement a été exécuté avec succès."),
+      })
       // Scroll vers le message
       setTimeout(() => {
         successMessageRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })

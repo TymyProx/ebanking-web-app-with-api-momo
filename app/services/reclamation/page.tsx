@@ -11,9 +11,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { AlertCircle, Clock, CheckCircle, Send, Search, MessageSquare } from "lucide-react"
+import { AlertCircle, Clock, CheckCircle, Send, Search, MessageSquare, Eye } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { createReclamation, getReclamations, getReclamationById, getClientByUserId } from "./actions"
 import { getCurrentUser } from "@/app/user/actions"
 
@@ -592,25 +592,36 @@ export default function ReclamationPage() {
               ) : (
                 <div className="space-y-4">
                   {filteredReclamations.map((reclamation) => (
-                    <Card 
-                      key={reclamation.id} 
-                      className="hover:shadow-md transition-shadow cursor-pointer"
-                      onDoubleClick={() => handleViewDetails(reclamation)}
-                    >
+                    <Card key={reclamation.id} className="hover:shadow-md transition-shadow">
                       <CardContent className="p-4">
-                        <div className="flex items-center justify-between">
-                          <div className="space-y-2 flex-1">
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                          <div className="space-y-2 flex-1 min-w-0">
                             <div className="flex items-center gap-2">
-                              <MessageSquare className="w-4 h-4 text-blue-600" />
+                              <MessageSquare className="w-4 h-4 text-blue-600 shrink-0" />
                               <span className="font-semibold text-gray-900">{reclamation.claimId}</span>
                             </div>
                             <div className="text-sm text-gray-600 space-y-1">
                               <p className="font-medium">{reclamation.object}</p>
-                              <p>Date de soumission: {new Date(reclamation.submittedAt).toLocaleDateString("fr-FR")}</p>
+                              <p>
+                                Date de soumission:{" "}
+                                {new Date(reclamation.submittedAt).toLocaleDateString("fr-FR")}
+                              </p>
+                              {reclamation.description && (
+                                <p className="line-clamp-2 text-gray-500">{reclamation.description}</p>
+                              )}
                             </div>
                           </div>
-                          <div>
+                          <div className="flex items-center gap-2 shrink-0">
                             {getStatusBadge(reclamation.status)}
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleViewDetails(reclamation)}
+                            >
+                              <Eye className="w-4 h-4 mr-1" />
+                              Voir les détails
+                            </Button>
                           </div>
                         </div>
                       </CardContent>
@@ -623,10 +634,18 @@ export default function ReclamationPage() {
         </TabsContent>
       </Tabs>
 
-      <Dialog open={isDetailsModalOpen} onOpenChange={setIsDetailsModalOpen}>
+      <Dialog
+        open={isDetailsModalOpen}
+        onOpenChange={(open) => {
+          if (!open) closeDetailsModal()
+        }}
+      >
         <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Détails de la réclamation</DialogTitle>
+            <DialogTitle className="flex flex-wrap items-center gap-2">
+              Détails de la réclamation
+              {selectedReclamationDetails && getStatusBadge(selectedReclamationDetails.status)}
+            </DialogTitle>
           </DialogHeader>
           {isLoadingDetails ? (
             <div className="flex items-center justify-center py-8">
@@ -634,16 +653,31 @@ export default function ReclamationPage() {
             </div>
           ) : selectedReclamationDetails ? (
             <div className="space-y-4">
-              {formatRequestDetails(selectedReclamationDetails).map((field, index) => (
-                <div key={index} className="grid grid-cols-2 gap-2 py-2 border-b">
-                  <span className="font-medium text-gray-700">{field.label}</span>
-                  <span className="text-gray-900">{field.value}</span>
+              {formatRequestDetails(selectedReclamationDetails)
+                .filter((field) => field.label !== "Description")
+                .map((field, index) => (
+                  <div key={index} className="grid grid-cols-1 sm:grid-cols-2 gap-2 py-2 border-b">
+                    <span className="font-medium text-gray-700">{field.label}</span>
+                    <span className="text-gray-900 break-words">{field.value}</span>
+                  </div>
+                ))}
+              <div className="space-y-2 pt-2">
+                <span className="font-medium text-gray-700">Description détaillée</span>
+                <div className="rounded-lg border bg-muted/30 p-3 text-sm text-gray-900 whitespace-pre-wrap break-words">
+                  {selectedReclamationDetails.description ||
+                    selectedReclamationDetails.motifRecl ||
+                    "Aucune description disponible"}
                 </div>
-              ))}
+              </div>
             </div>
           ) : (
             <p className="text-center text-gray-500">Aucun détail disponible</p>
           )}
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={closeDetailsModal}>
+              Fermer
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

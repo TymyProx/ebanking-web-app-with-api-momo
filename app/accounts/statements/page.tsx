@@ -11,9 +11,9 @@ import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { DatePickerField, toLocalYmd } from "@/components/ui/date-picker-field"
 import {
+  getStatementPeriodError,
   getEarliestOnlineStatementStartDate,
-  isStatementPeriodLimitEnabled,
-  isStatementStartDateTooOld,
+  STATEMENT_PERIOD_TOO_LONG_MESSAGE,
   STATEMENT_PERIOD_TOO_OLD_MESSAGE,
 } from "@/lib/statement-period-utils"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -185,6 +185,28 @@ export default function StatementsPage() {
   }, [])
 
   useEffect(() => {
+    if (!startDate || !endDate || new Date(startDate) > new Date(endDate)) {
+      return
+    }
+
+    const periodValidationError = getStatementPeriodError(startDate, endDate)
+    if (periodValidationError) {
+      setErrorMessage(periodValidationError)
+      setFilteredTransactions([])
+      setTransactionCount(0)
+      setShowDownloadLink(false)
+      setIsLoadingTransactions(false)
+      setHasSearched(false)
+    } else {
+      setErrorMessage((prev) =>
+        prev === STATEMENT_PERIOD_TOO_OLD_MESSAGE || prev === STATEMENT_PERIOD_TOO_LONG_MESSAGE
+          ? ""
+          : prev,
+      )
+    }
+  }, [startDate, endDate])
+
+  useEffect(() => {
     const loadTransactionsPreview = async () => {
       if (!selectedAccount || !startDate || !endDate) {
         setFilteredTransactions([])
@@ -197,12 +219,13 @@ export default function StatementsPage() {
         return
       }
 
-      if (isStatementStartDateTooOld(startDate)) {
+      const periodValidationError = getStatementPeriodError(startDate, endDate)
+      if (periodValidationError) {
         setFilteredTransactions([])
         setTransactionCount(0)
         setShowDownloadLink(false)
         setIsLoadingTransactions(false)
-        setErrorMessage("")
+        setErrorMessage(periodValidationError)
         return
       }
 
@@ -211,7 +234,7 @@ export default function StatementsPage() {
       setShowDownloadLink(false)
 
       try {
-        const result = await getTransactionsByNumCompte(selectedAccount.number)
+        const result = await getTransactionsByNumCompte(selectedAccount.number, startDate, endDate)
 
         if (!result.success) {
           setErrorMessage(result.error || "Impossible de récupérer les transactions")
@@ -221,7 +244,7 @@ export default function StatementsPage() {
 
         const allTransactions = result.data
 
-        // Créer les dates de début et fin en s'assurant d'inclure toute la journée
+        // Les transactions sont déjà filtrées côté API par période ; conserver un filtre local de sécurité.
         const start = new Date(startDate + "T00:00:00")
         const end = new Date(endDate + "T23:59:59")
         const effectiveStartDate = start
@@ -414,8 +437,9 @@ export default function StatementsPage() {
   const handleGenerateStatement = async () => {
     if (!selectedAccount || !startDate || !endDate || filteredTransactions.length === 0) return
 
-    if (isStatementStartDateTooOld(startDate)) {
-      setErrorMessage(STATEMENT_PERIOD_TOO_OLD_MESSAGE)
+    const periodError = getStatementPeriodError(startDate, endDate)
+    if (periodError) {
+      setErrorMessage(periodError)
       return
     }
 
@@ -480,8 +504,9 @@ export default function StatementsPage() {
   const handleDownloadPDF = () => {
     if (!selectedAccount || filteredTransactions.length === 0) return
 
-    if (isStatementStartDateTooOld(startDate)) {
-      setErrorMessage(STATEMENT_PERIOD_TOO_OLD_MESSAGE)
+    const periodError = getStatementPeriodError(startDate, endDate)
+    if (periodError) {
+      setErrorMessage(periodError)
       return
     }
 
@@ -519,8 +544,9 @@ export default function StatementsPage() {
       return
     }
 
-    if (isStatementStartDateTooOld(startDate)) {
-      setErrorMessage(STATEMENT_PERIOD_TOO_OLD_MESSAGE)
+    const periodError = getStatementPeriodError(startDate, endDate)
+    if (periodError) {
+      setErrorMessage(periodError)
       return
     }
 
@@ -566,18 +592,19 @@ export default function StatementsPage() {
   }
   // --- UPDATE END ---
 
-  const isPeriodTooOld = startDate ? isStatementStartDateTooOld(startDate) : false
-  const earliestStartDate = isStatementPeriodLimitEnabled()
-    ? toLocalYmd(getEarliestOnlineStatementStartDate())
-    : undefined
+  const periodError =
+    startDate && endDate && new Date(startDate) <= new Date(endDate)
+      ? getStatementPeriodError(startDate, endDate)
+      : null
+  const isPeriodInvalid = !!periodError
   const isFormValid =
     selectedAccount &&
     startDate &&
     endDate &&
     new Date(startDate) <= new Date(endDate) &&
-    !isPeriodTooOld
+    !isPeriodInvalid
   const isGenerateDisabled =
-    !isFormValid || isPeriodTooOld || isLoadingTransactions || filteredTransactions.length === 0
+    !isFormValid || isPeriodInvalid || isLoadingTransactions || filteredTransactions.length === 0
 
   // Appliquer les filtres quand ils changent
   useEffect(() => {
@@ -769,8 +796,7 @@ export default function StatementsPage() {
                         onChange={setStartDate}
                         fromYear={2000}
                         toYear={new Date().getFullYear() + 1}
-                        minDate={earliestStartDate}
-                        maxDate={endDate || undefined}
+                        maxDate={endDate || toLocalYmd()}
                         buttonClassName="h-9"
                       />
                     </div>
@@ -843,8 +869,12 @@ export default function StatementsPage() {
                 )}
                 
                 {startDate && endDate && (
-                  <div className="p-2 bg-blue-50 rounded-lg">
-                    <p className="text-sm text-blue-800">
+                  <div
+                    className={`p-2 rounded-lg ${
+                      periodError ? "bg-amber-50 border border-amber-200" : "bg-blue-50"
+                    }`}
+                  >
+                    <p className={`text-sm ${periodError ? "text-amber-900" : "text-blue-800"}`}>
                       <Calendar className="w-4 h-4 inline mr-1" />
                       Période sélectionnée : du {new Date(startDate).toLocaleDateString("fr-FR")} au{" "}
                       {new Date(endDate).toLocaleDateString("fr-FR")}
@@ -852,11 +882,11 @@ export default function StatementsPage() {
                   </div>
                 )}
 
-                {isPeriodTooOld && (
-                  <Alert className="border-amber-200 bg-amber-50">
+                {periodError && (
+                  <Alert variant="destructive" className="border-amber-300 bg-amber-50 text-amber-950">
                     <AlertCircle className="h-4 w-4 text-amber-700" />
-                    <AlertDescription className="text-sm text-amber-900">
-                      {STATEMENT_PERIOD_TOO_OLD_MESSAGE}
+                    <AlertDescription className="text-sm font-medium text-amber-950">
+                      {periodError}
                     </AlertDescription>
                   </Alert>
                 )}
@@ -947,7 +977,7 @@ export default function StatementsPage() {
                   <Button
                     onClick={handleGenerateStatement}
                     disabled={isGenerateDisabled}
-                    className={`flex-1 h-9 ${isPeriodTooOld ? "opacity-50 cursor-not-allowed" : ""}`}
+                    className={`flex-1 h-9 ${isPeriodInvalid ? "opacity-50 cursor-not-allowed" : ""}`}
                   >
                     {isLoadingTransactions ? (
                       <>
@@ -971,7 +1001,7 @@ export default function StatementsPage() {
                       isSending ||
                       isPending
                     }
-                    className={`flex-1 h-9 bg-transparent ${isPeriodTooOld ? "opacity-50 cursor-not-allowed" : ""}`}
+                    className={`flex-1 h-9 bg-transparent ${isPeriodInvalid ? "opacity-50 cursor-not-allowed" : ""}`}
                   >
                     {isSending || isPending ? (
                       <>
@@ -987,7 +1017,7 @@ export default function StatementsPage() {
                   </Button>
                 </div>
 
-                {!isFormValid && !isPeriodTooOld && (
+                {!isFormValid && !isPeriodInvalid && (
                   <Alert>
                     <AlertCircle className="h-4 w-4" />
                     <AlertDescription className="text-sm">

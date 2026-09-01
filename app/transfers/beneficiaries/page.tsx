@@ -178,6 +178,7 @@ export default function BeneficiariesPage() {
   const [showOtpModal, setShowOtpModal] = useState(false)
   const [otpReferenceId, setOtpReferenceId] = useState<string | null>(null)
   const [pendingBeneficiaryData, setPendingBeneficiaryData] = useState<FormData | null>(null)
+  const lastAddedBeneficiaryTypeRef = useRef<string>("")
 
   const loadBeneficiaries = async () => {
     setIsLoading(true)
@@ -292,6 +293,15 @@ export default function BeneficiariesPage() {
   useEffect(() => {
     if (addState?.success || addAndActivateState?.success) {
       setShowAddSuccess(true)
+
+      const addedType = lastAddedBeneficiaryTypeRef.current
+      const isConfrere = addedType === "BNG-CONFRERE"
+      toast({
+        title: "Confirmation",
+        description: isConfrere
+          ? "Bénéficiaire confrère ajouté et activé avec succès."
+          : "Bénéficiaire ajouté et activé avec succès.",
+      })
 
       if (addAndActivateState?.success) {
         setAddFormSuccess(true)
@@ -668,6 +678,7 @@ export default function BeneficiariesPage() {
     }
 
     // Sauvegarder les données et ouvrir le modal OTP (seulement si la validation RIB est OK)
+    lastAddedBeneficiaryTypeRef.current = selectedType
     setPendingBeneficiaryData(formData)
     setShowOtpModal(true)
   }
