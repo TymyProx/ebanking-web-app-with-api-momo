@@ -388,13 +388,14 @@ export default function AccountDetailsPage({ params }: AccountDetailPageProps) {
   }
 
   const formatAmount = (amount: number, currency = "GNF") => {
+    const value = Number.isFinite(amount) ? amount : 0
     if (currency === "GNF") {
-      return new Intl.NumberFormat("fr-FR").format(Math.abs(amount))
+      return new Intl.NumberFormat("fr-FR").format(Math.trunc(Math.abs(value)))
     }
     return new Intl.NumberFormat("en-US", {
       style: "currency",
       currency: currency,
-    }).format(Math.abs(amount))
+    }).format(value)
   }
 
   const formatDate = (dateString: string) => {

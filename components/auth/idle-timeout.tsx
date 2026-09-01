@@ -5,6 +5,7 @@ import { useRouter, usePathname } from "next/navigation"
 import AuthService from "@/lib/auth-service"
 import { dispatchAuthSessionChanged, EBANKING_AUTH_SESSION_CHANGED } from "@/lib/auth-events"
 import { clientLogout } from "@/lib/client-logout"
+import { setLogoutReason } from "@/lib/logout-reason"
 
 const IDLE_MS = 5 * 60 * 1000
 const THROTTLE_MS = 500
@@ -30,16 +31,18 @@ export function IdleTimeout() {
   const runLogout = useCallback(async () => {
     if (loggingOutRef.current || !AuthService.isAuthenticated()) return
     loggingOutRef.current = true
+    setLogoutReason("idle_timeout")
     clearTimer()
     try {
       await clientLogout()
       dispatchAuthSessionChanged()
       try {
         sessionStorage.clear()
+        setLogoutReason("idle_timeout")
       } catch {
         /* ignore */
       }
-      router.push("/login")
+      router.push("/login?reason=idle_timeout")
     } finally {
       loggingOutRef.current = false
     }

@@ -2,6 +2,7 @@ import axios from "axios"
 import Cookies from "js-cookie"
 import { getApiBaseUrl, TENANT_ID } from "./api-url"
 import { devError, devWarn, extractApiErrorMessage } from "./client-logger"
+import { consumeLogoutReason, resolveLoginReasonFrom401 } from "./logout-reason"
 
 const API_BASE_URL = getApiBaseUrl();
 
@@ -36,19 +37,18 @@ authAxios.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      // Token expiré ou invalidé (ex. connexion depuis un autre appareil).
       if (typeof window !== "undefined") {
-        // On n'essaie pas de prolonger la session : on force un retour
-        // vers /login en nettoyant tout stockage local.
         localStorage.removeItem("token")
         localStorage.removeItem("user")
         Cookies.remove("token")
 
-        // Évite les redirections en boucle si on est déjà sur /login.
         const alreadyOnLogin = window.location.pathname.startsWith("/login")
         if (!alreadyOnLogin) {
+          const reason = consumeLogoutReason() || resolveLoginReasonFrom401(error)
           const params = new URLSearchParams()
-          params.set("reason", "session_replaced")
+          if (reason !== "manual") {
+            params.set("reason", reason)
+          }
           params.set("redirect", window.location.pathname + window.location.search)
           window.location.href = `/login?${params.toString()}`
         }

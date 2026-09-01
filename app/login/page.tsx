@@ -26,6 +26,7 @@ import { isAccountActive } from "@/lib/status-utils"
 import Link from "next/link"
 import { dispatchAuthSessionChanged } from "@/lib/auth-events"
 import { devLog } from "@/lib/client-logger"
+import { LOGIN_LOGOUT_MESSAGES, type LogoutReason } from "@/lib/logout-reason"
 
 const welcomeMessages = [
   {
@@ -67,14 +68,11 @@ export default function LoginPage() {
     return () => clearInterval(interval)
   }, [])
 
-  // Message affiché lorsque la session a été invalidée (connexion
-  // depuis un autre appareil, expiration, etc.).
+  // Message affiché selon la cause de déconnexion (inactivité, autre appareil, etc.).
   useEffect(() => {
-    const reason = searchParams?.get("reason")
-    if (reason === "session_replaced") {
-      setError(
-        "Votre session a été fermée car vous vous êtes connecté depuis un autre appareil ou navigateur.",
-      )
+    const reason = searchParams?.get("reason") as LogoutReason | null
+    if (reason && reason in LOGIN_LOGOUT_MESSAGES) {
+      setError(LOGIN_LOGOUT_MESSAGES[reason as keyof typeof LOGIN_LOGOUT_MESSAGES])
     }
   }, [searchParams])
 
