@@ -6,11 +6,11 @@ export const STATEMENT_PERIOD_TOO_OLD_MESSAGE =
 export const STATEMENT_PERIOD_TOO_LONG_MESSAGE =
   "La période sélectionnée ne peut pas dépasser 6 mois. Veuillez réduire la plage de dates."
 
-/** Active le mode test (sans limite 6 mois) via NEXT_PUBLIC_STATEMENT_TEST_MODE=true */
+/** Préprod/dev : limite 6 mois désactivée par défaut. Mettre NEXT_PUBLIC_STATEMENT_TEST_MODE=false en prod. */
 export function isStatementTestMode(): boolean {
   const value = process.env.NEXT_PUBLIC_STATEMENT_TEST_MODE
-  if (value === undefined || value.trim() === "") return false
-  return value.trim().toLowerCase() === "true"
+  if (value === undefined || value.trim() === "") return true
+  return value.trim().toLowerCase() !== "false"
 }
 
 export function isStatementPeriodLimitEnabled(): boolean {
