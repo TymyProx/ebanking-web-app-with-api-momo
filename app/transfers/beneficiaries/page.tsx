@@ -71,6 +71,7 @@ type ActionResult = {
   success?: boolean
   error?: string
   message?: string
+  submittedAt?: number
 }
 
 const WORKFLOW_STATUS = {
@@ -282,17 +283,12 @@ export default function BeneficiariesPage() {
     ) {
       loadBeneficiaries()
     }
-  }, [
-    addState?.success,
-    addAndActivateState?.success,
-    updateState?.success,
-    deactivateState?.success,
-    reactivateState?.success,
-  ])
+  }, [addState, addAndActivateState, updateState, deactivateState, reactivateState])
 
   useEffect(() => {
     if (addState?.success || addAndActivateState?.success) {
       setShowAddSuccess(true)
+      setAddFormSuccess(true)
 
       const addedType = lastAddedBeneficiaryTypeRef.current
       const isConfrere = addedType === "BNG-CONFRERE"
@@ -304,22 +300,31 @@ export default function BeneficiariesPage() {
       })
 
       if (addAndActivateState?.success) {
-        setAddFormSuccess(true)
         resetForm()
         setPendingBeneficiaryData(null)
         setOtpReferenceId(null)
-
-        setTimeout(() => {
-          setAddFormSuccess(false)
-        }, 10000)
       }
 
       const timer = setTimeout(() => {
         setShowAddSuccess(false)
-      }, 5000)
+        setAddFormSuccess(false)
+      }, 10000)
       return () => clearTimeout(timer)
     }
-  }, [addState?.success, addAndActivateState?.success])
+
+    if (addAndActivateState?.error || addState?.error) {
+      setShowAddSuccess(false)
+      setAddFormSuccess(false)
+      const errorMessage = addAndActivateState?.error || addState?.error
+      if (errorMessage) {
+        toast({
+          variant: "destructive",
+          title: "Erreur",
+          description: errorMessage,
+        })
+      }
+    }
+  }, [addAndActivateState, addState])
 
   useEffect(() => {
     if (updateState?.success) {
@@ -625,6 +630,9 @@ export default function BeneficiariesPage() {
 
   const handleAddBeneficiary = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
+    setAddFormSuccess(false)
+    setShowAddSuccess(false)
+
     const formData = new FormData(e.currentTarget)
 
     if (selectedType !== "BNG-INTERNATIONAL") {
@@ -856,6 +864,8 @@ export default function BeneficiariesPage() {
 
     setShowOtpModal(false)
     setOtpReferenceId(payload.referenceId || null)
+    setAddFormSuccess(false)
+    setShowAddSuccess(false)
 
     // Soumettre le formulaire après vérification OTP
     startTransition(() => {
@@ -891,7 +901,11 @@ export default function BeneficiariesPage() {
 
             <form ref={formRef} onSubmit={handleAddBeneficiary} className="space-y-4">
               {addFormSuccess && (
-                <Alert variant="default" className="border-green-200 bg-green-50">
+                <Alert
+                  key={`add-success-${addAndActivateState?.submittedAt ?? addState?.submittedAt ?? "idle"}`}
+                  variant="default"
+                  className="border-green-200 bg-green-50"
+                >
                   <CheckCircle className="h-4 w-4 text-green-600" />
                   <AlertDescription className="text-green-800">
                     ✅ Bénéficiaire ajouté et activé avec succès! Vous pouvez maintenant effectuer des virements.
@@ -901,7 +915,10 @@ export default function BeneficiariesPage() {
 
               {/* Show errors from streamlined flow */}
               {addAndActivateState?.error && (
-                <Alert variant="destructive">
+                <Alert
+                  key={`add-error-${addAndActivateState.submittedAt ?? addAndActivateState.error}`}
+                  variant="destructive"
+                >
                   <AlertCircle className="h-4 w-4" />
                   <AlertDescription>{addAndActivateState.error}</AlertDescription>
                 </Alert>
@@ -1107,7 +1124,10 @@ export default function BeneficiariesPage() {
       </div>
 
       {showAddSuccess && (
-        <Alert className="border-green-200 bg-green-50">
+        <Alert
+          key={`page-add-success-${addAndActivateState?.submittedAt ?? addState?.submittedAt ?? "idle"}`}
+          className="border-green-200 bg-green-50"
+        >
           <CheckCircle className="h-4 w-4 text-green-600" />
           <AlertDescription className="text-green-800">
             ✅ Bénéficiaire ajouté et activé avec succès! Vous pouvez maintenant effectuer des virements.

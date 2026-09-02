@@ -11,6 +11,11 @@ interface ActionResult {
   error?: string
   message?: string
   details?: any
+  submittedAt?: number
+}
+
+function withSubmittedAt(result: ActionResult): ActionResult {
+  return { ...result, submittedAt: Date.now() }
 }
 
 interface ApiBeneficiary {
@@ -470,24 +475,24 @@ export async function addBeneficiaryAndActivate(
     const cleRib = getStr("cleRib") || getStr("1_cleRib")
 
     if (!name || !account || !type) {
-      return {
+      return withSubmittedAt({
         success: false,
         error: "Tous les champs obligatoires doivent être remplis",
-      }
+      })
     }
 
     if (type === "BNG-INTERNATIONAL" && !bankname && !codeBanque) {
-      return {
+      return withSubmittedAt({
         success: false,
         error: "Le nom de la banque est obligatoire pour les bénéficiaires internationaux",
-      }
+      })
     }
 
     if (type === "BNG-CONFRERE" && !(bankname || codeBanque)) {
-      return {
+      return withSubmittedAt({
         success: false,
         error: "Le nom de la banque est obligatoire",
-      }
+      })
     }
 
     if (type !== "BNG-INTERNATIONAL") {
@@ -505,10 +510,10 @@ export async function addBeneficiaryAndActivate(
         : "Le numéro de compte doit contenir exactement 10 chiffres sans caractères spéciaux"
       
       if (digitsOnly.length !== expectedLength || account !== digitsOnly) {
-        return {
+        return withSubmittedAt({
           success: false,
           error: errorMessage,
-        }
+        })
       }
     }
 
@@ -630,10 +635,10 @@ export async function addBeneficiaryAndActivate(
 
     if (!response.ok) {
       const errorMessage = await extractErrorMessage(response)
-      return {
+      return withSubmittedAt({
         success: false,
         error: errorMessage,
-      }
+      })
     }
 
     const result = await response.json()
@@ -641,16 +646,16 @@ export async function addBeneficiaryAndActivate(
     revalidatePath("/transfers/beneficiaries")
     revalidatePath("/transfers/new")
 
-    return {
+    return withSubmittedAt({
       success: true,
       message: "Bénéficiaire ajouté et activé avec succès",
-    }
+    })
   } catch (error) {
     console.error("Erreur lors de l'ajout du bénéficiaire:", error)
-    return {
+    return withSubmittedAt({
       success: false,
       error: error instanceof Error ? error.message : "Une erreur inattendue s'est produite",
-    }
+    })
   }
 }
 
