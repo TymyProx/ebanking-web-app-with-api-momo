@@ -233,7 +233,8 @@ export function AccountsCarousel({ accounts: initialAccounts = [] }: AccountsCar
     return () => clearInterval(autoplay)
   }, [count])
 
-  const formatAmount = (amount: number | string, currency = "GNF") => formatBalanceAmount(amount, currency)
+  const formatAmount = (amount: number | string, currency = "GNF") =>
+    formatBalanceAmount(amount, currency, "subtle")
 
   const getAccountIcon = (type: string) => {
     switch (type) {
