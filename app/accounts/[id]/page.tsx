@@ -1,6 +1,6 @@
 "use client"
 
-import { useRouter } from "next/navigation"
+import { formatBalanceAmount } from "@/lib/format-amount"
 import { useState, useEffect, useTransition, useMemo } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -491,10 +491,10 @@ export default function AccountDetailsPage({ params }: AccountDetailPageProps) {
                       </TooltipContent>
                     </Tooltip>
                   </div>
-                  <div className="text-3xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">
+                  <div className="text-3xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text tabular-nums">
                     {showBalance ? (
                       <>
-                        {formatAmount(account.balance, account.currency)} {account.currency}
+                        {formatBalanceAmount(account.balance, account.currency)} {account.currency}
                       </>
                     ) : (
                       "••••••••"
@@ -503,10 +503,10 @@ export default function AccountDetailsPage({ params }: AccountDetailPageProps) {
                 </div>
                 <div className="space-y-2 p-4 rounded-xl bg-gradient-to-br from-secondary/5 to-transparent">
                   <p className="text-sm font-medium text-muted-foreground">Solde disponible</p>
-                  <div className="text-2xl font-bold text-primary">
+                  <div className="text-2xl font-bold text-primary tabular-nums">
                     {showBalance ? (
                       <>
-                        {formatAmount(account.availableBalance, account.currency)} {account.currency}
+                        {formatBalanceAmount(account.availableBalance, account.currency)} {account.currency}
                       </>
                     ) : (
                       "••••••••"
@@ -566,8 +566,8 @@ export default function AccountDetailsPage({ params }: AccountDetailPageProps) {
                       <Shield className="h-5 w-5 text-primary mt-0.5" />
                       <div>
                         <p className="text-xs text-muted-foreground font-medium">Découvert autorisé</p>
-                        <p className="text-sm font-semibold">
-                          {formatAmount(account.overdraftLimit, account.currency)} {account.currency}
+                        <p className="text-sm font-semibold tabular-nums">
+                          {formatBalanceAmount(account.overdraftLimit, account.currency)} {account.currency}
                         </p>
                       </div>
                     </div>

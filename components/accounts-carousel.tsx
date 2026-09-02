@@ -1,5 +1,7 @@
 "use client"
 
+import { formatBalanceAmount } from "@/lib/format-amount"
+
 import { useEffect, useState, useCallback } from "react"
 import Link from "next/link"
 import { Card, CardContent, CardTitle } from "@/components/ui/card"
@@ -231,16 +233,7 @@ export function AccountsCarousel({ accounts: initialAccounts = [] }: AccountsCar
     return () => clearInterval(autoplay)
   }, [count])
 
-  const formatAmount = (amount: number | string, currency = "GNF") => {
-    const numAmount = typeof amount === "string" ? Number.parseFloat(amount) : amount
-    if (currency === "GNF") {
-      return new Intl.NumberFormat("fr-FR").format(Math.trunc(numAmount))
-    }
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: currency,
-    }).format(numAmount)
-  }
+  const formatAmount = (amount: number | string, currency = "GNF") => formatBalanceAmount(amount, currency)
 
   const getAccountIcon = (type: string) => {
     switch (type) {
@@ -417,7 +410,7 @@ export function AccountsCarousel({ accounts: initialAccounts = [] }: AccountsCar
                     </div>
                     <div>
                       <p className="text-xs text-muted-foreground mb-1">Solde disponible</p>
-                      <div className="text-3xl font-heading font-bold text-foreground">
+                      <div className="text-3xl font-heading font-bold text-foreground tabular-nums">
                         {showBalances
                           ? formatAmount(currentAccount.availableBalance, currentAccount.currency)
                           : "••••••••"}
@@ -429,7 +422,7 @@ export function AccountsCarousel({ accounts: initialAccounts = [] }: AccountsCar
 
                     <div className="pt-2 border-t border-border/50">
                       <p className="text-xs text-muted-foreground mb-1">Solde comptable</p>
-                      <div className="text-xl font-heading font-semibold text-muted-foreground">
+                      <div className="text-xl font-heading font-semibold text-muted-foreground tabular-nums">
                         {showBalances
                           ? `${formatAmount(currentAccount.bookBalance, currentAccount.currency)} ${currentAccount.currency}`
                           : "••••••••"}
