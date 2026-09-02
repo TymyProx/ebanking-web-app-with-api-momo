@@ -25,7 +25,7 @@ export function applyThousandSeparators(
 export function formatBalanceAmount(
   amount: number | string,
   currency = "GNF",
-  spacing: ThousandSeparatorSpacing = "wide",
+  spacing: ThousandSeparatorSpacing = "subtle",
 ): string {
   const numAmount = typeof amount === "string" ? Number.parseFloat(amount) : amount
   const safeAmount = Number.isFinite(numAmount) ? numAmount : 0
