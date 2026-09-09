@@ -25,42 +25,12 @@ export interface NotificationItem {
   action: string
 }
 
-const RELEVANT_ENTITIES = [
-  "client",
-  "compte",
-  "transactions",
-  "virementCompte",
-  "beneficiaire",
-  "reclamation",
-  "commande",
-]
-
 function parseValues(raw: any): Record<string, any> {
   if (!raw) return {}
   if (typeof raw === "string") {
     try { return JSON.parse(raw) } catch { return {} }
   }
   return raw
-}
-
-/** clientId dans l’audit peut être une string UUID ou un objet Sequelize { id } */
-function clientIdFromValues(v: Record<string, any>): string | undefined {
-  const c = v?.clientId
-  if (c == null) return undefined
-  if (typeof c === "object" && c !== null && "id" in c) return String((c as { id: unknown }).id)
-  return String(c)
-}
-
-/**
- * Nouveaux clients : leurs demandes de compte ont leur userId en clientId dans les values,
- * mais l’entityId de l’audit est l’id du compte — il faut aussi matcher sur clientId.
- */
-function compteAuditConcernsUser(entry: any, userId: string, userAccountIds: string[]): boolean {
-  if (userAccountIds.includes(entry.entityId)) return true
-  const vals = parseValues(entry.values ?? entry.newValues ?? entry.after)
-  const olds = parseValues(entry.oldValues ?? entry.previousValues ?? entry.before)
-  const uid = String(userId)
-  return clientIdFromValues(vals) === uid || clientIdFromValues(olds) === uid
 }
 
 /**
@@ -423,64 +393,25 @@ export async function fetchUserNotifications(): Promise<NotificationItem[]> {
     const token = cookieStore.get("token")?.value
     if (!token) return []
 
-    const meRes = await fetch(`${API_BASE_URL}/auth/me`, {
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-      cache: "no-store",
-    })
-    if (!meRes.ok) return []
-    const me = await meRes.json()
-    const userId: string = me.id
-
-    const comptesRes = await fetch(`${API_BASE_URL}/tenant/${TENANT_ID}/compte`, {
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-      cache: "no-store",
-    })
-    let userAccountIds: string[] = []
-    if (comptesRes.ok) {
-      const comptesData = await comptesRes.json()
-      const rows = comptesData.rows || comptesData.data || comptesData || []
-      userAccountIds = (Array.isArray(rows) ? rows : [])
-        .filter((a: any) => a.clientId === userId)
-        .map((a: any) => a.id)
-    }
-
     const params = new URLSearchParams()
-    RELEVANT_ENTITIES.forEach((e) => params.append("filter[entityNames][]", e))
     params.set("limit", "100")
-    params.set("orderBy", "timestamp_DESC")
 
-    const auditRes = await fetch(
-      `${API_BASE_URL}/tenant/${TENANT_ID}/audit-log?${params.toString()}`,
+    const res = await fetch(
+      `${API_BASE_URL}/tenant/${TENANT_ID}/notifications/me?${params.toString()}`,
       {
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         cache: "no-store",
       },
     )
-    if (!auditRes.ok) return []
+    if (!res.ok) {
+      console.error("[notifications] API error:", res.status, await res.text().catch(() => ""))
+      return []
+    }
 
-    const auditData = await auditRes.json()
-    const entries: any[] = auditData.rows || auditData.data || []
+    const data = await res.json()
+    const entries: any[] = data.rows || data.data || []
 
-    const relevant = entries.filter((e) => {
-      const vals = parseValues(e.values)
-      switch (e.entityName) {
-        case "client":
-          return e.entityId === userId
-        case "compte":
-          return compteAuditConcernsUser(e, userId, userAccountIds)
-        case "transactions":
-        case "virementCompte":
-        case "beneficiaire":
-          return e.createdById === userId
-        case "reclamation":
-        case "commande":
-          return vals.clientId === userId || vals.createdById === userId || e.createdById === userId
-        default:
-          return false
-      }
-    })
-
-    return relevant.map(buildNotification).filter((n): n is NotificationItem => n !== null)
+    return entries.map(buildNotification).filter((n): n is NotificationItem => n !== null)
   } catch (error) {
     console.error("Error fetching user notifications:", error)
     return []
