@@ -8,19 +8,43 @@
       "address": "Koulewondy, boulevard Diallo Telly",
       "city": "Conakry",
       "country": "Guinée",
-      "telephone": "+224 628 08 37 80",
+      "telephone": "+224 621 28 43 84",
       "email": "contact@bng.gn",
       "latitude": 9.51074,
       "longitude": -13.70636,
       "mapEmbedUrl": "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d1637.3434477643993!2d-13.708148818167942!3d9.510134962403662!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0xf1cd19cb9097961%3A0xbe4cd7f62e53f9f2!2sBanque%20Nationale%20de%20Guin%C3%A9e!5e0!3m2!1sfr!2s!4v1771406303482!5m2!1sfr!2s",
       "openingHours": {
-        "mon": { "open": "08:00", "close": "16:30", "closed": false },
-        "tue": { "open": "08:00", "close": "16:30", "closed": false },
-        "wed": { "open": "08:00", "close": "16:30", "closed": false },
-        "thu": { "open": "08:00", "close": "16:30", "closed": false },
-        "fri": { "open": "08:00", "close": "16:30", "closed": false },
-        "sat": { "closed": true },
-        "sun": { "closed": true }
+        "mon": {
+          "open": "08:00",
+          "close": "16:30",
+          "closed": false
+        },
+        "tue": {
+          "open": "08:00",
+          "close": "16:30",
+          "closed": false
+        },
+        "wed": {
+          "open": "08:00",
+          "close": "16:30",
+          "closed": false
+        },
+        "thu": {
+          "open": "08:00",
+          "close": "16:30",
+          "closed": false
+        },
+        "fri": {
+          "open": "08:00",
+          "close": "16:30",
+          "closed": false
+        },
+        "sat": {
+          "closed": true
+        },
+        "sun": {
+          "closed": true
+        }
       },
       "exceptionalClosures": [],
       "publicHolidays": [],
@@ -34,18 +58,42 @@
       "address": "Dans l’enceinte du port, sur la zone des quais commercials",
       "city": "Conakry",
       "country": "Guinée",
-      "telephone": "+224 622 234 567",
+      "telephone": "+224 623 17 23 45",
       "email": "pac@bng.gn",
       "latitude": 9.518475,
       "longitude": -13.713311,
       "openingHours": {
-        "mon": { "open": "08:00", "close": "16:30", "closed": false },
-        "tue": { "open": "08:00", "close": "16:30", "closed": false },
-        "wed": { "open": "08:00", "close": "16:30", "closed": false },
-        "thu": { "open": "08:00", "close": "16:30", "closed": false },
-        "fri": { "open": "08:00", "close": "16:30", "closed": false },
-        "sat": { "closed": true },
-        "sun": { "closed": true }
+        "mon": {
+          "open": "08:00",
+          "close": "16:30",
+          "closed": false
+        },
+        "tue": {
+          "open": "08:00",
+          "close": "16:30",
+          "closed": false
+        },
+        "wed": {
+          "open": "08:00",
+          "close": "16:30",
+          "closed": false
+        },
+        "thu": {
+          "open": "08:00",
+          "close": "16:30",
+          "closed": false
+        },
+        "fri": {
+          "open": "08:00",
+          "close": "16:30",
+          "closed": false
+        },
+        "sat": {
+          "closed": true
+        },
+        "sun": {
+          "closed": true
+        }
       },
       "exceptionalClosures": [],
       "publicHolidays": [],
@@ -59,18 +107,42 @@
       "address": "Madina corniche, en face de l’école primaire et à côté du cimetière",
       "city": "Conakry",
       "country": "Guinée",
-      "telephone": "+224 622 345 678",
+      "telephone": "+224 622 38 52 15",
       "email": "madina@bng.gn",
       "latitude": 9.542841,
       "longitude": -13.66395,
       "openingHours": {
-        "mon": { "open": "08:00", "close": "16:30", "closed": false },
-        "tue": { "open": "08:00", "close": "16:30", "closed": false },
-        "wed": { "open": "08:00", "close": "16:30", "closed": false },
-        "thu": { "open": "08:00", "close": "16:30", "closed": false },
-        "fri": { "open": "08:00", "close": "16:30", "closed": false },
-        "sat": { "closed": true },
-        "sun": { "closed": true }
+        "mon": {
+          "open": "08:00",
+          "close": "16:30",
+          "closed": false
+        },
+        "tue": {
+          "open": "08:00",
+          "close": "16:30",
+          "closed": false
+        },
+        "wed": {
+          "open": "08:00",
+          "close": "16:30",
+          "closed": false
+        },
+        "thu": {
+          "open": "08:00",
+          "close": "16:30",
+          "closed": false
+        },
+        "fri": {
+          "open": "08:00",
+          "close": "16:30",
+          "closed": false
+        },
+        "sat": {
+          "closed": true
+        },
+        "sun": {
+          "closed": true
+        }
       },
       "exceptionalClosures": [],
       "publicHolidays": [],
@@ -84,18 +156,42 @@
       "address": "Lambanyi à coté de la station shell",
       "city": "Conakry",
       "country": "Guinée",
-      "telephone": "+224 622 456 789",
+      "telephone": "+224 625 94 33 76",
       "email": "lambanyi@bng.gn",
       "latitude": 9.642028,
       "longitude": -13.612227,
       "openingHours": {
-        "mon": { "open": "08:00", "close": "16:30", "closed": false },
-        "tue": { "open": "08:00", "close": "16:30", "closed": false },
-        "wed": { "open": "08:00", "close": "16:30", "closed": false },
-        "thu": { "open": "08:00", "close": "16:30", "closed": false },
-        "fri": { "open": "08:00", "close": "16:30", "closed": false },
-        "sat": { "closed": true },
-        "sun": { "closed": true }
+        "mon": {
+          "open": "08:00",
+          "close": "16:30",
+          "closed": false
+        },
+        "tue": {
+          "open": "08:00",
+          "close": "16:30",
+          "closed": false
+        },
+        "wed": {
+          "open": "08:00",
+          "close": "16:30",
+          "closed": false
+        },
+        "thu": {
+          "open": "08:00",
+          "close": "16:30",
+          "closed": false
+        },
+        "fri": {
+          "open": "08:00",
+          "close": "16:30",
+          "closed": false
+        },
+        "sat": {
+          "closed": true
+        },
+        "sun": {
+          "closed": true
+        }
       },
       "exceptionalClosures": [],
       "publicHolidays": [],
@@ -109,18 +205,42 @@
       "address": "Au rond point, en allant vers KM 5",
       "city": "Dubréka",
       "country": "Guinée",
-      "telephone": "+224 622 567 890",
+      "telephone": "+224 621 75 91 89",
       "email": "kagbelen@bng.gn",
       "latitude": 9.7147779,
       "longitude": -13.501121,
       "openingHours": {
-        "mon": { "open": "08:00", "close": "16:30", "closed": false },
-        "tue": { "open": "08:00", "close": "16:30", "closed": false },
-        "wed": { "open": "08:00", "close": "16:30", "closed": false },
-        "thu": { "open": "08:00", "close": "16:30", "closed": false },
-        "fri": { "open": "08:00", "close": "16:30", "closed": false },
-        "sat": { "closed": true },
-        "sun": { "closed": true }
+        "mon": {
+          "open": "08:00",
+          "close": "16:30",
+          "closed": false
+        },
+        "tue": {
+          "open": "08:00",
+          "close": "16:30",
+          "closed": false
+        },
+        "wed": {
+          "open": "08:00",
+          "close": "16:30",
+          "closed": false
+        },
+        "thu": {
+          "open": "08:00",
+          "close": "16:30",
+          "closed": false
+        },
+        "fri": {
+          "open": "08:00",
+          "close": "16:30",
+          "closed": false
+        },
+        "sat": {
+          "closed": true
+        },
+        "sun": {
+          "closed": true
+        }
       },
       "exceptionalClosures": [],
       "publicHolidays": [],
@@ -128,24 +248,48 @@
     },
     {
       "id": "agence-006",
-      "agenceName": "Agance Kamsar",
+      "agenceName": "Agence Kamsar",
       "agenceNumber": "7",
       "agenceCode": "007",
       "address": "Dans les cités de kamsar",
       "city": "Kamsar",
       "country": "Guinée",
-      "telephone": "+224 622 678 901",
+      "telephone": "+224 629 77 60 60",
       "email": "kamsar@bng.gn",
       "latitude": 10.663767,
       "longitude": -14.596773,
       "openingHours": {
-        "mon": { "open": "08:00", "close": "16:30", "closed": false },
-        "tue": { "open": "08:00", "close": "16:30", "closed": false },
-        "wed": { "open": "08:00", "close": "16:30", "closed": false },
-        "thu": { "open": "08:00", "close": "16:30", "closed": false },
-        "fri": { "open": "08:00", "close": "16:30", "closed": false },
-        "sat": { "closed": true },
-        "sun": { "closed": true }
+        "mon": {
+          "open": "08:00",
+          "close": "16:30",
+          "closed": false
+        },
+        "tue": {
+          "open": "08:00",
+          "close": "16:30",
+          "closed": false
+        },
+        "wed": {
+          "open": "08:00",
+          "close": "16:30",
+          "closed": false
+        },
+        "thu": {
+          "open": "08:00",
+          "close": "16:30",
+          "closed": false
+        },
+        "fri": {
+          "open": "08:00",
+          "close": "16:30",
+          "closed": false
+        },
+        "sat": {
+          "closed": true
+        },
+        "sun": {
+          "closed": true
+        }
       },
       "exceptionalClosures": [],
       "publicHolidays": [],
@@ -159,18 +303,42 @@
       "address": "Dans le grand marché de kankan en face de ecobank",
       "city": "Kankan",
       "country": "Guinée",
-      "telephone": "+224 622 789 012",
+      "telephone": "+224 628 45 89 13",
       "email": "kankan@bng.gn",
       "latitude": 10.376352,
       "longitude": -9.298835,
       "openingHours": {
-        "mon": { "open": "08:00", "close": "16:30", "closed": false },
-        "tue": { "open": "08:00", "close": "16:30", "closed": false },
-        "wed": { "open": "08:00", "close": "16:30", "closed": false },
-        "thu": { "open": "08:00", "close": "16:30", "closed": false },
-        "fri": { "open": "08:00", "close": "16:30", "closed": false },
-        "sat": { "closed": true },
-        "sun": { "closed": true }
+        "mon": {
+          "open": "08:00",
+          "close": "16:30",
+          "closed": false
+        },
+        "tue": {
+          "open": "08:00",
+          "close": "16:30",
+          "closed": false
+        },
+        "wed": {
+          "open": "08:00",
+          "close": "16:30",
+          "closed": false
+        },
+        "thu": {
+          "open": "08:00",
+          "close": "16:30",
+          "closed": false
+        },
+        "fri": {
+          "open": "08:00",
+          "close": "16:30",
+          "closed": false
+        },
+        "sat": {
+          "closed": true
+        },
+        "sun": {
+          "closed": true
+        }
       },
       "exceptionalClosures": [],
       "publicHolidays": [],
@@ -188,13 +356,37 @@
       "email": "beyla@bng.gn",
       "isHidden": true,
       "openingHours": {
-        "mon": { "open": "08:00", "close": "16:30", "closed": false },
-        "tue": { "open": "08:00", "close": "16:30", "closed": false },
-        "wed": { "open": "08:00", "close": "16:30", "closed": false },
-        "thu": { "open": "08:00", "close": "16:30", "closed": false },
-        "fri": { "open": "08:00", "close": "16:30", "closed": false },
-        "sat": { "closed": true },
-        "sun": { "closed": true }
+        "mon": {
+          "open": "08:00",
+          "close": "16:30",
+          "closed": false
+        },
+        "tue": {
+          "open": "08:00",
+          "close": "16:30",
+          "closed": false
+        },
+        "wed": {
+          "open": "08:00",
+          "close": "16:30",
+          "closed": false
+        },
+        "thu": {
+          "open": "08:00",
+          "close": "16:30",
+          "closed": false
+        },
+        "fri": {
+          "open": "08:00",
+          "close": "16:30",
+          "closed": false
+        },
+        "sat": {
+          "closed": true
+        },
+        "sun": {
+          "closed": true
+        }
       },
       "exceptionalClosures": [],
       "publicHolidays": [],
