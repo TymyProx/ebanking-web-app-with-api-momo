@@ -2,7 +2,6 @@ import type React from "react"
 import {
   Home,
   FileText,
-  Bell,
   Building2,
   Wallet,
   BarChart3,
@@ -116,11 +115,7 @@ export const navigationData: PortalNavigationData = {
           url: "/agences",
           icon: Building2,
         },
-        {
-          title: "Notifications",
-          url: "/notifications",
-          icon: Bell,
-        },
+        // Notifications masquées au lancement.
       ],
     },
   ],
