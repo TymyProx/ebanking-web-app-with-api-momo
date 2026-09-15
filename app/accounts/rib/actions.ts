@@ -117,7 +117,7 @@ export async function getAccountForRib(accountId: string): Promise<RibInfo | nul
 
 export async function sendRibEmail(payload: SendRibEmailPayload) {
   const resendApiKey = process.env.RESEND_API_KEY
-  const fromEmail = process.env.RESEND_FROM_EMAIL ?? "BNG Connect <support-bngconnect@notif.bngconnect.com>"
+  const fromEmail = process.env.RESEND_FROM_EMAIL ?? "BNG Connect <support-bngconnect@bngconnect.com>"
 
   if (!resendApiKey) {
     console.error("[RIB] RESEND_API_KEY manquante. Impossible d'envoyer l'email.")

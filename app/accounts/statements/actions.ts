@@ -255,7 +255,7 @@ export async function sendStatementByEmail(prevState: any, formData: FormData) {
     const filename = `Releve_${safeNum}_${validated.startDate}_${validated.endDate}.pdf`
 
     const resendApiKey = process.env.RESEND_API_KEY
-    const fromEmail = process.env.RESEND_FROM_EMAIL ?? "BNG Connect <support-bngconnect@notif.bngconnect.com>"
+    const fromEmail = process.env.RESEND_FROM_EMAIL ?? "BNG Connect <support-bngconnect@bngconnect.com>"
 
     if (!resendApiKey) {
       console.error("[STATEMENTS EMAIL] RESEND_API_KEY manquante")
