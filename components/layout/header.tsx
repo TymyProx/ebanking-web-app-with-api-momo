@@ -15,7 +15,6 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { TooltipProvider } from "@/components/ui/tooltip"
 import { User } from "lucide-react"
 import { LogoutButton } from "@/components/auth/logout-button"
-import { NotificationDropdown } from "@/components/notifications/notification-dropdown"
 import { usePathname } from "next/navigation"
 import { useState, useEffect } from "react"
 import { getAccounts } from "@/app/accounts/actions"
@@ -91,8 +90,6 @@ export function Header() {
         )}
 
         <div className="ml-auto flex items-center gap-1 sm:gap-2 shrink-0">
-          <NotificationDropdown />
-
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="relative h-8 w-8 rounded-full shrink-0">

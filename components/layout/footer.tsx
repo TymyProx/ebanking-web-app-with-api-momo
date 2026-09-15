@@ -53,11 +53,6 @@ export function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/services/reclamation" className="hover:text-blue-600">
-                  Réclamations
-                </Link>
-              </li>
-              <li>
                 <Link href="/agences" className="hover:text-blue-600">
                   Nos agences
                 </Link>

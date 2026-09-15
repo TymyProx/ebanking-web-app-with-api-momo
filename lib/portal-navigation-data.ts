@@ -5,7 +5,6 @@ import {
   Building2,
   Wallet,
   BarChart3,
-  AlertCircle,
 } from "lucide-react"
 
 export type PortalMenuItem = {
@@ -106,16 +105,11 @@ export const navigationData: PortalNavigationData = {
       icon: FileText,
       items: [
         {
-          title: "Réclamations",
-          url: "/services/reclamation",
-          icon: AlertCircle,
-        },
-        {
           title: "Agences",
           url: "/agences",
           icon: Building2,
         },
-        // Notifications masquées au lancement.
+        // Réclamations et Notifications masquées au lancement.
       ],
     },
   ],
