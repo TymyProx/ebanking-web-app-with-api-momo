@@ -19,7 +19,6 @@ import {
   DollarSign,
   CreditCard,
   Building,
-  Calendar,
   ArrowUpRight,
   ArrowDownRight,
   TrendingUp,
@@ -48,7 +47,6 @@ interface Account {
   status: string
   iban: string
   rib?: string
-  openingDate: string
   branch: string
   interestRate?: number
   overdraftLimit?: number
@@ -144,7 +142,6 @@ export default function AccountDetailsPage({ params }: AccountDetailPageProps) {
             status: accountDetails.status,
             iban: iban,
             rib: rib,
-            openingDate: accountDetails.createdAt || "2020-01-01",
             branch: accountDetails.codeAgence || "Agence Kaloum",
             overdraftLimit: accountDetails.currency === "GNF" ? 500000 : undefined,
             avisDC:
@@ -175,7 +172,6 @@ export default function AccountDetailsPage({ params }: AccountDetailPageProps) {
                 status: foundAccount.status,
                 iban: iban,
                 rib: rib,
-                openingDate: foundAccount.createdAt || "2020-01-01",
                 branch: foundAccount.codeAgence || "Agence Kaloum",
                 overdraftLimit: foundAccount.currency === "GNF" ? 500000 : undefined,
                 avisDC:
@@ -399,14 +395,6 @@ export default function AccountDetailsPage({ params }: AccountDetailPageProps) {
     }).format(value)
   }
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("fr-FR", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    })
-  }
-
   const formatDateTime = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("fr-FR", {
       year: "numeric",
@@ -526,13 +514,6 @@ export default function AccountDetailsPage({ params }: AccountDetailPageProps) {
                     <div>
                       <p className="text-xs text-muted-foreground font-medium">Agence</p>
                       <p className="text-sm font-semibold">{account.branch}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start space-x-3 p-3 rounded-lg bg-muted/30">
-                    <Calendar className="h-5 w-5 text-secondary mt-0.5" />
-                    <div>
-                      <p className="text-xs text-muted-foreground font-medium">Date d'ouverture</p>
-                      <p className="text-sm font-semibold">{formatDate(account.openingDate)}</p>
                     </div>
                   </div>
                 </div>
