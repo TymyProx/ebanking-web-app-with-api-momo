@@ -2015,6 +2015,11 @@ async function generateExcelStatement(
   closingBalance: number,
 ) {
   try {
+    // Ordre chronologique croissant : le solde courant se cumule depuis le solde d'ouverture.
+    const dateOf = (txn: any) => new Date(txn?.valueDate || txn?.dateEcriture || 0).getTime()
+    const timeOf = (txn: any) => new Date(txn?.dateEcriture || txn?.valueDate || 0).getTime()
+    transactions = [...transactions].sort((a, b) => dateOf(a) - dateOf(b) || timeOf(a) - timeOf(b))
+
     // Calculate totals
     let totalDebit = 0
     let totalCredit = 0
