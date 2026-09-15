@@ -275,7 +275,7 @@ export async function completeSignup(token: string, password: string, email?: st
         const displayName =
           String(pending?.fullName || "").trim() || String(signupEmail).split("@")[0]
         const resend = new Resend(process.env.RESEND_API_KEY)
-        const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || "no-reply@bngebanking.com"
+        const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || "BNG Connect <support@bngconnect.com>"
         await resend.emails.send({
           from: FROM_EMAIL,
           to: String(signupEmail).trim().toLowerCase(),

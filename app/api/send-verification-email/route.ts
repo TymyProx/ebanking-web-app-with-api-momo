@@ -2,8 +2,8 @@ import { type NextRequest, NextResponse } from "next/server"
 import { Resend } from "resend"
 import { VerificationEmail } from "@/emails/verification-email"
 
-const resend = new Resend(process.env.RESEND_API_KEY || "re_NdcxUQii_54sRnXtfjKgHcXdr2XZf5FzP")
-const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || "bng@astratechnologie.com"
+const resend = new Resend(process.env.RESEND_API_KEY)
+const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || "BNG Connect <support@bngconnect.com>"
 const APP_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000"
 
 export async function POST(request: NextRequest) {
