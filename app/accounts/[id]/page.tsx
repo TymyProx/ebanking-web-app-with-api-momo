@@ -22,7 +22,6 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   TrendingUp,
-  Shield,
   Info,
   RefreshCw,
 } from "lucide-react"
@@ -49,7 +48,6 @@ interface Account {
   rib?: string
   branch: string
   interestRate?: number
-  overdraftLimit?: number
   /** 1 = recevoir les avis débit/crédit, 0 = non */
   avisDC?: number
 }
@@ -143,7 +141,6 @@ export default function AccountDetailsPage({ params }: AccountDetailPageProps) {
             iban: iban,
             rib: rib,
             branch: accountDetails.codeAgence || "Agence Kaloum",
-            overdraftLimit: accountDetails.currency === "GNF" ? 500000 : undefined,
             avisDC:
               accountDetails.avisDC !== undefined && accountDetails.avisDC !== null
                 ? Number(accountDetails.avisDC)
@@ -173,7 +170,6 @@ export default function AccountDetailsPage({ params }: AccountDetailPageProps) {
                 iban: iban,
                 rib: rib,
                 branch: foundAccount.codeAgence || "Agence Kaloum",
-                overdraftLimit: foundAccount.currency === "GNF" ? 500000 : undefined,
                 avisDC:
                   foundAccount.avisDC !== undefined && foundAccount.avisDC !== null
                     ? Number(foundAccount.avisDC)
@@ -506,56 +502,40 @@ export default function AccountDetailsPage({ params }: AccountDetailPageProps) {
 
               <Separator />
 
-              {/* Account details grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <div className="space-y-4">
-                  <div className="flex items-start space-x-3 p-3 rounded-lg bg-muted/30">
-                    <Building className="h-5 w-5 text-primary mt-0.5" />
-                    <div>
-                      <p className="text-xs text-muted-foreground font-medium">Agence</p>
-                      <p className="text-sm font-semibold">{account.branch}</p>
-                    </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="flex items-start space-x-3 p-3 rounded-lg bg-muted/30">
+                  <Building className="h-5 w-5 text-primary mt-0.5" />
+                  <div className="min-w-0">
+                    <p className="text-xs text-muted-foreground font-medium">Agence</p>
+                    <p className="text-sm font-semibold">
+                      {/^agence\b/i.test(account.branch) ? account.branch : `Agence ${account.branch}`}
+                    </p>
                   </div>
                 </div>
-                <div className="space-y-4">
-                  <div className="flex items-start space-x-3 p-3 rounded-lg bg-muted/30">
-                    <CreditCard className="h-5 w-5 text-primary mt-0.5" />
-                    <div>
-                      <p className="text-xs text-muted-foreground font-medium">IBAN</p>
-                      <p className="text-sm font-semibold font-mono">{account.iban}</p>
-                    </div>
+                <div className="flex items-start space-x-3 p-3 rounded-lg bg-muted/30">
+                  <CreditCard className="h-5 w-5 text-primary mt-0.5" />
+                  <div className="min-w-0">
+                    <p className="text-xs text-muted-foreground font-medium">IBAN</p>
+                    <p className="text-sm font-semibold font-mono break-all">{account.iban || "—"}</p>
                   </div>
-                  {account.rib && (
-                    <div className="flex items-start space-x-3 p-3 rounded-lg bg-muted/30">
-                      <CreditCard className="h-5 w-5 text-secondary mt-0.5" />
-                      <div>
-                        <p className="text-xs text-muted-foreground font-medium">RIB</p>
-                        <p className="text-sm font-semibold font-mono">{account.rib}</p>
-                      </div>
-                    </div>
-                  )}
-                  {account.interestRate && (
-                    <div className="flex items-start space-x-3 p-3 rounded-lg bg-muted/30">
-                      <TrendingUp className="h-5 w-5 text-secondary mt-0.5" />
-                      <div>
-                        <p className="text-xs text-muted-foreground font-medium">Taux d'intérêt</p>
-                        <p className="text-sm font-semibold">{account.interestRate}% par an</p>
-                      </div>
-                    </div>
-                  )}
-                  {account.overdraftLimit && (
-                    <div className="flex items-start space-x-3 p-3 rounded-lg bg-muted/30">
-                      <Shield className="h-5 w-5 text-primary mt-0.5" />
-                      <div>
-                        <p className="text-xs text-muted-foreground font-medium">Découvert autorisé</p>
-                        <p className="text-sm font-semibold tabular-nums">
-                          {formatBalanceAmount(account.overdraftLimit, account.currency)} {account.currency}
-                        </p>
-                      </div>
-                    </div>
-                  )}
+                </div>
+                <div className="flex items-start space-x-3 p-3 rounded-lg bg-muted/30">
+                  <CreditCard className="h-5 w-5 text-secondary mt-0.5" />
+                  <div className="min-w-0">
+                    <p className="text-xs text-muted-foreground font-medium">RIB</p>
+                    <p className="text-sm font-semibold font-mono break-all">{account.rib || "—"}</p>
+                  </div>
                 </div>
               </div>
+              {account.interestRate ? (
+                <div className="flex items-start space-x-3 p-3 rounded-lg bg-muted/30 mt-3">
+                  <TrendingUp className="h-5 w-5 text-secondary mt-0.5" />
+                  <div>
+                    <p className="text-xs text-muted-foreground font-medium">Taux d'intérêt</p>
+                    <p className="text-sm font-semibold">{account.interestRate}% par an</p>
+                  </div>
+                </div>
+              ) : null}
             </CardContent>
           </Card>
 
