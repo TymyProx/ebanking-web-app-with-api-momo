@@ -439,7 +439,7 @@ export default function AccountDetailsPage({ params }: AccountDetailPageProps) {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
           {/* Main balance card */}
-          <Card className="lg:col-span-2 relative overflow-hidden border-2 hover:border-primary/50 transition-all duration-300 shadow-lg">
+          <Card className="lg:col-span-2 relative overflow-hidden border-2 hover:border-primary/50 transition-all duration-300 shadow-lg h-full flex flex-col">
             <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent" />
 
             <CardHeader className="relative">
@@ -457,7 +457,7 @@ export default function AccountDetailsPage({ params }: AccountDetailPageProps) {
               </CardTitle>
             </CardHeader>
 
-            <CardContent className="relative space-y-6">
+            <CardContent className="relative flex flex-1 flex-col space-y-6">
               {/* Balance display */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2 p-4 rounded-xl bg-gradient-to-br from-primary/5 to-transparent">
@@ -505,7 +505,8 @@ export default function AccountDetailsPage({ params }: AccountDetailPageProps) {
 
               <Separator />
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="flex flex-1 items-center justify-center">
+                <div className="grid w-full max-w-xl grid-cols-1 sm:grid-cols-3 gap-3">
                 <div className="flex flex-col items-center justify-center text-center gap-2 p-4 rounded-lg bg-muted/30">
                   <Building className="h-5 w-5 text-primary" />
                   <div className="min-w-0 w-full">
@@ -528,6 +529,7 @@ export default function AccountDetailsPage({ params }: AccountDetailPageProps) {
                     <p className="text-xs text-muted-foreground font-medium">RIB</p>
                     <p className="text-sm font-semibold font-mono break-all">{account.rib || "—"}</p>
                   </div>
+                </div>
                 </div>
               </div>
               {account.interestRate ? (
