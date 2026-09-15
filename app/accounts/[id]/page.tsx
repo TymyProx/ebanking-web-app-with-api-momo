@@ -506,25 +506,25 @@ export default function AccountDetailsPage({ params }: AccountDetailPageProps) {
               <Separator />
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div className="flex items-start space-x-3 p-3 rounded-lg bg-muted/30">
-                  <Building className="h-5 w-5 text-primary mt-0.5" />
-                  <div className="min-w-0">
+                <div className="flex flex-col items-center justify-center text-center gap-2 p-4 rounded-lg bg-muted/30">
+                  <Building className="h-5 w-5 text-primary" />
+                  <div className="min-w-0 w-full">
                     <p className="text-xs text-muted-foreground font-medium">Agence</p>
                     <p className="text-sm font-semibold">
                       {/^agence\b/i.test(account.branch) ? account.branch : `Agence ${account.branch}`}
                     </p>
                   </div>
                 </div>
-                <div className="flex items-start space-x-3 p-3 rounded-lg bg-muted/30">
-                  <CreditCard className="h-5 w-5 text-primary mt-0.5" />
-                  <div className="min-w-0">
+                <div className="flex flex-col items-center justify-center text-center gap-2 p-4 rounded-lg bg-muted/30">
+                  <CreditCard className="h-5 w-5 text-primary" />
+                  <div className="min-w-0 w-full">
                     <p className="text-xs text-muted-foreground font-medium">IBAN</p>
                     <p className="text-sm font-semibold font-mono break-all">{account.iban || "—"}</p>
                   </div>
                 </div>
-                <div className="flex items-start space-x-3 p-3 rounded-lg bg-muted/30">
-                  <CreditCard className="h-5 w-5 text-secondary mt-0.5" />
-                  <div className="min-w-0">
+                <div className="flex flex-col items-center justify-center text-center gap-2 p-4 rounded-lg bg-muted/30">
+                  <CreditCard className="h-5 w-5 text-secondary" />
+                  <div className="min-w-0 w-full">
                     <p className="text-xs text-muted-foreground font-medium">RIB</p>
                     <p className="text-sm font-semibold font-mono break-all">{account.rib || "—"}</p>
                   </div>
