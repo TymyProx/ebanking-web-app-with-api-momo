@@ -7,7 +7,7 @@ import { dispatchAuthSessionChanged, EBANKING_AUTH_SESSION_CHANGED } from "@/lib
 import { clientLogout } from "@/lib/client-logout"
 import { setLogoutReason } from "@/lib/logout-reason"
 
-const IDLE_MS = 5 * 60 * 1000
+const IDLE_MS = 15 * 60 * 1000
 const THROTTLE_MS = 500
 
 /**
@@ -73,7 +73,16 @@ export function IdleTimeout() {
     if (AuthService.isAuthenticated()) scheduleIdle()
     else clearTimer()
 
-    const events = ["mousedown", "keydown", "scroll", "touchstart", "click", "wheel"] as const
+    const events = [
+      "mousedown",
+      "mousemove",
+      "keydown",
+      "scroll",
+      "touchstart",
+      "pointerdown",
+      "click",
+      "wheel",
+    ] as const
     events.forEach((ev) => window.addEventListener(ev, onActivity, { passive: true }))
     document.addEventListener("visibilitychange", onActivity)
     window.addEventListener(EBANKING_AUTH_SESSION_CHANGED, onSessionChanged)
