@@ -217,7 +217,7 @@ async function sendFundsProvisionEmail(data: {
   pdfContent: Uint8Array
 }): Promise<{ success: boolean; error?: string }> {
   const resendApiKey = process.env.RESEND_API_KEY
-  const fromEmail = process.env.RESEND_FROM_EMAIL ?? "BNG Connect <support-bngconnect@bngconnect.com>"
+  const fromEmail = process.env.RESEND_FROM_EMAIL ?? "BNG Connect <support-bngconnect@notif.bngconnect.com>"
   
   if (!resendApiKey) {
     console.error("[MDF] RESEND_API_KEY manquante. Impossible d'envoyer l'email.")

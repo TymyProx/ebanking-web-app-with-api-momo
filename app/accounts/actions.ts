@@ -177,7 +177,7 @@ async function sendAccountOpeningRecapEmail(payload: {
   accountNumber?: string | null
 }) {
   const resendApiKey = process.env.RESEND_API_KEY
-  const fromEmail = process.env.RESEND_FROM_EMAIL ?? "BNG Connect <support-bngconnect@bngconnect.com>"
+  const fromEmail = process.env.RESEND_FROM_EMAIL ?? "BNG Connect <support-bngconnect@notif.bngconnect.com>"
 
   if (!resendApiKey) {
     console.error("[Account Opening Email] RESEND_API_KEY manquante")

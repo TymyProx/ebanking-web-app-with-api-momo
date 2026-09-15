@@ -145,7 +145,7 @@ export async function initiateSignup(data: InitialSignupData): Promise<SignupRes
     )
 
     const resend = new Resend(process.env.RESEND_API_KEY)
-    const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || "BNG Connect <support-bngconnect@bngconnect.com>"
+    const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || "BNG Connect <support-bngconnect@notif.bngconnect.com>"
 
     const { data: resendData, error: resendError } = await resend.emails.send({
       from: FROM_EMAIL,
@@ -268,7 +268,7 @@ export async function verifyNewClientSignupOtp(otp: string): Promise<SignupResul
     })
 
     const resend = new Resend(process.env.RESEND_API_KEY)
-    const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || "BNG Connect <support-bngconnect@bngconnect.com>"
+    const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || "BNG Connect <support-bngconnect@notif.bngconnect.com>"
     const verificationUrl = `${APP_URL.replace(/\/$/, "")}/auth/verify-email?token=${verificationToken}&email=${encodeURIComponent(email)}`
 
     const verifySubject =
@@ -352,7 +352,7 @@ export async function resendNewClientSignupOtp(): Promise<SignupResult> {
     )
 
     const resend = new Resend(process.env.RESEND_API_KEY)
-    const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || "BNG Connect <support-bngconnect@bngconnect.com>"
+    const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || "BNG Connect <support-bngconnect@notif.bngconnect.com>"
     const fullName = String(pending.fullName || "")
 
     const otpSubject =
@@ -779,7 +779,7 @@ export async function initiateExistingClientSignup(data: { clientCode: string })
     console.log("[v0] Step 6: Sending OTP email (existing client)...")
 
     const resend = new Resend(process.env.RESEND_API_KEY)
-    const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || "BNG Connect <support-bngconnect@bngconnect.com>"
+    const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || "BNG Connect <support-bngconnect@notif.bngconnect.com>"
 
     const { data: resendData, error: resendError } = await resend.emails.send({
       from: FROM_EMAIL,
@@ -925,7 +925,7 @@ export async function initiateExistingClientSignup(data: { clientCode: string })
 //     console.log("[v0] Sending verification email via Resend...")
 
 //     const resend = new Resend(process.env.RESEND_API_KEY)
-//     const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || "BNG Connect <support-bngconnect@bngconnect.com>"
+//     const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || "BNG Connect <support-bngconnect@notif.bngconnect.com>"
 //     const verificationUrl = `${APP_URL.replace(/\/$/, "")}/auth/verify-email?token=${verificationToken}&email=${encodeURIComponent(
 //       data.email,
 //     )}`
