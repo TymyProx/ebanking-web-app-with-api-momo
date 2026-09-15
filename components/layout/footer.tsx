@@ -32,11 +32,6 @@ export function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/transfers/new" className="hover:text-blue-600">
-                  Virements
-                </Link>
-              </li>
-              <li>
                 <Link href="/investments" className="hover:text-blue-600">
                   Investissements
                 </Link>

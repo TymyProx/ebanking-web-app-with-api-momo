@@ -1,7 +1,7 @@
 import Link from "next/link"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Eye, Send, Receipt, ArrowUpRight, ArrowDownRight, Users } from "lucide-react"
+import { Eye, Receipt, ArrowUpRight, ArrowDownRight, FileText } from "lucide-react"
 import { getUserTransactions } from "@/app/transfers/mes-virements/actions"
 import { getAccounts } from "@/app/accounts/actions"
 import { AccountsCarousel } from "@/components/accounts-carousel"
@@ -119,7 +119,7 @@ async function RecentTransactions() {
       <CardHeader className="flex flex-row items-center justify-between pb-3">
         <CardTitle className="font-heading text-lg">Dernières transactions</CardTitle>
         <Link
-          href="/transfers/mes-virements"
+          href="/accounts/statements"
           className="text-xs text-primary hover:text-primary/80 font-medium flex items-center gap-1 transition-colors"
         >
           Voir tout
@@ -233,23 +233,7 @@ export default async function Dashboard() {
 
       <Card className="border-0 shadow-sm bg-muted/30">
         <CardContent className="pt-3 p-2 sm:p-3">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-            <Link href="/transfers/new">
-              <Button size="sm" className="h-11 flex flex-col space-y-0.5 w-full btn-primary group">
-                <Send className="h-3.5 w-3.5 group-hover:scale-110 transition-transform pt-1" />
-                <span className="text-xs font-medium">Virement</span>
-              </Button>
-            </Link>
-            <Link href="/transfers/beneficiaries">
-              <Button
-                size="sm"
-                variant="outline"
-                className="h-11 flex flex-col space-y-0.5 w-full hover:bg-secondary/10 hover:border-secondary group bg-transparent"
-              >
-                <Users className="h-3.5 w-3.5 group-hover:scale-110 transition-transform pt-1" />
-                <span className="text-xs font-medium truncate">Gestion des bénéficiaires</span>
-              </Button>
-            </Link>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             <Link href="/accounts/balance">
               <Button
                 size="sm"
@@ -258,6 +242,16 @@ export default async function Dashboard() {
               >
                 <Eye className="h-3.5 w-3.5 group-hover:scale-110 transition-transform pt-1" />
                 <span className="text-xs font-medium">Consultation de solde</span>
+              </Button>
+            </Link>
+            <Link href="/accounts/statements">
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-11 flex flex-col space-y-0.5 w-full hover:bg-secondary/10 hover:border-secondary group bg-transparent"
+              >
+                <FileText className="h-3.5 w-3.5 group-hover:scale-110 transition-transform pt-1" />
+                <span className="text-xs font-medium">Relevés de compte</span>
               </Button>
             </Link>
           </div>

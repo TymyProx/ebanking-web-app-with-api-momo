@@ -1,14 +1,11 @@
 import type React from "react"
 import {
   Home,
-  ArrowLeftRight,
   FileText,
   Bell,
-  User,
   Building2,
   Wallet,
   BarChart3,
-  Clock,
   AlertCircle,
 } from "lucide-react"
 
@@ -101,29 +98,9 @@ export const navigationData: PortalNavigationData = {
       ],
     },
   ],
-  operations: [
-    {
-      title: "Virements",
-      icon: ArrowLeftRight,
-      items: [
-        {
-          title: "Effectuer un virement",
-          url: "/transfers/new",
-          icon: ArrowLeftRight,
-        },
-        {
-          title: "Bénéficiaires",
-          url: "/transfers/beneficiaries",
-          icon: User,
-        },
-        {
-          title: "Mes virements",
-          url: "/transfers/mes-virements",
-          icon: Clock,
-        },
-      ],
-    },
-  ],
+  // Virements et carnet de bénéficiaires fermés au lancement (décision BNG 14/09/2026).
+  // Réactivation : rétablir le groupe ci-dessous.
+  operations: [],
   services: [
     {
       title: "E-Services",

@@ -654,15 +654,6 @@ export default function AccountDetailsPage({ params }: AccountDetailPageProps) {
                 <div className="space-y-2">
                   {account.status === "ACTIF" && !!(account.number && String(account.number).trim()) && (
                     <>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="w-full justify-start bg-white/50 hover:bg-primary/10 hover:border-primary/50 transition-all"
-                        onClick={() => router.push(`/transfers/new?fromAccount=${accountId}`)}
-                      >
-                        <ArrowUpRight className="w-4 h-4 mr-2" />
-                        Effectuer un virement
-                      </Button>
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <Button

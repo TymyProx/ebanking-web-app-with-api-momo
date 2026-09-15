@@ -25,6 +25,11 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL("/login", request.url))
   }
 
+  // Virements fermés au lancement — même périmètre que le monorepo Particulier
+  if (pathname === "/transfers" || pathname.startsWith("/transfers/")) {
+    return NextResponse.redirect(new URL("/dashboard", request.url))
+  }
+
   // Some email clients / in-app browsers may open links using POST.
   // Pages are GET-only in Next, so we normalize to GET to avoid 405.
   if (
