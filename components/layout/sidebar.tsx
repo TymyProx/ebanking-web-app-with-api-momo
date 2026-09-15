@@ -381,7 +381,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>): 
               </SidebarGroupContent>
             </SidebarGroup>
 
-            {/* Opérations */}
+            {/* Opérations — masqué au lancement si aucun item (virements fermés). */}
+            {navigationData.operations.length > 0 && (
             <SidebarGroup className="mt-4">
               <SidebarGroupLabel asChild>
                 <div>Opérations</div>
@@ -411,6 +412,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>): 
                 </SidebarMenu>
               </SidebarGroupContent>
             </SidebarGroup>
+            )}
 
             {/* Services */}
             <SidebarGroup className="mt-4">
