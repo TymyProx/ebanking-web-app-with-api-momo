@@ -70,6 +70,9 @@ interface AccountDetailPageProps {
   params: Promise<{ id: string }>
 }
 
+/** Avis débit/crédit masqués au lancement (même périmètre que le monorepo). */
+const SHOW_AVIS_DC = false
+
 export default function AccountDetailsPage({ params }: AccountDetailPageProps) {
   const router = useRouter()
   const { toast } = useToast()
@@ -564,6 +567,7 @@ export default function AccountDetailsPage({ params }: AccountDetailPageProps) {
                   <p className="text-xs text-muted-foreground uppercase font-medium mb-1">Statut</p>
                   {getStatusBadge(account.status)}
                 </div>
+                {SHOW_AVIS_DC && (
                 <div className="p-3 rounded-lg bg-white/50 backdrop-blur-sm space-y-2">
                   <div className="flex items-center justify-between gap-3">
                     <Label htmlFor="avis-dc-toggle" className="text-sm font-medium leading-tight cursor-pointer">
@@ -606,6 +610,7 @@ export default function AccountDetailsPage({ params }: AccountDetailPageProps) {
                     Recevoir par e-mail les notifications d&apos;avis de débit et de crédit pour ce compte.
                   </p>
                 </div>
+                )}
               </div>
 
               <Separator />
