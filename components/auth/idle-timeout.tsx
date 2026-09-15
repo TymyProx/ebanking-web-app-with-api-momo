@@ -70,8 +70,12 @@ export function IdleTimeout() {
       else clearTimer()
     }
 
-    if (AuthService.isAuthenticated()) scheduleIdle()
-    else clearTimer()
+    if (AuthService.isAuthenticated()) {
+      throttleRef.current = 0
+      scheduleIdle()
+    } else {
+      clearTimer()
+    }
 
     const events = [
       "mousedown",
